@@ -1,0 +1,1136 @@
+Task, Company Name, origType, newType, PredDisabled
+Added 43-1: Aaron Anthony, 3, 9, True
+Added 44-2: Aaron Suttle, 1, 3, False
+Added 47-3: Abdul Kader, 3, 9, True
+Added 49-4: Abdullah Elhabb Isaacs, 3, 9, True
+Added 51-5: Abri Du Plessis, 5, 9, True
+Added 53-6: Absolute Golf, 1, 6, False
+Added 60-7: Adam Todes, 1, 9, True
+Added 63-8: Adelaide Masu, 3, 9, True
+Added 66-9: Adi Reed, 0, 9, True
+Added 72-10: Adrian Kriel, 1, 9, False
+Added 73-11: Adrian Reed, 3, 9, True
+Added 74-12: Adrian Smith, 3, 9, True
+Added 75-13: Adriel Joshua, 3, 9, True
+Added 81-14: Afbuso Pty Ltd, 3, 9, True
+Added 86-15: Africa Infused, 1, 6, False
+Added 91-16: Afro Oceanic Investments, 3, 6, False
+Added 95-17: AH Ernst & Seuns (Edms) Bpk, 0, 9, False
+Added 96-18: Ahmed Mahran, 1, 9, True
+Added 100-19: Aiden Walton, 0, 9, True
+Added 104-20: Akeso Montrose Manor, 3, 1, False
+Added 107-21: Alan Jordan, 8, 9, False
+Added 108-22: Alan McLachlan , 1, 6, False
+Added 113-23: Albert Visagie, 0, 9, True
+Added 114-24: Albert Zelie, 3, 9, True
+Added 115-25: Albie Niemandt, 0, 9, True
+Added 116-26: Alcarga Shipping Services SA, 3, 1, False
+Added 120-27: Alex Clegg, 3, 9, True
+Added 121-28: Alex Mukaddam, 0, 3, False
+Added 122-29: Alex Steinberg, 3, 1, False
+Added 123-30: Alex Sully, 3, 9, True
+Added 125-31: Alexander Pittendrigh, 0, 9, True
+Added 129-32: Alexandre Anastassiou, 3, 9, True
+Added 131-33: Alinea Advisory Pty Limited, 5, 9, True
+Added 132-34: All About Coffee, 3, 9, True
+Added 136-35: Allan Singer, 5, 9, True
+Added 139-36: Allesbeste Padstal / AH Ernst, 3, 9, True
+Added 140-37: Allie Rawood, 3, 9, True
+Added 146-38: Amanda / Jean van Zyl, 1, 3, False
+Added 162-39: Andel Klaasen, 1, 3, False
+Added 165-40: Andre Blom, 3, 9, True
+Added 166-41: Andre Bouwer Boskind, 3, 9, True
+Added 169-42: Andre Kotze, 0, 3, False
+Added 172-43: Andre van Wyk , 0, 9, True
+Added 175-44: Andrew  Bryee, 3, 9, True
+Added 178-45: Andrew Cawood(Techairos Consulting (Pty) Ltd), 0, 9, True
+Added 179-46: Andrew Cuthbert, 3, 9, True
+Added 181-47: Andrew Dippenaar, 3, 9, True
+Added 184-48: Andrew Hart, 3, 9, True
+Added 189-49: Andrew Thompson, 3, 9, True
+Added 222-50: Arlyn Culwick, 0, 3, False
+Added 223-51: Arnelle Booysen, 3, 9, True
+Added 225-52: Arnold Di Bella, 3, 9, True
+Added 229-53: Artisan Luxe (Pty) Ltd, 3, 9, True
+Added 238-54: Athos, 3, 9, True
+Added 243-55: Attie van der Walt, 3, 9, True
+Added 254-56: Baked Coffer Bar, 1, 9, False
+Added 256-57: Baptiste Herbert, 3, 9, True
+Added 277-58: Ben Jenkin, 3, 9, True
+Added 279-59: Benj / Debbie, 3, 1, False
+Added 281-60: Beno Viehboeck, 3, 9, True
+Added 290-61: Beth Rademeyer, 0, 9, True
+Added 293-62: Bevan Mandy, 3, 9, True
+Added 297-63: Bianca Evans , 0, 9, True
+Added 310-64: BlueAsset Technologies, 3, 9, True
+Added 311-65: Blu's Bistro (Donca Management), 3, 9, True
+Added 317-66: Brad Latre, 3, 9, True
+Added 319-67: Brad Sitzer, 0, 3, False
+Added 320-68: Brad Smede, 3, 9, True
+Added 323-69: Bradley Marais, 3, 9, True
+Added 327-70: Brendan & Ian Drummond-Hay (Hy-Jack), 5, 9, True
+Added 328-71: Brendan Keogh, 8, 9, False
+Added 335-72: Brenton Wood, 3, 9, True
+Added 338-73: Brett Thomas, 1, 6, False
+Added 340-74: Brian Burnett, 1, 3, False
+Added 342-75: Brian Holt, 3, 9, True
+Added 346-76: Brian Venter, 3, 9, True
+Added 355-77: Bronwyn Rosslee, 3, 9, True
+Added 356-78: Bruce Francois, 1, 6, False
+Added 361-79: Brunch and Munch Coffee Shop, 3, 9, False
+Added 363-80: Bryan Leibbrandt, 2, 3, False
+Added 368-81: Buntu Ngcebetsha, 3, 9, True
+Added 369-82: Burgert Maree, 3, 9, True
+Added 371-83: BWC GROUP (PTY) LTD, 1, 9, True
+Added 375-84: Cabine du Cap, 5, 6, False
+Added 376-85: Cadiant Partners Actuarial & Consulting Solutions, 3, 1, False
+Added 380-86: Calvin Muller, 3, 9, True
+Added 381-87: Cambria Melchert, 0, 3, False
+Added 393-88: Capital International Group SA, 3, 9, True
+Added 405-89: Carlo Sangiorgio, 3, 9, True
+Added 419-90: Catherin Mathews, 3, 9, True
+Added 420-91: Catherine Schmolke, 3, 9, True
+Added 422-92: Cathy/Tony Bell, 3, 1, True
+Added 423-93: Cecile Nell, 0, 1, False
+Added 425-94: Cedric, 0, 9, True
+Added 432-95: CG Nightingale, 5, 9, True
+Added 435-96: Chanhee Lee, 1, 9, True
+Added 436-97: Chantal Barnard, 3, 9, True
+Added 437-98: Charl Bleach, 3, 9, True
+Added 440-99: Charl Retief, 3, 9, True
+Added 441-100: Charl Stander, 3, 9, True
+Added 455-101: Chez Pool, 0, 9, True
+Added 462-102: Chris Coetzee, 3, 9, True
+Added 465-103: Chris Pike, 3, 9, True
+Added 473-104: Chrissi Maria, 1, 6, False
+Added 482-105: Christo du Preez, 3, 9, True
+Added 487-106: Christopher Starke, 3, 9, True
+Added 494-107: Clare Lindsay, 1, 3, False
+Added 502-108: Clifford Lotter, 1, 6, False
+Added 512-109: Clyde & Co Inc, 5, 6, True
+Added 518-110: Cobus Albertse, 0, 9, True
+Added 521-111: Coffee Crate, 0, 9, True
+Added 525-112: Colin De La Harpe, 3, 9, True
+Added 527-113: Colin Koen, 1, 9, False
+Added 536-114: Como Caffe, 3, 9, True
+Added 539-115: Conberg Catering , 3, 9, False
+Added 550-116: COOKtastic Hub NPC, 0, 3, False
+Added 551-117: Corel niekeik, 3, 9, True
+Added 552-118: Corne Van Antwerpen, 3, 9, True
+Added 554-119: Cornelius van Niekerk, 3, 9, True
+Added 556-120: Courtney Van Zyl, 3, 9, True
+Added 563-121: Craig Henen (EQI), 3, 9, True
+Added 574-122: Cuth Bland, 7, 3, True
+Added 586-123: Daniel Foster, 3, 9, True
+Added 588-124: Daniel Gersohn, 3, 9, True
+Added 591-125: Daniel Robinson, 3, 9, True
+Added 594-126: Danielle Abdullah, 3, 9, True
+Added 598-127: Darren Abrahams , 3, 9, True
+Added 602-128: Darryl Stander , 1, 3, False
+Added 604-129: Daryn Houston-McMillan, 3, 9, True
+Added 609-130: Dave Moores, 0, 6, False
+Added 610-131: Dave Reynders, 0, 9, True
+Added 613-132: David Bassett, 3, 9, True
+Added 615-133: David Burstein, 0, 9, True
+Added 618-134: David Ellington, 3, 9, True
+Added 622-135: David Kibel, 1, 3, False
+Added 626-136: David Miles, 7, 9, False
+Added 634-137: Dawid Jacobus van der Merwe, 3, 9, True
+Added 635-138: Dawid Mostert, 0, 9, False
+Added 640-139: Dean Underwood, 3, 9, True
+Added 642-140: Debbie Gartshore, 3, 9, False
+Added 643-141: Debbie Ludik, 3, 9, False
+Added 647-142: Deborah Dutton, 0, 3, False
+Added 649-143: Debra Van Niekerk, 1, 9, True
+Added 667-144: Demo Xs9 (02757) - At COOKTasting, 4, 9, False
+Added 689-145: Deon Phyfer, 3, 1, False
+Added 696-146: Design Your Way, 0, 9, True
+Added 700-147: Devlin Quinn, 3, 9, True
+Added 705-148: Diana, 3, 9, True
+Added 712-149: Dimitri Otis, 3, 9, True
+Added 716-150: Dirk Van der Merwe, 3, 9, True
+Added 718-151: DMQ Trading / McCusker, 1, 6, False
+Added 721-152: Dominic Giampaolo, 3, 9, False
+Added 725-153: Dominic Takacs, 0, 3, False
+Added 729-154: Donovan Lewis, 0, 9, False
+Added 734-155: Douglas Cherry, 3, 9, True
+Added 735-156: Douglas Van Der Merwe, 3, 9, True
+Added 736-157: Downer Hans Merensky Hotel and Spa, 2, 3, False
+Added 738-158: Dr Charl van den Berg Incorporated, 5, 9, True
+Added 741-159: Dr Duncan McGuire, 5, 9, True
+Added 764-160: Duran Cornhill, 3, 9, True
+Added 766-161: Dustin Fourie, 3, 9, True
+Added 769-162: Dyalan Wallis, 3, 9, True
+Added 771-163: Dylan Teubes, 0, 9, True
+Added 776-164: Eamon McLoughlin, 3, 9, True
+Added 777-165: Earl Riffel, 1, 9, False
+Added 790-166: Edward Steere, 3, 9, False
+Added 802-167: Elrine Naidoo, 0, 9, True
+Added 809-168: Emile Van Rooyen, 4, 3, False
+Added 810-169: Emma Elliott, 3, 9, True
+Added 813-170: Employment Solutions, 3, 1, False
+Added 831-171: Erica Schuurmans-Stekhoven, 0, 9, True
+Added 835-172: Erin Jade Myburgh, 3, 9, True
+Added 842-173: Estean Bardenhorst, 3, 9, True
+Added 843-174: Estiaan Pretorius, 3, 9, True
+Added 849-175: Eugene Booyens , 0, 3, False
+Added 852-176: Euphoria Telecom, 5, 6, False
+Added 856-177: Ewald Horn, 3, 9, True
+Added 857-178: Eyad, 3, 9, True
+Added 863-179: Faizel Lorgat, 5, 3, False
+Added 864-180: Falcon Projects, 3, 9, False
+Added 865-181: Family Health Medical Practice, 7, 9, False
+Added 866-182: Fat Henry's Pizzeria/Hendrik Combrinck, 7, 3, False
+Added 872-183: Ferhat Jeena, 2, 3, True
+Added 881-184: Floraland, 5, 9, True
+Added 886-185: Formative, 0, 9, True
+Added 890-186: Francis Mboko, 3, 9, False
+Added 893-187: Francois de Villiers, 3, 9, True
+Added 897-188: Francois van der Westhuizen, 3, 9, True
+Added 898-189: Francois Wessels, 1, 9, True
+Added 899-190: Frank Berkeley, 0, 9, True
+Added 907-191: Fred Kohrs, 5, 9, True
+Added 918-192: Fundamental Software, 5, 9, True
+Added 923-193: Gadi Chait, 3, 9, True
+Added 925-194: Gail Machanik, 3, 9, True
+Added 928-195: Gareth Clarke, 3, 9, True
+Added 932-196: Gary Davidson, 0, 3, False
+Added 938-197: Gavin Ritchie, 8, 9, False
+Added 939-198: Gemma Nourse, 7, 9, False
+Added 940-199: Gendac (Pty) Ltd, 3, 1, False
+Added 942-200: Geoff Budge, 3, 1, False
+Added 945-201: Geoff Raikes, 3, 9, True
+Added 948-202: Geoffrey Hayward, 0, 3, False
+Added 949-203: George / Ieteke  Golding, 5, 6, False
+Added 951-204: George Hanekom, 3, 9, True
+Added 952-205: George Louw, 3, 9, True
+Added 956-206: Georgie Mathews, 5, 9, True
+Added 962-207: Gerhard Moolman/Robusta Wholesale Growers , 5, 9, True
+Added 963-208: Gerhard Nel, 3, 9, True
+Added 964-209: Gerhard Nel Agrifusion, 3, 9, False
+Added 989-210: Goindustry Dovebid / Liquidity, 3, 1, False
+Added 994-211: Grace de Jager, 1, 3, False
+Added 1000-212: Graham Hills, 3, 9, True
+Added 1012-213: Greenwood Bay College, 3, 9, True
+Added 1014-214: Greg Kanes, 3, 9, True
+Added 1019-215: Gregory Houle, 3, 9, True
+Added 1020-216: Gregory Vogel, 3, 9, True
+Added 1021-217: Greig Jansen, 3, 9, True
+Added 1024-218: Gridline Property Projects, 3, 9, True
+Added 1026-219: Griebenow Consulting, 5, 9, True
+Added 1027-220: Groot Constantia production cellar, 1, 3, False
+Added 1028-221: Growmatter, 5, 9, True
+Added 1029-222: Gryphon, 0, 3, False
+Added 1030-223: Guerilla Tactic Media, 5, 6, False
+Added 1044-224: Hannah Aallis, 3, 9, True
+Added 1048-225: Hannes Geldenhuys, 3, 9, True
+Added 1059-226: Harley Edwards, 3, 9, True
+Added 1078-227: Heilene das Neves, 5, 9, True
+Added 1082-228: Heinrich Laue, 8, 3, False
+Added 1087-229: Helga Giershausen, 3, 1, False
+Added 1093-230: Hennie Ferreira, 1, 3, False
+Added 1095-231: Henry Pretorius, 0, 3, False
+Added 1096-232: Hercules Sandenbergh, 5, 9, True
+Added 1103-233: Hile Du Toit  , 5, 9, True
+Added 1118-234: House of Team/Hop and Scotch, 3, 1, False
+Added 1133-235: Ian Cooper, 3, 9, False
+Added 1134-236: Ian Holmes, 1, 6, False
+Added 1135-237: Ian Massey, 8, 3, False
+Added 1136-238: Ian Metcalfe, 3, 9, True
+Added 1145-239: Idequity (Pty) LTD, 7, 3, False
+Added 1148-240: Ilana Sossen, 3, 9, True
+Added 1149-241: Ilande Vorster, 0, 9, True
+Added 1151-242: Ilze Human, 5, 9, True
+Added 1159-243: Ina Du Plooy, 0, 9, True
+Added 1162-244: Ines Stroll, 1, 9, False
+Added 1186-245: Isaac Mthmunye (Explore Data Science Academy), 3, 9, True
+Added 1190-246: Ishtiyaaq Kolabhai, 3, 9, True
+Added 1200-247: J.B Burger, 3, 9, True
+Added 1201-248: Jackie Hills, 3, 9, True
+Added 1202-249: Jackie Ma, 3, 9, True
+Added 1207-250: Jaco van den Berg, 1, 6, False
+Added 1208-251: Jaco van der Westhuizen, 3, 9, True
+Added 1212-252: Jacqueco Peenz, 3, 9, True
+Added 1215-253: Jacques Basson, 3, 9, True
+Added 1218-254: Jacques Marx, 3, 9, True
+Added 1220-255: Jacques van Zyl, 3, 9, True
+Added 1228-256: James Hepworth, 3, 9, True
+Added 1231-257: James Perkins, 3, 9, True
+Added 1234-258: James Robertson, 3, 9, True
+Added 1238-259: James Wiles (QR Space), 3, 9, True
+Added 1240-260: Jamie Coete, 3, 9, True
+Added 1244-261: Jan Harmse, 3, 9, True
+Added 1256-262: Jarajar t/a Protea BV, 3, 9, True
+Added 1257-263: Jarno van Vuuren, 5, 9, True
+Added 1258-264: Jarrod Eder, 3, 9, True
+Added 1260-265: Jason Cooper-Williams(Gen Re), 3, 9, True
+Added 1261-266: Jason Katz, 3, 9, True
+Added 1263-267: Jason Michael Smith Inc. Attorneys, 5, 6, False
+Added 1264-268: Jason Mill, 3, 9, True
+Added 1265-269: Jason Smith, 5, 9, True
+Added 1268-270: Jean Brazendale, 1, 9, True
+Added 1269-271: Jean du Rand, 1, 9, True
+Added 1270-272: Jean Louw, 3, 9, True
+Added 1271-273: Jean Meyer, 1, 6, False
+Added 1272-274: Jeandre Naude , 0, 9, False
+Added 1276-275: Jean-Pierre Buys, 0, 6, False
+Added 1277-276: Jeff Miller, 3, 9, True
+Added 1282-277: Jennah Dollman, 3, 9, True
+Added 1288-278: Jenny Geldenhuys (3%.com Properties George), 3, 9, True
+Added 1291-279: Jenny Slack, 3, 1, False
+Added 1301-280: Jill / Gary Buchanan, 3, 1, False
+Added 1303-281: Jimmy / Thomas Fitzpatrick, 1, 3, False
+Added 1306-282: Jo Brom, 3, 1, False
+Added 1307-283: Joanne Du Plessis (Nokia), 3, 9, True
+Added 1308-284: Joanne Louw, 3, 9, True
+Added 1310-285: Joel Ramasami, 1, 9, True
+Added 1316-286: Johan de Villiers, 3, 9, True
+Added 1320-287: Johan Otto, 0, 9, True
+Added 1325-288: Johanda Hugo  (Solar Spectrum Trading 65(Pty) Ltd), 3, 9, True
+Added 1326-289: Johandre Jacobs, 3, 9, True
+Added 1333-290: John Claassen, 3, 1, True
+Added 1337-291: John Earle, 3, 6, False
+Added 1338-292: John Fabricius, 3, 1, False
+Added 1344-293: John Murray, 3, 9, True
+Added 1350-294: Jolandi Morkel, 3, 9, True
+Added 1355-295: Jonathan Dutton , 3, 9, True
+Added 1359-296: Jonathan Stewart, 3, 9, True
+Added 1364-297: Jordan Calder, 3, 9, True
+Added 1367-298: Jose Vattakunnel, 0, 9, True
+Added 1368-299: JP du Toit Watchmaker Genomics, 3, 9, True
+Added 1371-300: Juan Cano, 3, 9, True
+Added 1372-301: Juan Terblanche, 3, 9, True
+Added 1376-302: Juliane Birling, 1, 9, True
+Added 1377-303: Julianna Jones, 3, 9, True
+Added 1381-304: Julien Daniels (S A Construction Group Pty Ltd., 3, 9, False
+Added 1390-305: Justin Wilson, 3, 9, False
+Added 1396-306: Kamran Malik, 5, 9, True
+Added 1399-307: Karen Amato, 1, 3, False
+Added 1401-308: Karen Gibbs Physiotherapists , 0, 9, False
+Added 1403-309: Karen Weimann, 3, 9, True
+Added 1414-310: Kastelo, 3, 1, False
+Added 1418-311: Kate Gerber/Armond Furmie , 0, 3, False
+Added 1424-312: Kathy Baxter, 1, 9, False
+Added 1428-313: Keagan de Villiers, 3, 1, False
+Added 1436-314: Keith Rosmarin, 1, 9, True
+Added 1443-315: Kenneth Dollman, 3, 9, True
+Added 1447-316: Keren Machanik, 3, 1, True
+Added 1450-317: Kevin Britz, 3, 9, True
+Added 1451-318: Kevin Dyamond, 1, 9, True
+Added 1452-319: Kevin Hojem, 3, 1, True
+Added 1454-320: Kevin Levey (Titeforce), 3, 9, True
+Added 1455-321: Kevin Miller, 3, 9, False
+Added 1457-322: Kevin Swarts, 3, 9, True
+Added 1458-323: Khombisa Media, 3, 9, True
+Added 1459-324: Khomotso Moabelo, 3, 9, True
+Added 1460-325: Khutso Ngoasheng, 0, 9, True
+Added 1461-326: KIA Motors Tableview, 3, 9, False
+Added 1462-327: Kim  Boezaart, 3, 9, False
+Added 1463-328: Kim Gorgulho, 3, 9, True
+Added 1464-329: Kim H, 3, 9, False
+Added 1467-330: Kim Van Zyl, 3, 9, True
+Added 1468-331: Kimmey-Li/Ruan Yacumakis, 1, 9, True
+Added 1469-332: Kinetic Solutions, 3, 9, False
+Added 1470-333: Kirendran Govender, 3, 9, False
+Added 1474-334: Kishan  Dayar (SA Coffee Map PTY LTD), 0, 9, True
+Added 1476-335: Knysna Provincial Hospital, 3, 9, True
+Added 1477-336: Kobie du Preez, 3, 9, False
+Added 1478-337: Kobus Stoeder, 1, 9, False
+Added 1481-338: Kondylis (Home), 3, 1, False
+Added 1483-339: Konrad Blum, 3, 9, True
+Added 1485-340: Kronendal Heritage, 3, 9, False
+Added 1487-341: Kubu Lodge, 3, 9, False
+Added 1488-342: Kudakwashe Rodze, 0, 9, True
+Added 1489-343: Kumquat Gift Shop, 3, 9, False
+Added 1490-344: Kurt Vining, 3, 9, False
+Added 1492-345: Kwang Lee, 3, 9, False
+Added 1494-346: Kwikspar on Kloof & Tops, 3, 9, False
+Added 1495-347: Kyle Business Projects, 3, 9, False
+Added 1499-348: Kyle Noyes-Smith, 3, 9, False
+Added 1503-349: Lara Weissenberger, 3, 9, False
+Added 1505-350: Larry Johnson, 0, 3, False
+Added 1506-351: Lasec SA, 3, 1, False
+Added 1508-352: Latina Investments 5 CC, 5, 9, True
+Added 1509-353: Laura Gossayn, 0, 9, True
+Added 1511-354: Lauren Oostingh, 3, 9, False
+Added 1512-355: Lauren Ronnenbergh, 3, 9, True
+Added 1513-356: Lauren Tee, 3, 9, True
+Added 1514-357: Laurence Feldman, 0, 9, True
+Added 1517-358: Le Eat Catering, 3, 9, False
+Added 1518-359: Le Roux Bodenstein, 3, 9, False
+Added 1519-360: Le Roux Jacobs, 1, 3, False
+Added 1520-361: Leanne Porter, 3, 9, True
+Added 1524-362: Lee-Ann (Touchline Media), 3, 9, False
+Added 1525-363: Legado, 10, 3, False
+Added 1530-364: Leighton Forbes, 3, 9, True
+Added 1531-365: Leila Falletisch, 1, 3, False
+Added 1532-366: Leja Duggie, 3, 9, True
+Added 1533-367: Lemon Tree Catering, 3, 9, False
+Added 1534-368: Leo Herselman, 3, 9, False
+Added 1535-369: Leon du Preez, 3, 9, True
+Added 1536-370: Leon Krige, 3, 9, False
+Added 1540-371: Les Thomson, 3, 9, True
+Added 1541-372: Leshni Naidoo, 3, 9, False
+Added 1542-373: Lesil, 3, 9, False
+Added 1543-374: Lesley Croskery (In Focus Qualitative Research) , 3, 1, False
+Added 1544-375: Leslie Godwin, 0, 3, False
+Added 1546-376: Levi Ginsberg, 3, 9, True
+Added 1549-377: LG Electronics, 3, 9, True
+Added 1554-378: Liberty (Cape), 3, 9, False
+Added 1555-379: Lidia Finn, 3, 9, True
+Added 1556-380: Life and Leisure, 3, 9, False
+Added 1557-381: LifeHouse Church, 3, 9, False
+Added 1558-382: Lighthouse Christian Centre, 3, 1, False
+Added 1559-383: Limberlost, 3, 9, False
+Added 1561-384: Lincoln Neto, 7, 9, False
+Added 1562-385: Linda Balonaa, 1, 9, True
+Added 1567-386: Lindsay Oets, 3, 9, False
+Added 1568-387: Lindy Nicol, 3, 9, True
+Added 1570-388: Linkhills Family Dental Care, 3, 9, True
+Added 1571-389: Linsey Schluter, 3, 9, False
+Added 1573-390: Liquidchefs, 3, 9, False
+Added 1574-391: Liquorice (Lease), 3, 9, False
+Added 1576-392: Lisa Brown, 3, 9, False
+Added 1577-393: Lisa Moyers, 3, 9, True
+Added 1578-394: Lisa Vosloo, 3, 9, False
+Added 1581-395: Living Your Brand, 3, 9, False
+Added 1583-396: Lize Huiseman/Karl Rohloff, 0, 9, True
+Added 1584-397: Llewellyn Roos, 1, 3, False
+Added 1586-398: Lloyd Pretorius, 3, 9, True
+Added 1587-399: Lloyd Williams, 3, 9, True
+Added 1588-400: Lodestone, 3, 9, False
+Added 1589-401: Lood, 3, 9, False
+Added 1590-402: Lood VSC, 3, 9, False
+Added 1591-403: Lora Trinchero, 3, 9, False
+Added 1592-404: Loreen Muyambi, 0, 9, False
+Added 1593-405: Loren Hilligardt, 3, 9, True
+Added 1594-406: Lorenzo Gabba, 3, 9, False
+Added 1595-407: Lorin Ungerer, 3, 9, False
+Added 1597-408: Louis, 3, 9, True
+Added 1598-409: Louis Aucamp, 3, 9, True
+Added 1599-410: Louis Barry  , 3, 1, False
+Added 1600-411: Louis Farrell, 3, 9, False
+Added 1601-412: Louis Germishuys, 3, 9, True
+Added 1603-413: Louis Reynolds, 3, 9, True
+Added 1606-414: Louise Robinson, 3, 9, True
+Added 1607-415: Louise Snyders, 3, 9, True
+Added 1611-416: Löwenberg Boerdery, 1, 9, True
+Added 1616-417: Luisa Castro, 3, 9, True
+Added 1619-418: Luke R Younge, 1, 3, False
+Added 1620-419: Luke Richardson, 0, 9, True
+Added 1621-420: Luke Van Ees, 0, 9, True
+Added 1622-421: Lullingstone Promotions, 3, 9, False
+Added 1626-422: Lydia Holden, 3, 9, True
+Added 1628-423: Lynda Murdhy, 3, 9, True
+Added 1630-424: Lynne Hogan, 0, 9, True
+Added 1631-425: Lynne Sawyer, 5, 9, True
+Added 1632-426: Lynnette Jones (online), 3, 9, False
+Added 1635-427: MacQuarie, 3, 9, False
+Added 1638-428: Mahamuputra Ranokarna, 3, 9, True
+Added 1639-429: Maheerah Gamieldien, 2, 3, False
+Added 1640-430: Mahlatse Mashua, 0, 9, True
+Added 1644-431: Mandy Collis, 1, 6, False
+Added 1646-432: Mandy Hunt, 3, 9, False
+Added 1647-433: Mandy McKay, 3, 9, True
+Added 1648-434: Manfred Hepner, 5, 9, False
+Added 1649-435: Manta Marine Dive Centre, 6, 9, False
+Added 1650-436: Manual Da Jesus, 3, 9, False
+Added 1651-437: Manuel De Jesus, 0, 6, False
+Added 1652-438: Marc Alganti, 1, 9, True
+Added 1653-439: Marc Chilton, 0, 3, False
+Added 1654-440: Marc Coppin, 0, 3, False
+Added 1657-441: Marc Howell, 3, 9, False
+Added 1658-442: Marc Schroeder, 3, 9, False
+Added 1663-443: Marcel Hutten, 3, 9, True
+Added 1665-444: Marcelle Morgan Stastny, 3, 9, True
+Added 1666-445: Marchum Burger, 3, 9, False
+Added 1667-446: Marcia Maclons, 5, 9, True
+Added 1668-447: Marco Bronze, 5, 9, True
+Added 1669-448: Marcus Susman, 1, 9, True
+Added 1672-449: Maria Constantinides (Sundry), 3, 9, False
+Added 1673-450: Marie odendaal, 8, 9, False
+Added 1674-451: Marie Van Vlaanderen, 3, 9, True
+Added 1676-452: Mariette, 3, 9, True
+Added 1677-453: Mariette Daubenton, 3, 9, True
+Added 1678-454: Marika Low, 0, 9, True
+Added 1682-455: Marina Charilaou, 3, 9, True
+Added 1683-456: Marinda Coertse, 3, 9, False
+Added 1686-457: Marion Erdmann, 1, 6, False
+Added 1687-458: Marion Pooley, 0, 9, True
+Added 1688-459: Marisa Fritz, 3, 9, False
+Added 1691-460: Mark Chambers, 0, 9, True
+Added 1694-461: Mark Duncan, 3, 9, False
+Added 1695-462: Mark Gibson, 3, 9, False
+Added 1698-463: Mark Ilbury, 1, 6, True
+Added 1700-464: Mark Kingon, 0, 9, False
+Added 1701-465: Mark Midgley, 3, 6, False
+Added 1702-466: Mark Miller, 3, 9, False
+Added 1703-467: Mark Shepstone, 3, 9, False
+Added 1706-468: Mark Verryn, 3, 9, True
+Added 1707-469: Mark Waterkeyn, 3, 1, False
+Added 1708-470: Mark Whitehead, 0, 9, True
+Added 1712-471: Marlet Speedy, 3, 9, True
+Added 1714-472: Marlise Burger, 3, 9, True
+Added 1715-473: Marthi Harmse, 8, 9, False
+Added 1716-474: Martie Hayman, 3, 9, False
+Added 1717-475: Martin Bone, 3, 1, True
+Added 1720-476: Martin J. Vermeulen, 3, 9, False
+Added 1721-477: Martin Strydom , 3, 9, True
+Added 1723-478: Marunic Coffee, 3, 9, False
+Added 1724-479: Mary de Villiers, 3, 9, False
+Added 1725-480: Mary Julyan, 3, 9, True
+Added 1726-481: Mary Swann, 0, 3, False
+Added 1729-482: Mathew Bessesen, 3, 9, False
+Added 1730-483: Mathew Roberts, 3, 9, True
+Added 1731-484: Mathieu Lalain  , 1, 9, True
+Added 1732-485: Matt Mercer, 3, 9, False
+Added 1735-486: Matthew, 3, 9, False
+Added 1736-487: Matthew and Donna Silvester, 1, 6, False
+Added 1737-488: Matthew Carter, 3, 9, True
+Added 1740-489: Matthew Hillburn, 5, 6, False
+Added 1743-490: Matthew Sparkhall-Brown, 0, 9, True
+Added 1746-491: Maurice Liss, 3, 9, False
+Added 1750-492: Max Nerf, 3, 9, False
+Added 1756-493: Mbulelo Thinta, 3, 9, True
+Added 1757-494: MC Coetzer, 3, 9, False
+Added 1759-495: MDLG Trading CC, 3, 9, False
+Added 1761-496: Mediclinic Cape Gate, 3, 9, False
+Added 1762-497: Medicross Kenikworth Dental Department, 3, 9, True
+Added 1763-498: MediFAM cc, 3, 9, False
+Added 1764-499: Meg Napier, 3, 9, False
+Added 1765-500: Megan Oettle Gegrond, 3, 9, True
+Added 1766-501: Megan Wearing, 3, 9, False
+Added 1767-502: Mel Jackaman, 3, 9, False
+Added 1768-503: Melinda Glanvill, 3, 9, False
+Added 1771-504: Melony Wright, 0, 9, True
+Added 1773-505: Mentone Media Centre (Pty) Ltd, 0, 9, True
+Added 1774-506: Mercedes-Benz South Africa, 3, 9, False
+Added 1778-507: Mestern Construction, 1, 9, True
+Added 1781-508: Metropolitan Health (Finance department), 1, 3, False
+Added 1785-509: Mhold Properties, 5, 9, True
+Added 1786-510: Michael Allen, 1, 9, True
+Added 1788-511: Michael Dalton, 3, 9, True
+Added 1790-512: Michael Funke, 5, 6, False
+Added 1791-513: Michael Hanslo, 3, 9, True
+Added 1793-514: Michael Laubscher, 3, 9, False
+Added 1794-515: Michael le Sueur, 3, 9, False
+Added 1797-516: Michael Roberts, 3, 9, True
+Added 1799-517: Michael Sachar, 3, 9, True
+Added 1800-518: Michael Sherwia, 3, 9, True
+Added 1802-519: Michaela  / Boela Gerber, 1, 3, False
+Added 1805-520: Michele Besterfield, 3, 9, False
+Added 1808-521: Michelle @ Embroidery, 3, 9, False
+Added 1809-522: Michelle Hart, 3, 9, True
+Added 1810-523: Michelle/Charles Goodman, 0, 9, True
+Added 1811-524: Miguel/Odette, 1, 3, False
+Added 1814-525: MIH Internet SWOT, 3, 9, False
+Added 1816-526: Mika Nyyssonen, 3, 6, False
+Added 1817-527: Mike Burrows, 3, 9, False
+Added 1818-528: Mike Cawood, 10, 9, False
+Added 1819-529: Mike Dollow, 0, 9, True
+Added 1820-530: Mike Fannin, 3, 9, False
+Added 1822-531: Mike Jackson, 3, 9, False
+Added 1823-532: Mike McNaught, 3, 9, True
+Added 1824-533: Mike Molyneux (PF), 3, 9, False
+Added 1826-534: Mike Murphy, 3, 9, False
+Added 1829-535: Mike Taylor-Parker, 3, 9, True
+Added 1830-536: Mikhail Hendricks, 5, 9, True
+Added 1834-537: Mirandà Myburgh, 0, 9, False
+Added 1835-538: MIX Telematics, 3, 9, False
+Added 1840-539: MK Lee, 0, 9, True
+Added 1841-540: MKT Trading enterprise, 3, 9, False
+Added 1843-541: Moedverloren Slaghuis & Abattoir, 5, 6, False
+Added 1844-542: Moerland Koffie, 8, 9, False
+Added 1846-543: Mohomed Kazi, 3, 9, True
+Added 1847-544: Moira Rogers, 3, 6, False
+Added 1848-545: Moller Thompson, 5, 9, True
+Added 1850-546: Monier Roofing JHB, 3, 9, False
+Added 1853-547: Mooivallei Suiwel, 3, 9, False
+Added 1854-548: Moonlighting Chase Team cc, 3, 9, False
+Added 1855-549: Moonlighting Films, 3, 9, False
+Added 1856-550: Morgan Williams, 3, 9, False
+Added 1859-551: Morn�, 3, 9, False
+Added 1860-552: MORNAY RICHARDS, 3, 9, False
+Added 1861-553: Mornay van Rensburg, 3, 9, False
+Added 1862-554: Morne Buchner, 3, 9, True
+Added 1863-555: Morne Coetzee, 3, 9, False
+Added 1865-556: Morris Zack, 3, 9, True
+Added 1868-557: Mr G Gaard, 3, 9, False
+Added 1870-558: Mr Vanzyl, 3, 9, False
+Added 1871-559: Mrs Cira, 3, 9, False
+Added 1872-560: Mrs H Edmunds, 3, 9, False
+Added 1874-561: Mu'aaz Dasoo, 3, 9, True
+Added 1875-562: Muller Rautenbach, 3, 9, False
+Added 1876-563: Munro Consulting Actuaries , 3, 1, False
+Added 1877-564: Munro Forensic Actuaries, 3, 1, False
+Added 1881-565: MV Gule, 3, 9, True
+Added 1884-566: MWeb Connect, 3, 9, True
+Added 1888-567: Myra Bouwer, 3, 9, True
+Added 1893-568: Naeela Kamaldien, 1, 6, False
+Added 1895-569: Natalie, 3, 9, False
+Added 1896-570: Natalie Blackmore, 3, 9, False
+Added 1897-571: Natalie Jayne Horter, 3, 9, False
+Added 1898-572: Natalie Kriel, 0, 9, False
+Added 1899-573: Natasha Theron, 3, 9, True
+Added 1901-574: Nathan Fredericks, 5, 9, False
+Added 1902-575: Nathan Michlo , 7, 9, False
+Added 1906-576: Naude Marais, 7, 3, False
+Added 1910-577: Nazneen Allie, 1, 3, True
+Added 1911-578: Neal Bresler, 3, 1, True
+Added 1912-579: Neighborhood Farm, 0, 3, False
+Added 1913-580: Neil baker, 3, 6, False
+Added 1916-581: Neil Hart, 0, 9, True
+Added 1917-582: Neil Oliver, 0, 9, True
+Added 1918-583: Neil Slabbert, 3, 9, False
+Added 1920-584: Nélio Sardinho, 0, 3, False
+Added 1922-585: Neptek, 5, 6, False
+Added 1923-586: Netpartnering SA, 3, 9, False
+Added 1924-587: Network International, 1, 3, False
+Added 1926-588: Neville Venter, 1, 6, False
+Added 1932-589: Nic Pink, 3, 1, False
+Added 1934-590: Nicholas Ashton, 3, 9, True
+Added 1936-591: Nicholas Prozesky, 5, 6, False
+Added 1938-592: Nick Harris, 0, 3, False
+Added 1940-593: Nick Pawley, 0, 9, True
+Added 1943-594: Nicki Nichles, 3, 9, True
+Added 1944-595: Nico Labuschagne, 3, 9, True
+Added 1945-596: Nico Stephan Bantjes, 3, 9, False
+Added 1947-597: Nicola J Advertising Promotions, 3, 9, False
+Added 1948-598: Nicola Nelidonis, 3, 9, False
+Added 1949-599: Nicole Brandt, 3, 9, False
+Added 1950-600: Nicole H Martin, 3, 9, False
+Added 1952-601: Nicolene Olivier, 3, 9, True
+Added 1953-602: Nicolette de Beer, 3, 9, False
+Added 1954-603: Nielen Prinsloo, 3, 9, False
+Added 1955-604: Nigel Gwynne-Evans, 3, 9, False
+Added 1957-605: Nilesh Luckhoo, 3, 9, True
+Added 1960-606: Nina Grittey, 3, 9, True
+Added 1962-607: Nitrogen Fund Managers, 5, 6, False
+Added 1965-608: Nobby Yamawaku, 3, 9, False
+Added 1967-609: Nohline Geyer, 3, 9, True
+Added 1968-610: Noleen Nkanjeni, 3, 9, False
+Added 1969-611: none, 3, 9, False
+Added 1973-612: Noris Fresh Produce t/a Golden Harvest, 5, 9, True
+Added 1975-613: Northam Chrome Producers, 3, 9, False
+Added 1976-614: North-West University, 3, 1, False
+Added 1977-615: Nose Wine Bar, 3, 9, False
+Added 1979-616: Ntswiki Rangoanasha, 3, 9, False
+Added 1980-617: Nur Dreyer, 1, 9, True
+Added 1982-618: Nuvolve Pty TA CUPOCAFE, 3, 9, True
+Added 1983-619: Nuzhah Jacobs, 3, 9, True
+Added 1984-620: NWU, 3, 9, False
+Added 1985-621: Nyeleti Consulting, 3, 9, True
+Added 1986-622: ODDS- buy & sell, 3, 9, True
+Added 1987-623: Odette Fourie, 3, 9, False
+Added 1995-624: Old Mutual Direct Finance Advise , 3, 9, True
+Added 1999-625: Olga Speakes, 3, 9, False
+Added 2002-626: Omri Kleynhans, 3, 9, False
+Added 2003-627: Oojah Coffee Roastery, 3, 9, False
+Added 2004-628: Open Mind Group (Dolby Studio), 0, 6, False
+Added 2008-629: Orange Canary, 3, 9, False
+Added 2009-630: Orange Grove Garden and Home (online), 3, 9, False
+Added 2011-631: Order Talk, 3, 9, False
+Added 2013-632: Ornico Group, 3, 9, False
+Added 2014-633: Orrin Snelgar, 0, 3, False
+Added 2015-634: Orthogonal Investments, 3, 9, False
+Added 2016-635: Oudewerf Hotel, 0, 9, False
+Added 2020-636: Page Automation, 3, 1, False
+Added 2021-637: Pankie Kellerman, 3, 9, True
+Added 2025-638: Paragon Entities, 1, 9, True
+Added 2027-639: Patrick Morris, 3, 9, True
+Added 2030-640: Patsy Geach, 3, 9, False
+Added 2033-641: Paul Bender, 0, 3, False
+Added 2034-642: Paul Blackbeard, 3, 1, False
+Added 2035-643: Paul Bornhutter, 3, 9, True
+Added 2038-644: Paul Crowson, 3, 9, False
+Added 2039-645: Paul Dold, 3, 9, False
+Added 2040-646: Paul Floquet (Flagship Asset Management), 1, 9, True
+Added 2041-647: Paul Forsyth, 3, 9, False
+Added 2042-648: Paul Gerber, 3, 9, False
+Added 2045-649: Paul Steyn, 3, 9, True
+Added 2049-650: Pavel Tcholakov, 3, 9, False
+Added 2055-651: Pelking Engineering, 3, 9, False
+Added 2056-652: Penelope Stuart-Findlay, 3, 9, False
+Added 2057-653: Penny, 3, 9, False
+Added 2058-654: Penny Holtzhausen (online), 3, 9, False
+Added 2059-655: Penny Raad, 5, 9, True
+Added 2060-656: Percy , 3, 9, False
+Added 2062-657: Peregrine Equities, 3, 9, False
+Added 2063-658: Peregrine Financial Services, 3, 9, False
+Added 2065-659: Persimmon Catering, 3, 9, False
+Added 2066-660: Personal Wealth Managers, 3, 1, False
+Added 2068-661: Pete Hobday, 3, 9, True
+Added 2069-662: Peter Baumann, 3, 9, False
+Added 2073-663: Peter Fosseus, 3, 9, True
+Added 2075-664: Peter Goslett, 0, 9, True
+Added 2078-665: Peter Horn, 3, 9, True
+Added 2079-666: Peter John Charter, 3, 9, False
+Added 2080-667: Peter Kieser, 0, 9, True
+Added 2084-668: Peter Robinson, 3, 6, False
+Added 2085-669: Peter Scott, 1, 9, True
+Added 2086-670: Petmin, 3, 9, False
+Added 2090-671: PetroSA, 3, 1, False
+Added 2092-672: Philip Anastasiadis, 8, 9, False
+Added 2094-673: Philip Correia, 3, 9, False
+Added 2096-674: Philip Hewitson c/o Hillsong Church, 0, 3, False
+Added 2097-675: Philip Jurgens, 3, 9, True
+Added 2098-676: Philip Maree, 3, 9, False
+Added 2099-677: Philip Meyer, 3, 9, True
+Added 2100-678: Philip Nel (PF), 3, 9, False
+Added 2101-679: Philip Perry, 3, 9, False
+Added 2102-680: Philip Smith, 3, 9, True
+Added 2103-681: Philip Vandergucht, 0, 3, False
+Added 2105-682: Phillip Breedt, 0, 9, True
+Added 2107-683: Pick n Pay, 3, 9, False
+Added 2108-684: Pierre Dalton, 3, 6, False
+Added 2110-685: Pierre Engelbrecht (The Bus Stop), 3, 9, False
+Added 2113-686: Piers L'Estramge, 3, 9, False
+Added 2114-687: Piet Bester, 3, 9, False
+Added 2116-688: Pieter Deyzel, 3, 9, False
+Added 2117-689: Pieter Kleinhans, 3, 9, False
+Added 2118-690: Pieter Retief, 3, 9, False
+Added 2119-691: Pilar Gaywood, 3, 9, False
+Added 2122-692: Pippa Segal, 3, 9, False
+Added 2124-693: PL Computer Services, 3, 9, True
+Added 2125-694: PLAN A DESIGNS, 3, 9, False
+Added 2129-695: Plumberama, 3, 9, False
+Added 2131-696: Port Shepstone Bargain Wholesalers, 8, 9, False
+Added 2134-697: PPS (Jhb), 3, 9, False
+Added 2140-698: Premiere Design Studio, 5, 9, True
+Added 2141-699: Prescient Analytics, 0, 9, True
+Added 2143-700: Pretoria Portland Cement Company Limited, 3, 9, False
+Added 2145-701: PRISM, 3, 9, True
+Added 2149-702: Private (Joanne Jacob), 3, 9, False
+Added 2150-703: Proconics (Pty) Ltd, 3, 9, False
+Added 2152-704: Prof Oleg Smirnov, 3, 9, False
+Added 2153-705: Profhulp Brokers / Destimart, 3, 1, False
+Added 2155-706: PROS Software, 3, 9, False
+Added 2157-707: Prosperity Management Africa (PMA), 5, 9, False
+Added 2158-708: Protea Hotel, 3, 9, True
+Added 2159-709: Proudafrique, 3, 9, False
+Added 2160-710: PSG Corporate Services, 3, 9, False
+Added 2162-711: Publicis Machine, 3, 1, False
+Added 2164-712: Punjab Express, 3, 9, True
+Added 2166-713: Punjab Larside, 3, 9, True
+Added 2168-714: Qlikview, 3, 9, False
+Added 2169-715: Quadrem Africa (Pty) Ltd, 3, 9, False
+Added 2171-716: Quaffee AT The Vineyard, 8, 3, False
+Added 2173-717: Quantus Technology Management, 0, 9, True
+Added 2174-718: Quartet Retirement Estate, 3, 1, False
+Added 2176-719: Quinton Naidoo, 0, 3, False
+Added 2177-720: R. Potgieter, 3, 9, False
+Added 2179-721: Rabah Telli, 3, 9, True
+Added 2180-722: Rachel Ramsay, 0, 9, True
+Added 2183-723: Raffin Attorneys, 3, 9, True
+Added 2184-724: Rafiq Phillips, 1, 3, False
+Added 2185-725: Rahul Mistri, 3, 9, True
+Added 2186-726: Rainbow Revolution (Pty) Ltd, 3, 9, True
+Added 2187-727: Rainer Berger, 5, 9, True
+Added 2188-728: Rainer W�sthoff, 3, 9, False
+Added 2189-729: Ralf Wittrowski, 3, 9, False
+Added 2190-730: Ralph Klopper, 1, 6, False
+Added 2191-731: Ran Greenstein, 3, 9, False
+Added 2192-732: Randolf Chen, 3, 9, True
+Added 2194-733: Raphaela Adler, 3, 9, True
+Added 2196-734: Rawlings, 3, 9, True
+Added 2197-735: Ray Harris, 3, 9, False
+Added 2199-736: Raymond Booyse, 1, 9, True
+Added 2200-737: Raymond de Villiers, 3, 9, False
+Added 2207-738: Rebecca Warner, 3, 9, True
+Added 2208-739: Red Cap Energy, 3, 9, True
+Added 2209-740: Reddam Pharamcy, 3, 9, True
+Added 2214-741: Renier Schwarzer, 3, 9, False
+Added 2217-742: Reppies Repsold, 3, 9, False
+Added 2218-743: RE-Store, 3, 9, False
+Added 2222-744: Rey Franco, 3, 9, False
+Added 2227-745: Rhona/Tim Adams, 3, 9, True
+Added 2229-746: Riaan Ellis, 5, 9, True
+Added 2230-747: Riaan Fourie, 0, 9, True
+Added 2233-748: Riaan Van Rensburg, 3, 9, True
+Added 2234-749: Riaan van Zyl, 1, 9, False
+Added 2235-750: Riaz Lalla, 3, 9, True
+Added 2236-751: Ricardo Franca, 3, 9, True
+Added 2237-752: Riccardo Benedetti, 3, 9, False
+Added 2240-753: Richard Gerry, 8, 9, False
+Added 2241-754: Richard Heijberg, 3, 9, False
+Added 2242-755: Richard Krepelka, 3, 9, False
+Added 2243-756: Richard Marais, 1, 9, True
+Added 2244-757: Richard Matchett WSP, 3, 9, False
+Added 2246-758: Richard Pomario, 3, 9, False
+Added 2247-759: Richard Raulstone / Tammy Wilmot , 3, 9, True
+Added 2250-760: Richard Young, 3, 9, False
+Added 2251-761: Rick Heatherington, 3, 9, False
+Added 2252-762: Ricoh South Africa, 3, 9, True
+Added 2258-763: Rize Global (Pty) Ltd, 3, 9, True
+Added 2261-764: Rob Henst, 3, 9, True
+Added 2262-765: Rob Logan, 3, 9, True
+Added 2264-766: Rob Walker (Ascert Ltd), 5, 9, True
+Added 2265-767: Rob/Ann.Stead , 3, 9, True
+Added 2266-768: Robbie/Collette Martin, 3, 1, False
+Added 2267-769: Robert  Gibson, 0, 9, True
+Added 2270-770: Robert de la Rey (Nanoteq), 3, 9, True
+Added 2271-771: Robert Kellerman, 3, 9, False
+Added 2272-772: Robert Miller, 3, 1, False
+Added 2273-773: Robert Smith, 3, 9, True
+Added 2274-774: Robert Stanford Estate, 3, 9, True
+Added 2276-775: Robert Whitwam, 3, 9, True
+Added 2280-776: Robin Lautenbach, 3, 1, False
+Added 2281-777: Robin Moore, 3, 9, True
+Added 2282-778: Robin van den Heever, 3, 9, False
+Added 2284-779: Robynne McMartin, 3, 9, False
+Added 2286-780: Rock Capital Management, 3, 9, False
+Added 2287-781: Rock Capital Management (Pty)Ltd, 3, 9, False
+Added 2288-782: Rockwood Private Equity, 1, 9, True
+Added 2289-783: Rocky Heath, 3, 9, True
+Added 2290-784: Roeloff Botha, 6, 9, False
+Added 2292-785: Roger Friedman, 6, 9, False
+Added 2296-786: Rolf Boesenberg , 3, 9, True
+Added 2299-787: Rondebosch Golf Club, 3, 1, False
+Added 2301-788: Ronel Geldenhuys, 3, 9, True
+Added 2302-789: Ronel Jennings, 3, 9, False
+Added 2304-790: Rory Taljaard , 5, 9, True
+Added 2308-791: Ross Dorkin, 0, 3, False
+Added 2309-792: Ross Grewar, 1, 9, True
+Added 2312-793: Ross Roberts, 3, 9, False
+Added 2313-794: Rouan Martin Zurich, 3, 9, False
+Added 2314-795: Roundstone Estates, 3, 9, False
+Added 2315-796: Rowan Goss, 7, 9, False
+Added 2316-797: Rowan Hunt, 3, 9, True
+Added 2317-798: Rowan McDonald, 3, 9, False
+Added 2318-799: Rowan Pillay, 3, 9, True
+Added 2319-800: Roy Brueton, 3, 9, True
+Added 2320-801: Roy&Jackie, 3, 9, True
+Added 2321-802: Ruaan Botha, 8, 9, False
+Added 2323-803: Ruan Le Grange, 3, 9, True
+Added 2324-804: Ruan Swanepoel, 4, 6, False
+Added 2325-805: Ruben Kruger, 7, 9, False
+Added 2326-806: Ruben Rood/Page Automation, 3, 9, True
+Added 2328-807: Rudzani Muloiwa, 8, 9, False
+Added 2331-808: Russell De Jager, 3, 9, False
+Added 2332-809: Russell White, 3, 9, False
+Added 2334-810: Ryan Collins, 3, 9, True
+Added 2335-811: Ryan Evans, 3, 9, False
+Added 2336-812: Ryan Langman, 3, 9, True
+Added 2337-813: Ryan Slade, 0, 9, False
+Added 2338-814: Ryan's Car Wash, 3, 9, False
+Added 2339-815: SA Homebuyers Pty Ltd., 5, 9, False
+Added 2340-816: SA Hunters, 3, 9, False
+Added 2341-817: SA Litho, 3, 9, False
+Added 2345-818: Saeed Motara, 0, 9, True
+Added 2346-819: SafMed, 3, 9, False
+Added 2348-820: Saleem Sonday, 3, 9, True
+Added 2350-821: Samantha Davids, 3, 9, False
+Added 2351-822: Samantha Naidoo, 3, 9, True
+Added 2352-823: Samantha Trotman, 3, 9, False
+Added 2353-824: Samuel Copeland, 3, 9, True
+Added 2354-825: Sandile Shongwe, 7, 9, False
+Added 2355-826: Sandra Monk, 3, 9, False
+Added 2356-827: Sandy Jeffery, 3, 1, True
+Added 2359-828: Sanspar Engineering Sales (Pty) Ltd, 5, 9, False
+Added 2360-829: Santie Conradie, 3, 9, False
+Added 2361-830: SAP (X Sybase), 3, 9, False
+Added 2362-831: Sarah Brocklehurst (Toptable), 3, 6, False
+Added 2364-832: Sarah Young, 3, 9, False
+Added 2365-833: Sarel J Snyman, 3, 9, False
+Added 2366-834: Sarel Joubert, 3, 9, False
+Added 2367-835: Sarel Louw, 3, 9, False
+Added 2368-836: Sarel Snyman, 3, 9, False
+Added 2370-837: Savoury blu, 3, 9, False
+Added 2371-838: Scan Display Solutions, 3, 9, False
+Added 2372-839: Schalk du Toit, 0, 9, False
+Added 2374-840: Schletter, 3, 9, False
+Added 2375-841: Schoongezicht Guest House, 3, 9, False
+Added 2376-842: Scorpion King Films, 3, 9, False
+Added 2379-843: Sculptures Hair Design (EL), 3, 9, False
+Added 2383-844: Sean Joubert, 3, 9, False
+Added 2384-845: Sean Sassen, 3, 9, False
+Added 2386-846: Seb Goldswain, 1, 9, True
+Added 2387-847: Sebastian Borckenhagen, 0, 3, False
+Added 2389-848: Seeff Atlantic Seaboard, 3, 9, False
+Added 2390-849: Segan Haripersad, 3, 9, True
+Added 2392-850: Selwyn Kahanovitz (Online), 3, 9, False
+Added 2393-851: Sense of Taste, 3, 9, False
+Added 2398-852: Seriti Green Developments SA, 3, 9, False
+Added 2399-853: Set Squared, 3, 9, False
+Added 2401-854: Seven Oaks (Cape Town), 0, 9, False
+Added 2402-855: Shaheen Seedat, 3, 9, False
+Added 2403-856: Shane Ryding, 3, 9, True
+Added 2404-857: Shannon, 3, 9, False
+Added 2405-858: Shannon Maxwell, 3, 9, False
+Added 2408-859: Sharieef Mohamed, 3, 9, True
+Added 2409-860: Sharon Blumberg, 3, 9, False
+Added 2411-861: Shaun Pesskin, 3, 9, False
+Added 2412-862: Shawn Smit, 3, 9, True
+Added 2414-863: Sheena, 3, 9, False
+Added 2418-864: Sheppard�s Lands Country House, 3, 9, False
+Added 2419-865: Sheree Young, 3, 9, False
+Added 2420-866: Sherry Maree (Atelier Ultimate International), 3, 9, False
+Added 2424-867: Shofar Christian Church, 3, 9, False
+Added 2425-868: Shohag and Brothers, 3, 9, True
+Added 2426-869: Shop2Shop, 5, 6, False
+Added 2428-870: Shun Udagawa, 3, 9, True
+Added 2430-871: Sias Mey, 3, 9, False
+Added 2436-872: Silverblu Logistics  (xSlateBlu / xMultisol), 3, 1, False
+Added 2439-873: Simon Alcock, 3, 9, False
+Added 2440-874: Simon Hudson, 5, 6, False
+Added 2441-875: Simon Michael, 3, 9, False
+Added 2443-876: Simon Waterkeyn, 3, 9, False
+Added 2445-877: Simone Beryoff, 0, 9, True
+Added 2446-878: Simone Gad, 3, 9, False
+Added 2448-879: Simoné Marshall-Smith, 3, 9, True
+Added 2449-880: Simone Verdoodt, 1, 9, True
+Added 2450-881: Simon-Kucher & Partners, 5, 6, False
+Added 2453-882: Sky's The Limit, 3, 9, False
+Added 2456-883: Smart Kitchen co, 1, 3, False
+Added 2457-884: Smart Technology, 3, 9, False
+Added 2458-885: Smashing Machine, 3, 9, False
+Added 2460-886: SnapBill, 3, 9, False
+Added 2461-887: Solar Group, 3, 9, True
+Added 2466-888: Sonja Cave, 5, 9, True
+Added 2467-889: Sonja Liebold (!!!!!!!), 3, 9, False
+Added 2468-890: Sonja Wilker, 3, 9, False
+Added 2469-891: South African Receiver Of Re - Receivable, 3, 9, False
+Added 2472-892: Specialised Exhibitions, 3, 9, False
+Added 2473-893: Square Kilometer Array, 5, 9, True
+Added 2477-894: St. James/ Rovos Guest Houses, 3, 1, False
+Added 2479-895: Stable-Net (jhb), 3, 9, False
+Added 2481-896: Stainprobe, 3, 9, False
+Added 2482-897: Stanchion Payment Solutions, 3, 9, True
+Added 2483-898: Stanley van Wyk, 3, 9, False
+Added 2484-899: Starboard Coffee Company (Pty) Ltd, 1, 9, False
+Added 2489-900: Stefan Kubina, 3, 9, False
+Added 2490-901: Stefano Strafella, 3, 1, False
+Added 2493-902: Stephan Jansen van Rensburg, 3, 9, False
+Added 2496-903: Stephanie Naidoo, 3, 9, True
+Added 2497-904: Stephen Cowley, 3, 9, True
+Added 2498-905: Stephen Davis, 0, 9, False
+Added 2501-906: Stephen Powell, 0, 3, False
+Added 2502-907: Stephen Tredrea, 0, 3, False
+Added 2504-908: Steve Bailey, 3, 9, False
+Added 2506-909: Steve Erlank, 3, 9, False
+Added 2508-910: Steve Mabbutt, 3, 9, False
+Added 2510-911: Steven, 3, 9, True
+Added 2511-912: Steven Brown, 3, 9, True
+Added 2513-913: Steven Hahan, 3, 9, False
+Added 2514-914: Steven Jowell, 5, 3, False
+Added 2516-915: Stewart Goodman, 3, 9, False
+Added 2518-916: Stiles , 3, 1, False
+Added 2520-917: Stitch Money (Pty) Ltd, 3, 9, True
+Added 2522-918: Stocksource, 3, 9, False
+Added 2527-919: Stuart Corbishley, 3, 9, True
+Added 2528-920: Stuart Hutcheson (Native Sport(Pty)Ltd), 0, 9, True
+Added 2531-921: Sue Blunden, 3, 9, True
+Added 2532-922: Sue Cox, 5, 6, False
+Added 2533-923: Sue Eloff, 3, 9, False
+Added 2535-924: Sue Lloyd-Roberts (Minthouse), 3, 9, False
+Added 2537-925: Sue Sabor, 3, 1, False
+Added 2538-926: Sue White, 0, 9, False
+Added 2539-927: Suleiman Salie, 1, 3, False
+Added 2540-928: Suleiman Tootla, 1, 3, True
+Added 2541-929: Sumayya Davenhill c/o PPM, 3, 9, False
+Added 2543-930: Summer Mobile (Pty) Ltd, 3, 9, False
+Added 2544-931: Sunkist Tea Garden (Jhb), 3, 9, False
+Added 2545-932: Susan Fouche, 3, 9, False
+Added 2547-933: Susanne Karcher, 3, 9, False
+Added 2548-934: Susell van Graan, 7, 3, False
+Added 2549-935: Suvir Gajadhur, 3, 9, True
+Added 2550-936: Suzanna Capper, 3, 9, True
+Added 2551-937: Suzanne Vermeulen (Cannabeans Cpt), 3, 9, False
+Added 2552-938: SVB Services (Pty) Ltd, 3, 9, False
+Added 2553-939: Swift Displays, 3, 9, False
+Added 2555-940: Sybase, 3, 9, False
+Added 2557-941: Syliva Loedolff, 3, 9, False
+Added 2558-942: Symington and Partners Rentals (Pty) Ltd, 3, 9, False
+Added 2559-943: Synchrona Leadership Strategy, 3, 9, False
+Added 2560-944: T2 Home Entertainment, 3, 9, False
+Added 2562-945: Table Seven, 5, 6, False
+Added 2564-946: Tahir Gamiet, 3, 9, True
+Added 2567-947: Takura Chinodya, 8, 9, False
+Added 2568-948: Tal Even-Tov, 3, 9, False
+Added 2569-949: Taliep Family Trust t/a, 3, 9, False
+Added 2570-950: Talk-Show.TV cafe, 3, 9, False
+Added 2572-951: Tami Cimring, 3, 9, False
+Added 2573-952: Tamlyn Jones (Kayser Baird Insurance Brokers), 3, 6, False
+Added 2575-953: Tani Moodley, 3, 1, False
+Added 2576-954: Tanya Pretorius, 0, 3, False
+Added 2577-955: Tanya Templeton, 0, 9, False
+Added 2579-956: Tariq Blecher, 3, 9, True
+Added 2580-957: TASI Consulting, 3, 9, False
+Added 2581-958: Taube Sutherland, 3, 9, True
+Added 2582-959: Taurai Kurebwa, 3, 9, False
+Added 2583-960: TBM (Jhb), 3, 9, False
+Added 2584-961: Tea and Coffee Emporium (jhb), 3, 9, False
+Added 2587-962: Technoswitch, 3, 9, False
+Added 2589-963: Ted Pietrzak, 5, 9, False
+Added 2591-964: Telesure Group Services, 0, 6, False
+Added 2592-965: Tembile Kulati, 7, 9, False
+Added 2593-966: Teo Strydom, 5, 9, True
+Added 2594-967: Terbodore Coffee Roasters, 3, 9, False
+Added 2595-968: Terence, 0, 9, True
+Added 2597-969: Terra Firma, 3, 9, True
+Added 2598-970: Terrance Brown, 1, 3, False
+Added 2600-971: Terry Brewis, 3, 9, True
+Added 2601-972: Tess Joubert, 1, 9, False
+Added 2602-973: Tetanya Yancek, 3, 9, False
+Added 2603-974: Tetrad IT, 3, 9, False
+Added 2606-975: The Advocates Huguenot Chambers, 3, 9, False
+Added 2607-976: The Cape Coffee Co, 3, 1, True
+Added 2610-977: The Combustion Group, 3, 9, False
+Added 2611-978: The Creative Counsel, 3, 9, False
+Added 2612-979: The Daily Grind, 3, 9, False
+Added 2613-980: The Design Co, 3, 9, False
+Added 2617-981: The Peoples Church Constantia, 3, 9, True
+Added 2618-982: The Quaffery, 3, 9, True
+Added 2619-983: The Silos Guesthouse, 5, 9, True
+Added 2620-984: Thea Daniella Hurenkamp, 3, 9, False
+Added 2622-985: Theo Frasher, 3, 9, False
+Added 2623-986: Theo Gerdener, 3, 9, True
+Added 2624-987: Theo Shiffman Telasera, 1, 9, True
+Added 2630-988: Thomas Fuss, 5, 9, True
+Added 2631-989: Thomas Hartig, 1, 3, False
+Added 2632-990: Thomas Hopfinger, 3, 9, False
+Added 2634-991: Thomas Putter (iLabs), 3, 9, True
+Added 2636-992: Thorsten Ronge, 0, 6, False
+Added 2638-993: Tiaan Viljoen , 0, 6, False
+Added 2640-994: Tim Forshaw (online), 3, 9, False
+Added 2641-995: Tim Haak, 3, 9, False
+Added 2642-996: Tim Porter (Rosetta Roastery), 3, 9, True
+Added 2645-997: Tim Wood, 0, 9, True
+Added 2646-998: Time Data Sequel, 3, 9, False
+Added 2648-999: Timothy Theron, 3, 9, False
+Added 2651-1000: Tinroof Studio, 3, 9, False
+Added 2653-1001: Tish Venter, 3, 9, True
+Added 2654-1002: TJ Rapoo, 3, 9, True
+Added 2655-1003: TNT EXPRESS WORLDWIDE, 3, 9, False
+Added 2656-1004: To The T, 3, 9, False
+Added 2657-1005: Tommie Grové, 3, 9, True
+Added 2659-1006: Tony Garner, 0, 3, False
+Added 2660-1007: Tony Kietzman, 3, 1, False
+Added 2662-1008: Tony Makin , 3, 9, True
+Added 2664-1009: Top Nosh Caterers and Cooking School, 0, 1, False
+Added 2666-1010: TopFloor (Zambia), 3, 9, False
+Added 2667-1011: TORREFAZIONE MOKAFLOR SRL, 3, 9, False
+Added 2668-1012: TouchPay, 3, 9, False
+Added 2669-1013: Tourvest Destination, 3, 9, False
+Added 2671-1014: Trackmatic Solutions, 3, 9, False
+Added 2672-1015: Tracy Cumming Consulting, 0, 9, True
+Added 2674-1016: Tracy Roberts, 3, 9, True
+Added 2675-1017: Tracy Stanford, 3, 9, False
+Added 2676-1018: Tracy Stanford c/o Multisol, 3, 9, True
+Added 2677-1019: Tracy Ward, 0, 3, False
+Added 2678-1020: Tramper Technology South Africa, 5, 3, False
+Added 2681-1021: TrenStar SA (jhb), 3, 9, False
+Added 2682-1022: Tresor Mvumbi, 3, 9, True
+Added 2683-1023: Trevor Daly, 7, 9, False
+Added 2684-1024: Trevor Leonard, 3, 9, False
+Added 2685-1025: Trevor McPherson, 3, 9, False
+Added 2686-1026: Trevor Morrick, 0, 3, False
+Added 2687-1027: Trevor Nelson, 3, 9, False
+Added 2691-1028: Tristan Glen, 3, 9, True
+Added 2693-1029: Tristen Export, 3, 9, False
+Added 2695-1030: Trysport, 6, 9, False
+Added 2696-1031: Turbofluid Engineering, 2, 9, True
+Added 2698-1032: Twisted Fork, 3, 9, False
+Added 2700-1033: UBS, 3, 9, False
+Added 2702-1034: UCT (Dept. of Statistical Sciences), 3, 9, True
+Added 2704-1035: UCT African Centre for Cities, 3, 1, False
+Added 2706-1036: UCT Climate Systems Analysis Group, 3, 9, False
+Added 2708-1037: UCT Dept Comp Sci, 3, 9, False
+Added 2711-1038: UCT Environmental & Geographical Science, 3, 9, False
+Added 2717-1039: Ulrich Gaum, 3, 9, True
+Added 2721-1040: Unice Vorster, 3, 9, True
+Added 2722-1041: Unitemp, 3, 9, False
+Added 2723-1042: Univ of Stellenbosch E&E Dept, 3, 9, False
+Added 2724-1043: Univ of Stellenbosch Fac. of Law, 3, 9, False
+Added 2726-1044: University of the Free State, DF, 0, 9, False
+Added 2729-1045: Urbantonic, 3, 9, False
+Added 2730-1046: Ursula Skellern-Gouws, 3, 9, False
+Added 2731-1047: Ursula Torr, 5, 9, True
+Added 2732-1048: Uzayr Haneef, 3, 9, True
+Added 2733-1049: Valemount Trading, 3, 9, False
+Added 2735-1050: Van Dyke Carpets, 3, 9, False
+Added 2736-1051: Van Heerden Pharmacy, Eden Sq, 3, 9, True
+Added 2737-1052: Vanessa Ingram, 3, 9, False
+Added 2740-1053: VDMV Properties, 3, 9, True
+Added 2741-1054: Velesh Chhiba, 10, 3, False
+Added 2742-1055: Venessa Teich, 3, 9, False
+Added 2743-1056: Verder Pumps SA, 3, 9, False
+Added 2744-1057: Verfin Finance (VF International), 3, 9, False
+Added 2745-1058: Veronica Cadman, 3, 9, False
+Added 2748-1059: Vicky Lin Vivo, 3, 9, True
+Added 2749-1060: View Health & Skin care, 3, 9, False
+Added 2750-1061: Vigilent-Tek, 3, 9, True
+Added 2751-1062: Viglietti Motors, 3, 9, False
+Added 2752-1063: Village Veterinary Clinic, 3, 9, False
+Added 2754-1064: Vinnie Orchard, 3, 9, True
+Added 2755-1065: Vintage Coffee, 3, 9, True
+Added 2756-1066: Visual Fusion Global, 3, 9, False
+Added 2757-1067: Visual Impact, 0, 9, True
+Added 2759-1068: Vivien de Klerk, 0, 6, False
+Added 2764-1069: Wade Lambert, 2, 3, False
+Added 2765-1070: Wade Willingale, 3, 6, False
+Added 2766-1071: Waldi van Zyl (Web-Care), 0, 3, False
+Added 2768-1072: Walker Bay Spice, 3, 9, False
+Added 2770-1073: Walter Aeberli, 3, 9, False
+Added 2771-1074: Walter Norris c/o Thought Advisory, 5, 9, True
+Added 2772-1075: Walworth Consulting (Pty) Ltd, 3, 6, False
+Added 2773-1076: Warren Bonn, 3, 9, True
+Added 2775-1077: Warren Ferreira, 3, 9, False
+Added 2776-1078: Warren Freese, 3, 9, False
+Added 2777-1079: Warren Hewitt, 3, 9, False
+Added 2779-1080: Water Gardens & Features, 3, 9, False
+Added 2780-1081: Waterfront Studios, 3, 9, False
+Added 2783-1082: Wayne Badenhorst, 3, 9, True
+Added 2785-1083: Wayne Juan Liebenberg, 3, 1, False
+Added 2786-1084: Wayne Reddie, 3, 9, False
+Added 2792-1085: Werner Bester, 3, 9, False
+Added 2794-1086: Werner Smith, 3, 9, True
+Added 2795-1087: Werner van Wyk, 3, 9, False
+Added 2797-1088: Wesley (via Rhys), 0, 3, False
+Added 2798-1089: Wesley Jones (Personal), 3, 9, True
+Added 2799-1090: Wessel Coetzee, 3, 9, True
+Added 2800-1091: Wessel Kruger, 10, 3, False
+Added 2802-1092: Westfalia Marketing (Pty) Ltd, AFRICA, 1, 6, False
+Added 2803-1093: WFA, 3, 9, False
+Added 2804-1094: Whip Fire, 3, 9, False
+Added 2805-1095: White House, 5, 9, False
+Added 2806-1096: Whitehead Scientific, 3, 9, False
+Added 2808-1097: Wicked Pixels, 3, 9, False
+Added 2810-1098: Wilhelm Kirschbaum, 0, 3, False
+Added 2813-1099: Willem Johannes van den Berg, 3, 9, False
+Added 2814-1100: Willem Krog, 3, 9, True
+Added 2817-1101: Willem Visser, 3, 9, False
+Added 2818-1102: William Greyvenstein, 3, 9, True
+Added 2819-1103: William Leong Plastics, 3, 9, False
+Added 2820-1104: William Stewart, 3, 9, True
+Added 2821-1105: Willie le Roux, 3, 1, False
+Added 2822-1106: Willie Schmitz, 3, 9, False
+Added 2823-1107: Wondatrade (rental), 3, 9, False
+Added 2826-1108: Wouter van der Merwe, 1, 3, False
+Added 2827-1109: WP Motors, 5, 6, False
+Added 2828-1110: Wrightway Computing Services, 3, 9, False
+Added 2829-1111: WSP SA Civil and Structural, 3, 9, False
+Added 2831-1112: Wytske van Wyk Interiors, 3, 9, False
+Added 2832-1113: X Liang, 3, 9, True
+Added 2834-1114: Y Mohamed Assurance Brokers CC, 4, 9, False
+Added 2837-1115: Yenza, 3, 9, False
+Added 2838-1116: Yolanda Barnard, 3, 9, False
+Added 2839-1117: Young Huem Ohm, 3, 9, False
+Added 2840-1118: Yuan Roets, 3, 9, True
+Added 2841-1119: Yusuf Jakoet, 3, 9, False
+Added 2842-1120: Yusuf Motala, 3, 9, True
+Added 2843-1121: YVETTE CHERRY, 3, 9, False
+Added 2844-1122: YVONNE, 3, 9, False
+Added 2845-1123: Yvonne Kane, 3, 9, False
+Added 2847-1124: Yvonne Porceddu, 3, 9, False
+Added 2848-1125: Z&J Consulting Engineers, 3, 9, False
+Added 2849-1126: Zaahir Ebrahim, 3, 9, True
+Added 2850-1127: Zaakiyah Mohamed, 0, 9, True
+Added 2851-1128: Zafar Harnekar, 0, 3, False
+Added 2853-1129: Zander Du Preez, 3, 9, True
+Added 2856-1130: Zarina Rahman, 3, 9, True
+Added 2857-1131: Zelda Swart, 3, 9, False
+Added 2858-1132: Zenith For The Accomplished, 5, 9, True
+Added 2859-1133: Zjaan Meyer, 0, 9, True
+Added 2861-1134: Zukisa Masiza, 3, 9, True
+Added 2862-1135: Zumae Barnard, 0, 3, False

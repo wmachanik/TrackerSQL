@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+  <command type="select">
+    SELECT        TOP 10 CompanyName, SendDeliveryConfirmation
+    FROM            CustomersTbl
+  </command>
+  <command type="select">
+    SELECT        TOP 10 ID, enabled, DeliveryByID, PackagingID
+    FROM          ReoccuringOrderTbl
+  </command>
+</commands>
+

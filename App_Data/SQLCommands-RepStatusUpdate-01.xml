@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+
+	<command type="alter">
+		ALTER TABLE RepairStatusesTbl ADD StatusNote NVARCHAR(255) NULL
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Equipment to be collected.' WHERE RepairStatusID = 1
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Equipment collected.' WHERE RepairStatusID = 2
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Equipment at the workshop for assessment/repair.' WHERE RepairStatusID = 3
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Awaiting required parts for repair.' WHERE RepairStatusID = 4
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Repair estimate has been provided.' WHERE RepairStatusID = 5
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Equipment ready for return/delivery.' WHERE RepairStatusID = 6
+	</command>
+	<command type="update">
+		UPDATE RepairStatusesTbl SET StatusNote = 'Repair completed and order closed.' WHERE RepairStatusID = 7
+	</command>
+	<command type="select">
+		SELECT RepairStatusID, RepairStatusDesc, StatusNote FROM RepairStatusesTbl ORDER BY RepairStatusID
+	</command>
+</root>

@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+
+	<command type="drop">
+		DROP TABLE HolidayClosureTbl;
+	</command>
+		<!-- Create table (supports multi‑day closures via DaysClosed) -->
+	<command type="create">
+		CREATE TABLE HolidayClosureTbl (
+		ID AUTOINCREMENT PRIMARY KEY,
+		ClosureDate DATETIME NOT NULL,
+		DaysClosed INTEGER NOT NULL DEFAULT 1,  
+		AppliesToPrep YESNO NOT NULL DEFAULT 1,
+		AppliesToDelivery YESNO NOT NULL DEFAULT 1,
+		ShiftStrategy TEXT(20) NOT NULL DEFAULT 'Forward',  
+		Description TEXT(255)
+		)
+	</command>
+
+	<!-- Index: start date (range scans still simple for Access) -->
+	<command type="create">
+		CREATE INDEX IX_HolidayClosure_Date ON HolidayClosureTbl (ClosureDate);
+	</command>
+
+	<!-- Seed: Single public holiday (Heritage Day) - 1 day, move backward -->
+	<command type="insert">
+		INSERT INTO HolidayClosureTbl
+		(ClosureDate, DaysClosed, AppliesToPrep, AppliesToDelivery, ShiftStrategy, Description)
+		VALUES
+		(#2025-09-24#, 1, TRUE, TRUE, 'Backward', 'Public Holiday - Heritage Day');
+	</command>
+
+	<!-- Seed: Example 2-week shutdown (e.g. Dec maintenance) -->
+	<command type="insert">
+		INSERT INTO HolidayClosureTbl
+		(ClosureDate, DaysClosed, AppliesToPrep, AppliesToDelivery, ShiftStrategy, Description)
+		VALUES
+		(#2025-12-19#, 14, TRUE, TRUE, 'Backward', 'Year-end Shutdown');
+	</command>
+
+	<!-- List all closure records -->
+	<command type="select">
+		SELECT ID, ClosureDate, DaysClosed, AppliesToPrep, AppliesToDelivery, ShiftStrategy, Description
+		FROM HolidayClosureTbl
+		ORDER BY ClosureDate;
+	</command>
+
+</root>

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+ <command type="create">
+	 CREATE TABLE ItemGroupTbl (
+	 [ItemGroupID] AUTOINCREMENT,
+	 [GroupItemTypeID] INT,
+	 [ItemTypeID] INT,
+	 [ItemTypeSortPos] INT,
+	 [Enabled] YESNO,
+	 [Notes] MEMO,
+	 CONSTRAINT [pk_ItemGroupID] PRIMARY KEY (ItemGroupID)
+	 )
+ </command>
+	<command type="create">
+		CREATE TABLE UsedItemGroupTbl (
+		[UsedItemGroupID] AUTOINCREMENT,
+		[ContactID] INT,
+		[GroupItemTypeID] INT,
+		[LastItemTypeID] INT,
+		[LastItemTypeSortPos] INT,
+		[LastItemDateChanged] DATETIME,
+		[Notes] MEMO,
+		CONSTRAINT [pk_UsedItemGroupID] PRIMARY KEY (UsedItemGroupID)
+		)
+	</command>
+	<command type="disable">
+		ALTER TABLE SysDataTbl ADD GroupItemTypeID INT
+	</command>
+	<command type="insert">
+		INSERT INTO ServiceTypesTbl (ServiceType, Description, PackagingID, PrepTypeID)
+		VALUES ("Group","Group Item",3,2)
+	</command>
+	<command type="insert">
+		UPDATE SysDataTbl
+		SET    GroupItemTypeID = 21
+		WHERE  (ID = 1)
+	</command>
+
+</commands>
+

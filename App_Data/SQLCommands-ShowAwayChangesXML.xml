@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<commands>
+	<command type="drop">
+		DROP TABLE ClientAwayPeriod;
+	</command>
+	<!-- Create ClientAwayPeriod table -->
+	<command type="create">
+		CREATE TABLE ClientAwayPeriodTbl (
+		AwayPeriodID AUTOINCREMENT PRIMARY KEY,
+		ClientID INT NOT NULL,
+		AwayStartDate DATETIME NOT NULL,
+		AwayEndDate DATETIME NOT NULL,
+		ReasonID INT NOT NULL
+		)
+	</command>
+	<!-- Show AwayReasonTbl contents -->
+	<command type="select">
+      SELECT * FROM AwayReasonTbl
+	</command>
+
+	<!-- Show ClientAwayPeriod contents (should be empty after creation) -->
+	<command type="select">
+      SELECT * FROM ClientAwayPeriodTbl
+	</command>
+</commands>

@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <style type="text/css">
+  @media print {
+    thead { display: table-header-group; }
+  }
+  </style>
+  <script type="text/javascript">
+    function onBodyLoad() {
+      var tbl = document.getElementById("tblForPrint");
+      if (tbl) {
+        for (var i = 1; i < 100; i++) {
+          var row = tbl.insertRow(-1);
+          var cell = row.insertCell(0);
+          cell.innerHTML = "Row " + i + " Cell 0";
+          cell = row.insertCell(1);
+          cell.innerHTML = "Row " + i + " Cell 1";
+        }
+      }
+    }
+    function onPrint(btn) {
+      btn.style.display = "none";
+      window.print();
+      btn.style.display = "";
+    }
+  </script>
+</head>
+<body onload="onBodyLoad();">
+<table border="0" cellspacing="0" cellpadding="0" width="100%" style="padding-bottom:1px">
+    <tr>
+      <td style="padding-right: 10px">
+        <!-- logo goes at the top of the page--->
+         <img id="imgQuaffeeLogo" src="../images/logo/QuaffeeLogoSmall.jpg" alt="Quaffee Logo" align="left" />
+      </td>
+      <td class="mHdrText rightJustify"> 
+        I the undersigned acknowledge receipt of the items marked below. I am an authorized signatory for delivery of 
+        these items, and understand that items are charged as per the invoice that has supplied with this delivery 
+        I have acknowledge receipt of. All items have been received in working order.																									
+      </td>
+    </tr>
+  </table>
+  <!--  MAIN Body content -->
+  <form method="post" action="DeliverySheet.aspx?Print=Y&amp;DateValue=2013%2f01%2f09" id="frmMain">
+<div class="aspNetHidden">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUJNzUzOTA3NDA0D2QWAmYPZBYCAgUPZBYCAgEPZBYEAgEPDxYCHgdWaXNpYmxlaGQWBgIBDxBkZBYBZmQCCQ8QZGQWAGQCCw8PFgIfAGhkZAIFDw8WBB4IQ3NzQ2xhc3MFD1RibENvZmZlZSBzbWFsbB4EXyFTQgICZGRk26Z4dCQYAYc26X/0cMl6iVx0VJAc3pgaB2HIySdI+ss=" />
+</div>
+
+    
+  <input id="Button1" type="button" value="print" onclick="onPrint(this);" />
+  
+    <table id="MainContent_tblDeliveries" class="TblZebra" style="width:100%;">
+    <thead>
+     <tr>
+		<th>By</th><th>To</th><th style="width:90px;">
+          Received By
+        </th><th style="width:100px;">
+          Signature
+        </th><th>
+          Items
+        </th><th>
+          In Stock
+        </th>
+	</tr>
+  </thead>
+<tr>
+		<td style="font-size:X-Small;"> WGM</td><td><b>DONE</b>-> Buiten Rest</td><td></td><td></td><td><span style='background-color:'>3XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> WGM</td><td><b>DONE</b>-> CoffeeBloC</td><td></td><td></td><td><span style='background-color:'>10XRlntshp</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Acsis {plunger grnd 250g}</td><td></td><td></td><td><span style='background-color:#E6FFB2; padding-top: 1px; padding-bottom:2px'>4XBunna (250g GrndFltr)</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> African Axess</td><td></td><td></td><td><span style='background-color:'>2XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Agent: Paul</td><td></td><td></td><td><span style='background-color:'>0.5XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Clear Channel Business Technology</td><td></td><td></td><td><span style='background-color:'>1XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Harley Davidson</td><td></td><td></td><td><span style='background-color:'>2XLimu</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Heinrich de Jongh</td><td></td><td></td><td><span style='background-color:'>1XLos Idol</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Imperial Ford & Mazda CT</td><td></td><td></td><td><span style='background-color:'>3XArmizr</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Lexus Culemborg</td><td></td><td></td><td><span style='background-color:'>2XYirgchf</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> PPM</td><td></td><td></td><td><span style='background-color:'>4XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Soliditech</td><td></td><td></td><td><span style='background-color:'>2XHouse</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Third Bridge Consulting</td><td></td><td></td><td><span style='background-color:'>2XHouse</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> PS</td><td><b>DONE</b>-> Vunani FM</td><td></td><td></td><td><span style='background-color:'>2XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Amdec</td><td></td><td></td><td><span style='background-color:#EFEF70; padding-top: 1px; padding-bottom:2px'>3.5XArmizr (500g Grnd Flt)</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Bechet & Co</td><td></td><td></td><td><span style='background-color:'>1XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Hardy Maritz</td><td></td><td></td><td><span style='background-color:'>2XLE! SaoJ</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Health Connection (Hout Bay)</td><td></td><td></td><td><span style='background-color:'>2XWildO</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Hout Bay Ins Broker</td><td></td><td></td><td><span style='background-color:'>2XLa Pirmd</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Karl Setzer</td><td></td><td></td><td><span style='background-color:'>0.75XLimu</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Karl Storz Endoscopy</td><td></td><td></td><td><span style='background-color:'>3XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Keren Machanik</td><td></td><td></td><td><span style='background-color:'>0.5XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Nautic Africa (xKND Projects)</td><td></td><td></td><td><span style='background-color:'>2XBunna</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Planet Kids</td><td></td><td></td><td><span style='background-color:'>2XSidama</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Progressive Bus Services (PBS)</td><td></td><td></td><td><span style='background-color:'>2XHouse</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> Stensons</td><td></td><td></td><td><span style='background-color:'>1XCoatepec</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> ?: Anna Wolleben</td><td></td><td></td><td><span style='background-color:'>1.5XSulDM</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> SS</td><td><b>DONE</b>-> ?: Talk-Show.TV café (am only)</td><td></td><td></td><td><span style='background-color:'>1XBututsi</span>; <span style='background-color:'>1XCoatepec</span></td><td></td>
+	</tr><tr>
+		<td style="font-size:X-Small;"> ER</td><td><b>DONE</b>-> Hendrikus Pretorius[+LO]</td><td></td><td></td><td><span style='background-color:'>2XDecal</span>; <span style='background-color:'>0.5XLE! SaoJ</span>; <span style='background-color:'>0.5XHouse</span>; <span style='background-color:'>2XGrnCoatpc</span>; <span style='background-color:'>3XGrnAntig</span>; <span style='background-color:'>5XGrnLosN</span></td><td></td>
+	</tr>
+</table>
+  <br />
+  <table id="MainContent_tblTotals" class="TblCoffee small" style="width:100%;">
+	<tr>
+		<th style="font-weight:bold;">Item</th><th style="font-weight:bold;">Decal</th><th style="font-weight:bold;">Bunna</th><th style="font-weight:bold;">Rlntshp</th><th style="font-weight:bold;">Limu</th><th style="font-weight:bold;">Los Idol</th><th style="font-weight:bold;">Armizr</th><th style="font-weight:bold;">Yirgchf</th><th style="font-weight:bold;">House</th><th style="font-weight:bold;">LE! SaoJ</th><th style="font-weight:bold;">WildO</th><th style="font-weight:bold;">La Pirmd</th><th style="font-weight:bold;">Sidama</th><th style="font-weight:bold;">Coatepec</th><th style="font-weight:bold;">SulDM</th><th style="font-weight:bold;">Bututsi</th><th style="font-weight:bold;">GrnCoatpc</th><th style="font-weight:bold;">GrnAntig</th><th style="font-weight:bold;">GrnLosN</th>
+	</tr><tr>
+		<td style="font-weight:bold;">Total</td><td align="right">2.00</td><td align="right">23.00</td><td align="right">10.00</td><td align="right">2.75</td><td align="right">1.00</td><td align="right">6.50</td><td align="right">2.00</td><td align="right">6.50</td><td align="right">2.50</td><td align="right">2.00</td><td align="right">2.00</td><td align="right">2.00</td><td align="right">2.00</td><td align="right">1.50</td><td align="right">1.00</td><td align="right">2.00</td><td align="right">3.00</td><td align="right">5.00</td>
+	</tr>
+</table>
+  <br />
+  <span id="MainContent_ltrlWhichDate" class="hideWhenPrinting"></span>
+
+
+  </form>
+  
+  <br />
+   <table class="small" width="100%">
+    <tr>
+      <td>
+        <a href="http://www.quaffee.co.za">www.quaffee.co.za</a>
+      </td>
+      <td>
+        <button id="btnPrint" title="Print" type="button" onclick="window.print()">Print</button>
+      </td>
+      <td style="text-align: right">
+        <a href="javascript:history.back(-1);">Previous Page</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

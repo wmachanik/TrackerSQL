@@ -1,0 +1,117 @@
+Task, Company Name, origType, newType, PredDisabled
+Added 1899-1: Naude Marais, 3, 9, True
+Added 2263-2: Robert de la Rey (Nanoteq), 3, 9, True
+Added 2541-3: Susell van Graan, 3, 9, True
+Added 2676-4: Trevor Daly, 7, 9, False
+Added 2677-5: Trevor Leonard, 3, 9, False
+Added 2678-6: Trevor McPherson, 3, 9, False
+Added 2679-7: Trevor Morrick, 0, 3, False
+Added 2680-8: Trevor Nelson, 3, 9, False
+Added 2684-9: Tristan Glen, 3, 9, True
+Added 2686-10: Tristen Export, 3, 9, False
+Added 2688-11: Trysport, 6, 9, False
+Added 2689-12: Turbofluid Engineering, 2, 9, True
+Added 2691-13: Twisted Fork, 3, 9, False
+Added 2693-14: UBS, 3, 9, False
+Added 2695-15: UCT (Dept. of Statistical Sciences), 3, 9, True
+Added 2696-16: UCT African Centre for Cities, 3, 1, False
+Added 2698-17: UCT Climate Systems Analysis Group, 3, 9, False
+Added 2700-18: UCT Dept Comp Sci, 3, 9, False
+Added 2703-19: UCT Environmental & Geographical Science, 3, 9, False
+Added 2709-20: Ulrich Gaum, 3, 9, True
+Added 2713-21: Unice Vorster, 3, 9, True
+Added 2714-22: Unitemp, 3, 9, False
+Added 2715-23: Univ of Stellenbosch E&E Dept, 3, 9, False
+Added 2716-24: Univ of Stellenbosch Fac. of Law, 3, 9, False
+Added 2718-25: University of the Free State, DF, 0, 9, False
+Added 2721-26: Urbantonic, 3, 9, False
+Added 2722-27: Ursula Skellern-Gouws, 3, 9, False
+Added 2723-28: Ursula Torr, 5, 9, True
+Added 2724-29: Uzayr Haneef, 3, 9, True
+Added 2725-30: Valemount Trading, 3, 9, False
+Added 2727-31: Van Dyke Carpets, 3, 9, False
+Added 2728-32: Van Heerden Pharmacy, Eden Sq, 3, 9, True
+Added 2729-33: Vanessa Ingram, 3, 9, False
+Added 2732-34: VDMV Properties, 3, 9, True
+Added 2733-35: Velesh Chhiba, 10, 3, False
+Added 2734-36: Venessa Teich, 3, 9, False
+Added 2735-37: Verder Pumps SA, 3, 9, False
+Added 2736-38: Verfin Finance (VF International), 3, 9, False
+Added 2737-39: Veronica Cadman, 3, 9, False
+Added 2740-40: Vicky Lin Vivo, 3, 9, True
+Added 2741-41: View Health & Skin care, 3, 9, False
+Added 2742-42: Vigilent-Tek, 3, 9, True
+Added 2743-43: Viglietti Motors, 3, 9, False
+Added 2744-44: Village Veterinary Clinic, 3, 9, False
+Added 2746-45: Vinnie Orchard, 3, 9, True
+Added 2747-46: Vintage Coffee, 3, 9, True
+Added 2748-47: Visual Fusion Global, 3, 9, False
+Added 2749-48: Visual Impact, 0, 9, True
+Added 2751-49: Vivien de Klerk, 0, 6, False
+Added 2756-50: Wade Lambert, 2, 3, False
+Added 2757-51: Wade Willingale, 3, 6, False
+Added 2758-52: Waldi van Zyl (Web-Care), 0, 3, False
+Added 2760-53: Walker Bay Spice, 3, 9, False
+Added 2762-54: Walter Aeberli, 3, 9, False
+Added 2763-55: Walter Norris c/o Thought Advisory, 5, 9, True
+Added 2764-56: Walworth Consulting (Pty) Ltd, 3, 6, False
+Added 2765-57: Warren Bonn, 3, 9, True
+Added 2767-58: Warren Ferreira, 3, 9, False
+Added 2768-59: Warren Freese, 3, 9, False
+Added 2769-60: Warren Hewitt, 3, 9, False
+Added 2771-61: Water Gardens & Features, 3, 9, False
+Added 2772-62: Waterfront Studios, 3, 9, False
+Added 2775-63: Wayne Badenhorst, 3, 9, True
+Added 2777-64: Wayne Juan Liebenberg, 3, 1, False
+Added 2778-65: Wayne Reddie, 3, 9, False
+Added 2784-66: Werner Bester, 3, 9, False
+Added 2786-67: Werner Smith, 3, 9, True
+Added 2787-68: Werner van Wyk, 3, 9, False
+Added 2789-69: Wesley (via Rhys), 0, 3, False
+Added 2790-70: Wesley Jones (Personal), 3, 9, True
+Added 2791-71: Wessel Coetzee, 3, 9, True
+Added 2792-72: Wessel Kruger, 10, 3, False
+Added 2794-73: Westfalia Marketing (Pty) Ltd, AFRICA, 1, 6, False
+Added 2795-74: WFA, 3, 9, False
+Added 2796-75: Whip Fire, 3, 9, False
+Added 2797-76: White House, 5, 9, False
+Added 2798-77: Whitehead Scientific, 3, 9, False
+Added 2800-78: Wicked Pixels, 3, 9, False
+Added 2802-79: Wilhelm Kirschbaum, 0, 3, False
+Added 2805-80: Willem Johannes van den Berg, 3, 9, False
+Added 2806-81: Willem Krog, 3, 9, True
+Added 2809-82: Willem Visser, 3, 9, False
+Added 2810-83: William Greyvenstein, 3, 9, True
+Added 2811-84: William Leong Plastics, 3, 9, False
+Added 2812-85: William Stewart, 3, 9, True
+Added 2813-86: Willie le Roux, 3, 1, False
+Added 2814-87: Willie Schmitz, 3, 9, False
+Added 2815-88: Wondatrade (rental), 3, 9, False
+Added 2818-89: Wouter van der Merwe, 1, 3, False
+Added 2819-90: WP Motors, 5, 6, False
+Added 2820-91: Wrightway Computing Services, 3, 9, False
+Added 2821-92: WSP SA Civil and Structural, 3, 9, False
+Added 2823-93: Wytske van Wyk Interiors, 3, 9, False
+Added 2824-94: X Liang, 3, 9, True
+Added 2826-95: Y Mohamed Assurance Brokers CC, 4, 9, False
+Added 2829-96: Yenza, 3, 9, False
+Added 2830-97: Yolanda Barnard, 3, 9, False
+Added 2831-98: Young Huem Ohm, 3, 9, False
+Added 2832-99: Yuan Roets, 3, 9, True
+Added 2833-100: Yusuf Jakoet, 3, 9, False
+Added 2834-101: Yusuf Motala, 3, 9, True
+Added 2835-102: YVETTE CHERRY, 3, 9, False
+Added 2836-103: YVONNE, 3, 9, False
+Added 2837-104: Yvonne Kane, 3, 9, False
+Added 2839-105: Yvonne Porceddu, 3, 9, False
+Added 2840-106: Z&J Consulting Engineers, 3, 9, False
+Added 2841-107: Zaahir Ebrahim, 3, 9, True
+Added 2842-108: Zaakiyah Mohamed, 0, 9, True
+Added 2843-109: Zafar Harnekar, 0, 3, False
+Added 2845-110: Zander Du Preez, 3, 9, True
+Added 2848-111: Zarina Rahman, 3, 9, True
+Added 2849-112: Zelda Swart, 3, 9, False
+Added 2850-113: Zenith For The Accomplished, 5, 9, True
+Added 2851-114: Zjaan Meyer, 0, 9, True
+Added 2853-115: Zukisa Masiza, 3, 9, True
+Added 2854-116: Zumae Barnard, 0, 3, False

@@ -1,0 +1,100 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="MobileSite.Master.cs" Inherits="TrackerDotNet.MobileSiteMaster" %>
+<%@ Register assembly="AjaxControlToolkit" namespace="AjaxControlToolkit" tagprefix="cc1" %>
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head runat="server">
+    <title>Coffee Tracker - Mobile</title>
+    <link href="~/Styles/MobileSite.css" rel="stylesheet" type="text/css" />
+    <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="MobileOptimized" content="width" />
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="theme-color" content="#302a20" />
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server">
+    </asp:ContentPlaceHolder>
+
+    <script type="text/javascript">
+        function showAppMessage(thisMessage) {
+            alert(thisMessage);
+        }
+
+        // Hamburger menu toggle
+        function toggleMobileMenu() {
+            var menu = document.getElementById('mobileNavMenu');
+            var hamburger = document.getElementById('hamburgerIcon');
+
+            if (menu.classList.contains('mobile-menu-open')) {
+                menu.classList.remove('mobile-menu-open');
+                hamburger.classList.remove('hamburger-open');
+            } else {
+                menu.classList.add('mobile-menu-open');
+                hamburger.classList.add('hamburger-open');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function (event) {
+            var menu = document.getElementById('mobileNavMenu');
+            var hamburger = document.getElementById('hamburgerButton');
+
+            if (menu && hamburger && !hamburger.contains(event.target) && !menu.contains(event.target)) {
+                menu.classList.remove('mobile-menu-open');
+                document.getElementById('hamburgerIcon').classList.remove('hamburger-open');
+            }
+        });
+    </script>
+</head>
+<body>
+    <form id="frmMobileMain" runat="server">
+        <div class="mobile-header">
+            <div class="mobile-header-content">
+                <button type="button" id="hamburgerButton" class="hamburger-button" onclick="toggleMobileMenu()">
+                    <div id="hamburgerIcon" class="hamburger-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </button>
+                
+                <h1 class="mobile-title">Coffee Tracker</h1>
+                
+                <div class="mobile-login">
+                    <asp:LoginView ID="HeadLoginView" runat="server" EnableViewState="false">
+                        <AnonymousTemplate>
+                            <a href="~/Account/Login.aspx" id="HeadLoginStatus" runat="server">Login</a>
+                        </AnonymousTemplate>
+                        <LoggedInTemplate>
+                            <span class="mobile-username">
+                                <asp:LoginName ID="HeadLoginName" runat="server" />
+                            </span>
+                            <asp:LoginStatus ID="HeadLoginStatus" runat="server" 
+                                LogoutAction="Redirect" 
+                                LogoutText="Logout" 
+                                LogoutPageUrl="~/Account/Login.aspx"/>
+                        </LoggedInTemplate>
+                    </asp:LoginView>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation Menu -->
+            <nav id="mobileNavMenu" class="mobile-nav-menu">
+                <ul class="mobile-nav-list">
+                    <li><asp:HyperLink ID="hlHome" NavigateUrl="~/Default.aspx" Text="🏠 Home" runat="server" /></li>
+                    <li><asp:HyperLink ID="hlDeliveries" NavigateUrl="~/Pages/DeliverySheet.aspx" Text="🚚 Deliveries" runat="server" /></li>
+                    <li><asp:HyperLink ID="hlRepairs" NavigateUrl="~/Pages/Repairs.aspx" Text="🔧 Repairs" runat="server" /></li>
+                    <li><asp:HyperLink ID="hlOrders" NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" Text="📋 New Order" runat="server" /></li>
+                    <li><asp:HyperLink ID="hlCustomers" NavigateUrl="~/Pages/Customers.aspx" Text="👥 Customers" runat="server" /></li>
+                    <li><asp:HyperLink ID="hlLookups" NavigateUrl="~/Pages/Lookups.aspx" Text="📊 Lookup Tables" runat="server" /></li>
+                </ul>
+            </nav>
+        </div>
+
+        <div class="mobile-page">
+            <div class="mobile-main">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </div>
+        </div>
+    </form>
+</body>
+</html>

@@ -1,0 +1,218 @@
+﻿/* EmailTest.css */
+
+/* Base styling */
+/*body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+*/
+.container {
+    max-width: 98%;
+    margin: auto;
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+test-h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* Form fields */
+fieldset {
+    border: none;
+    margin-bottom: 10px;
+}
+
+legend {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.test-css label {
+    display: block;
+    margin-top: 4px; /* Less space above each label */
+    font-weight: 500;
+}
+
+.test-css input[type="text"],
+.test-css input[type="password"],
+.test-css textarea,
+.test-css select {
+    width: auto;
+    min-width: 200px;
+    min-height: 2em;
+    padding: 4px;
+    margin-top: 2px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.test-css textarea {
+    width: 80%;
+    resize: vertical;
+    min-height: 4em;
+}
+.password-group {
+    margin-bottom: 12px;
+}
+
+.input-with-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+/* Action buttons */
+.test-css .form-actions {
+    text-align: left;
+    margin-top: 20px;
+}
+
+    .test-css .form-actions input,
+    .test-css .tab-buttons button {
+        margin: 5px;
+        padding: 10px 20px;
+        font-weight: bold;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+/* Primary buttons */
+#btnSend {
+    background-color: #0078D4;
+    color: white;
+}
+
+#btnSaveConfig {
+    background-color: #28a745;
+    color: white;
+}
+
+#lblResult {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Diagnostics styles */
+.diagnostics-output {
+    display: block;
+    margin-top: 10px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.results-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 15px;
+}
+
+    .results-table th,
+    .results-table td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        text-align: left;
+    }
+
+    .results-table th {
+        background-color: #f0f0f0;
+    }
+
+    .results-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+/* Tabs */
+.tab-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+    .tab-buttons button {
+        background-color: #0078D4;
+        color: white;
+    }
+
+.tab {
+    display: none;
+}
+
+    .tab.active {
+        display: block;
+    }
+
+/* Log viewer */
+#litLogOutput {
+    font-family: monospace;
+    white-space: pre-wrap;
+    display: block;
+    margin-top: 10px;
+    background-color: #fcfcfc;
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Progress feedback */
+#lblProgress {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+    color: #0078D4;
+}
+
+/* Success/Error messages */
+.success {
+    color: green;
+}
+
+.error {
+    color: red;
+}
+
+.warning {
+    color: orange;
+}
+
+.results-table th, .results-table td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: left;
+}
+
+.results-table th {
+    background-color: #f0f0f0;
+}
+
+.results-table td button {
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.update-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    color: #0077cc;
+}

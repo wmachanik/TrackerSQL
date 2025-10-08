@@ -1,0 +1,48 @@
+<%@ Master Language="C#" AutoEventWireup="true"
+  Inherits="PrintMasterPage" CodeBehind="Print.master.cs" %>
+<%@ Import Namespace="TrackerDotNet.Classes" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1" runat="server">
+  <title></title>
+  <link href="~/Styles/Site.css" rel="stylesheet" type="text/css" />
+  <asp:ContentPlaceHolder ID="HeadContent" runat="server">
+  </asp:ContentPlaceHolder>
+</head>
+<body style="background-color: White; padding-top: 0px;">
+  <table border="0" cellspacing="0" cellpadding="0" width="100%" style="padding-bottom:1px">
+    <tr>
+      <td style="padding-right: 10px">
+        <!-- logo goes at the top of the page--->
+         <asp:Image ID="imgQuaffeeLogo" runat="server" ImageUrl="~/images/logo/QuaffeeLogoSmall.jpg"
+           AlternateText="Quaffee Logo" ImageAlign="Left" />
+      </td>
+      <td class="mHdrText rightJustify"> 
+        I the undersigned acknowledge receipt of the items marked below. I am an authorized signatory for delivery of 
+        these items, and understand that items are charged as per the invoice supplied with this delivery 
+        I have acknowledge receipt of. This delivery is subject to our standard terms and conditions available online.
+      </td>
+    </tr>
+  </table>
+  <!--  MAIN Body content -->
+  <form id="frmMain" runat="server">
+    <asp:ContentPlaceHolder ID="MainContent" runat="server">
+    </asp:ContentPlaceHolder>
+  </form>
+  <%--   FOOTER --%>
+  <table class="small" width="100%">
+    <tr>
+      <td>Date: 
+        <% Response.Write(String.Format("{0:yyyy-MMM-dd}", TimeZoneUtils.Now())); %>
+      </td>
+      <td class="hideWhenPrinting">
+        <button id="btnPrint" title="Print" type="button" onclick="window.print()">Print</button>
+      </td>
+      <td class="hideWhenPrinting" style="text-align: right">
+        <a href="javascript:history.back(-1);">Previous Page</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

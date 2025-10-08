@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+  <command type="select">
+    SELECT        Header, Body, Footer, DateLastChange, Notes    FROM            SendCheckEmailTextsTbl
+  </command>
+  <command type="alter">
+    UPDATE       SendCheckEmailTextsTbl
+    SET                Header = 'Is it time to order coffee?', Body = 'Reply to confirm or cancel', Footer = 'visit our website at www.quaffee.com'
+    WHERE        (SCEMTID = 1)
+  </command>
+  <command type="select">
+    SELECT        Header, Body, Footer, DateLastChange, Notes    FROM            SendCheckEmailTextsTbl
+  </command>
+</commands>
+

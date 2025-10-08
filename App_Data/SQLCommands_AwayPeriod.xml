@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<commands>
+  <!-- Create AwayReasonTbl lookup table -->
+  <command type="create">
+    CREATE TABLE AwayReasonTbl (
+        AwayReasonID AUTOINCREMENT PRIMARY KEY,
+        ReasonDesc TEXT(100) NOT NULL
+      )
+  </command>
+
+  <!-- Populate AwayReasonTbl with sensible values -->
+  <command type="insert">
+      INSERT INTO AwayReasonTbl (ReasonDesc) VALUES
+        ('On holiday')
+  </command>
+  <command type="insert">
+      INSERT INTO AwayReasonTbl (ReasonDesc) VALUES
+        ('Have stock')
+  </command>
+  <command type="insert">
+      INSERT INTO AwayReasonTbl (ReasonDesc) VALUES
+        ('Closed for business')
+  </command>
+  <command type="insert">
+      INSERT INTO AwayReasonTbl (ReasonDesc) VALUES
+        ('Other')
+  </command>
+  <!-- Create ClientAwayPeriod table -->
+  <command type="create">
+      CREATE TABLE ClientAwayPeriodTbl (
+        AwayPeriodID AUTOINCREMENT PRIMARY KEY,
+        ClientID INT NOT NULL,
+        AwayStartDate DATETIME NOT NULL,
+        AwayEndDate DATETIME NOT NULL,
+        ReasonID INT NOT NULL
+      )
+  </command>
+  <!-- Add foreign keys (Access requires separate statements) -->
+  <command type="alter">
+    ALTER TABLE ClientAwayPeriod
+        ADD CONSTRAINT FK_ClientAwayPeriod_CustomersTbl
+        FOREIGN KEY (ClientID) REFERENCES CustomersTbl(CustomerID);
+    
+  </command>
+  <command type="alter">
+    
+      ALTER TABLE ClientAwayPeriod
+        ADD CONSTRAINT FK_ClientAwayPeriod_AwayReasonTbl
+        FOREIGN KEY (ReasonID) REFERENCES AwayReasonTbl(AwayReasonID);
+    
+  </command>
+<!-- Show AwayReasonTbl contents -->
+  <command type="select">
+      SELECT * FROM AwayReasonTbl
+  </command>
+
+  <!-- Show ClientAwayPeriod contents (should be empty after creation) -->
+  <command type="select">
+      SELECT * FROM ClientAwayPeriodTbl
+  </command>
+</commands>

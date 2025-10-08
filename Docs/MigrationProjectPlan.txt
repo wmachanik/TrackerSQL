@@ -1,0 +1,446 @@
+﻿Migration Project Plan (Expanded Step‑By‑Step – Data First, Code Second)
+Project: TrackerDotNet (Access) → TrackerSQL (SQL Server)
+Framework: .NET Framework 4.8
+Strategy: 1) Clone project & migrate schema/data first. 2) Validate data. 3) Only then change code (queries / DAL / UI).
+
+===============================================================================
+PHASE 0 – GOALS & CONSTRAINTS (UNCHANGED CORE OBJECTIVES)
+===============================================================================
+1. Replace Microsoft Access (OleDb, 32‑bit) with SQL Server / SQL Express.
+2. Minimize UI breakage (WebForms + SqlDataSource / ObjectDataSource).
+3. Centralize data access later (ITrackerDb / TrackerDbSql abstraction).
+4. Support two connection strings (Security + Data) OR unify if host limits.
+5. Remove Access SQL idioms (iif, IsNull, #dates#, ? parameters).
+6. Enable 64‑bit hosting (remove Jet/Ace provider requirement).
+7. Lay groundwork for future refactors (repositories, tests, stored procs).
+
+Deliverables (Phase 0 Done When):
+- This plan committed under /Docs.
+- Access DB backup stored safely (read‑only).
+- Decision logged: “Data-first / no code changes until data sign-off”.
+
+===============================================================================
+PHASE 1 – INVENTORY & AUDIT (NO CODE CHANGES)
+===============================================================================
+Objective: Capture full schema + usage footprint.
+
+Action Steps:
+1. Ensure you’re on latest stable: 
+   git fetch origin
+   git checkout version/2.1.3.0
+   git pull
+2. Create folders (if missing):
+   PowerShell:
+     New-Item -ItemType Directory -Path .\Docs\Generated -ErrorAction SilentlyContinue | Out-Null
+     New-Item -ItemType Directory -Path .\Docs\Reports   -ErrorAction SilentlyContinue | Out-Null
+3. Backup Access file(s):
+   Copy-Item .\App_Data\*.mdb .\Backups\ -Force
+4. Produce schema & profile (Option A – existing ShowTableStruct.aspx if extended; else Option B below).
+
+Option B – PowerShell schema export (create Tools\Export-AccessSchema.ps1):
+-----------------------------------------------------------------------------
+param(
+  [string]$AccessFile = ".\App_Data\TrackerData.mdb",
+  [string]$OutJson = ".\Docs\Generated\AccessSchema.json",
+  [string]$OutProfile = ".\Docs\Reports\AccessProfile.tsv"
+)
+
+Add-Type -AssemblyName System.Data
+$cs = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$AccessFile;Persist Security Info=False;"
+$cn = New-Object System.Data.OleDb.OleDbConnection($cs); $cn.Open()
+
+$tables = $cn.GetOleDbSchemaTable([System.Data.OleDb.OleDbSchemaGuid]::Tables, @($null,$null,$null,"TABLE"))
+$result = @()
+foreach ($row in $tables.Rows) {
+  $tName = $row.TABLE_NAME
+  $cols = $cn.GetOleDbSchemaTable([System.Data.OleDb.OleDbSchemaGuid]::Columns, @($null,$null,$tName,$null))
+  $cObjs = @()
+  foreach ($c in $cols.Rows) {
+    $cObjs += [pscustomobject]@{
+      ColumnName = $c.COLUMN_NAME
+      Ordinal    = $c.ORDINAL_POSITION
+      DataType   = $c.DATA_TYPE
+      Width      = $c.CHARACTER_MAXIMUM_LENGTH
+      Nullable   = ($c.IS_NULLABLE -eq "YES")
+    }
+  }
+  $cmd = $cn.CreateCommand(); $cmd.CommandText = "SELECT COUNT(*) FROM [$tName]"
+  $count = $cmd.ExecuteScalar()
+  $result += [pscustomobject]@{ Table=$tName; RowCount=$count; Columns=$cObjs }
+}
+$cn.Close()
+$result | ConvertTo-Json -Depth 7 | Out-File $OutJson -Encoding UTF8
+"Table`tColumn`tRowCount" | Out-File $OutProfile -Encoding UTF8
+$result | ForEach-Object { $_.Columns | ForEach-Object { "$($_.Table)`t$($_.ColumnName)`t$($_.RowCount)" | Add-Content $OutProfile } }
+Write-Host "Schema exported to $OutJson"
+-----------------------------------------------------------------------------
+
+5. Run export:
+   powershell -ExecutionPolicy Bypass -File .\Tools\Export-AccessSchema.ps1
+6. Search for Access idioms (create Docs\Reports\AccessIdiomHits_Initial.txt):
+   Select-String -Path . -Pattern "iif\(|IsNull\(| Date\(\)| Now\(\)|#[0-9]{4}-[0-9]{2}-[0-9]{2}#|\s\?[\s,)\r\n]" |
+     Select Path,LineNumber,Line | Out-File .\Docs\Reports\AccessIdiomHits_Initial.txt
+7. Manually list all <asp:SqlDataSource> occurrences:
+   Select-String -Path . -Pattern "<asp:SqlDataSource" > .\Docs\Reports\SqlDataSources.txt
+8. Create summary file: Docs\Reports\InventorySummary.md (tables count, largest tables, etc.)
+
+Phase 1 Done When:
+- AccessSchema.json + AccessProfile.tsv + InventorySummary.md committed
+- SqlDataSources.txt & AccessIdiomHits_Initial.txt committed
+
+===============================================================================
+PHASE 2 – NEW BRANCH & PROJECT IDENTITY (DATA STILL FIRST)
+===============================================================================
+We keep original intact; create working area.
+
+Steps:
+1. Create maintenance branch (if needed):
+   git checkout version/2.1.3.0
+   git checkout -b version/2.x-access
+   git push -u origin version/2.x-access
+2. Create migration feature branch:
+   git checkout version/2.1.3.0
+   git checkout -b feature/sql-migration
+3. Copy project to TrackerSQL (SIDE-BY-SIDE):
+   Copy-Item -Recurse -Path .\TrackerDotNet -Destination .\TrackerSQL
+4. Rename project file inside new folder (if necessary) to TrackerSQL.csproj.
+5. Open solution, Add Existing Project -> TrackerSQL\TrackerSQL.csproj.
+6. Edit TrackerSQL.csproj: change <AssemblyName> and <RootNamespace> to TrackerSQL.
+7. Build both projects (no functional changes yet).
+8. Commit changes:
+   git add TrackerSQL
+   git commit -m "Clone project to TrackerSQL (pre-migration)"
+
+Phase 2 Done When: TrackerSQL builds successfully; no code logic altered.
+
+===============================================================================
+PHASE 3 – SCHEMA MIGRATION (DESIGN SQL SCHEMA – NO APP CODE CHANGE)
+===============================================================================
+Goal: Author SQL Server schema (Database\Schema.sql) from Access schema inventory.
+
+Data Type Mapping Reference (apply consistently):
+  AutoNumber -> INT IDENTITY(1,1)
+  YES/NO -> BIT
+  TEXT(n) -> NVARCHAR(n)
+  MEMO -> NVARCHAR(MAX)
+  CURRENCY -> DECIMAL(19,4)
+  SINGLE -> REAL (or DECIMAL(10,4) if precision needed)
+  DOUBLE -> FLOAT
+  DATE/TIME -> DATETIME2(0) (or DATETIME2(3) if time precision needed)
+  OLE Object -> VARBINARY(MAX)
+
+Steps:
+1. Create Database directory if missing: New-Item -ItemType Directory -Path .\Database -ErrorAction SilentlyContinue
+2. Draft Schema_Draft.sql from AccessSchema.json (include tables in dependency order; parent tables first).
+3. Add explicit PRIMARY KEY constraints.
+4. Add indexes for frequent filters: (SortOrder), (ItemDesc), (City), etc.
+5. OPTIONAL: Add ROWVERSION columns (RowVer) for tables with frequent updates (defer usage until code phase).
+6. Save final as Database\Schema.sql.
+7. Create empty SQL databases:
+   sqlcmd -S .\SQLEXPRESS -Q "IF DB_ID('TrackerData') IS NULL CREATE DATABASE TrackerData;"
+   sqlcmd -S .\SQLEXPRESS -Q "IF DB_ID('TrackerSecurity') IS NULL CREATE DATABASE TrackerSecurity;"
+8. Apply schema:
+   sqlcmd -S .\SQLEXPRESS -d TrackerData -i .\Database\Schema.sql > .\Docs\Reports\SchemaApply.log
+9. Inspect log for errors; fix & re-run until clean.
+10. Commit:
+    git add Database\Schema.sql Docs\Reports\SchemaApply.log
+    git commit -m "Add SQL Server schema"
+
+Phase 3 Done When: Schema.sql applied cleanly (no errors) & committed.
+
+===============================================================================
+PHASE 4 – DATA MIGRATION (REPEATABLE SCRIPT)
+===============================================================================
+Goal: Move ALL data Access -> SQL preserving identity & row counts; record validation.
+
+Script: Database\DataMigration.ps1 (bulk copy KeepIdentity).
+
+Outline (create file):
+-----------------------------------------------------------------------------
+param(
+  [string]$AccessFile = ".\App_Data\TrackerData.mdb",
+  [string]$SqlServer = ".\SQLEXPRESS",
+  [string]$Database = "TrackerData",
+  [switch]$Clear
+)
+
+Add-Type -AssemblyName System.Data
+$accessCs = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$AccessFile;Persist Security Info=False;"
+$sqlCs    = "Server=$SqlServer;Database=$Database;Integrated Security=SSPI;MultipleActiveResultSets=True;"
+
+$tables = @(
+  # Order parents first (adjust to real list)
+  "ServiceTypesTbl",
+  "ItemTypeTbl",
+  "CityTbl",
+  "PackagingTbl",
+  "PriceLevelsTbl",
+  "PaymentTermsTbl",
+  "InvoiceTypeTbl",
+  "RepairStatusesTbl"
+  # add remaining tables...
+)
+
+$log = ".\Docs\Reports\MigrationRun_$(Get-Date -Format yyyyMMdd_HHmmss).log"
+"Migration start $(Get-Date -Format u)" | Out-File $log
+
+$cnA = New-Object System.Data.OleDb.OleDbConnection($accessCs); $cnA.Open()
+
+foreach ($t in $tables) {
+  Write-Host "Migrating $t"
+  if ($Clear) { sqlcmd -S $SqlServer -d $Database -Q "DELETE FROM [$t]" | Out-Null }
+  $cmd = $cnA.CreateCommand(); $cmd.CommandText = "SELECT * FROM [$t]"
+  $da = New-Object System.Data.OleDb.OleDbDataAdapter($cmd)
+  $dt = New-Object System.Data.DataTable
+  [void]$da.Fill($dt)
+
+  if ($dt.Rows.Count -gt 0) {
+    $bulk = New-Object Data.SqlClient.SqlBulkCopy($sqlCs,[Data.SqlClient.SqlBulkCopyOptions]::KeepIdentity)
+    $bulk.DestinationTableName = $t
+    foreach ($c in $dt.Columns) { $null = $bulk.ColumnMappings.Add($c.ColumnName,$c.ColumnName) }
+    $bulk.WriteToServer($dt)
+  }
+
+  $sqlCount = sqlcmd -S $SqlServer -d $Database -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM [$t];"
+  "$t`tin:$($dt.Rows.Count)`tout:$sqlCount" | Add-Content $log
+}
+
+$cnA.Close()
+"Migration end $(Get-Date -Format u)" | Add-Content $log
+Write-Host "Finished. Log: $log"
+-----------------------------------------------------------------------------
+
+Run baseline migration:
+  powershell -ExecutionPolicy Bypass -File .\Database\DataMigration.ps1
+
+Create validation markdown: Docs\Reports\MigrationValidation.md:
+  For each line t in log → table | in | out | Match?
+
+Phase 4 Done When:
+- Log file exists & every table in == out (or discrepancy documented).
+- MigrationValidation.md committed.
+
+Tag baseline:
+  git tag data-migration-baseline
+  git push origin data-migration-baseline
+
+===============================================================================
+GATE – DATA PHASE SIGN-OFF (STOP – NO CODE CHANGES BEFORE THIS)
+===============================================================================
+All MUST be true before proceeding:
+[ ] Schema.sql applied cleanly
+[ ] DataMigration.ps1 executed successfully
+[ ] All table counts match (or accepted deltas documented)
+[ ] Validation report committed
+[ ] Tag data-migration-baseline created
+
+Create Docs\Reports\DataPhaseSignoff.md:
+  Date / Signer / Notes
+
+===============================================================================
+PHASE 5 – CONNECTION STRATEGY (START CODE CHANGES AFTER SIGN-OFF)
+===============================================================================
+Goal: Introduce SQL connection strings (still minimal UI change).
+
+Steps:
+1. In TrackerSQL\Web.config add:
+-----------------------------------------------------------------------------
+<connectionStrings>
+  <add name="TrackerData"
+       connectionString="Server=.\SQLEXPRESS;Database=TrackerData;Integrated Security=True;MultipleActiveResultSets=True;"
+       providerName="System.Data.SqlClient" />
+  <add name="TrackerSecurity"
+       connectionString="Server=.\SQLEXPRESS;Database=TrackerSecurity;Integrated Security=True;MultipleActiveResultSets=True;"
+       providerName="System.Data.SqlClient" />
+</connectionStrings>
+<appSettings>
+  <add key="UseUnifiedDatabase" value="false" />
+</appSettings>
+-----------------------------------------------------------------------------
+2. Build & ensure no runtime errors (still referencing Access until queries switched).
+3. Commit.
+
+Phase 5 Done When: Web.config contains SQL connection strings; app still runs (using old logic).
+
+===============================================================================
+PHASE 6 – DATA ACCESS ABSTRACTION (OPTIONAL EARLY / OR LATER)
+===============================================================================
+(If you delay abstraction, refactor after verifying pages against SQL.)
+
+Steps (when chosen):
+1. Add /DataAccess/ITrackerDb.cs & TrackerDbSql.cs (as per initial plan).
+2. Add TrackerDbFactory (static) returning new TrackerDbSql(connStr).
+3. Convert one low-risk DAL file (e.g., PersonsTbl) to prove pattern.
+4. Regression test People tab.
+
+Phase 6 Done When: At least one DAL uses abstraction, pattern documented.
+
+===============================================================================
+PHASE 7 – REFACTOR UI DATA SOURCES (PAGE-BY-PAGE)
+===============================================================================
+Order (recommended): Items → Cities → ServiceTypes → Packaging → InvoiceTypes → PaymentTerms → PriceLevels → RepairStatuses → Remaining.
+
+For each page:
+1. Replace Access expressions:
+   iif(IsNull(X),0,X) → ISNULL(X,0)
+   LIKE ? → LIKE @Search
+2. Replace positional ? params with @Named.
+3. Ensure code-behind sets Session["SearchItemContains"] = "%" + input + "%"; (if needed).
+4. Test CRUD (Insert/Edit/Delete) with SQL Server DB.
+5. Log result in Docs\Reports\PageMigrationLog.md.
+
+Phase 7 Done When: All targeted data sources converted & PageMigrationLog.md shows PASS entries.
+
+===============================================================================
+PHASE 8 – SQL SYNTAX ADJUSTMENTS (GLOBAL CLEANUP)
+===============================================================================
+Search & replace patterns:
+- iif(  → IIF( or CASE WHEN
+- IsNull( → ISNULL(
+- Date() → CAST(GETDATE() AS date)
+- Now()  → GETDATE()
+- #yyyy-mm-dd# → 'yyyy-mm-dd'
+- & concat → +
+- TRUE/FALSE → 1/0
+- ? params → @Named
+
+Re-run idiom scan; produce AccessIdiomHits_Final.txt (must be empty or known safe).
+
+Phase 8 Done When: Final scan clean; committed.
+
+===============================================================================
+PHASE 9 – CONCURRENCY & TRANSACTIONS (OPTIONAL ENHANCEMENT)
+===============================================================================
+1. Add ROWVERSION to high-contention tables (if not already).
+2. Update UPDATE statements to include RowVer in WHERE.
+3. Add transactional helper if multi-step operations exist.
+
+Phase 9 Done When: Documented tables upgraded & tested (optional).
+
+===============================================================================
+PHASE 10 – TESTING STRATEGY IMPLEMENTATION
+===============================================================================
+Artifacts:
+- Docs/Testing/SmokeChecklist.md
+- Docs/Testing/CRUDChecklist.md
+
+Smoke Checklist Includes:
+- App loads
+- Login (if applicable)
+- Each Lookups tab loads
+- Each CRUD operation works
+- Search works (Items)
+
+Execute & mark PASS/FAIL. Record results in TestRun_<date>.md.
+
+Phase 10 Done When: All tests PASS or waivers approved.
+
+===============================================================================
+PHASE 11 – DEPLOYMENT PLAN
+===============================================================================
+Pre-Prod Rehearsal:
+1. Run Schema.sql on staging SQL.
+2. Run DataMigration.ps1 (fresh).
+3. Deploy TrackerSQL site (staging IIS).
+4. Point connectionStrings to staging DBs.
+5. Run full smoke + CRUD test.
+6. Produce Runbook: Docs\Runbook_Cutover.md (exact ordered steps).
+
+Cutover Checklist:
+- Freeze writes on old site.
+- Final data migration (delta) if needed (or short downtime).
+- Swap IIS binding or DNS to new site.
+- Post-cutover smoke test (abbreviated).
+- Monitor logs 1–2 hours.
+
+Rollback Plan:
+- Keep Access site & DB intact.
+- If blocking issue: revert IIS binding to old site within X minutes.
+- Document root cause before retry.
+
+Phase 11 Done When: Runbook + rollback rehearsal completed; sign-off captured.
+
+===============================================================================
+PHASE 12 – CLEAN-UP
+===============================================================================
+Actions:
+1. Remove OleDb references & any x86 build requirement.
+2. Remove unused Access-only helper classes.
+3. Update README with: prerequisites, Schema.sql, DataMigration.ps1, Web.config changes.
+4. Tag release: tracker-sql-live.
+
+Phase 12 Done When: No OleDb or ACE references, README updated, tag pushed.
+
+===============================================================================
+PHASE 13 – OPTIONAL ENHANCEMENTS
+===============================================================================
+1. Stored procedures for heavy writes.
+2. MemoryCache for static lookups (10 min TTL).
+3. Introduce Dapper for new DAL code.
+4. Add /healthz endpoint checking DB connectivity.
+5. Add integration tests (LocalDB) in CI pipeline.
+
+===============================================================================
+SECURITY DB NOTES
+===============================================================================
+If one DB only: Point TrackerSecurity to TrackerData; run membership schema inside same DB.  
+If two DBs allowed: Keep separate; add diagnostic page listing connection health.
+
+===============================================================================
+QUICK WIN PRIORITIES (IF TIME LIMITED)
+===============================================================================
+1. Migrate schema + data (Phases 3–4).
+2. Swap connection strings (Phase 5).
+3. Convert critical SqlDataSources (Items, Cities).
+4. Smoke test top traffic pages.
+5. Abstract DAL later after stabilization.
+
+===============================================================================
+STATUS DASHBOARD (UPDATE AS YOU PROGRESS)
+===============================================================================
+| Code | Step                                   | Date  | Status | Notes |
+|------|----------------------------------------|-------|--------|-------|
+| P1   | Inventory Export                       |       |        |       |
+| P2   | Project Clone                          |       |        |       |
+| P3   | Schema.sql Applied                     |       |        |       |
+| P4   | DataMigration Baseline                 |       |        |       |
+| G1   | Data Sign-Off                          |       |        |       |
+| P5   | SQL Connection Strings Added           |       |        |       |
+| P7   | Items SqlDataSource Converted          |       |        |       |
+| P7   | All Lookups Converted                  |       |        |       |
+| P8   | Final Idiom Scan Clean                 |       |        |       |
+| P10  | Full Test Pass                         |       |        |       |
+| P11  | Cutover Runbook Rehearsed              |       |        |       |
+| P11  | Production Cutover                     |       |        |       |
+| P12  | Cleanup Completed                      |       |        |       |
+
+===============================================================================
+ACCEPTANCE CRITERIA (FINAL GO-LIVE)
+===============================================================================
+All must be TRUE:
+1. All tables migrated; counts match (or documented deltas).
+2. No OleDb / ACE references in TrackerSQL.
+3. All critical pages CRUD succeed against SQL Server.
+4. Access idiom scan final file empty.
+5. Runbook & rollback tested.
+6. README updated for SQL-only setup.
+7. Stakeholder sign-off recorded.
+
+===============================================================================
+APPENDIX – QUICK REFERENCE TRANSFORMS
+===============================================================================
+iif(a,b,c)         → IIF(a,b,c) or CASE WHEN a THEN b ELSE c END
+IsNull(col,0)      → ISNULL(col,0)
+#2025-10-07#       → '2025-10-07'
+Date()             → CAST(GETDATE() AS date)
+Now()              → GETDATE()
+Concatenation &    → +
+Positional ? param → @ParamName
+True/False         → 1 / 0 (BIT)
+
+===============================================================================
+APPENDIX – ESCALATION (IF STUCK)
+===============================================================================
+Report with: Phase, Step, Error Message, Attempted Fixes, Blocking Impact.
+
+End of MigrationProjectPlan.txt (Expanded)

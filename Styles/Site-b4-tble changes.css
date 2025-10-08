@@ -1,0 +1,2740 @@
+﻿/* DEFAULTS
+----------------------------------------------------------*/
+:root {
+    --primary-brown: #302a20;
+    --secondary-brown: #595939;
+    --light-brown: #d0d0b9;
+    --primary-green: #4e664d;
+    --light-green: #e5f0d4;
+    --secondary-green: #EDEBD2; /* linen leaf apparatnmely */
+}
+
+body {
+    background-color: var(--light-brown);
+    font-size: .90em;
+    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", sans-serif, Helvetica, Verdana, sans-serif;
+    margin: 10px;
+    padding: 0px;
+    color: #696969;
+    padding-top: 60px;
+}
+
+a:link,
+a:visited {
+    color: #03b34a;
+}
+
+a:hover {
+    color: #1dbf60;
+    text-decoration: none;
+}
+
+a:active {
+    color: #03b34a;
+}
+
+p {
+    margin-bottom: 10px;
+    line-height: 1.2em;
+}
+
+
+/* HEADINGS   
+----------------------------------------------------------*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-size: 1.5em;
+    color: #607060;
+    font-variant: small-caps;
+    text-transform: none;
+    font-weight: 200;
+    margin-bottom: 0px;
+}
+
+h1 {
+    font-size: 1.6em;
+    padding-bottom: 4px;
+    margin-bottom: 0px;
+}
+
+h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+h4 {
+    font-size: 1.1em;
+}
+
+h5,
+h6 {
+    font-size: 1em;
+}
+
+
+/*----------------------------------------------------------*/
+
+.page {
+    width: 98%;
+    background-color: #fff;
+    margin: auto;
+    border: 1px solid transparent;
+}
+
+.minipage {
+    background-color: #fff;
+    margin: auto;
+    border: 1px solid #496077;
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    width: 100%;
+    height: 60px; /* Add fixed height (adjust as needed) */
+    background: #302a20;
+    border-bottom: 1px solid white;
+    /* Optional: add a subtle shadow for separation */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+    /*    .header, .header table, .header tr, .header td {
+        background-color: #302a20 !important;
+    }
+*/
+    /* Prevent text wrapping in header cells */
+    .header td {
+        white-space: nowrap;
+    }
+
+        /* Allow menu to wrap normally */
+        .header td:nth-child(2) {
+            white-space: normal;
+            width: 100%;
+        }
+
+    .header h1 {
+        font-weight: 700;
+        margin: 0px;
+        padding: 0px 0px 0px 6px;
+        color: #f9f9f9;
+        border: none;
+        font-size: 2em;
+        display: inline-block;
+    }
+
+.main {
+    padding: 0px 12px;
+    margin: 12px 8px 8px 8px;
+    min-height: 420px;
+}
+
+.minimain {
+    padding: 0px 12px;
+    margin: 6px 12px 8px 4px;
+}
+
+.leftCol {
+    padding: 6px 0px;
+    margin: 12px 8px 8px 8px;
+    width: 200px;
+    min-height: 200px;
+}
+
+.footer {
+    color: var(--primary-brown); /* Even lighter gray */
+    font-weight: normal;
+    padding: 12px 2px 12px 2px;
+    margin: 0px auto;
+    text-align: center;
+    line-height: normal;
+    font-size: 1.1em; /* Smaller text */
+    background: transparent; /* Ensure no background */
+}
+
+/* ======================= */
+/* CONSOLIDATED MENU STYLES */
+/* ======================= */
+
+/* Menu background container */
+.menuBG {
+    background-color: #302a20 !important;
+    padding: 4px 0;
+    width: 96%;
+    margin: 0px auto 5px auto;
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: large;
+}
+
+/* Menu structure */
+.menu ul {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .menu ul li {
+        position: relative;
+        margin: 0 2px;
+    }
+
+        /* Base menu item styles */
+        .menu ul li a {
+            display: block;
+            padding: 8px 12px;
+            text-decoration: none !important;
+            /*background-color: #595939; /* Original brown */
+            color: #fff !important;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            /* Hover states */
+            .menu ul li a:hover {
+                background-color: #d0d0b9 !important;
+                color: #595939 !important;
+                transform: translateY(-2px);
+            }
+
+            /* Active/selected item styles */
+            .menu ul li a:active,
+            .menu ul li a.selected {
+                background-color: #4e664d !important;
+                color: #fff !important;
+                transform: translateY(0);
+            }
+
+            /* Disabled item styles */
+            .menu ul li a:disabled {
+                background-color: #ccc;
+                color: #666;
+                pointer-events: none;
+                transform: none;
+            }
+
+/* Selected item styles */
+.StaticSelectedStyle > a,
+.DynamicSelectedStyle > a {
+    background-color: #d0d0b9 !important;
+    color: #595939 !important;
+    font-weight: bold !important;
+    font-style: italic !important;
+    border-bottom: 3px solid #4e664d !important;
+}
+
+/* Submenu styling */
+.menu ul ul {
+    display: none;
+    position: absolute;
+    background-color: #302a20;
+    border: 1px solid #4e664d;
+    border-radius: 4px;
+    padding: 5px 0;
+    min-width: 180px;
+    z-index: 100;
+}
+
+.menu ul li:hover > ul {
+    display: block;
+}
+
+.menu ul ul li {
+    margin: 3px 0;
+    width: 100%;
+}
+
+    .menu ul ul li a {
+        margin: 0 5px;
+        padding: 6px 10px;
+        /*background-color: #302a20;*/
+    }
+
+        /* Enhance submenu item hover effects */
+        .menu ul ul li a:hover {
+            background-color: #595939 !important;
+            color: #fff !important;
+            transform: translateY(-2px);
+        }
+
+/* Responsive menu */
+@media (max-width: 768px) {
+    .menu ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+        .menu ul li {
+            width: 90%;
+            margin: 3px 0;
+        }
+
+        .menu ul ul {
+            position: static;
+            width: 90%;
+            margin-left: 10%;
+        }
+
+    .header table {
+        display: block;
+    }
+
+    .header td {
+        display: block;
+        width: 100% !important;
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    .loginDisplay {
+        display: block !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+    }
+}
+
+/* ======================= */
+/* END OF MENU STYLES */
+
+
+/* FORM ELEMENTS   
+    ----------------------------------------------------------*/
+
+fieldset {
+    margin: 1em 0px;
+    padding: 1em;
+    border: 1px solid #ccc;
+}
+
+    fieldset p {
+        margin: 2px 12px 10px 10px;
+    }
+
+    fieldset.login label,
+    fieldset.register label,
+    fieldset.changePassword label {
+        display: block;
+    }
+
+    fieldset label.inline {
+        display: inline;
+    }
+
+legend {
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 2px 4px 8px 4px;
+}
+
+input.textEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+input.passwordEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+div.accountInfo {
+    width: 42%;
+}
+
+
+/* MISC  
+    ----------------------------------------------------------*/
+
+.title {
+    display: block;
+    float: left;
+    text-align: left;
+    width: 100%;
+}
+
+.loginDisplay {
+    font-size: 1.1em;
+    display: inline-block;
+    text-align: right;
+    padding: 8px;
+    color: White;
+    text-decoration: underline;
+    white-space: nowrap;
+    vertical-align: top;
+    margin-right: 12px;
+}
+
+    .loginDisplay a:link {
+        color: white;
+    }
+
+    .loginDisplay a:visited {
+        color: white;
+    }
+
+    .loginDisplay a:hover {
+        color: white;
+    }
+
+.failureNotification {
+    font-size: 1.2em;
+    color: Red;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.submitButton {
+    text-align: right;
+    padding-right: 10px;
+}
+
+
+/* Styles added afterwards */
+
+.floatRight {
+    float: right;
+}
+
+
+/* table input styles */
+
+h2.InputFrm {
+    border: solid 1px #C0C090;
+    padding: 2px 5px 2px 2px;
+    margin: 0px 0px 0px 0px;
+    background-color: #CCCC99;
+    color: White;
+    letter-spacing: 2px;
+    font-family: sans-serif, Helvetica;
+    font-weight: bold;
+    font-size: large;
+    width: 100%;
+    padding-bottom: 2px;
+    margin-bottom: 8px;
+}
+
+
+/*-User making contact with us form-*/
+
+table.InputFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 5px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: 100%;
+}
+
+
+/*-User making contact with us form-*/
+
+table.AutoWidthFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 2px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: auto;
+}
+
+
+    /*-Standard row or even rows-*/
+
+    table.AutoWidthFrm tr td {
+        padding-left: 4px;
+        padding-right: 4px;
+        border: 1px solid #221110;
+        background-color: #fff;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    table.AutoWidthFrm td.rowR table.AutoWidthFrm tr.rowR td {
+        text-align: right;
+    }
+
+    table.AutoWidthFrm div.rowOdd,
+    table.AutoWidthFrm td.rowOdd,
+    table.AutoWidthFrm tr.rowOdd td {
+        background-color: #FFF2F2;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    table.AutoWidthFrm td.rowOddC,
+    table.AutoWidthFrm tr.rowOddC td {
+        background-color: #FFF2F2;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    table.AutoWidthFrm td.rowOddR,
+    table.AutoWidthFrm tr.rowOddR td {
+        padding-left: 2px;
+        background-color: #FFF2F2;
+        text-align: right;
+        vertical-align: middle;
+    }
+
+tb.rowC {
+    text-align: center;
+    vertical-align: middle;
+}
+
+
+/*/TBL Coffee from http://icant.co.uk/csstablegallery/tables/36.php */
+
+table.TblCoffee {
+    font: normal 76%/150% "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif, Helvetica, sans-serif;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 1px 1em 0;
+    color: #000;
+    padding: 0;
+}
+
+    table.TblCoffee a {
+        color: #523A0B;
+        text-decoration: none;
+        border-bottom: 1px dotted;
+        padding: 0;
+    }
+
+        table.TblCoffee a:visited {
+            color: #444;
+            font-weight: normal;
+        }
+
+            table.TblCoffee a:visited:after {
+                content: "\00A0\221A";
+            }
+
+        table.TblCoffee a:hover {
+            border-bottom-style: solid;
+        }
+
+.TblCoffee input[type='submit']:disabled,
+.TblCoffee input[type='submit']:disabled:hover {
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif;
+    background-color: #aaa;
+    border: 1px #aaa;
+}
+
+table.TblCoffee thead th,
+table.TblCoffee thead td,
+table.TblCoffee tfoot th,
+table.TblCoffee tfoot td {
+    border: 1px solid #523A0B;
+    background: #EBE5D9;
+    font-size: 12px;
+}
+
+table.TblCoffee th {
+    font-weight: bold;
+    line-height: normal;
+    border: 1px solid #523A0B;
+    padding: 0.25em 0.5em;
+    text-align: left;
+    font-size: 12px;
+}
+
+table.TblCoffee tbody th,
+table.TblCoffee td {
+    padding: 0.25em 0.1em 0.25em;
+    border: 1px solid #523A0B;
+    vertical-align: top;
+}
+
+table.TblCoffee tbody th {
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+    table.TblCoffee tbody th a:link,
+    table.TblCoffee tbody th a:visited {
+        font-weight: bold;
+    }
+
+table.TblCoffee tbody td,
+table.TblCoffee tbody th {
+    border: 1px solid #fff;
+    border: 1px solid #111;
+}
+
+table.TblCoffee tbody tr:nth-child(odd) th,
+table.TblCoffee tbody tr:nth-child(odd) td {
+    border-color: #EBE5D9;
+    background: #F7F4EE;
+    border: 1px solid #111;
+}
+
+table.TblCoffee tbody tr:hover td,
+table.TblCoffee tbody tr:hover th {
+    background: #ffffee;
+    border-color: #523A0B;
+}
+
+table.TblCoffee caption {
+    font-family: Georgia, Times, serif;
+    font-weight: normal;
+    font-size: 1.4em;
+    text-align: left;
+    margin: 0;
+    padding: 0.5em 0.25em;
+}
+
+
+/* new table styles */
+
+table.TblZebra {
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    text-align: left;
+    border: 1px solid #9FCF9F;
+    page-break-inside: avoid;
+    padding: 0;
+    margin-bottom: 1px;
+}
+
+    table.TblZebra tr:nth-child(odd) {
+        padding: 0;
+        background: #EaF2E3;
+    }
+
+    table.TblZebra tr:nth-child(even) {
+        padding: 0;
+        background: #FFF;
+    }
+
+    table.TblZebra th {
+        color: Green;
+        border: 0;
+        border-bottom: 1px solid #797;
+        font-size: 16px;
+        padding-left: 4px;
+        font-weight: bold;
+        background: #e9f9e3;
+    }
+
+    table.TblZebra tr:hover td {
+        background-color: #E0EFD0;
+    }
+
+    table.TblZebra tr:hover a:not(.plain) {
+        color: #FFF;
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+        background-color: Green;
+    }
+
+    table.TblZebra tr a:not(.plain) {
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+    }
+
+    table.TblZebra td {
+        padding: .3em;
+        font-size: 14px;
+    }
+
+
+/*Simple table*/
+
+.TblSimple {
+    border-top: 1px solid #a3a360;
+    border-left: 1px solid #a3a360;
+    padding: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+table.TblSimple {
+    background: #fffff9;
+    height: auto;
+    line-height: 1.5em;
+    border-radius: 15px;
+    padding: 10px 10px;
+    /*
+        -webkit-border-radius: 15px;
+        -moz-border-radius: 15px;
+        -o-border-radius: 15px;
+    */
+}
+
+.TblSimple th {
+    border-right: 1px solid #898;
+    border-bottom: 1px solid #898;
+    text-align: left;
+    padding: 5px;
+}
+
+.TblSimple td {
+    border-right: 1px solid #E9E9D0;
+    border-bottom: 1px solid #E9E9D0;
+    text-align: left;
+    padding: 2px 4px 2px 2px;
+}
+
+.TblSimple th {
+    background-color: #9dD49c;
+    font-size: 120%;
+}
+
+.TblSimple tr:nth-child(even) {
+    background: #fff;
+}
+
+.TblSimple tr:nth-child(odd) {
+    background: #f3f9e9;
+}
+
+
+/* Delivered/Not Delivered table - JH */
+
+table.TblDlvrd {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 1px 1em 0;
+    color: #000;
+    font-size: 14px;
+    width: 100%;
+}
+
+    table.TblDlvrd th,
+    table.TblDlvrd td {
+        border: 1px solid #9FCF9F;
+        padding: 8px;
+        text-align: left;
+    }
+
+    table.TblDlvrd th {
+        background-color: #f2f2f2;
+        color: #333;
+        font-weight: bold;
+    }
+
+    table.TblDlvrd td {
+        background-color: #fff;
+    }
+
+    table.TblDlvrd tr:nth-child(odd) td {
+        background-color: #f9f9f9;
+    }
+
+    table.TblDlvrd tr:hover td {
+        background-color: #e1f5fe;
+    }
+
+    table.TblDlvrd .delivered {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    table.TblDlvrd .not-delivered {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+.TblMudZebra {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    box-shadow: 10px 10px 5px #888888;
+    border: 1px solid #000000;
+    -moz-border-radius-bottomleft: 0px;
+    -webkit-border-bottom-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    -moz-border-radius-bottomright: 0px;
+    -webkit-border-bottom-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+    -moz-border-radius-topright: 0px;
+    -webkit-border-top-right-radius: 0px;
+    border-top-right-radius: 0px;
+    -moz-border-radius-topleft: 0px;
+    -webkit-border-top-left-radius: 0px;
+    border-top-left-radius: 0px;
+}
+
+    .TblMudZebra table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .TblMudZebra tr:last-child td:last-child {
+        -moz-border-radius-bottomright: 0px;
+        -webkit-border-bottom-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+
+    .TblMudZebra table tr:first-child td:first-child {
+        -moz-border-radius-topleft: 0px;
+        -webkit-border-top-left-radius: 0px;
+        border-top-left-radius: 0px;
+    }
+
+    .TblMudZebra table tr:first-child td:last-child {
+        -moz-border-radius-topright: 0px;
+        -webkit-border-top-right-radius: 0px;
+        border-top-right-radius: 0px;
+    }
+
+    .TblMudZebra tr:last-child td:first-child {
+        -moz-border-radius-bottomleft: 0px;
+        -webkit-border-bottom-left-radius: 0px;
+        border-bottom-left-radius: 0px;
+    }
+
+    .TblMudZebra tr:hover td {
+        background-color: #DFDF9F;
+    }
+
+    .TblMudZebra tr:nth-child(odd) {
+        background-color: #ffffee;
+    }
+
+    .TblMudZebra tr:nth-child(even) {
+        background-color: #e9e9b0;
+    }
+
+    .TblMudZebra td {
+        vertical-align: middle;
+        border: 1px solid #000000;
+        border-width: 0px 1px 1px 0px;
+        text-align: left;
+        padding: 1px;
+        font-size: 11px;
+        font-weight: normal;
+        color: #000000;
+    }
+
+    .TblMudZebra tr:last-child td {
+        border-width: 0px 1px 0px 0px;
+    }
+
+    .TblMudZebra tr td:last-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblMudZebra tr:last-child td:last-child {
+        border-width: 0px 0px 0px 0px;
+    }
+
+    .TblMudZebra tr:first-child td {
+        background: -o-linear-gradient(bottom, #cccc99 5%, #cccc99 100%);
+        background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #cccc99), color-stop(1, #cccc99));
+        background: -moz-linear-gradient( center top, #cccc99 5%, #cccc99 100%);
+        filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#cccc99", endColorstr="#cccc99");
+        background: -o-linear-gradient(top, #cccc99, cccc99);
+        background-color: #cccc99;
+        font-size: 14px;
+        font-family: sans-serif;
+        font-weight: bold;
+        color: #ffffff;
+    }
+
+    .TblMudZebra tr:first-child:hover td {
+        background: -o-linear-gradient(bottom, #cccc99 5%, #cccc99 100%);
+        background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #cccc99), color-stop(1, #cccc99));
+        background: -moz-linear-gradient( center top, #cccc99 5%, #cccc99 100%);
+        filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#cccc99", endColorstr="#cccc99");
+        background: -o-linear-gradient(top, #cccc99, cccc99);
+        background-color: #cccc99;
+    }
+
+    .TblMudZebra tr:first-child td:first-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblMudZebra tr:first-child td:last-child {
+        border-width: 0px 0px 1px 1px;
+    }
+
+.TblDetailZebra {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    box-shadow: 10px 10px 5px #888888;
+    border: 1px solid #000000;
+    -moz-border-radius-bottomleft: 6px;
+    -webkit-border-bottom-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    -moz-border-radius-bottomright: 6px;
+    -webkit-border-bottom-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    -moz-border-radius-topright: 6px;
+    -webkit-border-top-right-radius: 6px;
+    border-top-right-radius: 6px;
+    -moz-border-radius-topleft: 6px;
+    -webkit-border-top-left-radius: 6px;
+    border-top-left-radius: 6px;
+    text-align: center;
+}
+
+    .TblDetailZebra table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .TblDetailZebra tr:last-child td:last-child {
+        -moz-border-radius-bottomright: 6px;
+        -webkit-border-bottom-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+    }
+
+    .TblDetailZebra table tr:first-child td:first-child {
+        -moz-border-radius-topleft: 6px;
+        -webkit-border-top-left-radius: 6px;
+        border-top-left-radius: 6px;
+    }
+
+    .TblDetailZebra table tr:first-child td:last-child {
+        -moz-border-radius-topright: 6px;
+        -webkit-border-top-right-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .TblDetailZebra tr:last-child td:first-child {
+        -moz-border-radius-bottomleft: 6px;
+        -webkit-border-bottom-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+    }
+
+    .TblDetailZebra a {
+        color: #303000;
+    }
+
+        .TblDetailZebra a:hover {
+            color: #fff0ff;
+        }
+
+    .TblDetailZebra tr:nth-child(odd) {
+        background-color: #f4f4d7;
+    }
+
+    .TblDetailZebra tr:nth-child(even) {
+        background-color: #ededa3;
+    }
+
+    .TblDetailZebra td {
+        vertical-align: middle;
+        border: 1px solid #000000;
+        border-width: 0px 1px 1px 0px;
+        text-align: left;
+        padding: 2px;
+        font-size: 11px;
+        font-family: sans-serif;
+        font-weight: normal;
+        color: #000000;
+    }
+
+    .TblDetailZebra tr:last-child td {
+        border-width: 0px 1px 0px 0px;
+    }
+
+    .TblDetailZebra tr td:last-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblDetailZebra tr:last-child td:last-child {
+        border-width: 0px 0px 0px 0px;
+    }
+
+    .TblDetailZebra tr:first-child td {
+        background: -o-linear-gradient(bottom, #a3a360 5%, #a3a360 100%);
+        background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #a3a360), color-stop(1, #a3a360));
+        background: -moz-linear-gradient( center top, #a3a360 5%, #a3a360 100%);
+        filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#a3a360", endColorstr="#a3a360");
+        background: -o-linear-gradient(top, #a3a360, a3a360);
+        background-color: #a3a360;
+        border: 0px solid #000000;
+        text-align: center;
+        border-width: 0px 0px 1px 1px;
+        font-size: 14px;
+        font-family: sans-serif;
+        font-weight: bold;
+        color: #ffffff;
+    }
+
+    .TblDetailZebra tr:hover td {
+        background-color: #d3d390;
+    }
+
+    .TblDetailZebra tr:first-child td:first-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblDetailZebra tr:first-child td:last-child {
+        border-width: 0px 0px 1px 1px;
+    }
+
+
+/*Image style with label Box*/
+
+.imgRightBox {
+    float: right;
+    font-style: italic;
+    font-size: 94%;
+    text-align: right;
+    border: solid 2px #EEE;
+    margin: 2px;
+    padding: 1px;
+}
+
+.imgLeftBox {
+    float: left;
+    font-style: italic;
+    font-size: 94%;
+    text-align: left;
+    border: solid 2px #EEE;
+    margin: 2px;
+    padding: 1px;
+}
+
+
+/* ============================================ */
+/* FORM STYLING REFACTOR - FINAL FIX          */
+/* ============================================ */
+
+/* REVERT simpleLightBrownForm to original block behavior */
+div.simpleLightBrownForm {
+    background: #F8F8E1;
+    height: auto;
+    line-height: 1.5em;
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    -o-border-radius: 15px;
+    border-radius: 15px;
+    padding: 15px 5px;
+    display: block;
+}
+
+/* Mobile for delivery sheet */
+@media (max-width: 1000px) {
+    .delivery-sheet-filter {
+        justify-content: center !important;
+        gap: 6px !important;
+        padding: 12px !important;
+    }
+
+        .delivery-sheet-filter .delivery-group {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            margin: 2px 0 !important;
+        }
+
+        .delivery-sheet-filter > * {
+            margin: 1px !important;
+        }
+}
+
+/* Force override old conflicting styles */
+.delivery-filter-grid {
+    display: contents !important;
+}
+
+.filter-group {
+    display: contents !important;
+}
+
+@media (max-width: 900px) {
+    .delivery-filter-grid {
+        grid-template-columns: 1fr;
+        gap: 10px 0;
+        padding: 8px 4px;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        flex-wrap: wrap; /* Allow wrapping in mobile */
+    }
+
+        .filter-group label {
+            text-align: left;
+            margin-right: 0;
+            margin-bottom: 2px;
+            min-width: 0;
+        }
+
+        .filter-group.filter-group-inline {
+            flex-direction: row;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .filter-group.filter-group-inline > * {
+                width: auto;
+                flex: 0 0 auto;
+            }
+}
+
+/* ============================================ */
+/* MOBILE MENU STYLES - UNCHANGED             */
+/* ============================================ */
+
+.mobile-header-content,
+.mobile-nav-menu {
+    display: none !important;
+}
+
+.mobile-title {
+    font-size: xx-large;
+    font-weight: bold;
+    color: green;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.hamburger-button {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    z-index: 102;
+}
+
+.hamburger-icon {
+    width: 28px;
+    height: 20px;
+    position: relative;
+    transform: rotate(0deg);
+    transition: .3s ease-in-out;
+}
+
+    .hamburger-icon span {
+        display: block;
+        position: absolute;
+        height: 4px;
+        width: 100%;
+        background: #fff;
+        border-radius: 2px;
+        opacity: 1;
+        left: 0;
+        transform: rotate(0deg);
+        transition: .25s ease-in-out;
+    }
+
+        .hamburger-icon span:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger-icon span:nth-child(2) {
+            top: 8px;
+        }
+
+        .hamburger-icon span:nth-child(3) {
+            top: 16px;
+        }
+
+.hamburger-button.open .hamburger-icon span:nth-child(1) {
+    top: 8px;
+    transform: rotate(135deg);
+}
+
+.hamburger-button.open .hamburger-icon span:nth-child(2) {
+    opacity: 0;
+    left: -60px;
+}
+
+.hamburger-button.open .hamburger-icon span:nth-child(3) {
+    top: 8px;
+    transform: rotate(-135deg);
+}
+
+@media (max-width: 768px) {
+    .header {
+        display: none !important;
+    }
+
+    body {
+        padding: 0px;
+        padding-top: 56px;
+        margin: 0px;
+    }
+
+    .page {
+        width: 100%;
+        margin: auto;
+        border: 0px solid transparent;
+    }
+
+
+    .mobile-header-content {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10000;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 56px;
+        padding: 0 8px;
+        background: #302a20;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .mobile-nav-menu {
+        display: block !important;
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        background: #fff;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0 0 6px 6px;
+        padding: 6px 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+        .mobile-nav-menu.mobile-menu-open {
+            max-height: 600px;
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .mobile-nav-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mobile-nav-menu li {
+            padding: 12px 20px;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            font-size: 1.1em;
+            text-align: left;
+        }
+
+            .mobile-nav-menu li:last-child {
+                border-bottom: none;
+            }
+
+        .mobile-nav-menu a {
+            color: #302a20;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+}
+
+/* ============================================ */
+/* DEFAULT BUTTON STYLING - MATCHES FILTER-TOOLBAR */
+/* ============================================ */
+
+/* Apply filter-toolbar button styling to all buttons by default */
+input[type="submit"],
+button,
+.btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 0.9em !important;
+    min-width: 60px !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+    input[type="submit"]:hover,
+    button:hover,
+    .btn:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+    /* Disabled button styling */
+    input[type="submit"]:disabled,
+    button:disabled,
+    .btn:disabled {
+        background-color: #aaa !important;
+        border-color: #999 !important;
+        color: #666 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6;
+    }
+
+/* ============================================ */
+/* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
+/* ============================================ */
+
+/* Exclude Ajax ComboBox buttons from global styling */
+.ajax__combobox_buttoncontainer button,
+.ajax__combobox_buttoncontainer input[type="button"],
+*[id*="ComboBox"] button,
+*[id*="ComboBox"] input[type="button"],
+*[class*="combobox"] button,
+*[class*="combobox"] input[type="button"],
+.ajax__combobox_button,
+.ajax__combobox_dropdownbutton {
+    /*background: transparent !important;*/
+    border: #595939 !important;
+    padding: initial !important;
+    margin: initial !important;
+    min-width: initial !important;
+    height: 1.2em !important;
+    vertical-align: text-bottom;
+    font-size: initial !important;
+    font-family: initial !important;
+    color: #4e664d !important;
+    display: initial !important;
+    box-sizing: initial !important;
+    border-radius: 4px !important;
+    text-decoration: initial !important;
+    cursor: initial !important;
+    transition: initial !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+    /* Fix hover state - target ONLY the actual dropdown button */
+    .ajax__combobox_buttoncontainer button:hover,
+    .ajax__combobox_buttoncontainer input[type="button"]:hover,
+    .ajax__combobox_button:hover,
+    .ajax__combobox_dropdownbutton:hover {
+        background: #607060 !important;
+        border: #1f2f20 !important;
+        color: #1f2f20 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: relative !important;
+    }
+
+        /* Add arrow ONLY to the specific dropdown button elements */
+        .ajax__combobox_buttoncontainer button:hover::after,
+        .ajax__combobox_buttoncontainer input[type="button"]:hover::after,
+        .ajax__combobox_button:hover::after,
+        .ajax__combobox_dropdownbutton:hover::after {
+            content: "";
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #1f2f20;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+/* Ensure text input does NOT get the arrow */
+.ajax__combobox_textboxcontainer input[type="text"]:hover::after,
+*[id*="ComboBox"] input[type="text"]:hover::after {
+    display: none !important;
+    content: none !important;
+}
+
+
+/* ============================================ */
+/* STANDARDIZED FILTER TOOLBAR SYSTEM         */
+/* ============================================ */
+
+/* Main filter toolbar container - replaces inconsistent form classes */
+.filter-toolbar {
+    background: var(--secondary-green);
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 50px;
+}
+
+.filter-block {
+    display: block;
+    width: 100%;
+    gap: 8px;
+    padding: 12px 4px 12px 4px;
+}
+
+/* Filter sections - logical groupings */
+.filter-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+    .filter-section.search-controls {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .filter-section.action-buttons {
+        margin-left: auto;
+        gap: 4px;
+    }
+
+    .filter-section.admin-controls {
+        gap: 8px;
+    }
+
+/* Individual filter controls */
+.filter-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+    .filter-control label {
+        font-weight: 500;
+        color: #666;
+        margin-right: 4px;
+        white-space: nowrap;
+    }
+
+    .filter-control select,
+    .filter-control input[type="text"] {
+        min-width: 120px;
+        padding: 4px 6px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+
+/* Standardized button styling in filter toolbar */
+.filter-toolbar input[type="submit"],
+.filter-toolbar button,
+.filter-toolbar .btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 0.9em !important;
+    min-width: 60px !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .filter-toolbar input[type="submit"]:hover,
+    .filter-toolbar button:hover,
+    .filter-toolbar .btn:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+/* Special styling for add/new buttons */
+.filter-toolbar .btn-add,
+.filter-toolbar a[href*="Details.aspx"],
+.filter-toolbar a[href*="NewOrder"] {
+    /*background-color: #228B22 !important;*/
+    border-color: #228B22 !important;
+}
+
+    .filter-toolbar .btn-add:hover,
+    .filter-toolbar a[href*="Details.aspx"]:hover,
+    .filter-toolbar a[href*="NewOrder"]:hover {
+        background-color: #32CD32 !important;
+        border-color: #32CD32 !important;
+    }
+
+/* Handle UpdatePanels and other ASP.NET containers */
+.filter-toolbar div[id*="upnl"],
+.filter-toolbar .UpdatePanel {
+    display: contents;
+}
+
+/* Responsive behavior */
+@media (max-width: 1200px) {
+    .filter-toolbar {
+        gap: 6px;
+        padding: 12px 10px;
+    }
+
+    .filter-section.search-controls {
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 900px) {
+    .filter-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px;
+        margin-bottom: 12px;
+    }
+
+    .filter-section {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+        .filter-section.action-buttons {
+            margin-left: 0;
+            order: 999;
+        }
+
+    .filter-control {
+        margin: 2px 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .filter-control {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+        .filter-control label {
+            margin-right: 0;
+            margin-bottom: 2px;
+        }
+
+        .filter-control select,
+        .filter-control input[type="text"] {
+            width: 100%;
+            min-width: 0;
+        }
+}
+
+/* ============================================ */
+/* STANDARDIZED RESULTS CONTAINER SYSTEM      */
+/* ============================================ */
+
+/* Main results container - replaces various grid containers */
+.results-container {
+    background: var(--light-green);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+    .results-container {
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+}
+
+    .results-table,
+    table.results-table {
+        width: 100% !important;
+        border-collapse: collapse;
+        border-spacing: 0;
+        margin: 0;
+        font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+        font-size: 1em;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+        /* Fix GridView Headers - Plain background, readable text */
+        .results-table th,
+        .results-table thead th,
+        table.results-table th,
+        table.results-table thead th {
+            background: #4e664d !important; /* Plain solid green background */
+            color: #ffffff !important; /* White text */
+            font-weight: bold !important;
+            font-size: 0.9em !important;
+            padding: 6px 8px !important;
+            text-align: left !important;
+            border: 1px solid #3d5540 !important; /* Subtle border */
+            position: relative;
+        }
+
+            /* Fix sortable column links in headers */
+            .results-table th a,
+            .results-table thead th a,
+            table.results-table th a,
+            table.results-table thead th a {
+                color: #ffffff !important; /* White text for links */
+                text-decoration: underline !important;
+                font-weight: bold !important;
+                display: block;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+
+                .results-table th a:hover,
+                .results-table thead th a:hover,
+                table.results-table th a:hover,
+                table.results-table thead th a:hover {
+                    color: #e0e0e0 !important; /* Slightly dimmed on hover */
+                    background: transparent !important;
+                    text-decoration: underline !important;
+                }
+
+        /* Fix alternating row colors for GridView */
+        .results-table tr,
+        table.results-table tr {
+            background-color: #fff !important; /* Default white */
+        }
+
+            .results-table tr:nth-child(even),
+            table.results-table tr:nth-child(even) {
+                background-color: #e8ede8 !important; /* Light green for even rows */
+            }
+
+            .results-table tr:nth-child(odd),
+            table.results-table tr:nth-child(odd) {
+                background-color: #fff !important; /* White for odd rows */
+            }
+
+            /* Fix alternating row colors for td elements specifically */
+            .results-table tr:nth-child(even) td,
+            table.results-table tr:nth-child(even) td {
+                background-color: var(--light-green) !important;
+            }
+
+            .results-table tr:nth-child(odd) td,
+            table.results-table tr:nth-child(odd) td {
+                background-color: #fff !important;
+            }
+
+            /* Fix hover effect */
+            .results-table tr:hover,
+            .results-table tr:hover td,
+            table.results-table tr:hover,
+            table.results-table tr:hover td {
+                background-color: #e8f5e8 !important;
+                transform: none; /* Remove the translateY effect that might cause issues */
+                box-shadow: none; /* Remove shadow that might interfere */
+            }
+
+        /* Ensure header row doesn't get alternating colors */
+        .results-table thead tr,
+        .results-table thead tr:nth-child(even),
+        .results-table thead tr:nth-child(odd),
+        table.results-table thead tr,
+        table.results-table thead tr:nth-child(even),
+        table.results-table thead tr:nth-child(odd) {
+            background-color: #4e664d !important;
+        }
+
+            .results-table thead tr th,
+            .results-table thead tr:nth-child(even) th,
+            .results-table thead tr:nth-child(odd) th,
+            table.results-table thead tr th,
+            table.results-table thead tr:nth-child(even) th,
+            table.results-table thead tr:nth-child(odd) th {
+                background-color: #4e664d !important;
+            }
+
+        /* Enhanced body cell styling */
+        .results-table td,
+        table.results-table td {
+            padding: 8px 8px !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: none !important;
+            vertical-align: middle !important;
+            font-size: 0.9em !important;
+        }
+
+    /* Fix corner radius for clean appearance */
+    .results-table,
+    table.results-table {
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+        .results-table th:first-child,
+        table.results-table th:first-child {
+            border-top-left-radius: 8px !important;
+        }
+
+        .results-table th:last-child,
+        table.results-table th:last-child {
+            border-top-right-radius: 8px !important;
+        }
+        /* Enhanced link styling in tables - add after line 1084 */
+        .results-table a {
+            color: var(--primary-green);
+            text-decoration:;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+            .results-table a:hover {
+                background-color: var(--primary-green);
+                color: #fff !important;
+                text-decoration: none;
+            }
+
+        /* Checkbox styling */
+        .results-table input[type="checkbox"] {
+            transform: scale(1.2);
+            accent-color: var(--primary-green);
+        }
+    /* Mobile-responsive column hiding system */
+    @media (max-width: 1024px) {
+        .results-table .hide-tablet,
+        .results-table th.hide-tablet,
+        .results-table td.hide-tablet {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .results-table .hide-mobile,
+        .results-table th.hide-mobile,
+        .results-table td.hide-mobile {
+            display: none !important;
+        }
+
+        .results-table {
+            font-size: 0.8em;
+        }
+
+            .results-table th,
+            .results-table td {
+                padding: 8px 4px;
+            }
+    }
+
+    @media (max-width: 480px) {
+        .results-table .hide-small,
+        .results-table th.hide-small,
+        .results-table td.hide-small {
+            display: none !important;
+        }
+
+        .results-table {
+            font-size: 0.75em;
+        }
+
+            .results-table th,
+            .results-table td {
+                padding: 6px 3px;
+            }
+    }
+
+    /* ============================================ */
+    /* SENDCOFFEECHECKUP SPECIFIC LAYOUT          */
+    /* ============================================ */
+
+    /* Complex form layout for SendCoffeeCheckup */
+    .complex-form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .complex-form-section {
+        background: var(--light-brown);
+        border-radius: 15px;
+        padding: 20px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+        .complex-form-section h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-green);
+            border-bottom: 2px solid var(--primary-green);
+            padding-bottom: 8px;
+        }
+
+        /* Tab container styling for complex forms */
+        .complex-form-section .ajax__tab_container {
+            width: 100% !important;
+            margin: 10px 0;
+        }
+
+        .complex-form-section .ajax__tab_body {
+            padding: 15px !important;
+            background: #fff;
+            border-radius: 0 0 8px 8px;
+        }
+
+
+    /* ============================================ */
+    /* MOBILE COLUMN HIDING UTILITY CLASSES - FIXED */
+    /* ============================================ */
+
+    /* Utility classes for responsive column hiding */
+    .col-priority-1 { /* Always visible - essential columns like Name, ID */
+        display: table-cell !important;
+    }
+
+    .col-priority-2 { /* Hide on small mobile */
+        display: table-cell;
+    }
+
+    .col-priority-3 { /* Hide on mobile */
+        display: table-cell;
+    }
+
+    .col-priority-4 { /* Hide on tablet and below */
+        display: table-cell;
+    }
+
+    .col-priority-5 { /* Hide on small desktop and below */
+        display: table-cell;
+    }
+
+    /* ENHANCED Responsive hiding - now includes both th and td */
+    @media (max-width: 1200px) {
+        .col-priority-5,
+        th.col-priority-5,
+        td.col-priority-5 {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .col-priority-4,
+        .col-priority-5,
+        th.col-priority-4,
+        th.col-priority-5,
+        td.col-priority-4,
+        td.col-priority-5 {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .col-priority-3,
+        .col-priority-4,
+        .col-priority-5,
+        th.col-priority-3,
+        th.col-priority-4,
+        th.col-priority-5,
+        td.col-priority-3,
+        td.col-priority-4,
+        td.col-priority-5 {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .col-priority-2,
+        .col-priority-3,
+        .col-priority-4,
+        .col-priority-5,
+        th.col-priority-2,
+        th.col-priority-3,
+        th.col-priority-4,
+        th.col-priority-5,
+        td.col-priority-2,
+        td.col-priority-3,
+        td.col-priority-4,
+        td.col-priority-5 {
+            display: none !important;
+            text-overflow: ellipsis;
+        }
+    }
+
+    /* Enhanced mobile hiding classes */
+    @media (max-width: 768px) {
+        .hide-mobile-city,
+        .hide-mobile-equipment,
+        .hide-mobile-serial,
+        .hide-mobile-details,
+        th.hide-mobile-city,
+        th.hide-mobile-equipment,
+        th.hide-mobile-serial,
+        th.hide-mobile-details,
+        td.hide-mobile-city,
+        td.hide-mobile-equipment,
+        td.hide-mobile-serial,
+        td.hide-mobile-details {
+            display: none !important;
+            text-overflow: ellipsis;
+        }
+    }
+
+    @media print {
+        body {
+            padding-top: 0 !important;
+        }
+
+        .header {
+            display: none !important;
+        }
+    }
+    /* Ensure GridViews use full width */
+    .TblDetailZebra,
+    .TblWhite,
+    .TblZebra {
+        width: 100% !important;
+        table-layout: auto;
+        margin: 0;
+    }
+
+        /* Update legacy table headers */
+        .TblDetailZebra tr:first-child td,
+        .TblWhite th,
+        .TblZebra th {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #5a7059 100%) !important;
+            color: #fff !important;
+            font-weight: bold !important;
+            font-size: 0.95em !important;
+            padding: 12px 8px !important;
+            text-align: left !important;
+            border: none !important;
+        }
+
+        /* Update legacy table rows */
+        .TblDetailZebra tr:hover td,
+        .TblWhite tr:hover td,
+        .TblZebra tr:hover td {
+            background-color: #e8f5e8 !important;
+        }
+    /*Simple table*/
+
+    .TblSimple {
+        border-top: 1px solid #a3a360;
+        border-left: 1px solid #a3a360;
+        padding: 0;
+        border-right: 0;
+        border-bottom: 0;
+    }
+
+    table.TblSimple {
+        background: #fffff9;
+        height: auto;
+        line-height: 1.5em;
+        -webkit-border-radius: 15px;
+        -moz-border-radius: 15px;
+        -o-border-radius: 15px;
+        border-radius: 15px;
+        padding: 10px 10px;
+    }
+
+    .TblSimple th {
+        border-right: 1px solid #898;
+        border-bottom: 1px solid #898;
+        text-align: left;
+        padding: 5px;
+    }
+
+    .TblSimple td {
+        border-right: 1px solid #E9E9D0;
+        border-bottom: 1px solid #E9E9D0;
+        text-align: left;
+        padding: 2px 4px 2px 2px;
+    }
+
+    .TblSimple th {
+        background-color: #9dD49c;
+        font-size: 120%;
+    }
+
+    .TblSimple tr:nth-child(even) {
+        background: #fff;
+    }
+
+    .TblSimple tr:nth-child(odd) {
+        background: #f3f9e9;
+    }
+    /*-User making contact with us form-*/
+
+    table.InputFrm {
+        background-color: #fff;
+        color: #1f2f20;
+        border: solid 5px #BB9999;
+        padding: 6px 4px 6px 4px;
+        width: 100%;
+    }
+
+
+    /*-User making contact with us form-*/
+
+    table.AutoWidthFrm {
+        background-color: #fff;
+        color: #1f2f20;
+        border: solid 2px #BB9999;
+        padding: 6px 4px 6px 4px;
+        width: auto;
+    }
+
+
+        /*-Standard row or even rows-*/
+
+        table.AutoWidthFrm tr td {
+            padding-left: 4px;
+            padding-right: 4px;
+            border: 1px solid #221110;
+            background-color: #fff;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        table.AutoWidthFrm td.rowR table.AutoWidthFrm tr.rowR td {
+            text-align: right;
+        }
+
+        table.AutoWidthFrm div.rowOdd,
+        table.AutoWidthFrm td.rowOdd,
+        table.AutoWidthFrm tr.rowOdd td {
+            /*  padding-left: 2px; */
+            background-color: #FFF2F2;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        table.AutoWidthFrm td.rowOddC,
+        table.AutoWidthFrm tr.rowOddC td {
+            /*  padding-left: 2px; */
+            background-color: #FFF2F2;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        table.AutoWidthFrm td.rowOddR,
+        table.AutoWidthFrm tr.rowOddR td {
+            padding-left: 2px;
+            background-color: #FFF2F2;
+            text-align: right;
+            vertical-align: middle;
+        }
+
+    tb.rowC {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+
+    /*One Col Style Tble*/
+
+    .TblLHColHdr {
+        font-family: Calibri, sans-serif, "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+        font-size: 12px;
+        min-width: 480px;
+        text-align: left;
+        padding: 0;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #d0d090;
+    }
+
+        .TblLHColHdr th {
+            font-size: 14px;
+            font-weight: normal;
+            color: #103010;
+            padding: 12px 15px;
+        }
+
+        .TblLHColHdr td {
+            color: #60A060;
+            border-top: 1px solid #c0c090;
+            padding: 10px 15px;
+        }
+
+    .TblLHCol-first {
+        background: #F0FFF0;
+        font-weight: bold;
+        color: #092909;
+        border-right: 10px solid transparent;
+        border-left: 10px solid transparent;
+    }
+
+    .TblLHCol-brown {
+        background: #F9F9e0;
+        font-weight: bold;
+        color: #292909;
+        vertical-align: middle;
+    }
+
+    .TblLHColHdr tr:hover td {
+        color: #373;
+        background: #aea;
+    }
+    /* ============================================ */
+    /* RESPONSIVE LAYOUT SYSTEM                   */
+    /* ============================================ */
+
+    .responsive-layout-container {
+        background: var(--light-green);
+        border-radius: 15px;
+        padding: 15px;
+        margin: 0px;
+        margin-bottom: 15px;
+        width: fit-content; /* Use fit-content instead of auto */
+        box-sizing: border-box;
+        /* Use CSS Grid instead of Flexbox for better control */
+        display: grid;
+        grid-template-columns: auto auto; /* Two columns: main and detail */
+        grid-template-rows: auto auto; /* Two rows: content and footer */
+        gap: 20px;
+        /* Define grid areas */
+        grid-template-areas:
+            "main detail"
+            "footer footer";
+    }
+
+    .layout-main-panel {
+        grid-area: main;
+        min-width: 300px;
+        max-width: 500px;
+    }
+
+    .layout-detail-panel {
+        grid-area: detail;
+        min-width: 400px;
+        max-width: auto;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between;
+        /* Add rounded box styling like the header */
+        background: #fff; /* White background like TblSimple */
+        border-radius: 15px; /* Rounded corners */
+        padding: 15px; /* Internal padding */
+        border: 1px solid #E9E9D0; /* Subtle border like TblSimple */
+    }
+
+    .layout-footer-panel {
+        grid-area: footer; /* Always stays in footer row */
+        background: var(--secondary-green);
+        border-radius: 15px;
+        padding: 12px 15px;
+        margin-top: 15px;
+        /* Center the buttons */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+        /* Keep existing button styling */
+        .layout-footer-panel input[type="submit"],
+        .layout-footer-panel button,
+        .layout-footer-panel .btn {
+            background-color: var(--primary-green) !important;
+            color: #fff !important;
+            border: 1px solid var(--primary-green) !important;
+            padding: 6px 6px !important;
+            border-radius: 4px !important;
+            font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+            font-size: 0.9em !important;
+            min-width: 40px !important;
+            height: 32px !important;
+            white-space: nowrap !important;
+            margin: 0 2px;
+        }
+
+    /* Keep existing panel positioning */
+    .layout-panel-top {
+        flex: 1;
+        margin-bottom: 15px;
+    }
+
+    .layout-panel-bottom {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* Mobile responsive - switch to single column */
+    @media (max-width: 768px) {
+        .responsive-layout-container {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "main"
+                "detail"
+                "footer";
+            gap: 15px;
+        }
+
+        .layout-main-panel,
+        .layout-detail-panel {
+            min-width: 0;
+            max-width: none;
+        }
+
+        .layout-footer-panel {
+            margin-top: 10px;
+        }
+
+        .layout-detail-panel {
+            justify-content: flex-start;
+        }
+
+        .layout-panel-bottom {
+            margin-top: 15px;
+        }
+        /* Mobile button improvements for layout-footer-panel */
+        .layout-footer-panel {
+            gap: 12px; /* Increase gap between buttons when wrapping */
+            padding: 15px 12px; /* Add more padding on mobile */
+        }
+
+            /* Make buttons smaller on mobile */
+            .layout-footer-panel input[type="submit"],
+            .layout-footer-panel button,
+            .layout-footer-panel .btn {
+                padding: 4px 8px !important; /* Smaller padding */
+                font-size: 0.8em !important; /* Smaller font */
+                min-width: 50px !important; /* Smaller min-width */
+                height: 28px !important; /* Smaller height */
+                margin: 4px 2px !important; /* Add vertical margin for wrapping */
+            }
+    }
+
+    /* Extra small mobile - even smaller buttons */
+    @media (max-width: 480px) {
+        .layout-footer-panel {
+            gap: 8px;
+            padding: 12px 8px;
+        }
+
+            .layout-footer-panel input[type="submit"],
+            .layout-footer-panel button,
+            .layout-footer-panel .btn {
+                padding: 3px 6px !important;
+                font-size: 0.75em !important;
+                min-width: 45px !important;
+                height: 26px !important;
+                margin: 3px 1px !important;
+            }
+    }
+
+/* ============================================ */
+/* TblFlex - Mobile-First Responsive Table     */
+/* ============================================ */
+
+.TblFlex {
+    width: 100%;
+    background: #fff;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.9em;
+}
+
+    /* Header styling using root color scheme */
+    .TblFlex th {
+        background: var(--primary-green);
+        color: var(--light-brown);
+        font-weight: bold;
+        font-size: 0.85em;
+        padding: 8px 12px;
+        text-align: left;
+        border: none;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* Body cell styling with better alignment */
+    .TblFlex td {
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(78, 102, 77, 0.1);
+        vertical-align: middle;
+        text-align: left;
+        background: #fff;
+    }
+
+    /* Alternating row colors using root color scheme */
+    .TblFlex tr:nth-child(even) td {
+        background: var(--light-green);
+    }
+
+    .TblFlex tr:nth-child(odd) td {
+        background: #fff;
+    }
+
+    /* Hover effect */
+    .TblFlex tr:hover td {
+        background: rgba(78, 102, 77, 0.15);
+    }
+
+    /* Form controls within table - max width and responsive */
+    .TblFlex input[type="text"],
+    .TblFlex select,
+    .TblFlex textarea {
+        width: 100%;
+        max-width: 200px;
+        padding: 4px 6px;
+        border: 1px solid var(--secondary-brown);
+        border-radius: 3px;
+        font-size: 0.9em;
+        box-sizing: border-box;
+    }
+
+    /* ComboBox specific styling */
+    .TblFlex .ajax__combobox_textboxcontainer input {
+        width: 100% !important;
+        max-width: 180px !important;
+        padding: 4px 6px !important;
+        border: 1px solid var(--secondary-brown) !important;
+        border-radius: 3px !important;
+        font-size: 0.9em !important;
+    }
+
+    .TblFlex .ajax__combobox_buttoncontainer {
+        width: auto !important;
+    }
+
+    /* Smaller inputs for quantity fields */
+    /*.TblFlex input[id*="Quantity"] {
+        max-width: 80px !important;
+        text-align: center;
+    }*/
+
+    /* Button styling within table */
+    .TblFlex input[type="submit"],
+    .TblFlex input[type="button"],
+    .TblFlex button {
+        background-color: var(--primary-green) !important;
+        color: #fff !important;
+        border: 1px solid var(--primary-green) !important;
+        padding: 4px 8px !important;
+        border-radius: 3px !important;
+        font-size: 0.8em !important;
+        min-width: 30px !important;
+        height: 28px !important;
+    }
+
+        .TblFlex input[type="submit"]:hover,
+        .TblFlex input[type="button"]:hover,
+        .TblFlex button:hover {
+            background-color: var(--secondary-brown) !important;
+        }
+
+    /* Image buttons */
+    .TblFlex img {
+        max-height: 20px;
+        max-width: 20px;
+    }
+
+/* ============================================ */
+/* TblFlex - Clean Generic Responsive Table    */
+/* ============================================ */
+
+.TblFlex {
+    width: 100%;
+    max-width: 100%;
+    background: #fff;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.95em;
+    border: 1px solid rgba(78, 102, 77, 0.3);
+    table-layout: auto;
+}
+
+    /* Clean solid header */
+    .TblFlex th,
+    .TblFlex thead th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 0.9em;
+        padding: 8px 10px;
+        text-align: left;
+        border: none !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* Body cell styling with reduced padding */
+    .TblFlex td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(78, 102, 77, 0.2);
+        border-right: none;
+        border-left: none;
+        vertical-align: middle;
+        text-align: left;
+        transition: background-color 0.2s ease;
+    }
+
+    /* Clean alternating row colors */
+    .TblFlex tbody tr:nth-child(even) td,
+    .TblFlex tr:nth-child(even) td {
+        background: var(--light-green) !important;
+    }
+
+    .TblFlex tbody tr:nth-child(odd) td,
+    .TblFlex tr:nth-child(odd) td {
+        background: #fff !important;
+    }
+
+    /* Ensure header doesn't get alternating colors */
+    .TblFlex thead tr,
+    .TblFlex thead tr th,
+    .TblFlex thead tr:nth-child(even),
+    .TblFlex thead tr:nth-child(odd),
+    .TblFlex thead tr:nth-child(even) th,
+    .TblFlex thead tr:nth-child(odd) th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Simple hover effect */
+    .TblFlex tbody tr:hover td,
+    .TblFlex tr:hover td {
+        background: rgba(78, 102, 77, 0.15) !important;
+    }
+
+    /* FIXED: Header hover - ensure text stays visible and background stays same */
+    .TblFlex thead tr:hover,
+    .TblFlex thead tr:hover th,
+    .TblFlex th:hover {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Generic form controls within table */
+    .TblFlex input[type="text"],
+    .TblFlex select,
+    .TblFlex textarea {
+        width: 100%;
+        max-width: 180px;
+        padding: 4px 6px;
+        border: 1px solid rgba(78, 102, 77, 0.4);
+        border-radius: 4px;
+        font-size: 0.9em;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+        .TblFlex input[type="text"]:focus,
+        .TblFlex select:focus,
+        .TblFlex textarea:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 1px rgba(78, 102, 77, 0.3);
+            outline: none;
+        }
+
+    /* FIXED: Override the global combo box button styling for TblFlex ONLY */
+    .TblFlex .ajax__combobox_buttoncontainer button,
+    .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+    .TblFlex .ajax__combobox_button,
+    .TblFlex .ajax__combobox_dropdownbutton {
+        min-width: 18px !important;
+        min-height: 1em;
+        height: 1.8em !important;
+        padding: initial;
+        font-size: 12px !important;
+        font-family: inherit !important;
+        color: #333 !important;
+        display: inline-block !important;
+        box-sizing: border-box !important;
+        /*border-radius: 0 4px 4px 0 !important;*/
+        text-decoration: none !important;
+        cursor: pointer !important;
+        transition: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        width: 18px !important;
+    }
+
+        .TblFlex .ajax__combobox_buttoncontainer button:hover,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"]:hover,
+        .TblFlex .ajax__combobox_button:hover,
+        .TblFlex .ajax__combobox_dropdownbutton:hover {
+            background: #e8e8e8 !important;
+            border: 1px solid #999 !important;
+            color: #333 !important;
+        }
+
+        .TblFlex input[type="submit"]:hover,
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover,
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover {
+            background: var(--secondary-brown) !important;
+        }
+
+    /* Image buttons - simple styling */
+    .TblFlex img {
+        max-height: 16px;
+        max-width: 16px;
+        border-radius: 2px;
+    }
+
+    /* Auto-width for button columns */
+    .TblFlex td:first-child,
+    .TblFlex th:first-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .TblFlex td:last-child,
+    .TblFlex th:last-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+/* ============================================ */
+/* Responsive Design                           */
+/* ============================================ */
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .TblFlex {
+        font-size: 1em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 6px 8px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: auto;
+        }
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+    .TblFlex {
+        font-size: 0.9em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+            max-width: 120px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 140px;
+        }
+}
+
+/* Mobile breakpoint - much more compact */
+@media (max-width: 768px) {
+    .TblFlex {
+        font-size: 0.8em;
+        border-radius: 6px;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+        }
+
+        .TblFlex th {
+            font-size: 0.8em;
+            padding: 6px 6px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 120px;
+            font-size: 0.85em;
+            padding: 3px 5px;
+        }
+
+        /* Smaller combo box buttons on mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 16px !important;
+            min-width: 16px !important;
+            height: auto !important;
+            padding: 1px 2px !important;
+            font-size: 10px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 3px 6px !important;
+            font-size: 0.75em !important;
+            height: 20px !important;
+            min-width: 12px !important;
+        }
+
+        .TblFlex img {
+            max-height: 14px;
+            max-width: 14px;
+        }
+
+        /* Hide less important columns on mobile */
+        .TblFlex .hide-mobile,
+        .TblFlex th.hide-mobile,
+        .TblFlex td.hide-mobile {
+            display: none !important;
+        }
+}
+
+/* Small mobile breakpoint - super compact */
+@media (max-width: 480px) {
+    .TblFlex {
+        border-radius: 4px;
+        font-size: 0.75em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 3px 4px;
+        }
+
+        .TblFlex th {
+            font-size: 0.75em;
+            padding: 4px 4px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 90px;
+            font-size: 0.8em;
+            padding: 2px 4px;
+        }
+
+        /* Even smaller combo box buttons on small mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 14px !important;
+            min-width: 14px !important;
+            padding: 1px !important;
+            font-size: 9px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 2px 4px !important;
+            font-size: 0.7em !important;
+            height: 20px !important;
+            min-width: 25px !important;
+        }
+
+        .TblFlex img {
+            max-height: 12px;
+            max-width: 12px;
+        }
+
+        /* Hide additional columns on small mobile */
+        .TblFlex .hide-small-mobile,
+        .TblFlex th.hide-small-mobile,
+        .TblFlex td.hide-small-mobile {
+            display: none !important;
+        }
+}
+
+/* ============================================ */
+/* Empty Data Styling                          */
+/* ============================================ */
+
+.TblFlex .empty-data,
+.TblFlex .simpleLightBrownForm {
+    text-align: center;
+    padding: 20px 15px;
+    color: var(--secondary-brown);
+    font-style: italic;
+    background: var(--light-green);
+    border-radius: 6px;
+    margin: 10px;
+}
+
+    .TblFlex .empty-data h2,
+    .TblFlex .simpleLightBrownForm h2 {
+        color: var(--primary-green);
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+
+@media (max-width: 768px) {
+    .TblFlex .empty-data,
+    .TblFlex .simpleLightBrownForm {
+        padding: 15px 10px;
+        font-size: 0.85em;
+        margin: 5px;
+    }
+}
+/* Button container for auto-width buttons */
+.button-container-auto {
+    text-align: center;
+    padding: 10px 0;
+}
+
+    .button-container-auto button,
+    .button-container-auto input[type="submit"] {
+        width: auto !important;
+        display: inline-block !important;
+        min-width: 120px !important;
+        max-width: 300px !important;
+    }

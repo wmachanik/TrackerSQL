@@ -1,0 +1,289 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerDotNet.SiteMaster" %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head runat="server">
+    <title>QOnT</title>
+    <link href="~/Styles/Site.css?v=20250922" rel="stylesheet" type="text/css" />
+    <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
+    <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
+    <meta name="MobileOptimized" content="width" />
+    <meta name="HandheldFriendly" content="true" />
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server">
+    </asp:ContentPlaceHolder>
+    <!-- Loading Indicator Styles -->
+    <style type="text/css">
+        /* Loading overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-green, #4e664d);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Loading text */
+        .loading-text {
+            margin-top: 20px;
+            font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+            font-size: 1.2em;
+            color: var(--primary-green, #4e664d);
+            font-weight: bold;
+        }
+        
+        /* Spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Alternative pulse animation for loading text */
+        .loading-text {
+            animation: pulse 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+        
+        /* Hide loading overlay when page is loaded */
+        .page-loaded #loadingOverlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+    </style>
+    <script type="text/javascript">
+        function showAppMessage(thisMessage) {
+            alert(thisMessage);
+        }
+        function toggleMobileNav() {
+            var nav = document.getElementById('mobileNavMenu');
+            var hamburger = document.getElementById('mobileHamburger');
+            nav.classList.toggle('mobile-menu-open');
+            hamburger.classList.toggle('open');
+        }
+        document.addEventListener('click', function (event) {
+            var nav = document.getElementById('mobileNavMenu');
+            var hamburger = document.getElementById('mobileHamburger');
+            if (nav && hamburger && !nav.contains(event.target) && !hamburger.contains(event.target)) {
+                nav.classList.remove('mobile-menu-open');
+                hamburger.classList.remove('open');
+            }
+        });
+        window.addEventListener('resize', function () {
+            var nav = document.getElementById('mobileNavMenu');
+            var hamburger = document.getElementById('mobileHamburger');
+            if (window.innerWidth > 768 && nav && hamburger) {
+                nav.classList.remove('mobile-menu-open');
+                hamburger.classList.remove('open');
+            }
+        });
+        // Loading indicator functionality
+        function hideLoadingIndicator() {
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                document.body.classList.add('page-loaded');
+                // Remove the overlay after animation completes
+                setTimeout(function () {
+                    if (overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                }, 300);
+            }
+        }
+
+        // Hide loading when page is fully loaded
+        window.addEventListener('load', hideLoadingIndicator);
+
+        // Fallback: Hide loading after DOM is ready (faster)
+        document.addEventListener('DOMContentLoaded', function () {
+            // Give a small delay to ensure content is rendered
+            setTimeout(hideLoadingIndicator, 500);
+        });
+
+        // Additional fallback for slow pages
+        setTimeout(function () {
+            hideLoadingIndicator();
+        }, 5000); // Force hide after 5 seconds
+    </script>
+</head>
+<body>
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading QOnT...</div>
+    </div>
+    <form id="frmMain" runat="server">
+        <div class="header">
+            <table border="0" cellpadding="0" cellspacing="0" style="width: 100%">
+                <tr>
+                    <td style="text-align: left; padding-left: 12px; color: lightgreen; white-space: nowrap;">
+                        <h1>QO<span style="font-variant: normal">n</span>T</h1>
+                    </td>
+                    <td style="width: 98%; vertical-align: bottom; padding: 0 10px;">
+                        <div id="menuWrapper" class="clear menuBG" style="padding-bottom: 4px">
+                            <asp:Menu ID="NavigationMenu" runat="server"
+                                CssClass="menu" RenderingMode="List"
+                                StaticSelectedStyle-CssClass="StaticSelectedStyle"
+                                DynamicSelectedStyle-CssClass="DynamicSelectedStyle"
+                                EnableViewState="False" IncludeStyleBlock="False" Orientation="Horizontal"
+                                ForeColor="#30FFAF" ToolTip="Please select menu option" DynamicHorizontalOffset="2" StaticSubMenuIndent="10px">
+                                <StaticHoverStyle BackColor="White" ForeColor="#201606" />
+                                <StaticMenuItemStyle BackColor="Transparent" HorizontalPadding="5px" VerticalPadding="2px" />
+                                <DynamicHoverStyle ForeColor="#201606" BackColor="White" />
+                                <DynamicMenuItemStyle ForeColor="White" HorizontalPadding="5px" VerticalPadding="2px" />
+                                <DynamicMenuStyle BackColor="#201606" VerticalPadding="2px" HorizontalPadding="2px" BorderColor="Transparent" BorderStyle="Solid" />
+                                <Items>
+                                    <asp:MenuItem NavigateUrl="~/Default.aspx" Text="🏠" />
+                                    <asp:MenuItem NavigateUrl="~/Pages/Customers.aspx" Text="Contacts" ToolTip="Contact List"
+                                        Value="Contacts">
+                                        <asp:MenuItem NavigateUrl="~/Pages/Customers.aspx" Text="Customers"
+                                            Value="Customer List" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/CustomerDetails.aspx" Text="New Customer"
+                                            Value="New Customers" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/CustomersAway.aspx" Text="Customers Away" Value="CustomersAway" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/SendCoffeeCheckup.aspx" Text="Send Checkup"
+                                            Value="Send Checkup" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/SentRemindersSheet.aspx" Text="View List of reminders sent"
+                                            Value="Sent Reminders List" />
+                                    </asp:MenuItem>
+                                    <asp:MenuItem Selectable="False" Text="Orders" Value="Orders">
+                                        <asp:MenuItem NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" Text="New Order"
+                                            Value="New Order"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/OrderEntry.aspx" Text="View/Edit Orders"
+                                            Value="View/Edit Orders"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/ReoccuringOrders.aspx"
+                                            Text="Reoccuring Orders" ToolTip="Reoccuring Orders" Value="Reoccuring Orders"></asp:MenuItem>
+                                    </asp:MenuItem>
+                                    <asp:MenuItem Selectable="False" Text="Repairs" Value="Repairs">
+                                        <asp:MenuItem NavigateUrl="~/Pages/Repairs.aspx" Text="Repairs"
+                                            Value="Repeairs"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/RepairDetail.aspx" Text="New Repair"
+                                            Value="New Repair"></asp:MenuItem>
+                                    </asp:MenuItem>
+                                    <asp:MenuItem Selectable="False" Text="Preperation" Value="Prep">
+                                        <asp:MenuItem NavigateUrl="~/Pages/CoffeeRequired.aspx" Text="Required Sheet"
+                                            Value="Required Sheet"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/DeliverySheet.aspx" Text="Delivery Sheet"
+                                            Value="Delivery Sheet"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/PreperationSummary.aspx" Text="Preperation Summary"
+                                            Value="Preperation Summary"></asp:MenuItem>
+                                    </asp:MenuItem>
+                                    <asp:MenuItem NavigateUrl="#" Text="System" Value="System">
+                                        <asp:MenuItem NavigateUrl="~/Pages/ItemGroups.aspx" Text="Item Groups" Value="Item Groups" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx" Text="Lookup Tables" Value="Lookup Tables" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/LogViewer.aspx" Text="Log Viewer" Value="Logs" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="System Tools" Value="System Tools">
+                                            <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="All Tools" Value="All Tools" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/MoveDeliveryDate.aspx" Text="Move Del. Dt" Value="Move Delivery Date"></asp:MenuItem>
+                                            <asp:MenuItem NavigateUrl="~/Tools/SystemData.aspx" Text="System Data" Value="System Date"></asp:MenuItem>
+                                            <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag."></asp:MenuItem>
+                                        </asp:MenuItem>
+                                        <asp:MenuItem Text="Forms" Value="Forms">
+                                            <asp:MenuItem NavigateUrl="~/Pages/LeaveApp.aspx" Text="Leave App" Value="Leave App"></asp:MenuItem>
+                                        </asp:MenuItem>
+                                    </asp:MenuItem>
+                                    <asp:MenuItem Text="User" Value="User">
+                                        <asp:MenuItem NavigateUrl="~/Account/Login.aspx" Text="Login" Value="Login"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Account/RecoverPassword.aspx"
+                                            Text="Recover Password" Value="Recover Password"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Account/ChangePassword.aspx"
+                                            Text="Change Password" Value="Change Password"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Account/Register.aspx" Text="Register"
+                                            Value="Register"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Administration/ManageUsers.aspx"
+                                            Text="Manage Users" Value="Manage Users"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Administration/ManageRoles.aspx"
+                                            Text="Manage Roles" Value="Manage Roles"></asp:MenuItem>
+                                    </asp:MenuItem>
+                                </Items>
+                            </asp:Menu>
+                        </div>
+                    </td>
+                    <td class="loginDisplay">
+                        <asp:LoginView ID="HeadLoginView" runat="server" EnableViewState="false">
+                            <AnonymousTemplate>
+                                [ <a href="~/Account/Login.aspx" id="HeadLoginStatus" runat="server">Log In</a>
+                                ]
+                            </AnonymousTemplate>
+                            <LoggedInTemplate>
+                                Welcome <span class="bold">
+                                    <asp:LoginName ID="HeadLoginName" runat="server" />
+                                </span>! [<asp:LoginStatus ID="HeadLoginStatus" runat="server" LogoutAction="Redirect" LogoutText="Log Out" LogoutPageUrl="~/" />
+                                ]
+                            </LoggedInTemplate>
+                        </asp:LoginView>
+                        <br />
+                        <span class="small" style="font-style: normal; text-decoration: none">v2.2.2.3</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <!-- Mobile Header/Menu -->
+        <div class="mobile-header-content">
+            <span class="mobile-title">QO<span style="font-variant: normal">n</span>T</span>
+            <button type="button" id="mobileHamburger" class="hamburger-button" onclick="toggleMobileNav()" aria-label="Open menu">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+        </div>
+        <nav id="mobileNavMenu" class="mobile-nav-menu">
+            <ul class="mobile-nav-list">
+                <li><a href="/Default.aspx">🏠 Home</a></li>
+                <li><a href="/Pages/Customers.aspx">👥 Customers</a></li>
+                <li><a href="/Pages/CustomersAway.aspx">🛫 Customers Away</a></li>
+                <li><a href="/Pages/SendCoffeeCheckup.aspx">☕ Send Checkup</a></li>
+                <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">📋 New Order</a></li>
+                <li><a href="/Pages/DeliverySheet.aspx">🚚 Deliveries</a></li>
+                <li><a href="/Pages/Repairs.aspx">🔧 Repairs</a></li>
+                <li><a href="/Pages/Lookups.aspx">📊 Lookup Tables</a></li>
+                <li>
+                    <asp:LoginView ID="MobileLoginView" runat="server">
+                        <AnonymousTemplate>
+                            <a href="/Account/Login.aspx" class="mobile-login-link">🔑 Login</a>
+                        </AnonymousTemplate>
+                        <LoggedInTemplate>
+                            <span class="mobile-login-user">
+                                <asp:LoginName ID="MobileLoginName" runat="server" />
+                            </span>
+                            <a href="/Account/Logout.aspx" class="mobile-login-link">Log Out</a>
+                        </LoggedInTemplate>
+                    </asp:LoginView>
+                </li>
+            </ul>
+        </nav>
+        <div class="page">
+            <div class="main">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+                <br />
+            </div>
+        </div>
+        <div class="clear">
+            &nbsp;
+        </div>
+    </form>
+
+</body>
+</html>

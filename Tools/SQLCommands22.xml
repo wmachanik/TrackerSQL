@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+	<command type="create">
+		CREATE TABLE UsedItemGroupTbl (
+		[UsedItemGroupID] AUTOINCREMENT,
+		[ContactID] INT,
+		[GroupItemTypeID] INT,
+		[LastItemTypeID] INT,
+		[LastItemTypeSortPos] INT,
+		[LastItemDateChanged] DATETIME,
+		[Notes] MEMO,
+		CONSTRAINT [pk_UsedItemGroupID] PRIMARY KEY (UsedItemGroupID)
+		)
+	</command>
+</commands>

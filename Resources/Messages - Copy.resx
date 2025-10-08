@@ -1,0 +1,569 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DefaultEmailSignature" xml:space="preserve">
+    <value>&lt;br /&gt;
+Kind regards,&lt;br /&gt;
+{0}, &lt;b&gt;a member of the Quaffee Team&lt;/b&gt;&lt;br /&gt;
+📧  orders@quaffee.co.za&lt;br /&gt;
+🌐 &lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;br /&gt;</value>
+    <comment>The default email signature</comment>
+  </data>
+  <data name="OrderCollectionNote" xml:space="preserve">
+    <value>You’ve selected collection. Your order will be ready on: {0}.</value>
+    <comment>Order Collection Note</comment>
+  </data>
+  <data name="OrderConfirmationIntro" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;We confirm the following order:</value>
+    <comment>Order Confirmation Intro</comment>
+  </data>
+  <data name="OrderConfirmationLineIntro" xml:space="preserve">
+    <value>Order Details:</value>
+    <comment>Order Confirmation Line Intro</comment>
+  </data>
+  <data name="OrderConfirmationPOReceived" xml:space="preserve">
+    <value>This order has purchase order: {0}, allocated to it.</value>
+    <comment>Order Confirmation PO Received</comment>
+  </data>
+  <data name="OrderConfirmationPORequired" xml:space="preserve">
+    <value>&lt;b&gt;NOTE&lt;/b&gt;: We're still waiting for your Purchase Order number. Please send it at your earliest convenience.</value>
+    <comment>Order Confirmation PO Required</comment>
+  </data>
+  <data name="OrderConfirmationSubject" xml:space="preserve">
+    <value>Your Quaffee Order Confirmation</value>
+    <comment>Order Confirmation Email Subject</comment>
+  </data>
+  <data name="OrderCourierNote" xml:space="preserve">
+    <value>Your order will be sent via courier on: {0}.</value>
+    <comment>Order Courier Note</comment>
+  </data>
+  <data name="OrderDeliveryNote" xml:space="preserve">
+    <value>We’ll deliver your order on: {0}.</value>
+    <comment>Order Delivery Note</comment>
+  </data>
+  <data name="OrderEmailFooter" xml:space="preserve">
+    <value>&lt;br /&gt;This confirmation was generated automatically by Quaffee’s order and tracking system.&lt;br /&gt;</value>
+    <comment>Order Email Footer</comment>
+  </data>
+  <data name="OrderItemFormatBasic" xml:space="preserve">
+    <value>&lt;li&gt;{0} of {1}&lt;/li&gt;</value>
+    <comment>Order Item Format Basic</comment>
+  </data>
+  <data name="OrderItemFormatWithPrep" xml:space="preserve">
+    <value>&lt;li&gt;{0} of {1} - Preparation note: {2}&lt;/li&gt;</value>
+    <comment>Order Item Format With Prep</comment>
+  </data>
+  <data name="OrderStatusCollected" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;Your order has been collected — thank you!</value>
+    <comment>Order Status Collected</comment>
+  </data>
+  <data name="OrderStatusDelivered" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;Your order has been successfully delivered and signed for.</value>
+    <comment>Order Status Delivered</comment>
+  </data>
+  <data name="OrderStatusDispatched" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;Your order has left our premises and is now enroute to you.</value>
+    <comment>Order Status Dispatched</comment>
+  </data>
+  <data name="OrderStatusFooter" xml:space="preserve">
+    <value> &lt;br /&gt;Thank you for your continued support.&lt;br /&gt;</value>
+    <comment>Order Status Footer</comment>
+  </data>
+  <data name="OrderStatusPostbox" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;Your order has been placed in your post box and is ready for you.</value>
+    <comment>Order Status Postbox</comment>
+  </data>
+  <data name="OrderStatusSubject" xml:space="preserve">
+    <value>Quaffee Order Status Update</value>
+    <comment>Order Status Subject</comment>
+  </data>
+  <data name="RepairStatusEmailBody" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;&lt;br /&gt;
+We wanted to let you know that the repair status of your &lt;b&gt;{1}&lt;/b&gt; (serial number: &lt;b&gt;{2}&lt;/b&gt;) has been updated to: &lt;b&gt;{3}&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;
+You're receiving this message because your email address is linked to this repair.&lt;br /&gt;&lt;br /&gt;
+
+Please note:&lt;br /&gt;
+Quaffee does not operate a dedicated repair workshop. As a service to our coffee clients, we deliver machines to external partners, provide swap-out units when available, and apply a workshop fee plus a small admin charge.&lt;br /&gt;&lt;br /&gt;
+
+Clients not regularly using our coffee may be charged additional fees for swap-out equipment or delivery — this is assessed on a case-by-case basis.&lt;br /&gt;&lt;br /&gt;
+
+Warranty coverage is provided by the workshop directly — not Quaffee.&lt;br /&gt;
+</value>
+    <comment>Repair notification for linked contacts with machine details.</comment>
+  </data>
+  <data name="RepairStatusEmailSubject" xml:space="preserve">
+    <value> Your Repair Status Has Changed</value>
+    <comment>Subject line for status notification email.</comment>
+  </data>
+  <data name="DisableClientSubject" xml:space="preserve">
+    <value>{0} request to be disabled in Coffee Tracker</value>
+  </data>
+  <data name="DisableClientGreeting" xml:space="preserve">
+    <value>Dear {0},</value>
+  </data>
+  <data name="DisableClientDisabledMessage" xml:space="preserve">
+    <value>As requested we have disabled: {0} in Quaffee's Coffee Tracker.</value>
+  </data>
+  <data name="DisableClientFutureMessage" xml:space="preserve">
+    <value>We wish you the best in the future. Should you require anything else from us please email {0}.</value>
+  </data>
+  <data name="DisableClientSecurityError" xml:space="preserve">
+    <value>Invalid request detected</value>
+  </data>
+  <data name="DisableClientNotFound" xml:space="preserve">
+    <value>Company not found or invalid request</value>
+  </data>
+  <data name="CustomerDisabled" xml:space="preserve">
+    <value>Customer {0} (ID: {1}) has been disabled.</value>
+  </data>
+  <data name="CustomerDisabledViaSelfService" xml:space="preserve">
+    <value>Customer {0} (ID: {1}) has been disabled via self-service request.</value>
+  </data>
+  <data name="CustomerDisableError" xml:space="preserve">
+    <value>Error disabling customer {0}: {1}</value>
+  </data>
+  <data name="RepairErrorUpdating" xml:space="preserve">
+    <value>Error updating the repair</value>
+    <comment>Repair Updating Error</comment>
+  </data>
+  <data name="RepairStatusUpdateSuccess" xml:space="preserve">
+    <value>Repair status updated successfully and notification sent.</value>
+    <comment>Repair Status Update Success</comment>
+  </data>
+  <data name="CoffeeCheckupSubjectRecurring" xml:space="preserve">
+    <value>Your regular coffee order is ready for review</value>
+  </data>
+  <data name="CoffeeCheckupSubjectAutoFulfill" xml:space="preserve">
+    <value>Coffee delivery update for your consideration</value>
+  </data>
+  <data name="CoffeeCheckupSubjectReminderOnly" xml:space="preserve">
+    <value>Friendly coffee supply reminder</value>
+  </data>
+  <data name="CoffeeCheckupSubjectCombined" xml:space="preserve">
+    <value>Your coffee order and delivery update</value>
+  </data>
+  <data name="CoffeeCheckupGreetingWithName" xml:space="preserve">
+    <value>&lt;p&gt;Hi {0},&lt;/p&gt;</value>
+  </data>
+  <data name="CoffeeCheckupGreetingGeneric" xml:space="preserve">
+    <value>&lt;p&gt;Hi Coffee Lover,&lt;/p&gt;</value>
+  </data>
+  <data name="CoffeeCheckupOrderTypeRecurring" xml:space="preserve">
+    <value>Recurring order</value>
+  </data>
+  <data name="CoffeeCheckupOrderTypeAutoFulfill" xml:space="preserve">
+    <value>Auto-fulfill order</value>
+  </data>
+  <data name="CoffeeCheckupOrderTypeCombined" xml:space="preserve">
+    <value>Auto-fulfill and recurring order</value>
+  </data>
+  <data name="CoffeeCheckupOrderTypeReminderOnly" xml:space="preserve">
+    <value>a reminder only</value>
+  </data>
+  <data name="CoffeeCheckupBodyReminderOnly" xml:space="preserve">
+    <value>We will only place an order on your request, no order has been added, this just a reminder.</value>
+  </data>
+  <data name="CoffeeCheckupBodyOrderType" xml:space="preserve">
+    <value>This is a{0} {1}, please respond to cancel.</value>
+  </data>
+  <data name="CoffeeCheckupFooterOrderAdded" xml:space="preserve">
+    <value>Orders have been automatically created for the items listed above. These will be processed on your next delivery day.</value>
+  </data>
+  <data name="CoffeeCheckupFooterOrderLink" xml:space="preserve">
+    <value>&lt;br /&gt;&lt;br /&gt;Internal: Order Ref &lt;a href='{0}/{1}'&gt;here&lt;/a&gt;.</value>
+  </data>
+  <data name="CoffeeCheckupFooterDisableLink" xml:space="preserve">
+    <value>If you would prefer not to receive these reminders, &lt;a href='{0}'&gt;click here to disable them&lt;/a&gt;&lt;br /&gt;[Where "click here" is a secure link to:  our tracker system and uses a security token.</value>
+  </data>
+  <data name="CoffeeCheckupTableCompanyContact" xml:space="preserve">
+    <value>Company/Contact</value>
+  </data>
+  <data name="CoffeeCheckupTableNextPrepDate" xml:space="preserve">
+    <value>Next estimate prep date</value>
+  </data>
+  <data name="CoffeeCheckupTableNextDispatchDate" xml:space="preserve">
+    <value>Se estimate dispatch/delivery on:</value>
+  </data>
+  <data name="CoffeeCheckupTableType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="CoffeeCheckupTableListOfItems" xml:space="preserve">
+    <value>&lt;b&gt;List of Items&lt;/b&gt;</value>
+  </data>
+  <data name="CoffeeCheckupErrorRecurringDateFailure" xml:space="preserve">
+    <value>Could not set the recurring last date</value>
+  </data>
+  <data name="CoffeeCheckupErrorTempTableDelete" xml:space="preserve">
+    <value>Error deleting old temp tables</value>
+  </data>
+  <data name="CoffeeCheckupErrorTempTableInsert" xml:space="preserve">
+    <value>Error adding some records to temp table</value>
+  </data>
+  <data name="CoffeeCheckupErrorOrderInsert" xml:space="preserve">
+    <value>Error inserting order for: {0}</value>
+  </data>
+  <data name="CoffeeCheckupErrorEmailSending" xml:space="preserve">
+    <value>Email Sending Error</value>
+  </data>
+  <data name="CoffeeCheckupErrorBatchEmailFailure" xml:space="preserve">
+    <value>Failed to send some emails in batch: {0}</value>
+  </data>
+  <data name="CoffeeCheckupStatusRemindersProcessed" xml:space="preserve">
+    <value>Reminders processed: {0} sent, {1} failed</value>
+  </data>
+  <data name="CoffeeCheckupStatusBatchSendSuccess" xml:space="preserve">
+    <value>Email batch sent successfully to {0} recipients</value>
+  </data>
+  <data name="CoffeeCheckupStatusBatchSendPartial" xml:space="preserve">
+    <value>Email batch partially sent: {0} successful, {1} failed</value>
+  </data>
+  <data name="CoffeeCheckupDialogRecurringDateTitle" xml:space="preserve">
+    <value>Set Recurring Item Last Date</value>
+  </data>
+  <data name="CoffeeCheckupDialogTempTableTitle" xml:space="preserve">
+    <value>Temp Table Operation</value>
+  </data>
+  <data name="CoffeeCheckupDialogEmailStatusTitle" xml:space="preserve">
+    <value>Coffee Checkup Status</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableStart" xml:space="preserve">
+    <value>&lt;table border='0' style='border: 1px solid'&gt;</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableHeader" xml:space="preserve">
+    <value>&lt;thead&gt;&lt;tr&gt;&lt;td style='background-color: #EFFFE9; font-weight: bold'&gt;{0}&lt;/td&gt;&lt;td style='background-color: #EFFFE9;' colspan='2'&gt;{1}&lt;/td&gt;&lt;/thead&gt;</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableRowNormal" xml:space="preserve">
+    <value>&lt;tr&gt;&lt;td style='background-color: #E9FFE0; color: #593020; font-weight: bold'&gt;{0}&lt;/td&gt;&lt;td style='background-color: #E9FFE0'&gt;{1}&lt;/td&gt;&lt;td style='background-color: #E9FFE0'&gt;{2}&lt;/td&gt;&lt;/tr&gt;</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableRowAlt" xml:space="preserve">
+    <value>&lt;tr&gt;&lt;td style='background-color: #CFEFC9; color: #694030; font-weight: bold'&gt;{0}&lt;/td&gt;&lt;td style='background-color: #CFEFC9'&gt;{1}&lt;/td&gt;&lt;td style='background-color: #CFEFC9'&gt;{2}&lt;/td&gt;&lt;/tr&gt;</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableCellNormal" xml:space="preserve">
+    <value>&lt;td style='background-color: #E9FFE0; color: #593020; font-weight: bold'&gt;{0}&lt;/td&gt;</value>
+  </data>
+  <data name="CoffeeCheckupHtmlTableCellAlt" xml:space="preserve">
+    <value>&lt;td style='background-color: #CFEFC9; color: #694030; font-weight: bold'&gt;{0}&lt;/td&gt;</value>
+  </data>
+  <data name="CoffeeCheckup.BodyFinalWarning" xml:space="preserve">
+    <value>FINAL NOTICE: This is your last reminder before your account will be suspended. Please respond immediately.
+</value>
+  </data>
+  <data name="DefaultEmailSignatureNoUser" xml:space="preserve">
+    <value>&lt;br /&gt;
+Kind regards,&lt;br /&gt;
+&lt;b&gt;The Quaffee Team&lt;/b&gt;&lt;br /&gt;
+📧 orders@quaffee.co.za&lt;br /&gt;
+🌐 &lt;a href='http://www.quaffee.co.za&gt;quaffee.co.za&lt;/a&gt;&lt;br /&gt;</value>
+    <comment>Default Email Signature No User</comment>
+  </data>
+  <data name="CoffeeCheckupHtmlTableIntro" xml:space="preserve">
+    <value>Based on your previous orders, here's what you might need:</value>
+    <comment>Coffee Checkup HTML Table Intro</comment>
+  </data>
+  <data name="CoffeeCheckupHtmlTableRowColspan" xml:space="preserve">
+    <value>&lt;td colspan="2" style="background-color: #A8E6A3 ; color: #2D5016; font-weight: bold; padding: 4px; border: 1px solid #ddd;" vertical-align: bottom;&gt;{0}&lt;/td&gt;&lt;/tr&gt;</value>
+    <comment>Coffee Checkup Html Table Row Colspan</comment>
+  </data>
+<!-- DisableClient Page Messages -->
+<data name="DisableClient.PageTitle" xml:space="preserve">
+  <value>Disable Coffee Checkup Reminders - Quaffee</value>
+</data>
+
+<data name="DisableClient.ConfirmationHeader" xml:space="preserve">
+  <value>📧 Disable Coffee Checkup Reminders?</value>
+</data>
+
+<data name="DisableClient.ConfirmationMessage" xml:space="preserve">
+  <value>You are about to disable coffee checkup reminders for:</value>
+</data>
+
+<data name="DisableClient.WarningMessage" xml:space="preserve">
+  <value>⚠️ &lt;strong&gt;This will stop all future coffee checkup reminder emails.&lt;/strong&gt;&lt;br /&gt;You can always re-enable reminders by contacting us directly.</value>
+</data>
+
+<data name="DisableClient.ButtonConfirm" xml:space="preserve">
+  <value>Yes, Disable Reminders</value>
+</data>
+
+<data name="DisableClient.ButtonCancel" xml:space="preserve">
+  <value>Cancel &amp; Keep Reminders</value>
+</data>
+
+<data name="DisableClient.HelpMessage" xml:space="preserve">
+  <value>💡 &lt;strong&gt;Need help instead?&lt;/strong&gt;&lt;br /&gt;Contact us at</value>
+</data>
+
+<data name="DisableClient.SuccessHeader" xml:space="preserve">
+  <value>✅ Reminders Disabled Successfully</value>
+</data>
+
+<data name="DisableClient.SuccessMessage" xml:space="preserve">
+  <value>Coffee checkup reminders have been disabled for:</value>
+</data>
+
+<data name="DisableClient.SuccessDetails" xml:space="preserve">
+  <value>Our administrator has been notified of this change.&lt;br /&gt;You will no longer receive automated coffee checkup reminder emails.</value>
+</data>
+
+<data name="DisableClient.ReenableMessage" xml:space="preserve">
+  <value>&lt;strong&gt;Need to re-enable reminders?&lt;/strong&gt;&lt;br /&gt;Contact us at {0} and we'll be happy to help.</value>
+</data>
+
+<!-- Error Messages -->
+<data name="DisableClient.ErrorHeader" xml:space="preserve">
+  <value>❌ Error</value>
+</data>
+
+<data name="DisableClient.ErrorInvalidParams" xml:space="preserve">
+  <value>Invalid or missing parameters. Please use the link from your email.</value>
+</data>
+
+<data name="DisableClient.ErrorInvalidToken" xml:space="preserve">
+  <value>Invalid or expired security token. Please use the latest link from your email.</value>
+</data>
+
+<data name="DisableClient.ErrorCustomerNotFound" xml:space="preserve">
+  <value>Customer not found. Please contact us for assistance.</value>
+</data>
+
+<data name="DisableClient.ErrorGeneral" xml:space="preserve">
+  <value>An error occurred while processing your request. Please try again or contact us for assistance.</value>
+</data>
+
+<!-- Goodbye Email Messages -->
+<data name="DisableClient.GoodbyeSubject" xml:space="preserve">
+  <value>Coffee Checkup Reminders Disabled - We'll Miss You!</value>
+</data>
+
+<data name="DisableClient.GoodbyeHeader" xml:space="preserve">
+  <value>&lt;h2 style='color: #2c5530;'&gt;Coffee Checkup Reminders Disabled&lt;/h2&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeMessage" xml:space="preserve">
+  <value>&lt;div style='background-color: #F9FFDF; padding: 20px; border-radius: 8px; margin: 20px 0;'&gt;&lt;p&gt;Hi there,&lt;/p&gt;&lt;p&gt;We've successfully disabled coffee checkup reminders for &lt;strong&gt;{0}&lt;/strong&gt; as you requested.&lt;/p&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeWhatThisMeans" xml:space="preserve">
+  <value>&lt;p&gt;📧 &lt;strong&gt;What this means:&lt;/strong&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;You will no longer receive automated coffee checkup reminder emails&lt;/li&gt;&lt;li&gt;Your account remains active for manual orders&lt;/li&gt;&lt;li&gt;You can still contact us anytime for coffee orders&lt;/li&gt;&lt;/ul&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeReenableInstructions" xml:space="preserve">
+  <value>&lt;p&gt;🔄 &lt;strong&gt;Want to re-enable reminders?&lt;/strong&gt;&lt;br/&gt;Simply contact us at &lt;a href='mailto:{1}'&gt;{1}&lt;/a&gt; and we'll be happy to turn them back on for you.&lt;/p&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeStillNeedCoffee" xml:space="preserve">
+  <value>&lt;p&gt;☕ &lt;strong&gt;Still need great coffee?&lt;/strong&gt;&lt;br/&gt;Don't hesitate to reach out! We're always here to help with your coffee needs.&lt;/p&gt;&lt;/div&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeThankYou" xml:space="preserve">
+  <value>&lt;div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;'&gt;&lt;p&gt;&lt;strong&gt;Thank you for being part of the Quaffee family!&lt;/strong&gt;&lt;/p&gt;</value>
+</data>
+
+<data name="DisableClient.GoodbyeFooter" xml:space="preserve">
+  <value>&lt;p&gt;Visit us: &lt;a href='http://www.quaffee.co.za' style='color: #2c5530;'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;&lt;p style='font-size: 12px; color: #666;'&gt;Quaffee Coffee Roastery&lt;br/&gt;Bringing you exceptional coffee since 2008&lt;/p&gt;&lt;/div&gt;</value>
+</data>
+
+<!-- Admin Notification Messages -->
+<data name="DisableClient.AdminSubjectTemplate" xml:space="preserve">
+  <value>Customer Disabled Coffee Checkup Reminders - {0}</value>
+</data>
+
+<data name="DisableClient.AdminBodyHeader" xml:space="preserve">
+  <value>Customer has disabled coffee checkup reminders:
+
+Customer ID: {0}
+Company Name: {1}
+Disabled Date: {2}
+Method: Self-service via email link
+
+</value>
+</data>
+
+<data name="DisableClient.AdminRecurringFound" xml:space="preserve">
+  <value>⚠️ RECURRING ORDERS FOUND:
+- Total recurring orders: {0}
+- Successfully disabled: {1}
+- Failed to disable: {2}
+
+Disabled recurring orders:
+</value>
+</data>
+
+<data name="DisableClient.AdminRecurringNone" xml:space="preserve">
+  <value>✅ No recurring orders found for this customer.
+
+</value>
+</data>
+
+<data name="DisableClient.AdminManualActionRequired" xml:space="preserve">
+  <value>
+⚠️ MANUAL ACTION REQUIRED: Some recurring orders failed to disable automatically.
+Please check and disable them manually in the system.
+
+</value>
+</data>
+
+<data name="DisableClient.AdminFooter" xml:space="preserve">
+  <value>A goodbye email has been sent to the customer.
+
+No further action required unless customer contacts you directly.</value>
+</data>  
+<!-- Customer Management Messages -->
+<data name="Customer.NotFound" xml:space="preserve">
+  <value>Customer {0} not found</value>
+</data>
+
+<data name="Customer.Disabled" xml:space="preserve">
+  <value>Customer {0} (ID: {1}) disabled successfully</value>
+</data>
+
+<data name="Customer.DisabledViaSelfService" xml:space="preserve">
+  <value>Customer {0} (ID: {1}) disabled via self-service</value>
+</data>
+
+<data name="Customer.DisableError" xml:space="preserve">
+  <value>Error disabling customer {0}: {1}</value>
+</data>
+
+<data name="Customer.EquipmentUpdated" xml:space="preserve">
+  <value>Equipment updated for customer {0}: Type {1}, SN {2}</value>
+</data>
+
+<data name="Customer.EquipmentUpdateError" xml:space="preserve">
+  <value>Equipment update failed for customer {0}: {1}</value>
+</data>
+
+<data name="Customer.ReminderCountReset" xml:space="preserve">
+  <value>Reminder count reset for customer {0}, force enable: {1}</value>
+</data>
+
+<!-- Email Error Messages -->
+<data name="Email.SendError" xml:space="preserve">
+  <value>Failed to send email to {0}: {1}</value>
+</data>
+
+<!-- Additional DisableClient Keys for CustomerManager -->
+<data name="DisableClient.Greeting" xml:space="preserve">
+  <value>&lt;p&gt;Hi {0},&lt;/p&gt;</value>
+</data>
+
+<data name="DisableClient.DisabledMessage" xml:space="preserve">
+  <value>&lt;p&gt;We've successfully disabled coffee checkup reminders for &lt;strong&gt;{0}&lt;/strong&gt; as requested.&lt;/p&gt;</value>
+</data>
+</root>

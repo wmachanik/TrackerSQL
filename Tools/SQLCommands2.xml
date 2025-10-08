@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+  <command type="disable">
+    ALTER TABLE CustomersTbl ADD SendDeliveryConfirmation YESNO
+  </command>
+  <command type="alter">
+    ALTER TABLE CustomersTbl ADD LastDateSentReminder DateTime
+  </command>
+  <command type="select">
+    SELECT        TOP 10 CompanyName, SendDeliveryConfirmation
+    FROM            CustomersTbl
+  </command>
+  <command type="alter">
+    ALTER TABLE ReoccuringOrderTbl ADD [PackagingID] INT
+  </command>
+  <command type="alter">
+    ALTER TABLE ReoccuringOrderTbl ADD [DeliveryByID] INT
+  </command>
+  <command type="select">
+    SELECT        TOP 10 ID, enabled, DeliveryByID, PackagingID
+    FROM          ReoccuringOrderTbl
+  </command>
+  <command type="create">
+    CREATE TABLE TempCoffeecheckupCustomerTbl (
+    [TCCID] AUTOINCREMENT,
+    [CustomerID] INT,
+    [CompanyName] VARCHAR(50),
+    [ContactFirstName] VARCHAR(50),
+    [ContactAltFirstName] VARCHAR(50),
+    [CityID] INT,
+    [EmailAddress] VARCHAR(50),
+    [AltEmailAddress] VARCHAR(50),
+    [CustomerTypeID] INT,
+    [EquipTypeID] INT,
+    [TypicallySecToo] YESNO,
+    [PreferedAgentID] INT,
+    [SalesAgentID] INT,
+    [UsesFilter] YESNO,
+    [enabled] YESNO,
+    [AlwaysSendChkUp] YESNO,
+    [ReminderCount] INT,
+    [NextPrepDate] DateTime ,
+    [NextDeliveryDate] DateTime,
+    [NextCoffee] DateTime,
+    [NextClean] DateTime,
+    [NextFilter] DateTime,
+    [NextDescal] DateTime,
+    [NextService] DateTime,
+    CONSTRAINT [pk_TCCID] PRIMARY KEY (TCCID)
+    )
+  </command>
+  <command type="create">
+    CREATE TABLE TempCoffeecheckupItemsTbl (
+    [TCIID] AUTOINCREMENT,
+    [CustomerID] INT,
+    [ItemID] INT,
+    [ItemQty] SINGLE,
+    [ItemPrepID] INT,
+    [ItemPackagID] INT,
+    [AutoFulfill] YESNO,
+    [ReoccurOrder] YESNO,
+    [NextDateRequired] DateTime,
+    CONSTRAINT [pk_TCIID] PRIMARY KEY (TCIID)
+    )
+  </command>
+</commands>
+

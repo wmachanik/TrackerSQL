@@ -1,0 +1,4045 @@
+﻿/* DEFAULTS
+----------------------------------------------------------*/
+:root {
+    --primary-brown: #302a20;
+    --secondary-brown: #595939;
+    --light-brown: #d0d0b9;
+    --primary-green: #4e664d;
+    --light-green: #e5f0d4;
+    --secondary-green: #EDEBD2; /* linen leaf apparatnmely */
+}
+
+body {
+    background-color: var(--light-brown);
+    font-size: .90em;
+    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", sans-serif, Helvetica, Verdana, sans-serif;
+    margin: 10px;
+    padding: 0px;
+    color: #696969;
+    padding-top: 60px;
+}
+
+a:link,
+a:visited {
+    color: #03b34a;
+}
+
+a:hover {
+    color: #1dbf60;
+    text-decoration: none;
+}
+
+a:active {
+    color: #03b34a;
+}
+
+p {
+    margin-bottom: 10px;
+    line-height: 1.2em;
+}
+/* HEADINGS   ----------------------------------------------------------*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-size: 1.5em;
+    color: #607060;
+    font-variant: small-caps;
+    text-transform: none;
+    font-weight: 300;
+    margin-bottom: 0px;
+    margin-top: 10px;
+}
+
+h1 {
+    font-size: 1.6em;
+    padding-bottom: 4px;
+    margin-bottom: 0px;
+}
+
+h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+h4 {
+    font-size: 1.1em;
+}
+
+h5,
+h6 {
+    font-size: 1em;
+}
+/*----------------------------------------------------------*/
+.page {
+    width: 99%;
+    background-color: #fff;
+    padding-top: 10px;
+    margin: auto;
+    border: 0px solid transparent;
+}
+
+.minipage {
+    background-color: #fff;
+    margin: auto;
+    border: 1px solid #496077;
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    width: 100%;
+    height: 60px; /* Add fixed height (adjust as needed) */
+    background: #302a20;
+    border-bottom: 1px solid white;
+    /* Optional: add a subtle shadow for separation */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+    /* Prevent text wrapping in header cells */
+    .header td {
+        white-space: nowrap;
+    }
+
+        /* Allow menu to wrap normally */
+        .header td:nth-child(2) {
+            white-space: normal;
+            width: 100%;
+        }
+
+    .header h1 {
+        font-weight: 700;
+        margin: 0px;
+        padding: 0px 0px 0px 6px;
+        color: #f9f9f9;
+        border: none;
+        font-size: 2em;
+        display: inline-block;
+    }
+
+.main {
+    padding: 0px 12px;
+    margin: 12px 8px 8px 8px;
+    min-height: 420px;
+}
+
+.minimain {
+    padding: 0px 12px;
+    margin: 6px 12px 8px 4px;
+}
+
+.leftCol {
+    padding: 6px 0px;
+    margin: 12px 8px 8px 8px;
+    width: 200px;
+    min-height: 200px;
+}
+
+.footer {
+    color: var(--primary-brown); /* Even lighter gray */
+    font-weight: normal;
+    padding: 12px 2px 12px 2px;
+    margin: 0px auto;
+    text-align: center;
+    line-height: normal;
+    font-size: 1.1em; /* Smaller text */
+    background: transparent; /* Ensure no background */
+}
+/* ======================= */
+/* CONSOLIDATED MENU STYLES */
+/* ======================= */
+
+/* Menu background container */
+.menuBG {
+    background-color: #302a20 !important;
+    padding: 4px 0;
+    width: 96%;
+    margin: 0px auto 5px auto;
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: large;
+}
+
+/* Menu structure */
+.menu ul {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .menu ul li {
+        position: relative;
+        margin: 0 2px;
+    }
+
+        /* Base menu item styles */
+        .menu ul li a {
+            display: block;
+            padding: 8px 12px;
+            text-decoration: none !important;
+            /*background-color: #595939; /* Original brown */
+            color: #fff !important;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            /* Hover states */
+            .menu ul li a:hover {
+                background-color: #d0d0b9 !important;
+                color: #595939 !important;
+                transform: translateY(-2px);
+            }
+
+            /* Active/selected item styles */
+            .menu ul li a:active,
+            .menu ul li a.selected {
+                background-color: #4e664d !important;
+                color: #fff !important;
+                transform: translateY(0);
+            }
+
+            /* Disabled item styles */
+            .menu ul li a:disabled {
+                background-color: #ccc;
+                color: #666;
+                pointer-events: none;
+                transform: none;
+            }
+
+/* Selected item styles */
+.StaticSelectedStyle > a,
+.DynamicSelectedStyle > a {
+    background-color: #d0d0b9 !important;
+    color: #595939 !important;
+    font-weight: bold !important;
+    font-style: italic !important;
+    border-bottom: 3px solid #4e664d !important;
+}
+
+/* Submenu styling */
+.menu ul ul {
+    display: none;
+    position: absolute;
+    background-color: #302a20;
+    border: 1px solid #4e664d;
+    border-radius: 4px;
+    padding: 5px 0;
+    min-width: 180px;
+    z-index: 100;
+}
+
+.menu ul li:hover > ul {
+    display: block;
+}
+
+.menu ul ul li {
+    margin: 3px 0;
+    width: 100%;
+}
+
+    .menu ul ul li a {
+        margin: 0 5px;
+        padding: 6px 10px;
+        /*background-color: #302a20;*/
+    }
+
+        /* Enhance submenu item hover effects */
+        .menu ul ul li a:hover {
+            background-color: #595939 !important;
+            color: #fff !important;
+            transform: translateY(-2px);
+        }
+
+/* ============================================ */
+/* IMPROVED RESPONSIVE MENU SYSTEM             */
+/* ============================================ */
+
+/* Medium screens (960px - 800px): Make menu more compact but keep horizontal */
+@media (max-width: 960px) and (min-width: 800px) {
+    .menuBG {
+        font-size: medium !important; /* Reduced from large */
+        padding: 3px 0 !important;
+    }
+
+    .menu ul li a {
+        padding: 6px 8px !important; /* Reduced padding */
+        font-size: 0.9em !important; /* Slightly smaller text */
+    }
+
+    .menu ul li {
+        margin: 0 1px !important; /* Tighter spacing */
+    }
+}
+
+/* Smaller medium screens (800px - 600px): Even more compact horizontal menu */
+@media (max-width: 800px) and (min-width: 600px) {
+    .menuBG {
+        font-size: small !important; /* Even smaller */
+        padding: 2px 0 !important;
+    }
+
+    .menu ul {
+        flex-wrap: nowrap !important; /* Prevent wrapping */
+        overflow-x: auto !important; /* Allow horizontal scroll if needed */
+        -webkit-overflow-scrolling: touch !important;
+        padding: 0 2px !important;
+    }
+
+        .menu ul li {
+            flex-shrink: 0 !important; /* Prevent shrinking */
+            margin: 0 1px !important;
+        }
+
+            .menu ul li a {
+                padding: 4px 6px !important; /* Very compact */
+                font-size: 0.8em !important; /* Smaller text */
+                white-space: nowrap !important;
+            }
+}
+
+/* Mobile screens (600px and below): Vertical menu only for very small screens */
+@media (max-width: 600px) {
+    .menu ul {
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: wrap; /* Reset to allow wrapping vertically */
+        overflow-x: visible !important; /* Reset overflow */
+    }
+
+        .menu ul li {
+            width: 90%;
+            margin: 3px 0;
+            flex-shrink: 1 !important; /* Reset shrinking */
+        }
+
+            .menu ul li a {
+                padding: 8px 12px !important; /* Reset to full padding */
+                font-size: 1em !important; /* Reset font size */
+            }
+
+        .menu ul ul {
+            position: static;
+            width: 90%;
+            margin-left: 10%;
+        }
+
+    .header table {
+        display: block;
+    }
+
+    .header td {
+        display: block;
+        width: 100% !important;
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    .loginDisplay {
+        display: block !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+        font-size: 0.8em !important;
+    }
+}
+
+/* ============================================ */
+/* MOBILE LANDSCAPE MENU & TITLE FIX            */
+/* ============================================ */
+
+@media (max-width: 600px) and (orientation: landscape) {
+    /* Reduce header height for landscape */
+    .header {
+        height: 45px !important;
+    }
+
+    body {
+        padding-top: 45px !important;
+    }
+
+    /* Make QOnT title smaller in landscape */
+    .header h1 {
+        font-size: 1.4em !important;
+        padding: 0px 0px 0px 4px !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+    }
+
+    /* Make the menu container more compact */
+    .menuBG {
+        padding: 2px 0 !important;
+        font-size: small !important;
+    }
+
+    .menu ul {
+        flex-direction: row !important; /* Force horizontal in landscape */
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 0 2px !important;
+        margin: 0 !important;
+    }
+
+        .menu ul li {
+            width: auto !important; /* Reset width for horizontal layout */
+            flex-shrink: 0 !important;
+            margin: 0 1px !important;
+            min-width: auto !important;
+        }
+
+            .menu ul li a {
+                padding: 4px 6px !important;
+                font-size: 0.8em !important;
+                white-space: nowrap !important;
+                line-height: 1.2 !important;
+            }
+
+    /* Make login display smaller */
+    .loginDisplay {
+        font-size: 0.85em !important;
+        padding: 4px !important;
+        margin-right: 8px !important;
+        display: inline-block !important; /* Reset to inline for landscape */
+        text-align: right !important; /* Reset alignment */
+    }
+
+    /* Adjust table cell heights */
+    .header table td {
+        vertical-align: middle !important;
+        padding: 2px 4px !important;
+        display: table-cell !important; /* Reset to table-cell for landscape */
+    }
+
+    .header table {
+        display: table !important; /* Reset to table layout for landscape */
+    }
+}
+
+/* For very narrow landscape screens */
+@media (max-width: 500px) and (orientation: landscape) {
+    .header {
+        height: 40px !important;
+    }
+
+    body {
+        padding-top: 40px !important;
+    }
+
+    .header h1 {
+        font-size: 1.2em !important;
+        padding-left: 2px !important;
+    }
+
+    .menu ul li a {
+        padding: 3px 4px !important;
+        font-size: 0.75em !important;
+    }
+
+    .loginDisplay {
+        font-size: 0.75em !important;
+        padding: 2px !important;
+        margin-right: 4px !important;
+    }
+
+    .menu ul li {
+        margin: 0 !important;
+    }
+}
+
+/* Mobile portrait mode - only for very small screens */
+@media (max-width: 600px) and (orientation: portrait) {
+    .menu ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+        .menu ul li {
+            width: 90%;
+            margin: 3px 0;
+        }
+
+        .menu ul ul {
+            position: static;
+            width: 90%;
+            margin-left: 10%;
+        }
+}
+
+/* Default mobile behavior - updated breakpoint */
+@media (max-width: 600px) {
+    .header table {
+        display: block;
+    }
+
+    .header td {
+        display: block;
+        width: 100% !important;
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    .loginDisplay {
+        display: block !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+        font-size: 0.8em !important;
+    }
+}
+
+/* ======================= */
+/* END OF MENU STYLES   */
+/* ======================= */
+/* FORM ELEMENTS   
+/* ======================= */
+
+fieldset {
+    margin: 1em 0px;
+    padding: 1em;
+    border: 1px solid #ccc;
+}
+
+    fieldset p {
+        margin: 2px 12px 10px 10px;
+    }
+
+    fieldset.login label,
+    fieldset.register label,
+    fieldset.changePassword label {
+        display: block;
+    }
+
+    fieldset label.inline {
+        display: inline;
+    }
+
+legend {
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 2px 4px 8px 4px;
+}
+
+input.textEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+input.passwordEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+div.accountInfo {
+    width: 42%;
+}
+/* MISC  ----------------------------------------------------------*/
+
+.title {
+    display: block;
+    float: left;
+    text-align: left;
+    width: 100%;
+}
+
+.loginDisplay {
+    font-size: 0.9em;
+    display: inline-block;
+    text-align: right;
+    padding: 8px;
+    color: White;
+    text-decoration: underline;
+    white-space: nowrap;
+    vertical-align: top;
+    margin-right: 12px;
+}
+
+    .loginDisplay a:link {
+        color: white;
+    }
+
+    .loginDisplay a:visited {
+        color: white;
+    }
+
+    .loginDisplay a:hover {
+        color: white;
+    }
+
+.failureNotification {
+    font-size: 1.2em;
+    color: Red;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.submitButton {
+    text-align: right;
+    padding-right: 10px;
+}
+
+.floatRight {
+    float: right;
+}
+
+/* table input styles */
+h2.InputFrm {
+    border: solid 1px #C0C090;
+    padding: 2px 5px 2px 2px;
+    margin: 0px 0px 0px 0px;
+    background-color: #CCCC99;
+    color: White;
+    letter-spacing: 2px;
+    font-family: sans-serif, Helvetica;
+    font-weight: bold;
+    font-size: large;
+    width: 100%;
+    padding-bottom: 2px;
+    margin-bottom: 8px;
+}
+/*-User making contact with us form-*/
+table.InputFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 5px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: 100%;
+}
+
+tb.rowC {
+    text-align: center;
+    vertical-align: middle;
+}
+
+table.TblCoffee {
+    font: normal 90%/150% "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif, Helvetica, sans-serif;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 1px 1em 0;
+    color: #000;
+    padding: 0;
+}
+
+    table.TblCoffee a {
+        color: #523A0B;
+        text-decoration: none;
+        border-bottom: 1px dotted;
+        padding: 0;
+    }
+
+        table.TblCoffee a:visited {
+            color: #444;
+            font-weight: normal;
+        }
+
+            table.TblCoffee a:visited:after {
+                content: "\00A0\221A";
+            }
+
+        table.TblCoffee a:hover {
+            border-bottom-style: solid;
+        }
+
+.TblCoffee input[type='submit']:disabled,
+.TblCoffee input[type='submit']:disabled:hover {
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif;
+    background-color: #aaa;
+    border: 1px #aaa;
+}
+
+table.TblCoffee thead th,
+table.TblCoffee thead td,
+table.TblCoffee tfoot th,
+table.TblCoffee tfoot td {
+    border: 1px solid #523A0B;
+    background: #EBE5D9;
+    font-size: 12px;
+    display: table-cell;
+}
+
+table.TblCoffee th {
+    font-weight: bold;
+    line-height: normal;
+    border: 1px solid #523A0B;
+    padding: 0.25em 0.5em;
+    text-align: left;
+    font-size: 12px;
+}
+
+table.TblCoffee tbody th,
+table.TblCoffee td {
+    padding: 0.25em 0.1em 0.25em;
+    border: 1px solid #523A0B;
+    vertical-align: top;
+    display: table-cell;
+}
+
+table.TblCoffee tbody th {
+    font-weight: normal;
+    white-space: nowrap;
+    display: table-cell;
+}
+
+    table.TblCoffee tbody th a:link,
+    table.TblCoffee tbody th a:visited {
+        font-weight: bold;
+    }
+
+table.TblCoffee tbody td,
+table.TblCoffee tbody th {
+    border: 1px solid #fff;
+    border: 1px solid #111;
+    display: table-cell;
+}
+
+table.TblCoffee tbody tr:nth-child(odd) th,
+table.TblCoffee tbody tr:nth-child(odd) td {
+    border-color: #EBE5D9;
+    background: #F7F4EE;
+    border: 1px solid #111;
+}
+
+table.TblCoffee tbody tr:hover td,
+table.TblCoffee tbody tr:hover th {
+    background: #ffffee;
+    border-color: #523A0B;
+}
+
+table.TblCoffee caption {
+    font-family: Georgia, Times, serif;
+    font-weight: normal;
+    font-size: 1.4em;
+    text-align: left;
+    margin: 0;
+    padding: 0.5em 0.25em;
+}
+/* new table styles */
+table.TblZebra {
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    text-align: left;
+    border: 1px solid #9FCF9F;
+    page-break-inside: avoid;
+    padding: 0;
+    margin-bottom: 1px;
+}
+    table.TblZebra tr:nth-child(odd) {
+        padding: 0;
+        background: #EaF2E3;
+    }
+    table.TblZebra tr:nth-child(even) {
+        padding: 0;
+        background: #FFF;
+    }
+    table.TblZebra th {
+        color: Green;
+        border: 0;
+        border-bottom: 1px solid #797;
+        font-size: 16px;
+        padding-left: 4px;
+        font-weight: bold;
+        background: #e9f9e3;
+    }
+    table.TblZebra tr:hover td {
+        background-color: #E0EFD0;
+        display: table-cell;
+    }
+    table.TblZebra tr:hover a:not(.plain) {
+        color: #FFF;
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+        background-color: Green;
+        /* display: table-cell;*/
+    }
+    table.TblZebra tr a:not(.plain) {
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+        /*display: table-cell;*/
+    }
+    table.TblZebra td {
+        padding: .3em;
+        font-size: 14px;
+        display: table-cell;
+    }
+
+/*Simple table*/
+
+.TblSimple {
+    border-top: 1px solid #a3a360;
+    border-left: 1px solid #a3a360;
+    padding: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+table.TblSimple {
+    background: #fffff9;
+    height: auto;
+    line-height: 1.5em;
+    border-radius: 15px;
+    padding: 10px 10px;
+    /*
+        -webkit-border-radius: 15px;
+        -moz-border-radius: 15px;
+        -o-border-radius: 15px;
+    */
+}
+
+.TblSimple th {
+    border-right: 1px solid #898;
+    border-bottom: 1px solid #898;
+    text-align: left;
+    padding: 5px;
+}
+
+.TblSimple td {
+    border-right: 1px solid #E9E9D0;
+    border-bottom: 1px solid #E9E9D0;
+    text-align: left;
+    padding: 2px 4px 2px 2px;
+    display: table-cell;
+}
+
+.TblSimple th {
+    background-color: #9dD49c;
+    font-size: 120%;
+}
+
+.TblSimple tr:nth-child(even) {
+    background: #fff;
+}
+
+.TblSimple tr:nth-child(odd) {
+    background: #f3f9e9;
+}
+
+.TblMudZebra {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    box-shadow: 10px 10px 5px #888888;
+    border: 1px solid #000000;
+    -moz-border-radius-bottomleft: 0px;
+    -webkit-border-bottom-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    -moz-border-radius-bottomright: 0px;
+    -webkit-border-bottom-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+    -moz-border-radius-topright: 0px;
+    -webkit-border-top-right-radius: 0px;
+    border-top-right-radius: 0px;
+    -moz-border-radius-topleft: 0px;
+    -webkit-border-top-left-radius: 0px;
+    border-top-left-radius: 0px;
+}
+
+    .TblMudZebra table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .TblMudZebra tr:last-child td:last-child {
+        -moz-border-radius-bottomright: 0px;
+        -webkit-border-bottom-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+
+    .TblMudZebra table tr:first-child td:first-child {
+        -moz-border-radius-topleft: 0px;
+        -webkit-border-top-left-radius: 0px;
+        border-top-left-radius: 0px;
+    }
+
+    .TblMudZebra table tr:first-child td:last-child {
+        -moz-border-radius-topright: 0px;
+        -webkit-border-top-right-radius: 0px;
+        border-top-right-radius: 0px;
+    }
+
+    .TblMudZebra tr:last-child td:first-child {
+        -moz-border-radius-bottomleft: 0px;
+        -webkit-border-bottom-left-radius: 0px;
+        border-bottom-left-radius: 0px;
+    }
+
+    .TblMudZebra tr:hover td {
+        background-color: #DFDF9F;
+    }
+
+    .TblMudZebra tr:nth-child(odd) {
+        background-color: #ffffee;
+    }
+
+    .TblMudZebra tr:nth-child(even) {
+        background-color: #e9e9b0;
+    }
+
+    .TblMudZebra td {
+        vertical-align: middle;
+        border: 1px solid #000000;
+        border-width: 0px 1px 1px 0px;
+        text-align: left;
+        padding: 1px;
+        font-size: 11px;
+        font-weight: normal;
+        color: #000000;
+        display: table-cell;
+    }
+
+    .TblMudZebra tr:last-child td {
+        border-width: 0px 1px 0px 0px;
+    }
+
+    .TblMudZebra tr td:last-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblMudZebra tr:last-child td:last-child {
+        border-width: 0px 0px 0px 0px;
+    }
+
+    .TblMudZebra tr:first-child td {
+        background: -o-linear-gradient(bottom, #cccc99 5%, #cccc99 100%);
+        background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #cccc99), color-stop(1, #cccc99));
+        background: -moz-linear-gradient( center top, #cccc99 5%, #cccc99 100%);
+        filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#cccc99", endColorstr="#cccc99");
+        background: -o-linear-gradient(top, #cccc99, cccc99);
+        background-color: #cccc99;
+        font-size: 14px;
+        font-family: sans-serif;
+        font-weight: bold;
+        color: #ffffff;
+    }
+
+    .TblMudZebra tr:first-child:hover td {
+        background: -o-linear-gradient(bottom, #cccc99 5%, #cccc99 100%);
+        background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #cccc99), color-stop(1, #cccc99));
+        background: -moz-linear-gradient( center top, #cccc99 5%, #cccc99 100%);
+        filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#cccc99", endColorstr="#cccc99");
+        background: -o-linear-gradient(top, #cccc99, cccc99);
+        background-color: #cccc99;
+    }
+
+    .TblMudZebra tr:first-child td:first-child {
+        border-width: 0px 0px 1px 0px;
+    }
+
+    .TblMudZebra tr:first-child td:last-child {
+        border-width: 0px 0px 1px 1px;
+    }
+
+/*Image style with label Box*/
+
+.imgRightBox {
+    float: right;
+    font-style: italic;
+    font-size: 94%;
+    text-align: right;
+    border: solid 2px #EEE;
+    margin: 2px;
+    padding: 1px;
+}
+
+.imgLeftBox {
+    float: left;
+    font-style: italic;
+    font-size: 94%;
+    text-align: left;
+    border: solid 2px #EEE;
+    margin: 2px;
+    padding: 1px;
+}
+
+
+/* ============================================ */
+/* FORM STYLING REFACTOR - FINAL FIX          */
+/* ============================================ */
+
+/* REVERT simpleLightBrownForm to original block behavior */
+div.simpleLightBrownForm {
+    background: #F8F8E1;
+    height: auto;
+    line-height: 1.5em;
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    -o-border-radius: 15px;
+    border-radius: 15px;
+    padding: 15px 5px;
+    display: block;
+}
+
+/* Mobile for delivery sheet */
+@media (max-width: 1000px) {
+    .delivery-sheet-filter {
+        justify-content: center !important;
+        gap: 6px !important;
+        padding: 12px !important;
+    }
+
+        .delivery-sheet-filter .delivery-group {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            margin: 2px 0 !important;
+        }
+
+        .delivery-sheet-filter > * {
+            margin: 1px !important;
+        }
+}
+
+/* Force override old conflicting styles */
+.delivery-filter-grid {
+    display: contents !important;
+}
+
+.filter-group {
+    display: contents !important;
+}
+
+@media (max-width: 900px) {
+    .delivery-filter-grid {
+        grid-template-columns: 1fr;
+        gap: 10px 0;
+        padding: 8px 4px;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        flex-wrap: wrap; /* Allow wrapping in mobile */
+    }
+
+        .filter-group label {
+            text-align: left;
+            margin-right: 0;
+            margin-bottom: 2px;
+            min-width: 0;
+        }
+
+        .filter-group.filter-group-inline {
+            flex-direction: row;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .filter-group.filter-group-inline > * {
+                width: auto;
+                flex: 0 0 auto;
+            }
+}
+/* ============================================ */
+/* DASHBOARD STYLES                           */
+/* ============================================ */
+
+.dashboard-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.dashboard-link {
+    /*flex: 1 1 300px;*/
+    min-width: 280px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.dashboard-card {
+    background: #fff;
+    border: 2px solid var(--light-green);
+    border-radius: 8px;
+    padding: 10px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+    .dashboard-card h4 {
+        color: var(--primary-green);
+        margin: 0 0 8px 0;
+        font-size: 1.1em;
+        font-weight: 600;
+    }
+
+    .dashboard-card p {
+        color: var(--secondary-brown);
+        margin: 0;
+        font-size: 0.9em;
+        line-height: 1.3;
+    }
+
+.dashboard-link:hover .dashboard-card {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: var(--primary-green);
+}
+
+    .dashboard-link:hover .dashboard-card h4 {
+        color: var(--primary-brown);
+    }
+
+/* Special styling for "Add/New" buttons */
+.dashboard-link.btn-add .dashboard-card {
+    border-color: var(--primary-green);
+    background: linear-gradient(135deg, var(--light-green) 0%, #fff 100%);
+}
+
+.dashboard-link.btn-add:hover .dashboard-card {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-brown) 100%);
+    border-color: var(--primary-brown);
+}
+
+    .dashboard-link.btn-add:hover .dashboard-card h4,
+    .dashboard-link.btn-add:hover .dashboard-card p {
+        color: #fff;
+    }
+/* SystemTools: compact cards/buttons via a single wrapper */
+.dashboard-links.tools-dashboard {
+    gap: 8px; /* tighter spacing than default if needed */
+}
+
+    /* Let cards size to content (default had fixed heights) */
+    .dashboard-links.tools-dashboard .dashboard-card {
+        height: auto;
+        padding: 8px 10px;
+    }
+
+        /* Slightly smaller titles and no extra paragraph margins */
+        .dashboard-links.tools-dashboard .dashboard-card h4 {
+            margin: 0 0 4px 0;
+            font-size: 1em;
+        }
+
+        .dashboard-links.tools-dashboard .dashboard-card p {
+            margin: 0 0 6px 0;
+            font-size: 0.9em;
+            line-height: 1.25;
+        }
+
+    /* Compact buttons inside cards */
+    .dashboard-links.tools-dashboard input[type="submit"],
+    .dashboard-links.tools-dashboard button {
+        height: 28px !important;
+        padding: 3px 10px !important;
+        font-size: 0.9em !important;
+        min-width: 100px !important;
+    }
+
+/* Mobile: even tighter */
+@media (max-width: 768px) {
+    .dashboard-links.tools-dashboard {
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+        .dashboard-links.tools-dashboard .dashboard-card {
+            padding: 6px 8px;
+        }
+
+        .dashboard-links.tools-dashboard input[type="submit"],
+        .dashboard-links.tools-dashboard button {
+            height: 26px !important;
+            padding: 2px 8px !important;
+            min-width: 90px !important;
+            font-size: 0.85em !important;
+        }
+}
+
+@media (max-width: 480px) {
+    .dashboard-links.tools-dashboard {
+        gap: 5px;
+    }
+
+        .dashboard-links.tools-dashboard .dashboard-card {
+            padding: 4px 6px;
+        }
+
+        .dashboard-links.tools-dashboard input[type="submit"],
+        .dashboard-links.tools-dashboard button {
+            height: 24px !important;
+            padding: 2px 6px !important;
+            min-width: 80px !important;
+            font-size: 0.8em !important;
+        }
+}
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .dashboard-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard-link {
+        min-width: 0;
+    }
+
+    .dashboard-card {
+        height: 60px;
+        padding: 10px;
+    }
+
+        .dashboard-card h4 {
+            font-size: 1em;
+        }
+
+        .dashboard-card p {
+            font-size: 0.8em;
+        }
+}
+
+@media (max-width: 480px) {
+    .dashboard-card {
+        height: 40px;
+        padding: 8px;
+    }
+}
+/* ============================================ */
+/* MOBILE MENU STYLES - UNCHANGED             */
+/* ============================================ */
+
+.mobile-header-content,
+.mobile-nav-menu {
+    display: none !important;
+}
+
+.mobile-title {
+    font-size: xx-large;
+    font-weight: bold;
+    color: green;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.hamburger-button {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    z-index: 102;
+}
+
+.hamburger-icon {
+    width: 28px;
+    height: 20px;
+    position: relative;
+    transform: rotate(0deg);
+    transition: .3s ease-in-out;
+}
+
+    .hamburger-icon span {
+        display: block;
+        position: absolute;
+        height: 4px;
+        width: 100%;
+        background: #fff;
+        border-radius: 2px;
+        opacity: 1;
+        left: 0;
+        transform: rotate(0deg);
+        transition: .25s ease-in-out;
+    }
+
+        .hamburger-icon span:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger-icon span:nth-child(2) {
+            top: 8px;
+        }
+
+        .hamburger-icon span:nth-child(3) {
+            top: 16px;
+        }
+
+.hamburger-button.open .hamburger-icon span:nth-child(1) {
+    top: 8px;
+    transform: rotate(135deg);
+}
+
+.hamburger-button.open .hamburger-icon span:nth-child(2) {
+    opacity: 0;
+    left: -60px;
+}
+
+.hamburger-button.open .hamburger-icon span:nth-child(3) {
+    top: 8px;
+    transform: rotate(-135deg);
+}
+
+@media (max-width: 768px) {
+    .header {
+        display: none !important;
+    }
+
+    body {
+        padding: 0px;
+        padding-top: 56px;
+        margin: 0px;
+    }
+
+    .page {
+        width: 100%;
+        margin: auto;
+        border: 0px solid transparent;
+    }
+
+
+    .mobile-header-content {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10000;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 56px;
+        padding: 0 8px;
+        background: #302a20;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .mobile-nav-menu {
+        display: block !important;
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        background: #fff;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0 0 6px 6px;
+        padding: 6px 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+        .mobile-nav-menu.mobile-menu-open {
+            max-height: 600px;
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .mobile-nav-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mobile-nav-menu li {
+            padding: 12px 20px;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            font-size: 1.1em;
+            text-align: left;
+        }
+
+            .mobile-nav-menu li:last-child {
+                border-bottom: none;
+            }
+
+        .mobile-nav-menu a {
+            color: #302a20;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+}
+
+/* ============================================ */
+/* DEFAULT BUTTON STYLING - MATCHES FILTER-TOOLBAR */
+/* ============================================ */
+
+/* Apply filter-toolbar button styling to all buttons by default */
+input[type="submit"],
+button,
+.btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 1.1em !important;
+    min-width: 40px !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+    input[type="submit"]:hover,
+    button:hover,
+    .btn:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+    /* Disabled button styling */
+    input[type="submit"]:disabled,
+    button:disabled,
+    .btn:disabled {
+        background-color: #aaa !important;
+        border-color: #999 !important;
+        color: #666 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6;
+    }
+
+/* ============================================ */
+/* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
+/* ============================================ */
+
+/* Exclude Ajax ComboBox buttons from global styling */
+.ajax__combobox_buttoncontainer button,
+.ajax__combobox_buttoncontainer input[type="button"],
+*[id*="ComboBox"] button,
+*[id*="ComboBox"] input[type="button"],
+*[class*="combobox"] button,
+*[class*="combobox"] input[type="button"],
+.ajax__combobox_button,
+.ajax__combobox_dropdownbutton {
+    /*background: transparent !important;*/
+    border: #595939 !important;
+    padding: initial !important;
+    margin: initial !important;
+    min-width: initial !important;
+    height: 1.2em !important;
+    vertical-align: text-bottom;
+    font-size: initial !important;
+    font-family: initial !important;
+    color: #4e664d !important;
+    display: initial !important;
+    box-sizing: initial !important;
+    border-radius: 4px !important;
+    text-decoration: initial !important;
+    cursor: initial !important;
+    transition: initial !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+    /* Fix hover state - target ONLY the actual dropdown button */
+    .ajax__combobox_buttoncontainer button:hover,
+    .ajax__combobox_buttoncontainer input[type="button"]:hover,
+    .ajax__combobox_button:hover,
+    .ajax__combobox_dropdownbutton:hover {
+        background: #607060 !important;
+        border: #1f2f20 !important;
+        color: #1f2f20 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: relative !important;
+    }
+
+        /* Add arrow ONLY to the specific dropdown button elements */
+        .ajax__combobox_buttoncontainer button:hover::after,
+        .ajax__combobox_buttoncontainer input[type="button"]:hover::after,
+        .ajax__combobox_button:hover::after,
+        .ajax__combobox_dropdownbutton:hover::after {
+            content: "";
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #1f2f20;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+/* Ensure text input does NOT get the arrow */
+.ajax__combobox_textboxcontainer input[type="text"]:hover::after,
+*[id*="ComboBox"] input[type="text"]:hover::after {
+    display: none !important;
+    content: none !important;
+}
+
+
+/* ============================================ */
+/* STANDARDIZED FILTER TOOLBAR SYSTEM         */
+/* ============================================ */
+
+/* Main filter toolbar container - replaces inconsistent form classes */
+.filter-toolbar {
+    background: var(--secondary-green);
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 50px;
+}
+
+.filter-block {
+    display: block;
+    width: 100%;
+    gap: 8px;
+    padding: 12px 4px 12px 4px;
+}
+
+/* Filter sections - logical groupings */
+.filter-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+    .filter-section.search-controls {
+        min-width: 460px;
+        flex: 1;
+    }
+
+    .filter-section.action-buttons {
+        margin-left: auto;
+        gap: 4px;
+    }
+
+    .filter-section.admin-controls {
+        gap: 8px;
+    }
+
+/* Individual filter controls */
+.filter-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+    .filter-control label {
+        font-weight: 500;
+        color: #666;
+        margin-right: 4px;
+        white-space: nowrap;
+        font-size: smaller;
+    }
+
+    .filter-control select,
+    .filter-control input[type="text"] {
+        min-width: 20px;
+        padding: 4px 6px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.85em;
+        /*width: auto !important; /* Allow auto-width */
+        flex: 1 !important; /* Allow to grow */
+    }
+
+/* Standardized button styling in filter toolbar */
+.filter-toolbar input[type="submit"],
+.filter-toolbar button,
+.filter-toolbar .btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 0.9em !important;
+    min-width: 40px !important;
+    max-width: 160px !important;
+    height: 30px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: self-start;
+    justify-content: left;
+}
+
+    .filter-toolbar input[type="submit"]:hover,
+    .filter-toolbar button:hover,
+    .filter-toolbar .btn:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+/* Special styling for add/new buttons */
+.filter-toolbar .btn-add,
+.filter-toolbar a[href*="Details.aspx"],
+.filter-toolbar a[href*="NewOrder"] {
+    /*background-color: #228B22 !important;*/
+    border-color: #228B22 !important;
+}
+
+    .filter-toolbar .btn-add:hover,
+    .filter-toolbar a[href*="Details.aspx"]:hover,
+    .filter-toolbar a[href*="NewOrder"]:hover {
+        background-color: #32CD32 !important;
+        border-color: #32CD32 !important;
+    }
+
+@media (min-width: 900px) and (max-width: 1180px) {
+    .filter-toolbar:has(.filter-section.date-controls) .filter-section.admin-controls {
+        flex-basis: 100% !important;
+        width: 100% !important;
+        order: 99 !important;
+        margin-top: 8px !important;
+    }
+
+    .filter-toolbar:has(.filter-section.date-controls) {
+        flex-wrap: wrap !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .filter-toolbar {
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px;
+        margin-bottom: 12px;
+    }
+
+    .filter-section {
+        justify-content: left;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+        .filter-section.action-buttons {
+            margin-left: 0;
+            order: 999;
+        }
+
+    .filter-control {
+        margin: 2px 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-section {
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .filter-control {
+        /* flex-direction: column;  */
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+        .filter-control label {
+            margin-right: 0;
+            margin-bottom: 2px;
+        }
+
+        .filter-control select,
+        .filter-control input[type="text"] {
+            width: 100%;
+            min-width: 0;
+        }
+}
+/* ============================================ */
+/* GENERIC DATE CONTROLS - REUSABLE ACROSS PAGES */
+/* ============================================ */
+
+/* Date controls section - can be used on any page */
+.filter-section.date-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    min-width: 400px;
+    /* causing issues with wrapping width: 100%; */
+}
+
+/* Date filter dropdown - always comes first */
+.filter-control.date-filter-dropdown {
+    order: 1;
+    flex: 0 0 auto;
+    margin-bottom: 0;
+}
+
+/* Custom date range container - generic class */
+.filter-control.custom-date-range {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Date input groups - wraps label and input */
+.date-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+    .date-input-group label {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.9em;
+        margin-right: 4px;
+    }
+
+    .date-input-group input[type="date"] {
+        min-width: 60px;
+        /* makes it too big max-width: 150px;*/
+        padding: 2px 4px;
+        font-size: 0.85em;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+/* Apply button in date range */
+.custom-date-range button,
+.custom-date-range input[type="submit"] {
+    padding: 4px 12px !important;
+    font-size: 0.9em !important;
+    min-width: 60px !important;
+    height: 32px !important;
+    margin-left: 8px;
+    flex-shrink: 0;
+    max-width: fit-content;
+}
+
+/* Desktop and large tablet - single line layout 
+@media (min-width: 1024px) {
+    .filter-section.date-controls {
+        /*-- causing over flow 
+            flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .filter-control.custom-date-range {
+        flex-wrap: nowrap;
+        min-width: 400px;
+    }
+}
+*/
+/* Medium screens - allow wrapping 
+@media (max-width: 1023px) and (min-width: 768px) {
+    .filter-section.date-controls {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .filter-control.date-filter-dropdown {
+        margin-bottom: 8px;
+    }
+
+    .filter-control.custom-date-range {
+        flex: 1 1 100%;
+        min-width: 280px;
+        margin-top: 2px;
+        justify-content: flex-start;
+    }
+
+    .date-input-group input[type="date"] {
+        min-width: 120px;
+        max-width: 140px;
+    }
+}
+    */
+/* Small screens - vertical stack */
+@media (max-width: 767px) {
+    .filter-section.date-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        margin-top: 12px;
+        margin-bottom: 12px;
+    }
+
+    .filter-control.date-filter-dropdown {
+        order: 1;
+        width: 100%;
+    }
+
+        .filter-control.date-filter-dropdown label {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .filter-control.date-filter-dropdown select {
+            width: 100%;
+        }
+
+    .filter-control.custom-date-range {
+        order: 2;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 8px;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .date-input-group {
+        /*flex-direction: column;*/
+        align-items: stretch;
+        margin-bottom: 8px;
+    }
+
+        .date-input-group label {
+            display: block;
+            margin-bottom: 4px;
+            margin-right: 0;
+        }
+
+        .date-input-group input[type="date"] {
+            width: 80px;
+        }
+
+    .custom-date-range button,
+    .custom-date-range input[type="submit"] {
+        /* align-self: center;*/
+        width: auto;
+        min-width: 100px !important;
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+    .filter-section.date-controls {
+        gap: 8px;
+    }
+
+    .filter-control.custom-date-range {
+        padding-top: 6px;
+        gap: 6px;
+    }
+
+    .custom-date-range button,
+    .custom-date-range input[type="submit"] {
+        min-width: 80px !important;
+        padding: 3px 8px !important;
+        font-size: 0.8em !important;
+        height: 28px !important;
+    }
+}
+/* ============================================ */
+/* STANDARDIZED RESULTS CONTAINER SYSTEM        */
+/* ============================================ */
+
+/* Main results container - replaces various grid containers */
+.results-container {
+    background: var(--light-green);
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto !important; /* Always allow horizontal scroll if needed */
+    -webkit-overflow-scrolling: touch !important;
+    position: relative;
+}
+
+@media (max-width: 900px) {
+    .results-container {
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+}
+
+.results-table,
+table.results-table {
+    /* removed as messes with the col sizes width: 100% !important; */
+    max-width: 100% !important;
+    table-layout: fixed !important; /* Fixed layout for better control */
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.9em;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 600px; /* Minimum width to ensure readability */
+}
+    /* Better column distribution for fixed layout */
+    .results-table th,
+    .results-table td,
+    table.results-table th,
+    table.results-table td {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        padding: 6px 8px !important;
+        border-right: 1px solid rgba(224, 224, 224, 0.5) !important;
+        border-bottom: 1px solid rgba(224, 224, 224, 0.5) !important;
+        vertical-align: middle !important;
+        /*font-size: .9em !important;*/
+        display: table-cell;
+    }
+    /* Header styling */
+    .results-table th,
+    .results-table thead th,
+    table.results-table th,
+    table.results-table thead th {
+        background: #4e664d !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        font-size: 1em !important;
+        text-align: left !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    /* form controls with minimal padding impact */
+    .results-table input[type="text"] {
+        width: 100% !important;
+        padding: 2px 4px !important;
+        font-size: 0.9em !important;
+        border: 1px solid #ccc !important;
+        border-radius: 3px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    .results-table select {
+        width: 100% !important;
+        font-size: 0.85em !important;
+        padding: 1px 2px !important;
+        border: 1px solid #ccc !important;
+        border-radius: 3px !important;
+        box-sizing: border-box !important;
+    }
+
+    .results-table input[type="checkbox"] {
+        margin: 0 !important;
+        transform: scale(1.1);
+        accent-color: var(--primary-green);
+    }
+
+    .results-table input[type="image"] {
+        width: auto !important;
+        height: auto !important;
+        /*        max-width: 16px !important;
+        max-height: 16px !important;*/
+        margin: 1px !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* Action column stays compact - only center when it contains buttons/images */
+    .results-table th:last-child,
+    .results-table td:last-child {
+        white-space: nowrap !important;
+        text-align: left !important;
+    }
+
+        /* Center align last column ONLY when it contains action buttons/images */
+        .results-table td:last-child:has(input[type="image"]),
+        .results-table td:last-child:has(input[type="submit"]),
+        .results-table td:last-child:has(input[type="button"]),
+        .results-table td:last-child:has(button),
+        .results-table td:last-child:has(img) {
+            text-align: center;
+        }
+
+        /* Also handle cases where the last column header indicates it's for actions */
+        .results-table th:last-child[headertext=""],
+        .results-table th:last-child:empty,
+        .results-table th:last-child:contains("Action") {
+            text-align: center;
+        }
+
+    /* Maintain row colors */
+    .results-table tr:nth-child(even) td,
+    table.results-table tr:nth-child(even) td {
+        background-color: var(--light-green);
+    }
+
+    .results-table tr:nth-child(odd) td,
+    table.results-table tr:nth-child(odd) td {
+        background-color: #fff;
+    }
+
+    .results-table tr:hover td,
+    table.results-table tr:hover td {
+        background-color: #e8f5e8 !important;
+    }
+
+    /* Ensure header styling remains consistent */
+    .results-table thead tr,
+    .results-table thead tr th,
+    table.results-table thead tr,
+    table.results-table thead tr th {
+        background-color: #4e664d !important;
+        color: #fff !important;
+    }
+
+    /* Header and body links */
+    .results-table th a,
+    .results-table thead th a,
+    table.results-table th a,
+    table.results-table thead th a {
+        color: #ffffff !important;
+        text-decoration: underline !important;
+        font-weight: bold !important;
+        display: block;
+        padding: 0 !important;
+        background: transparent !important;
+        display: table-cell;
+    }
+
+        .results-table th a:hover,
+        .results-table thead th a:hover,
+        table.results-table th a:hover,
+        table.results-table thead th a:hover {
+            color: #e0e0e0 !important; /* Slightly dimmed on hover */
+            background: transparent !important;
+            text-decoration: underline !important;
+        }
+    /* Enhanced link styling in tables */
+    .results-table a {
+        color: var(--primary-green);
+        text-decoration:;
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        display: table-cell;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+        .results-table a:hover {
+            background-color: var(--primary-green);
+            color: #fff !important;
+            text-decoration: none;
+        }
+    /* Selected row styling - must come last to override all other row styling */
+    .results-table tr.SelectedRowStyle td,
+    table.results-table tr.SelectedRowStyle td,
+    .results-table .SelectedRowStyle td,
+    table.results-table .SelectedRowStyle td,
+    tr.SelectedRowStyle td,
+    .SelectedRowStyle td,
+    #gvCities tr.SelectedRowStyle td,
+    #gvCities .SelectedRowStyle td {
+        background-color: #63cb66 !important;
+        color: var(--primary-green) !important;
+        font-weight: bold !important;
+    }
+
+    /* Also override hover on selected rows */
+    .results-table tr.SelectedRowStyle:hover td,
+    table.results-table tr.SelectedRowStyle:hover td,
+    tr.SelectedRowStyle:hover td,
+    #gvCities tr.SelectedRowStyle:hover td {
+        background-color: #63cb66 !important;
+        color: var(--primary-green) !important;
+        font-weight: bold !important;
+    }
+
+    /* Header styling */
+    .results-table th,
+    .results-table thead th,
+    table.results-table th,
+    table.results-table thead th {
+        background: #4e664d !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        font-size: 1em !important;
+        text-align: left !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+        /* Opt-in wrapping (override the global nowrap on .results-table cells) */
+        .results-table td.wrap,
+        .results-table th.wrap,
+        table.results-table td.wrap,
+        table.results-table th.wrap {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+        }
+
+    /* Multi-line clamp utilities (apply to an inner wrapper) */
+    .results-table .clamp-1,
+    .results-table .clamp-2,
+    .results-table .clamp-3,
+    table.results-table .clamp-1,
+    table.results-table .clamp-2,
+    table.results-table .clamp-3 {
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        white-space: normal !important; /* ensure wrapping before clamping */
+    }
+
+    .results-table .clamp-1 {
+        -webkit-line-clamp: 1 !important;
+    }
+
+    .results-table .clamp-2 {
+        -webkit-line-clamp: 2 !important;
+    }
+
+    .results-table .clamp-3 {
+        -webkit-line-clamp: 3 !important;
+    }
+/* Specific fix for gvReoccuringOrders on mobile */
+@media (max-width: 768px) {
+    #gvReoccuringOrders,
+    table[id*="gvReoccuringOrders"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
+        font-size: 0.85em !important;
+    }
+
+        #gvReoccuringOrders th,
+        #gvReoccuringOrders td,
+        table[id*="gvReoccuringOrders"] th,
+        table[id*="gvReoccuringOrders"] td {
+            padding: 4px 2px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+    /* Make the container for ReoccuringOrders GridView more mobile-friendly */
+    div[style*="padding-left: 1em; padding-right: 1em"] {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+}
+/* ============================================ */
+/* SCROLLABLE TABLE CONTAINER SYSTEM          */
+/* ============================================ */
+
+/* Generic scrollable table container for wide tables */
+.scrollable-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    border-radius: 8px;
+    position: relative;
+}
+
+    .scrollable-table-container .results-table {
+        margin: 0;
+        white-space: nowrap;
+    }
+
+        /* Make form controls responsive within scrollable tables */
+        .scrollable-table-container .results-table input,
+        .scrollable-table-container .results-table select {
+            max-width: 150px;
+        }
+
+/* Optional: Sticky action column for better UX */
+@media (max-width: 768px) {
+    .scrollable-table-container .results-table td:last-child,
+    .scrollable-table-container .results-table th:last-child {
+        position: sticky;
+        right: 0;
+        background: white;
+        z-index: 2;
+        box-shadow: -2px 0 4px rgba(0,0,0,0.1);
+    }
+
+    .scrollable-table-container .results-table tr:nth-child(even) td:last-child {
+        background: var(--light-green);
+    }
+}
+/* ============================================ */
+/* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
+/* ============================================ */
+
+/* Exclude ImageButtons from global styling to maintain natural size */
+input[type="image"],
+.results-table input[type="image"],
+.scrollable-table-container input[type="image"],
+*[id*="ImageButton"],
+*[id*="btn"]:not(button):not(input[type="submit"]):not(input[type="button"]) {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 2px !important;
+    min-width: auto !important;
+    height: auto !important;
+    box-sizing: content-box !important;
+    white-space: normal !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    display: inline !important;
+    align-items: initial !important;
+    justify-content: initial !important;
+    transition: none !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
+    color: inherit !important;
+}
+
+    /* ImageButton hover effects - keep them subtle */
+    input[type="image"]:hover,
+    .results-table input[type="image"]:hover,
+    .scrollable-table-container input[type="image"]:hover {
+        opacity: 0.8 !important;
+        transform: scale(1.05) !important;
+        background: none !important;
+        border: none !important;
+    }
+
+/* Exclude Ajax ComboBox buttons from global styling */
+.ajax__combobox_buttoncontainer button,
+.ajax__combobox_buttoncontainer input[type="button"],
+*[id*="ComboBox"] button,
+*[id*="ComboBox"] input[type="button"],
+*[class*="combobox"] button,
+*[class*="combobox"] input[type="button"],
+.ajax__combobox_button,
+.ajax__combobox_dropdownbutton {
+    /*background: transparent !important;*/
+    border: #595939 !important;
+    padding: initial !important;
+    margin: initial !important;
+    min-width: initial !important;
+    height: 1.2em !important;
+    vertical-align: text-bottom;
+    font-size: initial !important;
+    font-family: initial !important;
+    color: #4e664d !important;
+    display: initial !important;
+    box-sizing: initial !important;
+    border-radius: 4px !important;
+    text-decoration: initial !important;
+    cursor: initial !important;
+    transition: initial !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+/* ============================================ */
+/* SENDCOFFEECHECKUP SPECIFIC LAYOUT          */
+/* ============================================ */
+
+/* Complex form layout for SendCoffeeCheckup */
+.complex-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.complex-form-section {
+    background: var(--light-brown);
+    border-radius: 15px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    .complex-form-section h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: var(--primary-green);
+        border-bottom: 2px solid var(--primary-green);
+        padding-bottom: 8px;
+    }
+
+    /* Tab container styling for complex forms */
+    .complex-form-section .ajax__tab_container {
+        width: 100% !important;
+        margin: 10px 0;
+    }
+
+    .complex-form-section .ajax__tab_body {
+        padding: 15px !important;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+    }
+
+.button-toolbar-rounded {
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 15px;
+    background-color: var(--light-green);
+    margin: 10px 2px;
+    border: 1px solid rgba(78, 102, 77, 0.2);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+/* Enhanced mobile hiding classes with text overflow */
+@media (max-width: 768px) {
+    .hide-mobile-city,
+    .hide-mobile-equipment,
+    .hide-mobile-serial,
+    .hide-mobile-details,
+    th.hide-mobile-city,
+    th.hide-mobile-equipment,
+    th.hide-mobile-serial,
+    th.hide-mobile-details,
+    td.hide-mobile-city,
+    td.hide-mobile-equipment,
+    td.hide-mobile-serial,
+    td.hide-mobile-details {
+        display: none !important;
+    }
+}
+
+/* ADDITIONAL: Force table containers to respect viewport width */
+@media (max-width: 768px) {
+    .results-container {
+        max-width: 100vw !important;
+        overflow-x: auto !important;
+        padding: 8px 4px !important;
+    }
+
+    .results-table,
+    table.results-table {
+        max-width: 100% !important;
+        table-layout: fixed !important; /* Force fixed layout for better control */
+        min-width: 600px !important; /* Ensure minimum readable width */
+    }
+
+        /* Ensure all table cells respect max-width */
+        .results-table td,
+        .results-table th,
+        table.results-table td,
+        table.results-table th {
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+}
+
+/* ADDITIONAL: Special handling for GridView controls */
+@media (max-width: 768px) {
+    /* Target ASP.NET GridView containers */
+    div[id*="gvCustomers"],
+    div[id*="GridView"],
+    .GridView {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+    }
+
+        /* Force GridView tables to be responsive but readable */
+        div[id*="gvCustomers"] table,
+        div[id*="GridView"] table,
+        .GridView table {
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            min-width: 600px !important; /* Ensure readability */
+        }
+
+    /* Handle UpdatePanel containers */
+    div[id*="upnl"] {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+
+/* ADDITIONAL: Special handling for GridView controls */
+@media (max-width: 768px) {
+    /* Target ASP.NET GridView containers */
+    div[id*="gvCustomers"],
+    div[id*="GridView"],
+    .GridView {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }
+
+        /* Force GridView tables to be responsive */
+        div[id*="gvCustomers"] table,
+        div[id*="GridView"] table,
+        .GridView table {
+            max-width: 100% !important;
+            table-layout: fixed !important;
+        }
+
+    /* Handle UpdatePanel containers */
+    div[id*="upnl"] {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+/* Ensure GridViews use full width */
+.TblWhite,
+.TblZebra {
+    max-width: 100% !important;
+    table-layout: auto;
+    margin: 0;
+}
+
+    /* Update legacy table headers */
+    .TblWhite th,
+    .TblZebra th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+        font-weight: bold !important;
+        font-size: 0.95em !important;
+        padding: 8px 6px !important;
+        text-align: left !important;
+        border: none !important;
+    }
+
+    .TblWhite td,
+    .TblZebra td {
+        padding: 2px 2px !important;
+    }
+
+    /* Update legacy table rows */
+    .TblWhite tr:hover td,
+    .TblZebra tr:hover td {
+        background-color: #e8f5e8 !important;
+    }
+/*Simple table*/
+
+.TblSimple {
+    border-top: 1px solid #a3a360;
+    border-left: 1px solid #a3a360;
+    padding: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+table.TblSimple {
+    background: #fffff9;
+    height: auto;
+    line-height: 1.5em;
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    -o-border-radius: 15px;
+    border-radius: 15px;
+    padding: 10px 10px;
+}
+
+.TblSimple th {
+    border-right: 1px solid #898;
+    border-bottom: 1px solid #898;
+    text-align: left;
+    padding: 5px;
+}
+
+.TblSimple td {
+    border-right: 1px solid #E9E9D0;
+    border-bottom: 1px solid #E9E9D0;
+    text-align: left;
+    padding: 2px 4px 2px 2px;
+}
+
+.TblSimple th,
+.TblWhite th {
+    background-color: #9dD49c;
+    font-size: 120%;
+}
+
+.TblSimple tr:nth-child(even) {
+    background: #fff;
+}
+
+.TblSimple tr:nth-child(odd) {
+    background: #f3f9e9;
+}
+/*-User making contact with us form-*/
+
+table.InputFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 5px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: 100%;
+}
+
+/*One Col Style Tble*/
+
+.TblLHColHdr {
+    font-family: Calibri, sans-serif, "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+    font-size: 12px;
+    min-width: 480px;
+    text-align: left;
+    padding: 0;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #d0d090;
+}
+
+    .TblLHColHdr th {
+        font-size: 14px;
+        font-weight: normal;
+        color: #103010;
+        padding: 12px 15px;
+    }
+
+    .TblLHColHdr td {
+        color: #60A060;
+        border-top: 1px solid #c0c090;
+        padding: 10px 15px;
+        display: table-cell;
+    }
+
+.TblLHCol-first {
+    background: #F0FFF0;
+    font-weight: bold;
+    color: #092909;
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+}
+
+.TblLHCol-brown {
+    background: #F9F9e0;
+    font-weight: bold;
+    color: #292909;
+    vertical-align: middle;
+}
+
+.TblLHColHdr tr:hover td {
+    color: #373;
+    background: #aea;
+}
+/* ============================================ */
+/* RESPONSIVE LAYOUT SYSTEM                   */
+/* ============================================ */
+
+.responsive-layout-container {
+    background: var(--light-green);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 0px;
+    margin-bottom: 15px;
+    width: fit-content; /* Use fit-content instead of auto */
+    box-sizing: border-box;
+    /* Use CSS Grid instead of Flexbox for better control */
+    display: grid;
+    grid-template-columns: auto auto; /* Two columns: main and detail */
+    grid-template-rows: auto auto; /* Two rows: content and footer */
+    gap: 20px;
+    /* Define grid areas */
+    grid-template-areas:
+        "main detail"
+        "footer footer";
+}
+
+.layout-main-panel {
+    grid-area: main;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.layout-detail-panel {
+    grid-area: detail;
+    min-width: 400px;
+    max-width: auto;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between;
+    /* Add rounded box styling like the header */
+    background: #fff; /* White background like TblSimple */
+    border-radius: 15px; /* Rounded corners */
+    padding: 15px; /* Internal padding */
+    border: 1px solid #E9E9D0; /* Subtle border like TblSimple */
+}
+
+.layout-footer-panel {
+    grid-area: footer; /* Always stays in footer row */
+    background: var(--secondary-green);
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin-top: 15px;
+    /* Center the buttons */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    /* Keep existing button styling */
+    .layout-footer-panel input[type="submit"],
+    .layout-footer-panel button,
+    .layout-footer-panel .btn {
+        background-color: var(--primary-green) !important;
+        color: #fff !important;
+        border: 1px solid var(--primary-green) !important;
+        padding: 6px 6px !important;
+        border-radius: 4px !important;
+        font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+        font-size: 0.9em !important;
+        min-width: 40px !important;
+        height: 32px !important;
+        white-space: nowrap !important;
+        margin: 0 2px;
+    }
+
+/* Keep existing panel positioning */
+.layout-panel-top {
+    flex: 1;
+    margin-bottom: 15px;
+}
+
+.layout-panel-bottom {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Mobile responsive - switch to single column */
+@media (max-width: 768px) {
+    .responsive-layout-container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "main"
+            "detail"
+            "footer";
+        gap: 15px;
+    }
+
+    .layout-main-panel,
+    .layout-detail-panel {
+        min-width: 0;
+        max-width: none;
+    }
+
+    .layout-footer-panel {
+        margin-top: 10px;
+    }
+
+    .layout-detail-panel {
+        justify-content: flex-start;
+    }
+
+    .layout-panel-bottom {
+        margin-top: 15px;
+    }
+    /* Mobile button improvements for layout-footer-panel */
+    .layout-footer-panel {
+        gap: 12px; /* Increase gap between buttons when wrapping */
+        padding: 15px 12px; /* Add more padding on mobile */
+    }
+
+        /* Make buttons smaller on mobile */
+        .layout-footer-panel input[type="submit"],
+        .layout-footer-panel button,
+        .layout-footer-panel .btn {
+            padding: 4px 8px !important; /* Smaller padding */
+            font-size: 0.8em !important; /* Smaller font */
+            min-width: 50px !important; /* Smaller min-width */
+            height: 28px !important; /* Smaller height */
+            margin: 4px 2px !important; /* Add vertical margin for wrapping */
+        }
+}
+
+/* Extra small mobile - even smaller buttons */
+@media (max-width: 480px) {
+    .layout-footer-panel {
+        gap: 8px;
+        padding: 12px 8px;
+    }
+
+        .layout-footer-panel input[type="submit"],
+        .layout-footer-panel button,
+        .layout-footer-panel .btn {
+            padding: 3px 6px !important;
+            font-size: 0.75em !important;
+            min-width: 45px !important;
+            height: 26px !important;
+            margin: 3px 1px !important;
+        }
+}
+/* ============================================ */
+/* TblFlex - Clean Generic Responsive Table    */
+/* ============================================ */
+
+.TblFlex {
+    width: 100%;
+    max-width: 100%;
+    background: #fff;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.95em;
+    border: 1px solid rgba(78, 102, 77, 0.3);
+    table-layout: auto;
+}
+
+    /* Clean solid header */
+    .TblFlex th,
+    .TblFlex thead th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 0.9em;
+        padding: 8px 10px;
+        text-align: left;
+        border: none !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* Body cell styling with reduced padding */
+    .TblFlex td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(78, 102, 77, 0.2);
+        border-right: none;
+        border-left: none;
+        vertical-align: middle;
+        text-align: left;
+        transition: background-color 0.2s ease;
+        display: table-cell;
+    }
+
+    /* Clean alternating row colors */
+    .TblFlex tbody tr:nth-child(even) td,
+    .TblFlex tr:nth-child(even) td {
+        background: var(--light-green) !important;
+    }
+
+    .TblFlex tbody tr:nth-child(odd) td,
+    .TblFlex tr:nth-child(odd) td {
+        background: #fff !important;
+    }
+
+    /* Ensure header doesn't get alternating colors */
+    .TblFlex thead tr,
+    .TblFlex thead tr th,
+    .TblFlex thead tr:nth-child(even),
+    .TblFlex thead tr:nth-child(odd),
+    .TblFlex thead tr:nth-child(even) th,
+    .TblFlex thead tr:nth-child(odd) th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Simple hover effect */
+    .TblFlex tbody tr:hover td,
+    .TblFlex tr:hover td {
+        background: rgba(78, 102, 77, 0.15) !important;
+    }
+
+    /* FIXED: Header hover - ensure text stays visible and background stays same */
+    .TblFlex thead tr:hover,
+    .TblFlex thead tr:hover th,
+    .TblFlex th:hover {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Generic form controls within table */
+    .TblFlex input[type="text"],
+    .TblFlex select,
+    .TblFlex textarea {
+        width: 100%;
+        max-width: 180px;
+        padding: 4px 6px;
+        border: 1px solid rgba(78, 102, 77, 0.4);
+        border-radius: 4px;
+        font-size: 0.9em;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+        .TblFlex input[type="text"]:focus,
+        .TblFlex select:focus,
+        .TblFlex textarea:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 1px rgba(78, 102, 77, 0.3);
+            outline: none;
+        }
+
+    /* FIXED: Override the global combo box button styling for TblFlex ONLY */
+    .TblFlex .ajax__combobox_buttoncontainer button,
+    .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+    .TblFlex .ajax__combobox_button,
+    .TblFlex .ajax__combobox_dropdownbutton {
+        min-width: 18px !important;
+        min-height: 1em;
+        height: 1.8em !important;
+        padding: initial;
+        font-size: 12px !important;
+        font-family: inherit !important;
+        color: #333 !important;
+        display: inline-block !important;
+        box-sizing: border-box !important;
+        /*border-radius: 0 4px 4px 0 !important;*/
+        text-decoration: none !important;
+        cursor: pointer !important;
+        transition: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        width: 18px !important;
+    }
+
+        .TblFlex .ajax__combobox_buttoncontainer button:hover,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"]:hover,
+        .TblFlex .ajax__combobox_button:hover,
+        .TblFlex .ajax__combobox_dropdownbutton:hover {
+            background: #e8e8e8 !important;
+            border: 1px solid #999 !important;
+            color: #333 !important;
+        }
+
+    .TblFlex input[type="submit"]:hover,
+    .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover,
+    .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover {
+        background: var(--secondary-brown) !important;
+    }
+
+    /* Image buttons - simple styling */
+    .TblFlex img {
+        max-height: 16px;
+        max-width: 16px;
+        border-radius: 2px;
+    }
+
+    /* Auto-width for button columns */
+    .TblFlex td:first-child,
+    .TblFlex th:first-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .TblFlex td:last-child,
+    .TblFlex th:last-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+/* ============================================ */
+/* Responsive Design                           */
+/* ============================================ */
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .TblFlex {
+        font-size: 1em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 6px 8px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: auto;
+        }
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+    .TblFlex {
+        font-size: 0.9em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+            max-width: 120px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 140px;
+        }
+}
+
+/* Mobile breakpoint - much more compact */
+@media (max-width: 768px) {
+    .TblFlex {
+        font-size: 0.8em;
+        border-radius: 6px;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+        }
+
+        .TblFlex th {
+            font-size: 0.8em;
+            padding: 6px 6px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 120px;
+            font-size: 0.85em;
+            padding: 3px 5px;
+        }
+
+        /* Smaller combo box buttons on mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 16px !important;
+            min-width: 16px !important;
+            height: auto !important;
+            padding: 1px 2px !important;
+            font-size: 10px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 3px 6px !important;
+            font-size: 0.75em !important;
+            height: 20px !important;
+            min-width: 12px !important;
+        }
+
+        .TblFlex img {
+            max-height: 16px;
+            max-width: 16px;
+        }
+
+        /* Hide less important columns on mobile */
+        .TblFlex .hide-mobile,
+        .TblFlex th.hide-mobile,
+        .TblFlex td.hide-mobile {
+            display: none !important;
+        }
+}
+
+/* Small mobile breakpoint - super compact */
+@media (max-width: 480px) {
+    .TblFlex {
+        border-radius: 4px;
+        font-size: 0.75em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 3px 4px;
+        }
+
+        .TblFlex th {
+            font-size: 0.75em;
+            padding: 4px 4px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 90px;
+            font-size: 0.8em;
+            padding: 2px 4px;
+        }
+
+        /* Even smaller combo box buttons on small mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 14px !important;
+            min-width: 14px !important;
+            padding: 1px !important;
+            font-size: 9px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 2px 4px !important;
+            font-size: 0.7em !important;
+            height: 20px !important;
+            min-width: 25px !important;
+        }
+
+        .TblFlex img {
+            max-height: 16px;
+            max-width: 16px;
+        }
+
+        /* Hide additional columns on small mobile */
+        .TblFlex .hide-small-mobile,
+        .TblFlex th.hide-small-mobile,
+        .TblFlex td.hide-small-mobile {
+            display: none !important;
+        }
+}
+
+/* ============================================ */
+/* Empty Data Styling                          */
+/* ============================================ */
+
+.TblFlex .empty-data,
+.TblFlex .simpleLightBrownForm {
+    text-align: center;
+    padding: 20px 15px;
+    color: var(--secondary-brown);
+    font-style: italic;
+    background: var(--light-green);
+    border-radius: 6px;
+    margin: 10px;
+}
+
+    .TblFlex .empty-data h2,
+    .TblFlex .simpleLightBrownForm h2 {
+        color: var(--primary-green);
+        margin-bottom: 10px;
+        font-size: 1.1em;
+    }
+
+@media (max-width: 768px) {
+    .TblFlex .empty-data,
+    .TblFlex .simpleLightBrownForm {
+        padding: 15px 10px;
+        font-size: 0.85em;
+        margin: 5px;
+    }
+}
+/* Button container for auto-width buttons */
+.button-container-auto {
+    text-align: center;
+    padding: 10px 0;
+}
+
+    .button-container-auto button,
+    .button-container-auto input[type="submit"] {
+        width: auto !important;
+        display: inline-block !important;
+        min-width: 120px !important;
+        max-width: 300px !important;
+    }
+
+/* ============================================ */
+/* PURE GENERIC SOLUTION - NO ASPX CHANGES     */
+/* ============================================ */
+
+/* Automatically detect and handle wide tables */
+.results-table:has(.col-priority-4),
+.results-table:has(.col-priority-5),
+table.results-table:has(.col-priority-4),
+table.results-table:has(.col-priority-5) {
+    /* Tables with priority-4 or priority-5 columns are considered "wide" */
+    min-width: 100%;
+}
+
+@media (min-width: 1025px) /*and (max-width: 1400px)*/ {
+    /* Better column width distribution for tables with many columns */
+    .results-table:has(.col-priority-3),
+    table.results-table:has(.col-priority-3) {
+        table-layout: fixed !important;
+    }
+
+        .results-table:has(.col-priority-3) .col-priority-1,
+        table.results-table:has(.col-priority-3) .col-priority-1 {
+            width: fit-content !important;
+        }
+
+        .results-table:has(.col-priority-3) .col-priority-2,
+        table.results-table:has(.col-priority-3) .col-priority-2 {
+            width: fit-content !important;
+        }
+
+        .results-table:has(.col-priority-3) .col-priority-3,
+        table.results-table:has(.col-priority-3) .col-priority-3 {
+            width: fit-content !important;
+        }
+}
+
+/* Enhanced mobile hiding classes */
+@media (max-width: 768px) {
+    .hide-mobile-city,
+    .hide-mobile-equipment,
+    .hide-mobile-serial,
+    .hide-mobile-details,
+    th.hide-mobile-city,
+    th.hide-mobile-equipment,
+    th.hide-mobile-serial,
+    th.hide-mobile-details,
+    td.hide-mobile-city,
+    td.hide-mobile-equipment,
+    td.hide-mobile-serial,
+    td.hide-mobile-details {
+        display: none !important;
+    }
+}
+/* ============================================ */
+/* MOBILE COLUMN HIDING UTILITY CLASSES - FINAL CLEAN VERSION */
+/* ============================================ */
+
+/* Utility classes for responsive column hiding */
+.col-priority-1 { /* Always visible - essential columns like Name, ID */
+    display: table-cell !important;
+}
+
+.col-priority-2 { /* Hide on small mobile */
+    display: table-cell;
+}
+
+.col-priority-3 { /* Hide on mobile */
+    display: table-cell;
+}
+
+.col-priority-4 { /* Hide on tablet and below */
+    display: table-cell;
+}
+
+.col-priority-5 { /* Hide on small desktop and below */
+    display: table-cell;
+}
+
+/* ENHANCED Responsive hiding - now includes both th and td */
+@media (max-width: 1600px) {
+    .col-priority-5,
+    th.col-priority-5,
+    td.col-priority-5 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .col-priority-3,
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-3,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-3,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+
+    /* Mobile: 3 column layout with FIXED ellipses and controlled widths */
+    .results-table,
+    table.results-table {
+        table-layout: fixed !important; /* MUST be fixed for consistent column widths */
+        width: 100% !important;
+        min-width: 350px !important;
+    }
+
+    /* Company Name - gets most space but controlled */
+    .col-priority-1,
+    th.col-priority-1,
+    td.col-priority-1 {
+        width: 30% !important; /* Reduced from 60% */
+        max-width: 180px !important; /* Reduced max-width */
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    /* Phone Number - smaller, controlled width */
+    .col-priority-2,
+    th.col-priority-2,
+    td.col-priority-2 {
+        width: 30% !important; /* Reduced from 25% but more than auto */
+        max-width: 110px !important; /* Smaller max-width for phone */
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    /* Action column (+last) - compact */
+    .results-table th:last-child,
+    .results-table td:last-child,
+    table.results-table th:last-child,
+    table.results-table td:last-child {
+        width: 20% !important; /* Consistent percentage */
+        max-width: 70px !important; /* Small for action buttons */
+        text-align: center !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    /* Force all table cells to respect ellipses */
+    .results-table td,
+    .results-table th,
+    table.results-table td,
+    table.results-table th {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .col-priority-2,
+    .col-priority-3,
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-2,
+    th.col-priority-3,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-2,
+    td.col-priority-3,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+
+    /* Small mobile: Only 2 columns - Name and Action */
+    .results-table,
+    table.results-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+        min-width: 280px !important;
+    }
+
+    /* Company name gets most space */
+    .col-priority-1,
+    th.col-priority-1,
+    td.col-priority-1 {
+        width: 75% !important;
+        max-width: 200px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    /* Action column */
+    .results-table th:last-child,
+    .results-table td:last-child,
+    table.results-table th:last-child,
+    table.results-table td:last-child {
+        width: 25% !important;
+        max-width: 70px !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+}
+
+/* Enhanced mobile hiding classes */
+@media (max-width: 768px) {
+    .hide-mobile-city,
+    .hide-mobile-equipment,
+    .hide-mobile-serial,
+    .hide-mobile-details,
+    th.hide-mobile-city,
+    th.hide-mobile-equipment,
+    th.hide-mobile-serial,
+    th.hide-mobile-details,
+    td.hide-mobile-city,
+    td.hide-mobile-equipment,
+    td.hide-mobile-serial,
+    td.hide-mobile-details {
+        display: none !important;
+    }
+}
+/* Compact first or last column ONLY when it contains an image button */
+.results-table td:first-child:has(input[type="image"]),
+.results-table td:last-child:has(input[type="image"]) {
+    width: 1%;
+    /*    max-width: 32px; - causing 2 buttons to over lap*/
+    min-width: 16px;
+    text-align: center !important;
+    padding: 4px 8px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+}
+
+/* ADDITIONAL: Better table container handling */
+@media (max-width: 768px) {
+    .results-container {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        padding: 8px 4px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .results-table,
+    table.results-table {
+        border-spacing: 0 !important;
+    }
+}
+
+/* ADDITIONAL: Special handling for GridView controls */
+@media (max-width: 768px) {
+    /* Target ASP.NET GridView containers */
+    div[id*="gvCustomers"],
+    div[id*="GridView"],
+    .GridView {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+        /* GridView table sizing */
+        div[id*="gvCustomers"] table,
+        div[id*="GridView"] table,
+        .GridView table {
+            table-layout: fixed !important;
+            width: 100% !important;
+            min-width: 350px !important;
+        }
+
+    /* Handle UpdatePanel containers */
+    div[id*="upnl"] {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+
+/* ============================================ */
+/* RESPONSIVE INPUT CONTROL FIXES - IMPROVED FILTER INPUT */
+/* ============================================ */
+
+/* Override fixed-width input controls for mobile responsiveness */
+input.textEntry,
+input.passwordEntry,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+textarea,
+select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Specific fixes for existing textEntry and passwordEntry classes */
+input.textEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+input.passwordEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+
+/* RESPONSIVE OVERRIDES FOR SMALL SCREENS */
+@media (max-width: 1024px) {
+    input.textEntry,
+    input.passwordEntry {
+        width: 280px !important;
+        max-width: 90% !important;
+    }
+
+    /* Fix filter toolbar inputs - MORE GENEROUS 
+    .filter-toolbar input[type="text"],
+    .filter-toolbar select {
+        min-width: 140px !important;
+        max-width: 250px !important; /* Increased max-width */
+    /*
+        width: auto !important;
+    }*/
+}
+
+@media (max-width: 768px) {
+    /* Fix filter toolbar on mobile - MORE SPACE FOR INPUTS */
+    .filter-toolbar {
+        padding: 8px 6px !important;
+        margin-bottom: 12px !important;
+    }
+
+        .filter-toolbar input[type="text"],
+        .filter-toolbar select {
+            min-width: 120px !important;
+            max-width: 200px !important; /* Increased from 180px */
+            width: auto !important;
+            flex: 1 !important;
+        }
+
+    .filter-control {
+        flex-direction: column; /* - put this back !important; */
+        align-items: stretch !important;
+        gap: 4px !important;
+        margin: 3px 0 !important;
+    }
+
+        .filter-control input[type="text"] {
+            width: 100% !important; /* Full width on mobile when stacked */
+            min-width: 0 !important;
+            /* max-width: none !important;  Remove max-width restriction */
+        }
+
+    /* Dramatically reduce input widths for mobile */
+    input.textEntry,
+    input.passwordEntry,
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+        width: auto !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Fix login form on mobile */
+    div.accountInfo {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    fieldset.login {
+        padding: 8px !important;
+        margin: 0 !important;
+    }
+
+        fieldset.login input[type="text"],
+        fieldset.login input[type="password"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+    /* Ensure form containers don't overflow */
+    .simpleLightBrownForm {
+        padding: 12px 8px !important;
+        margin: 8px 4px !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Fix any container that might cause horizontal scroll */
+    .page,
+    .main,
+    .minimain {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Even more compact for small mobile */
+    input.textEntry,
+    input.passwordEntry,
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+        font-size: 14px !important; /* Prevent zoom on iOS */
+        padding: 6px 8px !important;
+    }
+
+    .filter-toolbar {
+        padding: 6px 4px !important;
+    }
+
+        .filter-toolbar input[type="text"],
+        .filter-toolbar select {
+            min-width: 80px !important;
+            font-size: 12px !important;
+            width: 100% !important; /* Full width on very small screens */
+        }
+
+    /* Make labels stack vertically on very small screens */
+    .filter-control label {
+        display: block !important;
+        /*width: 100% !important;*/
+        margin-bottom: 2px !important;
+        font-size: 0.85em !important;
+        align-self: flex-start;
+    }
+
+    /* Ensure login form doesn't overflow */
+    fieldset.login input[type="text"],
+    fieldset.login input[type="password"] {
+        font-size: 14px !important;
+        padding: 8px 6px !important;
+    }
+
+    /* Force all containers to respect viewport */
+    body {
+        margin: 0 !important;
+        padding-top: 56px !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    .page {
+        margin: 0 !important;
+        padding: 8px 4px !important;
+    }
+}
+
+table.full-width {
+    width: 100% !important;
+}
+
+
+/* ============================================ */
+/* UNIVERSAL RESPONSIVE DETAIL FORM SYSTEM    */
+/* ============================================ */
+
+/* Apply to all detail form table types */
+.TblMudZebra,
+.TblCoffee,
+.detail-form-table,
+table.InputFrm {
+    max-width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #fff !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    margin-bottom: 15px !important;
+}
+
+    /* Standard desktop behavior for detail forms */
+    .TblMudZebra td,
+    .TblCoffee td,
+    .detail-form-table td,
+    table.InputFrm td {
+        padding: 2px 4px;
+        border: 1px solid #ddd !important;
+        vertical-align: middle !important;
+    }
+
+    /* Form controls in detail tables */
+    .TblMudZebra input[type="text"],
+    .TblMudZebra select,
+    .TblMudZebra textarea,
+    .TblCoffee input[type="text"],
+    .TblCoffee select,
+    .TblCoffee textarea,
+    .detail-form-table input[type="text"],
+    .detail-form-table select,
+    .detail-form-table textarea,
+    table.InputFrm input[type="text"],
+    table.InputFrm select,
+    table.InputFrm textarea {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 14px !important; /* Prevent iOS zoom */
+    }
+
+/* DeliverySheet Totals table rounding fix */
+.TblWrapper {
+    border: none; /* wrapper becomes neutral */
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+    .TblWrapper .TblCoffee {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        margin: 0 !important; /* remove side gap that made corners look clipped */
+        border: 1px solid #523A0B; /* keep your original border tone */
+        border-radius: 10px !important;
+        overflow: hidden; /* clip cell backgrounds inside radius */
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    }
+
+        .TblWrapper .TblCoffee thead th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        .TblWrapper .TblCoffee thead th:last-child {
+            border-top-right-radius: 10px;
+        }
+
+        .TblWrapper .TblCoffee tbody tr:last-child td:first-child {
+            border-bottom-left-radius: 10px;
+        }
+
+        .TblWrapper .TblCoffee tbody tr:last-child td:last-child {
+            border-bottom-right-radius: 10px;
+        }
+        .TblWrapper .TblCoffee td,
+        .TblWrapper .TblCoffee th {
+            border: 1px solid #ddd !important;
+            padding: 2px 4px !important;
+        }
+/* UNIVERSAL MOBILE RESPONSIVE BEHAVIOR */
+@media (max-width: 768px) {
+
+    /* Transform all detail form tables into mobile-friendly layout */
+    .TblMudZebra,
+    .TblCoffee,
+    .detail-form-table,
+    table.InputFrm {
+        display: block !important;
+        overflow-x: hidden !important;
+        border-radius: 15px !important;
+        background: var(--light-green) !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+
+        /* Transform rows into individual cards */
+        .TblMudZebra tr,
+        .TblCoffee tr,
+        .detail-form-table tr,
+        table.InputFrm tr {
+            display: block !important;
+            margin-bottom: 15px !important;
+            background: #fff !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+
+        /* Transform cells into stacked layout */
+        .TblMudZebra td,
+        .TblCoffee td,
+        .detail-form-table td,
+        table.InputFrm td {
+            display: block !important;
+            width: 100% !important;
+            padding: 4px 0 !important;
+            border: none !important;
+            text-align: left !important;
+        }
+
+            /* Style label cells (usually first in row or containing just text) */
+            .TblMudZebra td:first-child,
+            .TblCoffee td:first-child,
+            .detail-form-table td:first-child,
+            table.InputFrm td:first-child {
+                font-weight: bold !important;
+                color: var(--primary-green) !important;
+                margin-bottom: 6px !important;
+                font-size: 0.9em !important;
+                text-transform: capitalize !important;
+            }
+
+            /* Hide empty cells and spacer cells */
+            .TblMudZebra td:empty,
+            .TblCoffee td:empty,
+            .detail-form-table td:empty,
+            table.InputFrm td:empty,
+            .TblMudZebra td:contains("&nbsp;"),
+            .TblCoffee td:contains("&nbsp;"),
+            .detail-form-table td:contains("&nbsp;"),
+            table.InputFrm td:contains("&nbsp;") {
+                display: none !important;
+            }
+
+        /* Full-width form controls */
+        .TblMudZebra input[type="text"],
+        .TblMudZebra select,
+        .TblMudZebra textarea,
+        .TblCoffee input[type="text"],
+        .TblCoffee select,
+        .TblCoffee textarea,
+        .detail-form-table input[type="text"],
+        .detail-form-table select,
+        .detail-form-table textarea,
+        table.InputFrm input[type="text"],
+        table.InputFrm select,
+        table.InputFrm textarea {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 8px 12px !important;
+            font-size: 16px !important; /* Prevent iOS zoom */
+            border: 1px solid #ccc !important;
+            border-radius: 6px !important;
+            margin-top: 4px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Better checkbox and radio styling */
+        .TblMudZebra input[type="checkbox"],
+        .TblMudZebra input[type="radio"],
+        .TblCoffee input[type="checkbox"],
+        .TblCoffee input[type="radio"],
+        .detail-form-table input[type="checkbox"],
+        .detail-form-table input[type="radio"],
+        table.InputFrm input[type="checkbox"],
+        table.InputFrm input[type="radio"] {
+            margin: 0 8px 0 0 !important;
+            transform: scale(1.3) !important;
+            accent-color: var(--primary-green) !important;
+        }
+
+        /* Special handling for button rows */
+        .TblMudZebra .rowOddC,
+        .TblCoffee .horizMiddle,
+        .detail-form-table .button-row,
+        table.InputFrm .button-row {
+            text-align: center !important;
+            background: var(--secondary-green) !important;
+            border-radius: 8px !important;
+            padding: 15px !important;
+            margin-top: 20px !important;
+        }
+
+            /* Stack buttons vertically on mobile */
+            .TblMudZebra .rowOddC input[type="submit"],
+            .TblMudZebra .rowOddC input[type="button"],
+            .TblMudZebra .rowOddC button,
+            .TblCoffee .horizMiddle input[type="submit"],
+            .TblCoffee .horizMiddle input[type="button"],
+            .TblCoffee .horizMiddle button,
+            .detail-form-table .button-row input[type="submit"],
+            .detail-form-table .button-row input[type="button"],
+            .detail-form-table .button-row button,
+            table.InputFrm .button-row input[type="submit"],
+            table.InputFrm .button-row input[type="button"],
+            table.InputFrm .button-row button {
+                display: block !important;
+                width: 90% !important;
+                max-width: 300px !important;
+                margin: 6px auto !important;
+                padding: 12px 16px !important;
+                font-size: 1em !important;
+                border-radius: 6px !important;
+                border: none !important;
+                background: var(--primary-green) !important;
+                color: #fff !important;
+                font-weight: bold !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
+            }
+
+                .TblMudZebra .rowOddC input[type="submit"]:hover,
+                .TblMudZebra .rowOddC input[type="button"]:hover,
+                .TblMudZebra .rowOddC button:hover,
+                .TblCoffee .horizMiddle input[type="submit"]:hover,
+                .TblCoffee .horizMiddle input[type="button"]:hover,
+                .TblCoffee .horizMiddle button:hover,
+                .detail-form-table .button-row input[type="submit"]:hover,
+                .detail-form-table .button-row input[type="button"]:hover,
+                .detail-form-table .button-row button:hover,
+                table.InputFrm .button-row input[type="submit"]:hover,
+                table.InputFrm .button-row input[type="button"]:hover,
+                table.InputFrm .button-row button:hover {
+                    background: var(--secondary-brown) !important;
+                    transform: translateY(-2px) !important;
+                }
+
+        /* Special handling for multiple checkboxes in one row */
+        .TblMudZebra td:has(input[type="checkbox"]),
+        .TblCoffee td:has(input[type="checkbox"]),
+        .detail-form-table td:has(input[type="checkbox"]),
+        table.InputFrm td:has(input[type="checkbox"]) {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            padding: 8px 0 !important;
+        }
+
+        /* Better handling for dropdowns with labels */
+        .TblMudZebra td:has(select),
+        .TblCoffee td:has(select),
+        .detail-form-table td:has(select),
+        table.InputFrm td:has(select) {
+            margin-bottom: 8px !important;
+        }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 480px) {
+    .TblMudZebra,
+    .TblCoffee,
+    .detail-form-table,
+    table.InputFrm {
+        padding: 12px !important;
+        margin-bottom: 10px !important;
+    }
+
+        .TblMudZebra tr,
+        .TblCoffee tr,
+        .detail-form-table tr,
+        table.InputFrm tr {
+            padding: 10px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .TblMudZebra .rowOddC input[type="submit"],
+        .TblMudZebra .rowOddC input[type="button"],
+        .TblMudZebra .rowOddC button,
+        .TblCoffee .horizMiddle input[type="submit"],
+        .TblCoffee .horizMiddle input[type="button"],
+        .TblCoffee .horizMiddle button,
+        .detail-form-table .button-row input[type="submit"],
+        .detail-form-table .button-row input[type="button"],
+        .detail-form-table .button-row button,
+        table.InputFrm .button-row input[type="submit"],
+        table.InputFrm .button-row input[type="button"],
+        table.InputFrm .button-row button {
+            width: 100% !important;
+            margin: 4px 0 !important;
+            padding: 10px 12px !important;
+            font-size: 0.9em !important;
+        }
+}
+
+/* ============================================ */
+/* UNIVERSAL TAB CONTAINER MOBILE FIXES       */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    /* Make tab containers more mobile friendly */
+    .ajax__tab_container {
+        width: 100% !important;
+    }
+
+    .ajax__tab_header {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+    }
+
+    .ajax__tab_tab {
+        font-size: 0.9em !important;
+        padding: 8px 12px !important;
+        min-width: auto !important;
+    }
+
+    .ajax__tab_body {
+        padding: 10px !important;
+        background: #fff !important;
+        border-radius: 0 0 8px 8px !important;
+    }
+}
+
+/* ============================================ */
+/* GRIDVIEW IN TABS MOBILE FIXES              */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    /* GridViews inside tabs get scrollable container */
+    .ajax__tab_body .TblWhite,
+    .ajax__tab_body table[id*="gv"] {
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+        min-width: 600px !important;
+        border-radius: 6px !important;
+    }
+
+        .ajax__tab_body .TblWhite th,
+        .ajax__tab_body .TblWhite td,
+        .ajax__tab_body table[id*="gv"] th,
+        .ajax__tab_body table[id*="gv"] td {
+            padding: 4px 6px !important;
+            font-size: 0.8em !important;
+            white-space: nowrap !important;
+        }
+}
+/* Remove conflicting min-width rules that were causing overflow */
+@media (max-width: 768px) {
+    .results-table {
+        min-width: 100% !important; /* Override the previous min-width: 600px */
+    }
+}
+
+@media (max-width: 480px) {
+    .results-table {
+        min-width: 100% !important; /* Override the previous min-width: 500px */
+    }
+}
+/* ============================================ */
+/* SELECTED ROW OVERRIDE - SIMPLIFIED         */
+/* ============================================ */
+/* Fixes the fact that the grid view does not add a selected row class, so we use hese hard coded colours */
+/* Override any GridView row that has the selected background color applied inline */
+.results-table tr[style*="background-color:#63CB66"],
+.results-table tr[style*="background-color: #63CB66"],
+.results-table tr[style*="background-color:#63cb66"],
+.results-table tr[style*="background-color: #63cb66"],
+table.results-table tr[style*="background-color:#63CB66"],
+table.results-table tr[style*="background-color: #63CB66"],
+table.results-table tr[style*="background-color:#63cb66"],
+table.results-table tr[style*="background-color: #63cb66"],
+#gvCities tr[style*="background-color:#63CB66"],
+#gvCities tr[style*="background-color: #63CB66"],
+#gvCities tr[style*="background-color:#63cb66"],
+#gvCities tr[style*="background-color: #63cb66"] {
+    background-color: #63cb66 !important;
+}
+
+    /* Target the cells within selected rows */
+    .results-table tr[style*="background-color:#63CB66"] td,
+    .results-table tr[style*="background-color: #63CB66"] td,
+    .results-table tr[style*="background-color:#63cb66"] td,
+    .results-table tr[style*="background-color: #63cb66"] td,
+    table.results-table tr[style*="background-color:#63CB66"] td,
+    table.results-table tr[style*="background-color: #63CB66"] td,
+    table.results-table tr[style*="background-color:#63cb66"] td,
+    table.results-table tr[style*="background-color: #63cb66"] td,
+    #gvCities tr[style*="background-color:#63CB66"] td,
+    #gvCities tr[style*="background-color: #63CB66"] td,
+    #gvCities tr[style*="background-color:#63cb66"] td,
+    #gvCities tr[style*="background-color: #63cb66"] td {
+        background-color: #63cb66 !important;
+        color: #4e664d !important;
+        font-weight: bold !important;
+    }
+
+.TblMudZebra .ajax__calendar_container,
+.TblMudZebra .ajax__calendar_body,
+.TblMudZebra .ajax__calendar_days,
+.TblMudZebra .ajax__calendar_months,
+.TblMudZebra .ajax__calendar_years {
+    box-sizing: border-box;
+    font-size: 10px !important;
+    font-family: tahoma,verdana,helvetica !important;
+    /*background: #fff !important;*/
+    /*color: #333 !important;*/
+    border: 1px solid #666 !important;
+    border-radius: 4px !important;
+    z-index: 99999 !important;
+    position: absolute !important; /* Use absolute for correct popup placement */
+    min-width: 290px !important;
+    max-width: 400px !important;
+    min-height: 290px !important;
+    padding: 1px !important;
+    margin: 0px !important;
+}
+
+.wordwrap
+td.wordwrap {
+    word-break: break-word;
+    white-space: normal;
+    background-color: pink;
+}
+/* Restrict the pager cell and its nested table to content width */
+.results-table tr.aspNetPager > td[colspan] {
+    text-align: left !important;
+    padding: 0 !important;
+    /* Remove any width constraints */
+    width: auto !important;
+    /* Prevent stretching */
+    white-space: nowrap !important;
+}
+
+    .results-table tr.aspNetPager > td[colspan] > table {
+        display: inline-block !important;
+        width: auto !important;
+        margin: 0 !important;
+        border: none !important;
+        background: none !important;
+    }
+
+        .results-table tr.aspNetPager > td[colspan] > table td,
+        .results-table tr.aspNetPager > td[colspan] > table th {
+            padding: 0 2px !important;
+            white-space: nowrap !important;
+        }
+/* Add spacing between pager image buttons */
+.results-table tr.aspNetPager input[type="image"] {
+    margin-right: 8px !important;
+}
+
+    .results-table tr.aspNetPager input[type="image"]:last-child {
+        margin-right: 0 !important;
+    }
+
+/* Status message styles */
+.status-message {
+    margin-top: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #d9e2ec;
+    background: #f5f7fa;
+    color: #2f3b48;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    width: auto;
+    max-width: 100%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    transition: background-color .25s, border-color .25s;
+    word-break: break-word;
+}
+    .status-message:empty {
+        display: none;
+    }
+
+    .status-message.status-info {
+        background: #eef6ff;
+        border-color: #c3ddfd;
+        color: #1e4976;
+    }
+
+    .status-message.status-success {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #05603a;
+    }
+
+    .status-message.status-warn {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+
+    .status-message.status-error {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .status-message a {
+        color: inherit;
+        text-decoration: underline;
+        font-weight: 500;
+    }
+
+    .status-message strong {
+        font-weight: 600;
+    }

@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<commands>
+  <command type="disable">
+    CREATE TABLE TempOrdersHeaderTbl (
+    [TOHeaderID] AUTOINCREMENT,
+    [CustomerID] INT ,
+    [OrderDate] DateTime,
+    [RoastDate]  DateTime,
+    [RequiredByDate]  DateTime ,
+    [ToBeDeliveredByID] INT ,
+    [Confirmed] YESNO,
+    [Done] YESNO,
+    [Notes] MEMO,
+    CONSTRAINT [pk_TOHeaderID] PRIMARY KEY (TOHeaderID)
+    )
+  </command>
+  <command type="create">
+      CREATE TABLE TempOrdersLinesTbl (
+      [TOLineID] AUTOINCREMENT,
+      [TOHeaderID]  INT , 
+      [ItemID]  INT ,
+      [ServiceTypeID] INT,
+      [Qty] SINGLE ,
+      [PackagingID] INT,
+      [OriginalOrderID] INT,
+      CONSTRAINT [pk_TOLineID] PRIMARY KEY (TOLineID)
+      )
+  </command>
+  <command type="alter">
+      ALTER ABLE CustomersTbl ADD SendDeliveryConfirmation YESNO
+  </command>
+  <command type="select">
+    SELECT        TOP 10 CompanyName, SendDeliveryConfirmation
+    FROM            CustomersTbl
+  </command>
+  <command type="alter">
+    ALTER TABLE ItemTypeTbl ADD UnitsPerQty SINGLE
+  </command>
+  <command type="alter">
+    ALTER TABLE ItemTypeTbl ALTER COLUMN UnitsPerQty SINGLE
+  </command>
+  <command type="update">
+    UPDATE ItemTypeTbl SET UnitsPerQty = 1
+  </command>
+  <command type="update">
+    UPDATE ItemTypeTbl SET UnitsPerQty = 25 WHERE SKU="8JuraCln25"
+  </command>
+  <command type="update">
+    UPDATE ItemTypeTbl SET UnitsPerQty = 3 WHERE SKU="8JuraDecaTab"
+  </command>
+  <command type="update">
+    UPDATE ItemTypeTbl SET UnitsPerQty = 6 WHERE SKU="8JuraCln6"
+  </command>
+  <command type="select">
+    SELECT        ItemTypeID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, UnitsPerQty, ServiceTypeId
+    FROM            ItemTypeTbl
+    WHERE        (SKU LIKE '8%')
+  </command>
+  <command type="alter">
+    ALTER TABLE ClientUsageTbl ADD CleanAveCount SINGLE
+  </command>
+  <command type="update">
+    UPDATE ClientUsageTbl SET CleanAveCount=200
+  </command>
+  <command type="create">
+    CREATE TABLE TrackedServiceItemTbl (
+      [TrackerServiceItemID] AUTOINCREMENT,
+      [ServiceTypeID] INT ,
+      [TypicalAvePerItem] SINGLE,
+      [UsageDateFieldName] VARCHAR(20),
+      [UsageAveFieldName] VARCHAR(20),
+      [ThisItemSetsDailyAverage] YESNO,
+      [Notes] MEMO,
+      CONSTRAINT [pk_TrackerServiceItemID] PRIMARY KEY (TrackerServiceItemID)
+    )
+  </command>
+  <command type="insert">
+    INSERT INTO TrackedServiceItemTbl
+    (ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName,ThisItemSetsDailyAverage , Notes)
+    VALUES        (2, 100, 'NextCoffeeBy', 'DailyConsumption', 1, 'Average Consumption for coffee')
+  </command>
+  <command type="insert">
+    INSERT INTO TrackedServiceItemTbl
+    (ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName,ThisItemSetsDailyAverage , Notes)
+    VALUES        (1, 200, 'NextCleanOn', 'CleanAveCount', 0, 'Average Consumption for cleaning pills')
+  </command>
+  <command type="insert">
+    INSERT INTO TrackedServiceItemTbl
+    (ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName,ThisItemSetsDailyAverage , Notes)
+    VALUES        (4, 550, 'NextDescaleEst', 'DescaleAveCount', 0, 'Average Consumption for descaling pills')
+  </command>
+  <command type="insert">
+    INSERT INTO TrackedServiceItemTbl
+    (ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName,ThisItemSetsDailyAverage , Notes)
+    VALUES        (5, 300, 'NextFilterEst', 'FilterAveCount', 0, 'Average Consumption for water Filters')
+  </command>
+  <command type="insert">
+    INSERT INTO TrackedServiceItemTbl
+    (ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName,ThisItemSetsDailyAverage , Notes)
+    VALUES        (10, 10000, 'NextServiceEst', 'ServiceAveCount', 0, 'Average Consumption between Services')
+  </command>
+  <command type="select">
+      SELECT        TrackerServiceItemID, ServiceTypeID, TypicalAvePerItem, UsageDateFieldName, UsageAveFieldName, ThisItemSetsDailyAverage, Notes
+      FROM            TrackedServiceItemTbl
+      ORDER BY ThisItemSetsDailyAverage, ServiceTypeID
+  </command>
+
+
+
+
+
+
+</commands>
+

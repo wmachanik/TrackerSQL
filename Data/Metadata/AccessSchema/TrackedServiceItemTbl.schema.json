@@ -1,0 +1,152 @@
+{
+  "SourceTable": "TrackedServiceItemTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "TrackerServiceItemID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "ServiceTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "TypicalAvePerItem",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "UsageDateFieldName",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "UsageAveFieldName",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "ThisItemSetsDailyAverage",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_TrackerServiceItemID",
+      "Columns": [
+        "TrackerServiceItemID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "TrackedServiceItemsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "TrackerServiceItemID",
+        "Target": "TrackerServiceItemID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceTypeID",
+        "Target": "ServiceTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TypicalAvePerItem",
+        "Target": "TypicalAvePerItem",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UsageDateFieldName",
+        "Target": "UsageDateFieldName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UsageAveFieldName",
+        "Target": "UsageAveFieldName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ThisItemSetsDailyAverage",
+        "Target": "ThisItemSetsDailyAverage",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

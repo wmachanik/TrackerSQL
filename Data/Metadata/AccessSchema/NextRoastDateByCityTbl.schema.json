@@ -1,0 +1,168 @@
+{
+  "SourceTable": "NextRoastDateByCityTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "NextRoastDayID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CityID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "PreperationDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "DeliveryDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "DeliveryOrder",
+      "DotNetType": "System.Int16",
+      "ColumnSize": 2,
+      "NumericPrecision": 5,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "SMALLINT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "NextPreperationDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "NextDeliveryDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "NextRoastDayID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CityID",
+      "Columns": [
+        "CityID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "NextRoastDayID",
+      "Columns": [
+        "NextRoastDayID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "NextPrepDateByAreasTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "NextRoastDayID",
+        "Target": "NextRoastDayID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CityID",
+        "Target": "CityID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PreperationDate",
+        "Target": "PreperationDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DeliveryDate",
+        "Target": "DeliveryDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DeliveryOrder",
+        "Target": "DeliveryOrder",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextPreperationDate",
+        "Target": "NextPreperationDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextDeliveryDate",
+        "Target": "NextDeliveryDate",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     public class RepairManager
     {

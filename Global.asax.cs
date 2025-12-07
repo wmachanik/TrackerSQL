@@ -2,9 +2,9 @@
 using System.IO;
 using System.Web;
 using System.Web.UI;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet
+namespace TrackerSQL
 {
     public class Global : HttpApplication
     {
@@ -62,7 +62,7 @@ namespace TrackerDotNet
                 try
                 {
                     // Try to log the error handling failure
-                    System.Diagnostics.EventLog.WriteEntry("TrackerDotNet",
+                    System.Diagnostics.EventLog.WriteEntry("TrackerSQL",
                         $"Error handling failed: {ex.Message}",
                         System.Diagnostics.EventLogEntryType.Error);
                 }
@@ -123,7 +123,7 @@ namespace TrackerDotNet
                 // Method 3: Try Event Log
                 try
                 {
-                    System.Diagnostics.EventLog.WriteEntry("TrackerDotNet",
+                    System.Diagnostics.EventLog.WriteEntry("TrackerSQL",
                         $"{root.GetType()}: {root.Message}",
                         System.Diagnostics.EventLogEntryType.Error);
                 }

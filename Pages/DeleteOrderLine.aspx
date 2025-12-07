@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DeleteOrderLine.aspx.cs" Inherits="TrackerDotNet.Pages.DeleteOrderLine" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DeleteOrderLine.aspx.cs" Inherits="TrackerSQL.Pages.DeleteOrderLine" %>
 <asp:Content ID="cntDeleteOrderLineHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntDeleteOrderLineBody" ContentPlaceHolderID="MainContent" runat="server">

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Provides centralized logging to App_Data with log rotation and named log files.

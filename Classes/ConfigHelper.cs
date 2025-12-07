@@ -1,7 +1,7 @@
 using System;
 using System.Configuration;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Central helper for reading typed AppSettings values safely.

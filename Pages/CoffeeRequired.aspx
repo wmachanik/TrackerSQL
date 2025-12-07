@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="CoffeeRequired.aspx.cs" Inherits="TrackerDotNet.Pages.CoffeeRequired" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="CoffeeRequired.aspx.cs" Inherits="TrackerSQL.Pages.CoffeeRequired" %>
 <asp:Content ID="cntCoffeeRequiredHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntCoffeeRequiredBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -41,7 +41,7 @@
             <asp:SqlDataSource ID="sdsRequiredByRoastingDay" runat="server" 
               ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>" 
               ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>" 
-              SelectCommand="SELECT OrdersTbl.RoastDate, ItemTypeTbl.ItemDesc, ROUND(SUM(OrdersTbl.QuantityOrdered),2) AS QTY FROM ((OrdersTbl INNER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) WHERE (OrdersTbl.Done = false) AND (ItemTypeTbl.ServiceTypeID = 2) GROUP BY OrdersTbl.RoastDate, ItemTypeTbl.ItemDesc">
+              SelectCommand="SELECT OrdersTbl.RoastDate, ItemTypeTbl.ItemDesc, ROUND(SUM(OrdersTbl.QuantityOrderBy),2) AS QTY FROM ((OrdersTbl INNER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) WHERE (OrdersTbl.Done = false) AND (ItemTypeTbl.ServiceTypeID = 2) GROUP BY OrdersTbl.RoastDate, ItemTypeTbl.ItemDesc">
             </asp:SqlDataSource>
           </ContentTemplate>
         </ajaxToolkit:TabPanel> 
@@ -84,7 +84,7 @@
             <asp:SqlDataSource ID="sdsCoffeeRequiredCalc" runat="server" 
               ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>" 
               ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>" 
-              SelectCommand="SELECT OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, ItemTypeTbl.ItemDesc, Round(SUM(OrdersTbl.QuantityOrdered),2) AS QTY FROM ((OrdersTbl INNER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) WHERE (OrdersTbl.Done = false) GROUP BY OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, ItemTypeTbl.ItemDesc">
+              SelectCommand="SELECT OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, ItemTypeTbl.ItemDesc, Round(SUM(OrdersTbl.QuantityOrderBy),2) AS QTY FROM ((OrdersTbl INNER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) WHERE (OrdersTbl.Done = false) GROUP BY OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, ItemTypeTbl.ItemDesc">
             </asp:SqlDataSource>
           </ContentTemplate>
         </ajaxToolkit:TabPanel>

@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ViewMyOrder.aspx.cs" Inherits="TrackerDotNet.Pages.ViewMyOrder" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ViewMyOrder.aspx.cs" Inherits="TrackerSQL.Pages.ViewMyOrder" %>
 <!DOCTYPE html>
 <html>
 <head runat="server">

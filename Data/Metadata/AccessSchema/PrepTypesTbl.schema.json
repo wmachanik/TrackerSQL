@@ -1,0 +1,96 @@
+{
+  "SourceTable": "PrepTypesTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "PrepID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "PrepType",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "IdentifyingChar",
+      "DotNetType": "System.String",
+      "ColumnSize": 1,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(1)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "PrepID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "IdentifyingChar",
+      "Columns": [
+        "IdentifyingChar"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PrepID",
+      "Columns": [
+        "PrepID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ItemPrepTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "PrepID",
+        "Target": "PrepID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrepType",
+        "Target": "PrepType",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "IdentifyingChar",
+        "Target": "IdentifyingChar",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

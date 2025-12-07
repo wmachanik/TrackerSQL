@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SupportTables.aspx.cs" Inherits="TrackerDotNet.Pages.SupportTables" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SupportTables.aspx.cs" Inherits="TrackerSQL.Pages.SupportTables" %>
 <asp:Content ID="cntSupportTablesHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntSupporTablesBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -34,10 +34,10 @@
   </asp:UpdatePanel>
 
 
- <asp:ObjectDataSource ID="odsItemTypeTbl" runat="server" TypeName="TrackerDotNet.Controls.ItemTypeTbl" 
+ <asp:ObjectDataSource ID="odsItemTypeTbl" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl" 
    SelectMethod="GetAll" SortParameterName="SortBy"
    UpdateMethod="UpdateItem" 
-   DataObjectTypeName="TrackerDotNet.Controls.ItemTypeTbl" 
+   DataObjectTypeName="TrackerSQL.Controls.ItemTypeTbl" 
    OldValuesParameterFormatString="original_{0}" >
  </asp:ObjectDataSource>
 

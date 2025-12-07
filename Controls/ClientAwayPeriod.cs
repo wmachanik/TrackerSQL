@@ -1,6 +1,6 @@
 using System;
 
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class ClientAwayPeriod
     {

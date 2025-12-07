@@ -1,0 +1,152 @@
+{
+  "SourceTable": "SentRemindersLogTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ReminderID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "DateSentReminder",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "NextPrepDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ReminderSent",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "HadAutoFulfilItem",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "HadReoccurItems",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_ReminderID",
+      "Columns": [
+        "ReminderID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "SentRemindersLogTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ReminderID",
+        "Target": "ReminderID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DateSentReminder",
+        "Target": "DateSentReminder",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextPrepDate",
+        "Target": "NextPrepDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReminderSent",
+        "Target": "ReminderSent",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "HadAutoFulfilItem",
+        "Target": "HadAutoFulfilItem",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "HadReoccurItems",
+        "Target": "HadReoccurItems",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

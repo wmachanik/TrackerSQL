@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     /// <summary>
     /// Service Types table class with centralized enum for better code quality

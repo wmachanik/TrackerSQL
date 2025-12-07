@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.Pages.OrderDone
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.Pages.OrderDone
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using AjaxControlToolkit;
 using System;
@@ -11,12 +11,12 @@ using System.Configuration;
 using System.Data.OleDb;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Managers;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class OrderDone : Page
     {

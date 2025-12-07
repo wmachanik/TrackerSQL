@@ -1,0 +1,255 @@
+{
+  "SourceTable": "ReoccuringOrderTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": false,
+      "IsAutoIncrement": true,
+      "IsKey": false,
+      "RecommendedSqlType": "INT IDENTITY(1,1)"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ReoccuranceType",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Value",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ItemRequired",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "QtyRequired",
+      "DotNetType": "System.Double",
+      "ColumnSize": 8,
+      "NumericPrecision": 15,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "DateLastDone",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "NextDateRequired",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "RequireUntilDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "Enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Normalize",
+    "TargetTable": "RecurringOrdersTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": true,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ID",
+        "Target": "RecurringOrderID",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReoccuranceType",
+        "Target": "ReoccuranceTypeID",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "Value",
+        "Target": "ReoccuranceValue",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "ItemRequired",
+        "Target": "ItemRequiredID",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "QtyRequired",
+        "Target": "QtyRequired",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DateLastDone",
+        "Target": "DateLastDone",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextDateRequired",
+        "Target": "NextDateRequired",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RequireUntilDate",
+        "Target": "RequireUntilDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PackagingID",
+        "Target": "PackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Enabled",
+        "Target": "Enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": {
+      "IsHeader": true,
+      "IsLine": false,
+      "NormalizeInto": [
+        {
+          "TargetTable": "RecurringOrdersTbl",
+          "Description": "Main recurring orders table"
+        },
+        {
+          "TargetTable": "RecurringOrderItemsTbl",
+          "Description": "Line items for recurring orders (future normalization)"
+        }
+      ]
+    }
+  }
+}

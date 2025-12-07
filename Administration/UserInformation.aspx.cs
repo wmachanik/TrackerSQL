@@ -1,17 +1,17 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.Administration.UserInformation
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.Administration.UserInformation
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Administration
+namespace TrackerSQL.Administration
 {
     public partial class UserInformation : Page
     {
@@ -66,8 +66,8 @@ namespace TrackerDotNet.Administration
             {
                 Guid userId = (Guid)user.ProviderUserKey;
 
-                TrackerDotNet.Classes.UserPreferencesHelper.EnsureUserPreferencesTableExists();
-                var prefs = TrackerDotNet.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
+                TrackerSQL.Classes.UserPreferencesHelper.EnsureUserPreferencesTableExists();
+                var prefs = TrackerSQL.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
 
                 ddlTimeZone.DataSource = TimeZoneInfo.GetSystemTimeZones();
                 ddlTimeZone.DataTextField = "DisplayName";
@@ -129,10 +129,10 @@ namespace TrackerDotNet.Administration
             {
                 Guid userId = (Guid)user.ProviderUserKey;
 
-                var prefs = TrackerDotNet.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
+                var prefs = TrackerSQL.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
                 prefs.TimeZoneId = ddlTimeZone.SelectedValue;
 
-                TrackerDotNet.Classes.UserPreferencesHelper.SaveOrUpdatePreferences(prefs); 
+                TrackerSQL.Classes.UserPreferencesHelper.SaveOrUpdatePreferences(prefs); 
 
                 AppLogger.WriteLog("userprefs", $"Updated time zone for user '{username}' to '{prefs.TimeZoneId}'");
             }

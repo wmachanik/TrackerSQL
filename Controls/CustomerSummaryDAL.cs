@@ -1,20 +1,20 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.CustomerSummaryDAL
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.control.CustomerSummaryDAL
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class CustomerSummaryDAL
     {
-        private const string CONST_SQL_SUMMARYDATA = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
+        private const string CONST_SQL_SUMMARYDATA = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
 
         public static List<CustomerSummary> GetAllCustomerSummarys(string SortBy)
         {
@@ -33,7 +33,7 @@ namespace TrackerDotNet.Controls
         {
             List<CustomerSummary> customerSummarys = new List<CustomerSummary>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
+            string strSQL = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
             string str = "";
             switch (IsEnabled)
             {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Web.Security;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Administration
+namespace TrackerSQL.Administration
 {
     public partial class ResetPasswordHelper : System.Web.UI.Page
     {

@@ -1,0 +1,168 @@
+{
+  "SourceTable": "ClientUsageLinesTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ClientUsageLineNo",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Date",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "CupCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ServiceTypeId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "Qty",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 150,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(150)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ClientUsageLineNo"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CustomerID",
+      "Columns": [
+        "CustomerID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "Date",
+      "Columns": [
+        "Date"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactUsageLinesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ClientUsageLineNo",
+        "Target": "ClientUsageLineNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Date",
+        "Target": "Date",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CupCount",
+        "Target": "CupCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceTypeId",
+        "Target": "ServiceTypeId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Qty",
+        "Target": "Qty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

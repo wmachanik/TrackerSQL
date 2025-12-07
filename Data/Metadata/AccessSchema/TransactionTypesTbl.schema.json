@@ -1,0 +1,80 @@
+{
+  "SourceTable": "TransactionTypesTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "TransactionID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "TransactionType",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_TransactionID",
+      "Columns": [
+        "TransactionID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "TransactionTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "TransactionID",
+        "Target": "TransactionID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TransactionType",
+        "Target": "TransactionType",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

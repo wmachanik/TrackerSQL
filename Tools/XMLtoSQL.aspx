@@ -1,5 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="XMLtoSQL.aspx.cs"
-  Inherits="TrackerDotNet.test.XMLtoSQL" %>
+  Inherits="TrackerSQL.test.XMLtoSQL" %>
 
 <asp:Content ID="cntXMLtoSQLHdr" ContentPlaceHolderID="HeadContent" runat="server">
   <title>XML TO SQL Read and run</title>

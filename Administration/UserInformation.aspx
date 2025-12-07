@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="UserInformation.aspx.cs" Inherits="TrackerDotNet.Administration.UserInformation" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="UserInformation.aspx.cs" Inherits="TrackerSQL.Administration.UserInformation" %>
 
 <asp:Content ID="cntUserInformationHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>

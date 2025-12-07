@@ -1,0 +1,88 @@
+{
+  "SourceTable": "CustomerTypeTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CustTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustTypeDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "CustTypeID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CustTypeID",
+      "Columns": [
+        "CustTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "CustTypeID",
+        "Target": "CustTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustTypeDesc",
+        "Target": "CustTypeDesc",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

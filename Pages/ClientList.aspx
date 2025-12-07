@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Tracker Client Dump" Language="C#" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" AutoEventWireup="true" CodeBehind="ClientList.aspx.cs" Inherits="TrackerDotNet.Pages.ClientListForm" %>
+﻿<%@ Page Title="Tracker Client Dump" Language="C#" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" AutoEventWireup="true" CodeBehind="ClientList.aspx.cs" Inherits="TrackerSQL.Pages.ClientListForm" %>
 <%@ Register assembly="AjaxControlToolkit" namespace="AjaxControlToolkit.HTMLEditor" tagprefix="cc1" %>
 <asp:Content ID="cntClientDumpHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -157,8 +157,8 @@
           SortExpression="CoffeePreference" Visible="False" />
         <asp:CheckBoxField DataField="UsesFilter" HeaderText="UsesFilter" 
           SortExpression="UsesFilter" Visible="False" />
-        <asp:BoundField DataField="Abreviation" HeaderText="Abreviation" 
-          SortExpression="Abreviation" Visible="False" />
+        <asp:BoundField DataField="Abbreviation" HeaderText="Abbreviation" 
+          SortExpression="Abbreviation" Visible="False" />
         <asp:CheckBoxField DataField="PredictionDisabled" 
           HeaderText="PredictionDisabled" SortExpression="PredictionDisabled" 
           Visible="False" />
@@ -195,7 +195,7 @@
   <asp:ObjectDataSource ID="odsCustomers" runat="server" 
     OldValuesParameterFormatString="original_{0}" 
     SelectMethod="GetCustomersByEnabled" 
-    TypeName="TrackerDotNet.DataSets.CustomersDataSetTableAdapters.CustomersTableAdapter">
+    TypeName="TrackerSQL.DataSets.CustomersDataSetTableAdapters.CustomersTableAdapter">
     <SelectParameters>
       <asp:ControlParameter ControlID="ddlClientEnabled" DefaultValue="true" 
         Name="enabled" PropertyName="SelectedValue" Type="Boolean" />

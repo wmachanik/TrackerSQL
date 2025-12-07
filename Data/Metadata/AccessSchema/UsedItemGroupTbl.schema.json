@@ -1,0 +1,152 @@
+{
+  "SourceTable": "UsedItemGroupTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "UsedItemGroupID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "ContactID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "GroupItemTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "LastItemTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "LastItemTypeSortPos",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "LastItemDateChanged",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_UsedItemGroupID",
+      "Columns": [
+        "UsedItemGroupID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "UsedItemGroupsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "UsedItemGroupID",
+        "Target": "UsedItemGroupID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactID",
+        "Target": "ContactID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "GroupItemTypeID",
+        "Target": "GroupItemTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastItemTypeID",
+        "Target": "LastItemTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastItemTypeSortPos",
+        "Target": "LastItemTypeSortPos",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastItemDateChanged",
+        "Target": "LastItemDateChanged",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

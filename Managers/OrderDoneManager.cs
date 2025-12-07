@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
-//using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
+//using TrackerSQL.Managers;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     public class OrderDoneResult
     {
@@ -201,7 +201,7 @@ namespace TrackerDotNet.Managers
         }
         private static bool IsCoffeeOrConsumable(int itemId)
         {
-            int serviceType = TrackerDotNet.Controls.ItemTypeTbl.GetServiceTypeForItem(itemId);
+            int serviceType = TrackerSQL.Controls.ItemTypeTbl.GetServiceTypeForItem(itemId);
             return IsCoffeeOrConsumableServiceType(serviceType);
         }
 
@@ -239,7 +239,7 @@ namespace TrackerDotNet.Managers
         {
             // This assumes group items are flagged by ServiceTypeConstants.GroupItem
             // Adjust if your schema uses a different approach
-            return TrackerDotNet.Controls.ItemTypeTbl.GetServiceTypeForItem(itemTypeId) == SystemConstants.ServiceTypeConstants.GroupItem;
+            return TrackerSQL.Controls.ItemTypeTbl.GetServiceTypeForItem(itemTypeId) == SystemConstants.ServiceTypeConstants.GroupItem;
         }
         // Helper: cache-friendly check
         private static bool GroupContainsCoffeeOrConsumable(IEnumerable<int> groupItemIds)
@@ -255,7 +255,7 @@ namespace TrackerDotNet.Managers
         {
             if (IsGroupItem(reoccurOrder.ItemRequiredID))
             {
-                var groupItemIds = TrackerDotNet.Controls.ItemGroupTbl.GetItemIdsForGroup(reoccurOrder.ItemRequiredID);
+                var groupItemIds = TrackerSQL.Controls.ItemGroupTbl.GetItemIdsForGroup(reoccurOrder.ItemRequiredID);
 
                 if (groupItemIds.Contains(deliveredItem.ItemID))
                     return true;

@@ -1,7 +1,7 @@
 using System;
 using System.Web;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public static class UrlTextDecoder
     {

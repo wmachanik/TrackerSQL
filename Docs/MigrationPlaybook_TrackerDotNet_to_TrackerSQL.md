@@ -1,5 +1,5 @@
 ﻿# Migration Playbook (Junior-Friendly)
-TrackerDotNet (Access / OleDb / Jet 32-bit) → TrackerSQL (SQL Server / SqlClient)
+TrackerSQL (Access / OleDb / Jet 32-bit) → TrackerSQL (SQL Server / SqlClient)
 Target Framework: .NET Framework 4.8 (unchanged)
 Version: 1.0
 Owner / Reviewer: (fill in)
@@ -8,7 +8,7 @@ Date Started: (fill in)
 ---
 
 ## 1. Overview (What We Are Doing)
-We are creating a brand‑new project named `TrackerSQL` cloned from the existing `TrackerDotNet`.  
+We are creating a brand‑new project named `TrackerSQL` cloned from the existing `TrackerSQL`.  
 The old project remains available for maintenance (critical bug fixes only).  
 Inside the new project we will:
 1. Replace the Access database with SQL Server / SQL Express.

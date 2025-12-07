@@ -1,6 +1,6 @@
 <%@ Page Title="Messages Editor" Language="C#" MasterPageFile="~/Site.Master"
     AutoEventWireup="true" CodeBehind="MessagesEditor.aspx.cs"
-    Inherits="TrackerDotNet.Tools.MessagesEditor"
+    Inherits="TrackerSQL.Tools.MessagesEditor"
     ValidateRequest="false" %>
 
 <asp:Content ID="HeadCnt" ContentPlaceHolderID="HeadContent" runat="server" />

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
   public partial class LogTable: System.Web.UI.Page
   {

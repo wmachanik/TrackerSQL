@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PreperationSummary.aspx.cs" Inherits="TrackerDotNet.Pages.PreperationSummary" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PreperationSummary.aspx.cs" Inherits="TrackerSQL.Pages.PreperationSummary" %>
 
 <asp:Content ID="cntPreSummaryHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -19,7 +19,7 @@
                         <tr>
                             <td class="TblLHCol-first">Date From:</td>
                             <td>
-                                <asp:TextBox ID="tbxDateFrom" runat="server" Text='<%# TrackerDotNet.Classes.TimeZoneUtils.Now() %>' />
+                                <asp:TextBox ID="tbxDateFrom" runat="server" Text='<%# TrackerSQL.Classes.TimeZoneUtils.Now() %>' />
                                 <ajaxToolkit:CalendarExtender ID="tbxDateFrom_CalendarExtender" runat="server"
                                     Enabled="True" TargetControlID="tbxDateFrom"></ajaxToolkit:CalendarExtender>
                             </td>

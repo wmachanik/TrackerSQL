@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.Pages.OrderDetail
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.Pages.OrderDetail
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using AjaxControlToolkit;
 using AjaxControlToolkit.HtmlEditor.ToolbarButtons;
@@ -18,11 +18,11 @@ using System.Web;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
-using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
+using TrackerSQL.Managers;
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class OrderDetail : Page
     {
@@ -284,7 +284,7 @@ namespace TrackerDotNet.Pages
             IsNewOrderMode = true;
 
             // Use OrderManager for date calculations
-            var orderManager = new TrackerDotNet.Managers.OrderManager();
+            var orderManager = new TrackerSQL.Managers.OrderManager();
             DateTime orderDate = TimeZoneUtils.Now().Date;
             var (roastDate, deliveryDate) = orderManager.CalculateOrderDates(orderDate);
 
@@ -377,7 +377,7 @@ namespace TrackerDotNet.Pages
                     pnlManualHeader.Visible = true;
 
                 // Initialize manual controls with calculated dates
-                var orderManager = new TrackerDotNet.Managers.OrderManager();
+                var orderManager = new TrackerSQL.Managers.OrderManager();
                 DateTime orderDate = TimeZoneUtils.Now().Date;
                 var (roastDate, deliveryDate) = orderManager.CalculateOrderDates(orderDate);
 
@@ -546,7 +546,7 @@ namespace TrackerDotNet.Pages
                 }
 
                 // Use OrderManager for customer preference logic
-                var orderManager = new TrackerDotNet.Managers.OrderManager();
+                var orderManager = new TrackerSQL.Managers.OrderManager();
                 var result = orderManager.SetCustomerPreferencesById(pCoNameID);
 
                 if (result.Success && result.CustomerFound)
@@ -583,7 +583,7 @@ namespace TrackerDotNet.Pages
             if (contactsControl == null) return;
 
             // Use OrderManager for customer lookup logic
-            var orderManager = new TrackerDotNet.Managers.OrderManager();
+            var orderManager = new TrackerSQL.Managers.OrderManager();
             var result = orderManager.SetCustomerPreferencesByContact(pCoName, pName, pEmail);
 
             if (result.Success)
@@ -817,7 +817,7 @@ namespace TrackerDotNet.Pages
         /// </summary>
         private void ResetToDefaultDates()
         {
-            var orderManager = new TrackerDotNet.Managers.OrderManager();
+            var orderManager = new TrackerSQL.Managers.OrderManager();
             DateTime orderDate = TimeZoneUtils.Now().Date;
             var (roastDate, deliveryDate) = orderManager.CalculateOrderDates(orderDate);
 
@@ -931,7 +931,7 @@ namespace TrackerDotNet.Pages
                     return false;
                 }
 
-                var orderManager = new TrackerDotNet.Managers.OrderManager();
+                var orderManager = new TrackerSQL.Managers.OrderManager();
 
                 // Get the last order items
                 List<OrderManager.OrderLineData> lastOrderItems = orderManager.GetLastOrderItems(customerId, pSetDates);
@@ -1048,7 +1048,7 @@ namespace TrackerDotNet.Pages
         }
         private void ProcessSKUParameters()
         {
-            var orderManager = new TrackerDotNet.Managers.OrderManager();
+            var orderManager = new TrackerSQL.Managers.OrderManager();
             var skuParams = new Dictionary<string, double>();
 
             // Extract SKU parameters from query string
@@ -1198,7 +1198,7 @@ namespace TrackerDotNet.Pages
                 //AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"btnLastOrder_Click: Starting for customer {customerId}");
 
                 // GET the last order items (changed to false as requested)
-                var orderManager = new TrackerDotNet.Managers.OrderManager();
+                var orderManager = new TrackerSQL.Managers.OrderManager();
                 List<OrderManager.OrderLineData> lastOrderItems = orderManager.GetLastOrderItems(customerId, false);
 
                 if (lastOrderItems.Count > 0)
@@ -1510,7 +1510,7 @@ namespace TrackerDotNet.Pages
                     PackagingID = string.IsNullOrEmpty(this.cboNewPackaging?.SelectedValue) ? 0 : Convert.ToInt32(this.cboNewPackaging.SelectedValue)
                 };
 
-                var manager = new TrackerDotNet.Managers.OrderManager();
+                var manager = new TrackerSQL.Managers.OrderManager();
                 string result = manager.AddOrderLine(headerData, orderData);
 
                 if (string.IsNullOrWhiteSpace(result))
@@ -1597,7 +1597,7 @@ namespace TrackerDotNet.Pages
         protected void gvOrderLines_OnItemDelete(object sender, EventArgs e)
         {
             string pDataValue = ((CommandEventArgs)e).CommandArgument.ToString();
-            var manager = new TrackerDotNet.Managers.OrderManager();
+            var manager = new TrackerSQL.Managers.OrderManager();
             string result = manager.DeleteOrderItem(Convert.ToInt32(pDataValue));
             this.ltrlStatus.Text = string.IsNullOrEmpty(result) ? "Item Deleted" : "Error deleting item: " + result;
         }
@@ -1716,7 +1716,7 @@ namespace TrackerDotNet.Pages
         }
         private ContactEmailDetails GetEmailAddressFromNote()
         {
-            var orderManager = new TrackerDotNet.Managers.OrderManager();
+            var orderManager = new TrackerSQL.Managers.OrderManager();
             string labelValue = this.dvOrderHeaderGetLabelValue("lblNotes");
             string emailAddress = orderManager.ExtractEmailFromNotes(labelValue);
 
@@ -1832,7 +1832,7 @@ namespace TrackerDotNet.Pages
             OrderHeaderData header = this.Get_dvOrderHeaderData(false);
 
             // Rest of method stays the same...
-            var orderLines = new List<TrackerDotNet.Managers.OrderLineData>();
+            var orderLines = new List<TrackerSQL.Managers.OrderLineData>();
             foreach (GridViewRow row in this.gvOrderLines.Rows)
             {
                 var (itemId, itemDesc) = GetControlIdAndDescFromRow(row, CONST_ORDERLINE_ITEM_COMBOBOX_ID, CONST_ORDERLINE_HIDDENFIELD_ITEM_LABEL, CONST_ORDERLINE_HIDDENFIELD_ITEM_ID);
@@ -1840,7 +1840,7 @@ namespace TrackerDotNet.Pages
                 var (packagingIdStr, packagingDesc) = GetControlIdAndDescFromRow(row, CONST_ORDERLINE_PACKAGING_COMBOBOX_ID, CONST_ORDERLINE_HIDDENFIELD_PACKAGING_LABEL, CONST_ORDERLINE_HIDDENFIELD_PACKAGING_ID);
                 int packagingId = Convert.ToInt32(packagingIdStr);
 
-                var line = new TrackerDotNet.Managers.OrderLineData
+                var line = new TrackerSQL.Managers.OrderLineData
                 {
                     ItemID = Convert.ToInt32(itemId),
                     ItemName = itemDesc,
@@ -1852,7 +1852,7 @@ namespace TrackerDotNet.Pages
             }
 
             string notes = this.GetOrderHeaderNotes();
-            var emailManager = new TrackerDotNet.Managers.OrderDetailManager();
+            var emailManager = new TrackerSQL.Managers.OrderDetailManager();
             string statusMsg;
             bool success = emailManager.SendOrderConfirmation(contact, header, orderLines, notes, out statusMsg);
             AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Order confirmation sent, status: {statusMsg}");
@@ -1890,7 +1890,7 @@ namespace TrackerDotNet.Pages
         }
         protected void MarkItemAsInvoiced()
         {
-            var manager = new TrackerDotNet.Managers.OrderManager();
+            var manager = new TrackerSQL.Managers.OrderManager();
             manager.MarkItemAsInvoiced(
                 (long)this.Session[SystemConstants.SessionConstants.BoundCustomerID],
                 ((DateTime)this.Session[SystemConstants.SessionConstants.BoundDeliveryDate]).Date,
@@ -1923,7 +1923,7 @@ namespace TrackerDotNet.Pages
                 orderLines.Add(line);
             }
 
-            var manager = new TrackerDotNet.Managers.OrderManager();
+            var manager = new TrackerSQL.Managers.OrderManager();
             bool success = manager.CompleteOrderDelivery(headerData, orderLines);
             AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Order for customer id: {this.Session[SystemConstants.SessionConstants.BoundCustomerID]}, marked as deliverred.");
             if (!success)
@@ -2079,7 +2079,7 @@ namespace TrackerDotNet.Pages
         }
         protected void btnUnDoDone_Click(object sender, EventArgs e)
         {
-            var manager = new TrackerDotNet.Managers.OrderManager();
+            var manager = new TrackerSQL.Managers.OrderManager();
             string empty = string.Empty;
             int count = 0;
             foreach (TableRow row in this.gvOrderLines.Rows)

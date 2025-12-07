@@ -1,1 +1,1 @@
-﻿<%@ Application Codebehind="Global.asax.cs" Inherits="TrackerDotNet.Global" Language="C#" %>
+﻿<%@ Application Codebehind="Global.asax.cs" Inherits="TrackerSQL.Global" Language="C#" %>

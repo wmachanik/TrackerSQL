@@ -2,9 +2,9 @@ using System;
 using System.Configuration;
 using System.Security.Cryptography;
 using System.Text;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     public class DisableClientManager
     {

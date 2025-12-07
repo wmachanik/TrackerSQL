@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="TestPage.aspx.cs" Inherits="TrackerDotNet.Pages.TestPage" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="TestPage.aspx.cs" Inherits="TrackerSQL.Pages.TestPage" %>
 
 <!DOCTYPE html>
 

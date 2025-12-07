@@ -1,0 +1,106 @@
+{
+  "SourceTable": "InvoiceTypeTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "InvoiceTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "InvoiceTypeDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_InvoiceTypeID ",
+      "Columns": [
+        "InvoiceTypeID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "UIT_InvoiceTypeDesc",
+      "Columns": [
+        "InvoiceTypeDesc"
+      ],
+      "Unique": true,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "InvoiceTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "InvoiceTypeID",
+        "Target": "InvoiceTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "InvoiceTypeDesc",
+        "Target": "InvoiceTypeDesc",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Enabled",
+        "Target": "Enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

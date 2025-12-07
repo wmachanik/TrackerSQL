@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderDone.aspx.cs"
-    Inherits="TrackerDotNet.Pages.OrderDone" %>
+    Inherits="TrackerSQL.Pages.OrderDone" %>
 
 <asp:Content ID="cntOrderDoneHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>

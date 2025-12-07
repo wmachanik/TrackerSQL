@@ -1,0 +1,160 @@
+{
+  "SourceTable": "PaymentTermsTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "PaymentTermID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "PaymentTermDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "PaymentDays",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "DayOfMonth",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "UseDays",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "Enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_PaymentTermsID",
+      "Columns": [
+        "PaymentTermID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "UPT_PaymentTermDesc",
+      "Columns": [
+        "PaymentTermDesc"
+      ],
+      "Unique": true,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "PaymentTermsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "PaymentTermID",
+        "Target": "PaymentTermID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PaymentTermDesc",
+        "Target": "PaymentTermDesc",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PaymentDays",
+        "Target": "PaymentDays",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DayOfMonth",
+        "Target": "DayOfMonth",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UseDays",
+        "Target": "UseDays",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Enabled",
+        "Target": "Enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

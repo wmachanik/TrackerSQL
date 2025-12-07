@@ -7,9 +7,9 @@ using System.Reflection;
 using System.Resources;
 using System.Web;
 using System.Xml.Linq;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Unified message manager:

@@ -4,7 +4,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet
+namespace TrackerSQL
 {
     public partial class About
     {

@@ -1,0 +1,132 @@
+{
+  "SourceTable": "CityPrepDaysTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CityPrepDaysID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CityID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "PrepDayOfWeekID",
+      "DotNetType": "System.Byte",
+      "ColumnSize": 1,
+      "NumericPrecision": 3,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "TINYINT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "DeliveryDelayDays",
+      "DotNetType": "System.Int16",
+      "ColumnSize": 2,
+      "NumericPrecision": 5,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "SMALLINT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "DeliveryOrder",
+      "DotNetType": "System.Int16",
+      "ColumnSize": 2,
+      "NumericPrecision": 5,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "SMALLINT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "CityPrepDaysID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CityID",
+      "Columns": [
+        "CityID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "CityTblCityPrepDaysTbl",
+      "Columns": [
+        "CityID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "AreaPrepDaysTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "CityPrepDaysID",
+        "Target": "CityPrepDaysID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CityID",
+        "Target": "CityID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrepDayOfWeekID",
+        "Target": "PrepDayOfWeekID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DeliveryDelayDays",
+        "Target": "DeliveryDelayDays",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DeliveryOrder",
+        "Target": "DeliveryOrder",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

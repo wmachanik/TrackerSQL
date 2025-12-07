@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class CustomersAway : Page
     {

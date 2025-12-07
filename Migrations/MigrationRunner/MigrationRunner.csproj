@@ -12,6 +12,10 @@
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
   <!-- Copy all content under project-local Migrations to output -->
   <ItemGroup>
     <Content Include="Migrations\**\*.*">

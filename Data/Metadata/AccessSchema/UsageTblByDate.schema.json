@@ -1,0 +1,204 @@
+﻿{
+  "SourceTable": "UsageTblByDate",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "UsaageID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "ClientID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Date",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "CupCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "CoffeeProvded",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "MachineCleaned",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "FilterProvided",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "MachineDescaled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "CountCheckOnly",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "UsaageID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "ClientID",
+      "Columns": [
+        "ClientID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "UsaageID",
+      "Columns": [
+        "UsaageID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "UsageTblByDate",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "UsaageID",
+        "Target": "UsaageID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ClientID",
+        "Target": "ClientID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Date",
+        "Target": "Date",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CupCount",
+        "Target": "CupCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CoffeeProvded",
+        "Target": "CoffeeProvded",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineCleaned",
+        "Target": "MachineCleaned",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FilterProvided",
+        "Target": "FilterProvided",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineDescaled",
+        "Target": "MachineDescaled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CountCheckOnly",
+        "Target": "CountCheckOnly",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

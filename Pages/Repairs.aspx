@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Repair List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Repairs.aspx.cs" Inherits="TrackerDotNet.Pages.Repairs" %>
+﻿<%@ Page Title="Repair List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Repairs.aspx.cs" Inherits="TrackerSQL.Pages.Repairs" %>
 
 <asp:Content ID="cntRepairsHdr" ContentPlaceHolderID="HeadContent" runat="server">
 
@@ -164,9 +164,9 @@
                 </asp:GridView>
                 <asp:ObjectDataSource ID="odsRepairs" runat="server"
                     SortParameterName="SortBy" SelectMethod="GetRepairsByStatusAndDateRange"
-                    TypeName="TrackerDotNet.Controls.RepairsTbl"
+                    TypeName="TrackerSQL.Controls.RepairsTbl"
                     OldValuesParameterFormatString="original_{0}"
-                    DataObjectTypeName="TrackerDotNet.Controls.RepairsTbl"
+                    DataObjectTypeName="TrackerSQL.Controls.RepairsTbl"
                     DeleteMethod="DeleteRepair" InsertMethod="InsertRepair"
                     UpdateMethod="UpdateRepair">
                     <DeleteParameters>
@@ -185,7 +185,7 @@
                     </SelectParameters>
                 </asp:ObjectDataSource>
                 <asp:ObjectDataSource ID="odsRepairsStatuses" runat="server"
-                    SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.RepairStatusesTbl"
+                    SelectMethod="GetAll" TypeName="TrackerSQL.Controls.RepairStatusesTbl"
                     OldValuesParameterFormatString="original_{0}">
                     <SelectParameters>
                         <asp:Parameter DefaultValue="RepairStatusID" Name="SortBy" Type="String" />

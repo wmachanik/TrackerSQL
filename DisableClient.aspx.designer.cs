@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet
+namespace TrackerSQL
 {
 
 
@@ -22,6 +22,15 @@ namespace TrackerDotNet
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlForm frmDisable;
+
+        /// <summary>
+        /// rblDisableChoice control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButtonList rblDisableChoice;
 
         /// <summary>
         /// ltrlContactEmail control.

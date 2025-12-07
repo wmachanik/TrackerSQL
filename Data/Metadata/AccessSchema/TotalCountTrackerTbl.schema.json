@@ -1,0 +1,98 @@
+{
+  "SourceTable": "TotalCountTrackerTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CountDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "TotalCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Comments",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "TotalCountTrackerTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ID",
+        "Target": "ID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CountDate",
+        "Target": "CountDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TotalCount",
+        "Target": "TotalCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Comments",
+        "Target": "Comments",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

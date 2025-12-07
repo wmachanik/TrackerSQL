@@ -1,0 +1,286 @@
+{
+  "SourceTable": "UsageAveTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ClientId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CoffeeCycle",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "CoffeeProvided",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "PreferedCoffeeId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "LastOrderedDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "EstReorderDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "CupsPerDaysConsumed",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "LastCleanDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "EstCleanDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "LastFilterDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "EstFilterDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "LastDescaleDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "EstDescaleDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "FitlerOnlyClient",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ClientId"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "ClientId",
+      "Columns": [
+        "ClientId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "UsageAveTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "ClientId",
+        "Target": "ClientId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CoffeeCycle",
+        "Target": "CoffeeCycle",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CoffeeProvided",
+        "Target": "CoffeeProvided",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PreferedCoffeeId",
+        "Target": "PreferedCoffeeId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastOrderedDate",
+        "Target": "LastOrderedDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EstReorderDate",
+        "Target": "EstReorderDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CupsPerDaysConsumed",
+        "Target": "CupsPerDaysConsumed",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastCleanDate",
+        "Target": "LastCleanDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EstCleanDate",
+        "Target": "EstCleanDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastFilterDate",
+        "Target": "LastFilterDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EstFilterDate",
+        "Target": "EstFilterDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastDescaleDate",
+        "Target": "LastDescaleDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EstDescaleDate",
+        "Target": "EstDescaleDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FitlerOnlyClient",
+        "Target": "FitlerOnlyClient",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

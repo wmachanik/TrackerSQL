@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.CustomersTbl
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.control.CustomersTbl
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Concurrent;
@@ -11,10 +11,10 @@ using System.ComponentModel;
 using System.Data;
 using System.Web;
 using System.Web.Configuration;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class CustomersTbl
     {
@@ -27,17 +27,22 @@ namespace TrackerDotNet.Controls
         private const string CONST_SQL_CUSTOMERS_UPDATE = "UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, City = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_SELECT_REMINDERCOUNT = "SELECT ReminderCount FROM CustomersTbl WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_SELECT_EQUIPINFO = "SELECT EquipType, MachineSN FROM CustomersTbl WHERE (CustomersTbl.CustomerID = ?)";
+
         private const string CONST_SQL_CUSTOMERS_INC_REMINDERCOUNT = "UPDATE CustomersTbl SET ReminderCount = ReminderCount + 1 WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_SETLASTSENTDATE_INCREMINDERCOUNT = "UPDATE CustomersTbl SET LastDateSentReminder = ?, ReminderCount = ReminderCount + 1 WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_DISABLE = "UPDATE CustomersTbl SET [enabled] = false, Notes = ? + [Notes] WHERE (CustomerID = ?)";
         private const string CONST_SQL_CUSTOMERS_DISABLEIFREMINDERTOHIGH = "UPDATE CustomersTbl SET enabled = false, Notes = ? + [Notes] WHERE (CustomerID = ?) AND (ReminderCount > ?)";
+
         private const string CONST_SQL_CUSTOMERS_UPDATE_EQUIPINFO = "UPDATE CustomersTbl SET EquipType =?, MachineSN = ? WHERE (CustomersTbl.CustomerID = ?)";
         private const string CONST_SQL_SELECTONBYCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName = ?)";
+
         private const string CONST_SQL_SELECTONCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName ALIKE '?')";
         private const string CONST_SQL_SELECTONCUSTOMERSEMAIL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (EmailAddress ALIKE '?') OR (AltEmailAddress ALIKE '?')";
+
         private const string CONST_SQL_CUSTOMERS_RESET_REMINDERCOUNT = "UPDATE CustomersTbl SET ReminderCount = 0";
         private const string CONST_SQL_CUSTOMERS_RESET_REMINDERCOUNT_FORCEENABLE = ", enabled = true";
         private const string CONST_SQL_CUSTOMERS_RESET_REMINDERCOUNT_WHERE = " WHERE CustomerID = ?";
+
         private long _CustomerID;
         private string _CompanyName;
         private string _ContactTitle;
@@ -639,6 +644,7 @@ namespace TrackerDotNet.Controls
             trackerDb.AddParams((object)pThisCustomerTblData.Notes, DbType.String);
             trackerDb.AddWhereParams((object)CustomerIDToUpdate, DbType.Int64);
             string str = trackerDb.ExecuteNonQuerySQL("UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, City = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?");
+
             trackerDb.Close();
             return str;
         }
@@ -649,6 +655,7 @@ namespace TrackerDotNet.Controls
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddWhereParams((object)pCustomerID, DbType.Int64);
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ReminderCount FROM CustomersTbl WHERE CustomersTbl.CustomerID = ?");
+
             if (dataReader != null)
             {
                 if (dataReader.Read())
@@ -668,6 +675,7 @@ namespace TrackerDotNet.Controls
             TrackerDb trackerDb1 = new TrackerDb();
             trackerDb1.AddWhereParams((object)pCustomerID, DbType.Int64);
             IDataReader dataReader = trackerDb1.ExecuteSQLGetDataReader("SELECT EquipType, MachineSN FROM CustomersTbl WHERE (CustomersTbl.CustomerID = ?)");
+
             if (dataReader != null)
             {
                 if (dataReader.Read())
@@ -788,6 +796,50 @@ namespace TrackerDotNet.Controls
             finally
             {
                 trackerDb.Close();
+            }
+        }
+
+        public bool DisableCustomerReminders(long customerId, string notes = null)
+        {
+            string currentUser = HttpContext.Current?.User?.Identity?.Name ?? "System";
+
+            if (!string.IsNullOrEmpty(notes))
+                notes = $"{notes}\nReminders disabled by {currentUser} on {TimeZoneUtils.Now():yyyy-MM-dd HH:mm}\n";
+            else
+                notes = $"Reminders disabled by {currentUser} on {TimeZoneUtils.Now():yyyy-MM-dd HH:mm}\n";
+
+            // Update PredictionDisabled flag, reset counters and append notes.
+            string sql = "UPDATE CustomersTbl SET PredictionDisabled = ?, ReminderCount = 0, LastDateSentReminder = NULL, Notes = ? WHERE CustomerID = ?";
+            TrackerDb trackerDb = new TrackerDb();
+            try
+            {
+                trackerDb.AddParams((object)true, DbType.Boolean);         // set PredictionDisabled = true
+                trackerDb.AddParams((object)notes, DbType.String);         // notes
+                trackerDb.AddWhereParams((object)customerId, DbType.Int64);// WHERE CustomerID = ?
+
+                string result = trackerDb.ExecuteNonQuerySQL(sql);
+                trackerDb.Close();
+
+                bool success = string.IsNullOrWhiteSpace(result);
+                if (success)
+                {
+                    var customer = GetCustomerByCustomerID(customerId);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers, $"Customer {customer?.CompanyName ?? customerId.ToString()} reminders disabled (PredictionDisabled=true). Notes: {notes}");
+                }
+                else
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers, $"Failed to disable reminders for customer {customerId}: {result}");
+                }
+                return success;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers, $"Error disabling reminders for customer {customerId}: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                try { trackerDb.Close(); } catch { }
             }
         }
 

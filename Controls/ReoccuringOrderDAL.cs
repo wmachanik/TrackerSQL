@@ -1,18 +1,18 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.ReoccuringOrderDAL
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.control.ReoccuringOrderDAL
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
-using static TrackerDotNet.Classes.DateCalculator;
-using static TrackerDotNet.Classes.MessageKeys;
+using TrackerSQL.Classes;
+using static TrackerSQL.Classes.DateCalculator;
+using static TrackerSQL.Classes.MessageKeys;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class ReoccuringOrderDAL
     {

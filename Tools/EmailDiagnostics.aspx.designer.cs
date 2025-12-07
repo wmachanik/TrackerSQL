@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
 
 

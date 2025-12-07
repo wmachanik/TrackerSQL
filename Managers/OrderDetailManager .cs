@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     public class OrderDetailManager
     {
@@ -38,8 +38,29 @@ namespace TrackerDotNet.Managers
             // 3. Order items
             AppendOrderItemsToEmailBody(email, orderLines, notes);
 
+            // 3.5 Pre-delivery status line (use resource string, not the literal key)
+            // Use MessageProvider.Get(...) so the resource value is retrieved; avoid passing the key itself.
+            string statusKey = GetStatusKeyFromDeliveryPersonId(header?.ToBeDeliveredBy ?? 0);
+            bool wrotePreDeliveryLine = false;
+            if (!string.IsNullOrEmpty(statusKey))
+            {
+                string statusText = MessageProvider.Get(statusKey);
+                string preDeliveryFormat = MessageProvider.Get(MessageKeys.Order.StatusPreDeliveryBody);
+                if (!string.IsNullOrEmpty(preDeliveryFormat))
+                {
+                    // Use AddFormatToBody (no automatic extra line break) because the resource already contains HTML line breaks.
+                    email.AddFormatToBody(preDeliveryFormat, contactName, statusText, header.RequiredByDate.ToString("dd MMM, ddd, yyyy"));
+                    wrotePreDeliveryLine = true;
+                }
+            }
+
             // 4. Delivery date
-            email.AddFormatAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationDeliveryDate), header.RequiredByDate.ToString("dd MMM, ddd, yyyy"));
+            // Avoid duplicating the delivery-date sentence when the pre-delivery body already included the date.
+            if (!wrotePreDeliveryLine)
+            {
+                email.AddFormatAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationDeliveryDate),
+                    header.RequiredByDate.ToString("dd MMM, ddd, yyyy"));
+            }
 
             // 5. Footer
             email.AddStrAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
@@ -109,6 +130,24 @@ namespace TrackerDotNet.Managers
                 MessageProvider.Get(MessageKeys.Order.ConfirmationDeliveryDate),
                 header.RequiredByDate.ToString("dd MMM, ddd, yyyy")
             );
+        }
+
+        // Map delivery person (ToBeDeliveredBy) id to an Order.Status* message key for pre-delivery emails.
+        private string GetStatusKeyFromDeliveryPersonId(int deliveryPersonId)
+        {
+            switch (deliveryPersonId)
+            {
+                case SystemConstants.DeliveryConstants.CourierDeliveryID:
+                case SystemConstants.DeliveryConstants.ParcelDispatchID:
+                    // Courier and ParcelDispatch ("Prgo") -> "dispatched"
+                    return MessageKeys.Order.StatusDispatched;
+                case SystemConstants.DeliveryConstants.CollectionID:
+                    // Collection -> "ready for collection"
+                    return MessageKeys.Order.StatusReadyForCollection;
+                default:
+                    // Default -> pending delivery wording
+                    return MessageKeys.Order.StatusPendingDelivery;
+            }
         }
     }
 

@@ -1,14 +1,14 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.DeliveryItemsTbl
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.control.DeliveryItemsTbl
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class DeliveryItemsTbl
     {
@@ -25,7 +25,7 @@ namespace TrackerDotNet.Controls
         private string _otToBeDeliveredBy;
         private string _otNotes;
         private string _PackDesc;
-        private string _ptAbreviation;
+        private string _ptAbbreviation;
         private double _otQuantityOrdered;
         private DateTime _otOrderDate;
         private DateTime _otRoastDate;
@@ -38,7 +38,7 @@ namespace TrackerDotNet.Controls
         {
             this._otOrderID = this._otCompanyId = this._otItemTypeID = this._itReplacementID = 0;
             this._cpdDeliveryOrder = this._itSortOrder = this._ptBGColour = 0;
-            this._ctCompanyName = this._itItemDesc = this._itItemShortName = this._otToBeDeliveredBy = this._otNotes = this._PackDesc = this._ptAbreviation = "";
+            this._ctCompanyName = this._itItemDesc = this._itItemShortName = this._otToBeDeliveredBy = this._otNotes = this._PackDesc = this._ptAbbreviation = "";
             this._otQuantityOrdered = 0.0;
             this._otOrderDate = this._otRoastDate = this._otRequiredDate = TimeZoneUtils.Now().Date;
             this._itItemEnabled = this._otConfirmed = true;
@@ -123,10 +123,10 @@ namespace TrackerDotNet.Controls
             set => this._PackDesc = value;
         }
 
-        public string ptAbreviation
+        public string ptAbbreviation
         {
-            get => this._ptAbreviation;
-            set => this._ptAbreviation = value;
+            get => this._ptAbbreviation;
+            set => this._ptAbbreviation = value;
         }
 
         public double otQuantityOrdered

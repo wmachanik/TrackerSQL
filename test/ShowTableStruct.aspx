@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ShowTableStruct.aspx.cs" Inherits="TrackerDotNet.test.ShowTableStruct" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ShowTableStruct.aspx.cs" Inherits="TrackerSQL.test.ShowTableStruct" %>
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">

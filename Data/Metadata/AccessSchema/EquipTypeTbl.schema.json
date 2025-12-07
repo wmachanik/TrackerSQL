@@ -1,0 +1,88 @@
+{
+  "SourceTable": "EquipTypeTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "EquipTypeId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "EquipTypeName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "EquipTypeDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "EquipTypeId"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "EquipTypeId",
+      "Columns": [
+        "EquipTypeId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "EquipTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "EquipTypeId",
+        "Target": "EquipTypeId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EquipTypeName",
+        "Target": "EquipTypeName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EquipTypeDesc",
+        "Target": "EquipTypeDesc",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using TrackerDotNet.Controls;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Calculates optimal delivery dates based on city delivery schedules and recurring order requirements

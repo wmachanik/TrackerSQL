@@ -1,0 +1,170 @@
+{
+  "SourceTable": "LogTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "LogID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "DateAdded",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "UserID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "SectionID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "TranactionTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Details",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_LogID",
+      "Columns": [
+        "LogID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "LogTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "LogID",
+        "Target": "LogID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DateAdded",
+        "Target": "DateAdded",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UserID",
+        "Target": "UserID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SectionID",
+        "Target": "SectionID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TranactionTypeID",
+        "Target": "TranactionTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Details",
+        "Target": "Details",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

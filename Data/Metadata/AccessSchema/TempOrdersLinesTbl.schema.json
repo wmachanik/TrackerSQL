@@ -1,0 +1,152 @@
+{
+  "SourceTable": "TempOrdersLinesTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "TOLineID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "TOHeaderID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ItemID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ServiceTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "Qty",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "OriginalOrderID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_TOLineID",
+      "Columns": [
+        "TOLineID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "TempOrdersLinesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "TOLineID",
+        "Target": "TOLineID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TOHeaderID",
+        "Target": "TOHeaderID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemID",
+        "Target": "ItemID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceTypeID",
+        "Target": "ServiceTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Qty",
+        "Target": "Qty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PackagingID",
+        "Target": "PackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "OriginalOrderID",
+        "Target": "OriginalOrderID",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

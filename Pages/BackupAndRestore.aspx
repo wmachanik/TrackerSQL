@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="Backup and Restore" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
- CodeBehind="BackupAndRestore.aspx.cs" Inherits="TrackerDotNet.Pages.BackupAndRestore" %>
+ CodeBehind="BackupAndRestore.aspx.cs" Inherits="TrackerSQL.Pages.BackupAndRestore" %>
 
 <asp:Content ID="cntBackupHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>

@@ -1,7 +1,7 @@
-﻿// Type: TrackerDotNet.Pages.DeliverySheet
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+﻿// Type: TrackerSQL.Pages.DeliverySheet
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using AjaxControlToolkit;
 using System;
@@ -12,11 +12,11 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class DeliverySheet : Page
     {
@@ -136,7 +136,7 @@ namespace TrackerDotNet.Pages
                               "ItemTypeTbl.ReplacementID,  CityPrepDaysTbl.DeliveryOrder,  ItemTypeTbl.SortOrder, " +
                               "OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, OrdersTbl.PurchaseOrder, OrdersTbl.Confirmed," +
                               "OrdersTbl.InvoiceDone, OrdersTbl.Done, OrdersTbl.Notes, PackagingTbl.Description AS PackDesc, " +
-                              "PackagingTbl.BGColour, PersonsTbl.Abreviation " +
+                              "PackagingTbl.BGColour, PersonsTbl.Abbreviation " +
                               "FROM ( ( " +
                                        "( CityPrepDaysTbl RIGHT OUTER JOIN CustomersTbl ON CityPrepDaysTbl.CityID = CustomersTbl.City )" +
                                         "RIGHT OUTER JOIN " +
@@ -295,11 +295,11 @@ namespace TrackerDotNet.Pages
                 if (!pPrintForm)
                 {
                     if (!sortedDictionary.ContainsKey(pDataReader["ToBeDeliveredBy"].ToString()))
-                        sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abreviation"].ToString();
+                        sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abbreviation"].ToString();
                     deliveryItems1.OrderDetailURL = $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?CustomerID={HttpContext.Current.Server.UrlEncode(pDataReader["CustomerID"].ToString())}&DeliveryDate={pDataReader["RequiredByDate"]:d}&Notes={HttpContext.Current.Server.UrlEncode(pDataReader["Notes"].ToString())}";
                 }
 
-                deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abreviation"]}";
+                deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abbreviation"]}";
                 deliveryItems1.InvoiceDone = pDataReader["InvoiceDone"] != DBNull.Value && (bool)pDataReader["InvoiceDone"];
                 deliveryItems1.PurchaseOrder = pDataReader["PurchaseOrder"] == DBNull.Value ? string.Empty : pDataReader["PurchaseOrder"].ToString();
 
@@ -617,10 +617,10 @@ namespace TrackerDotNet.Pages
         //        if (!pPrintForm)
         //        {
         //            if (!sortedDictionary.ContainsKey(pDataReader["ToBeDeliveredBy"].ToString()))
-        //                sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abreviation"].ToString();
+        //                sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abbreviation"].ToString();
         //            deliveryItems1.OrderDetailURL = $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?{$"CustomerID={HttpContext.Current.Server.UrlEncode(pDataReader["CustomerID"].ToString())}&DeliveryDate={pDataReader["RequiredByDate"]:d}&Notes={HttpContext.Current.Server.UrlEncode(pDataReader["Notes"].ToString())}"}";
         //        }
-        //        deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abreviation"]}";
+        //        deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abbreviation"]}";
         //        deliveryItems1.InvoiceDone = pDataReader["InvoiceDone"] != DBNull.Value && (bool)pDataReader["InvoiceDone"];
         //        deliveryItems1.PurchaseOrder = pDataReader["PurchaseOrder"] == DBNull.Value ? string.Empty : pDataReader["PurchaseOrder"].ToString();
         //        string key = pDataReader["ItemTypeID"].ToString();
@@ -943,7 +943,7 @@ namespace TrackerDotNet.Pages
         protected void btnFind_Click(object sender, EventArgs e)
         {
             AppLogger.WriteLog("deliverysheet", $"Searched for client: {tbxFindClient.Text}");
-            string strSQL = $"SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName AS CoName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.RoastDate, OrdersTbl.ItemTypeID, ItemTypeTbl.ItemDesc, OrdersTbl.QuantityOrdered, ItemTypeTbl.ItemShortName, ItemTypeTbl.ItemEnabled, ItemTypeTbl.ReplacementID,  CityPrepDaysTbl.DeliveryOrder,  ItemTypeTbl.SortOrder, OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, OrdersTbl.PurchaseOrder, OrdersTbl.Confirmed, OrdersTbl.InvoiceDone, OrdersTbl.Done, OrdersTbl.Notes, PackagingTbl.Description AS PackDesc, PackagingTbl.BGColour, PersonsTbl.Abreviation FROM ((((CityPrepDaysTbl RIGHT OUTER JOIN CustomersTbl ON CityPrepDaysTbl.CityID = CustomersTbl.City) RIGHT OUTER JOIN  (OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) ON CustomersTbl.CustomerID = OrdersTbl.CustomerID) LEFT OUTER JOIN   PackagingTbl ON OrdersTbl.PackagingID = PackagingTbl.PackagingID) LEFT OUTER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) WHERE (CustomersTbl.CompanyName LIKE '%{this.tbxFindClient.Text}%') AND (OrdersTbl.Done = false) ORDER BY OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, CityPrepDaysTbl.DeliveryOrder, CustomersTbl.CompanyName, ItemTypeTbl.SortOrder";
+            string strSQL = $"SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName AS CoName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.RoastDate, OrdersTbl.ItemTypeID, ItemTypeTbl.ItemDesc, OrdersTbl.QuantityOrdered, ItemTypeTbl.ItemShortName, ItemTypeTbl.ItemEnabled, ItemTypeTbl.ReplacementID,  CityPrepDaysTbl.DeliveryOrder,  ItemTypeTbl.SortOrder, OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, OrdersTbl.PurchaseOrder, OrdersTbl.Confirmed, OrdersTbl.InvoiceDone, OrdersTbl.Done, OrdersTbl.Notes, PackagingTbl.Description AS PackDesc, PackagingTbl.BGColour, PersonsTbl.Abbreviation FROM ((((CityPrepDaysTbl RIGHT OUTER JOIN CustomersTbl ON CityPrepDaysTbl.CityID = CustomersTbl.City) RIGHT OUTER JOIN  (OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) ON CustomersTbl.CustomerID = OrdersTbl.CustomerID) LEFT OUTER JOIN   PackagingTbl ON OrdersTbl.PackagingID = PackagingTbl.PackagingID) LEFT OUTER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) WHERE (CustomersTbl.CompanyName LIKE '%{this.tbxFindClient.Text}%') AND (OrdersTbl.Done = false) ORDER BY OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, CityPrepDaysTbl.DeliveryOrder, CustomersTbl.CompanyName, ItemTypeTbl.SortOrder";
             TrackerDb trackerDb = new TrackerDb();
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             this.BuildDeliveryTable(dataReader, false);

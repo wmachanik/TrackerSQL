@@ -1,0 +1,476 @@
+﻿{
+  "SourceTable": "OrderList",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "Cleints",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Cln Tb",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Decal",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "Filter",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "Sidama",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "Switch",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "Terranova",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "Alpino",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "Yirga",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "Marango",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "Limu",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "Harrar",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "Mandheling",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "Timana",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "Marcala",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "Antigua",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "Decaf",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "La Piram",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "Asorgan",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "Los Idol",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "No order",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 22,
+      "SourceName": "Day",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 23,
+      "SourceName": "done",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 24,
+      "SourceName": "Time",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "OrderList",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "ID",
+        "Target": "ID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Cleints",
+        "Target": "Cleints",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Cln Tb",
+        "Target": "Cln Tb",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Decal",
+        "Target": "Decal",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Filter",
+        "Target": "Filter",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Sidama",
+        "Target": "Sidama",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Switch",
+        "Target": "Switch",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Terranova",
+        "Target": "Terranova",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Alpino",
+        "Target": "Alpino",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Yirga",
+        "Target": "Yirga",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Marango",
+        "Target": "Marango",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Limu",
+        "Target": "Limu",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Harrar",
+        "Target": "Harrar",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Mandheling",
+        "Target": "Mandheling",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Timana",
+        "Target": "Timana",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Marcala",
+        "Target": "Marcala",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Antigua",
+        "Target": "Antigua",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Decaf",
+        "Target": "Decaf",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "La Piram",
+        "Target": "La Piram",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Asorgan",
+        "Target": "Asorgan",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Los Idol",
+        "Target": "Los Idol",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "No order",
+        "Target": "No order",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Day",
+        "Target": "Day",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "done",
+        "Target": "done",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Time",
+        "Target": "Time",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

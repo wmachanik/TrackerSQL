@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public class CityDeliveryMatrixRow
     {

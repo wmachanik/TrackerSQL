@@ -6,7 +6,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Security;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public static class UserPreferencesHelper
     {

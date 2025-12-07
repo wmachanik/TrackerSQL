@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerDotNet.SiteMaster" %>
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerSQL.SiteMaster" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
 
@@ -154,13 +154,13 @@
                                 <DynamicMenuStyle BackColor="#201606" VerticalPadding="2px" HorizontalPadding="2px" BorderColor="Transparent" BorderStyle="Solid" />
                                 <Items>
                                     <asp:MenuItem NavigateUrl="~/Default.aspx" Text="🏠" />
-                                    <asp:MenuItem NavigateUrl="~/Pages/Customers.aspx" Text="Contacts" ToolTip="Contact List"
+                                    <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts" ToolTip="Contact List"
                                         Value="Contacts">
-                                        <asp:MenuItem NavigateUrl="~/Pages/Customers.aspx" Text="Customers"
-                                            Value="Customer List" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/CustomerDetails.aspx" Text="New Customer"
-                                            Value="New Customers" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/CustomersAway.aspx" Text="Customers Away" Value="CustomersAway" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts"
+                                            Value="Contact List" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/ContactDetails.aspx" Text="New Contact"
+                                            Value="New Contact" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/CustomersAway.aspx" Text="Contacts Away" Value="ContactsAway" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SendCoffeeCheckup.aspx" Text="Send Checkup"
                                             Value="Send Checkup" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SentRemindersSheet.aspx" Text="View List of reminders sent"
@@ -252,8 +252,8 @@
         <nav id="mobileNavMenu" class="mobile-nav-menu">
             <ul class="mobile-nav-list">
                 <li><a href="/Default.aspx">🏠 Home</a></li>
-                <li><a href="/Pages/Customers.aspx">👥 Customers</a></li>
-                <li><a href="/Pages/CustomersAway.aspx">🛫 Customers Away</a></li>
+                <li><a href="/Pages/Contacts.aspx">👥 Contacts</a></li>
+                <li><a href="/Pages/CustomersAway.aspx">🛫 Contacts Away</a></li>
                 <li><a href="/Pages/SendCoffeeCheckup.aspx">☕ Send Checkup</a></li>
                 <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">📋 New Order</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">🚚 Deliveries</a></li>

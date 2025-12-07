@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SentRemindersSheet.aspx.cs" Inherits="TrackerDotNet.Pages.SentRemindersSheet" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SentRemindersSheet.aspx.cs" Inherits="TrackerSQL.Pages.SentRemindersSheet" %>
 
 <asp:Content ID="cntSentRemindersSheetHdr" ContentPlaceHolderID="HeadContent" runat="server">
     <style>
@@ -116,7 +116,7 @@
     </div>
     <br />
     <asp:ObjectDataSource ID="odsSentRemindersSummarys"
-        TypeName="TrackerDotNet.Controls.SentRemindersLogTbl"
+        TypeName="TrackerSQL.Controls.SentRemindersLogTbl"
         SortParameterName="SortBy"
         SelectMethod="GetAllByDate"
         runat="server" OldValuesParameterFormatString="original_{0}">
@@ -128,7 +128,7 @@
     </asp:ObjectDataSource>
     <asp:ObjectDataSource ID="odsDatesSentReminder" runat="server"
         SelectMethod="GetLast20DatesReminderSent"
-        TypeName="TrackerDotNet.Controls.SentRemindersLogTbl"></asp:ObjectDataSource>
+        TypeName="TrackerSQL.Controls.SentRemindersLogTbl"></asp:ObjectDataSource>
 
     <br />
     <asp:UpdatePanel ID="UpdatePanel1" runat="server" UpdateMode="Always">

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     /// <summary>
     /// Database access layer for order conflict checking and coffee checkup queries

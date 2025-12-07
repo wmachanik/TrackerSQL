@@ -3,7 +3,7 @@ using System.Configuration;
 using System.Linq;
 using System.Web;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public static class TimeZoneUtils
     {

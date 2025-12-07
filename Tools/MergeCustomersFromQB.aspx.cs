@@ -8,10 +8,10 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
   public partial class MergeCustomersFromQB : System.Web.UI.Page
   {
@@ -545,11 +545,11 @@ namespace TrackerDotNet.Tools
       return _found;
     }
 
-    private int GetPresonIDFromRep(string pAbreviation)
+    private int GetPresonIDFromRep(string pAbbreviation)
     {
       PersonsTbl _Person = new PersonsTbl();
 
-      return _Person.PersonsIDFromAbreviation(pAbreviation);
+      return _Person.PersonsIDFromAbbreviation(pAbbreviation);
     }
 
 /*

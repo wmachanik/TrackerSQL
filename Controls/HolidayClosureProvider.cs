@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 using System.Configuration;
 
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class HolidayClosure
     {

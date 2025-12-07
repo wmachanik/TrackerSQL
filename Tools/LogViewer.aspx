@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LogViewer.aspx.cs" Inherits="TrackerDotNet.Tools.LogViewer" %>
+<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LogViewer.aspx.cs" Inherits="TrackerSQL.Tools.LogViewer" %>
 
 <asp:Content ID="cntLogViewerHdr" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">

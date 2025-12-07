@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet.Account
+namespace TrackerSQL.Account
 {
 
 

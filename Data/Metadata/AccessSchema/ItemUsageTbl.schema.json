@@ -1,0 +1,195 @@
+{
+  "SourceTable": "ItemUsageTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ClientUsageLineNo",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Date",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ItemProvided",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "AmountProvided",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "PrepTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 150,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(150)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ClientUsageLineNo",
+        "CustomerID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CustomerID",
+      "Columns": [
+        "CustomerID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PrefPackagingID",
+      "Columns": [
+        "PackagingID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PrefPrepTypeID",
+      "Columns": [
+        "PrepTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactsItemUsageTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ClientUsageLineNo",
+        "Target": "ClientUsageLineNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Date",
+        "Target": "Date",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemProvided",
+        "Target": "ItemProvided",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AmountProvided",
+        "Target": "AmountProvided",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrepTypeID",
+        "Target": "PrepTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PackagingID",
+        "Target": "PackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

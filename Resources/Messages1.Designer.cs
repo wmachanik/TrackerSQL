@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet.Resources {
+namespace TrackerSQL.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace TrackerDotNet.Resources {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TrackerDotNet.Resources.Messages", typeof(Messages).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TrackerSQL.Resources.Messages", typeof(Messages).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -1045,6 +1045,24 @@ namespace TrackerDotNet.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dear {0},&lt;br /&gt;&lt;br /&gt;We have stopped sending automated coffee-checkup reminder emails for your account. You can still place orders and receive other notifications. If you want to re-enable reminders, please contact {1}.&lt;br /&gt;&lt;br /&gt;Kind regards,&lt;br /&gt;Quaffee Team.
+        /// </summary>
+        public static string DisableClient_RemindersDisabledMessage {
+            get {
+                return ResourceManager.GetString("DisableClient.RemindersDisabledMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Quaffee: Reminder emails disabled.
+        /// </summary>
+        public static string DisableClient_RemindersDisabledSubject {
+            get {
+                return ResourceManager.GetString("DisableClient.RemindersDisabledSubject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Our administrator has been notified of this change.&lt;br /&gt;You will no longer receive automated coffee checkup reminder emails..
         /// </summary>
         public static string DisableClient_SuccessDetails {
@@ -1369,6 +1387,15 @@ namespace TrackerDotNet.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to available for collection.
+        /// </summary>
+        public static string Order_StatusAvailableForCollection {
+            get {
+                return ResourceManager.GetString("Order.StatusAvailableForCollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Dear {0},&lt;br /&gt;&lt;br /&gt;Just a quick note to notify you that your Quaffee order has been {1}.&lt;br /&gt;&lt;br /&gt;.
         /// </summary>
         public static string Order_StatusBody {
@@ -1423,11 +1450,38 @@ namespace TrackerDotNet.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to delivered.
+        /// </summary>
+        public static string Order_StatusPendingDelivery {
+            get {
+                return ResourceManager.GetString("Order.StatusPendingDelivery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to placed in your postbox.
         /// </summary>
         public static string Order_StatusPostbox {
             get {
                 return ResourceManager.GetString("Order.StatusPostbox", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dear {0},&lt;br /&gt;&lt;br /&gt;Just a quick note to confirm that your Quaffee order will be {1} on {2}.&lt;br /&gt;&lt;br /&gt;.
+        /// </summary>
+        public static string Order_StatusPreDeliveryBody {
+            get {
+                return ResourceManager.GetString("Order.StatusPreDeliveryBody", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ready for collection.
+        /// </summary>
+        public static string Order_StatusReadyForCollection {
+            get {
+                return ResourceManager.GetString("Order.StatusReadyForCollection", resourceCulture);
             }
         }
         

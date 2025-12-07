@@ -1,0 +1,250 @@
+{
+  "SourceTable": "ClientUsageTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CustomerId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "LastCupCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "NextCoffeeBy",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "NextCleanOn",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "NextFilterEst",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "NextDescaleEst",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "NextServiceEst",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "DailyConsumption",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "FilterAveCount",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "DescaleAveCount",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "ServiceAveCount",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "CleanAveCount",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "CustomerId"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CustomerId",
+      "Columns": [
+        "CustomerId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactsUsageTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "CustomerId",
+        "Target": "CustomerId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastCupCount",
+        "Target": "LastCupCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextCoffeeBy",
+        "Target": "NextCoffeeBy",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextCleanOn",
+        "Target": "NextCleanOn",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextFilterEst",
+        "Target": "NextFilterEst",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextDescaleEst",
+        "Target": "NextDescaleEst",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextServiceEst",
+        "Target": "NextServiceEst",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DailyConsumption",
+        "Target": "DailyConsumption",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FilterAveCount",
+        "Target": "FilterAveCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DescaleAveCount",
+        "Target": "DescaleAveCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceAveCount",
+        "Target": "ServiceAveCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CleanAveCount",
+        "Target": "CleanAveCount",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

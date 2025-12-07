@@ -1,0 +1,142 @@
+{
+  "SourceTable": "PersonsTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "PersonID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "Person",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Abreviation",
+      "DotNetType": "System.String",
+      "ColumnSize": 5,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(5)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "NormalDeliveryDoW",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "SecurityUsername",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "PersonID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "PersonID",
+      "Columns": [
+        "PersonID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "PeopleTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "PersonID",
+        "Target": "PersonID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Person",
+        "Target": "Person",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Abreviation",
+        "Target": "Abreviation",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Enabled",
+        "Target": "Enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NormalDeliveryDoW",
+        "Target": "NormalDeliveryDoW",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SecurityUsername",
+        "Target": "SecurityUsername",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

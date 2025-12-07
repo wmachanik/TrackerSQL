@@ -1,0 +1,544 @@
+{
+  "SourceTable": "ArchivedCustomersTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CompanyName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ContactTitle",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ContactFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ContactLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "ContactAltFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "ContactAltLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "Department",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "BillingAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "City",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "StateOrProvince",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "PostalCode",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "Country/Region",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "PhoneNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "Extension",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "FaxNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "CellNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "EmailAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "ContractNo",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "CustomerType",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "CoffeePreference",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "PriPrefQty",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 22,
+      "SourceName": "SecondaryPreference",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 23,
+      "SourceName": "SecPrefQty",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 24,
+      "SourceName": "autofulfill",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 25,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    },
+    {
+      "Ordinal": 26,
+      "SourceName": "enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "CustomerID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CompanyName",
+      "Columns": [
+        "CompanyName"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ContactLastName",
+      "Columns": [
+        "ContactLastName"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "EmailAddress",
+      "Columns": [
+        "EmailAddress"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PostalCode",
+      "Columns": [
+        "PostalCode"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "ArchivedCustomersTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CompanyName",
+        "Target": "CompanyName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactTitle",
+        "Target": "ContactTitle",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactFirstName",
+        "Target": "ContactFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactLastName",
+        "Target": "ContactLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactAltFirstName",
+        "Target": "ContactAltFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactAltLastName",
+        "Target": "ContactAltLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Department",
+        "Target": "Department",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillingAddress",
+        "Target": "BillingAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "City",
+        "Target": "City",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "StateOrProvince",
+        "Target": "StateOrProvince",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PostalCode",
+        "Target": "PostalCode",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Country/Region",
+        "Target": "Country/Region",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PhoneNumber",
+        "Target": "PhoneNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Extension",
+        "Target": "Extension",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FaxNumber",
+        "Target": "FaxNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CellNumber",
+        "Target": "CellNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EmailAddress",
+        "Target": "EmailAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContractNo",
+        "Target": "ContractNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerType",
+        "Target": "CustomerType",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CoffeePreference",
+        "Target": "CoffeePreference",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PriPrefQty",
+        "Target": "PriPrefQty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SecondaryPreference",
+        "Target": "SecondaryPreference",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SecPrefQty",
+        "Target": "SecPrefQty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "autofulfill",
+        "Target": "autofulfill",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "enabled",
+        "Target": "enabled",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

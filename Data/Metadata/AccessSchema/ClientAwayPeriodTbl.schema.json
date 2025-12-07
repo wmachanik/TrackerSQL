@@ -1,0 +1,116 @@
+{
+  "SourceTable": "ClientAwayPeriodTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "AwayPeriodID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "ClientID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "AwayStartDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "AwayEndDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ReasonID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "Index_151EC36C_DF04_49B1",
+      "Columns": [
+        "AwayPeriodID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactsAwayPeriodTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "AwayPeriodID",
+        "Target": "AwayPeriodID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ClientID",
+        "Target": "ClientID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AwayStartDate",
+        "Target": "AwayStartDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AwayEndDate",
+        "Target": "AwayEndDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReasonID",
+        "Target": "ReasonID",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

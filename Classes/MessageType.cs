@@ -1,4 +1,4 @@
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public enum MessageType
     {

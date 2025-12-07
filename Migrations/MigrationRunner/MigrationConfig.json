@@ -1,0 +1,6 @@
+{
+  "AccessConnectionString": "Provider=Microsoft.ACE.OLEDB.16.0;Data Source=C:\\SRC\\Data\\QuaffeeTracker08.mdb;",
+  "TargetConnectionString": "Server=.\\SQLEXPRESS;Database=OtterDb;Trusted_Connection=True;MultipleActiveResultSets=True;",
+  "AccessTables": ["*"],
+  "AccessTableExcludes": [ "ContactTypeView" ]
+}

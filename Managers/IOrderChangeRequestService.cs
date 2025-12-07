@@ -1,6 +1,6 @@
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     public interface IOrderChangeRequestService
     {

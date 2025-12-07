@@ -4,14 +4,14 @@ $outFile = Join-Path $outDir "MigrationPlan_TrackerDotNet_to_TrackerSQL.md"
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
 
 $plan = @'
-# Migration Plan: TrackerDotNet (Access) → TrackerSQL (SQL Server / SQL Express)
+# Migration Plan: TrackerSQL (Access) → TrackerSQL (SQL Server / SQL Express)
 
 Version: 1.0
 Target Runtime: .NET Framework 4.8
 Date: (fill in)
 
 0. Executive Summary
-We fork `TrackerDotNet` → `TrackerSQL`, migrate schema/data to SQL Server, refactor away Access (OleDb), keep old project for hotfixes until cutover. Extend `test/ShowTableStruct.aspx` to extract schema → JSON + T-SQL.
+We fork `TrackerSQL` → `TrackerSQL`, migrate schema/data to SQL Server, refactor away Access (OleDb), keep old project for hotfixes until cutover. Extend `test/ShowTableStruct.aspx` to extract schema → JSON + T-SQL.
 
 1. Objectives
 - Replace Access (32‑bit) with SQL Server / SQL Express

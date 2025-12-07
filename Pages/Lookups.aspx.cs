@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.Pages.Lookups
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.Pages.Lookups
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using AjaxControlToolkit;
 using System;
@@ -11,10 +11,10 @@ using System.Data;
 using System.Drawing;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Controls;
+using TrackerSQL.Controls;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class Lookups : Page
     {
@@ -122,7 +122,7 @@ namespace TrackerDotNet.Pages
                 GridViewRow row = gvPeople.Rows[e.RowIndex];
 
                 var tbxPerson = (TextBox)row.FindControl("tbxPerson");
-                var tbxAbreviation = (TextBox)row.FindControl("tbxAbreviation");
+                var tbxAbbreviation = (TextBox)row.FindControl("tbxAbbreviation");
                 var cbxEnabled = (CheckBox)row.FindControl("cbxEnabled");
                 var ddlDayOfWeek = (DropDownList)row.FindControl("ddlDayOfWeek");
                 var ddlSecurityNames = (DropDownList)row.FindControl("ddlSecurityNames");
@@ -131,7 +131,7 @@ namespace TrackerDotNet.Pages
                 {
                     PersonID = Convert.ToInt32(gvPeople.DataKeys[e.RowIndex].Value),
                     Person = tbxPerson?.Text ?? "",
-                    Abreviation = tbxAbreviation?.Text ?? "",
+                    Abbreviation = tbxAbbreviation?.Text ?? "",
                     Enabled = cbxEnabled != null && cbxEnabled.Checked,
                     NormalDeliveryDoW = ddlDayOfWeek != null ? Convert.ToInt32(ddlDayOfWeek.SelectedValue) : 0,
                     SecurityUsername = ddlSecurityNames != null ? ddlSecurityNames.SelectedValue : ""
@@ -222,7 +222,7 @@ namespace TrackerDotNet.Pages
                 if (e.CommandName.Equals("AddItem"))
                 {
                     var personTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxPerson");
-                    var abrvTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxAbreviation");
+                    var abrvTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxAbbreviation");
                     var enabledCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxEnabled");
                     var dowDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlDayOfWeek");
                     var userDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlSecurityNames");
@@ -236,7 +236,7 @@ namespace TrackerDotNet.Pages
                     var newPerson = new PersonsTbl
                     {
                         Person = personTbx.Text,
-                        Abreviation = abrvTbx.Text,
+                        Abbreviation = abrvTbx.Text,
                         Enabled = enabledCbx.Checked,
                         NormalDeliveryDoW = Convert.ToInt32(dowDdl.SelectedValue),
                         SecurityUsername = userDdl.SelectedValue

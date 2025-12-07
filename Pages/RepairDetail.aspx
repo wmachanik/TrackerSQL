@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Repair Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="RepairDetail.aspx.cs" Inherits="TrackerDotNet.Pages.RepairDetail" %>
+﻿<%@ Page Title="Repair Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="RepairDetail.aspx.cs" Inherits="TrackerSQL.Pages.RepairDetail" %>
 
 <asp:Content ID="cntRepairDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -179,12 +179,12 @@
         </ContentTemplate>
     </asp:UpdatePanel>
 
-    <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerDotNet.Controls.CompanyNames"
+    <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerSQL.Controls.CompanyNames"
         SelectMethod="GetAll" OldValuesParameterFormatString="original_{0}"></asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsCompanyDemos" runat="server" TypeName="TrackerDotNet.Controls.CompanyNames"
+    <asp:ObjectDataSource ID="odsCompanyDemos" runat="server" TypeName="TrackerSQL.Controls.CompanyNames"
         SelectMethod="GetAllDemo"
         OldValuesParameterFormatString="original_{0}"></asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerDotNet.Controls.EquipTypeTbl"
+    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerSQL.Controls.EquipTypeTbl"
         SortParameterName="SortBy" SelectMethod="GetAll"
         OldValuesParameterFormatString="original_{0}">
         <SelectParameters>
@@ -193,19 +193,19 @@
     </asp:ObjectDataSource>
 
     <asp:ObjectDataSource ID="odsRepairFaults" runat="server" SelectMethod="GetAll"
-        SortParameterName="SortBy" TypeName="TrackerDotNet.Controls.RepairFaultsTbl">
+        SortParameterName="SortBy" TypeName="TrackerSQL.Controls.RepairFaultsTbl">
         <SelectParameters>
             <asp:Parameter DefaultValue="SortOrder" Name="SortBy" Type="String" />
         </SelectParameters>
     </asp:ObjectDataSource>
     <asp:ObjectDataSource ID="odsRepairStatuses" runat="server" SortParameterName="SortBy"
-        SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.RepairStatusesTbl">
+        SelectMethod="GetAll" TypeName="TrackerSQL.Controls.RepairStatusesTbl">
         <SelectParameters>
             <asp:Parameter DefaultValue="SortOrder" Name="SortBy" Type="String" />
         </SelectParameters>
     </asp:ObjectDataSource>
     <asp:ObjectDataSource ID="odsMachineConditions" runat="server" SortParameterName="SortBy"
-        SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.MachineConditionsTbl">
+        SelectMethod="GetAll" TypeName="TrackerSQL.Controls.MachineConditionsTbl">
         <SelectParameters>
             <asp:SessionParameter Name="SortBy" SessionField="SortOrder" Type="String" />
         </SelectParameters>

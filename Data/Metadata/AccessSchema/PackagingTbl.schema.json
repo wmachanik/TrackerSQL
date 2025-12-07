@@ -1,0 +1,134 @@
+{
+  "SourceTable": "PackagingTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "Description",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "AdditionalNotes",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "Symbol",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "Colour",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "BGColour",
+      "DotNetType": "System.String",
+      "ColumnSize": 9,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(9)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "PackagingID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ItemPackagingsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "PackagingID",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "Description",
+        "Target": "ItemPackagingDesc",
+        "Action": "Rename",
+        "Expression": null
+      },
+      {
+        "Source": "AdditionalNotes",
+        "Target": "AdditionalNotes",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Symbol",
+        "Target": "Symbol",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Colour",
+        "Target": "Colour",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BGColour",
+        "Target": "BGColour",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

@@ -1,0 +1,3 @@
+SourceTable,SourceColumn,TargetColumn,Action,Expression
+OrdersTbl,n/a,,Drop,
+ReoccuringOrderTbl,n/a,,Drop,

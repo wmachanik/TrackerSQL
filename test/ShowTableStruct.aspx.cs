@@ -3,10 +3,10 @@ using System.Data;
 using System.Data.OleDb;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.test
+namespace TrackerSQL.test
 {
     public partial class ShowTableStruct : System.Web.UI.Page
     {

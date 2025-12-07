@@ -3,11 +3,11 @@ using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes; // For SystemConstants and AppLogger
-using TrackerDotNet.Controls;
-using TrackerDotNet.Managers; // For CustomersAwayTbl
+using TrackerSQL.Classes; // For SystemConstants and AppLogger
+using TrackerSQL.Controls;
+using TrackerSQL.Managers; // For CustomersAwayTbl
 
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class CustomersAwayDetail : Page
     {

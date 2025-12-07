@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="Roles" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ManageRoles.aspx.cs"
- Inherits="TrackerDotNet.Administration.ManageRoles" %>
+ Inherits="TrackerSQL.Administration.ManageRoles" %>
 <asp:Content ID="cntRolesHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntRolesBdy" ContentPlaceHolderID="MainContent" runat="server">

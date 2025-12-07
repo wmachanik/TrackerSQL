@@ -1,0 +1,3 @@
+SourceTable,HeaderTable,LineTable,OldCompositeKey,NewHeaderKeyName,NewLineKeyName,LineLinkKeyName,HeaderPrimaryKey,LinePrimaryKey,PreserveHeaderIds,PreserveLineIds
+OrdersTbl,OrdersTbl,OrderLinesTbl,,,OrderLineID,OrderID,OrderID,OrderLineID,No,No
+ReoccuringOrderTbl,RecurringOrderTbl,RecurringItemsTbl,,,,RecurringOrderID,RecurringOrderID,,No,No

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using TrackerDotNet.Controls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Controls;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Manages all customer-related operations

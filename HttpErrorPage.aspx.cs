@@ -1,8 +1,8 @@
 using System;
 using System.Web;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet
+namespace TrackerSQL
 {
     public partial class HttpErrorPage : System.Web.UI.Page
     {

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LeaveApp.aspx.cs" Inherits="TrackerDotNet.Pages.LeaveApp" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LeaveApp.aspx.cs" Inherits="TrackerSQL.Pages.LeaveApp" %>
 <asp:Content ID="cntHeaderLeaveApp" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntBodyLeaveApp" ContentPlaceHolderID="MainContent" runat="server">

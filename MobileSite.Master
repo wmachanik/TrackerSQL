@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="MobileSite.Master.cs" Inherits="TrackerDotNet.MobileSiteMaster" %>
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="MobileSite.Master.cs" Inherits="TrackerSQL.MobileSiteMaster" %>
 <%@ Register assembly="AjaxControlToolkit" namespace="AjaxControlToolkit" tagprefix="cc1" %>
 
 <!DOCTYPE html>

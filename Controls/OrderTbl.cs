@@ -1,20 +1,20 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.OrderTbl
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.control.OrderTbl
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class OrderTbl
     {
-        private const string CONST_ORDERSHEADER_SELECT = "SELECT CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustId, OrdersTbl.OrderDate, OrdersTbl.RoastDate,  OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, PersonsTbl.PersonID,  OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.InvoiceDone, OrdersTbl.PurchaseOrder, OrdersTbl.Notes  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE ([CustomerID] = ?) AND ([RoastDate] = ?)";
+        private const string CONST_ORDERSHEADER_SELECT = "SELECT CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustId, OrdersTbl.OrderDate, OrdersTbl.RoastDate,  OrdersTbl.RequiredByDate, PersonsTbl.Abbreviation, PersonsTbl.PersonID,  OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.InvoiceDone, OrdersTbl.PurchaseOrder, OrdersTbl.Notes  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE ([CustomerID] = ?) AND ([RoastDate] = ?)";
         private const string CONST_SELECTBYORDERIR = "SELECT CustomerID, OrderDate, RoastDate, ItemTypeID, QuantityOrdered, RequiredByDate, PrepTypeID, PackagingID, ToBeDeliveredBy, Confirmed, Done, Packed, InvoiceDone, PurchaseOrder, Notes FROM OrdersTbl WHERE (OrderID = ?)";
         private const string CONST_UPDATE_INCREQUIRDERBYDATEBY7 = "UPDATE OrdersTbl SET RequiredByDate = DateAdd('d', 7, RequiredByDate) WHERE (OrderID = ?)";
         private const string CONST_ORDERSLINES_SELECT = "SELECT ItemTypeID, QuantityOrdered, PrepTypeID FROM OrdersTbl WHERE ([OrdersTbl.CustomerID] = ?) AND ([RoastDate] = ?)";
@@ -26,7 +26,7 @@ namespace TrackerDotNet.Controls
         public List<OrderHeaderData> LoadOrderHeader(long pCustomerID, DateTime pPrepDate)
         {
             List<OrderHeaderData> orderHeaderDataList = new List<OrderHeaderData>();
-            string strSQL = "SELECT CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustId, OrdersTbl.OrderDate, OrdersTbl.RoastDate,  OrdersTbl.RequiredByDate, PersonsTbl.Abreviation, PersonsTbl.PersonID,  OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.InvoiceDone, OrdersTbl.PurchaseOrder, OrdersTbl.Notes  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE ([CustomerID] = ?) AND ([RoastDate] = ?)";
+            string strSQL = "SELECT CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustId, OrdersTbl.OrderDate, OrdersTbl.RoastDate,  OrdersTbl.RequiredByDate, PersonsTbl.Abbreviation, PersonsTbl.PersonID,  OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.InvoiceDone, OrdersTbl.PurchaseOrder, OrdersTbl.Notes  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE ([CustomerID] = ?) AND ([RoastDate] = ?)";
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddWhereParams((object)pCustomerID, DbType.Int64, "@CustomerID");
             trackerDb.AddWhereParams((object)pPrepDate, DbType.Date, "@RoastDate");

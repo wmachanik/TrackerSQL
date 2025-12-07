@@ -1,0 +1,872 @@
+{
+  "SourceTable": "CustomersTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CompanyName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ContactTitle",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ContactFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ContactLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "ContactAltFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "ContactAltLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "Department",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "BillingAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "City",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "StateOrProvince",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "PostalCode",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "Country/Region",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "PhoneNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "Extension",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "FaxNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "CellNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "EmailAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "AltEmailAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "ContractNo",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "CustomerTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "CustomerTypeOLD",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 22,
+      "SourceName": "EquipType",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 23,
+      "SourceName": "CoffeePreference",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 24,
+      "SourceName": "PriPrefQty",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 25,
+      "SourceName": "PrefPrepTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 26,
+      "SourceName": "PrefPackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 27,
+      "SourceName": "SecondaryPreference",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 28,
+      "SourceName": "SecPrefQty",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 29,
+      "SourceName": "TypicallySecToo",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 30,
+      "SourceName": "PreferedAgent",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 31,
+      "SourceName": "SalesAgentID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 32,
+      "SourceName": "MachineSN",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 33,
+      "SourceName": "UsesFilter",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 34,
+      "SourceName": "autofulfill",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 35,
+      "SourceName": "enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 36,
+      "SourceName": "PredictionDisabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 37,
+      "SourceName": "AlwaysSendChkUp",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 38,
+      "SourceName": "NormallyResponds",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 39,
+      "SourceName": "ReminderCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 40,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    },
+    {
+      "Ordinal": 41,
+      "SourceName": "SendDeliveryConfirmation",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 42,
+      "SourceName": "LastDateSentReminder",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "CustomerID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "UCCN_CompanyName",
+      "Columns": [
+        "CompanyName"
+      ],
+      "Unique": true,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "CompanyName",
+      "Columns": [
+        "CompanyName"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ContactLastName",
+      "Columns": [
+        "ContactLastName"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "CustomerTypeID",
+      "Columns": [
+        "CustomerTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "EmailAddress",
+      "Columns": [
+        "EmailAddress"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PostalCode",
+      "Columns": [
+        "PostalCode"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PrefPrepTypeID",
+      "Columns": [
+        "PrefPackagingID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "UCALTEM_AltEmailAddress",
+      "Columns": [
+        "AltEmailAddress"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "UCEM_EmailAddress",
+      "Columns": [
+        "EmailAddress"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CompanyName",
+        "Target": "CompanyName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactTitle",
+        "Target": "ContactTitle",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactFirstName",
+        "Target": "ContactFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactLastName",
+        "Target": "ContactLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactAltFirstName",
+        "Target": "ContactAltFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactAltLastName",
+        "Target": "ContactAltLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Department",
+        "Target": "Department",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillingAddress",
+        "Target": "BillingAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "City",
+        "Target": "City",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "StateOrProvince",
+        "Target": "StateOrProvince",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PostalCode",
+        "Target": "PostalCode",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Country/Region",
+        "Target": "Country/Region",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PhoneNumber",
+        "Target": "PhoneNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Extension",
+        "Target": "Extension",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FaxNumber",
+        "Target": "FaxNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CellNumber",
+        "Target": "CellNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EmailAddress",
+        "Target": "EmailAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AltEmailAddress",
+        "Target": "AltEmailAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContractNo",
+        "Target": "ContractNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerTypeID",
+        "Target": "CustomerTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerTypeOLD",
+        "Target": "CustomerTypeOLD",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EquipType",
+        "Target": "EquipType",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CoffeePreference",
+        "Target": "CoffeePreference",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PriPrefQty",
+        "Target": "PriPrefQty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrefPrepTypeID",
+        "Target": "PrefPrepTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrefPackagingID",
+        "Target": "PrefPackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SecondaryPreference",
+        "Target": "SecondaryPreference",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SecPrefQty",
+        "Target": "SecPrefQty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TypicallySecToo",
+        "Target": "TypicallySecToo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PreferedAgent",
+        "Target": "PreferedAgent",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SalesAgentID",
+        "Target": "SalesAgentID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineSN",
+        "Target": "MachineSN",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UsesFilter",
+        "Target": "UsesFilter",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "autofulfill",
+        "Target": "autofulfill",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "enabled",
+        "Target": "enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PredictionDisabled",
+        "Target": "PredictionDisabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AlwaysSendChkUp",
+        "Target": "AlwaysSendChkUp",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NormallyResponds",
+        "Target": "NormallyResponds",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReminderCount",
+        "Target": "ReminderCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SendDeliveryConfirmation",
+        "Target": "SendDeliveryConfirmation",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastDateSentReminder",
+        "Target": "LastDateSentReminder",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

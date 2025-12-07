@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack; // add this
 using System.IO;       // for StringWriter
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
     public partial class MessagesEditor : System.Web.UI.Page
     {

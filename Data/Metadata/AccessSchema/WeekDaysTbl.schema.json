@@ -1,0 +1,62 @@
+﻿{
+  "SourceTable": "WeekDaysTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "WeekDaysID",
+      "DotNetType": "System.Byte",
+      "ColumnSize": 1,
+      "NumericPrecision": 3,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "TINYINT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "WeekDayName",
+      "DotNetType": "System.String",
+      "ColumnSize": 15,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(15)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "WeekDaysID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "WeekDaysTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": true,
+    "ColumnActions": [
+      {
+        "Source": "WeekDaysID",
+        "Target": "WeekDaysID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "WeekDayName",
+        "Target": "WeekDayName",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

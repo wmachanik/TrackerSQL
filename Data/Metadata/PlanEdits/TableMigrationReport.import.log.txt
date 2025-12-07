@@ -1,0 +1,172 @@
+﻿Import finished. Tables updated=45, Column plans touched~=377
+WARN: Dropped synthetic/malformed ColumnAction for table AwayReasonTbl: Source='Copy', Target='ReasonDesc', Action='n/a', Expr=''
+AUTO-DETECT PK for AwayReasonTbl -> AwayReasonTbl: AwayReasonID
+OK Simple: AwayReasonTbl -> AwayReasonTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CityPrepDaysTbl: Source='Rename', Target='PrepDayOfWeekID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CityPrepDaysTbl: Source='Copy', Target='DeliveryOrder', Action='n/a', Expr=''
+AUTO-DETECT PK for CityPrepDaysTbl -> AreaPrepDaysTbl: AreaPrepDaysID, AreaID
+OK Simple: CityPrepDaysTbl -> AreaPrepDaysTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CityTbl: Source='Rename', Target='DeliveryDelay', Action='n/a', Expr=''
+AUTO-DETECT PK for CityTbl -> AreasTbl: AreaID
+OK Simple: CityTbl -> AreasTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ClientAwayPeriodTbl: Source='Copy', Target='ReasonID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ClientAwayPeriodTbl: Source='Rename', Target='ContactID', Action='n/a', Expr=''
+AUTO-DETECT PK for ClientAwayPeriodTbl -> ContactsAwayPeriodTbl: AwayPeriodID, ContactID
+OK Simple: ClientAwayPeriodTbl -> ContactsAwayPeriodTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ClientUsageLinesTbl: Source='Rename', Target='ItemServiceTypeID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ClientUsageLinesTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for ClientUsageLinesTbl -> ContactUsageLinesTbl: ContactID, ItemServiceTypeID
+OK Simple: ClientUsageLinesTbl -> ContactUsageLinesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ClientUsageTbl: Source='Rename', Target='ContactID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ClientUsageTbl: Source='Copy', Target='CleanAveCount', Action='n/a', Expr=''
+AUTO-DETECT PK for ClientUsageTbl -> ContactsUsageTbl: ContactID
+OK Simple: ClientUsageTbl -> ContactsUsageTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ClosureDatesTbl: Source='Rename', Target='NextPrepDate', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ClosureDatesTbl: Source='Copy', Target='Comments', Action='n/a', Expr=''
+AUTO-DETECT PK for ClosureDatesTbl -> ClosureDatesTbl: ClosureDateID
+OK Simple: ClosureDatesTbl -> ClosureDatesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CustomersAccInfoTbl: Source='Rename', Target='ContactVATNo', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CustomersAccInfoTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for CustomersAccInfoTbl -> ContactsAccInfoTbl: ContactsAccInfoID, ContactID
+OK Simple: CustomersAccInfoTbl -> ContactsAccInfoTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CustomersTbl: Source='Rename', Target='Enabled', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CustomersTbl: Source='Copy', Target='LastDateSentReminder', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CustomersTbl: Source='Drop', Target='Drop', Action='n/a', Expr=''
+AUTO-DETECT PK for CustomersTbl -> ContactsTbl: ContactID, ContactTypeID
+OK Simple: CustomersTbl -> ContactsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CustomerTrackedServiceItemsTbl: Source='Rename', Target='ItemServiceTypeID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CustomerTrackedServiceItemsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for CustomerTrackedServiceItemsTbl -> ContactTrackedServiceItemsTbl: ContactTrackedServiceItemsID, ContactTypeID
+OK Simple: CustomerTrackedServiceItemsTbl -> ContactTrackedServiceItemsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table CustomerTypeTbl: Source='Rename', Target='ContactTypeDesc', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table CustomerTypeTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for CustomerTypeTbl -> ContactTypesTbl: ContactTypeID
+OK Simple: CustomerTypeTbl -> ContactTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table EquipTypeTbl: Source='Rename', Target='EquipTypeDescription', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table EquipTypeTbl: Source='Copy', Target='EquipTypeName', Action='n/a', Expr=''
+AUTO-DETECT PK for EquipTypeTbl -> EquipTypesTbl: EquipTypeID
+OK Simple: EquipTypeTbl -> EquipTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table HolidayClosureTbl: Source='Copy', Target='Description', Action='n/a', Expr=''
+AUTO-DETECT PK for HolidayClosureTbl -> HolidayClosuresTbl: HolidayClosureID
+OK Simple: HolidayClosureTbl -> HolidayClosuresTbl
+WARN: Dropped synthetic/malformed ColumnAction for table InvoiceTypeTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for InvoiceTypeTbl -> InvoiceTypesTbl: InvoiceTypeID
+OK Simple: InvoiceTypeTbl -> InvoiceTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ItemGroupTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ItemGroupTbl: Source='Rename', Target='ItemID', Action='n/a', Expr=''
+AUTO-DETECT PK for ItemGroupTbl -> ItemGroupsTbl: ItemGroupID, GroupReferenceItemID
+OK Simple: ItemGroupTbl -> ItemGroupsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ItemTypeTbl: Source='Rename', Target='ReplacementItemID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ItemTypeTbl: Source='Copy', Target='BasePrice', Action='n/a', Expr=''
+AUTO-DETECT PK for ItemTypeTbl -> ItemsTbl: ItemID, ItemServiceTypeID
+OK Simple: ItemTypeTbl -> ItemsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ItemUnitsTbl: Source='Copy', Target='UnitDescription', Action='n/a', Expr=''
+AUTO-DETECT PK for ItemUnitsTbl -> ItemUnitsTbl: ItemUnitID
+OK Simple: ItemUnitsTbl -> ItemUnitsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ItemUsageTbl: Source='Rename', Target='ItemPackagingID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ItemUsageTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for ItemUsageTbl -> ContactsItemUsageTbl: ContactID, ItemPrepTypeID
+OK Simple: ItemUsageTbl -> ContactsItemUsageTbl
+WARN: Dropped synthetic/malformed ColumnAction for table MachineConditionsTbl: Source='Rename', Target='EquipConditionID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table MachineConditionsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for MachineConditionsTbl -> EquipConditionsTbl: EquipConditionID
+OK Simple: MachineConditionsTbl -> EquipConditionsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table NextRoastDateByCityTbl: Source='Rename', Target='NextPrepDate', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table NextRoastDateByCityTbl: Source='Copy', Target='NextDeliveryDate', Action='n/a', Expr=''
+AUTO-DETECT PK for NextRoastDateByCityTbl -> NextPrepDateByAreasTbl: NextPrepDayID, AreaID
+OK Simple: NextRoastDateByCityTbl -> NextPrepDateByAreasTbl
+WARN: Dropped synthetic/malformed ColumnAction for table PackagingTbl: Source='Rename', Target='ItemPackagingDesc', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table PackagingTbl: Source='Copy', Target='BGColour', Action='n/a', Expr=''
+AUTO-DETECT PK for PackagingTbl -> ItemPackagingsTbl: ItemPackagingID
+OK Simple: PackagingTbl -> ItemPackagingsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table PaymentTermsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for PaymentTermsTbl -> PaymentTermsTbl: PaymentTermID
+OK Simple: PaymentTermsTbl -> PaymentTermsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table PersonsTbl: Source='Copy', Target='SecurityUsername', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table PersonsTbl: Source='Rename', Target='Abbreviation', Action='n/a', Expr=''
+AUTO-DETECT PK for PersonsTbl -> PeopleTbl: PersonID
+OK Simple: PersonsTbl -> PeopleTbl
+WARN: Dropped synthetic/malformed ColumnAction for table PrepTypesTbl: Source='Rename', Target='ItemPrepType', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table PrepTypesTbl: Source='Copy', Target='IdentifyingChar', Action='n/a', Expr=''
+AUTO-DETECT PK for PrepTypesTbl -> ItemPrepTypesTbl: ItemPrepID
+OK Simple: PrepTypesTbl -> ItemPrepTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table PriceLevelsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for PriceLevelsTbl -> PriceLevelsTbl: PriceLevelID
+OK Simple: PriceLevelsTbl -> PriceLevelsTbl
+PARSE ROW (ReoccuranceTypeTbl): src='Rename', act='n/a', tgt='RecurringTypeID', preserve='Yes', raw=[|ID|INT|No|No|--/--|RecurringTypeID|INT|PK|Yes|Yes|n/a|Rename|ID|||||||||]
+PARSE ROW (ReoccuranceTypeTbl): src='Rename', act='n/a', tgt='RecurringTypeDesc', preserve='Yes', raw=[|Type|NVARCHAR(255)|No|No|--/--|RecurringTypeDesc|NVARCHAR(255)|No|No|Yes|n/a|Rename|Type|||||||||]
+WARN: Dropped synthetic/malformed ColumnAction for table ReoccuranceTypeTbl: Source='Rename', Target='RecurringTypeDesc', Action='n/a', Expr=''
+AUTO-DETECT PK for ReoccuranceTypeTbl -> RecurranceTypesTbl: RecurringTypeID
+OK Simple: ReoccuranceTypeTbl -> RecurranceTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table RepairFaultsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for RepairFaultsTbl -> RepairFaultsTbl: RepairFaultID
+OK Simple: RepairFaultsTbl -> RepairFaultsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table RepairStatusesTbl: Source='Copy', Target='StatusNote', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table RepairStatusesTbl: Source='Rename', Target='EmailContact', Action='n/a', Expr=''
+AUTO-DETECT PK for RepairStatusesTbl -> RepairStatusesTbl: RepairStatusID
+OK Simple: RepairStatusesTbl -> RepairStatusesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table RepairsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table RepairsTbl: Source='Rename', Target='EquipSerialNumber', Action='n/a', Expr=''
+AUTO-DETECT PK for RepairsTbl -> RepairsTbl: RepairID, ContactID
+OK Simple: RepairsTbl -> RepairsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table SectionTypesTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for SectionTypesTbl -> SectionTypesTbl: SectionID
+OK Simple: SectionTypesTbl -> SectionTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table SendCheckEmailTextsTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table SendCheckEmailTextsTbl: Source='Rename', Target='FooterText', Action='n/a', Expr=''
+AUTO-DETECT PK for SendCheckEmailTextsTbl -> SendCheckupEmailTextsTbl: SCEMTID
+OK Simple: SendCheckEmailTextsTbl -> SendCheckupEmailTextsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table SentRemindersLogTbl: Source='Copy', Target='HadAutoFulfilItem', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table SentRemindersLogTbl: Source='Rename', Target='HadRecurrItems', Action='n/a', Expr=''
+AUTO-DETECT PK for SentRemindersLogTbl -> SentRemindersLogTbl: ReminderID, ContactID
+OK Simple: SentRemindersLogTbl -> SentRemindersLogTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ServiceTypesTbl: Source='Rename', Target='ItemPrepTypeID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table ServiceTypesTbl: Source='Copy', Target='Description', Action='n/a', Expr=''
+AUTO-DETECT PK for ServiceTypesTbl -> ItemServiceTypesTbl: ItemServiceTypeID, ItemPackagingID
+OK Simple: ServiceTypesTbl -> ItemServiceTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table SysDataTbl: Source='Copy', Target='MinReminderDate', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table SysDataTbl: Source='Rename', Target='InternalContactIDs', Action='n/a', Expr=''
+AUTO-DETECT PK for SysDataTbl -> SysDataTbl: ID, GroupReferenceItemID
+OK Simple: SysDataTbl -> SysDataTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TempCoffeecheckupCustomerTbl: Source='Copy', Target='RequiresPurchOrder', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TempCoffeecheckupCustomerTbl: Source='Rename', Target='Enabled', Action='n/a', Expr=''
+AUTO-DETECT PK for TempCoffeecheckupCustomerTbl -> TempCoffeecheckupCustomerTbl: TCCID, ContactID
+OK Simple: TempCoffeecheckupCustomerTbl -> TempCoffeecheckupCustomerTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TempCoffeecheckupItemsTbl: Source='Copy', Target='NextDateRequired', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TempCoffeecheckupItemsTbl: Source='Rename', Target='RecurringOrderItemID', Action='n/a', Expr=''
+AUTO-DETECT PK for TempCoffeecheckupItemsTbl -> TempCoffeecheckupItemsTbl: TCIID, ContactID
+OK Simple: TempCoffeecheckupItemsTbl -> TempCoffeecheckupItemsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersHeaderTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersHeaderTbl: Source='Rename', Target='ContactID', Action='n/a', Expr=''
+AUTO-DETECT PK for TempOrdersHeaderTbl -> TempOrdersHeaderTbl: TOHeaderID, ContactID
+OK Simple: TempOrdersHeaderTbl -> TempOrdersHeaderTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersLinesTbl: Source='Copy', Target='OriginalOrderID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersLinesTbl: Source='Rename', Target='ItemPackagingID', Action='n/a', Expr=''
+AUTO-DETECT PK for TempOrdersLinesTbl -> TempOrdersLinesTbl: TOLineID, TOHeaderID
+OK Simple: TempOrdersLinesTbl -> TempOrdersLinesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersTbl: Source='Rename', Target='QtyOrdered', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TempOrdersTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for TempOrdersTbl -> TempOrdersTbl: TempOrderID, OrderID
+OK Simple: TempOrdersTbl -> TempOrdersTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TotalCountTrackerTbl: Source='Rename', Target='TotalCounterTrackerID', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TotalCountTrackerTbl: Source='Copy', Target='Comments', Action='n/a', Expr=''
+AUTO-DETECT PK for TotalCountTrackerTbl -> TotalCountTrackerTbl: TotalCounterTrackerID
+OK Simple: TotalCountTrackerTbl -> TotalCountTrackerTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TrackedServiceItemTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table TrackedServiceItemTbl: Source='Rename', Target='ItemServiceTypeID', Action='n/a', Expr=''
+AUTO-DETECT PK for TrackedServiceItemTbl -> TrackedServiceItemsTbl: TrackerServiceItemID, ItemServiceTypeID
+OK Simple: TrackedServiceItemTbl -> TrackedServiceItemsTbl
+WARN: Dropped synthetic/malformed ColumnAction for table TransactionTypesTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+AUTO-DETECT PK for TransactionTypesTbl -> TransactionTypesTbl: TransactionID
+OK Simple: TransactionTypesTbl -> TransactionTypesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table UsedItemGroupTbl: Source='Copy', Target='Notes', Action='n/a', Expr=''
+WARN: Dropped synthetic/malformed ColumnAction for table UsedItemGroupTbl: Source='Rename', Target='LastItemSortPos', Action='n/a', Expr=''
+AUTO-DETECT PK for UsedItemGroupTbl -> UsedItemGroupsTbl: UsedItemGroupID, ContactID
+OK Simple: UsedItemGroupTbl -> UsedItemGroupsTbl
+AUTO-DETECT PK for OrdersTbl -> OrdersTbl: OrderID, ContactID
+OK Normalize: OrdersTbl -> H:OrdersTbl, L:OrderLinesTbl
+WARN: Dropped synthetic/malformed ColumnAction for table ReoccuringOrderTbl: Source='new', Target='RecurringOrderItemID', Action='Rename', Expr=''
+AUTO-DETECT PK for ReoccuringOrderTbl -> RecurringOrdersTbl: RecurringOrderID, ContactID
+OK Normalize: ReoccuringOrderTbl -> H:RecurringOrdersTbl, L:RecurringOrderItemsTbl
+OK BusinessRules updated: C:\SRC\ASP.net\TrackerSQL\Data\Metadata\PlanEdits\BusinessRules.json
+Constraints summary: Tables=47, PKCols=47, IdentityCols=48, FKs=76, NotNullCols=88

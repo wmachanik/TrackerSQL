@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Web.UI;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
-using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
+using TrackerSQL.Managers;
 using System.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.UI.WebControls;
 
-namespace TrackerDotNet
+namespace TrackerSQL
 {
     public partial class DisableClient : Page
     {
@@ -102,7 +102,6 @@ namespace TrackerDotNet
                 ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
             }
         }
-
         protected void btnConfirmDisable_Click(object sender, EventArgs e)
         {
             try
@@ -127,15 +126,19 @@ namespace TrackerDotNet
 
                 var customersTbl = new CustomersTbl();
                 string disableReason = $"Disabled by customer request on {TimeZoneUtils.Now():yyyy-MM-dd HH:mm} via email link";
-                
-                bool disableResult = customersTbl.DisableCustomer(customerId, disableReason);
 
-                if (disableResult)
+                // Page purpose: disable only prediction/reminder emails — set PredictionDisabled=true
+                bool remindersResult = customersTbl.DisableCustomerReminders(customerId, disableReason);
+
+                if (remindersResult)
                 {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Customer {customerId} ({companyName}) successfully disabled via email link");
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Customer {customerId} ({companyName}) - PredictionDisabled set true via email link");
 
+                    // Notify admin so they are aware (recurring orders still need manual action if present)
                     NotifyAdministrator(customerId, companyName, recurringOrdersInfo);
-                    SendCustomerGoodbyeEmail(customerId, companyName);
+
+                    // Send acknowledgement to customer
+                    SendCustomerRemindersDisabledEmail(customerId, companyName);
 
                     confirmationSection.Visible = false;
                     successSection.Visible = true;
@@ -147,11 +150,39 @@ namespace TrackerDotNet
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error disabling customer: {ex.Message}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error disabling reminders: {ex.Message}");
                 ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
             }
         }
 
+        private void SendCustomerRemindersDisabledEmail(int customerId, string companyName)
+        {
+            try
+            {
+                var emailManager = new CoffeeCheckupEmailManager();
+                var customersTbl = new CustomersTbl();
+                var customerData = customersTbl.GetCustomerByCustomerID(customerId);
+                if (customerData == null) return;
+
+                string customerEmail = !string.IsNullOrWhiteSpace(customerData.EmailAddress) ? customerData.EmailAddress : customerData.AltEmailAddress;
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                string subject = MessageProvider.Get(MessageKeys.DisableClient.RemindersDisabledSubject);
+                string bodyTemplate = MessageProvider.Get(MessageKeys.DisableClient.RemindersDisabledMessage);
+                string systemEmail = ConfigHelper.GetString("SysFromEmail", "info@quaffee.co.za");
+                string body = string.Format(bodyTemplate, companyName, systemEmail);
+
+                bool emailSent = emailManager.SendDirectEmail(customerEmail, subject, body);
+                if (emailSent)
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Reminders-disabled acknowledgement sent to {customerEmail} for customer {customerId}");
+                else
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Failed to send reminders-disabled acknowledgement to {customerEmail} for customer {customerId}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error sending reminders-disabled acknowledgement: {ex.Message}");
+            }
+        }
         private RecurringOrdersInfo CheckRecurringOrders(int customerId)
         {
             var recurringInfo = new RecurringOrdersInfo();

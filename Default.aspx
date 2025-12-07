@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true"
-    CodeBehind="Default.aspx.cs" Inherits="TrackerDotNet.Default" %>
+    CodeBehind="Default.aspx.cs" Inherits="TrackerSQL.Default" %>
 
 <%--<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>--%>
 
@@ -11,17 +11,17 @@
     <!-- Dashboard Grid Layout -->
     <div class="responsive-layout-container">
         
-        <!-- Customers Section -->
+        <!-- Contacts Section -->
         <div class="complex-form-section">
-            <h3>Customer Management</h3>
+            <h3>Contact Management</h3>
             <div class="dashboard-links">
                 <div class="dashboard-card">
-                    <h4><a href="Pages/Customers.aspx">Customers</a></h4>
-                    <p>Manage customer information and accounts</p>
+                    <h4><a href="Pages/Contacts.aspx">Contacts</a></h4>
+                    <p>Manage contact information and accounts</p>
                 </div>
                 <div class="dashboard-card">
-                    <h4><a href="Pages/SendCoffeeCheckup.aspx">Send Coffee Checkup</a></h4>
-                    <p>Send automated customer checkups</p>
+                    <h4><a href="Pages/SendCoffeeCheckup.aspx">Send Checkup</a></h4>
+                    <p>Send automated contact checkups</p>
                 </div>
                 <div class="dashboard-card">
                     <h4><a href="Pages/SentRemindersSheet.aspx">Reminder History</a></h4>
@@ -113,10 +113,6 @@
         <p style="color: var(--primary-brown); font-style: italic;">cups and counting...</p>
     </div>
     &nbsp;
-    <asp:SqlDataSource ID="sdsCupCountTotal" runat="server"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT SUM(LastCupCount) AS TotalCupCount FROM ClientUsageTbl"></asp:SqlDataSource>
 
     <div style="margin-top:40px; border-top:1px solid #ccc; padding-top:6px; font-size:12px; color:#555;">
         <asp:Literal ID="litCurrentDate" runat="server" />

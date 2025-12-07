@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.classes.TrackerDb
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.classes.TrackerDb
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections;
@@ -17,7 +17,7 @@ using System.Web;
 using System.Web.Configuration;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public class TrackerDb : IDisposable
     {
@@ -389,6 +389,15 @@ namespace TrackerDotNet.Classes
         {
             try
             {
+                // Kill switch to intentionally disable Access usage while migrating
+                if (ConfigHelper.GetBool("DisableAccessDb", false))
+                {
+                    var st = new System.Diagnostics.StackTrace(true);
+                    string msg = "Access database usage disabled via config (DisableAccessDb=true). Code path is still using TrackerDb.\n" + st.ToString();
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Database, msg);
+                    throw new InvalidOperationException("Access DB disabled by configuration. See logs for call site.");
+                }
+
                 if (this._TrackerDbConn != null)
                 {
                     if (this._TrackerDbConn.State == ConnectionState.Open)

@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="System Tools" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="SystemTools.aspx.cs" Inherits="TrackerDotNet.Tools.SystemTools" MaintainScrollPositionOnPostback="true" %>
+    CodeBehind="SystemTools.aspx.cs" Inherits="TrackerSQL.Tools.SystemTools" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntSystemToolsHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -138,7 +138,7 @@
                                     </Columns>
                                 </asp:GridView>
                                 <asp:ObjectDataSource ID="odsCustomerTypes" runat="server" SortParameterName="SortBy"
-                                    SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.CustomerTypeTbl"></asp:ObjectDataSource>
+                                    SelectMethod="GetAll" TypeName="TrackerSQL.Controls.CustomerTypeTbl"></asp:ObjectDataSource>
                             </td>
                         </tr>
                     </table>

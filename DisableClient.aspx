@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="DisableClient.aspx.cs" Inherits="TrackerDotNet.DisableClient" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="DisableClient.aspx.cs" Inherits="TrackerSQL.DisableClient" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -113,8 +113,14 @@
                     <p style="font-size: 16px; color: #666; margin: 25px 0;">
                         ⚠️ <strong>This will stop all future coffee checkup reminder emails.</strong><br />
                         You can always re-enable reminders by contacting us directly.
-                   
                     </p>
+                    <div id="disableOptions">
+                        <asp:RadioButtonList ID="rblDisableChoice" runat="server" RepeatDirection="Vertical">
+                            <asp:ListItem Text="Disable my account and stop all notifications" Value="disable_all" />
+                            <asp:ListItem Text="Stop only coffee checkup reminder emails (keep account active)" Value="disable_reminders" Selected="true" />
+                        </asp:RadioButtonList>
+                        <p class="help">Choose "Stop only coffee checkup..." if you still want to place orders / receive other emails.</p>
+                    </div>
                 </div>
 
                 <div class="buttons">

@@ -1,5 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="GroupItemDetail.aspx.cs"
-  Inherits="TrackerDotNet.Pages.GroupItemDetail" Title="Group Item Detail" %>
+  Inherits="TrackerSQL.Pages.GroupItemDetail" Title="Group Item Detail" %>
 
 <asp:Content ID="cntItemGroupDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>

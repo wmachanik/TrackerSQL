@@ -1,4 +1,30 @@
-﻿Migration Project Plan (Expanded Step‑By‑Step – Data First, Code Second)
+﻿Phase 1 (only): Create a clean cloned project + new Git repo (TrackerSQL) without touching the live one.
+Steps:
+1.	Close the solution in Visual Studio.
+2.	Copy the whole folder: File Explorer: C:\SRC\ASP.net\TrackerDotNet  →  C:\SRC\ASP.net\TrackerSQL
+3.	In the new folder remove the existing Git history: Open a terminal in C:\SRC\ASP.net\TrackerSQL rmdir /s /q .git
+4.	Rename the solution (optional but clearer):
+•	Rename TrackerDotNet.sln → TrackerSQL.sln
+•	If the main project folder is TrackerDotNet and you want it renamed: a. In Explorer rename folder TrackerDotNet → TrackerSQL b. Open TrackerSQL.sln in a text editor, change occurrences of TrackerDotNet to TrackerSQL (only in Project(...) line paths, not NuGet cache paths). c. Open the .csproj and (optional) change: <AssemblyName>TrackerSQL</AssemblyName> <RootNamespace>TrackerSQL</RootNamespace> (You can skip namespace changes now to avoid mass edits.)
+5.	Initialize new Git repo: cd C:\SRC\ASP.net\TrackerSQL git init git add . git commit -m "Initial import from TrackerDotNet"
+6.	Create the new remote repo (GitHub UI) named TrackerSQL, then: git remote add origin https://github.com/YourOrg/TrackerSQL.git git push -u origin main (If your default branch is master replace main.)
+7.	Open TrackerSQL.sln in Visual Studio; build to confirm it still compiles.
+Important tradeoff (concise):
+•	Pros: Zero risk of accidental changes leaking to production.
+•	Cons: Every bugfix now must be manually applied twice (TrackerDotNet and TrackerSQL). You must institute a tiny checklist for that.
+Stop here.
+If you want the next phase (adding SQL connection + provider toggle in the new project) say “next”.
+
+
+
+
+
+
+
+
+
+
+Migration Project Plan (Expanded Step‑By‑Step – Data First, Code Second)
 Project: TrackerDotNet (Access) → TrackerSQL (SQL Server)
 Framework: .NET Framework 4.8
 Strategy: 1) Clone project & migrate schema/data first. 2) Validate data. 3) Only then change code (queries / DAL / UI).

@@ -1,0 +1,132 @@
+{
+  "SourceTable": "ServiceTypesTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ServiceTypeId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "ServiceType",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "Description",
+      "DotNetType": "System.String",
+      "ColumnSize": 100,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(100)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "PrepTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ServiceTypeId"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "PrepTypeID",
+      "Columns": [
+        "PrepTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ServiceTypeId",
+      "Columns": [
+        "ServiceTypeId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ItemServiceTypesTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ServiceTypeId",
+        "Target": "ServiceTypeId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceType",
+        "Target": "ServiceType",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Description",
+        "Target": "Description",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PackagingID",
+        "Target": "PackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrepTypeID",
+        "Target": "PrepTypeID",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

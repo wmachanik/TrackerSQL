@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using TrackerDotNet.Controls;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public static class EmailUtils
     {

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Order Summary Sheet" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderSheet.aspx.cs" Inherits="TrackerDotNet.Pages.OrderSheet" %>
+﻿<%@ Page Title="Order Summary Sheet" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderSheet.aspx.cs" Inherits="TrackerSQL.Pages.OrderSheet" %>
 <%@ Register assembly="AjaxControlToolkit" namespace="AjaxControlToolkit" tagprefix="cc1" %>
 <asp:Content ID="cntOrderSheetHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -26,7 +26,7 @@
             <asp:TextBox id= "tbxFilter" runat="server" Width="20em" Enabled="false" />
             <asp:DropDownList ID="ddlDeliveryBy" runat="server" AutoPostBack="True" Visible="False"
               DataSourceID="odsDeliveryBy" DataTextField="Person" 
-              DataValueField="Abreviation" />
+              DataValueField="Abbreviation" />
             &nbsp;&nbsp;
             <asp:Button ID="btnGo" Text="Go" runat="server" onclick="btnGo_Click" />
           </td>
@@ -79,13 +79,13 @@
   </asp:UpdatePanel>
   <asp:ObjectDataSource ID="odsOrderSheet" runat="server" 
     OldValuesParameterFormatString="original_{0}" SelectMethod="GetOrdersToDoSheet" 
-    TypeName="TrackerDotNet.DataSets.OrderSheetTableAdapters.OrderSheetTableAdapter">
+    TypeName="TrackerSQL.DataSets.OrderSheetTableAdapters.OrderSheetTableAdapter">
     <SelectParameters>
       <asp:Parameter DefaultValue="false" Name="Done" Type="Boolean" />
     </SelectParameters>
   </asp:ObjectDataSource>
   <asp:ObjectDataSource ID="odsDeliveryBy" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetPeople" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
+    SelectMethod="GetPeople" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
   </asp:ObjectDataSource>
 <br /><br />
 <asp:Table ID="tblTotalsSummary" runat="server">

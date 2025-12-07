@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Log List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="LogTable.aspx.cs" Inherits="TrackerDotNet.Pages.LogTable" %>
+﻿<%@ Page Title="Log List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="LogTable.aspx.cs" Inherits="TrackerSQL.Pages.LogTable" %>
 <asp:Content ID="cntLogHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntLogBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -84,7 +84,7 @@
           </Columns>
         </asp:GridView>
         <asp:ObjectDataSource ID="odsLogTbl" runat="server" SelectMethod="GetAll" 
-          TypeName="TrackerDotNet.Controls.LogTbl">
+          TypeName="TrackerSQL.Controls.LogTbl">
           <SelectParameters>
             <asp:Parameter DefaultValue="DateAdded" Name="SortBy" Type="String" />
           </SelectParameters>

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
   public partial class MoveDeliveryDate : System.Web.UI.Page
   {
@@ -33,7 +33,7 @@ namespace TrackerDotNet.Tools
       else
       {
 
-        TrackerDotNet.Controls.NextRoastDateByCityTbl _NRD = new NextRoastDateByCityTbl();
+        TrackerSQL.Controls.NextRoastDateByCityTbl _NRD = new NextRoastDateByCityTbl();
         int _numRecs = 0;
         string _result = _NRD.MoveDeliveryDate(_OldDate, _NewDate, ref _numRecs);
 

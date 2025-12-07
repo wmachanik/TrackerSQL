@@ -1,4 +1,4 @@
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Represents the result of a batch email sending operation

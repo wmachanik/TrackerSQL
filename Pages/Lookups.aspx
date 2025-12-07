@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="Lookup Tables" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="Lookups.aspx.cs" Inherits="TrackerDotNet.Pages.Lookups" MaintainScrollPositionOnPostback="true" %>
+    CodeBehind="Lookups.aspx.cs" Inherits="TrackerSQL.Pages.Lookups" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntLookupHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -300,7 +300,7 @@
                     </ContentTemplate>
                 </asp:UpdatePanel>
                 <asp:ObjectDataSource ID="odsItemUnits" runat="server" SelectMethod="GetAll"
-                    TypeName="TrackerDotNet.Controls.ItemUnitsTbl"
+                    TypeName="TrackerSQL.Controls.ItemUnitsTbl"
                     OldValuesParameterFormatString="original_{0}">
                     <SelectParameters>
                         <asp:Parameter DefaultValue="UnitOfMeasure" Name="SortBy" Type="String" />
@@ -355,15 +355,15 @@
                                             <asp:Label ID="lblPerson" runat="server" Text='<%# Bind("Person") %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Abreviation" SortExpression="Abreviation">
+                                    <asp:TemplateField HeaderText="Abbreviation" SortExpression="Abbreviation">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="tbxAbreviation" runat="server" Width="8em" Text='<%# Bind("Abreviation") %>' />
+                                            <asp:TextBox ID="tbxAbbreviation" runat="server" Width="8em" Text='<%# Bind("Abbreviation") %>' />
                                         </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:TextBox ID="tbxAbreviation" runat="server" Width="8em" Text="" />
+                                            <asp:TextBox ID="tbxAbbreviation" runat="server" Width="8em" Text="" />
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="lblAbreviation" runat="server" Text='<%# Bind("Abreviation") %>' />
+                                            <asp:Label ID="lblAbbreviation" runat="server" Text='<%# Bind("Abbreviation") %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Enbld" SortExpression="Enabled">
@@ -684,9 +684,9 @@
                             </div>
                         </div>
                         <asp:ObjectDataSource ID="odsCityDays" runat="server"
-                            DataObjectTypeName="TrackerDotNet.Controls.CityPrepDaysTbl"
+                            DataObjectTypeName="TrackerSQL.Controls.CityPrepDaysTbl"
                             InsertMethod="InsertCityPrepDay" SelectMethod="GetAllByCityId"
-                            TypeName="TrackerDotNet.Controls.CityPrepDaysTbl"
+                            TypeName="TrackerSQL.Controls.CityPrepDaysTbl"
                             UpdateMethod="UpdateCityPrepDay"
                             OldValuesParameterFormatString="original_{0}">
                             <SelectParameters>
@@ -1141,8 +1141,8 @@
                             </asp:GridView>
 
                             <asp:ObjectDataSource ID="odsRepairStatuses" runat="server"
-                                TypeName="TrackerDotNet.Controls.RepairStatusesTbl"
-                                DataObjectTypeName="TrackerDotNet.Controls.RepairStatusesTbl"
+                                TypeName="TrackerSQL.Controls.RepairStatusesTbl"
+                                DataObjectTypeName="TrackerSQL.Controls.RepairStatusesTbl"
                                 SelectMethod="GetAll" InsertMethod="Insert" UpdateMethod="Update" DeleteMethod="Delete"
                                 SortParameterName="SortBy"
                                 OnInserted="odsRepairStatuses_Inserted"
@@ -1202,18 +1202,18 @@
             <asp:Parameter Name="UoMID" Type="Int32" />
         </InsertParameters>
     </asp:SqlDataSource>
-    <asp:ObjectDataSource ID="odsAllItems" runat="server" SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.ItemTypeTbl"
+    <asp:ObjectDataSource ID="odsAllItems" runat="server" SelectMethod="GetAll" TypeName="TrackerSQL.Controls.ItemTypeTbl"
         OldValuesParameterFormatString="original_{0}">
         <SelectParameters>
             <asp:Parameter DefaultValue="ItemDesc" Name="SortBy" Type="String" />
         </SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPeople" runat="server" TypeName="TrackerDotNet.Controls.PersonsTbl"
-        DataObjectTypeName="TrackerDotNet.Controls.PersonsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
+    <asp:ObjectDataSource ID="odsPeople" runat="server" TypeName="TrackerSQL.Controls.PersonsTbl"
+        DataObjectTypeName="TrackerSQL.Controls.PersonsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
         UpdateMethod="UpdatePerson" OldValuesParameterFormatString="original_{0}" DeleteMethod="DeletePerson"
         InsertMethod="InsertPerson">
         <SelectParameters>
-            <asp:Parameter DefaultValue="&quot;Abreviation&quot;" Name="SortBy" Type="String" />
+            <asp:Parameter DefaultValue="&quot;Abbreviation&quot;" Name="SortBy" Type="String" />
         </SelectParameters>
         <UpdateParameters>
             <asp:Parameter Name="pPerson" Type="Object" DbType="Object" />
@@ -1226,8 +1226,8 @@
     <asp:SqlDataSource ID="sdsUserNames" runat="server"
         ConnectionString="<%$ ConnectionStrings:ApplicationServices %>"
         SelectCommand="SELECT [UserName] AS SecurityUsername FROM [vw_aspnet_Users]" />
-    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerDotNet.Controls.EquipTypeTbl"
-        DataObjectTypeName="TrackerDotNet.Controls.EquipTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
+    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerSQL.Controls.EquipTypeTbl"
+        DataObjectTypeName="TrackerSQL.Controls.EquipTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
         UpdateMethod="UpdateEquipItem" OldValuesParameterFormatString="original_{0}" InsertMethod="InsertEquipObj"
         OnInserting="odsEquipTypes_OnInserting">
         <SelectParameters>
@@ -1237,8 +1237,8 @@
             <asp:Parameter DbType="Object" Name="objEquipType" Type="Object" />
         </InsertParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsInvoiceTypes" runat="server" TypeName="TrackerDotNet.Controls.InvoiceTypeTbl"
-        DataObjectTypeName="TrackerDotNet.Controls.InvoiceTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
+    <asp:ObjectDataSource ID="odsInvoiceTypes" runat="server" TypeName="TrackerSQL.Controls.InvoiceTypeTbl"
+        DataObjectTypeName="TrackerSQL.Controls.InvoiceTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
         UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
         <DeleteParameters>
             <asp:Parameter Name="pInvoiceTypeID" Type="Int32" />
@@ -1251,8 +1251,8 @@
             <asp:Parameter Name="pOrignal_InvoiceTypeID" Type="Int32" />
         </UpdateParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPaymentTerms" runat="server" TypeName="TrackerDotNet.Controls.PaymentTermsTbl"
-        DataObjectTypeName="TrackerDotNet.Controls.PaymentTermsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
+    <asp:ObjectDataSource ID="odsPaymentTerms" runat="server" TypeName="TrackerSQL.Controls.PaymentTermsTbl"
+        DataObjectTypeName="TrackerSQL.Controls.PaymentTermsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
         UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
         <DeleteParameters>
             <asp:Parameter Name="pPaymentTermID" Type="Int32" />
@@ -1265,8 +1265,8 @@
             <asp:Parameter Name="pOrignal_PaymentTermID" Type="Int32" />
         </UpdateParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPriceLevels" runat="server" TypeName="TrackerDotNet.Controls.PriceLevelsTbl"
-        DataObjectTypeName="TrackerDotNet.Controls.PriceLevelsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
+    <asp:ObjectDataSource ID="odsPriceLevels" runat="server" TypeName="TrackerSQL.Controls.PriceLevelsTbl"
+        DataObjectTypeName="TrackerSQL.Controls.PriceLevelsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
         UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
         <DeleteParameters>
             <asp:Parameter Name="pPriceLevelID" Type="Int32" />
@@ -1303,8 +1303,8 @@
             <asp:Parameter Name="RoastingDay" Type="Int32" />
         </UpdateParameters>
     </asp:SqlDataSource>
-    <asp:ObjectDataSource runat="server" SelectMethod="GetAll" TypeName="TrackerDotNet.Controls.PackagingTbl"
-        ID="odsPackaging" SortParameterName="SortBy" DataObjectTypeName="TrackerDotNet.Controls.PackagingTbl"
+    <asp:ObjectDataSource runat="server" SelectMethod="GetAll" TypeName="TrackerSQL.Controls.PackagingTbl"
+        ID="odsPackaging" SortParameterName="SortBy" DataObjectTypeName="TrackerSQL.Controls.PackagingTbl"
         InsertMethod="InsertPackaging" OldValuesParameterFormatString="original_{0}" UpdateMethod="UpdatePackaging">
         <SelectParameters>
             <asp:Parameter Name="SortBy" Type="String" DefaultValue="Description" />

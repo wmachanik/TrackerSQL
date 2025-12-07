@@ -3,11 +3,11 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Web;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
-//using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
+//using TrackerSQL.Managers;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Helper class for Coffee Checkup email operations

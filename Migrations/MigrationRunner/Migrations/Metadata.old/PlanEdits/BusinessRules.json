@@ -1,0 +1,29 @@
+{
+  "Tables": {
+    "OrdersTbl": {
+      "CompositeKeyRules": [
+        {
+          "Condition": "CustomerID = 9",
+          "TrueKey": [ "CustomerId", "RoastDate", "Notes" ],
+          "FalseKey": [ "CustomerId", "RoastDate" ],
+          "Part": "Header"
+        }
+      ],
+      "ComputedColumns": [
+        {
+          "Target": "OrderKey",
+          "Part": "H",
+          "Expression": "IIF(CustomerID = 9, CustomerID & '|' & RoastDate & '|' & Notes, CustomerID & '|' & RoastDate)"
+        }
+      ]
+    },
+    "ReoccuringOrderTbl": {
+      "RecurringGrouping": {
+        "HeaderGroupBy": [ "CustomerID" ],
+        "LineGroupBy": [ "ItemRequiredID", "ItemPackagingID", "ItemPrepTypeID" ],
+        "LineAggregations": { "QtyRequired": "SUM" },
+        "Filter": ""
+      }
+    }
+  }
+}

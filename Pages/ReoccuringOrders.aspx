@@ -1,5 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ReoccuringOrders.aspx.cs"
-    Inherits="TrackerDotNet.Pages.ReoccuringOrders" %>
+    Inherits="TrackerSQL.Pages.ReoccuringOrders" %>
 
 <asp:Content ID="cntReoccuringOrdersHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -106,7 +106,7 @@
     </asp:UpdatePanel>
 
     <asp:ObjectDataSource ID="odsReoccuringOrderSummarys"
-        TypeName="TrackerDotNet.Controls.ReoccuringOrderDAL"
+        TypeName="TrackerSQL.Controls.ReoccuringOrderDAL"
         SortParameterName="SortBy"
         SelectMethod="GetAll"
         runat="server" OldValuesParameterFormatString="original_{0}">

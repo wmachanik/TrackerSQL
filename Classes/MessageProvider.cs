@@ -4,10 +4,10 @@ using System.Linq;
 using System.Resources;
 using System.Web;
 using System.Text;
-using TrackerDotNet.Resources;
+using TrackerSQL.Resources;
 
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public static class MessageProvider
     {

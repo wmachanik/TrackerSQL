@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
-using TrackerDotNet.Controls;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Represents one prep/delivery schedule row for a city.

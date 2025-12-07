@@ -7,7 +7,7 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public class EmailMailKitCls
     {
@@ -26,8 +26,8 @@ namespace TrackerDotNet.Classes
 
         // Updated test mode properties that read from web.config
         public bool IsTestMode = ConfigHelper.GetBool("EmailTestMode", false);
-        
-        public string TestRecipientAddress = ConfigHelper.GetString("EmailTestRecipient","warren@machanik.com");
+
+        public string TestRecipientAddress = ConfigHelper.GetString("EmailTestRecipient", "warren@machanik.com");
 
         // batch message stuff
         private readonly List<MimeMessage> batchMessages = new List<MimeMessage>();
@@ -93,6 +93,7 @@ namespace TrackerDotNet.Classes
         public void SetEmailSubject(string subject) => message.Subject = subject;
         public void AddToBody(string htmlBody) => bodyBuilder.HtmlBody += htmlBody;
         public void AddStrAndNewLineToBody(string htmlLine) => bodyBuilder.HtmlBody += htmlLine + "<br />";
+
         /// <summary>
         /// Appends a formatted string with one parameter to the HTML body.
         /// </summary>
@@ -151,7 +152,35 @@ namespace TrackerDotNet.Classes
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"❌ Failed to add CC from address: {ex.Message}");
             }
         }
+        private void SavePreparedMessageToFile(string prefix = "email")
+        {
+            // Controlled by Web.config switch EmailDebugSaveMime (default: false)
+            if (!ConfigHelper.GetBool("EmailDebugSaveMime", false))
+                return;
 
+            try
+            {
+                // Ensure App_Data exists
+                string appData = Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? ".", "App_Data");
+                if (!Directory.Exists(appData)) Directory.CreateDirectory(appData);
+
+                string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
+                string fileName = $"{prefix}_{timestamp}.eml";
+                string path = Path.Combine(appData, fileName);
+
+                using (var fs = File.Create(path))
+                {
+                    // Write the full raw MIME to disk
+                    message.WriteTo(fs);
+                }
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Saved prepared message to {path}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Failed to save prepared message: {ex.Message}");
+            }
+        }
         public bool SendEmail()
         {
             if (emailConfig == null || !emailConfig.IsInitialized)
@@ -169,13 +198,63 @@ namespace TrackerDotNet.Classes
                 string actualTo = emailConfig.ToAddress;
 
                 // Check test mode at runtime instead of compile time
-                if (IsTestMode) 
+                if (IsTestMode)
                 {
                     actualTo = TestRecipientAddress;
                 }
 
                 if (!message.To?.Any() ?? true)
                     message.To.Add(MailboxAddress.Parse(actualTo));
+
+                // Ensure configured CC addresses are present on single-message sends as well
+                if (emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
+                {
+                    var ccList = emailConfig.CcAddress.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .Where(x => !string.IsNullOrEmpty(x))
+                        .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var cc in ccList)
+                    {
+                        // Avoid adding To as CC
+                        if (string.Equals(cc, actualTo, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        try
+                        {
+                            var mailbox = MailboxAddress.Parse(cc);
+
+                            // If configured CC equals the From header, or equals the SMTP authenticated user,
+                            // or equals the configured FromAddress, some SMTP servers (or DMARC/SPF/SendAs policies)
+                            // may drop or rewrite the CC. Fall back to Bcc in those cases.
+                            var fromHeader = message.From?.OfType<MailboxAddress>().FirstOrDefault()?.Address;
+                            bool isSameAsFromHeader = !string.IsNullOrEmpty(fromHeader) &&
+                                                      mailbox.Address.Equals(fromHeader, StringComparison.OrdinalIgnoreCase);
+                            bool isSameAsSmtpUser = !string.IsNullOrEmpty(emailConfig.SmtpUser) &&
+                                                    mailbox.Address.Equals(emailConfig.SmtpUser, StringComparison.OrdinalIgnoreCase);
+                            bool isSameAsFromConfig = !string.IsNullOrEmpty(emailConfig.FromAddress) &&
+                                                      mailbox.Address.Equals(emailConfig.FromAddress, StringComparison.OrdinalIgnoreCase);
+
+                            if (isSameAsFromHeader || isSameAsSmtpUser || isSameAsFromConfig)
+                            {
+                                // Add as Bcc fallback (avoid duplicates)
+                                if (!message.Bcc.Any(c => c is MailboxAddress m && m.Address.Equals(mailbox.Address, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    message.Bcc.Add(mailbox);
+                                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📥 CC matches From/SmtpUser; added as BCC fallback: {mailbox.Address}");
+                                }
+                                continue;
+                            }
+
+                            if (!message.Cc.Any(c => c is MailboxAddress m && m.Address.Equals(mailbox.Address, StringComparison.OrdinalIgnoreCase)))
+                                message.Cc.Add(mailbox);
+                        }
+                        catch
+                        {
+                            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"EmailMailKitCls.SendEmail: Invalid CC address in config skipped: {cc}");
+                        }
+                    }
+                }
 
                 message.Body = bodyBuilder.ToMessageBody();
 
@@ -187,7 +266,6 @@ namespace TrackerDotNet.Classes
 
                     // Optional: keep this if you're okay bypassing all validation
                     client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
 
                     SecureSocketOptions option;
                     switch (emailConfig.SocketOption)
@@ -209,19 +287,66 @@ namespace TrackerDotNet.Classes
                             break;
                     }
 
-                    client.Connect(emailConfig.SmtpHost, emailConfig.SmtpPort, option);
-                    client.Authenticate(emailConfig.SmtpUser, emailConfig.SmtpPass);
-
-                    // Log test mode warning at runtime
-                    if (IsTestMode) 
+                    // Diagnostic logging: show subject and a short preview of the HTML body and effective addresses
+                    try
                     {
-                        AppLogger.WriteLog(SystemConstants.LogTypes.Email, "🚨 SEND EMAIL BATCH IS IN TEST MODE 🚨");
+                        string subj = message.Subject ?? "(no subject)";
+                        string bodyPreview = bodyBuilder?.HtmlBody ?? string.Empty;
+                        if (bodyPreview.Length > 200) bodyPreview = bodyPreview.Substring(0, 200) + "...";
+                        string fromAddr = message.From?.OfType<MailboxAddress>().FirstOrDefault()?.Address ?? emailConfig.FromAddress ?? "(no-from)";
+                        string toAddrs = message.To != null ? string.Join(", ", message.To.OfType<MailboxAddress>().Select(m => m.Address)) : (emailConfig.ToAddress ?? "(no-to)");
+                        string ccAddrs = message.Cc != null ? string.Join(", ", message.Cc.OfType<MailboxAddress>().Select(m => m.Address)) : (emailConfig.CcAddress ?? "(no-cc)");
+                        string bccAddrs = message.Bcc != null ? string.Join(", ", message.Bcc.OfType<MailboxAddress>().Select(m => m.Address)) : "(no-bcc)";
+
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                            $"DEBUG EmailMailKitCls: Prepared message. From={fromAddr} To={toAddrs} Cc={ccAddrs} Bcc={bccAddrs} Subject='{subj}' BodyPreview='{System.Web.HttpUtility.HtmlEncode(bodyPreview)}'");
+                    }
+                    catch (Exception dbgEx)
+                    {
+                        // Don't fail send because of logging issues
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Failed to produce debug preview: {dbgEx.Message}");
                     }
 
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"🔌 SMTP session opened for batch delivery.");
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(message.MessageId))
+                            message.MessageId = MimeKit.Utils.MimeUtils.GenerateMessageId();
+
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Message-Id: {message.MessageId}");
+
+                        // Only save raw MIME if EmailDebugSaveMime is true in Web.config
+                        if (ConfigHelper.GetBool("EmailDebugSaveMime", false))
+                        {
+                            SavePreparedMessageToFile("pre_send");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Could not set Message-Id / save message: {ex.Message}");
+                    }
+
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                        $"DEBUG EmailMailKitCls: Connecting to SMTP host={emailConfig.SmtpHost} port={emailConfig.SmtpPort} user={emailConfig.SmtpUser} TestMode={IsTestMode}");
+                    client.Connect(emailConfig.SmtpHost, emailConfig.SmtpPort, option);
+                    client.Authenticate(emailConfig.SmtpUser, emailConfig.SmtpPass);
+                    try
+                    {
+                        var envelopeFrom = emailConfig.SmtpUser ?? emailConfig.FromAddress;
+                        var fromHeader = message.From?.OfType<MailboxAddress>().FirstOrDefault()?.Address ?? "(no-from)";
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                            $"DEBUG EmailMailKitCls: EnvelopeFrom={envelopeFrom} HeaderFrom={fromHeader} To={string.Join(", ", message.To.OfType<MailboxAddress>().Select(m => m.Address))} Cc={string.Join(", ", message.Cc.OfType<MailboxAddress>().Select(m => m.Address))} Bcc={string.Join(", ", message.Bcc.OfType<MailboxAddress>().Select(m => m.Address))}");
+                    }
+                    catch { /* keep send resilient — ignore logging errors */ }
+                    // Log test mode warning at runtime
+                    if (IsTestMode)
+                    {
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Email, "🚨 SEND EMAIL IS IN TEST MODE 🚨");
+                    }
+
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"🔌 SMTP session opened for send. To: {string.Join(", ", message.To.Select(m => ((MailboxAddress)m).Address))} CC: {string.Join(", ", message.Cc.Select(c => ((MailboxAddress)c).Address))} BCC: {string.Join(", ", message.Bcc.Select(b => ((MailboxAddress)b).Address))}");
 
                     client.Send(message);
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📧 Sent to: {string.Join(", ", message.To)}");
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📧 Sent to: {string.Join(", ", message.To)} CC: {string.Join(", ", message.Cc)} BCC: {string.Join(", ", message.Bcc)}");
 
                     client.Disconnect(true);
                 }
@@ -267,12 +392,60 @@ namespace TrackerDotNet.Classes
                 string actualTo = to; // Use the 'to' parameter (which can be overridden)
 
                 // Check test mode at runtime
-                if (IsTestMode) 
+                if (IsTestMode)
                 {
                     actualTo = TestRecipientAddress;
                 }
 
                 msg.To.Add(MailboxAddress.Parse(actualTo));
+
+                // Add configured CC addresses (support multiple addresses separated by ; or ,)
+                if (emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
+                {
+                    var ccList = emailConfig.CcAddress.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .Where(x => !string.IsNullOrEmpty(x))
+                        .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var cc in ccList)
+                    {
+                        // Avoid adding To as CC
+                        if (string.Equals(cc, actualTo, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        try
+                        {
+                            var mailbox = MailboxAddress.Parse(cc);
+
+                            // Same fallback logic as SendEmail(): if CC equals From header/config or the SMTP user, add as Bcc
+                            var fromHeader = msg.From?.OfType<MailboxAddress>().FirstOrDefault()?.Address;
+                            bool isSameAsFromHeader = !string.IsNullOrEmpty(fromHeader) &&
+                                                      mailbox.Address.Equals(fromHeader, StringComparison.OrdinalIgnoreCase);
+                            bool isSameAsSmtpUser = !string.IsNullOrEmpty(emailConfig.SmtpUser) &&
+                                                    mailbox.Address.Equals(emailConfig.SmtpUser, StringComparison.OrdinalIgnoreCase);
+                            bool isSameAsFromConfig = !string.IsNullOrEmpty(emailConfig.FromAddress) &&
+                                                      mailbox.Address.Equals(emailConfig.FromAddress, StringComparison.OrdinalIgnoreCase);
+
+                            if (isSameAsFromHeader || isSameAsSmtpUser || isSameAsFromConfig)
+                            {
+                                if (!msg.Bcc.Any(c => c is MailboxAddress m && m.Address.Equals(mailbox.Address, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    msg.Bcc.Add(mailbox);
+                                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📥 Batch CC matches From/SmtpUser; added as BCC fallback: {mailbox.Address}");
+                                }
+                                continue;
+                            }
+
+                            if (!msg.Cc.Any(c => c is MailboxAddress m && m.Address.Equals(mailbox.Address, StringComparison.OrdinalIgnoreCase)))
+                                msg.Cc.Add(mailbox);
+                        }
+                        catch
+                        {
+                            // ignore invalid CC entries, but log
+                            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"EmailMailKitCls.AddToBatch: Invalid CC address in config skipped: {cc}");
+                        }
+                    }
+                }
 
                 msg.Subject = subject;
 
@@ -283,7 +456,7 @@ namespace TrackerDotNet.Classes
 
                 msg.Body = builder.ToMessageBody();
                 batchMessages.Add(msg);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📦 Added message to batch: {subject} → {to}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📦 Added message to batch: {subject} → {to} (CC: {(emailConfig?.CcAddress ?? "(none)")})");
 
                 return true;
             }
@@ -295,7 +468,7 @@ namespace TrackerDotNet.Classes
         }
         /// <summary>
         /// Queues a message for batch delivery.
-        /// Use this method to build up one or more messages before sending via SendEmailBatch().
+        /// Use this method to build up one or more messages before sending via SendEmailBatch(). 
         /// </summary>
         /// <param name="subject">Subject line of the email.</param>
         /// <param name="htmlBody">HTML content for the message body.</param>
@@ -445,6 +618,7 @@ namespace TrackerDotNet.Classes
         {
             bodyBuilder.HtmlBody += string.Format(format, args) + "<br />";
         }
+
     }
 
 }

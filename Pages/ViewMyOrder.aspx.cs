@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.UI;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
-using TrackerDotNet.Managers;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
+using TrackerSQL.Managers;
 
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
     public partial class ViewMyOrder : Page
     {

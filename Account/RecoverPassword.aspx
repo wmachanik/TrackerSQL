@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RecoverPassword.aspx.cs" Inherits="TrackerDotNet.Account.RecoverPassword" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RecoverPassword.aspx.cs" Inherits="TrackerSQL.Account.RecoverPassword" %>
 <asp:Content ID="cntPasswordRecoveryHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntPasswordRecoveryBdy" ContentPlaceHolderID="MainContent" runat="server">

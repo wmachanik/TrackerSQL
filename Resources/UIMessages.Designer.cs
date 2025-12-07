@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet.Resources {
+namespace TrackerSQL.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace TrackerDotNet.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TrackerDotNet.Resources.UIMessages", typeof(UIMessages).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("TrackerSQL.Resources.UIMessages", typeof(UIMessages).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

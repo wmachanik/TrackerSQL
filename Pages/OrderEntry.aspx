@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderEntry.aspx.cs"
-  MaintainScrollPositionOnPostback="true" Inherits="TrackerDotNet.Pages.OrderEntry" %>
+  MaintainScrollPositionOnPostback="true" Inherits="TrackerSQL.Pages.OrderEntry" %>
 <asp:Content ID="cntOrderEntryHder" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntOrderEntryBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -33,8 +33,8 @@
       </table>
    </div>
 
-  <asp:ObjectDataSource ID="odsDistinctOrders" runat="server" TypeName="TrackerDotNet.Controls.OrderData" 
-    SelectMethod="GetDistinctOrders" OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerDotNet.Controls.OrderData" UpdateMethod="UpdateOrderData" >
+  <asp:ObjectDataSource ID="odsDistinctOrders" runat="server" TypeName="TrackerSQL.Controls.OrderData" 
+    SelectMethod="GetDistinctOrders" OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Controls.OrderData" UpdateMethod="UpdateOrderData" >
     <SelectParameters>
       <asp:ControlParameter ControlID="chkbxOrderDone" Name="pOrderDone" 
         PropertyName="Checked" Type="Boolean" 
@@ -76,7 +76,7 @@
         <asp:TemplateField HeaderText="Person" SortExpression="Person">
             <EditItemTemplate>
               <asp:DropDownList ID="ddlPersons" runat="server" AppendDataBoundItems="True" 
-               DataSourceID="odsPersons" DataTextField="Abreviation" DataValueField="PersonID"
+               DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID"
                SelectedValue='<%# Bind("ToBeDeliveredBy") %>' Font-Size="X-Small" >
               <asp:ListItem Text="none" Value="0" />
               </asp:DropDownList>
@@ -126,20 +126,20 @@
   <br />
 
 
-  <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerDotNet.Controls.CompanyNames"
+  <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerSQL.Controls.CompanyNames"
     SelectMethod="GetAll" OldValuesParameterFormatString="original_{0}">
   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerDotNet.Controls.PersonsTbl"
+  <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerSQL.Controls.PersonsTbl"
       SortParameterName="SortBy" SelectMethod="GetAll"
-      OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerDotNet.Controls.PersonsTbl" DeleteMethod="DeletePerson" InsertMethod="InsertPerson" UpdateMethod="UpdatePerson">
+      OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Controls.PersonsTbl" DeleteMethod="DeletePerson" InsertMethod="InsertPerson" UpdateMethod="UpdatePerson">
       <DeleteParameters>
           <asp:Parameter Name="pPersonID" Type="Int32" />
       </DeleteParameters>
       <SelectParameters>
-        <asp:Parameter DefaultValue="Abreviation" Name="SortBy" Type="String" />
+        <asp:Parameter DefaultValue="Abbreviation" Name="SortBy" Type="String" />
       </SelectParameters>
    </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerDotNet.Controls.ItemTypeTbl"
+  <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl"
       SortParameterName="SortBy" SelectMethod="GetAll"
       OldValuesParameterFormatString="original_{0}">
       <SelectParameters>

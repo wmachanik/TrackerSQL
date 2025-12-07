@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MergeCustomersFromQB.aspx.cs"
-   Inherits="TrackerDotNet.Tools.MergeCustomersFromQB" %>
+   Inherits="TrackerSQL.Tools.MergeCustomersFromQB" %>
 <asp:Content ID="hdrMergeCustomersFromQB" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="bodyMergeCustomersFromQB" ContentPlaceHolderID="MainContent" runat="server">

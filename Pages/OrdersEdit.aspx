@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" 
-  CodeBehind="OrdersEdit.aspx.cs" Inherits="TrackerDotNet.Pages.OrdersEdit" %>
+  CodeBehind="OrdersEdit.aspx.cs" Inherits="TrackerSQL.Pages.OrdersEdit" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>
 <asp:Content ID="cntOrderEditHdr" ContentPlaceHolderID="HeadContent" runat="server">
@@ -192,17 +192,17 @@
           <asp:TemplateField HeaderText="Delivery By" SortExpression="ToBeDeliveredBy">
             <EditItemTemplate>
               <asp:DropDownList ID="ddlDeliveryBy" runat="server" DataSourceID="odsDeliveryBy"
-                DataTextField="Abreviation" DataValueField="PersonID" 
+                DataTextField="Abbreviation" DataValueField="PersonID" 
                 SelectedValue='<%# Bind("ToBeDeliveredBy") %>' Font-Size="Small" Width="6em">
               </asp:DropDownList>
             </EditItemTemplate>
             <InsertItemTemplate>
               <asp:DropDownList ID="ddlDeliveryBy" runat="server" DataSourceID="odsDeliveryBy"
-                DataTextField="Abreviation" DataValueField="PersonID" SelectedValue='<%# Bind("ToBeDeliveredBy") %>' />
+                DataTextField="Abbreviation" DataValueField="PersonID" SelectedValue='<%# Bind("ToBeDeliveredBy") %>' />
             </InsertItemTemplate>
             <ItemTemplate>
               <asp:DropDownList ID="ddlDeliveryBy" runat="server" DataSourceID="odsDeliveryBy" Enabled="false" 
-                DataTextField="Abreviation" DataValueField="PersonID" SelectedValue='<%# Bind("ToBeDeliveredBy") %>' />
+                DataTextField="Abbreviation" DataValueField="PersonID" SelectedValue='<%# Bind("ToBeDeliveredBy") %>' />
             </ItemTemplate>
           </asp:TemplateField>
           <asp:TemplateField HeaderText="Confirmed" SortExpression="Confirmed">
@@ -241,7 +241,7 @@
       </asp:DetailsView>
       <asp:ObjectDataSource ID="odsOrderDetail" runat="server" OldValuesParameterFormatString="original_{0}" 
         InsertMethod="InsertOrder" SelectMethod="GetDataByOrderID" 
-        TypeName="TrackerDotNet.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter"
+        TypeName="TrackerSQL.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter"
         UpdateMethod="UpdateByOrderID">
         <InsertParameters>
           <asp:Parameter Name="CustomerID" Type="Int32" />
@@ -283,13 +283,13 @@
     </Triggers>
   </asp:UpdatePanel>
   <asp:ObjectDataSource ID="odsCompanyNames" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetCustomerName" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.CustomersLkupTableAdapter" >
+    SelectMethod="GetCustomerName" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.CustomersLkupTableAdapter" >
   </asp:ObjectDataSource>
   <asp:ObjectDataSource ID="odsItemTypes" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetItems" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.ItemTypeLkupTableAdapter">
+    SelectMethod="GetItems" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.ItemTypeLkupTableAdapter">
   </asp:ObjectDataSource>
   <asp:ObjectDataSource ID="odsDeliveryBy" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetPeople" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
+    SelectMethod="GetPeople" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
   </asp:ObjectDataSource>
   <asp:UpdateProgress ID="uprgOrdersEdit" runat="server" AssociatedUpdatePanelID="upnlOrdersEditList" DisplayAfter="200" >
     <ProgressTemplate>
@@ -410,13 +410,13 @@
           <asp:TemplateField HeaderText="Delivery By" SortExpression="ToBeDeliveredBy">
             <EditItemTemplate>
               <asp:DropDownList ID="ddlDeliveryBy" runat="server" DataSourceID="odsDeliveryBy"
-                DataTextField="Abreviation" DataValueField="PersonID" 
+                DataTextField="Abbreviation" DataValueField="PersonID" 
                 SelectedValue='<%# Bind("ToBeDeliveredBy") %>' Font-Size="Small" Width="4em">
               </asp:DropDownList>
             </EditItemTemplate>
             <InsertItemTemplate>
               <asp:DropDownList ID="ddlDeliveryBy" runat="server" DataSourceID="odsDeliveryBy"
-                DataTextField="Abreviation" DataValueField="PersonID">
+                DataTextField="Abbreviation" DataValueField="PersonID">
               </asp:DropDownList>
             </InsertItemTemplate>
             <ItemTemplate>
@@ -442,7 +442,7 @@
       </asp:GridView>
       <asp:ObjectDataSource ID="odsOrdersTbl" runat="server"
         OldValuesParameterFormatString="original_{0}" SelectMethod="GetData"    
-        TypeName="TrackerDotNet.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter" UpdateMethod="UpdateByOrderID"
+        TypeName="TrackerSQL.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter" UpdateMethod="UpdateByOrderID"
         OnSelecting="odsOrdersTbl_Selecting"  MaximumRowsParameterName="\*32">
         <UpdateParameters>
           <asp:Parameter Name="CustomerID" Type="Int32" />

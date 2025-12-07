@@ -1,8 +1,8 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.DataSets.CustomersDataSet
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.DataSets.CustomersDataSet
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.CodeDom.Compiler;
@@ -17,10 +17,10 @@ using System.Text;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.DataSets
+namespace TrackerSQL.DataSets
 {
     [DesignerCategory("code")]
     [ToolboxItem(true)]
@@ -294,7 +294,7 @@ namespace TrackerDotNet.DataSets
             private DataColumn columnCity;
             private DataColumn columnItemDesc;
             private DataColumn columnPriPrefQty;
-            private DataColumn columnAbreviation;
+            private DataColumn columnAbbreviation;
             private DataColumn columnMachineSN;
             private DataColumn columnUsesFilter;
             private DataColumn columnautofulfill;
@@ -431,7 +431,7 @@ namespace TrackerDotNet.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public DataColumn AbreviationColumn => this.columnAbreviation;
+            public DataColumn AbbreviationColumn => this.columnAbbreviation;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
@@ -518,7 +518,7 @@ namespace TrackerDotNet.DataSets
               string City,
               string ItemDesc,
               float PriPrefQty,
-              string Abreviation,
+              string Abbreviation,
               string MachineSN,
               bool UsesFilter,
               bool autofulfill,
@@ -554,7 +554,7 @@ namespace TrackerDotNet.DataSets
         (object) City,
         (object) ItemDesc,
         (object) PriPrefQty,
-        (object) Abreviation,
+        (object) Abbreviation,
         (object) MachineSN,
         (object) UsesFilter,
         (object) autofulfill,
@@ -612,7 +612,7 @@ namespace TrackerDotNet.DataSets
                 this.columnCity = this.Columns["City"];
                 this.columnItemDesc = this.Columns["ItemDesc"];
                 this.columnPriPrefQty = this.Columns["PriPrefQty"];
-                this.columnAbreviation = this.Columns["Abreviation"];
+                this.columnAbbreviation = this.Columns["Abbreviation"];
                 this.columnMachineSN = this.Columns["MachineSN"];
                 this.columnUsesFilter = this.Columns["UsesFilter"];
                 this.columnautofulfill = this.Columns["autofulfill"];
@@ -673,8 +673,8 @@ namespace TrackerDotNet.DataSets
                 this.Columns.Add(this.columnItemDesc);
                 this.columnPriPrefQty = new DataColumn("PriPrefQty", typeof(float), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnPriPrefQty);
-                this.columnAbreviation = new DataColumn("Abreviation", typeof(string), (string)null, MappingType.Element);
-                this.Columns.Add(this.columnAbreviation);
+                this.columnAbbreviation = new DataColumn("Abbreviation", typeof(string), (string)null, MappingType.Element);
+                this.Columns.Add(this.columnAbbreviation);
                 this.columnMachineSN = new DataColumn("MachineSN", typeof(string), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnMachineSN);
                 this.columnUsesFilter = new DataColumn("UsesFilter", typeof(bool), (string)null, MappingType.Element);
@@ -714,7 +714,7 @@ namespace TrackerDotNet.DataSets
                 this.columnEquipTypeName.MaxLength = 50;
                 this.columnCity.MaxLength = (int)byte.MaxValue;
                 this.columnItemDesc.MaxLength = 50;
-                this.columnAbreviation.MaxLength = 5;
+                this.columnAbbreviation.MaxLength = 5;
                 this.columnMachineSN.MaxLength = 50;
                 this.columnNotes.MaxLength = 536870910;
             }
@@ -1277,20 +1277,20 @@ namespace TrackerDotNet.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public string Abreviation
+            public string Abbreviation
             {
                 get
                 {
                     try
                     {
-                        return (string)this[this.tableCustomers.AbreviationColumn];
+                        return (string)this[this.tableCustomers.AbbreviationColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'Abreviation' in table 'Customers' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'Abbreviation' in table 'Customers' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCustomers.AbreviationColumn] = (object)value;
+                set => this[this.tableCustomers.AbbreviationColumn] = (object)value;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1671,13 +1671,13 @@ namespace TrackerDotNet.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public bool IsAbreviationNull() => this.IsNull(this.tableCustomers.AbreviationColumn);
+            public bool IsAbbreviationNull() => this.IsNull(this.tableCustomers.AbbreviationColumn);
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public void SetAbreviationNull()
+            public void SetAbbreviationNull()
             {
-                this[this.tableCustomers.AbreviationColumn] = Convert.DBNull;
+                this[this.tableCustomers.AbbreviationColumn] = Convert.DBNull;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]

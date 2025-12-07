@@ -3,9 +3,9 @@ using System.Drawing;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Handles adapting the Order Detail page to a public (token) read-only view.

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerDotNet.Pages.ThisWeeksOrder" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerSQL.Pages.ThisWeeksOrder" %>
 <asp:Content ID="cntThisWeeksOrderHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntThisWeeksOrderBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -56,8 +56,8 @@
             SortExpression="QuantityOrdered" />
           <asp:BoundField DataField="RequiredByDate" DataFormatString="{0:d}" 
             HeaderText="ByDate" SortExpression="RequiredByDate" />
-          <asp:BoundField DataField="Abreviation" HeaderText="DlvrdBy" 
-            SortExpression="Abreviation" />
+          <asp:BoundField DataField="Abbreviation" HeaderText="DlvrdBy" 
+            SortExpression="Abbreviation" />
           <asp:BoundField DataField="CompanyName" HeaderText="CompanyName" 
             SortExpression="CompanyName" Visible="False" />
           <asp:BoundField DataField="Expr1009" HeaderText="Expr1009" 

@@ -2,9 +2,9 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Logging-only implementation (no DB). Writes structured line via AppLogger.

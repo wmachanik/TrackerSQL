@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="OrderDetail.aspx.cs"
-    Inherits="TrackerDotNet.Pages.OrderDetail" MaintainScrollPositionOnPostback="true" %>
+    Inherits="TrackerSQL.Pages.OrderDetail" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntOrderDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">
@@ -130,21 +130,21 @@
                             <asp:TemplateField HeaderText="Delivery By" SortExpression="ToBeDeliveredBy">
                                 <EditItemTemplate>
                                     <asp:DropDownList ID="ddlToBeDeliveredBy" runat="server" AppendDataBoundItems="true"
-                                        DataSourceID="sdsDeliveryBy" DataTextField="Abreviation" DataValueField="PersonID"
+                                        DataSourceID="sdsDeliveryBy" DataTextField="Abbreviation" DataValueField="PersonID"
                                         SelectedValue='<%# Bind("ToBeDeliveredBy") == null ? "0" : Bind("ToBeDeliveredBy") %>'>
                                         <asp:ListItem Value="0">n/a</asp:ListItem>
                                     </asp:DropDownList>
                                 </EditItemTemplate>
                                 <InsertItemTemplate>
                                     <asp:DropDownList ID="ddlToBeDeliveredBy" runat="server" AppendDataBoundItems="true"
-                                        DataSourceID="sdsDeliveryBy" DataTextField="Abreviation" DataValueField="PersonID"
+                                        DataSourceID="sdsDeliveryBy" DataTextField="Abbreviation" DataValueField="PersonID"
                                         SelectedValue='<%# Bind("ToBeDeliveredBy") == null ? "0" : Bind("ToBeDeliveredBy") %>'>
                                         <asp:ListItem Value="0">n/a</asp:ListItem>
                                     </asp:DropDownList>
                                 </InsertItemTemplate>
                                 <ItemTemplate>
                                     <asp:DropDownList ID="ddlToBeDeliveredBy" runat="server" Enabled="False" AppendDataBoundItems="true"
-                                        DataSourceID="sdsDeliveryBy" DataTextField="Abreviation" DataValueField="PersonID"
+                                        DataSourceID="sdsDeliveryBy" DataTextField="Abbreviation" DataValueField="PersonID"
                                         SelectedValue='<%# Bind("ToBeDeliveredBy") == null ? "0" : Bind("ToBeDeliveredBy") %>'>
                                         <asp:ListItem Value="0">n/a</asp:ListItem>
                                     </asp:DropDownList>
@@ -257,7 +257,7 @@
                                 <td>Delivery By</td>
                                 <td>
                                     <asp:DropDownList ID="ddlManualToBeDeliveredBy" runat="server"
-                                        DataSourceID="sdsDeliveryBy" DataTextField="Abreviation"
+                                        DataSourceID="sdsDeliveryBy" DataTextField="Abbreviation"
                                         DataValueField="PersonID" AutoPostBack="true" AppendDataBoundItems="true">
                                         <asp:ListItem Value="0">n/a</asp:ListItem>
                                     </asp:DropDownList>
@@ -343,7 +343,7 @@
                                         </ajaxToolkit:ComboBox>
                                     </EditItemTemplate>
                                     <ItemTemplate>
-                                        <asp:Label ID="lblItemDesc" runat="server" Text='<%# TrackerDotNet.Controls.ItemTypeTbl.GetItemTypeDescById(Convert.ToInt32(Eval("ItemTypeID"))) %>' />
+                                        <asp:Label ID="lblItemDesc" runat="server" Text='<%# TrackerSQL.Controls.ItemTypeTbl.GetItemTypeDescById(Convert.ToInt32(Eval("ItemTypeID"))) %>' />
                                         <asp:HiddenField ID="hdnItemTypeID" runat="server" Value='<%# Bind("ItemTypeID") %>' />
                                     </ItemTemplate>
                                 </asp:TemplateField>
@@ -464,7 +464,7 @@
     </div>
 
 
-    <asp:ObjectDataSource ID="odsOrderSummary" runat="server" TypeName="TrackerDotNet.Controls.OrderItemTbl"
+    <asp:ObjectDataSource ID="odsOrderSummary" runat="server" TypeName="TrackerSQL.Controls.OrderItemTbl"
         EnablePaging="True" SelectMethod="LoadOrderSummary"
         StartRowIndexParameterName="StartRowIndex"
         MaximumRowsParameterName="MaximumRows"
@@ -509,7 +509,7 @@ Update:
     <!-- Replace the SqlDataSource with ObjectDataSource -->
     <asp:ObjectDataSource ID="odsCompanys" runat="server"
         SelectMethod="GetAllCustomerNames"
-        TypeName="TrackerDotNet.Controls.CustomersTbl" />
+        TypeName="TrackerSQL.Controls.CustomersTbl" />
 
     <!-- Remove or comment out the old SqlDataSource -->
     <!--
@@ -519,7 +519,7 @@ Update:
     SelectCommand="SELECT [CompanyName], [CustomerID] FROM [CustomersTbl] ORDER BY [enabled], [CompanyName]"></asp:SqlDataSource>
 -->
     <asp:ObjectDataSource ID="odsOrderDetail" runat="server"
-        TypeName="TrackerDotNet.Controls.OrderDetailDAL" SelectMethod="LoadOrderDetailData"
+        TypeName="TrackerSQL.Controls.OrderDetailDAL" SelectMethod="LoadOrderDetailData"
         UpdateMethod="UpdateOrderDetails"
         StartRowIndexParameterName="StartRowIndex"
         MaximumRowsParameterName="MaximumRows"
@@ -550,8 +550,8 @@ Update:
     <asp:SqlDataSource ID="sdsDeliveryBy" runat="server"
         ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
         ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [PersonID], [Abreviation] FROM [PersonsTbl] ORDER BY [Enabled], [Abreviation]"></asp:SqlDataSource>
-    <asp:ObjectDataSource ID="odsItemTypes" runat="server" SelectMethod="GetAllItemDesc" TypeName="TrackerDotNet.Controls.ItemTypeTbl" />
+        SelectCommand="SELECT [PersonID], [Abbreviation] FROM [PersonsTbl] ORDER BY [Enabled], [Abbreviation]"></asp:SqlDataSource>
+    <asp:ObjectDataSource ID="odsItemTypes" runat="server" SelectMethod="GetAllItemDesc" TypeName="TrackerSQL.Controls.ItemTypeTbl" />
 
     <%--   SelectCommand="SELECT [ItemTypeID], [ItemDesc] FROM [ItemTypeTbl] ORDER BY [ItemEnabled], [SortOrder], [ItemDesc]"> --%>
     <asp:SqlDataSource ID="sdsPackagingTypes" runat="server"

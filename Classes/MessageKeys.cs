@@ -1,4 +1,4 @@
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Constants for message resource keys to avoid magic strings
@@ -76,6 +76,9 @@ namespace TrackerDotNet.Classes
             public const string AdminRecurringNone = "DisableClient.AdminRecurringNone";
             public const string AdminManualActionRequired = "DisableClient.AdminManualActionRequired";
             public const string AdminFooter = "DisableClient.AdminFooter";
+
+            public const string RemindersDisabledSubject = "DisableClient.RemindersDisabledSubject";
+            public const string RemindersDisabledMessage = "DisableClient.RemindersDisabledMessage";
         }
 
         /// <summary>
@@ -130,10 +133,18 @@ namespace TrackerDotNet.Classes
             public const string NoTempOrder = "Order.NoTempOrderFound";
             public const string FutureMessage = "Order.FutureMessage";
             public const string EmailFooter = "Order.EmailFooter";
+
+            // Keys for pre-delivery wording (used by OrderDetail emails)
+            public const string StatusPreDeliveryBody = "Order.StatusPreDeliveryBody";
+            public const string StatusReadyForCollection = "Order.StatusReadyForCollection";
+            public const string StatusPendingDelivery = "Order.StatusPendingDelivery";
+
+            // Existing status keys used by OrderDone (post-delivery)
             public const string StatusPostbox = "Order.StatusPostbox";
             public const string StatusDispatched = "Order.StatusDispatched";
             public const string StatusCollected = "Order.StatusCollected";
             public const string StatusDelivered = "Order.StatusDelivered";
+
             public const string StatusBody = "Order.StatusBody";
             public const string ConfirmationHeader = "Order.ConfirmationHeader";
             public const string ConfirmationDeliveryDate = "Order.ConfirmationDeliveryDate";

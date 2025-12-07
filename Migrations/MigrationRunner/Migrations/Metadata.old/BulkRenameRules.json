@@ -1,0 +1,36 @@
+{
+  "CaseSensitive": false,
+  "TableRenames": {
+    "CityTbl": "AreaTbl",
+    "CityPrepDaysTbl": "AreaPrepDaysTbl",
+    "NextRoastDateByCityTbl": "NextRoastDateByAreaTbl",
+    "CustomersTbl": "ContactsTbl",
+    "CustomersAwayTbl": "ContactsAwayTbl",
+    "CustomersAccInfoTbl": "ContactAccInfoTbl",
+    "CustomerTypeTbl": "ContactTypeTbl",
+    "ClientAwayPeriodTbl": "ContactAwayPeriodTbl",
+    "ClientUsageTbl": "ContactUsageTbl",
+    "ClientUsageLinesTbl": "ContactUsageLinesTbl",
+    "ItemTypeTbl": "ItemsTbl",
+    "PackagingTbl": "ItemPackagingTbl",
+    "PrepTypeTbl": "ItemPrepTypeTbl",
+    "ItemUsageTbl": "ContactItemUsageTbl",
+    "ReoccuranceTypeTbl": "RecurranceTypeTbl",
+    "ReoccuringOrderTbl": "RecurringOrderHeaderTbl"
+  },
+  "ExactColumnRenames": {
+    "CityId": "AreaId",
+    "CityName": "AreaName",
+    "CustomerId": "ContactId",
+    "CustomerName": "ContactName",
+    "ClientId": "ContactId",
+    "ClientName": "ContactName",
+    "ItemTypeId": "ItemId",
+    "ItemTypeID": "ItemId"
+  },
+  "ColumnTokenReplacements": {
+    "City": "Area",
+    "Customer": "Contact",
+    "Client": "Contact"
+  }
+}

@@ -1,6 +1,6 @@
 using System;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public class ChangeRequestSubmission
     {

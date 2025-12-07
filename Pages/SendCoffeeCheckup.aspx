@@ -1,5 +1,5 @@
 <%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true"
-    CodeBehind="SendCoffeeCheckup.aspx.cs" Inherits="TrackerDotNet.Pages.SendCoffeeCheckup" %>
+    CodeBehind="SendCoffeeCheckup.aspx.cs" Inherits="TrackerSQL.Pages.SendCoffeeCheckup" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">
@@ -214,10 +214,10 @@
     <asp:Literal ID="ltrlMatrixDump" runat="server" Mode="PassThrough" />
 </asp:Panel>--%>
         <asp:ObjectDataSource ID="odsContactsToSendCheckup" runat="server"
-            DataObjectTypeName="TrackerDotNet.Controls.ContactToRemindDetails"
+            DataObjectTypeName="TrackerSQL.Controls.ContactToRemindDetails"
             InsertMethod="InsertContacts" SelectMethod="GetAllContacts"
             SortParameterName="SortBy"
-            TypeName="TrackerDotNet.Controls.TempCoffeeCheckup"
+            TypeName="TrackerSQL.Controls.TempCoffeeCheckup"
             OldValuesParameterFormatString="original_{0}">
             <SelectParameters>
                 <asp:Parameter DefaultValue="CompanyName" Name="SortBy" Type="String" />
@@ -225,7 +225,7 @@
         </asp:ObjectDataSource>
         <asp:ObjectDataSource ID="odsContactToBeRemindedItems" runat="server"
             SelectMethod="GetAllContactItems" SortParameterName="SortBy"
-            TypeName="TrackerDotNet.Controls.TempCoffeeCheckup"
+            TypeName="TrackerSQL.Controls.TempCoffeeCheckup"
             OldValuesParameterFormatString="original_{0}">
             <SelectParameters>
                 <asp:ControlParameter ControlID="gvCustomerCheckup" Name="CustomerID"

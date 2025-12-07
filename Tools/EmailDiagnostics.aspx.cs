@@ -11,9 +11,9 @@ using System.Web.Services;
 using System.Web.Services.Description;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
     public partial class EmailDiagnostics : System.Web.UI.Page
     {

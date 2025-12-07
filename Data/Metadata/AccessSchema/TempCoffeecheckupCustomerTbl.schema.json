@@ -1,0 +1,476 @@
+{
+  "SourceTable": "TempCoffeecheckupCustomerTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "TCCID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "CompanyName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ContactFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ContactAltFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "CityID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "EmailAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "AltEmailAddress",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "CustomerTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "EquipTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "TypicallySecToo",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "PreferedAgentID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "SalesAgentID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "UsesFilter",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "AlwaysSendChkUp",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "ReminderCount",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "NextPrepDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "NextDeliveryDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "NextCoffee",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "NextClean",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "NextFilter",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 22,
+      "SourceName": "NextDescal",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 23,
+      "SourceName": "NextService",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 24,
+      "SourceName": "RequiresPurchOrder",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_TCCID",
+      "Columns": [
+        "TCCID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "TempCoffeecheckupCustomerTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "TCCID",
+        "Target": "TCCID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CompanyName",
+        "Target": "CompanyName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactFirstName",
+        "Target": "ContactFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactAltFirstName",
+        "Target": "ContactAltFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CityID",
+        "Target": "CityID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EmailAddress",
+        "Target": "EmailAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AltEmailAddress",
+        "Target": "AltEmailAddress",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerTypeID",
+        "Target": "CustomerTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "EquipTypeID",
+        "Target": "EquipTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TypicallySecToo",
+        "Target": "TypicallySecToo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PreferedAgentID",
+        "Target": "PreferedAgentID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SalesAgentID",
+        "Target": "SalesAgentID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UsesFilter",
+        "Target": "UsesFilter",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "enabled",
+        "Target": "enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AlwaysSendChkUp",
+        "Target": "AlwaysSendChkUp",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReminderCount",
+        "Target": "ReminderCount",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextPrepDate",
+        "Target": "NextPrepDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextDeliveryDate",
+        "Target": "NextDeliveryDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextCoffee",
+        "Target": "NextCoffee",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextClean",
+        "Target": "NextClean",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextFilter",
+        "Target": "NextFilter",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextDescal",
+        "Target": "NextDescal",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "NextService",
+        "Target": "NextService",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RequiresPurchOrder",
+        "Target": "RequiresPurchOrder",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

@@ -1,0 +1,3 @@
+﻿-- No FK constraints generated.
+-- Reason: PlanConstraints.json has no foreign keys or target tables not found.
+-- Check PlanEdits/PlanConstraints.json and run option 11 to re-import.

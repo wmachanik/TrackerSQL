@@ -1,11 +1,11 @@
 ﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.DataSets.CustomersCls
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Type: TrackerSQL.DataSets.CustomersCls
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.DataSets
+namespace TrackerSQL.DataSets
 {
     public class CustomersCls
     {
@@ -34,7 +34,7 @@ namespace TrackerDotNet.DataSets
         private int _SecPref;
         private double _PriPrefQty;
         private double _SecPrefQty;
-        private int _Abreviation;
+        private int _Abbreviation;
         private string _MachineSN;
         private bool _UsesFilter;
         private bool _Autofulfill;
@@ -50,7 +50,7 @@ namespace TrackerDotNet.DataSets
             this._CompanyName = this._ContactTitle = this._ContactFirstName = this._ContactLastName = this._ContactAltFirstName = this._ContactAltLastName = this._Department = this._BillingAddress = this._StateOrProvince = this._PostalCode = this._PhoneNumber = this._Extension = this._FaxNumber = this._CellNumber = this._EmailAddress = this._AltEmailAddress = this._CustomerType = "";
             this._EquipTypeName = this._CoffeePreference = this._City = this._PriPref = this._SecPref = 0;
             this._PriPrefQty = this._SecPrefQty = 0.0;
-            this._Abreviation = 0;
+            this._Abbreviation = 0;
             this._MachineSN = "";
             this._Enabled = true;
             this._UsesFilter = this._Autofulfill = this._PredictionDisabled = this._AlwaysSendChkUp = this._NormallyResponds = false;
@@ -207,10 +207,10 @@ namespace TrackerDotNet.DataSets
             set => this._SecPrefQty = value;
         }
 
-        public int Abreviation
+        public int Abbreviation
         {
-            get => this._Abreviation;
-            set => this._Abreviation = value;
+            get => this._Abbreviation;
+            set => this._Abbreviation = value;
         }
 
         public string MachineSN

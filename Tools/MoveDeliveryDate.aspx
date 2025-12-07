@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Move Delivery Date" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MoveDeliveryDate.aspx.cs" Inherits="TrackerDotNet.Tools.MoveDeliveryDate" %>
+﻿<%@ Page Title="Move Delivery Date" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MoveDeliveryDate.aspx.cs" Inherits="TrackerSQL.Tools.MoveDeliveryDate" %>
 <asp:Content ID="cntMoveDeliveryDateHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntMoveDeliveryDateBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -22,7 +22,7 @@
                 DataSourceID="odsCityDeliveryDates" DataTextField="Date" DataValueField="Date"></asp:DropDownList>
               <asp:ObjectDataSource ID="odsCityDeliveryDates" runat="server" 
                 SelectMethod="GetAllDeliveryDates" 
-                TypeName="TrackerDotNet.Controls.NextRoastDateByCityTbl">
+                TypeName="TrackerSQL.Controls.NextRoastDateByCityTbl">
               </asp:ObjectDataSource>
             </td>
           </tr>

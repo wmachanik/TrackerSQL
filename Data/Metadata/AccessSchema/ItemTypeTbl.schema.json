@@ -1,0 +1,292 @@
+{
+  "SourceTable": "ItemTypeTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ItemTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "SKU",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ItemDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ItemEnabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ItemsCharacteritics",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "ItemDetail",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "ServiceTypeId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "ReplacementID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "ItemShortName",
+      "DotNetType": "System.String",
+      "ColumnSize": 10,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(10)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "SortOrder",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "UnitsPerQty",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "ItemUnitID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "BasePrice",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "ItemTypeID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CoffeeTypeID",
+      "Columns": [
+        "ItemTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ItemDesc",
+      "Columns": [
+        "ItemDesc"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ReplacementID",
+      "Columns": [
+        "ReplacementID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "ServiceTypeId",
+      "Columns": [
+        "ServiceTypeId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ItemsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ItemTypeID",
+        "Target": "ItemTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SKU",
+        "Target": "SKU",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemDesc",
+        "Target": "ItemDesc",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemEnabled",
+        "Target": "ItemEnabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemsCharacteritics",
+        "Target": "ItemsCharacteritics",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemDetail",
+        "Target": "ItemDetail",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ServiceTypeId",
+        "Target": "ServiceTypeId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ReplacementID",
+        "Target": "ReplacementID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemShortName",
+        "Target": "ItemShortName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SortOrder",
+        "Target": "SortOrder",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UnitsPerQty",
+        "Target": "UnitsPerQty",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemUnitID",
+        "Target": "ItemUnitID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BasePrice",
+        "Target": "BasePrice",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

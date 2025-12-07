@@ -1,4 +1,4 @@
-﻿<%@ Page Title="System Data" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SystemData.aspx.cs" Inherits="TrackerDotNet.Tools.SystemData" %>
+﻿<%@ Page Title="System Data" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SystemData.aspx.cs" Inherits="TrackerSQL.Tools.SystemData" %>
 
 <asp:Content ID="cntSystemDataHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -7,13 +7,13 @@
     <h1>System Data</h1>
     Test
     <asp:ObjectDataSource ID="odsSystemData" runat="server"
-        TypeName="TrackerDotNet.Controls.SysDataTbl"
+        TypeName="TrackerSQL.Controls.SysDataTbl"
         SelectMethod="GetAll"
         UpdateMethod="Update"
-        DataObjectTypeName="TrackerDotNet.Controls.SysDataTbl"></asp:ObjectDataSource>
+        DataObjectTypeName="TrackerSQL.Controls.SysDataTbl"></asp:ObjectDataSource>
 
     <asp:ObjectDataSource ID="odsItemTypes" runat="server"
-        TypeName="TrackerDotNet.Controls.ItemTypeTbl"
+        TypeName="TrackerSQL.Controls.ItemTypeTbl"
         SelectMethod="GetAll"></asp:ObjectDataSource>
     <div class="responsive-layout-container">
         <asp:DetailsView ID="dvSystemData" runat="server"

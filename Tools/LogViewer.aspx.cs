@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
     public partial class LogViewer : System.Web.UI.Page
     {

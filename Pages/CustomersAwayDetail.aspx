@@ -1,4 +1,4 @@
-<%@ Page Title="Customer Away Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="CustomersAwayDetail.aspx.cs" Inherits="TrackerDotNet.Pages.CustomersAwayDetail" %>
+<%@ Page Title="Customer Away Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="CustomersAwayDetail.aspx.cs" Inherits="TrackerSQL.Pages.CustomersAwayDetail" %>
 
 <asp:Content ID="cntCustomersAwayDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -74,8 +74,8 @@
     </asp:UpdatePanel>
     <asp:ObjectDataSource ID="odsCompanys" runat="server"
         SelectMethod="GetAllCustomerNames"
-        TypeName="TrackerDotNet.Controls.CustomersTbl" />
+        TypeName="TrackerSQL.Controls.CustomersTbl" />
     <asp:ObjectDataSource ID="odsAwayReasons" runat="server"
-        TypeName="TrackerDotNet.Controls.CustomersAwayTbl"
+        TypeName="TrackerSQL.Controls.CustomersAwayTbl"
         SelectMethod="GetAllAwayReasons" />
 </asp:Content>

@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="ReoccuringOrder Details" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="ReoccuringOrderDetails.aspx.cs" Inherits="TrackerDotNet.Pages.ReoccuringOrderDetails" %>
+    CodeBehind="ReoccuringOrderDetails.aspx.cs" Inherits="TrackerSQL.Pages.ReoccuringOrderDetails" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>
 
@@ -114,16 +114,16 @@
         ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
         ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
         SelectCommand="SELECT [CompanyName], [CustomerID] FROM [CustomersTbl] ORDER BY [enabled], [CompanyName]"></asp:SqlDataSource>
-    <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerDotNet.Controls.ItemTypeTbl"
+    <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl"
         SortParameterName="SortBy" SelectMethod="GetAll"
         OldValuesParameterFormatString="original_{0}">
         <SelectParameters>
             <asp:Parameter DefaultValue="[ItemEnabled], [SortOrder], ItemDesc" Name="SortBy" Type="String" />
         </SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsReoccuranceTypes" runat="server" TypeName="TrackerDotNet.Controls.ReoccuranceTypeTbl"
+    <asp:ObjectDataSource ID="odsReoccuranceTypes" runat="server" TypeName="TrackerSQL.Controls.ReoccuranceTypeTbl"
         SelectMethod="GetAll" OldValuesParameterFormatString="original_{0}"></asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPackagingTypes" runat="server" TypeName="TrackerDotNet.Controls.PackagingTbl"
+    <asp:ObjectDataSource ID="odsPackagingTypes" runat="server" TypeName="TrackerSQL.Controls.PackagingTbl"
         SortParameterName="SortBy" SelectMethod="GetAll"
         OldValuesParameterFormatString="original_{0}">
         <SelectParameters>

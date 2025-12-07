@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Web;
 using System.Web.Security;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Centralized helper for user/role/security checks.

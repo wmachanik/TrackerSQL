@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-  CodeBehind="TestPeople.aspx.cs" Inherits="TrackerDotNet.Tools.TestPeople" MaintainScrollPositionOnPostback="true" %>
+  CodeBehind="TestPeople.aspx.cs" Inherits="TrackerSQL.Tools.TestPeople" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntLookupHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -13,7 +13,7 @@
                   <asp:BoundField DataField="PersonID" HeaderText="PersonID" InsertVisible="False"
                     ReadOnly="True" SortExpression="PersonID" />
                   <asp:BoundField DataField="Person" HeaderText="Person" SortExpression="Person" />
-                  <asp:BoundField DataField="Abreviation" HeaderText="Abreviation" SortExpression="Abreviation" />
+                  <asp:BoundField DataField="Abbreviation" HeaderText="Abbreviation" SortExpression="Abbreviation" />
                   <asp:CheckBoxField DataField="Enabled" HeaderText="Enabled" SortExpression="Enabled" />
                 </Columns>
                 <EditRowStyle BackColor="#7C6F57" />
@@ -28,13 +28,13 @@
                 <SortedDescendingHeaderStyle BackColor="#15524A" />
               </asp:GridView>
   <asp:ObjectDataSource ID="odsPeople" runat="server"
-    TypeName="TrackerDotNet.Controls.PersonsTbl" 
-    DataObjectTypeName="TrackerDotNet.Controls.PersonsTbl"  
+    TypeName="TrackerSQL.Controls.PersonsTbl" 
+    DataObjectTypeName="TrackerSQL.Controls.PersonsTbl"  
     SelectMethod="GetAll" SortParameterName="SortBy"
     UpdateMethod="UpdatePerson" OldValuesParameterFormatString="original_{0}" 
     DeleteMethod="DeletePerson" InsertMethod="InsertPerson" >
     <SelectParameters>
-      <asp:Parameter DefaultValue="&quot;Abreviation&quot;" Name="SortBy" Type="String" />
+      <asp:Parameter DefaultValue="&quot;Abbreviation&quot;" Name="SortBy" Type="String" />
     </SelectParameters>
     <UpdateParameters>
       <asp:Parameter Name="pPerson" Type="Object" />

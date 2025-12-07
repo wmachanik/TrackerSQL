@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using TrackerDotNet.Controls;
-using TrackerDotNet.Classes;
+using TrackerSQL.Controls;
+using TrackerSQL.Classes;
 
-namespace TrackerDotNet.Tools
+namespace TrackerSQL.Tools
 {
     public partial class HolidayClosureDetail : System.Web.UI.Page
     {

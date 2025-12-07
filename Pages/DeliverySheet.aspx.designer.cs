@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerDotNet.Pages
+namespace TrackerSQL.Pages
 {
 
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     public class UserPreferences
     {

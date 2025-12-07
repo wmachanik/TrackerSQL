@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SummaryOFCoffeeRequired.aspx.cs" Inherits="TrackerDotNet.Pages.SummaryOFCoffeeRequired" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SummaryOFCoffeeRequired.aspx.cs" Inherits="TrackerSQL.Pages.SummaryOFCoffeeRequired" %>
 <asp:Content ID="cntSummaryOfCoffeeRequiredHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntSummaryOfCoffeeRequiredBdy" ContentPlaceHolderID="MainContent" runat="server">

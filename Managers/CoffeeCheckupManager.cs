@@ -4,10 +4,10 @@ using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Web;
-using TrackerDotNet.Classes;
-using TrackerDotNet.Controls;
+using TrackerSQL.Classes;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Managers
+namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Central business logic manager for Coffee Checkup operations

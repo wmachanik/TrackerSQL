@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="CustomersAway.aspx.cs" Inherits="TrackerDotNet.Pages.CustomersAway" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="CustomersAway.aspx.cs" Inherits="TrackerSQL.Pages.CustomersAway" %>
 
 <asp:Content ID="cntCustomersAwayHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -101,7 +101,7 @@
         </ContentTemplate>
     </asp:UpdatePanel>
     <asp:ObjectDataSource ID="odsCustomersAway"
-        TypeName="TrackerDotNet.Controls.CustomersAwayTbl"
+        TypeName="TrackerSQL.Controls.CustomersAwayTbl"
         SortParameterName="SortBy"
         SelectMethod="GetCustomersAway"
         runat="server" OldValuesParameterFormatString="original_{0}">

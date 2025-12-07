@@ -1,0 +1,422 @@
+{
+  "SourceTable": "RepairsTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "RepairID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "ContactName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "ContactEmail",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "JobCardNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 20,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(20)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "DateLogged",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "LastStatusChange",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "MachineTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "MachineSerialNumber",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "SwopOutMachineID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "MachineConditionID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "TakenFrother",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "TakenBeanLid",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "TakenWaterLid",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "BrokenFrother",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "BrokenBeanLid",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "BrokenWaterLid",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "RepairFaultID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "RepairFaultDesc",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "RepairStatusID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "RelatedOrderID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_RepairID",
+      "Columns": [
+        "RepairID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "RepairsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "RepairID",
+        "Target": "RepairID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactName",
+        "Target": "ContactName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ContactEmail",
+        "Target": "ContactEmail",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "JobCardNumber",
+        "Target": "JobCardNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "DateLogged",
+        "Target": "DateLogged",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "LastStatusChange",
+        "Target": "LastStatusChange",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineTypeID",
+        "Target": "MachineTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineSerialNumber",
+        "Target": "MachineSerialNumber",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "SwopOutMachineID",
+        "Target": "SwopOutMachineID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "MachineConditionID",
+        "Target": "MachineConditionID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TakenFrother",
+        "Target": "TakenFrother",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TakenBeanLid",
+        "Target": "TakenBeanLid",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "TakenWaterLid",
+        "Target": "TakenWaterLid",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BrokenFrother",
+        "Target": "BrokenFrother",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BrokenBeanLid",
+        "Target": "BrokenBeanLid",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BrokenWaterLid",
+        "Target": "BrokenWaterLid",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RepairFaultID",
+        "Target": "RepairFaultID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RepairFaultDesc",
+        "Target": "RepairFaultDesc",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RepairStatusID",
+        "Target": "RepairStatusID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RelatedOrderID",
+        "Target": "RelatedOrderID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

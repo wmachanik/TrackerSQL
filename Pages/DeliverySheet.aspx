@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DeliverySheet.aspx.cs" Inherits="TrackerDotNet.Pages.DeliverySheet" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DeliverySheet.aspx.cs" Inherits="TrackerSQL.Pages.DeliverySheet" %>
 
 <asp:Content ID="cntDeliveryHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -57,7 +57,7 @@
         <asp:ObjectDataSource ID="odsActiveRoastDates" runat="server"
             OldValuesParameterFormatString="original_{0}"
             SelectMethod="GetActiveDeliveryDates"
-            TypeName="TrackerDotNet.Controls.ActiveDeliveryData"></asp:ObjectDataSource>
+            TypeName="TrackerSQL.Controls.ActiveDeliveryData"></asp:ObjectDataSource>
         <br />
     </asp:Panel>
     <asp:UpdatePanel ID="upnlDeliveryItems" runat="server" UpdateMode="Conditional">

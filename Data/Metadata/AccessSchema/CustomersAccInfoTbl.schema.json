@@ -1,0 +1,574 @@
+{
+  "SourceTable": "CustomersAccInfoTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "CustomersAccInfoID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "RequiresPurchOrder",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "CustomerVATNo",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "BillAddr1",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "BillAddr2",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "BillAddr3",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "BillAddr4",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "BillAddr5",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "ShipAddr1",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "ShipAddr2",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "ShipAddr3",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "ShipAddr4",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "ShipAddr5",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "AccEmail",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "AltAccEmail",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 16,
+      "SourceName": "PaymentTermID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 17,
+      "SourceName": "Limit",
+      "DotNetType": "System.Single",
+      "ColumnSize": 4,
+      "NumericPrecision": 7,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 18,
+      "SourceName": "FullCoName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 19,
+      "SourceName": "AccFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 20,
+      "SourceName": "AccLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 21,
+      "SourceName": "AltAccFirstName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 22,
+      "SourceName": "AltAccLastName",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 23,
+      "SourceName": "PriceLevelID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 24,
+      "SourceName": "InvoiceTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 25,
+      "SourceName": "RegNo",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 26,
+      "SourceName": "BankAccNo",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 27,
+      "SourceName": "BankBranch",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    },
+    {
+      "Ordinal": 28,
+      "SourceName": "Enabled",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 29,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 536870910,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(536870910)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_CustomersAccInfoID",
+      "Columns": [
+        "CustomersAccInfoID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "UCID_CustomerID",
+      "Columns": [
+        "CustomerID"
+      ],
+      "Unique": true,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Rename",
+    "TargetTable": "ContactsAccInfoTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "CustomersAccInfoID",
+        "Target": "CustomersAccInfoID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerID",
+        "Target": "CustomerID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RequiresPurchOrder",
+        "Target": "RequiresPurchOrder",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerVATNo",
+        "Target": "CustomerVATNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillAddr1",
+        "Target": "BillAddr1",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillAddr2",
+        "Target": "BillAddr2",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillAddr3",
+        "Target": "BillAddr3",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillAddr4",
+        "Target": "BillAddr4",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BillAddr5",
+        "Target": "BillAddr5",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ShipAddr1",
+        "Target": "ShipAddr1",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ShipAddr2",
+        "Target": "ShipAddr2",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ShipAddr3",
+        "Target": "ShipAddr3",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ShipAddr4",
+        "Target": "ShipAddr4",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ShipAddr5",
+        "Target": "ShipAddr5",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AccEmail",
+        "Target": "AccEmail",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AltAccEmail",
+        "Target": "AltAccEmail",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PaymentTermID",
+        "Target": "PaymentTermID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Limit",
+        "Target": "Limit",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "FullCoName",
+        "Target": "FullCoName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AccFirstName",
+        "Target": "AccFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AccLastName",
+        "Target": "AccLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AltAccFirstName",
+        "Target": "AltAccFirstName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "AltAccLastName",
+        "Target": "AltAccLastName",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PriceLevelID",
+        "Target": "PriceLevelID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "InvoiceTypeID",
+        "Target": "InvoiceTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RegNo",
+        "Target": "RegNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BankAccNo",
+        "Target": "BankAccNo",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "BankBranch",
+        "Target": "BankBranch",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Enabled",
+        "Target": "Enabled",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

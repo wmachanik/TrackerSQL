@@ -1,0 +1,80 @@
+{
+  "SourceTable": "ItemUnitsTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "ItemUnitID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "UnitOfMeasure",
+      "DotNetType": "System.String",
+      "ColumnSize": 5,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(5)"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "UnitDescription",
+      "DotNetType": "System.String",
+      "ColumnSize": 50,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(50)"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "pk_ItemUnitsID",
+      "Columns": [
+        "ItemUnitID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    }
+  ],
+  "Plan": {
+    "Classification": "Copy",
+    "TargetTable": "ItemUnitsTbl",
+    "PreserveIdsOnInsert": false,
+    "Reviewed": false,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "ItemUnitID",
+        "Target": "ItemUnitID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UnitOfMeasure",
+        "Target": "UnitOfMeasure",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "UnitDescription",
+        "Target": "UnitDescription",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": null
+  }
+}

@@ -1,5 +1,5 @@
 <%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="HolidayClosureDetail.aspx.cs" Inherits="TrackerDotNet.Tools.HolidayClosureDetail"
+    CodeBehind="HolidayClosureDetail.aspx.cs" Inherits="TrackerSQL.Tools.HolidayClosureDetail"
     Title="Closure Detail" %>
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
 

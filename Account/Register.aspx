@@ -1,5 +1,5 @@
 ﻿<%@ Page Title="Register" Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true"
-  CodeBehind="Register.aspx.cs" Inherits="TrackerDotNet.Account.Register" %>
+  CodeBehind="Register.aspx.cs" Inherits="TrackerSQL.Account.Register" %>
 
 <asp:Content ID="HeaderContent" runat="server" ContentPlaceHolderID="HeadContent">
 </asp:Content>

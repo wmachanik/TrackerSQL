@@ -1,0 +1,21 @@
+﻿{
+  "Tables": {
+    "ReoccuringOrderTbl": {
+      "CompositeKeyRules": [],
+      "ComputedColumns": [],
+      "RecurringGrouping": {
+        "HeaderGroupBy": [
+          "CustomerID"
+        ],
+        "LineGroupBy": [
+          "ItemRequiredID",
+          "ItemPackagingID"
+        ],
+        "LineAggregations": {
+          "QtyRequired": "SUM"
+        },
+        "Filter": ""
+      }
+    }
+  }
+}

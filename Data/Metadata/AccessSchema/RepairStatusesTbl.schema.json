@@ -106,8 +106,8 @@
       },
       {
         "Source": "EmailClient",
-        "Target": "EmailClient",
-        "Action": "Copy",
+        "Target": "EmailContact",
+        "Action": "Rename",
         "Expression": null
       },
       {

@@ -136,8 +136,8 @@
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {

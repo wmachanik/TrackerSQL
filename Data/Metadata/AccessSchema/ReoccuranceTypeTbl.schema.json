@@ -46,14 +46,14 @@
     "ColumnActions": [
       {
         "Source": "ID",
-        "Target": "ID",
-        "Action": "Copy",
+        "Target": "RecurringTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Type",
-        "Target": "Type",
-        "Action": "Copy",
+        "Target": "RecurringTypeDesc",
+        "Action": "Rename",
         "Expression": null
       }
     ],

@@ -88,8 +88,8 @@
       },
       {
         "Source": "ClientID",
-        "Target": "ClientID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {

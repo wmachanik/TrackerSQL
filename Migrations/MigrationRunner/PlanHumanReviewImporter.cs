@@ -293,13 +293,50 @@ namespace MigrationRunner
             {
                 schema.Plan.Classification = "Rename";
             }
-            else if (string.Equals(mapping.Action, "Normalise", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(mapping.Action, "Normalize", StringComparison.OrdinalIgnoreCase))
             {
                 schema.Plan.Classification = "Normalize";
+                
+                    // Handle normalization specific settings
+                    if (mapping.NormalizationInfo != null)
+                    {
+                        Console.WriteLine($"    ?? Setting up normalization: {mapping.BeforeTable} -> {mapping.NormalizationInfo.HeaderTable} + {mapping.NormalizationInfo.LinesTable}");
+                        
+                        // Create or update the Normalize object in the plan
+                        if (schema.Plan.Normalize == null)
+                        {
+                            schema.Plan.Normalize = new
+                            {
+                                HeaderTable = mapping.NormalizationInfo.HeaderTable,
+                                LineTable = mapping.NormalizationInfo.LinesTable,
+                                IsHeader = false,
+                                IsLine = false,
+                                NormalizeInto = new[]
+                                {
+                                    new { TargetTable = mapping.NormalizationInfo.HeaderTable, Description = "Header table" },
+                                    new { TargetTable = mapping.NormalizationInfo.LinesTable, Description = "Lines table" }
+                                }
+                            };
+                        }
+                        else
+                        {
+                            schema.Plan.Normalize.HeaderTable = mapping.NormalizationInfo.HeaderTable;
+                            schema.Plan.Normalize.LineTable = mapping.NormalizationInfo.LinesTable;
+                        }
+                        
+                        // CRITICAL: Do NOT mark normalization tables as ignored - they need column mappings applied!
+                        // The custom normalizer will handle the special migration logic
+                        schema.Plan.Ignore = false;
+                        
+                        Console.WriteLine($"    ?? Normalization setup complete, table will be handled by custom normalizer");
+                        Console.WriteLine($"    ?? IMPORTANT: Normalized tables need column mappings applied to Plan.ColumnActions for correct DDL generation!");
+                    }
             }
 
             // Apply column mappings
             int appliedMappings = 0;
+            var existingActions = new List<Dictionary<string, string>>();
+            
             if (mapping.ColumnMappings?.Any() == true)
             {
                 Console.WriteLine($"    ?? Processing {mapping.ColumnMappings.Count} column mappings:");
@@ -311,7 +348,6 @@ namespace MigrationRunner
                 }
 
                 // Convert existing ColumnActions to a workable list
-                var existingActions = new List<Dictionary<string, string>>();
                 if (schema.Plan.ColumnActions != null)
                 {
                     // Handle JArray from JSON deserialization
@@ -349,6 +385,8 @@ namespace MigrationRunner
                     if (string.IsNullOrEmpty(columnMapping.BeforeColumn))
                         continue;
 
+                    Console.WriteLine($"      ?? Processing column: {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn} (Action: {columnMapping.Action}, Target: {columnMapping.NormalizationTarget ?? "N/A"})");
+
                     // Find existing action for this column
                     var existingAction = existingActions.FirstOrDefault(a => 
                         string.Equals(a["Source"], columnMapping.BeforeColumn, StringComparison.OrdinalIgnoreCase));
@@ -358,40 +396,102 @@ namespace MigrationRunner
                         // Update existing action
                         if (string.Equals(columnMapping.Action, "Drop", StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine($"      ???  Dropping column: {columnMapping.BeforeColumn}");
+                            Console.WriteLine($"        ???  Dropping column: {columnMapping.BeforeColumn}");
                             existingAction["Action"] = "Drop";
                             existingAction["Target"] = columnMapping.BeforeColumn; // Keep original for dropped columns
                         }
                         else if (!string.IsNullOrEmpty(columnMapping.AfterColumn))
                         {
-                            Console.WriteLine($"      ?? Column mapping: {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn}");
+                            Console.WriteLine($"        ?? Column mapping: {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn}");
                             existingAction["Target"] = columnMapping.AfterColumn;
-                            existingAction["Action"] = string.Equals(columnMapping.BeforeColumn, columnMapping.AfterColumn, StringComparison.OrdinalIgnoreCase) ? "Copy" : "Rename";
+                            
+                            // CRITICAL: Properly detect rename vs copy with OCD precision
+                            var isRename = !string.Equals(columnMapping.BeforeColumn, columnMapping.AfterColumn, StringComparison.OrdinalIgnoreCase);
+                            existingAction["Action"] = isRename ? "Rename" : "Copy";
+                            
+                            Console.WriteLine($"          ??? Action determined: {existingAction["Action"]} (Source: {columnMapping.BeforeColumn}, Target: {columnMapping.AfterColumn})");
+                            
+                            // Add normalization target info if available
+                            if (!string.IsNullOrEmpty(columnMapping.NormalizationTarget))
+                            {
+                                existingAction["NormalizationTarget"] = columnMapping.NormalizationTarget;
+                                Console.WriteLine($"          ??? Normalization target: {columnMapping.NormalizationTarget}");
+                            }
                         }
                         appliedMappings++;
                     }
-                    else if (!string.Equals(columnMapping.Action, "Drop", StringComparison.OrdinalIgnoreCase) && 
-                             !string.IsNullOrEmpty(columnMapping.AfterColumn))
+                    else if (string.Equals(columnMapping.Action, "Drop", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Add new column action
-                        Console.WriteLine($"      ? New column mapping: {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn}");
-                        existingActions.Add(new Dictionary<string, string>
+                        // Add new DROP column action
+                        Console.WriteLine($"        ? New DROP column mapping: {columnMapping.BeforeColumn} (Action: Drop)");
+                        
+                        var newAction = new Dictionary<string, string>
+                        {
+                            ["Source"] = columnMapping.BeforeColumn,
+                            ["Target"] = columnMapping.BeforeColumn, // Keep original for dropped columns
+                            ["Action"] = "Drop",
+                            ["Expression"] = ""
+                        };
+                        
+                        Console.WriteLine($"          ??? New DROP action added for: {columnMapping.BeforeColumn}");
+                        
+                        existingActions.Add(newAction);
+                        appliedMappings++;
+                    }
+                    else if (!string.IsNullOrEmpty(columnMapping.AfterColumn))
+                    {
+                        // Add new column action for Copy/Rename
+                        var targetInfo = !string.IsNullOrEmpty(columnMapping.NormalizationTarget) 
+                            ? $" ({columnMapping.NormalizationTarget})" 
+                            : "";
+                        Console.WriteLine($"        ? New column mapping: {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn}{targetInfo}");
+                        
+                        var newAction = new Dictionary<string, string>
                         {
                             ["Source"] = columnMapping.BeforeColumn,
                             ["Target"] = columnMapping.AfterColumn,
                             ["Action"] = string.Equals(columnMapping.BeforeColumn, columnMapping.AfterColumn, StringComparison.OrdinalIgnoreCase) ? "Copy" : "Rename",
                             ["Expression"] = ""
-                        });
+                        };
+                        
+                        Console.WriteLine($"          ??? New action determined: {newAction["Action"]} (Source: {columnMapping.BeforeColumn}, Target: {columnMapping.AfterColumn})");
+                        
+                        // Add normalization target info if available
+                        if (!string.IsNullOrEmpty(columnMapping.NormalizationTarget))
+                        {
+                            newAction["NormalizationTarget"] = columnMapping.NormalizationTarget;
+                            Console.WriteLine($"          ??? Normalization target: {columnMapping.NormalizationTarget}");
+                        }
+                        
+                        existingActions.Add(newAction);
                         appliedMappings++;
                     }
                 }
 
-                // Update schema with the processed column actions
-                schema.Plan.ColumnActions = existingActions;
+                // Don't update schema.Plan.ColumnActions here as it causes JSON serialization issues
+                // We'll apply the changes via text replacement instead
             }
             else
             {
                 Console.WriteLine($"    ??  No column mappings to apply");
+                
+                // Still need to populate existingActions from the schema for serialization
+                if (schema.Plan.ColumnActions != null)
+                {
+                    if (schema.Plan.ColumnActions is Newtonsoft.Json.Linq.JArray jArray)
+                    {
+                        foreach (var item in jArray)
+                        {
+                            existingActions.Add(new Dictionary<string, string>
+                            {
+                                ["Source"] = item["Source"]?.ToString() ?? "",
+                                ["Target"] = item["Target"]?.ToString() ?? "",
+                                ["Action"] = item["Action"]?.ToString() ?? "",
+                                ["Expression"] = item["Expression"]?.ToString() ?? ""
+                            });
+                        }
+                    }
+                }
             }
 
             Console.WriteLine($"    ? Applied {appliedMappings} column mappings");
@@ -399,77 +499,167 @@ namespace MigrationRunner
             // Create constraints for this table
             CreateConstraintsForTable(mapping, constraints);
 
-            // Save updated schema - Fix JSON serialization completely
+            // Save updated schema - Use text-based approach to avoid JSON serialization issues
             try
             {
-                // Create a completely clean object for serialization
-                var schemaDict = new Dictionary<string, object>();
+                var originalJson = File.ReadAllText(schemaPath);
+                var updatedJson = originalJson;
+                bool hasUpdates = false;
                 
-                // Copy all properties from the original schema except Plan
-                var originalSchema = (Newtonsoft.Json.Linq.JObject)schema;
-                foreach (var property in originalSchema.Properties())
+                // Update TargetTable
+                if (!string.Equals((string)schema.Plan.TargetTable, mapping.BeforeTable, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (property.Name != "Plan")
+                    updatedJson = System.Text.RegularExpressions.Regex.Replace(
+                        updatedJson, 
+                        @"""TargetTable"":\s*""[^""]*""", 
+                        $@"""TargetTable"": ""{targetTableName}""");
+                    hasUpdates = true;
+                    Console.WriteLine($"    ??  Updated TargetTable: {targetTableName}");
+                }
+                
+                // Update Classification
+                if (!string.IsNullOrEmpty((string)schema.Plan.Classification))
+                {
+                    updatedJson = System.Text.RegularExpressions.Regex.Replace(
+                        updatedJson, 
+                        @"""Classification"":\s*""[^""]*""", 
+                        $@"""Classification"": ""{schema.Plan.Classification}""");
+                    hasUpdates = true;
+                    Console.WriteLine($"    ??  Updated Classification: {schema.Plan.Classification}");
+                }
+                
+                // Update Ignore flag for normalized tables
+                if (schema.Plan.Ignore != null)
+                {
+                    updatedJson = System.Text.RegularExpressions.Regex.Replace(
+                        updatedJson, 
+                        @"""Ignore"":\s*(true|false)", 
+                        $@"""Ignore"": {schema.Plan.Ignore.ToString().ToLower()}");
+                    hasUpdates = true;
+                    Console.WriteLine($"    ??  Updated Ignore: {schema.Plan.Ignore}");
+                }
+                
+                // Apply key column mappings using proper JSON manipulation instead of fragile regex
+                if (appliedMappings > 0)
+                {
+                    Console.WriteLine($"    ?? Applying {appliedMappings} column mappings to schema JSON...");
+                    
+                    try
                     {
-                        schemaDict[property.Name] = property.Value.ToObject<object>();
+                        // Use proper JSON deserialization/serialization to update ColumnActions
+                        var schemaObj = JsonConvert.DeserializeObject<dynamic>(updatedJson);
+                        var columnActions = schemaObj?.Plan?.ColumnActions as Newtonsoft.Json.Linq.JArray;
+                        
+                        if (columnActions != null)
+                        {
+                            int updatedColumns = 0;
+                            
+                            // Apply all column mappings from our processed list
+                            foreach (var processedAction in existingActions)
+                            {
+                                if (string.IsNullOrEmpty(processedAction["Source"])) continue;
+                                
+                                // Find corresponding JSON action
+                                foreach (var jsonAction in columnActions)
+                                {
+                                    var sourceValue = jsonAction["Source"]?.ToString();
+                                    if (string.Equals(sourceValue, processedAction["Source"], StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        // Update the JSON action with new values
+                                        if (!string.IsNullOrEmpty(processedAction["Target"]))
+                                        {
+                                            var oldTarget = jsonAction["Target"]?.ToString();
+                                            var newTarget = processedAction["Target"];
+                                            
+                                            if (!string.Equals(oldTarget, newTarget, StringComparison.Ordinal))
+                                            {
+                                                jsonAction["Target"] = newTarget;
+                                                updatedColumns++;
+                                                Console.WriteLine($"      ??? Updated column: {processedAction["Source"]} Target: {oldTarget} -> {newTarget}");
+                                            }
+                                        }
+                                        
+                                        if (!string.IsNullOrEmpty(processedAction["Action"]))
+                                        {
+                                            var oldAction = jsonAction["Action"]?.ToString();
+                                            var newAction = processedAction["Action"];
+                                            
+                                            if (!string.Equals(oldAction, newAction, StringComparison.Ordinal))
+                                            {
+                                                jsonAction["Action"] = newAction;
+                                                Console.WriteLine($"      ??? Updated action: {processedAction["Source"]} Action: {oldAction} -> {newAction}");
+                                            }
+                                        }
+                                        
+                                        break; // Found the matching action, move to next
+                                    }
+                                }
+                            }
+                            
+                            if (updatedColumns > 0)
+                            {
+                                updatedJson = JsonConvert.SerializeObject(schemaObj, Formatting.Indented);
+                                hasUpdates = true;
+                                Console.WriteLine($"    ?? Successfully updated {updatedColumns} column mappings in schema JSON");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"    ??  No column mapping updates were needed in schema JSON");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"    ??  Warning: Could not find ColumnActions array in schema JSON");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"    ??  Error applying JSON-based column mappings: {ex.Message}");
+                        Console.WriteLine($"    ??  Attempting regex fallback for key mappings...");
+                        
+                        // Fallback to regex for critical mappings only
+                        foreach (var columnMapping in mapping.ColumnMappings.Where(cm => !string.IsNullOrEmpty(cm.BeforeColumn) && !string.IsNullOrEmpty(cm.AfterColumn)))
+                        {
+                            var isRename = !string.Equals(columnMapping.BeforeColumn, columnMapping.AfterColumn, StringComparison.OrdinalIgnoreCase);
+                            
+                            if (isRename)
+                            {
+                                try
+                                {
+                                    // Multi-line regex patterns for more reliable matching
+                                    var multiLineTargetPattern = @"""Source"":\s*""" + System.Text.RegularExpressions.Regex.Escape(columnMapping.BeforeColumn) + @""",\s*""Target"":\s*""[^""]*""";
+                                    var targetReplacement = $@"""Source"": ""{columnMapping.BeforeColumn}"",\r\n        ""Target"": ""{columnMapping.AfterColumn}""";
+                                    
+                                    if (System.Text.RegularExpressions.Regex.IsMatch(updatedJson, multiLineTargetPattern, System.Text.RegularExpressions.RegexOptions.Multiline))
+                                    {
+                                        updatedJson = System.Text.RegularExpressions.Regex.Replace(updatedJson, multiLineTargetPattern, targetReplacement, System.Text.RegularExpressions.RegexOptions.Multiline);
+                                        hasUpdates = true;
+                                        Console.WriteLine($"      ?? Applied column target mapping (regex fallback): {columnMapping.BeforeColumn} -> {columnMapping.AfterColumn}");
+                                    }
+                                }
+                                catch (Exception regexEx)
+                                {
+                                    Console.WriteLine($"      ??  Regex fallback also failed for {columnMapping.BeforeColumn}: {regexEx.Message}");
+                                }
+                            }
+                        }
                     }
                 }
                 
-                // Create a clean Plan object with explicit types
-                var planDict = new Dictionary<string, object>
+                if (hasUpdates)
                 {
-                    ["Classification"] = (string)schema.Plan.Classification,
-                    ["TargetTable"] = (string)schema.Plan.TargetTable,
-                    ["PreserveIdsOnInsert"] = (bool)(schema.Plan.PreserveIdsOnInsert ?? false),
-                    ["Reviewed"] = (bool)(schema.Plan.Reviewed ?? false),
-                    ["Ignore"] = (bool)(schema.Plan.Ignore ?? false),
-                    ["ColumnActions"] = schema.Plan.ColumnActions, // This should now be List<Dictionary<string,string>>
-                    ["Normalize"] = schema.Plan.Normalize?.ToObject<object>()
-                };
-                
-                schemaDict["Plan"] = planDict;
-                
-                var finalJson = JsonConvert.SerializeObject(schemaDict, Formatting.Indented);
-                File.WriteAllText(schemaPath, finalJson);
-                Console.WriteLine($"    ? Successfully saved schema: {mapping.BeforeTable} -> {targetTableName}");
+                    File.WriteAllText(schemaPath, updatedJson);
+                    Console.WriteLine($"    ? Successfully saved schema with {appliedMappings} column mappings: {mapping.BeforeTable} -> {targetTableName}");
+                }
+                else
+                {
+                    Console.WriteLine($"    ??  No updates needed for schema: {mapping.BeforeTable}");
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"    ? Error saving schema for {mapping.BeforeTable}: {ex.Message}");
-                Console.WriteLine($"    ?? Debug - TargetTable: {schema.Plan.TargetTable}, Classification: {schema.Plan.Classification}");
-                
-                // Try a simpler approach - just update the file directly as text
-                try
-                {
-                    Console.WriteLine($"    ?? Attempting text-based update...");
-                    var originalJson = File.ReadAllText(schemaPath);
-                    
-                    // Update TargetTable and Classification using string replacement
-                    var updatedJson = originalJson;
-                    if (!string.Equals((string)schema.Plan.TargetTable, mapping.BeforeTable, StringComparison.OrdinalIgnoreCase))
-                    {
-                        updatedJson = System.Text.RegularExpressions.Regex.Replace(
-                            updatedJson, 
-                            @"""TargetTable"":\s*""[^""]*""", 
-                            $@"""TargetTable"": ""{targetTableName}""");
-                    }
-                    
-                    if (schema.Plan.Classification != null)
-                    {
-                        updatedJson = System.Text.RegularExpressions.Regex.Replace(
-                            updatedJson, 
-                            @"""Classification"":\s*""[^""]*""", 
-                            $@"""Classification"": ""{schema.Plan.Classification}""");
-                    }
-                    
-                    File.WriteAllText(schemaPath, updatedJson);
-                    Console.WriteLine($"    ? Text-based update successful for {mapping.BeforeTable}");
-                }
-                catch (Exception textEx)
-                {
-                    Console.WriteLine($"    ? Text update also failed: {textEx.Message}");
-                    return false;
-                }
+                return false;
             }
 
             return true;
@@ -491,23 +681,102 @@ namespace MigrationRunner
                 NotNullColumns = new List<string>()
             };
 
-            // Add typical primary key based on naming convention
-            if (mapping.BeforeTable.EndsWith("Tbl", StringComparison.OrdinalIgnoreCase))
+            // Look for ID columns in the column mappings to find the actual primary key
+            if (mapping.ColumnMappings?.Any() == true)
             {
-                var baseName = mapping.BeforeTable.Substring(0, mapping.BeforeTable.Length - 3);
-                var pkColumn = baseName + "ID";
+                // Find columns that are likely primary keys (end with "ID")
+                var idColumns = mapping.ColumnMappings
+                    .Where(cm => !string.IsNullOrEmpty(cm.BeforeColumn) && 
+                                !string.IsNullOrEmpty(cm.AfterColumn) &&
+                                cm.BeforeColumn.EndsWith("ID", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                // For normalized tables, look for the table-specific ID (e.g., OrderID for OrdersTbl)
+                // Priority order: 1) Table-specific ID, 2) Generic "ID", 3) Others
+                var tableBaseName = mapping.BeforeTable.Replace("Tbl", "");
+                var expectedPkName = tableBaseName + "ID"; // e.g., "OrderID" for "OrdersTbl"
                 
-                // Check if we have a column mapping for this PK
-                var pkMapping = mapping.ColumnMappings?.FirstOrDefault(cm => 
-                    string.Equals(cm.BeforeColumn, pkColumn, StringComparison.OrdinalIgnoreCase));
-                
-                var finalPkName = pkMapping?.AfterColumn ?? pkColumn;
-                
-                constraintTable.PrimaryKey.Add(finalPkName);
-                constraintTable.IdentityColumns.Add(finalPkName);
+                var pkColumn = idColumns.FirstOrDefault(cm => 
+                    string.Equals(cm.BeforeColumn, expectedPkName, StringComparison.OrdinalIgnoreCase)) ??
+                    idColumns.FirstOrDefault(cm => 
+                        string.Equals(cm.BeforeColumn, "ID", StringComparison.OrdinalIgnoreCase)) ??
+                    idColumns.FirstOrDefault(); // Fallback to any ID column
+
+                if (pkColumn != null)
+                {
+                    var finalPkName = pkColumn.AfterColumn;
+                    Console.WriteLine($"    ?? Creating constraints for {targetTable}: PK={finalPkName} (mapped from {pkColumn.BeforeColumn})");
+                    
+                    constraintTable.PrimaryKey.Add(finalPkName);
+                    constraintTable.IdentityColumns.Add(finalPkName);
+                }
+                else
+                {
+                    Console.WriteLine($"    ??  No obvious primary key found for {targetTable}");
+                }
+            }
+            else
+            {
+                // Fallback to naming convention if no column mappings
+                if (mapping.BeforeTable.EndsWith("Tbl", StringComparison.OrdinalIgnoreCase))
+                {
+                    var baseName = mapping.BeforeTable.Substring(0, mapping.BeforeTable.Length - 3);
+                    var pkColumn = baseName + "ID";
+                    Console.WriteLine($"    ?? Creating constraints for {targetTable}: PK={pkColumn} (fallback naming convention)");
+                    
+                    constraintTable.PrimaryKey.Add(pkColumn);
+                    constraintTable.IdentityColumns.Add(pkColumn);
+                }
             }
 
             constraints.Add(constraintTable);
+            
+            // CRITICAL FIX: For normalized tables, also create constraints for line tables
+            if (string.Equals(mapping.Action, "Normalize", StringComparison.OrdinalIgnoreCase) &&
+                mapping.NormalizationInfo != null)
+            {
+                Console.WriteLine($"    ?? Creating constraints for normalized line table: {mapping.NormalizationInfo.LinesTable}");
+                
+                var lineConstraintTable = new ConstraintTable
+                {
+                    Table = mapping.NormalizationInfo.LinesTable,
+                    PrimaryKey = new List<string>(),
+                    IdentityColumns = new List<string>(),
+                    ForeignKeys = new List<ForeignKeyDef>(),
+                    NotNullColumns = new List<string>()
+                };
+                
+                // Determine line table primary key based on naming convention
+                var lineTableBaseName = mapping.NormalizationInfo.LinesTable.Replace("Tbl", "");
+                var linePkName = lineTableBaseName + "ID"; // e.g., "OrderLineID" for "OrderLinesTbl"
+                
+                // Special case handling for common patterns
+                if (lineTableBaseName.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+                {
+                    // "OrderLines" -> "OrderLineID", "RecurringOrderItems" -> "RecurringOrderItemID"
+                    linePkName = lineTableBaseName.TrimEnd('s') + "ID";
+                }
+                
+                Console.WriteLine($"    ??   Line table PK: {linePkName}");
+                
+                lineConstraintTable.PrimaryKey.Add(linePkName);
+                lineConstraintTable.IdentityColumns.Add(linePkName);
+                
+                // Add foreign key back to header table
+                var headerPkName = constraintTable.PrimaryKey.FirstOrDefault();
+                if (!string.IsNullOrEmpty(headerPkName))
+                {
+                    lineConstraintTable.ForeignKeys.Add(new ForeignKeyDef
+                    {
+                        Column = headerPkName, // Same column name in line table
+                        RefTable = mapping.NormalizationInfo.HeaderTable,
+                        RefColumn = headerPkName
+                    });
+                    Console.WriteLine($"    ??   Line table FK: {headerPkName} -> {mapping.NormalizationInfo.HeaderTable}.{headerPkName}");
+                }
+                
+                constraints.Add(lineConstraintTable);
+            }
         }
 
         private static string GenerateConstraintsSummary(List<ConstraintTable> constraints)
@@ -538,8 +807,65 @@ namespace MigrationRunner
                 if (string.IsNullOrEmpty(line) || line.StartsWith("Table Migration report:") || line.StartsWith("====") || line.StartsWith("-------"))
                     continue;
 
-                // Look for table definition lines: "Table,Before,After,Action"
-                if (line.StartsWith("Table,Before,After,Action"))
+                Console.WriteLine($"?? Processing line {i + 1}: {line.Substring(0, Math.Min(80, line.Length))}...");
+
+                // Handle normalization section differently
+                if (line.StartsWith("Table:,Before,After Header Tbl,After Lines Tbl,Action"))
+                {
+                    Console.WriteLine($"?? Found NORMALIZATION section at line {i + 1}");
+                    
+                    // Move to next line to find the table data
+                    i++;
+                    if (i >= lines.Length) continue;
+                    
+                    var tableDataLine = lines[i].Trim();
+                    Console.WriteLine($"?? Next line: {tableDataLine}");
+                    
+                    // Process the table data line (starts with "=====")
+                    if (tableDataLine.StartsWith("====="))
+                    {
+                        Console.WriteLine($"??   Processing table data line: {tableDataLine.Substring(0, Math.Min(80, tableDataLine.Length))}...");
+                        
+                        var normParts = ParseCsvLine(tableDataLine);
+                        if (normParts.Length >= 5)
+                        {
+                            var beforeTable = normParts[1]?.Trim();
+                            var afterHeaderTable = normParts[2]?.Trim();
+                            var afterLinesTable = normParts[3]?.Trim();
+                            var action = normParts[4]?.Trim();
+                            
+                            Console.WriteLine($"??   Parsed: Before={beforeTable}, HeaderTbl={afterHeaderTable}, LinesTbl={afterLinesTable}, Action={action}");
+                            
+                            if (!string.IsNullOrEmpty(beforeTable) && 
+                                string.Equals(action, "Normalise", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine($"?? Found normalization: {beforeTable} -> {afterHeaderTable} + {afterLinesTable}");
+                                
+                                var mapping = new TableMapping
+                                {
+                                    BeforeTable = beforeTable,
+                                    AfterTable = afterHeaderTable, // Use header table as the target table name
+                                    Action = "Normalize",
+                                    ColumnMappings = new List<ColumnMapping>(),
+                                    NormalizationInfo = new NormalizationMapping
+                                    {
+                                        HeaderTable = afterHeaderTable,
+                                        LinesTable = afterLinesTable
+                                    }
+                                };
+                                
+                                // Parse normalization column mappings
+                                i = ParseNormalizationColumns(lines, i, mapping);
+                                mappings.Add(mapping);
+                                
+                                Console.WriteLine($"?? Added normalization mapping for {beforeTable}");
+                            }
+                        }
+                    }
+                    continue; // Continue to process more sections instead of breaking
+                }
+                // Look for standard table definition lines: "Table,Before,After,Action"
+                else if (line.StartsWith("Table,Before,After,Action"))
                 {
                     // Parse the table section
                     i++; // Move to next line (the actual table data)
@@ -602,6 +928,7 @@ namespace MigrationRunner
                                 if (string.IsNullOrEmpty(columnLine) || 
                                     columnLine.StartsWith("------") ||
                                     columnLine.StartsWith("Table,Before,After,Action") ||
+                                    columnLine.StartsWith("Table:,Before,After Header Tbl") ||
                                     columnLine.StartsWith("Table,"))
                                 {
                                     break;
@@ -615,13 +942,33 @@ namespace MigrationRunner
                                     var afterCol = columnParts[6]?.Trim();  // After Col Name
                                     var colAction = columnParts[12]?.Trim(); // Action
                                     
+                                    // IMPROVED: Try different column positions for Action if standard position is empty
+                                    if (string.IsNullOrEmpty(colAction) && columnParts.Length > 12)
+                                    {
+                                        // Check other common positions for the Action column
+                                        for (int actionIndex = 11; actionIndex < Math.Min(columnParts.Length, 16); actionIndex++)
+                                        {
+                                            var potentialAction = columnParts[actionIndex]?.Trim();
+                                            if (!string.IsNullOrEmpty(potentialAction) && 
+                                                (string.Equals(potentialAction, "Drop", StringComparison.OrdinalIgnoreCase) ||
+                                                 string.Equals(potentialAction, "Copy", StringComparison.OrdinalIgnoreCase) ||
+                                                 string.Equals(potentialAction, "Rename", StringComparison.OrdinalIgnoreCase)))
+                                            {
+                                                colAction = potentialAction;
+                                                Console.WriteLine($"        ??? Found Action '{colAction}' at column index {actionIndex}");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
                                     if (!string.IsNullOrEmpty(beforeCol))
                                     {
-                                        // Handle dropped columns (empty after column)
-                                        if (string.IsNullOrEmpty(afterCol))
+                                        // Handle dropped columns (empty after column OR explicit Drop action)
+                                        if (string.IsNullOrEmpty(afterCol) || string.Equals(colAction, "Drop", StringComparison.OrdinalIgnoreCase))
                                         {
                                             colAction = "Drop";
-                                            afterCol = null;
+                                            afterCol = null; // Ensure afterCol is null for dropped columns
+                                            Console.WriteLine($"        ??? Detected DROP column: {beforeCol} (afterCol empty or explicit Drop action)");
                                         }
                                         
                                         // Default column action
@@ -662,11 +1009,91 @@ namespace MigrationRunner
             var ignoredCount = mappings.Count(m => string.Equals(m.Action, "Ignore", StringComparison.OrdinalIgnoreCase));
             var renamedCount = mappings.Count(m => string.Equals(m.Action, "Rename", StringComparison.OrdinalIgnoreCase));
             var copiedCount = mappings.Count(m => string.Equals(m.Action, "Copy", StringComparison.OrdinalIgnoreCase));
+            var normalizedCount = mappings.Count(m => string.Equals(m.Action, "Normalize", StringComparison.OrdinalIgnoreCase));
             var totalColumns = mappings.Sum(m => m.ColumnMappings?.Count ?? 0);
             
-            Console.WriteLine($"?? Summary: {ignoredCount} ignored, {renamedCount} renamed, {copiedCount} copied, {totalColumns} column mappings");
+            Console.WriteLine($"?? Summary: {ignoredCount} ignored, {renamedCount} renamed, {copiedCount} copied, {normalizedCount} normalized, {totalColumns} column mappings");
             
             return mappings;
+        }
+
+        private static int ParseNormalizationColumns(string[] lines, int currentIndex, TableMapping mapping)
+        {
+            int i = currentIndex + 1;
+            
+            // Look for the header line with column definitions
+            while (i < lines.Length)
+            {
+                var line = lines[i].Trim();
+                
+                if (line.StartsWith("Rows:,Before Col name"))
+                {
+                    Console.WriteLine($"    ?? Found normalization column section");
+                    i++; // Move to first data row
+                    break;
+                }
+                
+                if (string.IsNullOrEmpty(line) || line.StartsWith("Table"))
+                {
+                    return i - 1; // No column section found
+                }
+                
+                i++;
+            }
+            
+            int columnCount = 0;
+            
+            // Parse normalization column mappings
+            while (i < lines.Length)
+            {
+                var line = lines[i].Trim();
+                
+                // Stop at section separators or new tables
+                if (string.IsNullOrEmpty(line) || 
+                    line.StartsWith("------") ||
+                    line.StartsWith("Table"))
+                {
+                    break;
+                }
+                
+                var parts = ParseCsvLine(line);
+                if (parts.Length >= 23) // Normalization has more columns
+                {
+                    var beforeCol = parts[1]?.Trim();
+                    var headerCol = parts[6]?.Trim();
+                    var linesCol = parts[15]?.Trim();
+                    var action = parts[12]?.Trim();
+                    
+                    if (!string.IsNullOrEmpty(beforeCol))
+                    {
+                        // Determine where this column goes (header or lines)
+                        var targetCol = !string.IsNullOrEmpty(headerCol) ? headerCol : linesCol;
+                        var targetLocation = !string.IsNullOrEmpty(headerCol) ? "Header" : "Lines";
+                        
+                        if (!string.IsNullOrEmpty(targetCol))
+                        {
+                            var columnMapping = new ColumnMapping
+                            {
+                                BeforeColumn = beforeCol,
+                                AfterColumn = targetCol,
+                                Action = action ?? "Copy",
+                                NormalizationTarget = targetLocation
+                            };
+                            
+                            mapping.ColumnMappings.Add(columnMapping);
+                            columnCount++;
+                            
+                            Console.WriteLine($"      ?? Normalization column: {beforeCol} -> {targetCol} ({targetLocation})");
+                        }
+                    }
+                }
+                
+                i++;
+            }
+            
+            Console.WriteLine($"    ?? Added {columnCount} normalization column mappings");
+            
+            return i - 1;
         }
 
         private static string[] ParseCsvLine(string line)
@@ -719,6 +1146,7 @@ namespace MigrationRunner
         public string AfterTable { get; set; }
         public string Action { get; set; }
         public List<ColumnMapping> ColumnMappings { get; set; }
+        public NormalizationMapping NormalizationInfo { get; set; }
     }
 
     public class ColumnMapping
@@ -726,5 +1154,12 @@ namespace MigrationRunner
         public string BeforeColumn { get; set; }
         public string AfterColumn { get; set; }
         public string Action { get; set; }
+        public string NormalizationTarget { get; set; } // "Header" or "Lines"
+    }
+
+    public class NormalizationMapping
+    {
+        public string HeaderTable { get; set; }
+        public string LinesTable { get; set; }
     }
 }

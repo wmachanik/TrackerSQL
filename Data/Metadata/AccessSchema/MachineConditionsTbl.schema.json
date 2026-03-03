@@ -70,8 +70,8 @@
     "ColumnActions": [
       {
         "Source": "MachineConditionID",
-        "Target": "MachineConditionID",
-        "Action": "Copy",
+        "Target": "EquipConditionID",
+        "Action": "Rename",
         "Expression": null
       },
       {

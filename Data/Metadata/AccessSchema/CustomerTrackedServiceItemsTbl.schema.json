@@ -70,20 +70,20 @@
     "ColumnActions": [
       {
         "Source": "CustomerTrackedServiceItemsID",
-        "Target": "CustomerTrackedServiceItemsID",
-        "Action": "Copy",
+        "Target": "ContactTrackedServiceItemsID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustomerTypeID",
-        "Target": "CustomerTypeID",
-        "Action": "Copy",
+        "Target": "ContactTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ServiceTypeID",
-        "Target": "ServiceTypeID",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {

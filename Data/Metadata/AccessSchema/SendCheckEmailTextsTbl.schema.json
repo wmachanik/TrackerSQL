@@ -100,20 +100,20 @@
       },
       {
         "Source": "Header",
-        "Target": "Header",
-        "Action": "Copy",
+        "Target": "HeaderText",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Body",
-        "Target": "Body",
-        "Action": "Copy",
+        "Target": "BodyText",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Footer",
-        "Target": "Footer",
-        "Action": "Copy",
+        "Target": "FooterText",
+        "Action": "Rename",
         "Expression": null
       },
       {

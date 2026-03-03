@@ -74,14 +74,14 @@
     "ColumnActions": [
       {
         "Source": "PrepID",
-        "Target": "PrepID",
-        "Action": "Copy",
+        "Target": "ItemPrepID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PrepType",
-        "Target": "PrepType",
-        "Action": "Copy",
+        "Target": "ItemPrepType",
+        "Action": "Rename",
         "Expression": null
       },
       {

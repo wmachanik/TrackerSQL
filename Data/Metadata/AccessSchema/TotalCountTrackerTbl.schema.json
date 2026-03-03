@@ -70,8 +70,8 @@
     "ColumnActions": [
       {
         "Source": "ID",
-        "Target": "ID",
-        "Action": "Copy",
+        "Target": "TotalCounterTrackerID",
+        "Action": "Rename",
         "Expression": null
       },
       {

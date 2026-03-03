@@ -66,14 +66,14 @@
     "ColumnActions": [
       {
         "Source": "CustTypeID",
-        "Target": "CustTypeID",
-        "Action": "Copy",
+        "Target": "ContactTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustTypeDesc",
-        "Target": "CustTypeDesc",
-        "Action": "Copy",
+        "Target": "ContactTypeDesc",
+        "Action": "Rename",
         "Expression": null
       },
       {

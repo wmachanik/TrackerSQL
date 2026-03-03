@@ -2,7 +2,7 @@
 -- Metadata paths:
 --   AccessSchema: C:\SRC\ASP.net\TrackerSQL\Data\Metadata\AccessSchema
 --   PlanConstraints: C:\SRC\ASP.net\TrackerSQL\Data\Metadata\PlanEdits\PlanConstraints.json
--- Tables: 43, Columns: 348
+-- Tables: 47, Columns: 379
 -- Identity suppressed: No
 -- Drop existing tables: Yes
 -- Plan scan (source -> decision):
@@ -17,7 +17,7 @@
 -- [ClientUsageTbl] Class=Copy Target=ContactsUsageTbl EmittedCols=12
 -- [ClosureDatesTbl] Class=Copy Target=ClosureDatesTbl EmittedCols=5
 -- [CustomersAccInfoTbl] Class=Copy Target=ContactsAccInfoTbl EmittedCols=30
--- [CustomersTbl] Class=Copy Target=ContactsTbl EmittedCols=43
+-- [CustomersTbl] Class=Copy Target=ContactsTbl EmittedCols=42
 -- [CustomerTrackedServiceItemsTbl] Class=Copy Target=ContactTrackedServiceItemsTbl EmittedCols=4
 -- [CustomerTypeTbl] Class=Copy Target=ContactTypesTbl EmittedCols=3
 -- [EquipTypeTbl] Class=Copy Target=EquipTypesTbl EmittedCols=3
@@ -31,7 +31,7 @@
 -- [MachineConditionsTbl] Class=Copy Target=EquipConditionsTbl EmittedCols=4
 -- [NextRoastDateByCityTbl] Class=Copy Target=NextPrepDateByAreasTbl EmittedCols=7
 -- [OrderList] IGNORE (plan.Ignore=true)
--- [OrdersTbl] IGNORE (plan.Ignore=true)
+-- [OrdersTbl] Class=Normalize Header=OrdersTbl Lines=OrderLinesTbl Emitted(H/L)=11/6 Synth=[NewHeaderKey=OrderID, NewLineKey=OrderLineID, LinkFK=OrderID] 
 -- [OrdersTbl_Apr26_2008] IGNORE (plan.Ignore=true)
 -- [PackagingTbl] Class=Copy Target=ItemPackagingsTbl EmittedCols=6
 -- [PaymentTermsTbl] Class=Copy Target=PaymentTermsTbl EmittedCols=7
@@ -40,7 +40,7 @@
 -- [PrepTypesTbl] Class=Copy Target=ItemPrepTypesTbl EmittedCols=3
 -- [PriceLevelsTbl] Class=Copy Target=PriceLevelsTbl EmittedCols=5
 -- [ReoccuranceTypeTbl] Class=Copy Target=RecurranceTypesTbl EmittedCols=2
--- [ReoccuringOrderTbl] IGNORE (plan.Ignore=true)
+-- [ReoccuringOrderTbl] Class=Normalize Header=RecurringOrdersTbl Lines=RecurringOrderItemsTbl Emitted(H/L)=9/4 Synth=[NewHeaderKey=RecurringOrderID, NewLineKey=RecurringOrderItemID, LinkFK=RecurringOrderID] 
 -- [RepairFaultsTbl] Class=Copy Target=RepairFaultsTbl EmittedCols=4
 -- [RepairStatusesTbl] Class=Copy Target=RepairStatusesTbl EmittedCols=6
 -- [RepairsTbl] Class=Copy Target=RepairsTbl EmittedCols=22
@@ -78,11 +78,12 @@ IF OBJECT_ID(N'[AreaPrepDaysTbl]', N'U') IS NOT NULL DROP TABLE [AreaPrepDaysTbl
 GO
     CREATE TABLE [AreaPrepDaysTbl]
     (
-        [CityPrepDaysID] INT NULL,
-        [CityID] INT NULL,
+        [AreaPrepDaysID] INT IDENTITY(1,1) NOT NULL,
+        [AreaID] INT NULL,
         [PrepDayOfWeekID] TINYINT NULL,
         [DeliveryDelayDays] SMALLINT NULL,
         [DeliveryOrder] SMALLINT NULL
+        , CONSTRAINT [PK_AreaPrepDaysTbl] PRIMARY KEY CLUSTERED ([AreaPrepDaysID])
     );
 GO
 
@@ -97,10 +98,11 @@ IF OBJECT_ID(N'[AreasTbl]', N'U') IS NOT NULL DROP TABLE [AreasTbl];
 GO
     CREATE TABLE [AreasTbl]
     (
-        [ID] INT NULL,
-        [City] NVARCHAR(255) NULL,
-        [RoastingDay] INT NULL,
+        [AreaID] INT IDENTITY(1,1) NOT NULL,
+        [AreaName] NVARCHAR(255) NULL,
+        [PrepDayOfWeekID] INT NULL,
         [DeliveryDelay] INT NULL
+        , CONSTRAINT [PK_AreasTbl] PRIMARY KEY CLUSTERED ([AreaID])
     );
 GO
 
@@ -115,8 +117,9 @@ IF OBJECT_ID(N'[AwayReasonTbl]', N'U') IS NOT NULL DROP TABLE [AwayReasonTbl];
 GO
     CREATE TABLE [AwayReasonTbl]
     (
-        [AwayReasonID] INT NULL,
+        [AwayReasonID] INT IDENTITY(1,1) NOT NULL,
         [ReasonDesc] NVARCHAR(100) NULL
+        , CONSTRAINT [PK_AwayReasonTbl] PRIMARY KEY CLUSTERED ([AwayReasonID])
     );
 GO
 
@@ -131,11 +134,12 @@ IF OBJECT_ID(N'[ClosureDatesTbl]', N'U') IS NOT NULL DROP TABLE [ClosureDatesTbl
 GO
     CREATE TABLE [ClosureDatesTbl]
     (
-        [ID] INT NULL,
+        [ClosureDateID] INT IDENTITY(1,1) NOT NULL,
         [DateClosed] DATETIME NULL,
         [DateReopen] DATETIME NULL,
-        [NextRoastDate] DATETIME NULL,
+        [NextPrepDate] DATETIME NULL,
         [Comments] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_ClosureDatesTbl] PRIMARY KEY CLUSTERED ([ClosureDateID])
     );
 GO
 
@@ -150,10 +154,10 @@ IF OBJECT_ID(N'[ContactsAccInfoTbl]', N'U') IS NOT NULL DROP TABLE [ContactsAccI
 GO
     CREATE TABLE [ContactsAccInfoTbl]
     (
-        [CustomersAccInfoID] INT NULL,
-        [CustomerID] INT NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
+        [ContactsAccInfoID] INT NULL,
         [RequiresPurchOrder] BIT NULL,
-        [CustomerVATNo] NVARCHAR(30) NULL,
+        [ContactVATNo] NVARCHAR(30) NULL,
         [BillAddr1] NVARCHAR(50) NULL,
         [BillAddr2] NVARCHAR(50) NULL,
         [BillAddr3] NVARCHAR(50) NULL,
@@ -180,6 +184,7 @@ GO
         [BankBranch] NVARCHAR(50) NULL,
         [Enabled] BIT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_ContactsAccInfoTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -195,7 +200,7 @@ GO
     CREATE TABLE [ContactsAwayPeriodTbl]
     (
         [AwayPeriodID] INT NULL,
-        [ClientID] INT NULL,
+        [ContactID] INT NULL,
         [AwayStartDate] DATETIME NULL,
         [AwayEndDate] DATETIME NULL,
         [ReasonID] INT NULL
@@ -213,14 +218,15 @@ IF OBJECT_ID(N'[ContactsItemUsageTbl]', N'U') IS NOT NULL DROP TABLE [ContactsIt
 GO
     CREATE TABLE [ContactsItemUsageTbl]
     (
-        [ClientUsageLineNo] INT NULL,
-        [CustomerID] INT NULL,
-        [Date] DATETIME NULL,
-        [ItemProvided] INT NULL,
-        [AmountProvided] REAL NULL,
-        [PrepTypeID] INT NULL,
-        [PackagingID] INT NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
+        [ContactUsageLineNo] INT NULL,
+        [DeliveryDate] DATETIME NULL,
+        [ItemProvidedID] INT NULL,
+        [QtyProvided] REAL NULL,
+        [ItemPrepTypeID] INT NULL,
+        [ItemPackagingID] INT NULL,
         [Notes] NVARCHAR(150) NULL
+        , CONSTRAINT [PK_ContactsItemUsageTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -235,7 +241,7 @@ IF OBJECT_ID(N'[ContactsTbl]', N'U') IS NOT NULL DROP TABLE [ContactsTbl];
 GO
     CREATE TABLE [ContactsTbl]
     (
-        [CustomerID] INT NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [CompanyName] NVARCHAR(50) NULL,
         [ContactTitle] NVARCHAR(50) NULL,
         [ContactFirstName] NVARCHAR(30) NULL,
@@ -244,10 +250,10 @@ GO
         [ContactAltLastName] NVARCHAR(50) NULL,
         [Department] NVARCHAR(50) NULL,
         [BillingAddress] NVARCHAR(255) NULL,
-        [City] INT NULL,
+        [Area] INT NULL,
         [StateOrProvince] NVARCHAR(20) NULL,
         [PostalCode] NVARCHAR(20) NULL,
-        [Country/Region] NVARCHAR(50) NULL,
+        [CountryOrRegion] NVARCHAR(50) NULL,
         [PhoneNumber] NVARCHAR(30) NULL,
         [Extension] NVARCHAR(30) NULL,
         [FaxNumber] NVARCHAR(30) NULL,
@@ -255,22 +261,21 @@ GO
         [EmailAddress] NVARCHAR(50) NULL,
         [AltEmailAddress] NVARCHAR(255) NULL,
         [ContractNo] NVARCHAR(50) NULL,
-        [CustomerTypeID] INT NULL,
-        [CustomerTypeOLD] NVARCHAR(30) NULL,
-        [EquipType] INT NULL,
-        [CoffeePreference] INT NULL,
+        [ContactTypeID] INT NULL,
+        [EquipTypeID] INT NULL,
+        [ItemPrefID] INT NULL,
         [PriPrefQty] REAL NULL,
-        [PrefPrepTypeID] INT NULL,
-        [PrefPackagingID] INT NULL,
-        [SecondaryPreference] INT NULL,
+        [PrefItemPrepTypeID] INT NULL,
+        [PrefItemPackagingID] INT NULL,
+        [SecondaryItemPrefID] INT NULL,
         [SecPrefQty] REAL NULL,
         [TypicallySecToo] BIT NULL,
-        [PreferedAgent] INT NULL,
+        [PreferedAgentID] INT NULL,
         [SalesAgentID] INT NULL,
         [MachineSN] NVARCHAR(50) NULL,
         [UsesFilter] BIT NULL,
-        [autofulfill] BIT NULL,
-        [enabled] BIT NULL,
+        [AutoFulfill] BIT NULL,
+        [Enabled] BIT NULL,
         [PredictionDisabled] BIT NULL,
         [AlwaysSendChkUp] BIT NULL,
         [NormallyResponds] BIT NULL,
@@ -278,6 +283,7 @@ GO
         [Notes] NVARCHAR(MAX) NULL,
         [SendDeliveryConfirmation] BIT NULL,
         [LastDateSentReminder] DATETIME NULL
+        , CONSTRAINT [PK_ContactsTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -292,7 +298,7 @@ IF OBJECT_ID(N'[ContactsUsageTbl]', N'U') IS NOT NULL DROP TABLE [ContactsUsageT
 GO
     CREATE TABLE [ContactsUsageTbl]
     (
-        [CustomerId] INT NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [LastCupCount] INT NULL,
         [NextCoffeeBy] DATETIME NULL,
         [NextCleanOn] DATETIME NULL,
@@ -304,6 +310,7 @@ GO
         [DescaleAveCount] REAL NULL,
         [ServiceAveCount] REAL NULL,
         [CleanAveCount] REAL NULL
+        , CONSTRAINT [PK_ContactsUsageTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -318,10 +325,11 @@ IF OBJECT_ID(N'[ContactTrackedServiceItemsTbl]', N'U') IS NOT NULL DROP TABLE [C
 GO
     CREATE TABLE [ContactTrackedServiceItemsTbl]
     (
-        [CustomerTrackedServiceItemsID] INT NULL,
-        [CustomerTypeID] INT NULL,
-        [ServiceTypeID] INT NULL,
+        [ContactTrackedServiceItemsID] INT IDENTITY(1,1) NOT NULL,
+        [ContactTypeID] INT NULL,
+        [ItemServiceTypeID] INT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_ContactTrackedServiceItemsTbl] PRIMARY KEY CLUSTERED ([ContactTrackedServiceItemsID])
     );
 GO
 
@@ -336,8 +344,8 @@ IF OBJECT_ID(N'[ContactTypesTbl]', N'U') IS NOT NULL DROP TABLE [ContactTypesTbl
 GO
     CREATE TABLE [ContactTypesTbl]
     (
-        [CustTypeID] INT NULL,
-        [CustTypeDesc] NVARCHAR(50) NULL,
+        [ContactTypeID] INT NULL,
+        [ContactTypeDesc] NVARCHAR(50) NULL,
         [Notes] NVARCHAR(MAX) NULL
     );
 GO
@@ -353,13 +361,14 @@ IF OBJECT_ID(N'[ContactUsageLinesTbl]', N'U') IS NOT NULL DROP TABLE [ContactUsa
 GO
     CREATE TABLE [ContactUsageLinesTbl]
     (
-        [ClientUsageLineNo] INT NULL,
-        [CustomerID] INT NULL,
-        [Date] DATETIME NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
+        [ContactUsageLineNo] INT NULL,
+        [UsageDate] DATETIME NULL,
         [CupCount] INT NULL,
-        [ServiceTypeId] INT NULL,
+        [ItemServiceTypeID] INT NULL,
         [Qty] REAL NULL,
         [Notes] NVARCHAR(150) NULL
+        , CONSTRAINT [PK_ContactUsageLinesTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -374,7 +383,7 @@ IF OBJECT_ID(N'[EquipConditionsTbl]', N'U') IS NOT NULL DROP TABLE [EquipConditi
 GO
     CREATE TABLE [EquipConditionsTbl]
     (
-        [MachineConditionID] INT NULL,
+        [EquipConditionID] INT NULL,
         [ConditionDesc] NVARCHAR(50) NULL,
         [SortOrder] INT NULL,
         [Notes] NVARCHAR(MAX) NULL
@@ -392,9 +401,10 @@ IF OBJECT_ID(N'[EquipTypesTbl]', N'U') IS NOT NULL DROP TABLE [EquipTypesTbl];
 GO
     CREATE TABLE [EquipTypesTbl]
     (
-        [EquipTypeId] INT NULL,
+        [EquipTypeID] INT IDENTITY(1,1) NOT NULL,
         [EquipTypeName] NVARCHAR(50) NULL,
-        [EquipTypeDesc] NVARCHAR(50) NULL
+        [EquipTypeDescription] NVARCHAR(50) NULL
+        , CONSTRAINT [PK_EquipTypesTbl] PRIMARY KEY CLUSTERED ([EquipTypeID])
     );
 GO
 
@@ -409,13 +419,14 @@ IF OBJECT_ID(N'[HolidayClosuresTbl]', N'U') IS NOT NULL DROP TABLE [HolidayClosu
 GO
     CREATE TABLE [HolidayClosuresTbl]
     (
-        [ID] INT NULL,
+        [HolidayClosureID] INT IDENTITY(1,1) NOT NULL,
         [ClosureDate] DATETIME NULL,
         [DaysClosed] INT NULL,
         [AppliesToPrep] BIT NULL,
         [AppliesToDelivery] BIT NULL,
         [ShiftStrategy] NVARCHAR(20) NULL,
         [Description] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_HolidayClosuresTbl] PRIMARY KEY CLUSTERED ([HolidayClosureID])
     );
 GO
 
@@ -430,10 +441,11 @@ IF OBJECT_ID(N'[InvoiceTypesTbl]', N'U') IS NOT NULL DROP TABLE [InvoiceTypesTbl
 GO
     CREATE TABLE [InvoiceTypesTbl]
     (
-        [InvoiceTypeID] INT NULL,
+        [InvoiceTypeID] INT IDENTITY(1,1) NOT NULL,
         [InvoiceTypeDesc] NVARCHAR(20) NULL,
         [Enabled] BIT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_InvoiceTypesTbl] PRIMARY KEY CLUSTERED ([InvoiceTypeID])
     );
 GO
 
@@ -448,12 +460,13 @@ IF OBJECT_ID(N'[ItemGroupsTbl]', N'U') IS NOT NULL DROP TABLE [ItemGroupsTbl];
 GO
     CREATE TABLE [ItemGroupsTbl]
     (
+        [ItemID] INT IDENTITY(1,1) NOT NULL,
         [ItemGroupID] INT NULL,
-        [GroupItemTypeID] INT NULL,
-        [ItemTypeID] INT NULL,
-        [ItemTypeSortPos] INT NULL,
+        [GroupReferenceItemID] INT NULL,
+        [ItemSortPos] INT NULL,
         [Enabled] BIT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_ItemGroupsTbl] PRIMARY KEY CLUSTERED ([ItemID])
     );
 GO
 
@@ -468,12 +481,13 @@ IF OBJECT_ID(N'[ItemPackagingsTbl]', N'U') IS NOT NULL DROP TABLE [ItemPackaging
 GO
     CREATE TABLE [ItemPackagingsTbl]
     (
-        [ItemPackagingID] INT NULL,
+        [ItemPackagingID] INT IDENTITY(1,1) NOT NULL,
         [ItemPackagingDesc] NVARCHAR(50) NULL,
         [AdditionalNotes] NVARCHAR(255) NULL,
         [Symbol] NVARCHAR(255) NULL,
         [Colour] INT NULL,
         [BGColour] NVARCHAR(9) NULL
+        , CONSTRAINT [PK_ItemPackagingsTbl] PRIMARY KEY CLUSTERED ([ItemPackagingID])
     );
 GO
 
@@ -488,8 +502,8 @@ IF OBJECT_ID(N'[ItemPrepTypesTbl]', N'U') IS NOT NULL DROP TABLE [ItemPrepTypesT
 GO
     CREATE TABLE [ItemPrepTypesTbl]
     (
-        [PrepID] INT NULL,
-        [PrepType] NVARCHAR(50) NULL,
+        [ItemPrepID] INT NULL,
+        [ItemPrepType] NVARCHAR(50) NULL,
         [IdentifyingChar] NVARCHAR(1) NULL
     );
 GO
@@ -505,11 +519,11 @@ IF OBJECT_ID(N'[ItemServiceTypesTbl]', N'U') IS NOT NULL DROP TABLE [ItemService
 GO
     CREATE TABLE [ItemServiceTypesTbl]
     (
-        [ServiceTypeId] INT NULL,
-        [ServiceType] NVARCHAR(20) NULL,
+        [ItemServiceTypeID] INT NULL,
+        [ItemServiceType] NVARCHAR(20) NULL,
         [Description] NVARCHAR(100) NULL,
-        [PackagingID] INT NULL,
-        [PrepTypeID] INT NULL
+        [ItemPackagingID] INT NULL,
+        [ItemPrepTypeID] INT NULL
     );
 GO
 
@@ -524,19 +538,20 @@ IF OBJECT_ID(N'[ItemsTbl]', N'U') IS NOT NULL DROP TABLE [ItemsTbl];
 GO
     CREATE TABLE [ItemsTbl]
     (
-        [ItemTypeID] INT NULL,
+        [ItemID] INT IDENTITY(1,1) NOT NULL,
         [SKU] NVARCHAR(20) NULL,
         [ItemDesc] NVARCHAR(50) NULL,
         [ItemEnabled] BIT NULL,
         [ItemsCharacteritics] NVARCHAR(50) NULL,
         [ItemDetail] NVARCHAR(MAX) NULL,
-        [ServiceTypeId] INT NULL,
-        [ReplacementID] INT NULL,
+        [ItemServiceTypeID] INT NULL,
+        [ReplacementItemID] INT NULL,
         [ItemShortName] NVARCHAR(10) NULL,
         [SortOrder] INT NULL,
         [UnitsPerQty] REAL NULL,
         [ItemUnitID] INT NULL,
         [BasePrice] REAL NULL
+        , CONSTRAINT [PK_ItemsTbl] PRIMARY KEY CLUSTERED ([ItemID])
     );
 GO
 
@@ -568,13 +583,60 @@ IF OBJECT_ID(N'[NextPrepDateByAreasTbl]', N'U') IS NOT NULL DROP TABLE [NextPrep
 GO
     CREATE TABLE [NextPrepDateByAreasTbl]
     (
-        [NextRoastDayID] INT NULL,
-        [CityID] INT NULL,
+        [NextPrepDayID] INT NULL,
+        [AreaID] INT NULL,
         [PreperationDate] DATETIME NULL,
         [DeliveryDate] DATETIME NULL,
         [DeliveryOrder] SMALLINT NULL,
-        [NextPreperationDate] DATETIME NULL,
+        [NextPrepDate] DATETIME NULL,
         [NextDeliveryDate] DATETIME NULL
+    );
+GO
+
+-- Drop FKs referencing or owned by [OrderLinesTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[OrderLinesTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[OrderLinesTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[OrderLinesTbl]', N'U') IS NOT NULL DROP TABLE [OrderLinesTbl];
+GO
+    CREATE TABLE [OrderLinesTbl]
+    (
+        [OrderLineID] INT NULL,
+        [OrderID] INT NOT NULL,
+        [PrepDate] DATETIME NULL,
+        [ItemID] INT NULL,
+        [QtyOrdered] REAL NULL,
+        [PrepTypeID] INT NULL,
+        [PackagingID] INT NULL
+    );
+GO
+
+-- Drop FKs referencing or owned by [OrdersTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[OrdersTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[OrdersTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[OrdersTbl]', N'U') IS NOT NULL DROP TABLE [OrdersTbl];
+GO
+    CREATE TABLE [OrdersTbl]
+    (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
+        [OrderID] INT NOT NULL,
+        [OrderDate] DATETIME NULL,
+        [RequiredByDate] DATETIME NULL,
+        [ToBeDeliveredByID] INT NULL,
+        [Confirmed] BIT NULL,
+        [Done] BIT NULL,
+        [Packed] BIT NULL,
+        [Notes] NVARCHAR(255) NULL,
+        [PurchaseOrder] NVARCHAR(30) NULL,
+        [InvoiceDone] BIT NULL
+        , CONSTRAINT [PK_OrdersTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -612,7 +674,7 @@ GO
     (
         [PersonID] INT NULL,
         [Person] NVARCHAR(50) NULL,
-        [Abreviation] NVARCHAR(5) NULL,
+        [Abbreviation] NVARCHAR(5) NULL,
         [Enabled] BIT NULL,
         [NormalDeliveryDoW] INT NULL,
         [SecurityUsername] NVARCHAR(255) NULL
@@ -649,8 +711,51 @@ IF OBJECT_ID(N'[RecurranceTypesTbl]', N'U') IS NOT NULL DROP TABLE [RecurranceTy
 GO
     CREATE TABLE [RecurranceTypesTbl]
     (
-        [ID] INT NULL,
-        [Type] NVARCHAR(255) NULL
+        [RecurringTypeID] INT IDENTITY(1,1) NOT NULL,
+        [RecurringTypeDesc] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_RecurranceTypesTbl] PRIMARY KEY CLUSTERED ([RecurringTypeID])
+    );
+GO
+
+-- Drop FKs referencing or owned by [RecurringOrderItemsTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[RecurringOrderItemsTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[RecurringOrderItemsTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[RecurringOrderItemsTbl]', N'U') IS NOT NULL DROP TABLE [RecurringOrderItemsTbl];
+GO
+    CREATE TABLE [RecurringOrderItemsTbl]
+    (
+        [RecurringOrderItemID] INT NULL,
+        [RecurringOrderID] INT NOT NULL,
+        [ItemRequiredID] INT NULL,
+        [QtyRequired] REAL NULL,
+        [ItemPackagingID] INT NULL
+    );
+GO
+
+-- Drop FKs referencing or owned by [RecurringOrdersTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[RecurringOrdersTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[RecurringOrdersTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[RecurringOrdersTbl]', N'U') IS NOT NULL DROP TABLE [RecurringOrdersTbl];
+GO
+    CREATE TABLE [RecurringOrdersTbl]
+    (
+        [RecurringOrderID] INT NOT NULL,
+        [ContactID] INT NULL,
+        [RecurringTypeID] INT NULL,
+        [Value] INT NULL,
+        [DateLastDone] DATETIME NULL,
+        [NextDateRequired] DATETIME NULL,
+        [RequireUntilDate] DATETIME NULL,
+        [Enabled] BIT NULL,
+        [Notes] NVARCHAR(255) NULL
     );
 GO
 
@@ -685,7 +790,7 @@ GO
     (
         [RepairStatusID] INT NULL,
         [RepairStatusDesc] NVARCHAR(50) NULL,
-        [EmailClient] BIT NULL,
+        [EmailContact] BIT NULL,
         [SortOrder] INT NULL,
         [Notes] NVARCHAR(MAX) NULL,
         [StatusNote] NVARCHAR(255) NULL
@@ -703,17 +808,17 @@ IF OBJECT_ID(N'[RepairsTbl]', N'U') IS NOT NULL DROP TABLE [RepairsTbl];
 GO
     CREATE TABLE [RepairsTbl]
     (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [RepairID] INT NULL,
-        [CustomerID] INT NULL,
         [ContactName] NVARCHAR(50) NULL,
         [ContactEmail] NVARCHAR(50) NULL,
         [JobCardNumber] NVARCHAR(20) NULL,
         [DateLogged] DATETIME NULL,
         [LastStatusChange] DATETIME NULL,
-        [MachineTypeID] INT NULL,
-        [MachineSerialNumber] NVARCHAR(50) NULL,
+        [EquipTypeID] INT NULL,
+        [EquipSerialNumber] NVARCHAR(50) NULL,
         [SwopOutMachineID] INT NULL,
-        [MachineConditionID] INT NULL,
+        [EquipConditionID] INT NULL,
         [TakenFrother] BIT NULL,
         [TakenBeanLid] BIT NULL,
         [TakenWaterLid] BIT NULL,
@@ -725,6 +830,7 @@ GO
         [RepairStatusID] INT NULL,
         [RelatedOrderID] INT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_RepairsTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -757,9 +863,9 @@ GO
     CREATE TABLE [SendCheckupEmailTextsTbl]
     (
         [SCEMTID] INT NULL,
-        [Header] NVARCHAR(MAX) NULL,
-        [Body] NVARCHAR(MAX) NULL,
-        [Footer] NVARCHAR(MAX) NULL,
+        [HeaderText] NVARCHAR(MAX) NULL,
+        [BodyText] NVARCHAR(MAX) NULL,
+        [FooterText] NVARCHAR(MAX) NULL,
         [DateLastChange] DATETIME NULL,
         [Notes] NVARCHAR(MAX) NULL
     );
@@ -776,13 +882,14 @@ IF OBJECT_ID(N'[SentRemindersLogTbl]', N'U') IS NOT NULL DROP TABLE [SentReminde
 GO
     CREATE TABLE [SentRemindersLogTbl]
     (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [ReminderID] INT NULL,
-        [CustomerID] INT NULL,
         [DateSentReminder] DATETIME NULL,
         [NextPrepDate] DATETIME NULL,
         [ReminderSent] BIT NULL,
         [HadAutoFulfilItem] BIT NULL,
-        [HadReoccurItems] BIT NULL
+        [HadRecurrItems] BIT NULL
+        , CONSTRAINT [PK_SentRemindersLogTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -797,13 +904,14 @@ IF OBJECT_ID(N'[SysDataTbl]', N'U') IS NOT NULL DROP TABLE [SysDataTbl];
 GO
     CREATE TABLE [SysDataTbl]
     (
-        [ID] INT NULL,
+        [ID] INT IDENTITY(1,1) NOT NULL,
         [LastReoccurringDate] DATETIME NULL,
         [DoReoccuringOrders] BIT NULL,
         [DateLastPrepDateCalcd] DATETIME NULL,
         [MinReminderDate] DATETIME NULL,
-        [GroupItemTypeID] INT NULL,
-        [InternalCustomerIds] NVARCHAR(255) NULL
+        [GroupReferenceItemID] INT NULL,
+        [InternalContactIDs] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_SysDataTbl] PRIMARY KEY CLUSTERED ([ID])
     );
 GO
 
@@ -818,21 +926,21 @@ IF OBJECT_ID(N'[TempCoffeecheckupCustomerTbl]', N'U') IS NOT NULL DROP TABLE [Te
 GO
     CREATE TABLE [TempCoffeecheckupCustomerTbl]
     (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [TCCID] INT NULL,
-        [CustomerID] INT NULL,
         [CompanyName] NVARCHAR(50) NULL,
         [ContactFirstName] NVARCHAR(50) NULL,
         [ContactAltFirstName] NVARCHAR(50) NULL,
-        [CityID] INT NULL,
+        [AreaID] INT NULL,
         [EmailAddress] NVARCHAR(50) NULL,
         [AltEmailAddress] NVARCHAR(50) NULL,
-        [CustomerTypeID] INT NULL,
+        [ContactTypeID] INT NULL,
         [EquipTypeID] INT NULL,
         [TypicallySecToo] BIT NULL,
         [PreferedAgentID] INT NULL,
         [SalesAgentID] INT NULL,
         [UsesFilter] BIT NULL,
-        [enabled] BIT NULL,
+        [Enabled] BIT NULL,
         [AlwaysSendChkUp] BIT NULL,
         [ReminderCount] INT NULL,
         [NextPrepDate] DATETIME NULL,
@@ -843,6 +951,7 @@ GO
         [NextDescal] DATETIME NULL,
         [NextService] DATETIME NULL,
         [RequiresPurchOrder] BIT NULL
+        , CONSTRAINT [PK_TempCoffeecheckupCustomerTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -857,15 +966,16 @@ IF OBJECT_ID(N'[TempCoffeecheckupItemsTbl]', N'U') IS NOT NULL DROP TABLE [TempC
 GO
     CREATE TABLE [TempCoffeecheckupItemsTbl]
     (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [TCIID] INT NULL,
-        [CustomerID] INT NULL,
         [ItemID] INT NULL,
         [ItemQty] REAL NULL,
         [ItemPrepID] INT NULL,
-        [ItemPackagID] INT NULL,
+        [ItemPackagingID] INT NULL,
         [AutoFulfill] BIT NULL,
         [NextDateRequired] DATETIME NULL,
-        [ReoccurOrderID] INT NULL
+        [RecurringOrderItemID] INT NULL
+        , CONSTRAINT [PK_TempCoffeecheckupItemsTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -880,8 +990,8 @@ IF OBJECT_ID(N'[TempOrdersHeaderTbl]', N'U') IS NOT NULL DROP TABLE [TempOrdersH
 GO
     CREATE TABLE [TempOrdersHeaderTbl]
     (
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
         [TOHeaderID] INT NULL,
-        [CustomerID] INT NULL,
         [OrderDate] DATETIME NULL,
         [RoastDate] DATETIME NULL,
         [RequiredByDate] DATETIME NULL,
@@ -889,6 +999,7 @@ GO
         [Confirmed] BIT NULL,
         [Done] BIT NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_TempOrdersHeaderTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -906,9 +1017,9 @@ GO
         [TOLineID] INT NULL,
         [TOHeaderID] INT NULL,
         [ItemID] INT NULL,
-        [ServiceTypeID] INT NULL,
+        [ItemServiceTypeID] INT NULL,
         [Qty] REAL NULL,
-        [PackagingID] INT NULL,
+        [ItemPackagingID] INT NULL,
         [OriginalOrderID] INT NULL
     );
 GO
@@ -924,19 +1035,20 @@ IF OBJECT_ID(N'[TempOrdersTbl]', N'U') IS NOT NULL DROP TABLE [TempOrdersTbl];
 GO
     CREATE TABLE [TempOrdersTbl]
     (
-        [TempOrderId] INT NULL,
+        [ContactID] INT IDENTITY(1,1) NOT NULL,
+        [TempOrderID] INT NULL,
         [OrderID] INT NULL,
-        [CustomerId] INT NULL,
         [OrderDate] DATETIME NULL,
         [RoastDate] DATETIME NULL,
-        [ItemTypeID] INT NULL,
-        [ServiceTypeId] INT NULL,
-        [PrepTypeID] INT NULL,
-        [PackagingId] INT NULL,
-        [QuantityOrdered] REAL NULL,
+        [ItemID] INT NULL,
+        [ItemServiceTypeID] INT NULL,
+        [ItemPrepTypeID] INT NULL,
+        [ItemPackagingID] INT NULL,
+        [QtyOrdered] REAL NULL,
         [RequiredByDate] DATETIME NULL,
         [Delivered] BIT NULL,
         [Notes] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_TempOrdersTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -951,10 +1063,11 @@ IF OBJECT_ID(N'[TotalCountTrackerTbl]', N'U') IS NOT NULL DROP TABLE [TotalCount
 GO
     CREATE TABLE [TotalCountTrackerTbl]
     (
-        [ID] INT NULL,
+        [TotalCounterTrackerID] INT IDENTITY(1,1) NOT NULL,
         [CountDate] DATETIME NULL,
         [TotalCount] INT NULL,
         [Comments] NVARCHAR(255) NULL
+        , CONSTRAINT [PK_TotalCountTrackerTbl] PRIMARY KEY CLUSTERED ([TotalCounterTrackerID])
     );
 GO
 
@@ -970,7 +1083,7 @@ GO
     CREATE TABLE [TrackedServiceItemsTbl]
     (
         [TrackerServiceItemID] INT NULL,
-        [ServiceTypeID] INT NULL,
+        [ItemServiceTypeID] INT NULL,
         [TypicalAvePerItem] REAL NULL,
         [UsageDateFieldName] NVARCHAR(20) NULL,
         [UsageAveFieldName] NVARCHAR(20) NULL,
@@ -1007,13 +1120,14 @@ IF OBJECT_ID(N'[UsedItemGroupsTbl]', N'U') IS NOT NULL DROP TABLE [UsedItemGroup
 GO
     CREATE TABLE [UsedItemGroupsTbl]
     (
-        [UsedItemGroupID] INT NULL,
+        [UsedItemGroupID] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [GroupItemTypeID] INT NULL,
-        [LastItemTypeID] INT NULL,
-        [LastItemTypeSortPos] INT NULL,
+        [GroupReferenceItemID] INT NULL,
+        [LastItemID] INT NULL,
+        [LastItemSortPos] INT NULL,
         [LastItemDateChanged] DATETIME NULL,
         [Notes] NVARCHAR(MAX) NULL
+        , CONSTRAINT [PK_UsedItemGroupsTbl] PRIMARY KEY CLUSTERED ([UsedItemGroupID])
     );
 GO
 

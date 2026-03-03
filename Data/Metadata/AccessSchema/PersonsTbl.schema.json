@@ -114,8 +114,8 @@
       },
       {
         "Source": "Abreviation",
-        "Target": "Abreviation",
-        "Action": "Copy",
+        "Target": "Abbreviation",
+        "Action": "Rename",
         "Expression": null
       },
       {

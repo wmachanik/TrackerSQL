@@ -172,20 +172,20 @@
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ReoccuranceType",
-        "Target": "ReoccuranceTypeID",
+        "Target": "RecurringTypeID",
         "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Value",
-        "Target": "ReoccuranceValue",
-        "Action": "Rename",
+        "Target": "Value",
+        "Action": "Copy",
         "Expression": null
       },
       {
@@ -220,8 +220,8 @@
       },
       {
         "Source": "PackagingID",
-        "Target": "PackagingID",
-        "Action": "Copy",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -240,13 +240,41 @@
     "Normalize": {
       "IsHeader": true,
       "IsLine": false,
+      "HeaderTable": "RecurringOrdersTbl",
+      "LineTable": "RecurringOrderItemsTbl",
+      "NewHeaderKeyName": "RecurringOrderID",
+      "NewLineKeyName": "RecurringOrderItemID",
+      "LineLinkKeyName": "RecurringOrderID",
+      "HeaderPrimaryKey": [
+        "RecurringOrderID"
+      ],
+      "LinePrimaryKey": [
+        "RecurringOrderItemID"
+      ],
+      "HeaderColumns": [
+        "ID",
+        "CustomerID",
+        "ReoccuranceType",
+        "Value",
+        "DateLastDone",
+        "NextDateRequired",
+        "RequireUntilDate",
+        "Enabled",
+        "Notes"
+      ],
+      "LineColumns": [
+        "ID",
+        "ItemRequired",
+        "QtyRequired",
+        "PackagingID"
+      ],
       "NormalizeInto": [
         {
           "TargetTable": "RecurringOrdersTbl",
           "Description": "Main recurring orders table"
         },
         {
-          "TargetTable": "RecurringOrderItemsTbl",
+          "TargetTable": "RecurringOrdersTbl",
           "Description": "Line items for recurring orders (future normalization)"
         }
       ]

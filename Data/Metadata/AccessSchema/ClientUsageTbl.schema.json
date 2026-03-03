@@ -174,8 +174,8 @@
     "ColumnActions": [
       {
         "Source": "CustomerId",
-        "Target": "CustomerId",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {

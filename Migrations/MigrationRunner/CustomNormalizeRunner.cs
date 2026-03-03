@@ -389,7 +389,8 @@ namespace MigrationRunner
                     }
                     string srcName = null;
                     if (targetToSrc.TryGetValue(tcol, out var s)) srcName = s;
-                    else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("CustomerId")) srcName = "CustomerId";
+                        else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("CustomerId")) srcName = "CustomerId";
+                        else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("ContactID")) srcName = "ContactID"; // Use ContactID if it exists (after CSV mapping)
                     else if (tcol.Equals("RequiredByDate", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("RequiredByDate")) srcName = "RequiredByDate";
                     else if (first.ContainsKey(tcol)) srcName = tcol;
 
@@ -614,6 +615,7 @@ END";
                         string srcName = null;
                         if (targetToSrc.TryGetValue(tcol, out var s)) srcName = s;
                         else if (tcol.Equals("ItemID", StringComparison.OrdinalIgnoreCase) && row.ContainsKey("ItemTypeID")) srcName = "ItemTypeID";
+                        else if (tcol.Equals("ItemID", StringComparison.OrdinalIgnoreCase) && row.ContainsKey("ItemID")) srcName = "ItemID"; // Use ItemID if it exists (after CSV mapping)
                         else if (tcol.Equals("QtyOrdered", StringComparison.OrdinalIgnoreCase) && row.ContainsKey("QuantityOrdered")) srcName = "QuantityOrdered";
                         else if (row.ContainsKey(tcol)) srcName = tcol;
 
@@ -866,7 +868,8 @@ END";
                     }
                     string srcName = null;
                     if (targetToSrc.TryGetValue(tcol, out var s)) srcName = s;
-                    else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("CustomerID")) srcName = "CustomerID";
+                        else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("CustomerID")) srcName = "CustomerID";
+                        else if (tcol.Equals("ContactID", StringComparison.OrdinalIgnoreCase) && first.ContainsKey("ContactID")) srcName = "ContactID"; // Use ContactID if it exists (after CSV mapping)
                     else if (first.ContainsKey(tcol)) srcName = tcol;
                     if (srcName == null) continue;
                     var val = first.ContainsKey(srcName) ? first[srcName] : null;

@@ -125,8 +125,12 @@
     <Content Include="App_Data\SQLCommands001.xml" />
     <Content Include="App_Data\SQLCommands_AwayPeriod.xml" />
     <Content Include="CleanMigrationTables.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\FixBadDates_ContactsUsageTbl.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\FixSourceDataDates.sql" />
     <Content Include="Default.aspx" />
+    <Content Include="diagnose-contacts-orders.sql" />
     <Content Include="DisableClient.aspx" />
+    <Content Include="fix-step-n-data-migration.sql" />
     <Content Include="Global.asax" />
     <Content Include="HttpErrorPage.aspx" />
     <Content Include="images\animi\arrv_white.gif" />
@@ -243,6 +247,12 @@
     <Content Include="Migrations\Scripts\TestDropAllTables.bat" />
     <Content Include="Migrations\Scripts\FixMigrationAfterDrop.bat" />
     <Content Include="Migrations\Scripts\MigrationRunner-MenuOptions.md" />
+    <Content Include="diagnose-contacts-orders.ps1" />
+    <Content Include="diagnose-step-n.ps1" />
+    <Content Include="fix-missing-database.ps1" />
+    <Content Include="FIXED-DROP-COLUMN-ISSUE.md" />
+    <Content Include="regenerate-ddl-and-migrate.ps1" />
+    <Content Include="fix-bad-dates-and-migrate.ps1" />
     <None Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
@@ -909,6 +919,9 @@
     <Content Include="VERIFICATION_DIRECTORY_PATH_FIX.md" />
     <Content Include="test-csv-parser.ps1" />
     <Content Include="test-csv-import.ps1" />
+    <Content Include="test-error-reporting-fix.ps1" />
+    <Content Include="test-drop-column-fix.ps1" />
+    <Content Include="test-csv-line-parsing.ps1" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

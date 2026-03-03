@@ -100,20 +100,20 @@
       },
       {
         "Source": "GroupItemTypeID",
-        "Target": "GroupItemTypeID",
-        "Action": "Copy",
+        "Target": "GroupReferenceItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ItemTypeID",
-        "Target": "ItemTypeID",
-        "Action": "Copy",
+        "Target": "ItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ItemTypeSortPos",
-        "Target": "ItemTypeSortPos",
-        "Action": "Copy",
+        "Target": "ItemSortPos",
+        "Action": "Rename",
         "Expression": null
       },
       {

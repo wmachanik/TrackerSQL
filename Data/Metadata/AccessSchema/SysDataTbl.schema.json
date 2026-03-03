@@ -136,14 +136,14 @@
       },
       {
         "Source": "GroupItemTypeID",
-        "Target": "GroupItemTypeID",
-        "Action": "Copy",
+        "Target": "GroupReferenceItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "InternalCustomerIds",
-        "Target": "InternalCustomerIds",
-        "Action": "Copy",
+        "Target": "InternalContactIDs",
+        "Action": "Rename",
         "Expression": null
       }
     ],

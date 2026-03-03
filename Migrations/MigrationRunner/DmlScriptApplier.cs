@@ -55,7 +55,9 @@ namespace MigrationRunner
 
                     conn.Open();
 
-                    int batches = ExecuteBatches(conn, File.ReadAllText(scriptPath), sb, Path.GetFileName(scriptPath));
+                    int batchResult = ExecuteBatches(conn, File.ReadAllText(scriptPath), sb, Path.GetFileName(scriptPath));
+                    bool hadBatchErrors = batchResult < 0;
+                    int executedBatches = Math.Abs(batchResult);
 
                     // Append captured PRINT/RAISERROR messages
                     var infoText = infoBuf.ToString();
@@ -71,10 +73,20 @@ namespace MigrationRunner
                     bool infoHadErrors = patterns.Any(p => infoText.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
 
                     sb.AppendLine();
-                    sb.AppendLine($"Summary: batchesExecuted={batches}{(infoHadErrors ? ", detectedErrorsInInfoMessages=true" : "")}");
+                    if (hadBatchErrors || infoHadErrors)
+                    {
+                        sb.AppendLine($"? MIGRATION FAILED: executedBatches={executedBatches}, hadBatchErrors={hadBatchErrors}, infoHadErrors={infoHadErrors}");
+                        sb.AppendLine("Check the detailed error messages above for specific issues.");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"? SUCCESS: batchesExecuted={executedBatches}, no errors detected");
+                    }
+                    
                     File.WriteAllText(logPath, sb.ToString(), Encoding.UTF8);
 
-                    return infoHadErrors ? 1 : 0;
+                    // CRITICAL FIX: Return proper error code
+                    return (hadBatchErrors || infoHadErrors) ? 1 : 0;
                 }
             }
             catch (Exception ex)
@@ -91,6 +103,7 @@ namespace MigrationRunner
             var regex = new Regex(@"^\s*GO\s*;$|^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             var parts = regex.Split(script ?? string.Empty).Select(p => p?.Trim()).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
             int executed = 0;
+            bool hasErrors = false;
 
             for (int i = 0; i < parts.Count; i++)
             {
@@ -109,10 +122,12 @@ namespace MigrationRunner
                     {
                         cmd.ExecuteNonQuery();
                         executed++;
+                        log.AppendLine($"   ? Batch {i + 1} executed successfully");
                     }
                     catch (SqlException sex)
                     {
-                        log.AppendLine("ERROR executing batch:");
+                        hasErrors = true;
+                        log.AppendLine("? ERROR executing batch:");
                         log.AppendLine("  File: " + currentFile);
                         log.AppendLine("  Snippet: " + Summarize(part));
                         log.AppendLine("  SqlException: Number=" + sex.Number + " State=" + sex.State + " Class=" + sex.Class);
@@ -123,19 +138,26 @@ namespace MigrationRunner
                                 log.AppendLine($"    -> {e.Number} (Line {e.LineNumber}): {e.Message}");
                         }
                         catch { /* ignore */ }
-                        throw;
+                        
+                        // CRITICAL FIX: Don't throw, continue processing but mark as failed
+                        log.AppendLine($"   ? Batch {i + 1} FAILED - continuing with remaining batches");
                     }
                     catch (Exception ex)
                     {
-                        log.AppendLine("ERROR executing batch:");
+                        hasErrors = true;
+                        log.AppendLine("? ERROR executing batch:");
                         log.AppendLine("  File: " + currentFile);
                         log.AppendLine("  Snippet: " + Summarize(part));
                         log.AppendLine("  Exception: " + ex.Message);
-                        throw;
+                        
+                        // CRITICAL FIX: Don't throw, continue processing but mark as failed
+                        log.AppendLine($"   ? Batch {i + 1} FAILED - continuing with remaining batches");
                     }
                 }
             }
-            return executed;
+            
+            // CRITICAL FIX: Return negative value to indicate errors occurred
+            return hasErrors ? -executed : executed;
         }
 
         private static string Summarize(string sql)

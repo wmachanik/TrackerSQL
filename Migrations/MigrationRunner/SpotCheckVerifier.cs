@@ -841,16 +841,16 @@ namespace MigrationRunner
                         AddColMap(tmNormalized, src, tar);
                     }
                     
-                    // Based on the schema, OrdersTbl normalizes into OrderHeaders and OrderLines
+                    // Based on the schema, OrdersTbl normalizes into OrdersTbl and OrderLinesTbl (not OrderHeaders/OrderLines)
                     if (s.SourceTable.Equals("OrdersTbl", StringComparison.OrdinalIgnoreCase))
                     {
-                        tmNormalized.DependsOn.Add("OrderHeaders");
-                        tmNormalized.DependsOn.Add("OrderLines");
+                        tmNormalized.DependsOn.Add("OrdersTbl");
+                        tmNormalized.DependsOn.Add("OrderLinesTbl");
                     }
                     else if (s.SourceTable.Equals("ReoccuringOrderTbl", StringComparison.OrdinalIgnoreCase))
                     {
-                        tmNormalized.DependsOn.Add("RecurringOrders");
-                        tmNormalized.DependsOn.Add("RecurringOrderItems");
+                        tmNormalized.DependsOn.Add("RecurringOrdersTbl");
+                        tmNormalized.DependsOn.Add("RecurringOrderItemsTbl");
                     }
                 }
             }

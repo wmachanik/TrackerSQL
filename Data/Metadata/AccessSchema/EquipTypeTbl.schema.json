@@ -66,7 +66,7 @@
     "ColumnActions": [
       {
         "Source": "EquipTypeId",
-        "Target": "EquipTypeId",
+        "Target": "EquipTypeID",
         "Action": "Copy",
         "Expression": null
       },
@@ -78,8 +78,8 @@
       },
       {
         "Source": "EquipTypeDesc",
-        "Target": "EquipTypeDesc",
-        "Action": "Copy",
+        "Target": "EquipTypeDescription",
+        "Action": "Rename",
         "Expression": null
       }
     ],

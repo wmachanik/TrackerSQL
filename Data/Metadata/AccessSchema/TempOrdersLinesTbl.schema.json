@@ -124,8 +124,8 @@
       },
       {
         "Source": "ServiceTypeID",
-        "Target": "ServiceTypeID",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -136,8 +136,8 @@
       },
       {
         "Source": "PackagingID",
-        "Target": "PackagingID",
-        "Action": "Copy",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {

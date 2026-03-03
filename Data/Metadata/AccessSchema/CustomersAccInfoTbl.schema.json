@@ -390,14 +390,14 @@
     "ColumnActions": [
       {
         "Source": "CustomersAccInfoID",
-        "Target": "CustomersAccInfoID",
-        "Action": "Copy",
+        "Target": "ContactsAccInfoID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -408,8 +408,8 @@
       },
       {
         "Source": "CustomerVATNo",
-        "Target": "CustomerVATNo",
-        "Action": "Copy",
+        "Target": "ContactVATNo",
+        "Action": "Rename",
         "Expression": null
       },
       {

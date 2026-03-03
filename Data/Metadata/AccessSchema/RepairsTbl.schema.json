@@ -292,8 +292,8 @@
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -328,14 +328,14 @@
       },
       {
         "Source": "MachineTypeID",
-        "Target": "MachineTypeID",
-        "Action": "Copy",
+        "Target": "EquipTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "MachineSerialNumber",
-        "Target": "MachineSerialNumber",
-        "Action": "Copy",
+        "Target": "EquipSerialNumber",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -346,8 +346,8 @@
       },
       {
         "Source": "MachineConditionID",
-        "Target": "MachineConditionID",
-        "Action": "Copy",
+        "Target": "EquipConditionID",
+        "Action": "Rename",
         "Expression": null
       },
       {

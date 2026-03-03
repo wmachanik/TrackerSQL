@@ -239,7 +239,7 @@
   ],
   "Plan": {
     "Classification": "Normalize",
-    "TargetTable": "OrdersTbl", 
+    "TargetTable": "OrdersTbl",
     "PreserveIdsOnInsert": false,
     "Reviewed": true,
     "Ignore": false,
@@ -252,8 +252,8 @@
       },
       {
         "Source": "CustomerId",
-        "Target": "CustomerId",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -264,20 +264,20 @@
       },
       {
         "Source": "RoastDate",
-        "Target": "RoastDate",
-        "Action": "Copy",
+        "Target": "PrepDate",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ItemTypeID",
-        "Target": "ItemTypeID",
-        "Action": "Copy",
+        "Target": "ItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "QuantityOrdered",
-        "Target": "QuantityOrdered",
-        "Action": "Copy",
+        "Target": "QtyOrdered",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -300,8 +300,8 @@
       },
       {
         "Source": "ToBeDeliveredBy",
-        "Target": "ToBeDeliveredBy",
-        "Action": "Copy",
+        "Target": "ToBeDeliveredByID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -344,6 +344,38 @@
     "Normalize": {
       "IsHeader": true,
       "IsLine": false,
+      "HeaderTable": "OrdersTbl",
+      "LineTable": "OrderLinesTbl",
+      "NewHeaderKeyName": "OrderID",
+      "NewLineKeyName": "OrderLineID",
+      "LineLinkKeyName": "OrderID",
+      "HeaderPrimaryKey": [
+        "OrderID"
+      ],
+      "LinePrimaryKey": [
+        "OrderLineID"
+      ],
+      "HeaderColumns": [
+        "OrderID",
+        "CustomerId",
+        "OrderDate",
+        "RequiredByDate",
+        "ToBeDeliveredBy",
+        "Confirmed",
+        "Done",
+        "Packed",
+        "Notes",
+        "PurchaseOrder",
+        "InvoiceDone"
+      ],
+      "LineColumns": [
+        "OrderID",
+        "RoastDate",
+        "ItemTypeID",
+        "QuantityOrdered",
+        "PrepTypeID",
+        "PackagingID"
+      ],
       "NormalizeInto": [
         {
           "TargetTable": "OrdersTbl",

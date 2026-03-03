@@ -122,20 +122,20 @@
     "ColumnActions": [
       {
         "Source": "ClientUsageLineNo",
-        "Target": "ClientUsageLineNo",
-        "Action": "Copy",
+        "Target": "ContactUsageLineNo",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Date",
-        "Target": "Date",
-        "Action": "Copy",
+        "Target": "UsageDate",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -146,8 +146,8 @@
       },
       {
         "Source": "ServiceTypeId",
-        "Target": "ServiceTypeId",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {

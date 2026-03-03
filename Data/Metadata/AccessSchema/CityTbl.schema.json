@@ -70,20 +70,20 @@
     "ColumnActions": [
       {
         "Source": "ID",
-        "Target": "ID",
-        "Action": "Copy",
+        "Target": "AreaID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "City",
-        "Target": "City",
-        "Action": "Copy",
+        "Target": "AreaName",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "RoastingDay",
-        "Target": "RoastingDay",
-        "Action": "Copy",
+        "Target": "PrepDayOfWeekID",
+        "Action": "Rename",
         "Expression": null
       },
       {

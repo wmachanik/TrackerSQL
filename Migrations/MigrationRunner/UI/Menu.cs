@@ -935,6 +935,7 @@ namespace MigrationRunner.UI
                         conn.Open();
                         using (var cmd = conn.CreateCommand())
                         {
+                            cmd.CommandTimeout = 0;
                             cmd.CommandText = @"
 SET NOCOUNT ON;
 DECLARE @sql nvarchar(max) = N'',
@@ -1092,7 +1093,7 @@ IF LEN(@sql) > 0 EXEC sp_executesql @sql;
             if (string.IsNullOrWhiteSpace(dataScriptPath) || !File.Exists(dataScriptPath)) { Console.WriteLine("Skip verification: DataMigration script not found."); return; }
 
             var pairs = new List<(string Source, string Target)>();
-            foreach (var line in File.ReadLines(dataScriptPath))
+            foreach (var line in File.ReadAllLines(dataScriptPath))
             {
                 if (!line.StartsWith("-- ")) continue;
                 var parts = line.Substring(3).Split(new[] {"->"}, StringSplitOptions.None);
@@ -1497,12 +1498,12 @@ PRINT 'Normalized tables cleaned successfully.'
                                     cmd.ExecuteNonQuery();
                                 }
                                 
-                                Console.WriteLine("? Normalized tables cleaned successfully");
+                                Console.WriteLine("  ? Normalized tables cleaned successfully");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"??  Warning: Pre-cleanup failed: {ex.Message}");
+                            Console.WriteLine($"?  Warning: Pre-cleanup failed: {ex.Message}");
                             Console.WriteLine("Continuing with custom normalization...");
                         }
                     }
@@ -1632,6 +1633,38 @@ PRINT 'Normalized tables cleaned successfully.'
                 
                 var rc = AccessStagingImporter.StageAll(_migrationsDir, accessCs, sqlCs, out var logPath);
                 Console.WriteLine("Access staging rc=" + rc + " log: " + logPath);
+                
+                if (rc != 0)
+                {
+                    Console.WriteLine("? Access staging reported issues - skipping automatic data cleaning");
+                    return rc;
+                }
+                
+                // AUTOMATIC POST-STAGING DATA CLEANING
+                Console.WriteLine();
+                Console.WriteLine("?? Running automatic data cleaning on staged AccessSrc data...");
+                try
+                {
+                    using (var conn = new SqlConnection(sqlCs))
+                    {
+                        conn.Open();
+                        
+                        var cleanLog = new StringBuilder();
+                        CleanAccessSrcDates(conn, cleanLog);
+                        
+                        Console.WriteLine("? Data cleaning completed:");
+                        foreach (var line in cleanLog.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            Console.WriteLine($"  {line}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"? Data cleaning warning: {ex.Message}");
+                    Console.WriteLine("  Migration will continue, but date conversion errors may occur");
+                }
+                
                 return rc;
             }
             catch (Exception ex)
@@ -1640,920 +1673,96 @@ PRINT 'Normalized tables cleaned successfully.'
                 return 1;
             }
         }
-    }
 
-    internal sealed class ApplyDataMigrationScriptCommand : IMenuCommand
-    {
-        private readonly string _migrationsDir;
-        private readonly MigrationConfig _config;
-
-        public ApplyDataMigrationScriptCommand(string migrationsDir, MigrationConfig config)
+        private void CleanAccessSrcDates(SqlConnection conn, StringBuilder log)
         {
-            _migrationsDir = migrationsDir;
-            _config = config;
-        }
-
-        public string Key => "N";
-        public string Description => "Apply data migration script (excluding normalized tables) with enhanced error handling";
-
-        public int Execute()
-        {
-            try
-            {
-                // Use RunRangeState connection string if available
-                var rro = RunRangeState.Current;
-                string sqlCs;
-                
-                if (rro != null && rro.SuppressPrompts)
-                {
-                    sqlCs = rro.TargetConnectionString;
-                    Console.WriteLine("Using batch mode target connection string");
-                }
-                else
-                {
-                    sqlCs = _config?.TargetConnectionString ?? "";
-                }
-
-                // Enhanced error handling: Offer to run with data cleaning
-                bool enableDataCleaning = false;
-                if (rro == null || !rro.SuppressPrompts)
-                {
-                    Console.Write("Enable enhanced data cleaning (fix NULL FKs, date conversions, etc.)? [Y/n]: ");
-                    var cleanInput = Console.ReadLine();
-                    enableDataCleaning = string.IsNullOrWhiteSpace(cleanInput) || 
-                                       !cleanInput.Trim().StartsWith("n", StringComparison.OrdinalIgnoreCase);
-                }
-                else
-                {
-                    enableDataCleaning = true; // Auto-enable in batch mode
-                    Console.WriteLine("Auto-enabling enhanced data cleaning for batch mode");
-                }
-
-                int rc;
-                string logPath;
-
-                if (enableDataCleaning)
-                {
-                    Console.WriteLine("?? Running enhanced data migration with automatic data cleaning...");
-                    Console.WriteLine("??  Note: Tables marked for normalization (Orders, Recurring) will be skipped and handled by Step ! instead");
-                    rc = ApplyDataMigrationWithCleaning(_migrationsDir, sqlCs, out logPath);
-                }
-                else
-                {
-                    rc = DmlScriptApplier.ApplyLatest(_migrationsDir, sqlCs, out logPath);
-                }
-                
-                Console.WriteLine("Data migration apply rc=" + rc + " log: " + logPath);
-                
-                if (rc != 0 && File.Exists(logPath))
-                {
-                    // Show error summary
-                    var lines = File.ReadAllLines(logPath);
-                    var errorLines = lines.Where(l => l.Contains("ERROR")).Take(10).ToArray();
-                    
-                    if (errorLines.Length > 0)
-                    {
-                        Console.WriteLine("\n? Error Summary (first 10 errors):");
-                        foreach (var error in errorLines)
-                        {
-                            Console.WriteLine("  " + error);
-                        }
-                        
-                        if (!enableDataCleaning)
-                        {
-                            Console.WriteLine("\n?? Tip: Try running again with enhanced data cleaning enabled!");
-                        }
-                    }
-                }
-                
-                return rc;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("? Data migration apply failed: " + ex.Message);
-                return 1;
-            }
-        }
-
-        private int ApplyDataMigrationWithCleaning(string migrationsDir, string connectionString, out string logPath)
-        {
-            var logsDir = Path.Combine(migrationsDir, "Metadata", "PlanEdits", "Logs");
-            Directory.CreateDirectory(logsDir);
-            logPath = Path.Combine(logsDir, "DataMigrationWithCleaning_" + DateTime.Now.ToString("yyyyMMdd_HHmms") + ".log");
-            
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("=== Enhanced Data Migration with Cleaning ===");
-                sb.AppendLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                sb.AppendLine("Purpose: Apply data migration with automatic error handling and data cleaning");
-                sb.AppendLine();
-
-                using (var conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    sb.AppendLine("? Connected to SQL Server");
-
-                    // 1. Apply pre-migration data cleaning
-                    sb.AppendLine("\n=== PRE-MIGRATION DATA CLEANING ===");
-                    ApplyDataCleaningFixes(conn, sb);
-
-                    // 2. Run the original data migration script
-                    sb.AppendLine("\n=== RUNNING DATA MIGRATION SCRIPT ===");
-                    var originalRc = DmlScriptApplier.ApplyLatest(migrationsDir, connectionString, out var originalLogPath);
-                    sb.AppendLine($"Original migration result: {originalRc}");
-                    
-                    if (File.Exists(originalLogPath))
-                    {
-                        sb.AppendLine("Original migration log content:");
-                        sb.AppendLine(File.ReadAllText(originalLogPath));
-                    }
-
-                    // 3. Apply post-migration fixes if needed
-                    if (originalRc != 0)
-                    {
-                        sb.AppendLine("\n=== POST-MIGRATION ERROR FIXES ===");
-                        ApplyPostMigrationFixes(conn, sb);
-                    }
-
-                    sb.AppendLine("\n=== ENHANCED MIGRATION COMPLETED ===");
-                    sb.AppendLine($"Final result: {(originalRc == 0 ? "SUCCESS" : "COMPLETED WITH FIXES")}");
-                }
-
-                File.WriteAllText(logPath, sb.ToString(), Encoding.UTF8);
-                return 0; // Always return success when using enhanced cleaning
-            }
-            catch (Exception ex)
-            {
-                var errorLog = $"FATAL: Enhanced data migration failed: {ex.Message}\n{ex.StackTrace}";
-                File.WriteAllText(logPath, errorLog, Encoding.UTF8);
-                return 1;
-            }
-        }
-
-        private void ApplyDataCleaningFixes(SqlConnection conn, StringBuilder log)
-        {
-            try
-            {
-                log.AppendLine("Applying data cleaning fixes to AccessSrc schema...");
-
-                // Fix 1: Clean up invalid dates in AccessSrc tables
-                var dateCleanupSql = @"
--- Fix invalid dates by setting them to a reasonable default
-UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-SET [DateOfReading] = '1980-01-01' 
-WHERE [DateOfReading] IS NOT NULL 
-  AND (ISDATE([DateOfReading]) = 0 OR TRY_CONVERT(datetime, [DateOfReading]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-SET [LastUpdate] = '1980-01-01' 
-WHERE [LastUpdate] IS NOT NULL 
-  AND (ISDATE([LastUpdate]) = 0 OR TRY_CONVERT(datetime, [LastUpdate]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [NextCoffeeBy] = '1980-01-01' 
-WHERE [NextCoffeeBy] IS NOT NULL 
-  AND (ISDATE([NextCoffeeBy]) = 0 OR TRY_CONVERT(datetime, [NextCoffeeBy]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [NextCleanOn] = '1980-01-01' 
-WHERE [NextCleanOn] IS NOT NULL 
-  AND (ISDATE([NextCleanOn]) = 0 OR TRY_CONVERT(datetime, [NextCleanOn]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [NextFilterEst] = '1980-01-01' 
-WHERE [NextFilterEst] IS NOT NULL 
-  AND (ISDATE([NextFilterEst]) = 0 OR TRY_CONVERT(datetime, [NextFilterEst]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [NextDescaleEst] = '1980-01-01' 
-WHERE [NextDescaleEst] IS NOT NULL 
-  AND (ISDATE([NextDescaleEst]) = 0 OR TRY_CONVERT(datetime, [NextDescaleEst]) IS NULL);
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [NextServiceEst] = '1980-01-01' 
-WHERE [NextServiceEst] IS NOT NULL 
-  AND (ISDATE([NextServiceEst]) = 0 OR TRY_CONVERT(datetime, [NextServiceEst]) IS NULL);
-
-UPDATE [AccessSrc]..[_ClientUsageTbl] 
-SET [NextCoffeeBy] = '1980-01-01' 
-WHERE [NextCoffeeBy] IS NOT NULL 
-  AND (ISDATE([NextCoffeeBy]) = 0 OR TRY_CONVERT(datetime, [NextCoffeeBy]) IS NULL);
-";
-
-                using (var cmd = new SqlCommand(dateCleanupSql, conn))
-                {
-                    cmd.CommandTimeout = 300;
-                    var rowsAffected = cmd.ExecuteNonQuery();
-                    log.AppendLine($"? Fixed {rowsAffected} invalid date values");
-                }
-
-                // Fix 2: Handle NULL ContactID by assigning a default customer ID (9 = General/Other)
-                var nullContactIdSql = @"
--- Fix NULL ContactID values by assigning to General/Other customer (ID=9)
-UPDATE [AccessSrc].[SentRemindersLogTbl] 
-SET [ContactID] = 9 
-WHERE [ContactID] IS NULL OR [ContactID] = 0;
-
-UPDATE [AccessSrc].[TempCoffeecheckupItemsTbl] 
-SET [ContactID] = 9 
-WHERE [ContactID] IS NULL OR [ContactID] = 0;
-
-UPDATE [AccessSrc].[RepairsTbl] 
-SET [ContactID] = 9 
-WHERE [ContactID] IS NULL OR [ContactID] = 0;
-";
-
-                using (var cmd = new SqlCommand(nullContactIdSql, conn))
-                {
-                    cmd.CommandTimeout = 300;
-                    var rowsAffected = cmd.ExecuteNonQuery();
-                    log.AppendLine($"? Fixed {rowsAffected} NULL ContactID values");
-                }
-
-                // Fix 3: Clean up any other common data quality issues
-                var generalCleanupSql = @"
--- Clean up empty strings that should be NULL
-UPDATE [AccessSrc].[SentRemindersLogTbl] 
-SET [EmailAddress] = NULL 
-WHERE LTRIM(RTRIM([EmailAddress])) = '';
-
--- Ensure numeric fields have valid values
-UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-SET [CupCount] = 0 
-WHERE [CupCount] IS NULL OR [CupCount] < 0;
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [LastCupCount] = 0 
-WHERE [LastCupCount] IS NULL OR [LastCupCount] < 0;
-
-UPDATE [AccessSrc].[ClientUsageTbl] 
-SET [DailyConsumption] = 0 
-WHERE [DailyConsumption] IS NULL OR [DailyConsumption] < 0;
-";
-
-                using (var cmd = new SqlCommand(generalCleanupSql, conn))
-                {
-                    cmd.CommandTimeout = 300;
-                    var rowsAffected = cmd.ExecuteNonQuery();
-                    log.AppendLine($"? Cleaned {rowsAffected} data quality issues");
-                }
-
-                log.AppendLine("? All pre-migration data cleaning completed successfully");
-            }
- catch (Exception ex)
-            {
-                log.AppendLine($"? Data cleaning error: {ex.Message}");
-                // Continue anyway - cleaning is best-effort
-            }
-        }
-
-        private void ApplyPostMigrationFixes(SqlConnection conn, StringBuilder log)
-        {
-            try
-            {
-                log.AppendLine("Applying post-migration fixes...");
-
-                // Check for common issues and fix them
-                var postFixSql = @"
--- Ensure all ContactID references point to valid customers
--- If any orphaned records exist, point them to General customer (ID=9)
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'SentRemindersLogTbl')
-BEGIN
-    UPDATE SentRemindersLogTbl 
-    SET ContactID = 9 
-    WHERE ContactID NOT IN (SELECT CustomerID FROM ContactsTbl WHERE CustomerID IS NOT NULL)
-    AND ContactID IS NOT NULL AND ContactID != 9;
-END
-
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'RepairsTbl')
-BEGIN
-    UPDATE RepairsTbl 
-    SET ContactID = 9 
-    WHERE ContactID NOT IN (SELECT CustomerID FROM ContactsTbl WHERE CustomerID IS NOT NULL)
-    AND ContactID IS NOT NULL AND ContactID != 9;
-END
-
--- Clean up any remaining date issues in target tables
-IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'ClientUsageTbl' AND type = 'U')
-BEGIN
-    UPDATE ClientUsageTbl 
-    SET NextCoffeeBy = '1980-01-01' 
-    WHERE NextCoffeeBy < '1900-01-01' OR NextCoffeeBy > '2100-01-01';
-    
-    UPDATE ClientUsageTbl 
-    SET NextCleanOn = '1980-01-01' 
-    WHERE NextCleanOn < '1900-01-01' OR NextCleanOn > '2100-01-01';
-END
-";
-
-                using (var cmd = new SqlCommand(postFixSql, conn))
-                {
-                    cmd.CommandTimeout = 300;
-                    var rowsAffected = cmd.ExecuteNonQuery();
-                    log.AppendLine($"? Post-migration fixes completed, {rowsAffected} rows processed");
-                }
-            }
-            catch (Exception ex)
-            {
-                log.AppendLine($"?? Post-migration fix warning: {ex.Message}");
-                // Continue anyway - these are cleanup fixes
-            }
-        }
-    }
-
-    internal sealed class DataCleaningCommand : IMenuCommand
-    {
-        private readonly string _migrationsDir;
-        private readonly MigrationConfig _config;
-
-        public DataCleaningCommand(string migrationsDir, MigrationConfig config)
-        {
-            _migrationsDir = migrationsDir;
-            _config = config;
-        }
-
-        public string Key => "CLEAN";
-        public string Description => "Clean data issues (NULL FKs, date conversions, etc.) in AccessSrc schema";
-
-        public int Execute()
-        {
-            Console.WriteLine("=== DATA CLEANING UTILITY ===");
-            Console.WriteLine("This will clean common data issues in the AccessSrc schema:");
-            Console.WriteLine("  - Fix invalid date/time values");
-            Console.WriteLine("  - Replace NULL foreign keys with default values");
-            Console.WriteLine("  - Clean empty strings and invalid numeric values");
-            Console.WriteLine();
-
-            try
-            {
-                // Use RunRangeState connection string if available
-                var rro = RunRangeState.Current;
-                string sqlCs;
-                
-                if (rro != null && rro.SuppressPrompts)
-                {
-                    sqlCs = rro.TargetConnectionString;
-                    Console.WriteLine("Using batch mode target connection string");
-                }
-                else
-                {
-                    sqlCs = _config?.TargetConnectionString ?? "";
-                    
-                    if (string.IsNullOrWhiteSpace(sqlCs))
-                    {
-                        Console.Write("SQL connection string: ");
-                        sqlCs = Console.ReadLine()?.Trim() ?? "";
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(sqlCs))
-                {
-                    Console.WriteLine("? SQL connection string is required.");
-                    return 2;
-                }
-
-                // Test connection
-                try
-                {
-                    using (var testConn = new SqlConnection(sqlCs))
-                    {
-                        testConn.Open();
-                        Console.WriteLine("? SQL Server connection successful");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"? SQL Server connection failed: {ex.Message}");
-                    return 1;
-                }
-
-                using (var conn = new SqlConnection(sqlCs))
-                {
-                    conn.Open();
-                    
-                    Console.WriteLine("?? Starting data cleaning...");
-                    
-                    // 1. Clean invalid dates
-                    Console.WriteLine("Cleaning invalid date values...");
-                    var dateUpdates = CleanInvalidDates(conn);
-                    Console.WriteLine($"  ? Fixed {dateUpdates} invalid date values");
-                    
-                    // 2. Fix NULL ContactIDs
-                    Console.WriteLine("Fixing NULL foreign key values...");
-                    var fkUpdates = FixNullForeignKeys(conn);
-                    Console.WriteLine($"  ? Fixed {fkUpdates} NULL ContactID values");
-                    
-                    // 3. General cleanup
-                    Console.WriteLine("Performing general data cleanup...");
-                    var generalUpdates = PerformGeneralCleanup(conn);
-                    Console.WriteLine($"  ? Cleaned {generalUpdates} data quality issues");
-                    
-                    // 4. Validation summary
-                    Console.WriteLine("Validating data quality...");
-                    var issues = ValidateDataQuality(conn);
-                    
-                    if (issues.Count == 0)
-                    {
-                        Console.WriteLine("?? All data quality issues have been resolved!");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"??  {issues.Count} remaining issues found:");
-                        foreach (var issue in issues)
-                        {
-                            Console.WriteLine($"   - {issue}");
-                        }
-                    }
-                }
-
-                Console.WriteLine("? Data cleaning completed successfully!");
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"? Data cleaning failed: " + ex.Message);
-                return 1;
-            }
-        }
-
-        private int CleanInvalidDates(SqlConnection conn)
-        {
-            var sql = @"
-DECLARE @updates INT = 0;
-
--- ClientUsageHistoryTbl dates
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'ClientUsageHistoryTbl')
-BEGIN
-    UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-    SET [DateOfReading] = '1980-01-01' 
-    WHERE [DateOfReading] IS NOT NULL 
-      AND (ISDATE([DateOfReading]) = 0 OR TRY_CONVERT(datetime, [DateOfReading]) IS NULL);
-    SET @updates = @updates + @@ROWCOUNT;
-
-    UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-    SET [LastUpdate] = '1980-01-01' 
-    WHERE [LastUpdate] IS NOT NULL 
-      AND (ISDATE([LastUpdate]) = 0 OR TRY_CONVERT(datetime, [LastUpdate]) IS NULL);
-    SET @updates = @updates + @@ROWCOUNT;
-END
+            // Clean invalid dates that would cause SQL Server conversion errors
+            var cleanupSql = @"
+-- Clean invalid dates in AccessSrc schema (set to NULL for safe conversion)
+DECLARE @cleaned INT = 0;
 
 -- ClientUsageTbl dates
 IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'ClientUsageTbl')
 BEGIN
     UPDATE [AccessSrc].[ClientUsageTbl] 
-    SET [NextCoffeeBy] = '1980-01-01' 
-    WHERE [NextCoffeeBy] IS NOT NULL 
-      AND (ISDATE([NextCoffeeBy]) = 0 OR TRY_CONVERT(datetime, [NextCoffeeBy]) IS NULL);
-    SET @updates = @updates + @@ROWCOUNT;
+    SET [NextCoffeeBy] = NULL 
+    WHERE [NextCoffeeBy] IS NOT NULL AND TRY_CONVERT(datetime, [NextCoffeeBy]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
 
     UPDATE [AccessSrc].[ClientUsageTbl] 
-    SET [NextCleanOn] = '1980-01-01', [NextFilterEst] = '1980-01-01', [NextDescaleEst] = '1980-01-01', [NextServiceEst] = '1980-01-01'
-    WHERE ([NextCleanOn] IS NOT NULL AND (ISDATE([NextCleanOn]) = 0 OR TRY_CONVERT(datetime, [NextCleanOn]) IS NULL))
-       OR ([NextFilterEst] IS NOT NULL AND (ISDATE([NextFilterEst]) = 0 OR TRY_CONVERT(datetime, [NextFilterEst]) IS NULL))
-       OR ([NextDescaleEst] IS NOT NULL AND (ISDATE([NextDescaleEst]) = 0 OR TRY_CONVERT(datetime, [NextDescaleEst]) IS NULL))
-       OR ([NextServiceEst] IS NOT NULL AND (ISDATE([NextServiceEst]) = 0 OR TRY_CONVERT(datetime, [NextServiceEst]) IS NULL));
-    SET @updates = @updates + @@ROWCOUNT;
+    SET [NextCleanOn] = NULL 
+    WHERE [NextCleanOn] IS NOT NULL AND TRY_CONVERT(datetime, [NextCleanOn]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[ClientUsageTbl] 
+    SET [NextFilterEst] = NULL 
+    WHERE [NextFilterEst] IS NOT NULL AND TRY_CONVERT(datetime, [NextFilterEst]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[ClientUsageTbl] 
+    SET [NextDescaleEst] = NULL 
+    WHERE [NextDescaleEst] IS NOT NULL AND TRY_CONVERT(datetime, [NextDescaleEst]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[ClientUsageTbl] 
+    SET [NextServiceEst] = NULL 
+    WHERE [NextServiceEst] IS NOT NULL AND TRY_CONVERT(datetime, [NextServiceEst]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
 END
 
--- _ClientUsageTbl dates  
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = '_ClientUsageTbl')
-BEGIN
-    UPDATE [AccessSrc]..[_ClientUsageTbl] 
-    SET [NextCoffeeBy] = '1980-01-01' 
-    WHERE [NextCoffeeBy] IS NOT NULL 
-      AND (ISDATE([NextCoffeeBy]) = 0 OR TRY_CONVERT(datetime, [NextCoffeeBy]) IS NULL);
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
-SELECT @updates;
-";
-            using (var cmd = new SqlCommand(sql, conn))
-            {
-                cmd.CommandTimeout = 300;
-                return (int)(cmd.ExecuteScalar() ?? 0);
-            }
-        }
-
-        private int FixNullForeignKeys(SqlConnection conn)
-        {
-            var sql = @"
-DECLARE @updates INT = 0;
-
--- Fix NULL ContactID in SentRemindersLogTbl
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'SentRemindersLogTbl')
-BEGIN
-    UPDATE [AccessSrc].[SentRemindersLogTbl] 
-    SET [ContactID] = 9 
-    WHERE [ContactID] IS NULL OR [ContactID] = 0;
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
--- Fix NULL ContactID in TempCoffeecheckupItemsTbl
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'TempCoffeecheckupItemsTbl')
-BEGIN
-    UPDATE [AccessSrc].[TempCoffeecheckupItemsTbl] 
-    SET [ContactID] = 9 
-    WHERE [ContactID] IS NULL OR [ContactID] = 0;
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
--- Fix NULL ContactID in RepairsTbl
+-- RepairsTbl dates
 IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'RepairsTbl')
 BEGIN
     UPDATE [AccessSrc].[RepairsTbl] 
-    SET [ContactID] = 9 
-    WHERE [ContactID] IS NULL OR [ContactID] = 0;
-    SET @updates = @updates + @@ROWCOUNT;
+    SET [DateLogged] = NULL 
+    WHERE [DateLogged] IS NOT NULL AND TRY_CONVERT(datetime, [DateLogged]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[RepairsTbl] 
+    SET [LastStatusChange] = NULL 
+    WHERE [LastStatusChange] IS NOT NULL AND TRY_CONVERT(datetime, [LastStatusChange]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
 END
 
-SELECT @updates;
+-- TempCoffeecheckupCustomerTbl dates
+IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'TempCoffeecheckupCustomerTbl')
+BEGIN
+    UPDATE [AccessSrc].[TempCoffeecheckupCustomerTbl] 
+    SET [NextPrepDate] = NULL 
+    WHERE [NextPrepDate] IS NOT NULL AND TRY_CONVERT(datetime, [NextPrepDate]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[TempCoffeecheckupCustomerTbl] 
+    SET [NextDeliveryDate] = NULL 
+    WHERE [NextDeliveryDate] IS NOT NULL AND TRY_CONVERT(datetime, [NextDeliveryDate]) IS NULL;
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+
+    UPDATE [AccessSrc].[TempCoffeecheckupCustomerTbl] 
+    SET [NextCoffee] = NULL, [NextClean] = NULL, [NextFilter] = NULL, [NextDescal] = NULL, [NextService] = NULL
+    WHERE ([NextCoffee] IS NOT NULL AND TRY_CONVERT(datetime, [NextCoffee]) IS NULL)
+       OR ([NextClean] IS NOT NULL AND TRY_CONVERT(datetime, [NextClean]) IS NULL)
+       OR ([NextFilter] IS NOT NULL AND TRY_CONVERT(datetime, [NextFilter]) IS NULL)
+       OR ([NextDescal] IS NOT NULL AND TRY_CONVERT(datetime, [NextDescal]) IS NULL)
+       OR ([NextService] IS NOT NULL AND TRY_CONVERT(datetime, [NextService]) IS NULL);
+    SET @cleaned = @cleaned + @@ROWCOUNT;
+END
+
+SELECT @cleaned AS CleanedRows;
 ";
-            using (var cmd = new SqlCommand(sql, conn))
+
+            using (var cmd = new SqlCommand(cleanupSql, conn))
             {
                 cmd.CommandTimeout = 300;
-                return (int)(cmd.ExecuteScalar() ?? 0);
-            }
-        }
-
-        private int PerformGeneralCleanup(SqlConnection conn)
-        {
-            var sql = @"
-DECLARE @updates INT = 0;
-
--- Clean up empty strings in email addresses
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'SentRemindersLogTbl')
-BEGIN
-    UPDATE [AccessSrc].[SentRemindersLogTbl] 
-    SET [EmailAddress] = NULL 
-    WHERE LTRIM(RTRIM(ISNULL([EmailAddress], ''))) = '';
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
--- Fix negative or NULL numeric values
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'ClientUsageHistoryTbl')
-BEGIN
-    UPDATE [AccessSrc].[ClientUsageHistoryTbl] 
-    SET [CupCount] = 0 
-    WHERE [CupCount] IS NULL OR [CupCount] < 0;
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
-IF EXISTS (SELECT 1 FROM sys.schemas s JOIN sys.tables t ON s.schema_id = t.schema_id WHERE s.name = 'AccessSrc' AND t.name = 'ClientUsageTbl')
-BEGIN
-    UPDATE [AccessSrc].[ClientUsageTbl] 
-    SET [LastCupCount] = 0 
-    WHERE [LastCupCount] IS NULL OR [LastCupCount] < 0;
-    SET @updates = @updates + @@ROWCOUNT;
-    
-    UPDATE [AccessSrc].[ClientUsageTbl] 
-    SET [DailyConsumption] = 0 
-    WHERE [DailyConsumption] IS NULL OR [DailyConsumption] < 0;
-    SET @updates = @updates + @@ROWCOUNT;
-END
-
-SELECT @updates;
-";
-            using (var cmd = new SqlCommand(sql, conn))
-            {
-                cmd.CommandTimeout = 300;
-                return (int)(cmd.ExecuteScalar() ?? 0);
-            }
-        }
-
-        private List<string> ValidateDataQuality(SqlConnection conn)
-        {
-            var issues = new List<string>();
-            
-            // Check for remaining NULL ContactID values
-            var nullContactSql = @"
-SELECT 
-    'SentRemindersLogTbl' as TableName,
-    COUNT(*) as NullCount
-FROM [AccessSrc].[SentRemindersLogTbl] 
-WHERE [ContactID] IS NULL
-UNION ALL
-SELECT 
-    'TempCoffeecheckupItemsTbl' as TableName,
-    COUNT(*) as NullCount
-FROM [AccessSrc].[TempCoffeecheckupItemsTbl] 
-WHERE [ContactID] IS NULL
-UNION ALL
-SELECT 
-    'RepairsTbl' as TableName,
-    COUNT(*) as NullCount
-FROM [AccessSrc].[RepairsTbl] 
-WHERE [ContactID] IS NULL;
-";
-
-            try
-            {
-                using (var cmd = new SqlCommand(nullContactSql, conn))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var tableName = reader["TableName"].ToString();
-                            var nullCount = Convert.ToInt32(reader["NullCount"]);
-                            if (nullCount > 0)
-                            {
-                                issues.Add($"{tableName} has {nullCount} NULL ContactID values");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                issues.Add($"Error validating ContactID: {ex.Message}");
-            }
-
-            return issues;
-        }
-    }
-
-    internal sealed class CustomNormalizeCommand : IMenuCommand
-    {
-        private readonly string _migrationsDir;
-        private readonly MigrationConfig _config;
-
-        public CustomNormalizeCommand(string migrationsDir, MigrationConfig config)
-        {
-            _migrationsDir = migrationsDir;
-            _config = config;
-        }
-
-        public string Key => "!";
-        public string Description => "Custom migrate Orders + Recurring tables (normalization)";
-
-        public int Execute()
-        {
-            try
-            {
-                // Use RunRangeState connection string if available
-                var rro = RunRangeState.Current;
-                string sqlCs;
+                var cleanedRows = (int)(cmd.ExecuteScalar() ?? 0);
                 
-                if (rro != null && rro.SuppressPrompts)
+                if (cleanedRows > 0)
                 {
-                    sqlCs = rro.TargetConnectionString;
-                    Console.WriteLine("Using batch mode target connection string");
+                    log.AppendLine($"Fixed {cleanedRows} invalid date values (set to NULL)");
                 }
                 else
                 {
-                    sqlCs = _config?.TargetConnectionString ?? "";
-                    
-                    if (string.IsNullOrWhiteSpace(sqlCs))
-                    {
-                        Console.Write("SQL connection string: ");
-                        sqlCs = Console.ReadLine()?.Trim() ?? "";
-                    }
+                    log.AppendLine("No invalid dates found - data is clean");
                 }
-
-                if (string.IsNullOrWhiteSpace(sqlCs))
-                {
-                    Console.WriteLine("? SQL connection string is required.");
-                    return 2;
-                }
-                
-                Console.WriteLine("?? Starting custom normalization migration...");
-                Console.WriteLine("This will migrate Orders and Recurring tables with proper header/line normalization");
-                
-                var rc = CustomNormalizeRunner.Run(_migrationsDir, sqlCs);
-                
-                if (rc == 0)
-                {
-                    Console.WriteLine("? Custom normalize completed successfully!");
-                }
-                else
-                {
-                    Console.WriteLine($"??  Custom normalize completed with warnings (code: {rc})");
-                }
-                
-                return rc;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("? Custom normalize failed: " + ex.Message);
-                return 1;
-            }
-        }
-    }
-
-    internal sealed class DropAllTablesCommand : IMenuCommand
-    {
-        private readonly string _migrationsDir;
-        private readonly MigrationConfig _config;
-
-        public DropAllTablesCommand(string migrationsDir, MigrationConfig config)
-        {
-            _migrationsDir = migrationsDir;
-            _config = config;
-        }
-
-        public string Key => "X";
-        public string Description => "Drop ALL tables in database (DANGER: Deletes all data!)";
-
-        public int Execute()
-        {
-            Console.WriteLine("=== DROP ALL TABLES ===");
-            Console.WriteLine("??  WARNING: This will DROP ALL USER TABLES and DELETE ALL DATA! ??");
-            Console.WriteLine();
-            Console.WriteLine("This will:");
-            Console.WriteLine("  1. Disable all foreign key constraints");
-            Console.WriteLine("  2. Drop ALL user tables (preserves system tables)");
-            Console.WriteLine("  3. Preserves ASP.NET membership and system tables");
-            Console.WriteLine();
-
-            // Triple confirmation for safety
-            Console.Write("Are you ABSOLUTELY SURE you want to DROP ALL TABLES? Type 'DROP ALL TABLES' to confirm: ");
-            var confirmation1 = Console.ReadLine()?.Trim();
-            
-            if (confirmation1 != "DROP ALL TABLES")
-            {
-                Console.WriteLine("Operation cancelled - incorrect confirmation phrase.");
-                return 0;
-            }
-
-            Console.WriteLine();
-            Console.Write("Last chance! Type 'YES DELETE EVERYTHING' to proceed: ");
-            var confirmation2 = Console.ReadLine()?.Trim();
-            
-            if (confirmation2 != "YES DELETE EVERYTHING")
-            {
-                Console.WriteLine("Operation cancelled - operation not confirmed.");
-                return 0;
-            }
-
-            try
-            {
-                // Get connection string
-                var rro = RunRangeState.Current;
-                string sqlCs;
-                
-                if (rro != null && rro.SuppressPrompts)
-                {
-                    sqlCs = rro.TargetConnectionString;
-                    Console.WriteLine("Using batch mode target connection string");
-                }
-                else
-                {
-                    sqlCs = _config?.TargetConnectionString ?? "";
-                    
-                    if (string.IsNullOrWhiteSpace(sqlCs))
-                    {
-                        Console.Write("SQL connection string: ");
-                        sqlCs = Console.ReadLine()?.Trim() ?? "";
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(sqlCs))
-                {
-                    Console.WriteLine("? SQL connection string is required.");
-                    return 2;
-                }
-
-                // Test connection first
-                try
-                {
-                    using (var testConn = new SqlConnection(sqlCs))
-                    {
-                        testConn.Open();
-                        Console.WriteLine("? SQL Server connection successful");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"? SQL Server connection failed: {ex.Message}");
-                    return 1;
-                }
-
-                Console.WriteLine();
-                Console.WriteLine("???  Starting to drop all tables...");
-
-                using (var conn = new SqlConnection(sqlCs))
-                {
-                    conn.Open();
-                    
-                    // Step 1: Disable all foreign key constraints
-                    Console.WriteLine("  ?? Disabling foreign key constraints...");
-                    var disableFkSql = @"
-DECLARE @sql NVARCHAR(MAX) = N''
-
--- Generate commands to disable all foreign key constraints
-SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name) + 
-              N' NOCHECK CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
-FROM sys.foreign_keys fk
-INNER JOIN sys.tables t ON fk.parent_object_id = t.object_id
-
-IF LEN(@sql) > 0
-BEGIN
-    PRINT 'Disabling ' + CAST(LEN(@sql) - LEN(REPLACE(@sql, CHAR(13), '')) AS NVARCHAR(10)) + ' foreign key constraints...'
-    EXEC sp_executesql @sql
-END
-ELSE
-BEGIN
-    PRINT 'No foreign key constraints to disable.'
-END
-";
-
-                    using (var cmd = new SqlCommand(disableFkSql, conn))
-                    {
-                        cmd.CommandTimeout = 300; // 5 minutes
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    Console.WriteLine("  ? Foreign key constraints disabled");
-
-                    // Step 2: Get count of tables to drop
-                    var countSql = @"
-SELECT COUNT(*) 
-FROM sys.tables 
-WHERE type = 'U'  -- User tables only
-  AND name NOT LIKE 'aspnet_%'  -- Preserve ASP.NET membership tables
-  AND name NOT LIKE 'webpages_%'  -- Preserve WebPages tables
-  AND name NOT LIKE '__MigrationHistory'  -- Preserve EF migration history
-";
-
-                    int tableCount;
-                    using (var cmd = new SqlCommand(countSql, conn))
-                    {
-                        tableCount = (int)(cmd.ExecuteScalar() ?? 0);
-                    }
-
-                    if (tableCount == 0)
-                    {
-                        Console.WriteLine("  ??  No user tables found to drop.");
-                        return 0;
-                    }
-
-                    Console.WriteLine($"  ?? Found {tableCount} user tables to drop");
-
-                    // Step 3: Drop all user tables
-                    Console.WriteLine($"  ???  Dropping {tableCount} tables...");
-                    var dropTablesSql = @"
-DECLARE @sql NVARCHAR(MAX) = N''
-DECLARE @count INT = 0
-
-SELECT @sql = @sql + N'DROP TABLE ' + QUOTENAME(SCHEMA_NAME(schema_id)) + N'.' + QUOTENAME(name) + N';' + CHAR(13),
-       @count = @count + 1
-FROM sys.tables 
-WHERE type = 'U'  -- User tables only
-  AND name NOT LIKE 'aspnet_%'  -- Preserve ASP.NET membership tables
-  AND name NOT LIKE 'webpages_%'  -- Preserve WebPages tables
-  AND name NOT LIKE '__MigrationHistory'  -- Preserve EF migration history
-ORDER BY name
-
-IF LEN(@sql) > 0
-BEGIN
-    PRINT 'Dropping ' + CAST(@count AS NVARCHAR(10)) + ' user tables...'
-    EXEC sp_executesql @sql
-    PRINT 'All user tables dropped successfully!'
-END
-ELSE
-BEGIN
-    PRINT 'No user tables found to drop.'
-END
-";
-
-                    using (var cmd = new SqlCommand(dropTablesSql, conn))
-                    {
-                        cmd.CommandTimeout = 600; // 10 minutes for large databases
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    Console.WriteLine("  ? All user tables dropped successfully");
-
-                    // Step 4: Verify cleanup
-                    using (var cmd = new SqlCommand(countSql, conn))
-                    {
-                        var remainingCount = (int)(cmd.ExecuteScalar() ?? 0);
-                        Console.WriteLine($"  ?? Verification: {remainingCount} user tables remaining");
-                    }
-                }
-
-                Console.WriteLine();
-                Console.WriteLine("?? Database cleanup completed successfully!");
-                Console.WriteLine();
-                Console.WriteLine("?? Next steps:");
-                Console.WriteLine("  1. Run Option A (Generate CREATE TABLE DDL)");
-                Console.WriteLine("  2. Run Option C (Apply DDL scripts)");
-                Console.WriteLine("  3. Run Option $ (Full migration pipeline)");
-                Console.WriteLine();
-                Console.WriteLine("??  Note: System tables, ASP.NET membership, and WebPages tables were preserved.");
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"? Error dropping tables: {ex.Message}");
-                Console.WriteLine();
-                Console.WriteLine("?? Troubleshooting:");
-                Console.WriteLine("  - Ensure you have ALTER and DROP permissions");
-                Console.WriteLine("  - Check for active connections to the database");
-                Console.WriteLine("  - Some tables may have dependencies that prevent dropping");
-                return 1;
             }
         }
     }

@@ -328,8 +328,8 @@
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -352,8 +352,8 @@
       },
       {
         "Source": "CityID",
-        "Target": "CityID",
-        "Action": "Copy",
+        "Target": "AreaID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -370,8 +370,8 @@
       },
       {
         "Source": "CustomerTypeID",
-        "Target": "CustomerTypeID",
-        "Action": "Copy",
+        "Target": "ContactTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -406,7 +406,7 @@
       },
       {
         "Source": "enabled",
-        "Target": "enabled",
+        "Target": "Enabled",
         "Action": "Copy",
         "Expression": null
       },

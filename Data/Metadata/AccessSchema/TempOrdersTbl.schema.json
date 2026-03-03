@@ -218,7 +218,7 @@
     "ColumnActions": [
       {
         "Source": "TempOrderId",
-        "Target": "TempOrderId",
+        "Target": "TempOrderID",
         "Action": "Copy",
         "Expression": null
       },
@@ -230,8 +230,8 @@
       },
       {
         "Source": "CustomerId",
-        "Target": "CustomerId",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -248,32 +248,32 @@
       },
       {
         "Source": "ItemTypeID",
-        "Target": "ItemTypeID",
-        "Action": "Copy",
+        "Target": "ItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ServiceTypeId",
-        "Target": "ServiceTypeId",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PrepTypeID",
-        "Target": "PrepTypeID",
-        "Action": "Copy",
+        "Target": "ItemPrepTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PackagingId",
-        "Target": "PackagingId",
-        "Action": "Copy",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "QuantityOrdered",
-        "Target": "QuantityOrdered",
-        "Action": "Copy",
+        "Target": "QtyOrdered",
+        "Action": "Rename",
         "Expression": null
       },
       {

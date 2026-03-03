@@ -90,8 +90,8 @@
     "ColumnActions": [
       {
         "Source": "ID",
-        "Target": "ID",
-        "Action": "Copy",
+        "Target": "ClosureDateID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -108,8 +108,8 @@
       },
       {
         "Source": "NextRoastDate",
-        "Target": "NextRoastDate",
-        "Action": "Copy",
+        "Target": "NextPrepDate",
+        "Action": "Rename",
         "Expression": null
       },
       {

@@ -118,20 +118,20 @@
       },
       {
         "Source": "GroupItemTypeID",
-        "Target": "GroupItemTypeID",
-        "Action": "Copy",
+        "Target": "GroupReferenceItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "LastItemTypeID",
-        "Target": "LastItemTypeID",
-        "Action": "Copy",
+        "Target": "LastItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "LastItemTypeSortPos",
-        "Target": "LastItemTypeSortPos",
-        "Action": "Copy",
+        "Target": "LastItemSortPos",
+        "Action": "Rename",
         "Expression": null
       },
       {

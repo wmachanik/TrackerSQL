@@ -210,8 +210,8 @@
     "ColumnActions": [
       {
         "Source": "ItemTypeID",
-        "Target": "ItemTypeID",
-        "Action": "Copy",
+        "Target": "ItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -246,14 +246,14 @@
       },
       {
         "Source": "ServiceTypeId",
-        "Target": "ServiceTypeId",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ReplacementID",
-        "Target": "ReplacementID",
-        "Action": "Copy",
+        "Target": "ReplacementItemID",
+        "Action": "Rename",
         "Expression": null
       },
       {

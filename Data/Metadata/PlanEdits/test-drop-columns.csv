@@ -1,0 +1,13 @@
+﻿Table Migration report: CSV Import Test with DROP columns
+====================================
+
+Table,Before,After,Action
+,ContactsTbl,ContactsTbl,Copy
+
+Rows:,Before Col name,Before Type,Before Size,Before Null,Before Key,After Col Name,After Type,After Size,After Null,After Key,After FK Ref,Action,Source,After FK Table,After FK Column,After PK,After Identity,After UK,After Check,After Index
+,CompanyName,NVARCHAR,255,No,No,CompanyName,NVARCHAR,255,No,No,,Copy,CompanyName,,,,,,,,
+,CustomerTypeOLD,NVARCHAR,30,No,No,--/--,,,,,,n/a,Drop,CustomerTypeOLD,,,,,,,,,
+,ContactTitle,NVARCHAR,50,Yes,No,ContactTitle,NVARCHAR,50,Yes,No,,Copy,ContactTitle,,,,,,,,
+,ContactFirstName,NVARCHAR,50,Yes,No,ContactFirstName,NVARCHAR,50,Yes,No,,Copy,ContactFirstName,,,,,,,,
+
+----------------------------------------------

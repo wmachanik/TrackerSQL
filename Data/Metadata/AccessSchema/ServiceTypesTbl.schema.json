@@ -98,14 +98,14 @@
     "ColumnActions": [
       {
         "Source": "ServiceTypeId",
-        "Target": "ServiceTypeId",
-        "Action": "Copy",
+        "Target": "ItemServiceTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ServiceType",
-        "Target": "ServiceType",
-        "Action": "Copy",
+        "Target": "ItemServiceType",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -116,14 +116,14 @@
       },
       {
         "Source": "PackagingID",
-        "Target": "PackagingID",
-        "Action": "Copy",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PrepTypeID",
-        "Target": "PrepTypeID",
-        "Action": "Copy",
+        "Target": "ItemPrepTypeID",
+        "Action": "Rename",
         "Expression": null
       }
     ],

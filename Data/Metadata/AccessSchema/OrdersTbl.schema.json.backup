@@ -1,0 +1,387 @@
+{
+  "SourceTable": "OrdersTbl",
+  "Columns": [
+    {
+      "Ordinal": 0,
+      "SourceName": "OrderID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": false,
+      "IsAutoIncrement": true,
+      "IsKey": false,
+      "RecommendedSqlType": "INT IDENTITY(1,1)"
+    },
+    {
+      "Ordinal": 1,
+      "SourceName": "CustomerId",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 2,
+      "SourceName": "OrderDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 3,
+      "SourceName": "RoastDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 4,
+      "SourceName": "ItemTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 5,
+      "SourceName": "QuantityOrdered",
+      "DotNetType": "System.Double",
+      "ColumnSize": 8,
+      "NumericPrecision": 15,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "REAL"
+    },
+    {
+      "Ordinal": 6,
+      "SourceName": "RequiredByDate",
+      "DotNetType": "System.DateTime",
+      "ColumnSize": 8,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "DATETIME"
+    },
+    {
+      "Ordinal": 7,
+      "SourceName": "PrepTypeID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 8,
+      "SourceName": "PackagingID",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 9,
+      "SourceName": "ToBeDeliveredBy",
+      "DotNetType": "System.Int32",
+      "ColumnSize": 4,
+      "NumericPrecision": 10,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "INT"
+    },
+    {
+      "Ordinal": 10,
+      "SourceName": "Confirmed",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 11,
+      "SourceName": "Done",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 12,
+      "SourceName": "Packed",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    },
+    {
+      "Ordinal": 13,
+      "SourceName": "Notes",
+      "DotNetType": "System.String",
+      "ColumnSize": 255,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(255)"
+    },
+    {
+      "Ordinal": 14,
+      "SourceName": "PurchaseOrder",
+      "DotNetType": "System.String",
+      "ColumnSize": 30,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "NVARCHAR(30)"
+    },
+    {
+      "Ordinal": 15,
+      "SourceName": "InvoiceDone",
+      "DotNetType": "System.Boolean",
+      "ColumnSize": 2,
+      "NumericPrecision": 255,
+      "NumericScale": 255,
+      "AllowDBNull": true,
+      "IsAutoIncrement": false,
+      "IsKey": false,
+      "RecommendedSqlType": "BIT"
+    }
+  ],
+  "PrimaryKey": [],
+  "Indexes": [
+    {
+      "Name": "PrimaryKey",
+      "Columns": [
+        "OrderID"
+      ],
+      "Unique": true,
+      "PrimaryKey": true
+    },
+    {
+      "Name": "CoffeeTypeID",
+      "Columns": [
+        "ItemTypeID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "CustomerID",
+      "Columns": [
+        "CustomerId"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "OrderDate",
+      "Columns": [
+        "OrderDate"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    },
+    {
+      "Name": "PackagingID",
+      "Columns": [
+        "PackagingID"
+      ],
+      "Unique": false,
+      "PrimaryKey": false
+    }
+  ],
+  "Plan": {
+    "Classification": "Normalize",
+    "TargetTable": "OrdersTbl", 
+    "PreserveIdsOnInsert": false,
+    "Reviewed": true,
+    "Ignore": false,
+    "ColumnActions": [
+      {
+        "Source": "OrderID",
+        "Target": "OrderID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "CustomerId",
+        "Target": "CustomerId",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "OrderDate",
+        "Target": "OrderDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RoastDate",
+        "Target": "RoastDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ItemTypeID",
+        "Target": "ItemTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "QuantityOrdered",
+        "Target": "QuantityOrdered",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "RequiredByDate",
+        "Target": "RequiredByDate",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PrepTypeID",
+        "Target": "PrepTypeID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PackagingID",
+        "Target": "PackagingID",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "ToBeDeliveredBy",
+        "Target": "ToBeDeliveredBy",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Confirmed",
+        "Target": "Confirmed",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Done",
+        "Target": "Done",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Packed",
+        "Target": "Packed",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "Notes",
+        "Target": "Notes",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "PurchaseOrder",
+        "Target": "PurchaseOrder",
+        "Action": "Copy",
+        "Expression": null
+      },
+      {
+        "Source": "InvoiceDone",
+        "Target": "InvoiceDone",
+        "Action": "Copy",
+        "Expression": null
+      }
+    ],
+    "Normalize": {
+      "IsHeader": true,
+      "IsLine": false,
+      "HeaderTable": "OrdersTbl",
+      "LineTable": "OrderLinesTbl",
+      "NewHeaderKeyName": "OrderID",
+      "NewLineKeyName": "OrderLineID",
+      "LineLinkKeyName": "OrderID",
+      "HeaderPrimaryKey": ["OrderID"],
+      "LinePrimaryKey": ["OrderLineID"],
+      "HeaderColumns": [
+        "OrderID",
+        "CustomerId",
+        "OrderDate",
+        "RequiredByDate",
+        "ToBeDeliveredBy",
+        "Confirmed",
+        "Done",
+        "Packed",
+        "Notes",
+        "PurchaseOrder",
+        "InvoiceDone"
+      ],
+      "LineColumns": [
+        "OrderID",
+        "RoastDate",
+        "ItemTypeID",
+        "QuantityOrdered",
+        "PrepTypeID",
+        "PackagingID"
+      ],
+      "NormalizeInto": [
+        {
+          "TargetTable": "OrdersTbl",
+          "Description": "Order header table for normalized orders"
+        },
+        {
+          "TargetTable": "OrderLinesTbl",
+          "Description": "Order lines table for normalized order items"
+        }
+      ]
+    }
+  }
+}

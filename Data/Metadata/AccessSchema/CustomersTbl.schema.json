@@ -610,8 +610,8 @@
     "ColumnActions": [
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -664,8 +664,8 @@
       },
       {
         "Source": "City",
-        "Target": "City",
-        "Action": "Copy",
+        "Target": "Area",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -682,8 +682,8 @@
       },
       {
         "Source": "Country/Region",
-        "Target": "Country/Region",
-        "Action": "Copy",
+        "Target": "CountryOrRegion",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -730,26 +730,26 @@
       },
       {
         "Source": "CustomerTypeID",
-        "Target": "CustomerTypeID",
-        "Action": "Copy",
+        "Target": "ContactTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustomerTypeOLD",
         "Target": "CustomerTypeOLD",
-        "Action": "Copy",
+        "Action": "Drop",
         "Expression": null
       },
       {
         "Source": "EquipType",
-        "Target": "EquipType",
-        "Action": "Copy",
+        "Target": "EquipTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CoffeePreference",
-        "Target": "CoffeePreference",
-        "Action": "Copy",
+        "Target": "ItemPrefID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -760,20 +760,20 @@
       },
       {
         "Source": "PrefPrepTypeID",
-        "Target": "PrefPrepTypeID",
-        "Action": "Copy",
+        "Target": "PrefItemPrepTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PrefPackagingID",
-        "Target": "PrefPackagingID",
-        "Action": "Copy",
+        "Target": "PrefItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "SecondaryPreference",
-        "Target": "SecondaryPreference",
-        "Action": "Copy",
+        "Target": "SecondaryItemPrefID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -790,8 +790,8 @@
       },
       {
         "Source": "PreferedAgent",
-        "Target": "PreferedAgent",
-        "Action": "Copy",
+        "Target": "PreferedAgentID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -814,13 +814,13 @@
       },
       {
         "Source": "autofulfill",
-        "Target": "autofulfill",
+        "Target": "AutoFulfill",
         "Action": "Copy",
         "Expression": null
       },
       {
         "Source": "enabled",
-        "Target": "enabled",
+        "Target": "Enabled",
         "Action": "Copy",
         "Expression": null
       },

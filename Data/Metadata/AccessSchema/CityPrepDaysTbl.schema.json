@@ -98,14 +98,14 @@
     "ColumnActions": [
       {
         "Source": "CityPrepDaysID",
-        "Target": "CityPrepDaysID",
-        "Action": "Copy",
+        "Target": "AreaPrepDaysID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CityID",
-        "Target": "CityID",
-        "Action": "Copy",
+        "Target": "AreaID",
+        "Action": "Rename",
         "Expression": null
       },
       {

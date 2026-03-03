@@ -112,8 +112,8 @@
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
@@ -142,8 +142,8 @@
       },
       {
         "Source": "HadReoccurItems",
-        "Target": "HadReoccurItems",
-        "Action": "Copy",
+        "Target": "HadRecurrItems",
+        "Action": "Rename",
         "Expression": null
       }
     ],

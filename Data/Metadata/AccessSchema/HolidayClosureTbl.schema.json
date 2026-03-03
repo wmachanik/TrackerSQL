@@ -114,8 +114,8 @@
     "ColumnActions": [
       {
         "Source": "ID",
-        "Target": "ID",
-        "Action": "Copy",
+        "Target": "HolidayClosureID",
+        "Action": "Rename",
         "Expression": null
       },
       {

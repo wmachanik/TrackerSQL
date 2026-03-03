@@ -143,44 +143,44 @@
     "ColumnActions": [
       {
         "Source": "ClientUsageLineNo",
-        "Target": "ClientUsageLineNo",
-        "Action": "Copy",
+        "Target": "ContactUsageLineNo",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "CustomerID",
-        "Target": "CustomerID",
-        "Action": "Copy",
+        "Target": "ContactID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "Date",
-        "Target": "Date",
-        "Action": "Copy",
+        "Target": "DeliveryDate",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "ItemProvided",
-        "Target": "ItemProvided",
-        "Action": "Copy",
+        "Target": "ItemProvidedID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "AmountProvided",
-        "Target": "AmountProvided",
-        "Action": "Copy",
+        "Target": "QtyProvided",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PrepTypeID",
-        "Target": "PrepTypeID",
-        "Action": "Copy",
+        "Target": "ItemPrepTypeID",
+        "Action": "Rename",
         "Expression": null
       },
       {
         "Source": "PackagingID",
-        "Target": "PackagingID",
-        "Action": "Copy",
+        "Target": "ItemPackagingID",
+        "Action": "Rename",
         "Expression": null
       },
       {

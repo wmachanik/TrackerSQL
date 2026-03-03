@@ -535,13 +535,23 @@ namespace MigrationRunner
 
                     var tm = GetOrAddMap(maps, targetTable, sourceTable);
 
-                    // Process column mappings
+                    // Process column mappings (skip columns marked as "Drop")
                     if (schema?.Plan?.ColumnActions != null)
                     {
                         foreach (var colAction in schema.Plan.ColumnActions)
                         {
                             string srcCol = colAction?.Source;
                             string tarCol = colAction?.Target;
+                            string action = colAction?.Action;
+                            
+                            // CRITICAL FIX: Skip columns marked as "Drop"
+                            if (!string.IsNullOrEmpty(action) && 
+                                string.Equals(action, "Drop", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine($"  SKIPPING dropped column: {srcCol} (Action: {action})");
+                                continue;
+                            }
+                            
                             if (!string.IsNullOrEmpty(srcCol) && !string.IsNullOrEmpty(tarCol))
                             {
                                 AddColMap(tm, srcCol, tarCol);
@@ -728,13 +738,16 @@ namespace MigrationRunner
         private static string TryConvertDate(string exprNvarchar)
         {
             // exprNvarchar is an NVARCHAR expression already wrapped with NULLIF(...)
-            // Styles: 127 = ISO8601 with Z, 126 = ISO8601 T, 121 = ODBC canonical, 103 = d/M/y
-            return $"COALESCE(" +
+            // Try to handle more date formats and NULL/empty values gracefully
+            // Styles: 127 = ISO8601 with Z, 126 = ISO8601 T, 121 = ODBC canonical, 103 = dd/MM/yyyy, 101 = MM/dd/yyyy
+            return $"CASE WHEN {exprNvarchar} IS NULL OR LEN(LTRIM(RTRIM({exprNvarchar}))) = 0 THEN NULL " +
+                   $"ELSE COALESCE(" +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 127), " +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 126), " +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 121), " +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 103), " +
-                   $"TRY_CONVERT(datetime2(7), {exprNvarchar}))";
+                   $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 101), " +
+                   $"TRY_CONVERT(datetime2(7), {exprNvarchar})) END";
         }
 
         private static bool IsBoolLike(string sqlType, string colName)

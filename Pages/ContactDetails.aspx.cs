@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerDotNet.Classes.Poco;
@@ -170,31 +171,47 @@ namespace TrackerSQL.Pages
             {
                 var usageRepo = new TrackerDotNet.Classes.Sql.ContactsUsageRepository();
                 var usage = usageRepo.GetByContactId(contactId);
-                gvPrediction.DataSource = usage != null ? new[] { usage } : new TrackerDotNet.Classes.Sql.ContactsUsage[] { };
+                
+                if (usage != null)
+                {
+                    gvPrediction.DataSource = new[] { usage };
+                }
+                else
+                {
+                    gvPrediction.DataSource = new List<TrackerDotNet.Classes.Sql.ContactsUsage>();
+                }
                 gvPrediction.DataBind();
 
                 var itemsRepo = new TrackerDotNet.Classes.Sql.ContactsItemUsageRepository();
                 var items = itemsRepo.GetByContactId(contactId, "DeliveryDate DESC");
 
-                var itemLookup = new ItemsRepository().GetAll("ItemDesc");
-                var prepLookup = new ItemPrepTypesRepository().GetAll("ItemPrepTypeName");
-                var packLookup = new ItemPackagingsRepository().GetAll("ItemPackagingDesc");
+                if (items != null && items.Count > 0)
+                {
+                    var itemLookup = new ItemsRepository().GetAll("ItemDesc");
+                    var prepLookup = new ItemPrepTypesRepository().GetAll("ItemPrepTypeName");
+                    var packLookup = new ItemPackagingsRepository().GetAll("ItemPackagingDesc");
 
-                var uiItems = items.ConvertAll(x => new {
-                    ClientUsageLineNo = x.ContactUsageLineNo,
-                    ItemDate = x.DeliveryDate,
-                    ItemProvided = x.ItemProvidedID.HasValue ? (itemLookup.Find(i => i.ItemID == x.ItemProvidedID.Value)?.ItemDesc ?? x.ItemProvidedID.Value.ToString()) : string.Empty,
-                    AmountProvided = x.QtyProvided,
-                    PrepType = x.ItemPrepTypeID.HasValue ? (prepLookup.Find(p => p.ItemPrepID == x.ItemPrepTypeID.Value)?.ItemPrepTypeName ?? x.ItemPrepTypeID.Value.ToString()) : string.Empty,
-                    Packaging = x.ItemPackagingID.HasValue ? (packLookup.Find(p => p.ItemPackagingID == x.ItemPackagingID.Value)?.ItemPackagingDesc ?? x.ItemPackagingID.Value.ToString()) : string.Empty,
-                    Notes = x.Notes
-                });
-                gvContactItems.DataSource = uiItems;
+                    var uiItems = items.ConvertAll(x => new {
+                        ClientUsageLineNo = x.ContactUsageLineNo,
+                        ItemDate = x.DeliveryDate,
+                        ItemProvided = x.ItemProvidedID.HasValue ? (itemLookup.Find(i => i.ItemID == x.ItemProvidedID.Value)?.ItemDesc ?? x.ItemProvidedID.Value.ToString()) : string.Empty,
+                        AmountProvided = x.QtyProvided,
+                        PrepType = x.ItemPrepTypeID.HasValue ? (prepLookup.Find(p => p.ItemPrepID == x.ItemPrepTypeID.Value)?.ItemPrepTypeName ?? x.ItemPrepTypeID.Value.ToString()) : string.Empty,
+                        Packaging = x.ItemPackagingID.HasValue ? (packLookup.Find(p => p.ItemPackagingID == x.ItemPackagingID.Value)?.ItemPackagingDesc ?? x.ItemPackagingID.Value.ToString()) : string.Empty,
+                        Notes = x.Notes
+                    });
+                    gvContactItems.DataSource = uiItems;
+                }
+                else
+                {
+                    gvContactItems.DataSource = new List<object>();
+                }
                 gvContactItems.DataBind();
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "BindUsageLines error: " + ex.Message);
+                ltrlStatus.Text = "Error loading usage data: " + ex.Message;
             }
         }
 

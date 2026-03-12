@@ -74,16 +74,16 @@ namespace TrackerSQL.Pages
             string filterField = ddlFilterBy.SelectedValue;
             string filterValue = tbxFilterBy.Text.Trim();
 
-            if (filterField == "CustomerID")
+            if (filterField == "ContactID")
             {
                 if (int.TryParse(filterValue, out int contactId))
                 {
-                    Session[CONST_WHERECLAUSE_SESSIONVAR] = $"CustomerID = {contactId}"; // mapped in repository
+                    Session[CONST_WHERECLAUSE_SESSIONVAR] = $"ContactID = {contactId}";
                     lblFilter.Text = $"Filtered by ContactID={contactId}.";
                 }
                 else
                 {
-                    Session[CONST_WHERECLAUSE_SESSIONVAR] = "1=0"; // no results
+                    Session[CONST_WHERECLAUSE_SESSIONVAR] = "1=0";
                     lblFilter.Text = "Please enter a valid numeric Contact ID.";
                     new showMessageBox(Page, "Input Error", "Please enter a valid numeric Contact ID.");
                     upnlContactSummary.Update();
@@ -93,7 +93,7 @@ namespace TrackerSQL.Pages
             else
             {
                 if (!filterValue.StartsWith("%"))
-                    filterValue = "%" + filterValue + "%"; // contains search
+                    filterValue = "%" + filterValue + "%";
                 Session[CONST_WHERECLAUSE_SESSIONVAR] = $"{filterField} LIKE '{filterValue}'";
                 lblFilter.Text = $"Filtered by {filterField} LIKE '{filterValue}'";
             }

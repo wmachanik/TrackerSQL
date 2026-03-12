@@ -136,12 +136,12 @@
                 <tr>
                     <td>Uses/Enabled/Filters</td>
                     <td colspan="5">
-                        <asp:CheckBox ID="enabledCheckBox" runat="server" Text="enabled" TextAlign="Right" />
-                        <asp:CheckBox ID="autofulfillCheckBox" runat="server" Text="auto fulfill" TextAlign="Right" />
+                        <asp:CheckBox ID="enabledCheckBox" runat="server" Text="Enabled" TextAlign="Right" />
+                        <asp:CheckBox ID="autofulfillCheckBox" runat="server" Text="Auto Fulfill" TextAlign="Right" />
                         <asp:CheckBox ID="UsesFilterCheckBox" runat="server" Text="Uses Filter" TextAlign="Right" />
-                        <asp:CheckBox ID="PredictionDisabledCheckBox" runat="server" Text="PredictionDisabled" TextAlign="Right" />
-                        <asp:CheckBox ID="AlwaysSendChkUpCheckBox" runat="server" Text="AlwaysSendChkUp" TextAlign="Right" />
-                        <asp:CheckBox ID="NormallyRespondsCheckBox" runat="server" Text="NormallyResponds" TextAlign="Right" />
+                        <asp:CheckBox ID="PredictionDisabledCheckBox" runat="server" Text="Prediction Disabled" TextAlign="Right" />
+                        <asp:CheckBox ID="AlwaysSendChkUpCheckBox" runat="server" Text="Always Send Checkup" TextAlign="Right" />
+                        <asp:CheckBox ID="NormallyRespondsCheckBox" runat="server" Text="Normally Responds" TextAlign="Right" />
                     </td>
                 </tr>
                 <tr>

@@ -408,31 +408,105 @@ namespace TrackerSQL.Managers
         /// <returns>True if sent successfully, false otherwise</returns>
         public bool SendAdminNotification(string subject, string body)
         {
+            //!!!! replaced old code with below:
             try
             {
-                var emailSettings = new EmailSettings();
+                // Resolve addresses and SMTP login from config
                 string adminEmail = ConfigHelper.GetString("SysEmailFrom", SystemConstants.EmailConstants.DefaultAdminEmail);
-                emailSettings.SetRecipient(adminEmail);  // system email is the admin address
+                string smtpLogin = ConfigHelper.GetString("EMailLogIn", string.Empty);
 
-                var email = new EmailMailKitCls(emailSettings);
+                // Convert plain-text body to simple HTML (preserve paragraphs and lists)
+                string htmlBody;
+                {
+                    var sb = new StringBuilder();
+                    var lines = body.Replace("\r", "").Split('\n');
+                    bool inList = false;
+
+                    foreach (var raw in lines)
+                    {
+                        var line = raw?.Trim();
+                        if (string.IsNullOrEmpty(line))
+                        {
+                            // blank line -> paragraph break
+                            if (inList)
+                            {
+                                sb.AppendLine("</ul>");
+                                inList = false;
+                            }
+                            sb.AppendLine("<br/>");
+                            continue;
+                        }
+
+                        // list item detection (lines starting with "- " or " -")
+                        if (line.StartsWith("- ") || line.StartsWith(" -"))
+                        {
+                            if (!inList)
+                            {
+                                sb.AppendLine("<ul>");
+                                inList = true;
+                            }
+                            var itemText = line.TrimStart('-', ' ').Trim();
+                            sb.AppendLine($"<li>{HttpUtility.HtmlEncode(itemText)}</li>");
+                            continue;
+                        }
+
+                        // heading-like lines (all caps or starting with warning emoji)
+                        if (line.StartsWith("⚠️") || line == line.ToUpperInvariant() && line.Length < 80)
+                        {
+                            if (inList)
+                            {
+                                sb.AppendLine("</ul>");
+                                inList = false;
+                            }
+                            sb.AppendLine($"<p><strong>{HttpUtility.HtmlEncode(line)}</strong></p>");
+                            continue;
+                        }
+
+                        // normal line -> paragraph
+                        if (inList)
+                        {
+                            sb.AppendLine("</ul>");
+                            inList = false;
+                        }
+                        sb.AppendLine($"<p>{HttpUtility.HtmlEncode(line)}</p>");
+                    }
+
+                    if (inList)
+                        sb.AppendLine("</ul>");
+
+                    htmlBody = sb.ToString();
+                }
+
+                // Build an EmailMailKitCls using default config
+                var email = new EmailMailKitCls();
+
+                // Force real delivery for admin notifications regardless of global test flag
+                email.IsTestMode = false;
+
+                // Ensure From matches SMTP login to avoid SendAs rejections
+                if (!string.IsNullOrEmpty(smtpLogin))
+                    email.SetEmailFromTo(smtpLogin, adminEmail);
+                else
+                    email.SetEmailFromTo(null, adminEmail);
+
+                // Subject + HTML body (body is already HTML)
                 email.SetEmailSubject(subject);
-                email.AddFormatToBody(body);
+                email.AddFormatToBody(htmlBody);
+
+                // Send
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupEmailManager: Attempting admin notification From={(string.IsNullOrEmpty(smtpLogin) ? "(default)" : smtpLogin)} To={adminEmail} Subject={subject}");
                 bool result = email.SendEmail();
 
                 if (result)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"CoffeeCheckupEmailManager: Admin notification sent successfully to {adminEmail}");
-                }
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupEmailManager: Admin notification sent successfully to {adminEmail}");
                 else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"CoffeeCheckupEmailManager: Failed to send admin notification: {emailClient.LastErrorSummary}");
-                }
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupEmailManager: Failed to send admin notification: {email.LastErrorSummary}");
 
                 return result;
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"CoffeeCheckupEmailManager: Error sending admin notification: {ex.Message}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupEmailManager: Error sending admin notification: {ex.Message}");
                 return false;
             }
         }

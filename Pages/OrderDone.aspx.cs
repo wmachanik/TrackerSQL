@@ -73,7 +73,7 @@ namespace TrackerSQL.Pages
                 var tempHeader = new TempOrdersHeaderTbl().GetFirst();
                 if (tempHeader != null)
                 {
-                    sdsOrderDoneHeader.SelectParameters["CustomerID"].DefaultValue = tempHeader.CustomerID.ToString();
+                    sdsOrderDoneHeader.SelectParameters["ContactID"].DefaultValue = tempHeader.CustomerID.ToString();
                 }
                 fvOrderDone.DataBind();
                 SetDefaultRadioButtonFromDeliveryType();

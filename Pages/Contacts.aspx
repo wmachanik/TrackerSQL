@@ -21,11 +21,11 @@
                             <asp:ListItem Value="CompanyName" Text="Company Name" />
                             <asp:ListItem Value="ContactFirstName" Text="First Name" />
                             <asp:ListItem Value="EmailAddress" Text="Email" />
-                            <asp:ListItem Value="PersonsTbl.Abbreviation" Text="DeliveryBy" />
-                            <asp:ListItem Value="CityTbl.City" Text="City" />
-                            <asp:ListItem Value="EquipTypeTbl.EquipTypeName" Text="EquipType" />
-                            <asp:ListItem Value="CustomersTbl.MachineSN" Text="Serial No" />
-                            <asp:ListItem Value="CustomerID" Text="Contact ID" />
+                            <asp:ListItem Value="PeopleTbl.Abbreviation" Text="Delivery By" />
+                            <asp:ListItem Value="AreasTbl.AreaName" Text="Area" />
+                            <asp:ListItem Value="EquipTypesTbl.EquipTypeName" Text="Equipment Type" />
+                            <asp:ListItem Value="ContactsTbl.MachineSN" Text="Equipment S/N" />
+                            <asp:ListItem Value="ContactID" Text="Contact ID" />
                         </asp:DropDownList>
                     </div>
                     <div class="filter-control">
@@ -79,21 +79,21 @@
                             HeaderStyle-CssClass="col-priority-2" ItemStyle-CssClass="col-priority-2" />
                         <asp:BoundField DataField="ContactLastName" HeaderText="Last Name" SortExpression="ContactLastName"
                             HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4" />
-                        <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" ItemStyle-Font-Size="Smaller"
+                        <asp:BoundField DataField="City" HeaderText="Area" SortExpression="City" ItemStyle-Font-Size="Smaller"
                             HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3" />
                         <asp:BoundField DataField="PhoneNumber" HeaderText="Phone" SortExpression="PhoneNumber" HeaderStyle-Font-Size="Small" ItemStyle-Font-Size="Small"
                             HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1" />
                         <asp:BoundField DataField="EmailAddress" HeaderText="Email Address"
                             HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3" ItemStyle-Font-Size="Smaller" />
-                        <asp:BoundField DataField="DeliveryBy" HeaderText="By" SortExpression="DeliveryBy"
+                        <asp:BoundField DataField="DeliveryBy" HeaderText="Delivery By" SortExpression="DeliveryBy"
                             HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3" />
                         <asp:BoundField DataField="EquipTypeName" HeaderText="Equipment" SortExpression="EquipTypeName" ItemStyle-Font-Size="Smaller"
                             HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4" />
-                        <asp:BoundField DataField="MachineSN" HeaderText="S/N" SortExpression="MachineSN" ItemStyle-Font-Size="Smaller"
+                        <asp:BoundField DataField="MachineSN" HeaderText="Equip S/N" SortExpression="MachineSN" ItemStyle-Font-Size="Smaller"
                             HeaderStyle-CssClass="col-priority-5" ItemStyle-CssClass="col-priority-5" />
-                        <asp:CheckBoxField DataField="autofulfill" HeaderText="auto" SortExpression="autofulfill"
+                        <asp:CheckBoxField DataField="autofulfill" HeaderText="Auto" SortExpression="autofulfill"
                             HeaderStyle-CssClass="col-priority-5" ItemStyle-CssClass="col-priority-5" />
-                        <asp:CheckBoxField DataField="enabled" HeaderText="Enbld" SortExpression="enabled"
+                        <asp:CheckBoxField DataField="enabled" HeaderText="Enabled" SortExpression="enabled"
                             HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4" />
                         <asp:HyperLinkField DataNavigateUrlFields="CustomerID" HeaderText="Order" ItemStyle-HorizontalAlign="Center"
                             HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1"

@@ -125,8 +125,15 @@
     <Content Include="App_Data\SQLCommands001.xml" />
     <Content Include="App_Data\SQLCommands_AwayPeriod.xml" />
     <Content Include="CleanMigrationTables.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\AddForeignKeys_LATEST.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\CreateTables_LATEST.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\DataMigration_LATEST.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\Fix3FailedTables.sql" />
     <Content Include="Data\Metadata\PlanEdits\Sql\FixBadDates_ContactsUsageTbl.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\FixContactUsageTables.sql" />
     <Content Include="Data\Metadata\PlanEdits\Sql\FixSourceDataDates.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\ManualDropAllTables.sql" />
+    <Content Include="Data\Metadata\PlanEdits\Sql\VerifyMigrationRenames.sql" />
     <Content Include="Default.aspx" />
     <Content Include="diagnose-contacts-orders.sql" />
     <Content Include="DisableClient.aspx" />
@@ -203,6 +210,7 @@
     <Content Include="Pages\ClientList.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
     <Content Include="Pages\Contacts.aspx" />
+    <Content Include="Pages\ContactsTest.aspx" />
     <Content Include="Pages\CustomersAway.aspx" />
     <Content Include="Pages\CustomersAwayDetail.aspx" />
     <Content Include="Pages\DeleteOrderLine.aspx" />
@@ -253,6 +261,27 @@
     <Content Include="FIXED-DROP-COLUMN-ISSUE.md" />
     <Content Include="regenerate-ddl-and-migrate.ps1" />
     <Content Include="fix-bad-dates-and-migrate.ps1" />
+    <Content Include="Data\Metadata\README.md" />
+    <Content Include="Data\Metadata\BulkRenameRules.json" />
+    <Content Include="Migrations\MIGRATION_RENAME_GUIDE.md" />
+    <Content Include="Migrations\POST_MIGRATION_CODE_UPDATES.md" />
+    <Content Include="Migrations\README_MIGRATION.md" />
+    <Content Include="Migrations\STEP_N_FIX_SUMMARY.md" />
+    <Content Include="Migrations\DUPLICATE_PK_FIX_SUMMARY.md" />
+    <Content Include="Migrations\TROUBLESHOOTING.md" />
+    <Content Include="Migrations\ACTION_PLAN.md" />
+    <Content Include="Migrations\SCHEMA_DROP_VERIFICATION.md" />
+    <Content Include="Migrations\FINAL_FIX_IDENTITY_INSERT_BUG.md" />
+    <Content Include="Migrations\VerifyMigrationFix.ps1" />
+    <Content Include="Migrations\ConvertMigrationReportToImportFormat.ps1" />
+    <Content Include="Migrations\FixPlanConstraintsPrimaryKeys.ps1" />
+    <Content Include="Migrations\FIX_PRIMARY_KEY_CONSTRAINTS.md" />
+    <Content Include="Migrations\FixCsvImporterPrimaryKeyDetection.ps1" />
+    <Content Include="Migrations\PatchCsvImporterForPrimaryKeys.ps1" />
+    <Content Include="Migrations\MANUAL_FIX_CSV_IMPORTER.md" />
+    <Content Include="Migrations\ApplyRemainingCsvFixes.ps1" />
+    <Content Include="Migrations\AddColumnTypesToConstraints.ps1" />
+    <Content Include="Migrations\PostCsvImport_AddDateColumnTypes.ps1" />
     <None Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
@@ -597,6 +626,10 @@
     </Compile>
     <Compile Include="Pages\Contacts.aspx.cs">
       <DependentUpon>Contacts.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Pages\ContactsTest.aspx.cs">
+      <DependentUpon>ContactsTest.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Pages\CustomersAway.aspx.cs">

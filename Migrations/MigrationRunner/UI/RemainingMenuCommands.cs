@@ -129,15 +129,16 @@ namespace MigrationRunner.UI
                     var sql = @"
 -- Drop FKs first
 DECLARE @sql NVARCHAR(MAX) = N'';
-SELECT @sql = @sql + N''ALTER TABLE '' + QUOTENAME(SCHEMA_NAME(parent_object_id)) + N''.'' + QUOTENAME(OBJECT_NAME(parent_object_id)) + N'' DROP CONSTRAINT '' + QUOTENAME(name) + N'';''
-FROM sys.foreign_keys;
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.tables t ON t.object_id = fk.parent_object_id;
 IF LEN(@sql) > 0 EXEC sp_executesql @sql;
 
 -- Drop tables
 SET @sql = N'';
-SELECT @sql = @sql + N''DROP TABLE '' + QUOTENAME(SCHEMA_NAME(schema_id)) + N''.'' + QUOTENAME(name) + N'';''
+SELECT @sql = @sql + N'DROP TABLE ' + QUOTENAME(SCHEMA_NAME(schema_id)) + N'.' + QUOTENAME(name) + N';' + CHAR(13)
 FROM sys.tables
-WHERE type = ''U'' AND SCHEMA_NAME(schema_id) NOT IN (''sys'', ''INFORMATION_SCHEMA'');
+WHERE type = N'U' AND SCHEMA_NAME(schema_id) NOT IN (N'sys');
 IF LEN(@sql) > 0 EXEC sp_executesql @sql;
 ";
                     using (var cmd = new SqlCommand(sql, conn))

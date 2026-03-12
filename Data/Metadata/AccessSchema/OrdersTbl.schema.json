@@ -342,19 +342,8 @@
       }
     ],
     "Normalize": {
-      "IsHeader": true,
-      "IsLine": false,
       "HeaderTable": "OrdersTbl",
       "LineTable": "OrderLinesTbl",
-      "NewHeaderKeyName": "OrderID",
-      "NewLineKeyName": "OrderLineID",
-      "LineLinkKeyName": "OrderID",
-      "HeaderPrimaryKey": [
-        "OrderID"
-      ],
-      "LinePrimaryKey": [
-        "OrderLineID"
-      ],
       "HeaderColumns": [
         "OrderID",
         "CustomerId",
@@ -376,16 +365,18 @@
         "PrepTypeID",
         "PackagingID"
       ],
-      "NormalizeInto": [
-        {
-          "TargetTable": "OrdersTbl",
-          "Description": "Order header table for normalized orders"
-        },
-        {
-          "TargetTable": "OrderLinesTbl",
-          "Description": "Order lines table for normalized order items"
-        }
-      ]
+      "OldCompositeKey": [],
+      "NewHeaderKeyName": "OrderID",
+      "NewLineKeyName": "OrderLineID",
+      "LineLinkKeyName": "OrderID",
+      "HeaderPrimaryKey": [
+        "OrderID"
+      ],
+      "LinePrimaryKey": [
+        "OrderLineID"
+      ],
+      "PreserveHeaderIds": false,
+      "PreserveLineIds": false
     }
   }
 }

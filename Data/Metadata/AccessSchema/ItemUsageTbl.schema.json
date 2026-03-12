@@ -143,9 +143,9 @@
     "ColumnActions": [
       {
         "Source": "ClientUsageLineNo",
-        "Target": "ContactUsageLineNo",
-        "Action": "Rename",
-        "Expression": null
+        "Target": "ContactItemUsageLineNo",
+        "Action": "Drop",
+        "Expression": "Let SQL Server auto-generate new identity values since Access has composite PK with duplicates"
       },
       {
         "Source": "CustomerID",

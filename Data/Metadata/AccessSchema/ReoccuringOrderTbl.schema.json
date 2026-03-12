@@ -238,19 +238,8 @@
       }
     ],
     "Normalize": {
-      "IsHeader": true,
-      "IsLine": false,
       "HeaderTable": "RecurringOrdersTbl",
       "LineTable": "RecurringOrderItemsTbl",
-      "NewHeaderKeyName": "RecurringOrderID",
-      "NewLineKeyName": "RecurringOrderItemID",
-      "LineLinkKeyName": "RecurringOrderID",
-      "HeaderPrimaryKey": [
-        "RecurringOrderID"
-      ],
-      "LinePrimaryKey": [
-        "RecurringOrderItemID"
-      ],
       "HeaderColumns": [
         "ID",
         "CustomerID",
@@ -268,16 +257,18 @@
         "QtyRequired",
         "PackagingID"
       ],
-      "NormalizeInto": [
-        {
-          "TargetTable": "RecurringOrdersTbl",
-          "Description": "Main recurring orders table"
-        },
-        {
-          "TargetTable": "RecurringOrdersTbl",
-          "Description": "Line items for recurring orders (future normalization)"
-        }
-      ]
+      "OldCompositeKey": [],
+      "NewHeaderKeyName": "RecurringOrderID",
+      "NewLineKeyName": "RecurringOrderItemID",
+      "LineLinkKeyName": "RecurringOrderID",
+      "HeaderPrimaryKey": [
+        "RecurringOrderID"
+      ],
+      "LinePrimaryKey": [
+        "RecurringOrderItemID"
+      ],
+      "PreserveHeaderIds": false,
+      "PreserveLineIds": false
     }
   }
 }

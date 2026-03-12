@@ -1,0 +1,20 @@
+{
+  "CaseSensitive": false,
+  "TableRenames": {
+    "ClientUsageTbl": "ContactsItemsPredictedTbl",
+    "ClientUsageLinesTbl": "ContactsUsageTbl",
+    "ItemUsageTbl": "ContactsItemUsageTbl"
+  },
+  "ExactColumnRenames": {
+    "MachineSN": "EquipmentSN",
+    "CustomerId": "ContactID",
+    "CustomerID": "ContactID",
+    "ClientID": "ContactID",
+    "ClientUsageLineNo": "ContactUsageLineNo"
+  },
+  "ColumnTokenReplacements": {
+    "Machine": "Equipment",
+    "Customer": "Contact",
+    "Client": "Contact"
+  }
+}

@@ -12,17 +12,18 @@ namespace TrackerDotNet.Classes.Sql
     /// </summary>
     public class ContactSummariesRepository
     {
-        // UI dropdown values (legacy) mapped to current table/column expressions
+        // UI dropdown values mapped to current SQL table/column expressions
         private static readonly Dictionary<string,string> ColumnMap = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase)
         {
             {"CompanyName","c.CompanyName"},
             {"ContactFirstName","c.ContactFirstName"},
             {"EmailAddress","c.EmailAddress"},
-            {"PersonsTbl.Abbreviation","p.Abbreviation"}, // legacy misspelling retained in UI
-            {"CityTbl.City","a.Area"},                    // legacy 'City' now 'Area'
-            {"EquipTypeTbl.EquipTypeName","e.EquipTypeName"},
-            {"CustomersTbl.MachineSN","c.MachineSN"},      // legacy CustomersTbl reference
-            {"CustomerID","c.ContactID"}                   // legacy alias
+            {"PeopleTbl.Abbreviation","p.Abbreviation"},
+            {"AreasTbl.Area","a.AreaName"},
+            {"AreasTbl.AreaName","a.AreaName"},
+            {"EquipTypesTbl.EquipTypeName","e.EquipTypeName"},
+            {"ContactsTbl.MachineSN","c.MachineSN"},
+            {"ContactID","c.ContactID"}
         };
 
         /// <summary>
@@ -34,16 +35,16 @@ namespace TrackerDotNet.Classes.Sql
             using (var db = new TrackerSQLDb())
             {
                 string sql = @"SELECT c.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                                  a.Area AS City, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
-                                  e.EquipTypeName, c.MachineSN, c.autofulfill, c.enabled
+                                  a.AreaName AS City, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
+                                  e.EquipTypeName, c.MachineSN, c.AutoFulfill, c.Enabled
                                FROM ContactsTbl c
                                LEFT OUTER JOIN PeopleTbl p ON c.PreferedAgentID = p.PersonID
                                LEFT OUTER JOIN AreasTbl a ON c.Area = a.AreaID
                                LEFT OUTER JOIN EquipTypesTbl e ON c.EquipTypeID = e.EquipTypeID";
 
                 var whereParts = new List<string>();
-                if (isEnabled == 0) whereParts.Add("c.enabled = 0");
-                else if (isEnabled == 1) whereParts.Add("c.enabled = 1");
+                if (isEnabled == 0) whereParts.Add("c.Enabled = 0");
+                else if (isEnabled == 1) whereParts.Add("c.Enabled = 1");
 
                 if (!string.IsNullOrWhiteSpace(whereFilter))
                 {
@@ -80,8 +81,8 @@ namespace TrackerDotNet.Classes.Sql
                                 DeliveryBy = rdr["DeliveryBy"] as string ?? string.Empty,
                                 EquipTypeName = rdr["EquipTypeName"] as string ?? string.Empty,
                                 MachineSN = rdr["MachineSN"] as string ?? string.Empty,
-                                autofulfill = rdr["autofulfill"] != DBNull.Value && Convert.ToBoolean(rdr["autofulfill"]),
-                                enabled = rdr["enabled"] != DBNull.Value && Convert.ToBoolean(rdr["enabled"])
+                                autofulfill = rdr["AutoFulfill"] != DBNull.Value && Convert.ToBoolean(rdr["AutoFulfill"]),
+                                enabled = rdr["Enabled"] != DBNull.Value && Convert.ToBoolean(rdr["Enabled"])
                             });
                         }
                     }

@@ -115,16 +115,16 @@
   ],
   "Plan": {
     "Classification": "Rename",
-    "TargetTable": "ContactUsageLinesTbl",
+    "TargetTable": "ContactsItemSvcSummaryTbl",
     "PreserveIdsOnInsert": false,
     "Reviewed": false,
     "Ignore": false,
     "ColumnActions": [
       {
         "Source": "ClientUsageLineNo",
-        "Target": "ContactUsageLineNo",
+        "Target": "ContactsItemSvcSummaryId",
         "Action": "Rename",
-        "Expression": null
+        "Expression": "Let SQL Server auto-generate new identity values to avoid duplicate key 0 from Access"
       },
       {
         "Source": "CustomerID",

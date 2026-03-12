@@ -167,7 +167,7 @@
   ],
   "Plan": {
     "Classification": "Rename",
-    "TargetTable": "ContactsUsageTbl",
+    "TargetTable": "ContactsItemsPredictedTbl",
     "PreserveIdsOnInsert": false,
     "Reviewed": false,
     "Ignore": false,

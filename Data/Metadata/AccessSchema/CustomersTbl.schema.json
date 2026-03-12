@@ -682,8 +682,8 @@
       },
       {
         "Source": "Country/Region",
-        "Target": "CountryOrRegion",
-        "Action": "Rename",
+        "Target": "Country/Region",
+        "Action": "Copy",
         "Expression": null
       },
       {
@@ -802,8 +802,8 @@
       },
       {
         "Source": "MachineSN",
-        "Target": "MachineSN",
-        "Action": "Copy",
+        "Target": "EquipentSN",
+        "Action": "Rename",
         "Expression": null
       },
       {

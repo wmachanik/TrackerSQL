@@ -76,7 +76,7 @@
       },
       {
         "Source": "City",
-        "Target": "AreaName",
+        "Target": "Area",
         "Action": "Rename",
         "Expression": null
       },

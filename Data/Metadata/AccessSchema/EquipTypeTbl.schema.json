@@ -78,8 +78,8 @@
       },
       {
         "Source": "EquipTypeDesc",
-        "Target": "EquipTypeDescription",
-        "Action": "Rename",
+        "Target": "EquipTypeDesc",
+        "Action": "Copy",
         "Expression": null
       }
     ],

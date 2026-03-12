@@ -100,7 +100,7 @@
       },
       {
         "Source": "Description",
-        "Target": "ItemPackagingDesc",
+        "Target": "ItemPrepDescription",
         "Action": "Rename",
         "Expression": null
       },

@@ -2,7 +2,7 @@
 -- Metadata paths:
 --   AccessSchema: C:\SRC\ASP.net\TrackerSQL\Data\Metadata\AccessSchema
 --   PlanConstraints: C:\SRC\ASP.net\TrackerSQL\Data\Metadata\PlanEdits\PlanConstraints.json
--- Tables: 47, Columns: 379
+-- Tables: 47, Columns: 380
 -- Identity suppressed: No
 -- Drop existing tables: Yes
 -- Plan scan (source -> decision):
@@ -13,8 +13,8 @@
 -- [CityTbl] Class=Copy Target=AreasTbl EmittedCols=4
 -- [ClientAwayPeriodTbl] Class=Copy Target=ContactsAwayPeriodTbl EmittedCols=5
 -- [ClientUsageHistoryTbl] IGNORE (plan.Ignore=true)
--- [ClientUsageLinesTbl] Class=Copy Target=ContactUsageLinesTbl EmittedCols=7
--- [ClientUsageTbl] Class=Copy Target=ContactsUsageTbl EmittedCols=12
+-- [ClientUsageLinesTbl] Class=Copy Target=ContactsItemSvcSummaryTbl EmittedCols=7
+-- [ClientUsageTbl] Class=Copy Target=ContactsItemsPredictedTbl EmittedCols=12
 -- [ClosureDatesTbl] Class=Copy Target=ClosureDatesTbl EmittedCols=5
 -- [CustomersAccInfoTbl] Class=Copy Target=ContactsAccInfoTbl EmittedCols=30
 -- [CustomersTbl] Class=Copy Target=ContactsTbl EmittedCols=42
@@ -26,7 +26,7 @@
 -- [ItemGroupTbl] Class=Copy Target=ItemGroupsTbl EmittedCols=6
 -- [ItemTypeTbl] Class=Copy Target=ItemsTbl EmittedCols=13
 -- [ItemUnitsTbl] Class=Copy Target=ItemUnitsTbl EmittedCols=3
--- [ItemUsageTbl] Class=Copy Target=ContactsItemUsageTbl EmittedCols=8
+-- [ItemUsageTbl] Class=Copy Target=ContactsItemUsageTbl EmittedCols=7
 -- [LogTbl] IGNORE (plan.Ignore=true)
 -- [MachineConditionsTbl] Class=Copy Target=EquipConditionsTbl EmittedCols=4
 -- [NextRoastDateByCityTbl] Class=Copy Target=NextPrepDateByAreasTbl EmittedCols=7
@@ -99,7 +99,7 @@ GO
     CREATE TABLE [AreasTbl]
     (
         [AreaID] INT IDENTITY(1,1) NOT NULL,
-        [AreaName] NVARCHAR(255) NULL,
+        [Area] NVARCHAR(255) NULL,
         [PrepDayOfWeekID] INT NULL,
         [DeliveryDelay] INT NULL
         , CONSTRAINT [PK_AreasTbl] PRIMARY KEY CLUSTERED ([AreaID])
@@ -208,6 +208,56 @@ GO
     );
 GO
 
+-- Drop FKs referencing or owned by [ContactsItemsPredictedTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[ContactsItemsPredictedTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[ContactsItemsPredictedTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[ContactsItemsPredictedTbl]', N'U') IS NOT NULL DROP TABLE [ContactsItemsPredictedTbl];
+GO
+    CREATE TABLE [ContactsItemsPredictedTbl]
+    (
+        [ContactsItemsPredictedId] INT IDENTITY(1,1) NOT NULL,
+        [ContactID] INT NULL,
+        [LastCupCount] INT NULL,
+        [NextCoffeeBy] DATETIME NULL,
+        [NextCleanOn] DATETIME NULL,
+        [NextFilterEst] DATETIME NULL,
+        [NextDescaleEst] DATETIME NULL,
+        [NextServiceEst] DATETIME NULL,
+        [DailyConsumption] REAL NULL,
+        [FilterAveCount] REAL NULL,
+        [DescaleAveCount] REAL NULL,
+        [ServiceAveCount] REAL NULL,
+        [CleanAveCount] REAL NULL
+        , CONSTRAINT [PK_ContactsItemsPredictedTbl] PRIMARY KEY CLUSTERED ([ContactsItemsPredictedId])
+    );
+GO
+
+-- Drop FKs referencing or owned by [ContactsItemSvcSummaryTbl]
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
+FROM sys.foreign_keys fk
+JOIN sys.objects o ON fk.parent_object_id = o.object_id
+WHERE fk.parent_object_id = OBJECT_ID(N'[ContactsItemSvcSummaryTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[ContactsItemSvcSummaryTbl]');
+IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+IF OBJECT_ID(N'[ContactsItemSvcSummaryTbl]', N'U') IS NOT NULL DROP TABLE [ContactsItemSvcSummaryTbl];
+GO
+    CREATE TABLE [ContactsItemSvcSummaryTbl]
+    (
+        [ContactsItemSvcSummaryId] INT IDENTITY(1,1) NOT NULL,
+        [ContactID] INT NULL,
+        [UsageDate] DATETIME NULL,
+        [CupCount] INT NULL,
+        [ItemServiceTypeID] INT NULL,
+        [Qty] REAL NULL,
+        [Notes] NVARCHAR(150) NULL
+        , CONSTRAINT [PK_ContactsItemSvcSummaryTbl] PRIMARY KEY CLUSTERED ([ContactsItemSvcSummaryId])
+    );
+GO
+
 -- Drop FKs referencing or owned by [ContactsItemUsageTbl]
 DECLARE @sql nvarchar(max) = N'';
 SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
@@ -219,7 +269,7 @@ IF OBJECT_ID(N'[ContactsItemUsageTbl]', N'U') IS NOT NULL DROP TABLE [ContactsIt
 GO
     CREATE TABLE [ContactsItemUsageTbl]
     (
-        [ContactUsageLineNo] INT IDENTITY(1,1) NOT NULL,
+        [ContactItemUsageLineNo] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
         [DeliveryDate] DATETIME NULL,
         [ItemProvidedID] INT NULL,
@@ -227,7 +277,7 @@ GO
         [ItemPrepTypeID] INT NULL,
         [ItemPackagingID] INT NULL,
         [Notes] NVARCHAR(150) NULL
-        , CONSTRAINT [PK_ContactsItemUsageTbl] PRIMARY KEY CLUSTERED ([ContactUsageLineNo])
+        , CONSTRAINT [PK_ContactsItemUsageTbl] PRIMARY KEY CLUSTERED ([ContactItemUsageLineNo])
     );
 GO
 
@@ -254,7 +304,7 @@ GO
         [Area] INT NULL,
         [StateOrProvince] NVARCHAR(20) NULL,
         [PostalCode] NVARCHAR(20) NULL,
-        [CountryOrRegion] NVARCHAR(50) NULL,
+        [Country/Region] NVARCHAR(50) NULL,
         [PhoneNumber] NVARCHAR(30) NULL,
         [Extension] NVARCHAR(30) NULL,
         [FaxNumber] NVARCHAR(30) NULL,
@@ -273,7 +323,7 @@ GO
         [TypicallySecToo] BIT NULL,
         [PreferedAgentID] INT NULL,
         [SalesAgentID] INT NULL,
-        [MachineSN] NVARCHAR(50) NULL,
+        [EquipentSN] NVARCHAR(50) NULL,
         [UsesFilter] BIT NULL,
         [AutoFulfill] BIT NULL,
         [Enabled] BIT NULL,
@@ -285,33 +335,6 @@ GO
         [SendDeliveryConfirmation] BIT NULL,
         [LastDateSentReminder] DATETIME NULL
         , CONSTRAINT [PK_ContactsTbl] PRIMARY KEY CLUSTERED ([ContactID])
-    );
-GO
-
--- Drop FKs referencing or owned by [ContactsUsageTbl]
-DECLARE @sql nvarchar(max) = N'';
-SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
-FROM sys.foreign_keys fk
-JOIN sys.objects o ON fk.parent_object_id = o.object_id
-WHERE fk.parent_object_id = OBJECT_ID(N'[ContactsUsageTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[ContactsUsageTbl]');
-IF LEN(@sql) > 0 EXEC sp_executesql @sql;
-IF OBJECT_ID(N'[ContactsUsageTbl]', N'U') IS NOT NULL DROP TABLE [ContactsUsageTbl];
-GO
-    CREATE TABLE [ContactsUsageTbl]
-    (
-        [ContactID] INT NOT NULL,
-        [LastCupCount] INT NULL,
-        [NextCoffeeBy] DATETIME NULL,
-        [NextCleanOn] DATETIME NULL,
-        [NextFilterEst] DATETIME NULL,
-        [NextDescaleEst] DATETIME NULL,
-        [NextServiceEst] DATETIME NULL,
-        [DailyConsumption] REAL NULL,
-        [FilterAveCount] REAL NULL,
-        [DescaleAveCount] REAL NULL,
-        [ServiceAveCount] REAL NULL,
-        [CleanAveCount] REAL NULL
-        , CONSTRAINT [PK_ContactsUsageTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
 
@@ -352,28 +375,6 @@ GO
     );
 GO
 
--- Drop FKs referencing or owned by [ContactUsageLinesTbl]
-DECLARE @sql nvarchar(max) = N'';
-SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
-FROM sys.foreign_keys fk
-JOIN sys.objects o ON fk.parent_object_id = o.object_id
-WHERE fk.parent_object_id = OBJECT_ID(N'[ContactUsageLinesTbl]') OR fk.referenced_object_id = OBJECT_ID(N'[ContactUsageLinesTbl]');
-IF LEN(@sql) > 0 EXEC sp_executesql @sql;
-IF OBJECT_ID(N'[ContactUsageLinesTbl]', N'U') IS NOT NULL DROP TABLE [ContactUsageLinesTbl];
-GO
-    CREATE TABLE [ContactUsageLinesTbl]
-    (
-        [ContactUsageLineNo] INT IDENTITY(1,1) NOT NULL,
-        [ContactID] INT NULL,
-        [UsageDate] DATETIME NULL,
-        [CupCount] INT NULL,
-        [ItemServiceTypeID] INT NULL,
-        [Qty] REAL NULL,
-        [Notes] NVARCHAR(150) NULL
-        , CONSTRAINT [PK_ContactUsageLinesTbl] PRIMARY KEY CLUSTERED ([ContactUsageLineNo])
-    );
-GO
-
 -- Drop FKs referencing or owned by [EquipConditionsTbl]
 DECLARE @sql nvarchar(max) = N'';
 SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13)
@@ -406,7 +407,7 @@ GO
     (
         [EquipTypeID] INT IDENTITY(1,1) NOT NULL,
         [EquipTypeName] NVARCHAR(50) NULL,
-        [EquipTypeDescription] NVARCHAR(50) NULL
+        [EquipTypeDesc] NVARCHAR(50) NULL
         , CONSTRAINT [PK_EquipTypesTbl] PRIMARY KEY CLUSTERED ([EquipTypeID])
     );
 GO
@@ -485,7 +486,7 @@ GO
     CREATE TABLE [ItemPackagingsTbl]
     (
         [ItemPackagingID] INT IDENTITY(1,1) NOT NULL,
-        [ItemPackagingDesc] NVARCHAR(50) NULL,
+        [ItemPrepDescription] NVARCHAR(50) NULL,
         [AdditionalNotes] NVARCHAR(255) NULL,
         [Symbol] NVARCHAR(255) NULL,
         [Colour] INT NULL,

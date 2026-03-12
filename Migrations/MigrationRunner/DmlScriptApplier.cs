@@ -69,8 +69,17 @@ namespace MigrationRunner
                     }
 
                     // Heuristic: treat common severity messages printed via InfoMessage as failure
-                    var patterns = new[] { "Invalid column name", "Incorrect syntax near", "Invalid object name", "ERROR migrate" };
-                    bool infoHadErrors = patterns.Any(p => infoText.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0);
+                    // Only detect ACTUAL runtime errors, not template strings from CATCH blocks
+                    // Template strings appear as: "    PRINT N'ERROR: Failed to purge..."
+                    // Actual errors appear as: "SQL> ERROR migrate [TableName]..."
+                    var actualErrorPatterns = new[] 
+                    { 
+                        "Invalid column name", 
+                        "Incorrect syntax near", 
+                        "Invalid object name",
+                        @"^SQL> ERROR migrate \[" // Only match actual runtime PRINT statements
+                    };
+                    bool infoHadErrors = actualErrorPatterns.Any(p => Regex.IsMatch(infoText, p, RegexOptions.Multiline));
 
                     sb.AppendLine();
                     if (hadBatchErrors || infoHadErrors)

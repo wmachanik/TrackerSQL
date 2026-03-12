@@ -140,24 +140,18 @@ namespace MigrationRunner
                 }
 
                 sb.AppendLine("-- Purge target tables before load (child-to-parent)");
+                sb.AppendLine("-- Using DELETE instead of TRUNCATE because SQL Server TRUNCATE checks for FK existence even when disabled");
                 foreach (var t in deleteTargets)
                 {
                     var tEsc = (t ?? "").Replace("'", "''");
                     sb.AppendLine($"PRINT N'Purging {Qi(t)}';");
                     sb.AppendLine("BEGIN TRY");
-                    sb.AppendLine($"    IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys fk");
-                    sb.AppendLine($"                   JOIN sys.tables rt ON rt.object_id = fk.referenced_object_id");
-                    sb.AppendLine($"                   WHERE rt.name = N'{tEsc}')");
-                    sb.AppendLine($"        TRUNCATE TABLE {Qi(t)};");
-                    sb.AppendLine("    ELSE");
-                    sb.AppendLine("    BEGIN");
-                    sb.AppendLine($"        PRINT N'INFO: {Qi(t)} has referencing foreign keys – using DELETE';");
-                    sb.AppendLine($"        DELETE FROM {Qi(t)};");
-                    sb.AppendLine("    END");
+                    sb.AppendLine($"    DELETE FROM {Qi(t)};");
+                    sb.AppendLine($"    PRINT N'Successfully purged {Qi(t)}';");
                     sb.AppendLine("END TRY");
                     sb.AppendLine("BEGIN CATCH");
-                    sb.AppendLine($"    PRINT N'WARN: purge of {Qi(t)} failed: ' + ERROR_MESSAGE();");
-                    sb.AppendLine($"    BEGIN TRY DELETE FROM {Qi(t)}; END TRY BEGIN CATCH PRINT N'WARN: DELETE also failed: ' + ERROR_MESSAGE(); END CATCH");
+                    sb.AppendLine($"    PRINT N'ERROR: Failed to purge {Qi(t)}: ' + ERROR_MESSAGE();");
+                    sb.AppendLine($"    PRINT N'      This may indicate foreign keys were not properly disabled.';");
                     sb.AppendLine("END CATCH");
                 }
                 sb.AppendLine("GO");
@@ -185,8 +179,10 @@ namespace MigrationRunner
                     // define chosenIdentity before using it
                     var chosenIdentity = ChooseIdentity(ct, tm);
 
+                    // CRITICAL FIX: Use 'cols' (filtered list) instead of 'tm.Columns' (raw list)
+                    // This ensures that if a column was marked as "Drop", it won't trigger IDENTITY_INSERT
                     var includeIdentityInInsert = !string.IsNullOrWhiteSpace(chosenIdentity) &&
-                                                  tm.Columns.Any(c => c.Target != null && c.Target.Equals(chosenIdentity, StringComparison.OrdinalIgnoreCase));
+                                                  cols.Any(c => c.Target != null && c.Target.Equals(chosenIdentity, StringComparison.OrdinalIgnoreCase));
                     var useIdentityInsert = includeIdentityInInsert; // allow for Temp* tables too
 
                     // Wrap each source with proper type coercion based on constraints (or name heuristics)
@@ -574,6 +570,17 @@ namespace MigrationRunner
             return maps;
         }
 
+        private static TableMap GetOrAddMap(Dictionary<string, TableMap> dict, string target, int source)
+        {
+            string sourceTable = source.ToString();
+            if (!dict.TryGetValue(target, out var tm))
+            {
+                tm = new TableMap { Target = target, Source = sourceTable };
+                dict[target] = tm;
+            }
+            return tm;
+        }
+
         private static TableMap GetOrAddMap(Dictionary<string, TableMap> dict, string target, string source)
         {
             if (!dict.TryGetValue(target, out var tm))
@@ -740,6 +747,7 @@ namespace MigrationRunner
             // exprNvarchar is an NVARCHAR expression already wrapped with NULLIF(...)
             // Try to handle more date formats and NULL/empty values gracefully
             // Styles: 127 = ISO8601 with Z, 126 = ISO8601 T, 121 = ODBC canonical, 103 = dd/MM/yyyy, 101 = MM/dd/yyyy
+            // CRITICAL FIX: Add NULL as final fallback to prevent INSERT abort on invalid dates
             return $"CASE WHEN {exprNvarchar} IS NULL OR LEN(LTRIM(RTRIM({exprNvarchar}))) = 0 THEN NULL " +
                    $"ELSE COALESCE(" +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 127), " +
@@ -747,7 +755,8 @@ namespace MigrationRunner
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 121), " +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 103), " +
                    $"TRY_CONVERT(datetime2(7), {exprNvarchar}, 101), " +
-                   $"TRY_CONVERT(datetime2(7), {exprNvarchar})) END";
+                   $"TRY_CONVERT(datetime2(7), {exprNvarchar}), " +
+                   $"CAST(NULL AS datetime2(7))) END";  // Final fallback: explicit NULL to prevent abort
         }
 
         private static bool IsBoolLike(string sqlType, string colName)

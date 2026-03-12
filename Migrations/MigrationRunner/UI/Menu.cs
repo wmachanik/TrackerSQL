@@ -938,14 +938,16 @@ namespace MigrationRunner.UI
                             cmd.CommandTimeout = 0;
                             cmd.CommandText = @"
 SET NOCOUNT ON;
-DECLARE @sql nvarchar(max) = N'',
-        @schema nvarchar(128) = N'AccessSrc';
+DECLARE @sql nvarchar(max) = N'';
+
+-- Drop ALL foreign keys (not just AccessSrc schema)
 SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + N'.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(name) + N';'
 FROM sys.foreign_keys
-WHERE OBJECT_SCHEMA_NAME(parent_object_id) = 'AccessSrc';
+WHERE OBJECT_SCHEMA_NAME(parent_object_id) NOT IN ('sys');
 IF LEN(@sql) > 0 EXEC sp_executesql @sql;
 
-SET @sql = N' ';
+-- Drop ALL user tables (except system schemas)
+SET @sql = N'';
 SELECT @sql = @sql + N'DROP TABLE ' + QUOTENAME(s.name) + N'.' + QUOTENAME(t.name) + N';'
 FROM sys.tables t
 JOIN sys.schemas s ON t.schema_id = s.schema_id
@@ -1018,6 +1020,26 @@ IF LEN(@sql) > 0 EXEC sp_executesql @sql;
             // Quick verification
             try { VerifyFromScript(sql, dataSqlPath); } catch (Exception ex) { Console.WriteLine("Verification step failed: " + ex.Message); }
 
+            // 5.5) Run custom normalization BEFORE applying FKs (Orders + RecurringOrders)
+            Console.WriteLine();
+            Console.WriteLine("============================================================");
+            Console.WriteLine("STEP 5.5: Running custom normalization (Orders + RecurringOrders)");
+            Console.WriteLine("============================================================");
+            try
+            {
+                var rcNorm = CustomNormalizeRunner.Run(_migrationsDir, sql);
+                Console.WriteLine("Custom normalization rc=" + rcNorm);
+                if (rcNorm != 0)
+                {
+                    Console.WriteLine("? Custom normalization reported issues (likely orphaned records). Continuing with FK application...");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("? Custom normalization failed: " + ex.Message);
+                Console.WriteLine("Continuing with FK application...");
+            }
+
             // 6) Generate FK DDL
             try
             {
@@ -1039,10 +1061,16 @@ IF LEN(@sql) > 0 EXEC sp_executesql @sql;
             }
             catch (Exception ex) { Console.Error.WriteLine("FAIL apply FK script: " + ex.Message); return 1; }
 
-            Console.WriteLine("Create->Data->FKs pipeline completed. Run 'O' to run detailed spot-checks.");
+            Console.WriteLine();
+            Console.WriteLine("============================================================");
+            Console.WriteLine("? Create->Data->Normalize->FKs pipeline completed!");
+            Console.WriteLine("============================================================");
+            Console.WriteLine("Check Migration_OrphanedOrders and Migration_OrphanedRecurringOrders");
+            Console.WriteLine("for any records that were skipped due to missing FK references.");
+            Console.WriteLine();
+            Console.WriteLine("Run 'O' to run detailed spot-checks.");
             return 0;
         }
-
         private static void Tail(string path, int lines)
         {
             try

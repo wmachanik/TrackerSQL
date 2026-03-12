@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -128,6 +128,13 @@ namespace MigrationRunner
             // Generate constraints file
             constraintsPath = Path.Combine(dataDir, "Metadata", "PlanEdits", "PlanConstraints.json");
             Directory.CreateDirectory(Path.GetDirectoryName(constraintsPath));
+            
+            // SECOND PASS: Resolve FK reference columns by looking up the PK of each referenced table
+            Console.WriteLine();
+            Console.WriteLine("============================================================");
+            Console.WriteLine("⮞ SECOND PASS: Resolving FK reference columns...");
+            Console.WriteLine("============================================================");
+            ResolveForeignKeyReferences(allConstraints);
             
             var constraintsIndex = new ConstraintsIndex { Tables = allConstraints };
             var constraintsSummary = GenerateConstraintsSummary(allConstraints);
@@ -628,7 +635,7 @@ namespace MigrationRunner
                                 {
                                     // Multi-line regex patterns for more reliable matching
                                     var multiLineTargetPattern = @"""Source"":\s*""" + System.Text.RegularExpressions.Regex.Escape(columnMapping.BeforeColumn) + @""",\s*""Target"":\s*""[^""]*""";
-                                    var targetReplacement = $@"""Source"": ""{columnMapping.BeforeColumn}"",\r\n        ""Target"": ""{columnMapping.AfterColumn}""";
+                                    var targetReplacement = "\"Source\": \"" + columnMapping.BeforeColumn + "\",\r\n        \"Target\": \"" + columnMapping.AfterColumn + "\"";
                                     
                                     if (System.Text.RegularExpressions.Regex.IsMatch(updatedJson, multiLineTargetPattern, System.Text.RegularExpressions.RegexOptions.Multiline))
                                     {
@@ -681,14 +688,36 @@ namespace MigrationRunner
                 NotNullColumns = new List<string>()
             };
 
-            // Look for ID columns in the column mappings to find the actual primary key
-            if (mapping.ColumnMappings?.Any() == true)
+            // FIRST: Look for columns explicitly marked as PK in the CSV (most reliable)
+            var pkColumns = mapping.ColumnMappings?
+                .Where(cm => cm.IsPrimaryKey && !string.IsNullOrEmpty(cm.AfterColumn))
+                .ToList();
+
+            if (pkColumns?.Any() == true)
+            {
+                foreach (var pkCol in pkColumns)
+                {
+                    constraintTable.PrimaryKey.Add(pkCol.AfterColumn);
+                    
+                    // Add to identity columns if marked as identity
+                    if (pkCol.IsIdentity)
+                    {
+                        constraintTable.IdentityColumns.Add(pkCol.AfterColumn);
+                    }
+                    
+                    Console.WriteLine($"    ⮞ Creating constraints for {targetTable}: PK={pkCol.AfterColumn} (from CSV After Key=PK, Identity={pkCol.IsIdentity})");
+                }
+            }
+            // FALLBACK: Look for ID columns (legacy heuristic logic)
+            else if (mapping.ColumnMappings?.Any() == true)
             {
                 // Find columns that are likely primary keys (end with "ID")
+                // EXCLUDE columns that are foreign keys!
                 var idColumns = mapping.ColumnMappings
                     .Where(cm => !string.IsNullOrEmpty(cm.BeforeColumn) && 
                                 !string.IsNullOrEmpty(cm.AfterColumn) &&
-                                cm.BeforeColumn.EndsWith("ID", StringComparison.OrdinalIgnoreCase))
+                                cm.BeforeColumn.EndsWith("ID", StringComparison.OrdinalIgnoreCase) &&
+                                !cm.IsForeignKey)  // Exclude columns marked as FK in CSV
                     .ToList();
 
                 // For normalized tables, look for the table-specific ID (e.g., OrderID for OrdersTbl)
@@ -705,32 +734,44 @@ namespace MigrationRunner
                 if (pkColumn != null)
                 {
                     var finalPkName = pkColumn.AfterColumn;
-                    Console.WriteLine($"    ?? Creating constraints for {targetTable}: PK={finalPkName} (mapped from {pkColumn.BeforeColumn})");
+                    Console.WriteLine($"    ⮞ Creating constraints for {targetTable}: PK={finalPkName} (heuristic fallback from {pkColumn.BeforeColumn})");
                     
                     constraintTable.PrimaryKey.Add(finalPkName);
                     constraintTable.IdentityColumns.Add(finalPkName);
                 }
                 else
                 {
-                    Console.WriteLine($"    ??  No obvious primary key found for {targetTable}");
+                    Console.WriteLine($"    ⚠ No obvious primary key found for {targetTable}");
                 }
             }
-            else
+
+            // Extract foreign keys from column mappings
+            // NOTE: We store the FK column and ref table, but defer determining the actual
+            // ref column until after all constraints are built (so we can look up the PK)
+            if (mapping.ColumnMappings?.Any() == true)
             {
-                // Fallback to naming convention if no column mappings
-                if (mapping.BeforeTable.EndsWith("Tbl", StringComparison.OrdinalIgnoreCase))
+                var fkColumns = mapping.ColumnMappings
+                    .Where(cm => cm.IsForeignKey && 
+                                !string.IsNullOrEmpty(cm.AfterColumn) && 
+                                !string.IsNullOrEmpty(cm.ForeignKeyRefTable))
+                    .ToList();
+
+                foreach (var fkCol in fkColumns)
                 {
-                    var baseName = mapping.BeforeTable.Substring(0, mapping.BeforeTable.Length - 3);
-                    var pkColumn = baseName + "ID";
-                    Console.WriteLine($"    ?? Creating constraints for {targetTable}: PK={pkColumn} (fallback naming convention)");
+                    // Store FK with RefColumn = null for now; we'll resolve it in a second pass
+                    constraintTable.ForeignKeys.Add(new ForeignKeyDef
+                    {
+                        Column = fkCol.AfterColumn,
+                        RefTable = fkCol.ForeignKeyRefTable,
+                        RefColumn = null  // Will be resolved in second pass
+                    });
                     
-                    constraintTable.PrimaryKey.Add(pkColumn);
-                    constraintTable.IdentityColumns.Add(pkColumn);
+                    Console.WriteLine($"    ⮞ Adding FK (pending ref column resolution): {fkCol.AfterColumn} -> {fkCol.ForeignKeyRefTable}");
                 }
             }
 
             constraints.Add(constraintTable);
-            
+
             // CRITICAL FIX: For normalized tables, also create constraints for line tables
             if (string.Equals(mapping.Action, "Normalize", StringComparison.OrdinalIgnoreCase) &&
                 mapping.NormalizationInfo != null)
@@ -777,6 +818,56 @@ namespace MigrationRunner
                 
                 constraints.Add(lineConstraintTable);
             }
+        }
+
+        private static void ResolveForeignKeyReferences(List<ConstraintTable> constraints)
+        {
+            // Build a lookup dictionary of table name -> primary key column
+            var tablePkLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            
+            foreach (var constraint in constraints)
+            {
+                if (constraint.PrimaryKey != null && constraint.PrimaryKey.Count > 0)
+                {
+                    // For now, assume single-column PKs (composite PKs are rare in this schema)
+                    tablePkLookup[constraint.Table] = constraint.PrimaryKey[0];
+                }
+            }
+            
+            Console.WriteLine($"Built PK lookup for {tablePkLookup.Count} tables");
+            
+            // Now resolve all FK reference columns
+            int resolvedCount = 0;
+            int unresolvedCount = 0;
+            
+            foreach (var constraint in constraints)
+            {
+                if (constraint.ForeignKeys == null || constraint.ForeignKeys.Count == 0)
+                    continue;
+                    
+                foreach (var fk in constraint.ForeignKeys)
+                {
+                    if (fk.RefColumn == null && !string.IsNullOrEmpty(fk.RefTable))
+                    {
+                        if (tablePkLookup.TryGetValue(fk.RefTable, out var refPk))
+                        {
+                            fk.RefColumn = refPk;
+                            resolvedCount++;
+                            Console.WriteLine($"  ✓ Resolved FK: {constraint.Table}.{fk.Column} -> {fk.RefTable}.{refPk}");
+                        }
+                        else
+                        {
+                            // Fallback: try table name + "ID" pattern
+                            var refTableBase = fk.RefTable.Replace("Tbl", "");
+                            fk.RefColumn = refTableBase + "ID";
+                            unresolvedCount++;
+                            Console.WriteLine($"  ⚠ FK fallback (table not found): {constraint.Table}.{fk.Column} -> {fk.RefTable}.{fk.RefColumn}");
+                        }
+                    }
+                }
+            }
+            
+            Console.WriteLine($"FK resolution complete: {resolvedCount} resolved, {unresolvedCount} used fallback");
         }
 
         private static string GenerateConstraintsSummary(List<ConstraintTable> constraints)
@@ -928,8 +1019,7 @@ namespace MigrationRunner
                                 if (string.IsNullOrEmpty(columnLine) || 
                                     columnLine.StartsWith("------") ||
                                     columnLine.StartsWith("Table,Before,After,Action") ||
-                                    columnLine.StartsWith("Table:,Before,After Header Tbl") ||
-                                    columnLine.StartsWith("Table,"))
+                                    columnLine.StartsWith("Table:,"))
                                 {
                                     break;
                                 }
@@ -940,8 +1030,10 @@ namespace MigrationRunner
                                 {
                                     var beforeCol = columnParts[1]?.Trim(); // Before Col name
                                     var afterCol = columnParts[6]?.Trim();  // After Col Name
+                                    var afterKey = columnParts[8]?.Trim();  // After Key (PK, FK, No)
+                                    var afterAuto = columnParts[9]?.Trim(); // After Auto (Yes/No)
                                     var colAction = columnParts[12]?.Trim(); // Action
-                                    
+
                                     // IMPROVED: Try different column positions for Action if standard position is empty
                                     if (string.IsNullOrEmpty(colAction) && columnParts.Length > 12)
                                     {
@@ -977,17 +1069,81 @@ namespace MigrationRunner
                                             colAction = string.Equals(beforeCol, afterCol, StringComparison.OrdinalIgnoreCase) ? "Copy" : "Rename";
                                         }
                                         
+                                        // Detect primary key, identity, and foreign key from CSV
+                                        var isPrimaryKey = string.Equals(afterKey, "PK", StringComparison.OrdinalIgnoreCase);
+                                        var isIdentity = string.Equals(afterAuto, "Yes", StringComparison.OrdinalIgnoreCase);
+                                        var isForeignKey = (afterKey ?? "").StartsWith("FK", StringComparison.OrdinalIgnoreCase);
+                                        string fkRefTable = null;
+                                        
+                                        if (isForeignKey)
+                                        {
+                                            // Parse FK (TableName) from afterKey - extract table name between parentheses
+                                            var match = System.Text.RegularExpressions.Regex.Match(afterKey, @"FK\s*\(([^)]+)\)");
+                                            if (match.Success)
+                                            {
+                                                fkRefTable = match.Groups[1].Value.Trim();
+                                            }
+                                        }
+                                        
                                         var columnMapping = new ColumnMapping
                                         {
                                             BeforeColumn = beforeCol,
                                             AfterColumn = afterCol,
-                                            Action = colAction
+                                            Action = colAction,
+                                            IsPrimaryKey = isPrimaryKey,
+                                            IsIdentity = isIdentity,
+                                            IsForeignKey = isForeignKey,
+                                            ForeignKeyRefTable = fkRefTable
+                                        };
+                                        
+                                        mapping.ColumnMappings.Add(columnMapping);
+                                        columnCount++;
+
+                                        var pkMarker = isPrimaryKey ? " [PK]" : "";
+                                        var identityMarker = isIdentity ? " [IDENTITY]" : "";
+                                        var fkMarker = isForeignKey ? $" [FK->{fkRefTable}]" : "";
+                                        Console.WriteLine($"      ⮞ Column: {beforeCol} -> {afterCol ?? "DROP"} ({colAction}){pkMarker}{identityMarker}{fkMarker}");
+                                    }
+                                    // Handle NEW columns (no before column, but has after column)
+                                    else if (!string.IsNullOrEmpty(afterCol))
+                                    {
+                                        if (string.IsNullOrEmpty(colAction))
+                                            colAction = "New";
+                                        
+                                        // Detect primary key, identity, and foreign key from CSV
+                                        var isPrimaryKey = string.Equals(afterKey, "PK", StringComparison.OrdinalIgnoreCase);
+                                        var isIdentity = string.Equals(afterAuto, "Yes", StringComparison.OrdinalIgnoreCase);
+                                        var isForeignKey = (afterKey ?? "").StartsWith("FK", StringComparison.OrdinalIgnoreCase);
+                                        string fkRefTable = null;
+                                        
+                                        if (isForeignKey)
+                                        {
+                                            // Parse FK (TableName) from afterKey
+                                            var match = System.Text.RegularExpressions.Regex.Match(afterKey, @"FK\s*\(([^)]+)\)");
+                                            if (match.Success)
+                                            {
+                                                fkRefTable = match.Groups[1].Value.Trim();
+                                            }
+                                        }
+                                        
+                                        var columnMapping = new ColumnMapping
+                                        {
+                                            BeforeColumn = afterCol,  // Use target name as source for NEW columns
+                                            AfterColumn = afterCol,
+                                            Action = colAction,
+                                            IsPrimaryKey = isPrimaryKey,
+                                            IsIdentity = isIdentity,
+                                            IsForeignKey = isForeignKey,
+                                            ForeignKeyRefTable = fkRefTable
                                         };
                                         
                                         mapping.ColumnMappings.Add(columnMapping);
                                         columnCount++;
                                         
-                                        Console.WriteLine($"      ?? Column: {beforeCol} -> {afterCol ?? "DROP"} ({colAction})");
+                                        var pkMarker = isPrimaryKey ? " [PK]" : "";
+                                        var identityMarker = isIdentity ? " [IDENTITY]" : "";
+                                        var fkMarker = isForeignKey ? $" [FK->{fkRefTable}]" : "";
+                                        Console.WriteLine($"      ⮞ NEW Column: {afterCol} ({colAction}){pkMarker}{identityMarker}{fkMarker}");
                                     }
                                 }
                                 
@@ -1155,6 +1311,10 @@ namespace MigrationRunner
         public string AfterColumn { get; set; }
         public string Action { get; set; }
         public string NormalizationTarget { get; set; } // "Header" or "Lines"
+        public bool IsPrimaryKey { get; set; }
+        public bool IsIdentity { get; set; }
+        public bool IsForeignKey { get; set; }
+        public string ForeignKeyRefTable { get; set; }  // The referenced table name from FK (TableName)
     }
 
     public class NormalizationMapping

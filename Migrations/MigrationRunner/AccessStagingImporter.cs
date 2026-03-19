@@ -149,6 +149,25 @@ namespace MigrationRunner
                     }
 
                     log.Add($"Summary: ok={ok} skipped={skipped} failed={fail}");
+                    
+                    // AUTO-IMPORT: Special handling for ClientUsageTbl with proper datetime columns
+                    // This runs AFTER the initial staging to re-import with proper datetime types
+                    Console.WriteLine();
+                    Console.WriteLine("========================================");
+                    Console.WriteLine("AUTO-IMPORTING ClientUsageTbl with proper datetime columns...");
+                    Console.WriteLine("========================================");
+                    
+                    try
+                    {
+                        ImportClientUsageTableWithDates(acc, sql, log);
+                        log.Add("SUCCESS: ClientUsageTbl imported with proper datetime columns");
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Add($"WARNING: Failed to import ClientUsageTbl dates: {ex.Message}");
+                        Console.WriteLine($"WARNING: ClientUsageTbl datetime import failed: {ex.Message}");
+                        Console.WriteLine("Continuing with migration, but dates may be NULL in ContactsItemsPredictedTbl");
+                    }
                 }
 
                 File.WriteAllLines(logPath, log);
@@ -440,6 +459,179 @@ namespace MigrationRunner
                 cmd.CommandText = $"IF OBJECT_ID(N'{schema}.{table}', 'U') IS NOT NULL DELETE FROM [{schema}].[{table.Replace("]", "]]")}]";
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        // NEW: Import ClientUsageTbl with proper datetime handling
+        private static void ImportClientUsageTableWithDates(OleDbConnection acc, SqlConnection sql, List<string> log)
+        {
+            const string tableName = "ClientUsageTbl";
+            
+            // Check if table exists in Access
+            if (!AccessTableExists(acc, tableName))
+            {
+                log.Add($"SKIP {tableName} datetime import: table not found in Access");
+                return;
+            }
+            
+            log.Add($"Importing {tableName} with proper datetime columns...");
+            Console.WriteLine($"  Reading {tableName} from Access...");
+            
+            // Read from Access with proper datetime handling
+            var dataTable = new DataTable();
+            using (var cmd = acc.CreateCommand())
+            {
+                cmd.CommandText = $@"
+                    SELECT 
+                        CustomerId, 
+                        LastCupCount, 
+                        NextCoffeeBy, 
+                        NextCleanOn, 
+                        NextFilterEst, 
+                        NextDescaleEst, 
+                        NextServiceEst, 
+                        DailyConsumption, 
+                        FilterAveCount, 
+                        DescaleAveCount, 
+                        ServiceAveCount, 
+                        CleanAveCount
+                    FROM [{tableName}]";
+                cmd.CommandTimeout = 0;
+                
+                using (var adapter = new OleDbDataAdapter(cmd))
+                {
+                    adapter.Fill(dataTable);
+                }
+            }
+            
+            log.Add($"  Read {dataTable.Rows.Count} rows from Access");
+            Console.WriteLine($"  Read {dataTable.Rows.Count} rows");
+            
+            var datesFound = 0;
+            foreach (DataRow row in dataTable.Rows)
+            {
+                if (row["NextCoffeeBy"] != DBNull.Value) datesFound++;
+            }
+            log.Add($"  Found {datesFound} rows with NextCoffeeBy dates");
+            Console.WriteLine($"  Found {datesFound} rows with dates");
+            
+            // Backup existing data
+            Console.WriteLine($"  Creating backup: AccessSrc.{tableName}_BACKUP...");
+            using (var cmd = sql.CreateCommand())
+            {
+                cmd.CommandText = $@"
+                    IF OBJECT_ID('AccessSrc.{tableName}_BACKUP', 'U') IS NOT NULL
+                        DROP TABLE AccessSrc.{tableName}_BACKUP;
+                    
+                    IF OBJECT_ID('AccessSrc.{tableName}', 'U') IS NOT NULL
+                        SELECT * INTO AccessSrc.{tableName}_BACKUP FROM AccessSrc.{tableName};";
+                cmd.CommandTimeout = 0;
+                cmd.ExecuteNonQuery();
+            }
+            
+            // Clear existing data
+            Console.WriteLine($"  Clearing existing AccessSrc.{tableName}...");
+            using (var cmd = sql.CreateCommand())
+            {
+                cmd.CommandText = $"DELETE FROM AccessSrc.{tableName}";
+                cmd.CommandTimeout = 0;
+                var deleted = cmd.ExecuteNonQuery();
+                log.Add($"  Deleted {deleted} existing rows");
+            }
+            
+            // Insert with proper datetime handling
+            Console.WriteLine($"  Inserting {dataTable.Rows.Count} rows with proper datetime types...");
+            var insertSql = $@"
+                INSERT INTO AccessSrc.{tableName} 
+                (CustomerId, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, 
+                 NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, 
+                 DescaleAveCount, ServiceAveCount, CleanAveCount)
+                VALUES 
+                (@CustomerId, @LastCupCount, @NextCoffeeBy, @NextCleanOn, @NextFilterEst,
+                 @NextDescaleEst, @NextServiceEst, @DailyConsumption, @FilterAveCount,
+                 @DescaleAveCount, @ServiceAveCount, @CleanAveCount)";
+            
+            using (var cmd = new SqlCommand(insertSql, sql))
+            {
+                cmd.CommandTimeout = 0;
+                
+                // Define parameters with proper types
+                cmd.Parameters.Add("@CustomerId", SqlDbType.Int);
+                cmd.Parameters.Add("@LastCupCount", SqlDbType.Int);
+                cmd.Parameters.Add("@NextCoffeeBy", SqlDbType.DateTime);
+                cmd.Parameters.Add("@NextCleanOn", SqlDbType.DateTime);
+                cmd.Parameters.Add("@NextFilterEst", SqlDbType.DateTime);
+                cmd.Parameters.Add("@NextDescaleEst", SqlDbType.DateTime);
+                cmd.Parameters.Add("@NextServiceEst", SqlDbType.DateTime);
+                cmd.Parameters.Add("@DailyConsumption", SqlDbType.Float);
+                cmd.Parameters.Add("@FilterAveCount", SqlDbType.Int);
+                cmd.Parameters.Add("@DescaleAveCount", SqlDbType.Int);
+                cmd.Parameters.Add("@ServiceAveCount", SqlDbType.Int);
+                cmd.Parameters.Add("@CleanAveCount", SqlDbType.Int);
+                
+                var count = 0;
+                var total = dataTable.Rows.Count;
+                
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    cmd.Parameters["@CustomerId"].Value = row["CustomerId"];
+                    cmd.Parameters["@LastCupCount"].Value = row["LastCupCount"] == DBNull.Value ? (object)DBNull.Value : row["LastCupCount"];
+                    cmd.Parameters["@NextCoffeeBy"].Value = row["NextCoffeeBy"] == DBNull.Value ? (object)DBNull.Value : row["NextCoffeeBy"];
+                    cmd.Parameters["@NextCleanOn"].Value = row["NextCleanOn"] == DBNull.Value ? (object)DBNull.Value : row["NextCleanOn"];
+                    cmd.Parameters["@NextFilterEst"].Value = row["NextFilterEst"] == DBNull.Value ? (object)DBNull.Value : row["NextFilterEst"];
+                    cmd.Parameters["@NextDescaleEst"].Value = row["NextDescaleEst"] == DBNull.Value ? (object)DBNull.Value : row["NextDescaleEst"];
+                    cmd.Parameters["@NextServiceEst"].Value = row["NextServiceEst"] == DBNull.Value ? (object)DBNull.Value : row["NextServiceEst"];
+                    cmd.Parameters["@DailyConsumption"].Value = row["DailyConsumption"] == DBNull.Value ? (object)DBNull.Value : row["DailyConsumption"];
+                    cmd.Parameters["@FilterAveCount"].Value = row["FilterAveCount"] == DBNull.Value ? (object)DBNull.Value : row["FilterAveCount"];
+                    cmd.Parameters["@DescaleAveCount"].Value = row["DescaleAveCount"] == DBNull.Value ? (object)DBNull.Value : row["DescaleAveCount"];
+                    cmd.Parameters["@ServiceAveCount"].Value = row["ServiceAveCount"] == DBNull.Value ? (object)DBNull.Value : row["ServiceAveCount"];
+                    cmd.Parameters["@CleanAveCount"].Value = row["CleanAveCount"] == DBNull.Value ? (object)DBNull.Value : row["CleanAveCount"];
+                    
+                    cmd.ExecuteNonQuery();
+                    
+                    count++;
+                    if (count % 100 == 0 || count == total)
+                    {
+                        Console.Write($"\r  Progress: {count} / {total} rows ({count * 100.0 / total:F1}%)");
+                    }
+                }
+                Console.WriteLine();
+                log.Add($"  Inserted {count} rows with proper datetime types");
+            }
+            
+            // Verify import
+            Console.WriteLine($"  Verifying datetime import...");
+            using (var cmd = sql.CreateCommand())
+            {
+                cmd.CommandText = $@"
+                    SELECT 
+                        COUNT(*) AS Total,
+                        SUM(CASE WHEN NextCoffeeBy IS NOT NULL THEN 1 ELSE 0 END) AS NextCoffeeBy_Dates,
+                        SUM(CASE WHEN NextCleanOn IS NOT NULL THEN 1 ELSE 0 END) AS NextCleanOn_Dates,
+                        SUM(CASE WHEN NextFilterEst IS NOT NULL THEN 1 ELSE 0 END) AS NextFilterEst_Dates
+                    FROM AccessSrc.{tableName}";
+                cmd.CommandTimeout = 0;
+                
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        var total = reader["Total"];
+                        var coffee = reader["NextCoffeeBy_Dates"];
+                        var clean = reader["NextCleanOn_Dates"];
+                        var filter = reader["NextFilterEst_Dates"];
+                        
+                        log.Add($"  Verification: Total={total}, NextCoffeeBy={coffee}, NextCleanOn={clean}, NextFilterEst={filter}");
+                        Console.WriteLine($"  ? Total rows: {total}");
+                        Console.WriteLine($"  ? NextCoffeeBy with dates: {coffee}");
+                        Console.WriteLine($"  ? NextCleanOn with dates: {clean}");
+                        Console.WriteLine($"  ? NextFilterEst with dates: {filter}");
+                    }
+                }
+            }
+            
+            Console.WriteLine($"  ? {tableName} datetime import completed successfully!");
+            Console.WriteLine("========================================");
+            Console.WriteLine();
         }
     }
 }

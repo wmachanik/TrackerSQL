@@ -19,10 +19,10 @@ namespace TrackerDotNet.Classes.Sql
             {"ContactFirstName","c.ContactFirstName"},
             {"EmailAddress","c.EmailAddress"},
             {"PeopleTbl.Abbreviation","p.Abbreviation"},
-            {"AreasTbl.Area","a.AreaName"},
-            {"AreasTbl.AreaName","a.AreaName"},
+            {"AreasTbl.Area","a.Area"},
+            {"AreasTbl.AreaName","a.Area"},
             {"EquipTypesTbl.EquipTypeName","e.EquipTypeName"},
-            {"ContactsTbl.MachineSN","c.MachineSN"},
+            {"ContactsTbl.MachineSN","c.EquipentSN"},
             {"ContactID","c.ContactID"}
         };
 
@@ -35,8 +35,8 @@ namespace TrackerDotNet.Classes.Sql
             using (var db = new TrackerSQLDb())
             {
                 string sql = @"SELECT c.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                                  a.AreaName AS City, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
-                                  e.EquipTypeName, c.MachineSN, c.AutoFulfill, c.Enabled
+                                  a.Area AS City, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
+                                  e.EquipTypeName, c.EquipentSN AS MachineSN, c.AutoFulfill, c.Enabled
                                FROM ContactsTbl c
                                LEFT OUTER JOIN PeopleTbl p ON c.PreferedAgentID = p.PersonID
                                LEFT OUTER JOIN AreasTbl a ON c.Area = a.AreaID

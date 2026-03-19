@@ -8,6 +8,7 @@ namespace TrackerDotNet.Classes.Sql
 {
     public class ContactsUsage
     {
+        public int ContactsItemsPredictedId { get; set; }
         public int ContactID { get; set; }
         public int LastCupCount { get; set; }
         public DateTime? NextCoffeeBy { get; set; }
@@ -24,9 +25,9 @@ namespace TrackerDotNet.Classes.Sql
 
     public class ContactsUsageRepository : RepositoryBase<ContactsUsage>
     {
-        protected override string TableName => "ContactsUsageTbl";
-        protected override string KeyColumn => "ContactID";
-        protected override string CoreColumns => "ContactID, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount";
+        protected override string TableName => "ContactsItemsPredictedTbl";
+        protected override string KeyColumn => "ContactsItemsPredictedId";
+        protected override string CoreColumns => "ContactsItemsPredictedId, ContactID, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount";
 
         public ContactsUsage GetByContactId(int id)
         {

@@ -9,10 +9,17 @@ namespace MigrationRunner
 {
     internal static class DmlScriptGenerator
     {
-        private static void EmitInsertBlock(StringBuilder sb, string target, string fromObj, List<string> targetCols, List<string> selectCols, bool useIdentityInsert, string chosenIdentity)
+        private static void EmitInsertBlock(StringBuilder sb, string target, string fromObj, List<string> targetCols, List<string> selectCols, bool useIdentityInsert, string chosenIdentity, string sourceTable = null)
         {
+            // Check if we need to add FK safety INNER JOIN
+            bool needsFKJoin = sourceTable != null && NeedsForeignKeyJoin(target, sourceTable);
+            string fkJoinTable = needsFKJoin ? GetForeignKeyJoinTable(target) : null;
+            string fkJoinCondition = needsFKJoin ? GetForeignKeyJoinCondition(target, sourceTable) : null;
+            
             // Build a safe, truncated preview to avoid long literal issues
-            var preview = $"INSERT INTO {Qi(target)} ({string.Join(", ", targetCols)}) SELECT {string.Join(", ", selectCols)} FROM {fromObj};";
+            var preview = needsFKJoin 
+                ? $"INSERT INTO {Qi(target)} with dates (only valid ContactIDs)"
+                : $"INSERT INTO {Qi(target)} ({string.Join(", ", targetCols)}) SELECT {string.Join(", ", selectCols)} FROM {fromObj};";
             var previewTrunc = preview.Length > 1500 ? (preview.Substring(0, 1500) + " ... [truncated]") : preview;
 
             sb.AppendLine($"    PRINT {Qs("About to execute (IdentityInsert=" + (useIdentityInsert ? "ON" : "OFF") + "):")};");
@@ -27,7 +34,21 @@ namespace MigrationRunner
             sb.AppendLine("        )");
             sb.AppendLine("        SELECT");
             sb.AppendLine("            " + string.Join(", ", selectCols));
-            sb.AppendLine($"        FROM {fromObj};");
+            
+            if (needsFKJoin && !string.IsNullOrWhiteSpace(fkJoinTable) && !string.IsNullOrWhiteSpace(fkJoinCondition))
+            {
+                // Get the correct customer ID column name for the WHERE clause
+                string whereColumn = GetCustomerIdColumnName(sourceTable);
+                
+                sb.AppendLine($"        FROM {fromObj} src");
+                sb.AppendLine($"        INNER JOIN {fkJoinTable} c ON {fkJoinCondition}  -- Only migrate valid ContactIDs");
+                sb.AppendLine($"        WHERE src.{whereColumn} IS NOT NULL;");
+            }
+            else
+            {
+                sb.AppendLine($"        FROM {fromObj};");
+            }
+            
             if (useIdentityInsert)
             {
                 sb.AppendLine($"        SET IDENTITY_INSERT {Qi(target)} OFF;");
@@ -185,19 +206,37 @@ namespace MigrationRunner
                                                   cols.Any(c => c.Target != null && c.Target.Equals(chosenIdentity, StringComparison.OrdinalIgnoreCase));
                     var useIdentityInsert = includeIdentityInInsert; // allow for Temp* tables too
 
+                    // Check if this table needs FK join (will affect how we reference columns)
+                    var needsFKJoin = NeedsForeignKeyJoin(tm.Target, tm.Source);
+                    
                     // Wrap each source with proper type coercion based on constraints (or name heuristics)
                     var selectCols = cols
                         .Select(c =>
                         {
-                            var srcExpr = Qi(c.Source);                  // e.g., [OrderDate]
-                            var nvExpr = WrapNullIf(srcExpr);            // NULLIF([OrderDate], N'')
+                            // When we have a JOIN, qualify column references with src. prefix to avoid ambiguity
+                            var srcExpr = needsFKJoin ? $"src.{Qi(c.Source)}" : Qi(c.Source);  // e.g., src.[OrderDate] or [OrderDate]
                             var targetType = ResolveTargetType(ct, c.Target);
-
+                            
+                            // CRITICAL FIX for ClientUsageTbl and other tables with proper datetime columns:
+                            // If the source table has proper datetime columns (imported via PowerShell, not CSV),
+                            // do NOT wrap with NULLIF which converts to text
+                            bool isProperDatetime = IsProperDatetimeColumn(tm.Source, c.Source);
+                            
+                            var nvExpr = isProperDatetime ? srcExpr : (needsFKJoin ? $"NULLIF({srcExpr}, N'')" : WrapNullIf(Qi(c.Source)));  // Skip NULLIF for proper datetimes
+                            
                             string typedExpr = nvExpr;
                             if (IsDateLike(targetType, c.Target))
                             {
-                                // Try multiple date styles (ISO8601 w/ Z, ISO T, ODBC canonical, d/M/y) then default
-                                typedExpr = TryConvertDate(nvExpr);
+                                if (isProperDatetime)
+                                {
+                                    // Already a datetime - use directly, no conversion needed
+                                    typedExpr = srcExpr;
+                                }
+                                else
+                                {
+                                    // Text column that needs conversion - Try multiple date styles
+                                    typedExpr = TryConvertDate(nvExpr);
+                                }
                             }
                             else if (IsBoolLike(targetType, c.Target))
                             {
@@ -279,9 +318,30 @@ namespace MigrationRunner
                             var hdrSelectExprs = tm.Columns.Select(c =>
                             {
                                 var tgtType = ResolveTargetType(ctHdr, c.Target);
-                                var expr = $"COALESCE(CONVERT(nvarchar(max), _picked.{Qi(c.Source)}), N'')";
-                                if (IsDateLike(tgtType, c.Target)) expr = TryConvertDate($"NULLIF(_picked.{Qi(c.Source)}, N'')");
-                                else if (IsBoolLike(tgtType, c.Target)) expr = TryConvertBit($"NULLIF(_picked.{Qi(c.Source)}, N'')");
+                                
+                                // Check if this is a proper datetime column
+                                bool isProperDatetime = IsProperDatetimeColumn(tm.Source, c.Source);
+                                
+                                var expr = isProperDatetime 
+                                    ? $"_picked.{Qi(c.Source)}"  // Use directly for proper datetime
+                                    : $"COALESCE(CONVERT(nvarchar(max), _picked.{Qi(c.Source)}), N'')";  // Convert to text for others
+                                
+                                if (IsDateLike(tgtType, c.Target))
+                                {
+                                    if (isProperDatetime)
+                                    {
+                                        expr = $"_picked.{Qi(c.Source)}";  // Already datetime
+                                    }
+                                    else
+                                    {
+                                        expr = TryConvertDate($"NULLIF(_picked.{Qi(c.Source)}, N'')");
+                                    }
+                                }
+                                else if (IsBoolLike(tgtType, c.Target))
+                                {
+                                    expr = TryConvertBit($"NULLIF(_picked.{Qi(c.Source)}, N'')");
+                                }
+                                
                                 return expr + " AS " + Qi(c.Target);
                             }).ToList();
 
@@ -302,9 +362,30 @@ namespace MigrationRunner
                                 var lineSelectExprs = tmLine.Columns.Select(c =>
                                 {
                                     var tgtType = ResolveTargetType(ctLine, c.Target);
-                                    var expr = $"COALESCE(CONVERT(nvarchar(max), s.{Qi(c.Source)}), N'')";
-                                    if (IsDateLike(tgtType, c.Target)) expr = TryConvertDate($"NULLIF(s.{Qi(c.Source)}, N'')");
-                                    else if (IsBoolLike(tgtType, c.Target)) expr = TryConvertBit($"NULLIF(s.{Qi(c.Source)}, N'')");
+                                    
+                                    // Check if this is a proper datetime column
+                                    bool isProperDatetime = IsProperDatetimeColumn(tm.Source, c.Source);
+                                    
+                                    var expr = isProperDatetime 
+                                        ? $"s.{Qi(c.Source)}"  // Use directly for proper datetime
+                                        : $"COALESCE(CONVERT(nvarchar(max), s.{Qi(c.Source)}), N'')";  // Convert to text for others
+                                    
+                                    if (IsDateLike(tgtType, c.Target))
+                                    {
+                                        if (isProperDatetime)
+                                        {
+                                            expr = $"s.{Qi(c.Source)}";  // Already datetime
+                                        }
+                                        else
+                                        {
+                                            expr = TryConvertDate($"NULLIF(s.{Qi(c.Source)}, N'')");
+                                        }
+                                    }
+                                    else if (IsBoolLike(tgtType, c.Target))
+                                    {
+                                        expr = TryConvertBit($"NULLIF(s.{Qi(c.Source)}, N'')");
+                                    }
+                                    
                                     return expr + " AS " + Qi(c.Target);
                                 }).ToList();
 
@@ -352,7 +433,7 @@ namespace MigrationRunner
                         sb.AppendLine("END");
                         sb.AppendLine("ELSE");
                         sb.AppendLine("BEGIN");
-                        EmitInsertBlock(sb, tm.Target, accessSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity);
+                        EmitInsertBlock(sb, tm.Target, accessSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity, tm.Source);
                         sb.AppendLine("END");
                         sb.AppendLine("GO");
                         sb.AppendLine();
@@ -362,11 +443,11 @@ namespace MigrationRunner
                         // Prefer AccessSrc; else fall back to unqualified source
                         sb.AppendLine($"IF OBJECT_ID({Qs(U2(SourceSchema, tm.Source))}) IS NOT NULL");
                         sb.AppendLine("BEGIN");
-                        EmitInsertBlock(sb, tm.Target, accessSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity);
+                        EmitInsertBlock(sb, tm.Target, accessSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity, tm.Source);
                         sb.AppendLine("END");
                         sb.AppendLine("ELSE");
                         sb.AppendLine("BEGIN");
-                        EmitInsertBlock(sb, tm.Target, localSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity);
+                        EmitInsertBlock(sb, tm.Target, localSrcObj, targetColsLocal, selectCols, useIdentityInsert, chosenIdentity, tm.Source);
                         sb.AppendLine("END");
                         sb.AppendLine("GO");
                         sb.AppendLine();
@@ -719,6 +800,66 @@ namespace MigrationRunner
             return $"NULLIF({idExpr}, N'')";
         }
 
+        // NEW: Check if this table is known to have proper datetime columns in AccessSrc
+        // (imported via specialized script, not CSV)
+        private static bool HasProperDatetimeColumns(string sourceTable)
+        {
+            if (string.IsNullOrWhiteSpace(sourceTable)) return false;
+            
+            // Tables that are imported with proper datetime handling via auto-import
+            var tablesWithProperDates = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "ClientUsageTbl",                    // Auto-imported with proper datetime in AccessStagingImporter
+                // "ClientUsageLinesTbl",            // NOT auto-imported - dates are still NVARCHAR!
+                "TempCoffeecheckupCustomerTbl",      // Temp table with datetime columns in AccessSrc
+                "TempCoffeecheckupItemsTbl"          // Temp table with datetime columns in AccessSrc
+            };
+            
+            return tablesWithProperDates.Contains(sourceTable);
+        }
+
+        // NEW: Check if a specific column is a datetime column that's already properly typed
+        private static bool IsProperDatetimeColumn(string sourceTable, string columnName)
+        {
+            if (!HasProperDatetimeColumns(sourceTable)) return false;
+            if (string.IsNullOrWhiteSpace(columnName)) return false;
+            
+            var col = columnName.ToLowerInvariant();
+            
+            // Known datetime columns in ClientUsageTbl
+            if (sourceTable.Equals("ClientUsageTbl", StringComparison.OrdinalIgnoreCase))
+            {
+                return col == "nextcoffeeby" || 
+                       col == "nextcleanon" || 
+                       col == "nextfilterest" || 
+                       col == "nextdescaleest" || 
+                       col == "nextserviceest";
+            }
+            
+            // ClientUsageLinesTbl is NOT auto-imported, so its Date column needs conversion
+            // (removed from this method - will use standard date conversion)
+            
+            // Known datetime columns in TempCoffeecheckupCustomerTbl
+            if (sourceTable.Equals("TempCoffeecheckupCustomerTbl", StringComparison.OrdinalIgnoreCase))
+            {
+                return col == "nextprepdate" || 
+                       col == "nextdeliverydate" || 
+                       col == "nextcoffee" || 
+                       col == "nextclean" || 
+                       col == "nextfilter" || 
+                       col == "nextdescal" || 
+                       col == "nextservice";
+            }
+            
+            // Known datetime columns in TempCoffeecheckupItemsTbl
+            if (sourceTable.Equals("TempCoffeecheckupItemsTbl", StringComparison.OrdinalIgnoreCase))
+            {
+                return col == "nextdaterequired";
+            }
+            
+            return false;
+        }
+
         private static string ResolveTargetType(ConstraintTable ct, string targetCol)
         {
             if (ct?.ColumnTypes == null || string.IsNullOrWhiteSpace(targetCol)) return null;
@@ -739,7 +880,26 @@ namespace MigrationRunner
             if (string.IsNullOrWhiteSpace(colName)) return false;
             var n = colName.ToLowerInvariant();
             if (n.EndsWith("id")) return false; // don't infer dates for *ID columns
-            return n.Contains("date") || n.Contains("time");
+            
+            // Enhanced date detection patterns - be specific to avoid false positives
+            if (n.Contains("date") || n.Contains("time") || n.Contains("when"))
+                return true;
+            
+            // Specific ending patterns (must be whole word endings)
+            if (n.EndsWith("on") && (n.StartsWith("next") || n.StartsWith("last") || n.StartsWith("updated") || n.StartsWith("created") || n.Contains("clean")))
+                return true;  // NextCleanOn, UpdatedOn, LastOn, etc.
+            
+            if (n.EndsWith("by") && (n.StartsWith("next") || n.StartsWith("last") || n.StartsWith("completed") || n.StartsWith("updated")))
+                return true;  // NextCoffeeBy, CompletedBy, UpdatedBy
+            
+            // Specific starting patterns (for datetime fields without "date" in name)
+            if ((n.StartsWith("next") || n.StartsWith("last")) && (n.Contains("coffee") || n.Contains("clean") || n.Contains("filter") || n.Contains("descale") || n.Contains("service") || n.Contains("status")))
+                return true;  // NextCoffee, LastStatusChange, NextFilter, etc.
+            
+            if (n.Contains("logged") || (n.Contains("change") && n.StartsWith("last")))
+                return true;  // DateLogged, LastStatusChange
+            
+            return false;
         }
 
         private static string TryConvertDate(string exprNvarchar)
@@ -785,6 +945,71 @@ namespace MigrationRunner
                    $"WHEN {exprNvarchar} IN (N'1', N'-1', N'true', N'TRUE', N'yes', N'YES', N'Y', N'y') THEN 1 " +
                    $"WHEN {exprNvarchar} IN (N'0', N'false', N'FALSE', N'no', N'NO', N'N', N'n') THEN 0 " +
                    $"ELSE TRY_CONVERT(bit, {exprNvarchar}) END";
+        }
+
+        // NEW: Helper methods for FK join logic
+        private static bool NeedsForeignKeyJoin(string targetTable, string sourceTable)
+        {
+            if (string.IsNullOrWhiteSpace(targetTable)) return false;
+            
+            // Tables that need FK validation join (have ContactID/CustomerID FK)
+            var tablesNeedingFKJoin = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "ContactsItemsPredictedTbl",
+                "ContactsItemSvcSummaryTbl"
+            };
+            
+            return tablesNeedingFKJoin.Contains(targetTable);
+        }
+
+        private static string GetForeignKeyJoinTable(string targetTable)
+        {
+            // All these tables join to ContactsTbl
+            return "ContactsTbl";
+        }
+
+        private static string GetForeignKeyJoinCondition(string targetTable, string sourceTable)
+        {
+            // Special handling for different source column names
+            if (sourceTable != null)
+            {
+                // ClientUsageLinesTbl uses CustomerID (capital I, capital D)
+                if (sourceTable.Equals("ClientUsageLinesTbl", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "c.ContactID = src.CustomerID";
+                }
+                
+                // ClientUsageTbl uses CustomerId (capital I, lowercase d)
+                if (sourceTable.Equals("ClientUsageTbl", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "c.ContactID = src.CustomerId";
+                }
+            }
+            
+            // Default: Try CustomerId first (most common)
+            return "c.ContactID = src.CustomerId";
+        }
+        
+        private static string GetCustomerIdColumnName(string sourceTable)
+        {
+            // Return the correct CustomerID column name for WHERE clauses
+            if (sourceTable != null)
+            {
+                // ClientUsageLinesTbl uses CustomerID (capital I, capital D)
+                if (sourceTable.Equals("ClientUsageLinesTbl", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "CustomerID";
+                }
+                
+                // ClientUsageTbl uses CustomerId (capital I, lowercase d)
+                if (sourceTable.Equals("ClientUsageTbl", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "CustomerId";
+                }
+            }
+            
+            // Default: CustomerId (most common)
+            return "CustomerId";
         }
     }
 }

@@ -204,6 +204,21 @@ IF LEN(@sql) > 0 EXEC sp_executesql @sql;";
                 return 1;
             }
 
+            // V) VERIFY: Critical data quality checks
+            Console.WriteLine();
+            Console.WriteLine("========================================");
+            Console.WriteLine("V) VERIFICATION: Checking data quality...");
+            Console.WriteLine("========================================");
+            try
+            {
+                VerifyMigrationDataQuality(sql);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"WARNING: Verification checks failed: {ex.Message}");
+            }
+
+            Console.WriteLine();
             Console.WriteLine("All steps A..N completed. Run 'O' to run the detailed spot-check verifier if desired.");
             return 0;
         }
@@ -400,6 +415,142 @@ ORDER BY NEWID()";
                 }
             }
             return result;
+        }
+
+        private static void VerifyMigrationDataQuality(string sqlConnString)
+        {
+            using (var conn = new SqlConnection(sqlConnString))
+            {
+                conn.Open();
+                
+                // 1. Check ContactsItemsPredictedTbl has dates (not NULL)
+                Console.WriteLine("1) Checking ContactsItemsPredictedTbl dates...");
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandText = @"
+                        SELECT 
+                            COUNT(*) AS TotalRows,
+                            SUM(CASE WHEN NextCoffeeBy IS NOT NULL THEN 1 ELSE 0 END) AS NextCoffeeBy_HasDates,
+                            SUM(CASE WHEN NextCleanOn IS NOT NULL THEN 1 ELSE 0 END) AS NextCleanOn_HasDates,
+                            SUM(CASE WHEN NextFilterEst IS NOT NULL THEN 1 ELSE 0 END) AS NextFilterEst_HasDates,
+                            SUM(CASE WHEN NextDescaleEst IS NOT NULL THEN 1 ELSE 0 END) AS NextDescaleEst_HasDates
+                        FROM ContactsItemsPredictedTbl";
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var total = Convert.ToInt32(reader["TotalRows"]);
+                            var coffeeCount = Convert.ToInt32(reader["NextCoffeeBy_HasDates"] ?? 0);
+                            var cleanCount = Convert.ToInt32(reader["NextCleanOn_HasDates"] ?? 0);
+                            var filterCount = Convert.ToInt32(reader["NextFilterEst_HasDates"] ?? 0);
+                            var descaleCount = Convert.ToInt32(reader["NextDescaleEst_HasDates"] ?? 0);
+                            
+                            Console.WriteLine($"   Total rows: {total}");
+                            Console.WriteLine($"   NextCoffeeBy with dates: {coffeeCount} ({(total > 0 ? coffeeCount * 100.0 / total : 0):F1}%)");
+                            Console.WriteLine($"   NextCleanOn with dates: {cleanCount} ({(total > 0 ? cleanCount * 100.0 / total : 0):F1}%)");
+                            Console.WriteLine($"   NextFilterEst with dates: {filterCount} ({(total > 0 ? filterCount * 100.0 / total : 0):F1}%)");
+                            Console.WriteLine($"   NextDescaleEst with dates: {descaleCount} ({(total > 0 ? descaleCount * 100.0 / total : 0):F1}%)");
+                            
+                            if (total > 0)
+                            {
+                                var coffeePercent = coffeeCount * 100.0 / total;
+                                if (coffeePercent < 90)
+                                {
+                                    Console.WriteLine("   ??  WARNING: Less than 90% of rows have NextCoffeeBy dates!");
+                                    Console.WriteLine("   ??  This may indicate the datetime import failed.");
+                                }
+                                else if (coffeePercent >= 95)
+                                {
+                                    Console.WriteLine("   ? GOOD: Date columns are properly populated!");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("   ??  PARTIAL: Some dates are missing (90-95% populated)");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("   ??  WARNING: ContactsItemsPredictedTbl is empty!");
+                            }
+                        }
+                    }
+                }
+                
+                // 2. Check key tables have data (not empty)
+                Console.WriteLine();
+                Console.WriteLine("2) Checking key tables have data...");
+                
+                var criticalTables = new[] 
+                { 
+                    "ContactsTbl", 
+                    "ContactsItemsPredictedTbl", 
+                    "ContactsUsageTbl",
+                    "ItemsTbl",
+                    "AreasTbl"
+                };
+                
+                foreach (var table in criticalTables)
+                {
+                    try
+                    {
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandTimeout = 0;
+                            cmd.CommandText = $"SELECT COUNT(*) FROM {table}";
+                            var count = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+                            
+                            var status = count > 0 ? "?" : "?? ";
+                            Console.WriteLine($"   {status} {table}: {count:N0} rows");
+                            
+                            if (count == 0)
+                            {
+                                Console.WriteLine($"      WARNING: {table} is empty!");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"   ? {table}: Error checking - {ex.Message}");
+                    }
+                }
+                
+                // 3. Check for orphan records (FK violations that were skipped)
+                Console.WriteLine();
+                Console.WriteLine("3) Checking for orphan records in ContactsItemsPredictedTbl...");
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandText = @"
+                        SELECT COUNT(*) AS OrphanCount
+                        FROM AccessSrc.ClientUsageTbl src
+                        WHERE src.CustomerId IS NOT NULL
+                          AND NOT EXISTS (
+                              SELECT 1 FROM ContactsTbl c WHERE c.ContactID = src.CustomerId
+                          )";
+                    
+                    var orphanCount = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+                    
+                    if (orphanCount > 0)
+                    {
+                        Console.WriteLine($"   ??  Found {orphanCount} orphan records in AccessSrc.ClientUsageTbl");
+                        Console.WriteLine($"   These were excluded from migration (no matching ContactID in ContactsTbl)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"   ? No orphan records found");
+                    }
+                }
+                
+                Console.WriteLine();
+                Console.WriteLine("========================================");
+                Console.WriteLine("Verification Summary:");
+                Console.WriteLine("- Date columns checked for NULL values");
+                Console.WriteLine("- Table row counts verified");
+                Console.WriteLine("- Orphan records identified");
+                Console.WriteLine("========================================");
+            }
         }
     }
 }

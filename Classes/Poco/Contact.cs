@@ -36,7 +36,7 @@ namespace TrackerDotNet.Classes.Poco
         public bool? TypicallySecToo { get; set; }
         public int? PreferedAgentID { get; set; }
         public int? SalesAgentID { get; set; }
-        public string MachineSN { get; set; }
+        public string EquipentSN { get; set; }
         public bool? UsesFilter { get; set; }
         public bool? AutoFulfill { get; set; }
         public bool? Enabled { get; set; }

@@ -4,6 +4,7 @@ namespace TrackerDotNet.Classes.Poco
 {
     public class ContactUsage
     {
+        public int ContactsItemsPredictedId { get; set; }
         public int ContactID { get; set; }
         public int? LastCupCount { get; set; }
         public DateTime? NextCoffeeBy { get; set; }

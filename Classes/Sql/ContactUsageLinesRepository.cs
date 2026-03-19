@@ -3,7 +3,7 @@ namespace TrackerDotNet.Classes.Sql
 {
     public class ContactUsageLinesRepository : RepositoryBase<ContactUsageLine>
     {
-        protected override string TableName => "ContactUsageLinesTbl";
-        protected override string KeyColumn => "ContactUsageLineNo";
+        protected override string TableName => "ContactsItemSvcSummaryTbl";
+        protected override string KeyColumn => "ContactsItemSvcSummaryId";
     }
 }

@@ -269,8 +269,8 @@
                         </asp:UpdatePanel>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
-                <ajaxToolkit:TabPanel runat="server" HeaderText="Next Required" ID="tabpnlNextRequired">
-                    <HeaderTemplate>Next Items Required</HeaderTemplate>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Predicted Items" ID="tabpnlNextRequired">
+                    <HeaderTemplate>Predicted Items</HeaderTemplate>
                     <ContentTemplate>
                         <asp:UpdatePanel ID="upnlNextItems" runat="server" UpdateMode="Conditional">
                             <ContentTemplate>
@@ -291,8 +291,8 @@
                         </asp:UpdatePanel>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
-                <ajaxToolkit:TabPanel runat="server" HeaderText="Items" ID="tabpnlItems">
-                    <HeaderTemplate>Contact Usage</HeaderTemplate>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Item Usage" ID="tabpnlItems">
+                    <HeaderTemplate>Item Usage</HeaderTemplate>
                     <ContentTemplate>
                         <asp:UpdatePanel ID="upnlItems" runat="server" UpdateMode="Conditional">
                             <ContentTemplate>

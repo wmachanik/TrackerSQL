@@ -7,7 +7,7 @@ namespace TrackerDotNet.Classes.Sql
 {
     public class ContactsItemUsage
     {
-        public int ContactUsageLineNo { get; set; }
+        public int ContactItemUsageLineNo { get; set; }
         public int ContactID { get; set; }
         public System.DateTime? DeliveryDate { get; set; }
         public int? ItemProvidedID { get; set; }
@@ -20,8 +20,8 @@ namespace TrackerDotNet.Classes.Sql
     public class ContactsItemUsageRepository : RepositoryBase<ContactsItemUsage>
     {
         protected override string TableName => "ContactsItemUsageTbl";
-        protected override string KeyColumn => "ContactUsageLineNo";
-        protected override string CoreColumns => "ContactUsageLineNo, ContactID, DeliveryDate, ItemProvidedID, QtyProvided, ItemPrepTypeID, ItemPackagingID, Notes";
+        protected override string KeyColumn => "ContactItemUsageLineNo";
+        protected override string CoreColumns => "ContactItemUsageLineNo, ContactID, DeliveryDate, ItemProvidedID, QtyProvided, ItemPrepTypeID, ItemPackagingID, Notes";
         protected override string LookupColumns => null;
 
         public List<ContactsItemUsage> GetByContactId(int contactId, string sortBy = "DeliveryDate DESC")

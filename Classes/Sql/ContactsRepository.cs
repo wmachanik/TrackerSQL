@@ -95,7 +95,7 @@ namespace TrackerDotNet.Classes.Sql
                 TypicallySecToo = GetValue<bool?>(r, "TypicallySecToo"),
                 PreferedAgentID = GetValue<int?>(r, "PreferedAgentID"),
                 SalesAgentID = GetValue<int?>(r, "SalesAgentID"),
-                MachineSN = GetValue<string>(r, "MachineSN"),
+                EquipentSN = GetValue<string>(r, "EquipentSN") ?? GetValue<string>(r, "MachineSN"),
                 UsesFilter = GetValue<bool?>(r, "UsesFilter"),
                 AutoFulfill = GetValue<bool?>(r, "AutoFulfill"),
                 Enabled = GetValue<bool?>(r, "Enabled"),

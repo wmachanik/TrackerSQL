@@ -4,7 +4,7 @@ namespace TrackerDotNet.Classes.Poco
 {
     public class ContactUsageLine
     {
-        public int ContactUsageLineNo { get; set; }
+        public int ContactsItemSvcSummaryId { get; set; }
         public int ContactID { get; set; }
         public DateTime? UsageDate { get; set; }
         public int? CupCount { get; set; }

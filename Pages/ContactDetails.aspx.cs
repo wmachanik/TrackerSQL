@@ -117,7 +117,7 @@ namespace TrackerSQL.Pages
                 TrySelectDropDownByValue(ddlAgent, contact.SalesAgentID);
 
                 PriPrefQtyTextBox.Text = contact.PriPrefQty.HasValue ? contact.PriPrefQty.Value.ToString("0.##") : string.Empty;
-                MachineSNTextBox.Text = contact.MachineSN;
+                MachineSNTextBox.Text = contact.EquipentSN;
 
                 // Accounts section defaults - if you have ContactsAccInfo, use repository to load it.
                 var accRepo = new ContactsAccInfoRepository();
@@ -192,7 +192,7 @@ namespace TrackerSQL.Pages
                     var packLookup = new ItemPackagingsRepository().GetAll("ItemPackagingDesc");
 
                     var uiItems = items.ConvertAll(x => new {
-                        ClientUsageLineNo = x.ContactUsageLineNo,
+                        ClientUsageLineNo = x.ContactItemUsageLineNo,
                         ItemDate = x.DeliveryDate,
                         ItemProvided = x.ItemProvidedID.HasValue ? (itemLookup.Find(i => i.ItemID == x.ItemProvidedID.Value)?.ItemDesc ?? x.ItemProvidedID.Value.ToString()) : string.Empty,
                         AmountProvided = x.QtyProvided,

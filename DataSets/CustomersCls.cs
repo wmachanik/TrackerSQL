@@ -29,7 +29,7 @@ namespace TrackerSQL.DataSets
         private string _CustomerType;
         private int _EquipTypeName;
         private int _CoffeePreference;
-        private int _City;
+        private int _Area;
         private int _PriPref;
         private int _SecPref;
         private double _PriPrefQty;
@@ -48,7 +48,7 @@ namespace TrackerSQL.DataSets
         {
             this._CustomerID = 0;
             this._CompanyName = this._ContactTitle = this._ContactFirstName = this._ContactLastName = this._ContactAltFirstName = this._ContactAltLastName = this._Department = this._BillingAddress = this._StateOrProvince = this._PostalCode = this._PhoneNumber = this._Extension = this._FaxNumber = this._CellNumber = this._EmailAddress = this._AltEmailAddress = this._CustomerType = "";
-            this._EquipTypeName = this._CoffeePreference = this._City = this._PriPref = this._SecPref = 0;
+            this._EquipTypeName = this._CoffeePreference = this._Area = this._PriPref = this._SecPref = 0;
             this._PriPrefQty = this._SecPrefQty = 0.0;
             this._Abbreviation = 0;
             this._MachineSN = "";
@@ -177,10 +177,10 @@ namespace TrackerSQL.DataSets
             set => this._CoffeePreference = value;
         }
 
-        public int City
+        public int Area
         {
-            get => this._City;
-            set => this._City = value;
+            get => this._Area;
+            set => this._Area = value;
         }
 
         public int PriPref

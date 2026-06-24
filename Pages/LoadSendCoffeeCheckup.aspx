@@ -1,5 +1,5 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-   CodeBehind="LoadSendCoffeeCheckup.aspx.cs" Inherits="TrackerDotNet.Pages.LoadSendCoffeeCheckup" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+   CodeBehind="LoadSendCoffeeCheckup.aspx.cs" Inherits="TrackerSQL.Pages.LoadSendCoffeeCheckup" %>
 
 <asp:Content ID="cntSendCoffeeCheckupHdr" ContentPlaceHolderID="HeadContent" runat="server">
   <script type="text/javascript">

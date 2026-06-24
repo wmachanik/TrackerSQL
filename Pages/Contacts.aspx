@@ -39,7 +39,8 @@
                 </div>
                 <div class="filter-section admin-controls">
                     <div class="filter-control">
-                        <asp:DropDownList ID="ddlContactEnabled" runat="server" AutoPostBack="true">
+                        <asp:DropDownList ID="ddlContactEnabled" runat="server" AutoPostBack="true"
+                            OnSelectedIndexChanged="ddlContactEnabled_SelectedIndexChanged">
                             <asp:ListItem Value="-1" Text="both" />
                             <asp:ListItem Selected="True" Value="1" Text="enabled only" />
                             <asp:ListItem Value="0" Text="disabled only" />
@@ -59,6 +60,7 @@
             <asp:AsyncPostBackTrigger ControlID="tbxFilterBy"
                 EventName="TextChanged" />
             <asp:AsyncPostBackTrigger ControlID="btnGon" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
         </Triggers>
     </asp:UpdatePanel>
     <br />
@@ -66,8 +68,10 @@
         <ContentTemplate>
             <div class="results-container">
                 <asp:GridView ID="gvContacts" runat="server" AutoGenerateColumns="False" CssClass="results-table"
-                    AllowSorting="True" DataSourceID="odsContactSummaries" AllowPaging="True" CellPadding="0" CellSpacing="0"
-                    PageSize="25" EmptyDataText="No contacts found.">
+                    AllowSorting="True" AllowPaging="True" CellPadding="0" CellSpacing="0"
+                    PageSize="25" EmptyDataText="No contacts found."
+                    OnPageIndexChanging="gvContacts_PageIndexChanging"
+                    OnSorting="gvContacts_Sorting">
                     <Columns>
                         <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}"
                             DataTextField="CompanyName" HeaderText="Company Name" SortExpression="CompanyName"
@@ -79,7 +83,7 @@
                             HeaderStyle-CssClass="col-priority-2" ItemStyle-CssClass="col-priority-2" />
                         <asp:BoundField DataField="ContactLastName" HeaderText="Last Name" SortExpression="ContactLastName"
                             HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4" />
-                        <asp:BoundField DataField="City" HeaderText="Area" SortExpression="City" ItemStyle-Font-Size="Smaller"
+                        <asp:BoundField DataField="AreaName" HeaderText="Area" SortExpression="AreaName" ItemStyle-Font-Size="Smaller"
                             HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3" />
                         <asp:BoundField DataField="PhoneNumber" HeaderText="Phone" SortExpression="PhoneNumber" HeaderStyle-Font-Size="Small" ItemStyle-Font-Size="Small"
                             HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1" />
@@ -109,20 +113,6 @@
             <asp:AsyncPostBackTrigger ControlID="ddlContactEnabled" EventName="SelectedIndexChanged" />
         </Triggers>
     </asp:UpdatePanel>
-
-    <asp:ObjectDataSource ID="odsContactSummaries"
-        TypeName="TrackerDotNet.Classes.Sql.ContactSummariesRepository"
-        SortParameterName="SortBy"
-        SelectMethod="GetAllContactSummaries"
-        OnSelecting="odsContactSummaries_Selecting"
-        OnSelected="odsContactSummaries_Selected"
-        runat="server" OldValuesParameterFormatString="original_{0}">
-        <SelectParameters>
-            <asp:Parameter DefaultValue="CompanyName" Name="SortBy" Type="String" />
-            <asp:ControlParameter ControlID="ddlContactEnabled" DefaultValue="-1" Name="IsEnabled" PropertyName="SelectedValue" Type="Int32" />
-            <asp:SessionParameter DefaultValue="" Name="WhereFilter" SessionField="ContactSummaryWhereFilter" Type="String" />
-        </SelectParameters>
-    </asp:ObjectDataSource>
 
     <br />
     <asp:UpdatePanel runat="server" UpdateMode="Always">

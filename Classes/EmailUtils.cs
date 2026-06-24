@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using TrackerSQL.Controls;
+using TrackerSQL.Models;
 
 namespace TrackerSQL.Classes
 {

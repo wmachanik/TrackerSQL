@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PreperationSummary.aspx.cs" Inherits="TrackerSQL.Pages.PreperationSummary" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PreperationSummary.aspx.cs" Inherits="TrackerSQL.Pages.PreperationSummary" %>
 
 <asp:Content ID="cntPreSummaryHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -27,7 +27,7 @@
                         <tr>
                             <td class="TblLHCol-first">Date To:</td>
                             <td>
-                                <asp:TextBox ID="tbxDateTo" runat="server" Text='<%# Bind("RoastDate", "{0:yyyy-MM-dd}" ) %>' />
+                                <asp:TextBox ID="tbxDateTo" runat="server" Text='<%# Bind("PrepDate", "{0:yyyy-MM-dd}" ) %>' />
                                 <ajaxToolkit:CalendarExtender ID="tbxDateTo_CalendarExtender" runat="server"
                                     Enabled="True" TargetControlID="tbxDateTo"></ajaxToolkit:CalendarExtender>
                             </td>
@@ -35,9 +35,9 @@
                         <tr>
                             <td class="TblLHCol-first">Select By:</td>
                             <td style="text-align: left">
-                                <asp:DropDownList ID="ddlFilterByRoastDate" runat="server" ToolTip="Check for Roast Date - uncheck for Delivery Date">
-                                    <asp:ListItem Selected="True" Value="RoastDate" Text="Roast Date" />
-                                    <asp:ListItem Value="ReqDate" Text="Delivery/Dispatch Date" />
+                                <asp:DropDownList ID="ddlFilterByPrepDate" runat="server" ToolTip="Check for Prep Date - uncheck for Delivery/Required By Date">
+                                    <asp:ListItem Selected="True" Value="PrepDate" Text="Prep Date" />
+                                    <asp:ListItem Value="RequiredByDate" Text="Delivery/Required By Date" />
                                 </asp:DropDownList>
                             </td>
                         </tr>
@@ -59,7 +59,7 @@
             <br />
             <div class="results-container">
                 <asp:GridView ID="gvPreperationSummary" runat="server" AutoGenerateColumns="False"
-                    CssClass="results-table" OnRowDataBound="gvPreperationSummary_RowDataBound"
+                    CssClass="results-table table-auto-width" OnRowDataBound="gvPreperationSummary_RowDataBound"
                     EmptyDataText="Please Select a Date range with a valid prep date"
                     ShowFooter="True">
                     <Columns>

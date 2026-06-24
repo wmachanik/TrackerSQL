@@ -127,7 +127,7 @@
                         <ContentTemplate>
                             <asp:GridView ID="gvCustomerCheckup" runat="server" CssClass="results-table" Font-Size="X-Small"
                                 AllowPaging="True" PageSize="25" AutoGenerateColumns="False" DataKeyNames="CustomerID"
-                                DataSourceID="odsContactsToSendCheckup" AllowSorting="True">
+                                AllowSorting="True" OnSelectedIndexChanged="gvCustomerCheckup_SelectedIndexChanged">
                                 <EmptyDataTemplate>
                                     <div style="padding: 20px; text-align: left;">
                                         <img src="../images/animi/QuaffeeProgress.gif" alt="loading..." width="16" height="16" /><br />
@@ -138,18 +138,18 @@
                                 <Columns>
                                     <asp:CommandField ButtonType="Image" SelectImageUrl="~/images/imgButtons/SelectItem.gif" ShowSelectButton="true" />
                                     <asp:BoundField DataField="CustomerID" HeaderText="CustomerID" SortExpression="CustomerID" Visible="False" />
-                                    <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/CustomerDetails.aspx?ID={0}"
+                                    <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}"
                                         DataTextField="CompanyName" HeaderText="Company Name" SortExpression="CompanyName" />
                                     <asp:BoundField DataField="ContactFirstName" HeaderText="First Name" SortExpression="ContactFirstName" />
                                     <asp:BoundField DataField="EmailAddress" HeaderText="Email" SortExpression="EmailAddress" />
                                     <asp:BoundField DataField="ContactAltFirstName" HeaderText="Alt First Name" SortExpression="ContactAltFirstName" />
                                     <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email" SortExpression="AltEmailAddress" />
-                                    <asp:TemplateField HeaderText="City" SortExpression="CityID">
+                                    <asp:TemplateField HeaderText="Area" SortExpression="AreaID">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="CityNameTextBox" runat="server" Text='<%# Bind("CityID") %>'></asp:TextBox>
+                                            <asp:TextBox ID="AreaNameTextBox" runat="server" Text='<%# Bind("AreaID") %>'></asp:TextBox>
                                         </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="CityNameLabel" runat="server" Text='<%# GetCityName((int)Eval("CityID")) %>' />
+                                            <asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetAreaName((int)Eval("AreaID")) %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:BoundField DataField="NextCoffee" HeaderText="NxtCoffee" SortExpression="NextCoffee" DataFormatString="{0:d}" />
@@ -171,7 +171,7 @@
                     <asp:UpdatePanel ID="upnlContactItems" Visible="true" runat="server">
                         <ContentTemplate>
                             <asp:GridView ID="gvItemsToConfirm" runat="server" CssClass="TblZebra small"
-                                DataSourceID="odsContactToBeRemindedItems" AutoGenerateColumns="false">
+                                AutoGenerateColumns="false">
                                 <Columns>
                                     <asp:BoundField DataField="TCIID" HeaderText="TCIID" SortExpression="TCIID" Visible="false" />
                                     <asp:TemplateField HeaderText="Item">
@@ -213,26 +213,6 @@
 <asp:Panel ID="pnlMatrixDump" runat="server" Visible="false" Style="margin-top:10px;">
     <asp:Literal ID="ltrlMatrixDump" runat="server" Mode="PassThrough" />
 </asp:Panel>--%>
-        <asp:ObjectDataSource ID="odsContactsToSendCheckup" runat="server"
-            DataObjectTypeName="TrackerSQL.Controls.ContactToRemindDetails"
-            InsertMethod="InsertContacts" SelectMethod="GetAllContacts"
-            SortParameterName="SortBy"
-            TypeName="TrackerSQL.Controls.TempCoffeeCheckup"
-            OldValuesParameterFormatString="original_{0}">
-            <SelectParameters>
-                <asp:Parameter DefaultValue="CompanyName" Name="SortBy" Type="String" />
-            </SelectParameters>
-        </asp:ObjectDataSource>
-        <asp:ObjectDataSource ID="odsContactToBeRemindedItems" runat="server"
-            SelectMethod="GetAllContactItems" SortParameterName="SortBy"
-            TypeName="TrackerSQL.Controls.TempCoffeeCheckup"
-            OldValuesParameterFormatString="original_{0}">
-            <SelectParameters>
-                <asp:ControlParameter ControlID="gvCustomerCheckup" Name="CustomerID"
-                    PropertyName="SelectedValue" Type="Int64" />
-                <asp:Parameter Name="SortBy" Type="String" />
-            </SelectParameters>
-        </asp:ObjectDataSource>
         <br />
     </div>
 </asp:Content>

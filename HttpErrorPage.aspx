@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="HttpErrorPage.aspx.cs" Inherits="TrackerSQL.HttpErrorPage" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="HttpErrorPage.aspx.cs" Inherits="TrackerSQL.HttpErrorPage" %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
@@ -238,7 +238,7 @@
     <form id="frmErrorPage" runat="server">
         <div class="error-container">
             <div class="error-icon">
-                ⚠️
+                ??
             </div>
             
             <h1>Oops! Something Went Wrong</h1>
@@ -253,10 +253,10 @@
 
             <div class="action-buttons">
                 <a href="Default.aspx" class="btn btn-primary">
-                    🏠 Return Home
+                    ?? Return Home
                 </a>
                 <a href="javascript:history.back()" class="btn btn-secondary">
-                    ← Go Back
+                    ? Go Back
                 </a>
             </div>
 

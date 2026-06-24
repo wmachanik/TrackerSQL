@@ -1,0 +1,59 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class InvoiceTypesRepository : RepositoryBase<InvoiceType>
+    {
+        protected override string TableName => "InvoiceTypesTbl";
+        protected override string KeyColumn => "InvoiceTypeID";
+
+        // Minimal/core columns for targeted fetches
+        protected override string CoreColumns => "InvoiceTypeID, InvoiceTypeDesc, Enabled, Notes";
+        // Lookup (id + display text)
+        protected override string LookupColumns => "InvoiceTypeID, InvoiceTypeDesc";
+
+        public void Insert(InvoiceType invoiceType)
+        {
+            const string sql = "INSERT INTO InvoiceTypesTbl (InvoiceTypeDesc, Enabled, Notes) VALUES (@InvoiceTypeDesc, @Enabled, @Notes)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@InvoiceTypeDesc", DataValue = invoiceType.InvoiceTypeDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Enabled", DataValue = invoiceType.Enabled ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = invoiceType.Notes ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(InvoiceType invoiceType)
+        {
+            const string sql = "UPDATE InvoiceTypesTbl SET InvoiceTypeDesc = @InvoiceTypeDesc, Enabled = @Enabled, Notes = @Notes WHERE InvoiceTypeID = @InvoiceTypeID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@InvoiceTypeDesc", DataValue = invoiceType.InvoiceTypeDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Enabled", DataValue = invoiceType.Enabled ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = invoiceType.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@InvoiceTypeID", DataValue = invoiceType.InvoiceTypeID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int invoiceTypeID)
+        {
+            const string sql = "DELETE FROM InvoiceTypesTbl WHERE InvoiceTypeID = @InvoiceTypeID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@InvoiceTypeID", DataValue = invoiceTypeID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

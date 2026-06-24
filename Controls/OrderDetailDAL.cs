@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.OrderDetailDAL
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -77,7 +77,7 @@ namespace TrackerSQL.Controls
         public bool InsertOrderDetails(
           long CustomerID,
           DateTime OrderDate,
-          DateTime RoastDate,
+          DateTime PrepDate,
           int ToBeDeliveredBy,
           DateTime RequiredByDate,
           bool Confirmed,
@@ -87,12 +87,12 @@ namespace TrackerSQL.Controls
           int PackagingID,
           int ItemTypeID)
         {
-            string strSQL = "INSERT INTO OrdersTbl (CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, Notes,  ItemTypeID, QuantityOrdered, PackagingID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            string strSQL = "INSERT INTO OrdersTbl (CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, Notes,  ItemTypeID, QuantityOrdered, PackagingID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             ItemTypeID = new TrackerTools().ChangeItemIfGroupToNextItemInGroup(CustomerID, ItemTypeID, RequiredByDate);
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)CustomerID, DbType.Int64, "@CustomerID");
             trackerDb.AddParams((object)OrderDate, DbType.Date, "@OrderDate");
-            trackerDb.AddParams((object)RoastDate, DbType.Date, "@RoastDate");
+            trackerDb.AddParams((object)PrepDate, DbType.Date, "@PrepDate");
             trackerDb.AddParams((object)RequiredByDate, DbType.Date, "@RequiredByDate");
             trackerDb.AddParams((object)ToBeDeliveredBy, DbType.Int32, "@ToBeDeliveredBy");
             trackerDb.AddParams((object)Confirmed, DbType.Boolean, "@Confirmed");

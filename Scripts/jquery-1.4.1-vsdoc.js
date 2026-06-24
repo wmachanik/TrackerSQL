@@ -5910,7 +5910,7 @@ jQuery.extend({
 		var style = elem.style || elem, set = value !== undefined;
 
 		// IE uses filters for opacity
-		if ( !jQuery.support.opacity && name === "opacity" ) {
+		if (!jQuery.support.opacity && name === "opacity" ) {
 			if ( set ) {
 				// IE has trouble with opacity if it does not have layout
 				// Force it by setting the zoom level
@@ -5923,7 +5923,7 @@ jQuery.extend({
 			}
 
 			return style.filter && style.filter.indexOf("opacity=") >= 0 ?
-				(parseFloat( ropacity.exec(style.filter)[1] ) / 100) + "":
+				(parseFloat(opacity.exec(style.filter)[1] ) / 100) + "":
 				"";
 		}
 
@@ -5991,7 +5991,7 @@ jQuery.extend({
 		var ret, style = elem.style, filter;
 
 		// IE uses filters for opacity
-		if ( !jQuery.support.opacity && name === "opacity" && elem.currentStyle ) {
+		if (!jQuery.support.opacity && name === "opacity" && elem.currentStyle ) {
 			ret = ropacity.test(elem.currentStyle.filter || "") ?
 				(parseFloat(RegExp.$1) / 100) + "" :
 				"";
@@ -6031,7 +6031,7 @@ jQuery.extend({
 			}
 
 			// We should always get a number back from opacity
-			if ( name === "opacity" && ret === "" ) {
+			if (name === "opacity" && ret === "" ) {
 				ret = "1";
 			}
 
@@ -7266,7 +7266,7 @@ jQuery.fn[ "fadeOut" ] = function( speed, callback ) {
 	///	<param name="callback" optional="true" type="Function">A function to be executed whenever the animation completes, once for each animated element.  It should map function callback() such that this is the DOM element being animated.</param>
 	///	<returns type="jQuery" />
 
-	return this.animate( { opacity: "hide" }, speed, callback );
+	return this.animate({ opacity: "hide" }, speed, callback );
 };
 
 jQuery.extend({

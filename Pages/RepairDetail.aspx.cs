@@ -1,19 +1,13 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.RepairDetail
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
 using AjaxControlToolkit;
 using System;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
 using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL.Pages
 {
     public partial class RepairDetail : Page
@@ -21,16 +15,16 @@ namespace TrackerSQL.Pages
         public const string CONST_URL_REQUEST_REPAIRID = "RepairID";
         private const string CONST_SESSION_REPAIRSTATUSID = "RepairStatusID";
         private static string prevPage = string.Empty;
+        private readonly RepairManager _repairManager = new RepairManager();
+
         protected ScriptManager scrmRepairDetail;
         protected UpdateProgress udtpRepairDetail;
         protected UpdatePanel upnlRepairDetail;
         protected Panel pnlNewRepair;
-        //protected DropDownList ddlNewCompany;
         protected ComboBox cboNewCompany;
         protected Button btnInsert;
         protected Button btnCancelInsert;
         protected Panel pnlRepairDetail;
-        //protected DropDownList ddlCompany;
         protected ComboBox cboCompany;
         protected TextBox tbxContactName;
         protected TextBox tbxContactEmail;
@@ -64,14 +58,6 @@ namespace TrackerSQL.Pages
         protected ObjectDataSource odsRepairStatuses;
         protected ObjectDataSource odsMachineConditions;
 
-        protected void Page_PreInit(object sender, EventArgs e)
-        {
-            //if (new CheckBrowser().fBrowserIsMobile())
-            //    this.MasterPageFile = "~/MobileSite.master";
-            //else
-            //    this.MasterPageFile = "~/Site.master";
-        }
-
         protected void Page_Load(object sender, EventArgs e)
         {
             if (this.IsPostBack)
@@ -96,7 +82,7 @@ namespace TrackerSQL.Pages
 
         private void PutDataFromForm(int pRepairID)
         {
-            RepairsTbl repairById = new RepairsTbl().GetRepairById(pRepairID);
+            RepairFormData repairById = _repairManager.GetRepairFormDataById(pRepairID);
             if (repairById == null)
                 return;
             this.lblRepairID.Text = repairById.RepairID.ToString();
@@ -130,9 +116,9 @@ namespace TrackerSQL.Pages
             this.Session["RepairStatusID"] = (object)repairById.RepairStatusID;
         }
 
-        private RepairsTbl GetDataFromForm()
+        private RepairFormData GetDataFromForm()
         {
-            return new RepairsTbl()
+            return new RepairFormData
             {
                 RepairID = Convert.ToInt32(this.lblRepairID.Text),
                 CustomerID = Convert.ToInt32(this.cboCompany.SelectedValue),
@@ -161,33 +147,27 @@ namespace TrackerSQL.Pages
 
         protected void btnInsert_Click(object sender, EventArgs e)
         {
-            RepairsTbl DataItem = new RepairsTbl();
             if (this.cboNewCompany.SelectedIndex <= 0)
                 return;
-            DataItem.CustomerID = Convert.ToInt32(this.cboNewCompany.SelectedValue);
-            DataItem.DateLogged = TimeZoneUtils.Now().Date;
-            CustomersTbl customersByCustomerID = new CustomersTbl().GetCustomerByCustomerID(DataItem.CustomerID);
-            DataItem.ContactName = customersByCustomerID.ContactFirstName;
-            DataItem.ContactEmail = customersByCustomerID.EmailAddress;
-            DataItem.MachineTypeID = customersByCustomerID.EquipType;
-            DataItem.MachineSerialNumber = customersByCustomerID.MachineSN;
-            DataItem.DateLogged = TimeZoneUtils.Now().Date;
-            DataItem.InsertRepair(DataItem);
-            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"New repair created for CustomerID {DataItem.CustomerID}, RepairID {DataItem.GetLastIDInserted(DataItem.CustomerID)}");
+
+            int contactId = Convert.ToInt32(this.cboNewCompany.SelectedValue);
+            int repairId = _repairManager.CreateRepairForContact(contactId);
+            if (repairId <= 0)
+                return;
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"New repair created for ContactID {contactId}, RepairID {repairId}");
             this.pnlNewRepair.Visible = false;
             this.pnlRepairDetail.Visible = true;
-            DataItem.RepairID = DataItem.GetLastIDInserted(DataItem.CustomerID);
-            this.PutDataFromForm(DataItem.RepairID);
+            this.PutDataFromForm(repairId);
             this.upnlRepairDetail.Update();
         }
 
         private void UpdateRecord()
         {
-            var repairManager = new RepairManager();
-            RepairsTbl dataFromForm = this.GetDataFromForm();
+            RepairFormData dataFromForm = this.GetDataFromForm();
             int previousStatusId = this.Session["RepairStatusID"] != null ? (int)this.Session["RepairStatusID"] : 0;
 
-            string result = repairManager.HandleStatusChange(dataFromForm);
+            string result = _repairManager.HandleStatusChange(dataFromForm);
 
             if (string.IsNullOrWhiteSpace(result))
             {
@@ -223,34 +203,19 @@ namespace TrackerSQL.Pages
             this.UpdateRecord();
             string status = this.ltrlStatus.Text;
 
-            // Show popup only if there's a relevant message
             if (!string.IsNullOrWhiteSpace(status) && !status.Contains("Record Updated"))
             {
                 showMessageBox msgBox = new showMessageBox(this.Page, "Repair Status Update", status);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"Repair Status Update: {status}");
             }
             this.ReturnToPrevPage();
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e) => this.ReturnToPrevPage();
-
         protected void btnDelete_Click(object sender, EventArgs e)
         {
-            int repairId = Convert.ToInt32(this.lblRepairID.Text);
-            new RepairsTbl().DeleteRepair(repairId);
-            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"RepairID {repairId} deleted");
-            this.ReturnToPrevPage();
+            _repairManager.DeleteRepair(Convert.ToInt32(this.lblRepairID.Text));
+            this.ReturnToPrevPage(true);
         }
 
-        public void RepairUpdating(object source, ObjectDataSourceMethodEventArgs e)
-        {
-        }
-
-        public void RowUpdated(object source, ObjectDataSourceStatusEventArgs e)
-        {
-            if (e.AffectedRows != 0)
-                return;
-            showMessageBox showMessageBox = new showMessageBox(this.Page, "nothing updated", "no records updated");
-        }
+        protected void btnCancel_Click(object sender, EventArgs e) => this.ReturnToPrevPage();
     }
 }

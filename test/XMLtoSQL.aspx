@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="XMLtoSQL.aspx.cs" Inherits="TrackerDotNet.test.XMLtoSQL" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="XMLtoSQL.aspx.cs" Inherits="TrackerSQL.test.XMLtoSQL" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -17,7 +17,7 @@
       <h1>Read XML and do the SQL</h1>
       File name:&nbsp;
       <asp:TextBox ID="FileNameTextBox" runat="server" 
-        Text="C:\MyDocuments\Projects\Websites\TrackerDotNet\TrackerDotNet\test\SQLCommandsAug4.xml" 
+        Text="C:\SRC\ASP.net\TrackerSQL\test\SQLCommandsAug4.xml" 
         Width="750px" />
       &nbsp;&nbsp;
       <asp:Button ID="GoButton" Text="Go" runat="server" onclick="GoButton_Click" />

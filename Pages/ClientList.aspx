@@ -1,11 +1,11 @@
-﻿<%@ Page Title="Tracker Client Dump" Language="C#" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" AutoEventWireup="true" CodeBehind="ClientList.aspx.cs" Inherits="TrackerSQL.Pages.ClientListForm" %>
+<%@ Page Title="Tracker Client Dump" Language="C#" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" AutoEventWireup="true" CodeBehind="ItemsRequired.aspx.cs" Inherits="TrackerSQL.Pages.ClientListForm" %>
 <%@ Register assembly="AjaxControlToolkit" namespace="AjaxControlToolkit.HTMLEditor" tagprefix="cc1" %>
 <asp:Content ID="cntClientDumpHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntClientDump" ContentPlaceHolderID="MainContent" runat="server">
   <h1>Client List</h1>
   <p>Please select the type of client (enabled or disabled) and the nubmer of clients per page to display</p>
-  <asp:Label ID="lblRoastDate" CssClass="floatRight" runat="server" Text="dt" />
+  <asp:Label ID="lblPrepDate" CssClass="floatRight" runat="server" Text="dt" />
   <table cellpadding="0" cellspacing="0" width="100%">
     <tr>
       <td>Company Name Contains&nbsp;<asp:TextBox ID="tbxCompanyName" runat="server" />&nbsp;&nbsp;&nbsp;
@@ -104,7 +104,7 @@
         <asp:HyperLinkField 
           DataNavigateUrlFields="CustomerID" 
           HeaderText="Company Name" SortExpression="CompanyName" 
-          DataNavigateUrlFormatString="~/Pages/CustomerDetails.aspx?ID={0}&" 
+          DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}&" 
           DataTextField="CompanyName"  />
         <asp:TemplateField HeaderText="First Name" SortExpression="ContactFirstName">
           <EditItemTemplate>
@@ -147,8 +147,8 @@
           SortExpression="AltEmailAddress" Visible="False" />
         <asp:BoundField DataField="SalesInitials" HeaderText="Agent" 
           SortExpression="SalesInitials" />
-        <asp:BoundField DataField="City" HeaderText="City" 
-          SortExpression="City" Visible="False" />
+        <asp:BoundField DataField="Area" HeaderText="Area" 
+          SortExpression="Area" Visible="False" />
         <asp:BoundField DataField="PreferedAgent" HeaderText="PreferedAgent" 
           SortExpression="PreferedAgent" Visible="False" />
         <asp:BoundField DataField="SalesAgentID" HeaderText="SalesAgentID" 

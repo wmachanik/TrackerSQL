@@ -17,9 +17,10 @@ namespace TrackerSQL.Controls
         public const string CONST_BOUNDOLDDELIVERYDATE = "BoundOldDeliveryDate";
         public const string CONST_BOUNDNOTES = "BoundNotes";
         private long _otCustomerID;
+        private int _otOrderID;
         private int _otToBeDeliveredBy;
         private DateTime _otOrderDate;
-        private DateTime _otRoastDate;
+        private DateTime _otPrepDate;
         private DateTime _otRequiredByDate;
         private bool _otConfirmed;
         private bool _otDone;
@@ -29,9 +30,9 @@ namespace TrackerSQL.Controls
 
         public OrderHeaderData()
         {
-            this._otCustomerID = this._otToBeDeliveredBy = 0;
+            this._otCustomerID = this._otToBeDeliveredBy = this._otOrderID = 0;
             this._otPurchaseOrder = this._otNotes = string.Empty;
-            this._otOrderDate = this._otRoastDate = this._otRequiredByDate = TimeZoneUtils.Now().Date;
+            this._otOrderDate = this._otPrepDate = this._otRequiredByDate = TimeZoneUtils.Now().Date;
             this._otConfirmed = true;
             this._otInvoiceDone = this._otDone = false;
         }
@@ -40,6 +41,12 @@ namespace TrackerSQL.Controls
         {
             get => this._otCustomerID;
             set => this._otCustomerID = value;
+        }
+
+        public int OrderID
+        {
+            get => this._otOrderID;
+            set => this._otOrderID = value;
         }
 
         public int ToBeDeliveredBy
@@ -54,10 +61,10 @@ namespace TrackerSQL.Controls
             set => this._otOrderDate = value;
         }
 
-        public DateTime RoastDate
+        public DateTime PrepDate
         {
-            get => this._otRoastDate;
-            set => this._otRoastDate = value;
+            get => this._otPrepDate;
+            set => this._otPrepDate = value;
         }
 
         public DateTime RequiredByDate

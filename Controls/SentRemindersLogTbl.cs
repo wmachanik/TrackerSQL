@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.SentRemindersLogTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -15,15 +15,15 @@ namespace TrackerSQL.Controls
 {
     public class SentRemindersLogTbl
     {
-        private const string CONST_SQL_SELECT = "SELECT ReminderID, CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems FROM SentRemindersLogTbl";
-        private const string CONST_SQL_SELECT_BYDATESENT = "SELECT ReminderID, CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems  FROM SentRemindersLogTbl WHERE DateSentReminder = ?";
+        private const string CONST_SQL_SELECT = "SELECT ReminderID, CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems FROM SentRemindersLogTbl";
+        private const string CONST_SQL_SELECT_BYDATESENT = "SELECT ReminderID, CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems  FROM SentRemindersLogTbl WHERE DateSentReminder = ?";
         private const string CONST_SQL_SELECT_REMINDERDATESSENT = "SELECT DISTINCT TOP 20 DateSentReminder FROM SentRemindersLogTbl ORDER BY DateSentReminder DESC";
-        private const string CONST_SQL_UPDATE = "UPDATE SentRemindersLogTbl SET CustomerID = ?, DateSentReminder = ?, NextPrepDate = ?, ReminderSent = ?, HadAutoFulfilItem = ?, HadReoccurItems = ?  WHERE (SentRemindersLogTbl.ReminderID = ?)";
-        private const string CONST_SQL_INSERT = "INSERT INTO SentRemindersLogTbl (CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems) VALUES (?, ?, ?, ?, ?, ?)";
+        private const string CONST_SQL_UPDATE = "UPDATE SentRemindersLogTbl SET CustomerID = ?, DateSentReminder = ?, NextPreperationDate = ?, ReminderSent = ?, HadAutoFulfilItem = ?, HadReoccurItems = ?  WHERE (SentRemindersLogTbl.ReminderID = ?)";
+        private const string CONST_SQL_INSERT = "INSERT INTO SentRemindersLogTbl (CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems) VALUES (?, ?, ?, ?, ?, ?)";
         private int _ReminderID;
         private long _CustomerID;
         private DateTime _DateSentReminder;
-        private DateTime _NextPrepDate;
+        private DateTime _NextPreperationDate;
         private bool _ReminderSent;
         private bool _HadAutoFulfilItem;
         private bool _HadReoccurItems;
@@ -33,7 +33,7 @@ namespace TrackerSQL.Controls
             this._ReminderID = 0;
             this._CustomerID = 0;
             this._DateSentReminder = TimeZoneUtils.Now();
-            this._NextPrepDate = TimeZoneUtils.Now().Date;
+            this._NextPreperationDate = TimeZoneUtils.Now().Date;
             this._ReminderSent = false;
             this._HadAutoFulfilItem = false;
             this._HadReoccurItems = false;
@@ -57,10 +57,10 @@ namespace TrackerSQL.Controls
             set => this._DateSentReminder = value;
         }
 
-        public DateTime NextPrepDate
+        public DateTime NextPreperationDate
         {
-            get => this._NextPrepDate;
-            set => this._NextPrepDate = value;
+            get => this._NextPreperationDate;
+            set => this._NextPreperationDate = value;
         }
 
         public bool ReminderSent
@@ -85,7 +85,7 @@ namespace TrackerSQL.Controls
         {
             List<SentRemindersLogTbl> all = new List<SentRemindersLogTbl>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT ReminderID, CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems FROM SentRemindersLogTbl";
+            string strSQL = "SELECT ReminderID, CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems FROM SentRemindersLogTbl";
             if (!string.IsNullOrEmpty(SortBy))
                 strSQL = $"{strSQL} ORDER BY {SortBy}";
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
@@ -97,7 +97,7 @@ namespace TrackerSQL.Controls
                         ReminderID = dataReader["ReminderID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReminderID"]),
                         CustomerID = dataReader["CustomerID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerID"]),
                         DateSentReminder = dataReader["DateSentReminder"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["DateSentReminder"]).Date,
-                        NextPrepDate = dataReader["NextPrepDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPrepDate"]).Date,
+                        NextPreperationDate = dataReader["NextPreperationDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date,
                         ReminderSent = dataReader["ReminderSent"] != DBNull.Value && Convert.ToBoolean(dataReader["ReminderSent"]),
                         HadAutoFulfilItem = dataReader["HadAutoFulfilItem"] != DBNull.Value && Convert.ToBoolean(dataReader["HadAutoFulfilItem"]),
                         HadReoccurItems = dataReader["HadReoccurItems"] != DBNull.Value && Convert.ToBoolean(dataReader["HadReoccurItems"])
@@ -112,7 +112,7 @@ namespace TrackerSQL.Controls
         {
             List<SentRemindersLogTbl> allByDate = new List<SentRemindersLogTbl>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT ReminderID, CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems  FROM SentRemindersLogTbl WHERE DateSentReminder = ?";
+            string strSQL = "SELECT ReminderID, CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems  FROM SentRemindersLogTbl WHERE DateSentReminder = ?";
             if (!string.IsNullOrEmpty(SortBy))
                 strSQL = $"{strSQL} ORDER BY {SortBy}";
             trackerDb.AddWhereParams((object)pDateSent.Date, DbType.Date);
@@ -125,7 +125,7 @@ namespace TrackerSQL.Controls
                         ReminderID = dataReader["ReminderID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReminderID"]),
                         CustomerID = dataReader["CustomerID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerID"]),
                         DateSentReminder = dataReader["DateSentReminder"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["DateSentReminder"]).Date,
-                        NextPrepDate = dataReader["NextPrepDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPrepDate"]).Date,
+                        NextPreperationDate = dataReader["NextPreperationDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date,
                         ReminderSent = dataReader["ReminderSent"] != DBNull.Value && Convert.ToBoolean(dataReader["ReminderSent"]),
                         HadAutoFulfilItem = dataReader["HadAutoFulfilItem"] != DBNull.Value && Convert.ToBoolean(dataReader["HadAutoFulfilItem"]),
                         HadReoccurItems = dataReader["HadReoccurItems"] != DBNull.Value && Convert.ToBoolean(dataReader["HadReoccurItems"])
@@ -162,12 +162,12 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)pSentRemindersLog.CustomerID, DbType.Int64);
             trackerDb.AddParams((object)pSentRemindersLog.DateSentReminder, DbType.Date);
-            trackerDb.AddParams((object)pSentRemindersLog.NextPrepDate, DbType.Date);
+            trackerDb.AddParams((object)pSentRemindersLog.NextPreperationDate, DbType.Date);
             trackerDb.AddParams((object)pSentRemindersLog.ReminderSent, DbType.Boolean);
             trackerDb.AddParams((object)pSentRemindersLog.HadAutoFulfilItem, DbType.Boolean);
             trackerDb.AddParams((object)pSentRemindersLog.HadReoccurItems, DbType.Boolean);
             trackerDb.AddWhereParams((object)pSentRemindersLog.ReminderID, DbType.Int32);
-            string str = trackerDb.ExecuteNonQuerySQL("UPDATE SentRemindersLogTbl SET CustomerID = ?, DateSentReminder = ?, NextPrepDate = ?, ReminderSent = ?, HadAutoFulfilItem = ?, HadReoccurItems = ?  WHERE (SentRemindersLogTbl.ReminderID = ?)");
+            string str = trackerDb.ExecuteNonQuerySQL("UPDATE SentRemindersLogTbl SET CustomerID = ?, DateSentReminder = ?, NextPreperationDate = ?, ReminderSent = ?, HadAutoFulfilItem = ?, HadReoccurItems = ?  WHERE (SentRemindersLogTbl.ReminderID = ?)");
             trackerDb.Close();
             return str;
         }
@@ -178,11 +178,11 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)pSentRemindersLog.CustomerID, DbType.Int64);
             trackerDb.AddParams((object)pSentRemindersLog.DateSentReminder, DbType.Date);
-            trackerDb.AddParams((object)pSentRemindersLog.NextPrepDate, DbType.Date);
+            trackerDb.AddParams((object)pSentRemindersLog.NextPreperationDate, DbType.Date);
             trackerDb.AddParams((object)pSentRemindersLog.ReminderSent, DbType.Boolean);
             trackerDb.AddParams((object)pSentRemindersLog.HadAutoFulfilItem, DbType.Boolean);
             trackerDb.AddParams((object)pSentRemindersLog.HadReoccurItems, DbType.Boolean);
-            string str = trackerDb.ExecuteNonQuerySQL("INSERT INTO SentRemindersLogTbl (CustomerID, DateSentReminder, NextPrepDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems) VALUES (?, ?, ?, ?, ?, ?)");
+            string str = trackerDb.ExecuteNonQuerySQL("INSERT INTO SentRemindersLogTbl (CustomerID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadReoccurItems) VALUES (?, ?, ?, ?, ?, ?)");
             trackerDb.Close();
             return str;
         }
@@ -233,6 +233,56 @@ namespace TrackerSQL.Controls
         public int DeleteTodaysEntries()
         {
             return DeleteTodaysEntries(TimeZoneUtils.Now().Date);
+        }
+        /// <summary>
+        /// Gets the most recent date when checkup reminders were successfully sent.
+        /// Falls back to MinReminderDate if no reminders have been sent yet.
+        /// This is used to determine the baseline date for NextDeliveryDate filtering.
+        /// </summary>
+        /// <returns>Last successful checkup date or MinReminderDate</returns>
+        public DateTime GetLastSuccessfulCheckupDate()
+        {
+            DateTime lastCheckupDate = DateTime.MinValue;
+
+            try
+            {
+                TrackerDb trackerDb = new TrackerDb();
+                string sql = "SELECT MAX(DateSentReminder) AS LastCheckupDate FROM SentRemindersLogTbl WHERE ReminderSent = True";
+                IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(sql);
+
+                if (dataReader != null)
+                {
+                    if (dataReader.Read() && dataReader["LastCheckupDate"] != DBNull.Value)
+                    {
+                        lastCheckupDate = Convert.ToDateTime(dataReader["LastCheckupDate"]).Date;
+                    }
+                    dataReader.Close();
+                }
+                trackerDb.Close();
+
+                // If no checkup has been run yet, fall back to MinReminderDate from SysDataTbl
+                if (lastCheckupDate == DateTime.MinValue)
+                {
+                    SysDataTbl sysData = new SysDataTbl();
+                    lastCheckupDate = sysData.GetMinReminderDate();
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        $"SentRemindersLogTbl: No previous checkup found, using MinReminderDate: {lastCheckupDate:yyyy-MM-dd}");
+                }
+                else
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        $"SentRemindersLogTbl: Last successful checkup date: {lastCheckupDate:yyyy-MM-dd}");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                    $"SentRemindersLogTbl: Error getting last checkup date: {ex.Message}. Using MinReminderDate.");
+                SysDataTbl sysData = new SysDataTbl();
+                lastCheckupDate = sysData.GetMinReminderDate();
+            }
+
+            return lastCheckupDate;
         }
 
         /// <summary>

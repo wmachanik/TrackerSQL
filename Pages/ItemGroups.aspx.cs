@@ -1,20 +1,15 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.ItemGroups
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerSQL.Controls;
+using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL.Pages
 {
     public partial class ItemGroups : Page
     {
         private const string CONST_SESSION_LASTIDSELECTED = "LastGroupIDSelected";
+        private readonly ItemGroupsRepository _itemGroupsRepository = new ItemGroupsRepository();
+
         protected System.Web.UI.ScriptManager scrmngItemGroups;
         protected UpdatePanel updtPnlItems;
         protected DropDownList ddlGroupItems;
@@ -42,10 +37,6 @@ namespace TrackerSQL.Pages
             this.ddlGroupItems.SelectedValue = str;
         }
 
-        protected void Page_PreRenderComplete(object sender, EventArgs e)
-        {
-        }
-
         protected void btnAddGroup_Click(object sender, EventArgs e)
         {
             this.Response.Redirect("GroupItemDetail.aspx");
@@ -54,21 +45,14 @@ namespace TrackerSQL.Pages
 
         protected void btnAddItem_Click(object sender, EventArgs e)
         {
+            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
             foreach (GridViewRow row in this.gvItemsNotInGroup.Rows)
             {
                 CheckBox control1 = (CheckBox)row.FindControl("cbxAddItem");
                 if (control1 != null && control1.Checked)
                 {
                     DropDownList control2 = (DropDownList)row.FindControl("ddlItemTypeDesc");
-                    ItemGroupTbl pItemGroupTbl = new ItemGroupTbl()
-                    {
-                        GroupItemTypeID = Convert.ToInt32(this.ddlGroupItems.SelectedValue),
-                        ItemTypeID = Convert.ToInt32(control2.SelectedValue)
-                    };
-                    pItemGroupTbl.ItemTypeSortPos = pItemGroupTbl.GetLastGroupItemSortPos(pItemGroupTbl.GroupItemTypeID) + 1;
-                    pItemGroupTbl.Enabled = true;
-                    pItemGroupTbl.Notes = "added on ItemGroup form";
-                    pItemGroupTbl.InsertItemGroup(pItemGroupTbl);
+                    _itemGroupsRepository.InsertItemToGroup(groupId, Convert.ToInt32(control2.SelectedValue));
                 }
             }
             this.gvItemsInList.DataBind();
@@ -78,13 +62,14 @@ namespace TrackerSQL.Pages
 
         protected void btnRemove_Click(object sender, EventArgs e)
         {
+            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
             foreach (GridViewRow row in this.gvItemsInList.Rows)
             {
                 CheckBox control1 = (CheckBox)row.FindControl("cbxRemoveItem");
                 if (control1 != null && control1.Checked)
                 {
                     DropDownList control2 = (DropDownList)row.FindControl("ddlItemDesc");
-                    new ItemGroupTbl().DeleteGroupItemFromGroup(Convert.ToInt32(this.ddlGroupItems.SelectedValue), Convert.ToInt32(control2.SelectedValue));
+                    _itemGroupsRepository.DeleteItemFromGroup(groupId, Convert.ToInt32(control2.SelectedValue));
                 }
             }
             this.gvItemsInList.DataBind();
@@ -115,14 +100,15 @@ namespace TrackerSQL.Pages
             GridViewRow row = this.gvItemsInList.Rows[Convert.ToInt32(e.CommandArgument)];
             DropDownList control1 = (DropDownList)row.FindControl("ddlItemDesc");
             Label control2 = (Label)row.FindControl("lblItemSortPos");
-            ItemGroupTbl pItemGroupTbl = new ItemGroupTbl();
-            pItemGroupTbl.GroupItemTypeID = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
-            pItemGroupTbl.ItemTypeID = Convert.ToInt32(control1.SelectedValue);
-            pItemGroupTbl.ItemTypeSortPos = Convert.ToInt32(control2.Text);
+            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
+            int itemId = Convert.ToInt32(control1.SelectedValue);
+            int sortPos = Convert.ToInt32(control2.Text);
+
             if (e.CommandName.Equals("MoveUp"))
-                pItemGroupTbl.DecItemSortPos(pItemGroupTbl);
+                _itemGroupsRepository.MoveItemSortUp(groupId, itemId, sortPos);
             else
-                pItemGroupTbl.IncItemSortPos(pItemGroupTbl);
+                _itemGroupsRepository.MoveItemSortDown(groupId, itemId, sortPos);
+
             this.gvItemsInList.DataBind();
         }
 

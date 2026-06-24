@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ResetPasswordHelper.aspx.cs" 
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ResetPasswordHelper.aspx.cs" 
     Inherits="TrackerSQL.Administration.ResetPasswordHelper" %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">

@@ -51,7 +51,7 @@ Add Access→SQL type mapping + optional rowversion.
 COUNTER→INT IDENTITY, YES/NO→BIT, TEXT(n)→NVARCHAR(n), MEMO→NVARCHAR(MAX), CURRENCY→DECIMAL(19,4), SINGLE→REAL (or DECIMAL), DOUBLE→FLOAT, DATETIME→DATETIME2, OLEOBJECT→VARBINARY(MAX).
 
 7. Schema Conversion
-Generate draft → add PK/FK, unique, nonclustered indexes (SortOrder, ItemDesc, City, etc.), optional rowversion columns. Store in Database/Schema.sql + patches folder.
+Generate draft → add PK/FK, unique, nonclustered indexes (SortOrder, ItemDesc, Area, etc.), optional rowversion columns. Store in Database/Schema.sql + patches folder.
 
 8. Data Migration
 Use SSMA or CSV + BULK INSERT staging → final with IDENTITY_INSERT. Script: Database/DataMigration.ps1. Output row counts + checksums to Docs/Reports/MigrationValidation.md.

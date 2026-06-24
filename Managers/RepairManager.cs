@@ -2,89 +2,92 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
     public class RepairManager
     {
-        private readonly RepairsTbl _repairsTbl;
-        private readonly OrderTbl _orderTbl;
-        private readonly CustomersTbl _customersTbl;
+        private readonly RepairsRepository _repairsRepository;
+        private readonly OrdersRepository _ordersRepository;
+        private readonly ContactsRepository _contactsRepository;
+        private readonly RepairStatusesRepository _repairStatusesRepository;
+        private readonly NextPrepDateByAreaRepository _nextPrepDateRepository;
+        private readonly TempOrdersLinesRepository _tempOrdersLinesRepository;
+        private readonly EquipTypesRepository _equipTypesRepository = new EquipTypesRepository();
 
         public RepairManager()
         {
-            _repairsTbl = new RepairsTbl();
-            _orderTbl = new OrderTbl();
-            _customersTbl = new CustomersTbl();
+            _repairsRepository = new RepairsRepository();
+            _ordersRepository = new OrdersRepository();
+            _contactsRepository = new ContactsRepository();
+            _repairStatusesRepository = new RepairStatusesRepository();
+            _nextPrepDateRepository = new NextPrepDateByAreaRepository();
+            _tempOrdersLinesRepository = new TempOrdersLinesRepository();
         }
 
-        public string HandleStatusChange(RepairsTbl repair)
+        public string HandleStatusChange(RepairFormData repair)
         {
-            bool orderUpdated = true;
-
             switch (repair.RepairStatusID)
             {
-                case 1: // LOGGED
-                    orderUpdated = LogNewRepair(repair, true);
+                case 1:
+                    LogNewRepair(repair, true);
                     break;
 
-                case 2: // COLLECTED
+                case 2:
                     if (repair.RelatedOrderID == 0)
                     {
-                        orderUpdated = LogNewRepair(repair, true);
+                        LogNewRepair(repair, true);
                     }
                     else
                     {
-                        _orderTbl.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
+                        _ordersRepository.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
                     }
                     break;
 
-                case 3: // WORKSHOP
+                case 3:
                     HandleWorkshopStatus(repair);
                     break;
 
-                case 6: // READY
+                case 6:
                     if (repair.RelatedOrderID > 0)
                     {
-                        var nextDeliveryDate = new NextRoastDateByCityTbl()
-                            .GetNextDeliveryDate(repair.CustomerID);
-                        _orderTbl.UpdateOrderDeliveryDate(nextDeliveryDate, repair.RelatedOrderID);
+                        var nextDeliveryDate = _nextPrepDateRepository
+                            .GetNextDeliveryDateForContact((int)repair.CustomerID);
+                        if (nextDeliveryDate.HasValue)
+                        {
+                            _ordersRepository.UpdateOrderDeliveryDate(nextDeliveryDate.Value, repair.RelatedOrderID);
+                        }
                     }
                     break;
 
-                case 7: // DONE
+                case 7:
                     if (repair.RelatedOrderID > 0)
                     {
-                        _orderTbl.UpdateSetDoneByID(true, repair.RelatedOrderID);
+                        _ordersRepository.UpdateSetDoneById(true, repair.RelatedOrderID);
                     }
                     break;
             }
 
-            bool updateSuccess = string.IsNullOrEmpty(_repairsTbl.UpdateRepair(repair));
-            if (!updateSuccess)
+            if (!_repairsRepository.UpdateRepair(ToRepair(repair)))
+            {
                 return MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+            }
 
-            // Update order notes with the status note from the database
-            string statusNote = new RepairStatusesTbl().GetStatusNote(repair.RepairStatusID);
+            string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
             if (repair.RelatedOrderID > 0)
             {
-                RepairsTbl.UpdateOrderNotesWithRepairStatus(repair, statusNote);
+                UpdateOrderNotesWithRepairStatus(repair, statusNote);
             }
 
-            string emailError = SendStatusNotification(repair);
-
-            if (!string.IsNullOrEmpty(emailError))
-                return emailError;
-
-            return null; // Success
+            return SendStatusNotification(repair);
         }
 
-        public List<RepairsTbl> GetRepairsByDateFilter(string dateFilter, string repairStatus, string sortBy = "DateLogged DESC")
+        public List<RepairFormData> GetRepairsByDateFilter(string dateFilter, string repairStatus, string sortBy = "DateLogged DESC")
         {
             DateTime? fromDate = null;
             DateTime? toDate = null;
-
             var today = TimeZoneUtils.Now().Date;
 
             switch (dateFilter?.ToUpper())
@@ -111,85 +114,113 @@ namespace TrackerSQL.Managers
                     fromDate = lastMonthStart;
                     toDate = lastMonthStart.AddMonths(1).AddDays(-1);
                     break;
-
-                case "ALL":
-                case null:
-                case "":
-                    // No date filtering
-                    break;
-
-                default:
-                    // For custom date ranges, dates should be passed separately
-                    break;
             }
 
-            return _repairsTbl.GetRepairsByStatusAndDateRange(sortBy, repairStatus, fromDate, toDate, null, null);
+            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
+                sortBy, repairStatus, fromDate, toDate, null, null));
         }
 
         [DataObjectMethod(DataObjectMethodType.Select, true)]
-        public List<RepairsTbl> GetRepairsByStatusAndDateRange(string sortBy, string repairStatus, object fromDateObj, object toDateObj, string filterBy, string filterText)
+        public List<RepairFormData> GetRepairsByStatusAndDateRange(
+            string SortBy, string repairStatus, object fromDate, object toDate, string filterBy, string filterText)
         {
-            // Convert objects to DateTime? and call the main method
-            DateTime? fromDate = TrackerTools.ConvertToNullableDateTime(fromDateObj);
-            DateTime? toDate = TrackerTools.ConvertToNullableDateTime(toDateObj);
-            return _repairsTbl.GetRepairsByStatusAndDateRange(sortBy, repairStatus, fromDate, toDate, null, null);
+            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
+                SortBy, repairStatus, fromDate, toDate, filterBy, filterText));
         }
-        private string SafeString(string value) => string.IsNullOrWhiteSpace(value) ? "n/a" : value;
 
-        private string SendStatusNotification(RepairsTbl repair)
+        public RepairFormData GetRepairFormDataById(int repairId)
         {
-            var equipTypeTbl = new EquipTypeTbl();
-            var repairStatusesTbl = new RepairStatusesTbl();
+            var repair = _repairsRepository.GetRepairById(repairId);
+            return repair != null ? ToRepairFormData(repair) : null;
+        }
 
+        public int CreateRepairForContact(int contactId)
+        {
+            var contact = _contactsRepository.GetById(contactId);
+            if (contact == null) return 0;
+
+            var repair = new Repair
+            {
+                ContactID = contactId,
+                ContactName = contact.ContactFirstName ?? string.Empty,
+                ContactEmail = !string.IsNullOrWhiteSpace(contact.EmailAddress) ? contact.EmailAddress : contact.AltEmailAddress,
+                EquipTypeID = contact.EquipTypeID,
+                EquipSerialNumber = contact.EquipentSN,
+                DateLogged = TimeZoneUtils.Now().Date,
+                LastStatusChange = TimeZoneUtils.Now(),
+                RepairStatusID = 1
+            };
+
+            if (!_repairsRepository.InsertRepair(repair))
+                return 0;
+
+            return _repairsRepository.GetLastIdInserted(contactId);
+        }
+
+        [DataObjectMethod(DataObjectMethodType.Insert)]
+        public bool InsertRepair(RepairFormData repair)
+        {
+            return _repairsRepository.InsertRepair(ToRepair(repair));
+        }
+
+        [DataObjectMethod(DataObjectMethodType.Update)]
+        public string UpdateRepair(RepairFormData repair, int orig_RepairID)
+        {
+            repair.RepairID = orig_RepairID;
+            repair.LastStatusChange = TimeZoneUtils.Now();
+            return _repairsRepository.UpdateRepair(ToRepair(repair), orig_RepairID)
+                ? string.Empty
+                : MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+        }
+
+        [DataObjectMethod(DataObjectMethodType.Delete)]
+        public string DeleteRepair(int repairId)
+        {
+            return _repairsRepository.DeleteRepair(repairId) ? string.Empty : "Failed to delete repair";
+        }
+
+        private string SendStatusNotification(RepairFormData repair)
+        {
             var emailSettings = new EmailSettings();
             emailSettings.SetRecipient(repair.ContactEmail);
 
             var email = new EmailMailKitCls(emailSettings);
             email.AddSysCCFAddress();
-
             email.SetEmailSubject(MessageProvider.Get(MessageKeys.Repairs.StatusEmailSubject));
 
-            // Get the status note from the database
-            string statusNote = repairStatusesTbl.GetStatusNote(repair.RepairStatusID);
-
-            // Format the email body using Messages.resx template
-
-            // Usage in SendStatusNotification:
+            string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
+            var equipName = _equipTypesRepository.GetEquipTypeName(repair.MachineTypeID);
             string body = MessageProvider.Format(
                 MessageKeys.Repairs.StatusEmailBody,
-                TrackerTools.SafeString(repair.ContactName, SystemConstants.EmailConstants.DefaultContact),  // {0} = contact name
-                TrackerTools.SafeString(equipTypeTbl.GetEquipName(repair.MachineTypeID), SystemConstants.RepairConstants.DefaultEquipName ),   // {1} the equipment being repaired
-                TrackerTools.SafeString(repair.MachineSerialNumber),                                         // {2} = equipment serial number
+                TrackerTools.SafeString(repair.ContactName, SystemConstants.EmailConstants.DefaultContact),
+                TrackerTools.SafeString(equipName, SystemConstants.RepairConstants.DefaultEquipName),
+                TrackerTools.SafeString(repair.MachineSerialNumber),
                 statusNote,
-                TrackerTools.SafeString(repair.JobCardNumber)                                                // {4} the job card assocaited to this repair
-            );
+                TrackerTools.SafeString(repair.JobCardNumber));
 
             body += MessageProvider.Get(MessageKeys.Repairs.DisclaimerFooter) +
                 MessageProvider.Get(MessageProvider.GetEmailSignature());
 
             email.AddToBody(body);
 
-            bool success = email.SendEmail();
-
-            if (!success)
+            if (!email.SendEmail())
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, MessageProvider.Format(
                     MessageKeys.Email.SendError,
                     repair.ContactEmail,
                     email.LastErrorSummary));
+                return email.LastErrorSummary;
             }
 
-            return success ? null : email.LastErrorSummary;
+            return null;
         }
 
-        private bool LogNewRepair(RepairsTbl repair, bool calculateDelivery)
+        private bool LogNewRepair(RepairFormData repair, bool calculateDelivery)
         {
-
             DateTime delivery = TimeZoneUtils.Now().Date.AddDays(7.0);
 
             if (repair.RelatedOrderID == 0)
             {
-                // Create new order
                 var orderData = new OrderTblData
                 {
                     CustomerID = repair.CustomerID,
@@ -201,7 +232,7 @@ namespace TrackerSQL.Managers
                 if (calculateDelivery)
                 {
                     var tools = new TrackerTools();
-                    orderData.RoastDate = tools.GetNextRoastDateByCustomerID(repair.CustomerID, ref delivery);
+                    orderData.PrepDate = tools.GetNextPreperationDateByCustomerID(repair.CustomerID, ref delivery);
                     var prefs = tools.RetrieveCustomerPrefs(repair.CustomerID);
 
                     orderData.OrderDate = TimeZoneUtils.Now().Date;
@@ -209,39 +240,34 @@ namespace TrackerSQL.Managers
                     orderData.ToBeDeliveredBy = prefs.PreferredDeliveryByID;
 
                     if (prefs.RequiresPurchOrder)
+                    {
                         orderData.PurchaseOrder = SystemConstants.UIConstants.PORequiredText;
+                    }
                 }
                 else
                 {
                     DateTime today = TimeZoneUtils.Now().Date;
                     orderData.OrderDate = today;
-                    orderData.RoastDate = today;
+                    orderData.PrepDate = today;
                     orderData.RequiredByDate = delivery;
                 }
 
-                _orderTbl.InsertNewOrderLine(orderData);
-                repair.RelatedOrderID = _orderTbl.GetLastOrderAdded(
+                _ordersRepository.InsertNewOrderLine(orderData);
+                repair.RelatedOrderID = _ordersRepository.GetLastOrderAdded(
                     orderData.CustomerID,
                     orderData.OrderDate,
                     36);
             }
-            else
+            else if (calculateDelivery)
             {
-                // Optionally update delivery date or other fields if needed
-                if (calculateDelivery)
-                {
-                    var tools = new TrackerTools();
-                    var prefs = tools.RetrieveCustomerPrefs(repair.CustomerID);
-                    DateTime newDelivery = TimeZoneUtils.Now().Date.AddDays(7.0);
-                    _orderTbl.UpdateOrderDeliveryDate(newDelivery, repair.RelatedOrderID);
-                }
+                DateTime newDelivery = TimeZoneUtils.Now().Date.AddDays(7.0);
+                _ordersRepository.UpdateOrderDeliveryDate(newDelivery, repair.RelatedOrderID);
             }
-            // UpdateOrderNotesWithRepairStatus - > done later
 
             return true;
         }
 
-        private void HandleWorkshopStatus(RepairsTbl repair)
+        private void HandleWorkshopStatus(RepairFormData repair)
         {
             if (repair.RelatedOrderID == 0)
             {
@@ -249,46 +275,156 @@ namespace TrackerSQL.Managers
             }
             else
             {
-                _orderTbl.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
+                _ordersRepository.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
             }
 
             if (!string.IsNullOrEmpty(repair.MachineSerialNumber))
             {
-                _customersTbl.SetEquipDetailsIfEmpty(
+                _contactsRepository.SetEquipmentIfEmpty(
                     repair.MachineTypeID,
                     repair.MachineSerialNumber,
-                    repair.CustomerID);
+                    (int)repair.CustomerID);
             }
         }
 
         public void SetStatusDoneByTempOrder()
         {
-            var repairsTbl = new RepairsTbl();
-            var tempOrders = repairsTbl.GetListOfRelatedTempOrders();
+            var tempOrders = _repairsRepository.GetListOfRelatedTempOrders();
 
-            if (tempOrders.Count > 0)
+            foreach (var repair in tempOrders)
             {
-                var tempOrdersLinesTbl = new TempOrdersLinesTbl();
-                var orderTbl = new OrderTbl();
+                var repairTbl = ToRepairFormData(repair);
 
-                foreach (var repair in tempOrders)
+                if (repairTbl.RepairStatusID <= 3)
                 {
-                    if (repair.RepairStatusID <= 3)
-                    {
-                        // For repairs in early stages, delete temp order and extend delivery date
-                        tempOrdersLinesTbl.DeleteByOriginalID(repair.RelatedOrderID);
-                        orderTbl.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
-                    }
-                    else
-                    {
-                        // For repairs in later stages, mark as done
-                        repair.RepairStatusID = 7; // Done status
-                        repairsTbl.UpdateRepair(repair);
-                    }
+                    _tempOrdersLinesRepository.DeleteByOriginalOrderId(repairTbl.RelatedOrderID);
+                    _ordersRepository.UpdateIncDeliveryDateBy7(repairTbl.RelatedOrderID);
+                }
+                else
+                {
+                    repair.RepairStatusID = 7;
+                    _repairsRepository.UpdateRepair(repair);
                 }
             }
         }
 
-        // Other business logic methods...
+        private void UpdateOrderNotesWithRepairStatus(RepairFormData repair, string status)
+        {
+            if (repair.JobCardNumber.Equals(string.Empty))
+            {
+                repair.JobCardNumber = "n/a";
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with order related id: {repair.RelatedOrderID}, has not Job Card number set!");
+            }
+
+            var order = _ordersRepository.GetOrderTblDataById(repair.RelatedOrderID);
+            if (order == null)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with order related id: {repair.RelatedOrderID}, not found in OrdersTbl!");
+                return;
+            }
+
+            string startTag = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag;
+            int startIdx = order.Notes?.IndexOf(startTag, StringComparison.OrdinalIgnoreCase) ?? -1;
+            if (startIdx >= 0)
+            {
+                int endIdx = order.Notes.IndexOf(SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd, startIdx);
+                if (endIdx > startIdx)
+                {
+                    string before = order.Notes.Substring(0, startIdx);
+                    string after = order.Notes.Substring(endIdx + 1);
+                    string newBlock = $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
+                    order.Notes = before + newBlock + after;
+                }
+            }
+            else
+            {
+                order.Notes += $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
+            }
+
+            bool success = _ordersRepository.UpdateOrderNotes(repair.RelatedOrderID, order.Notes);
+            if (success)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with order related id: {repair.RelatedOrderID}, status changed to {status}.");
+            }
+            else
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with order related id: {repair.RelatedOrderID}, status update failed.");
+            }
+        }
+
+        private static Repair ToRepair(RepairFormData repair)
+        {
+            return new Repair
+            {
+                RepairID = repair.RepairID,
+                ContactID = (int)repair.CustomerID,
+                ContactName = repair.ContactName,
+                ContactEmail = repair.ContactEmail,
+                JobCardNumber = repair.JobCardNumber,
+                DateLogged = repair.DateLogged,
+                LastStatusChange = repair.LastStatusChange,
+                EquipTypeID = repair.MachineTypeID,
+                EquipSerialNumber = repair.MachineSerialNumber,
+                SwopOutMachineID = repair.SwopOutMachineID,
+                EquipConditionID = repair.MachineConditionID,
+                TakenFrother = repair.TakenFrother,
+                TakenBeanLid = repair.TakenBeanLid,
+                TakenWaterLid = repair.TakenWaterLid,
+                BrokenFrother = repair.BrokenFrother,
+                BrokenBeanLid = repair.BrokenBeanLid,
+                BrokenWaterLid = repair.BrokenWaterLid,
+                RepairFaultID = repair.RepairFaultID,
+                RepairFaultDesc = repair.RepairFaultDesc,
+                RepairStatusID = repair.RepairStatusID,
+                RelatedOrderID = repair.RelatedOrderID,
+                Notes = repair.Notes
+            };
+        }
+
+        private static RepairFormData ToRepairFormData(Repair repair)
+        {
+            return new RepairFormData
+            {
+                RepairID = repair.RepairID,
+                CustomerID = repair.ContactID,
+                ContactName = repair.ContactName ?? string.Empty,
+                ContactEmail = repair.ContactEmail ?? string.Empty,
+                JobCardNumber = repair.JobCardNumber ?? string.Empty,
+                DateLogged = repair.DateLogged ?? DateTime.MinValue,
+                LastStatusChange = repair.LastStatusChange ?? TimeZoneUtils.Now(),
+                MachineTypeID = repair.EquipTypeID ?? 0,
+                MachineSerialNumber = repair.EquipSerialNumber ?? string.Empty,
+                SwopOutMachineID = repair.SwopOutMachineID ?? 0,
+                MachineConditionID = repair.EquipConditionID ?? 0,
+                TakenFrother = repair.TakenFrother ?? false,
+                TakenBeanLid = repair.TakenBeanLid ?? true,
+                TakenWaterLid = repair.TakenWaterLid ?? true,
+                BrokenFrother = repair.BrokenFrother ?? false,
+                BrokenBeanLid = repair.BrokenBeanLid ?? false,
+                BrokenWaterLid = repair.BrokenWaterLid ?? false,
+                RepairFaultID = repair.RepairFaultID ?? 0,
+                RepairFaultDesc = repair.RepairFaultDesc ?? string.Empty,
+                RepairStatusID = repair.RepairStatusID ?? 0,
+                RelatedOrderID = repair.RelatedOrderID ?? 0,
+                Notes = repair.Notes ?? string.Empty
+            };
+        }
+
+        private static List<RepairFormData> ToRepairFormDataList(List<Repair> repairs)
+        {
+            var list = new List<RepairFormData>();
+            if (repairs == null) return list;
+
+            foreach (var repair in repairs)
+            {
+                list.Add(ToRepairFormData(repair));
+            }
+
+            return list;
+        }
     }
 }

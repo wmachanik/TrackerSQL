@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerSQL.Pages.ThisWeeksOrder" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerSQL.Pages.ThisWeeksOrder" %>
 <asp:Content ID="cntThisWeeksOrderHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntThisWeeksOrderBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -48,8 +48,8 @@
             SortExpression="EmailAddress" />
           <asp:BoundField DataField="OrderDate" DataFormatString="{0:d}" 
             HeaderText="OrderDate" SortExpression="OrderDate" />
-          <asp:BoundField DataField="RoastDate" DataFormatString="{0:d}" 
-            HeaderText="RoastDate" SortExpression="RoastDate" />
+          <asp:BoundField DataField="PrepDate" DataFormatString="{0:d}" 
+            HeaderText="PrepDate" SortExpression="PrepDate" />
           <asp:BoundField DataField="ItemDesc" HeaderText="Item Order" 
             SortExpression="ItemDesc" />
           <asp:BoundField DataField="QuantityOrdered" HeaderText="Qty" 

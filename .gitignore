@@ -132,8 +132,8 @@ _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
 
-# TeamCity is a build add-in
-_TeamCity*
+# TeamArea is a build add-in
+_TeamArea*
 
 # DotCover is a Code Coverage Tool
 *.dotCover
@@ -362,3 +362,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /App_Data/QuaffeeTracker08.mdb
+
+# Temp files - ignore ASP.NET shadow copy cache
+bin/Temp/
+obj/Temp/
+.vs/

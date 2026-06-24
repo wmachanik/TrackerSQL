@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.DataSets.TrackerDataSet
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -32,10 +32,10 @@ namespace TrackerSQL.DataSets
         private TrackerDataSet.OrderTblDataTable tableOrdersTbl;
         private TrackerDataSet.CustomersTblDataTable tableCustomersTbl;
         private TrackerDataSet.ItemTypeTblDataTable tableItemTypeTbl;
-        private TrackerDataSet.CityTblDataTable tableCityTbl;
+        private TrackerDataSet.AreaTblDataTable tableAreaTbl;
         private DataRelation relationPrimaryItemPrefernce;
         private DataRelation relationSecondaryItemPreference;
-        private DataRelation relationCustomerCityRelation;
+        private DataRelation relationCustomerAreaRelation;
         private DataRelation relationOrdersToCustomerRelation;
         private DataRelation relationOrderItemToItemIDRelation;
         private SchemaSerializationMode _schemaSerializationMode = SchemaSerializationMode.IncludeSchema;
@@ -77,8 +77,8 @@ namespace TrackerSQL.DataSets
                         base.Tables.Add((DataTable)new TrackerDataSet.CustomersTblDataTable(dataSet.Tables[nameof(CustomersTbl)]));
                     if (dataSet.Tables[nameof(ItemTypeTbl)] != null)
                         base.Tables.Add((DataTable)new TrackerDataSet.ItemTypeTblDataTable(dataSet.Tables[nameof(ItemTypeTbl)]));
-                    if (dataSet.Tables[nameof(CityTbl)] != null)
-                        base.Tables.Add((DataTable)new TrackerDataSet.CityTblDataTable(dataSet.Tables[nameof(CityTbl)]));
+                    if (dataSet.Tables[nameof(AreaTbl)] != null)
+                        base.Tables.Add((DataTable)new TrackerDataSet.AreaTblDataTable(dataSet.Tables[nameof(AreaTbl)]));
                     this.DataSetName = dataSet.DataSetName;
                     this.Prefix = dataSet.Prefix;
                     this.Namespace = dataSet.Namespace;
@@ -119,7 +119,7 @@ namespace TrackerSQL.DataSets
         [Browsable(false)]
         [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         [DebuggerNonUserCode]
-        public TrackerDataSet.CityTblDataTable CityTbl => this.tableCityTbl;
+        public TrackerDataSet.AreaTblDataTable AreaTbl => this.tableAreaTbl;
 
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
@@ -183,8 +183,8 @@ namespace TrackerSQL.DataSets
                     base.Tables.Add((DataTable)new TrackerDataSet.CustomersTblDataTable(dataSet.Tables["CustomersTbl"]));
                 if (dataSet.Tables["ItemTypeTbl"] != null)
                     base.Tables.Add((DataTable)new TrackerDataSet.ItemTypeTblDataTable(dataSet.Tables["ItemTypeTbl"]));
-                if (dataSet.Tables["CityTbl"] != null)
-                    base.Tables.Add((DataTable)new TrackerDataSet.CityTblDataTable(dataSet.Tables["CityTbl"]));
+                if (dataSet.Tables["AreaTbl"] != null)
+                    base.Tables.Add((DataTable)new TrackerDataSet.AreaTblDataTable(dataSet.Tables["AreaTbl"]));
                 this.DataSetName = dataSet.DataSetName;
                 this.Prefix = dataSet.Prefix;
                 this.Namespace = dataSet.Namespace;
@@ -228,12 +228,12 @@ namespace TrackerSQL.DataSets
             this.tableItemTypeTbl = (TrackerDataSet.ItemTypeTblDataTable)base.Tables["ItemTypeTbl"];
             if (initTable && this.tableItemTypeTbl != null)
                 this.tableItemTypeTbl.InitVars();
-            this.tableCityTbl = (TrackerDataSet.CityTblDataTable)base.Tables["CityTbl"];
-            if (initTable && this.tableCityTbl != null)
-                this.tableCityTbl.InitVars();
+            this.tableAreaTbl = (TrackerDataSet.AreaTblDataTable)base.Tables["AreaTbl"];
+            if (initTable && this.tableAreaTbl != null)
+                this.tableAreaTbl.InitVars();
             this.relationPrimaryItemPrefernce = this.Relations["PrimaryItemPrefernce"];
             this.relationSecondaryItemPreference = this.Relations["SecondaryItemPreference"];
-            this.relationCustomerCityRelation = this.Relations["CustomerCityRelation"];
+            this.relationCustomerAreaRelation = this.Relations["CustomerAreaRelation"];
             this.relationOrdersToCustomerRelation = this.Relations["OrdersToCustomerRelation"];
             this.relationOrderItemToItemIDRelation = this.Relations["OrderItemToItemIDRelation"];
         }
@@ -253,8 +253,8 @@ namespace TrackerSQL.DataSets
             base.Tables.Add((DataTable)this.tableCustomersTbl);
             this.tableItemTypeTbl = new TrackerDataSet.ItemTypeTblDataTable();
             base.Tables.Add((DataTable)this.tableItemTypeTbl);
-            this.tableCityTbl = new TrackerDataSet.CityTblDataTable();
-            base.Tables.Add((DataTable)this.tableCityTbl);
+            this.tableAreaTbl = new TrackerDataSet.AreaTblDataTable();
+            base.Tables.Add((DataTable)this.tableAreaTbl);
             this.relationPrimaryItemPrefernce = new DataRelation("PrimaryItemPrefernce", new DataColumn[1]
             {
       this.tableItemTypeTbl.ItemTypeIDColumn
@@ -271,14 +271,14 @@ namespace TrackerSQL.DataSets
       this.tableCustomersTbl.SecondaryPreferenceColumn
             }, false);
             this.Relations.Add(this.relationSecondaryItemPreference);
-            this.relationCustomerCityRelation = new DataRelation("CustomerCityRelation", new DataColumn[1]
+            this.relationCustomerAreaRelation = new DataRelation("CustomerAreaRelation", new DataColumn[1]
             {
-      this.tableCityTbl.IDColumn
+      this.tableAreaTbl.IDColumn
             }, new DataColumn[1]
             {
-      this.tableCustomersTbl.CityColumn
+      this.tableCustomersTbl.AreaIDColumn
             }, false);
-            this.Relations.Add(this.relationCustomerCityRelation);
+            this.Relations.Add(this.relationCustomerAreaRelation);
             this.relationOrdersToCustomerRelation = new DataRelation("OrdersToCustomerRelation", new DataColumn[1]
             {
       this.tableCustomersTbl.CustomerIDColumn
@@ -311,7 +311,7 @@ namespace TrackerSQL.DataSets
 
         [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         [DebuggerNonUserCode]
-        private bool ShouldSerializeCityTbl() => false;
+        private bool ShouldSerializeAreaTbl() => false;
 
         [DebuggerNonUserCode]
         [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -385,9 +385,9 @@ namespace TrackerSQL.DataSets
           TrackerDataSet.ItemTypeTblRowChangeEvent e);
 
         [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-        public delegate void CityTblRowChangeEventHandler(
+        public delegate void AreaTblRowChangeEventHandler(
           object sender,
-          TrackerDataSet.CityTblRowChangeEvent e);
+          TrackerDataSet.AreaTblRowChangeEvent e);
 
         [XmlSchemaProvider("GetTypedTableSchema")]
         [Serializable]
@@ -396,7 +396,7 @@ namespace TrackerSQL.DataSets
             private DataColumn columnOrderID;
             private DataColumn columnCustomerID;
             private DataColumn columnOrderDate;
-            private DataColumn columnRoastDate;
+            private DataColumn columnPrepDate;
             private DataColumn columnItemTypeID;
             private DataColumn columnQuantityOrdered;
             private DataColumn columnRequiredByDate;
@@ -452,7 +452,7 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public DataColumn RoastDateColumn => this.columnRoastDate;
+            public DataColumn PrepDateColumn => this.columnPrepDate;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
@@ -515,7 +515,7 @@ namespace TrackerSQL.DataSets
             public TrackerDataSet.OrdersTblRow AddOrdersTblRow(
               TrackerDataSet.CustomersTblRow parentCustomersTblRowByOrdersToCustomerRelation,
               DateTime OrderDate,
-              DateTime RoastDate,
+              DateTime PrepDate,
               TrackerDataSet.ItemTypeTblRow parentItemTypeTblRowByOrderItemToItemIDRelation,
               float QuantityOrdered,
               DateTime RequiredByDate,
@@ -530,7 +530,7 @@ namespace TrackerSQL.DataSets
         null,
         null,
         (object) OrderDate,
-        (object) RoastDate,
+        (object) PrepDate,
         null,
         (object) QuantityOrdered,
         (object) RequiredByDate,
@@ -581,7 +581,7 @@ namespace TrackerSQL.DataSets
                 this.columnOrderID = this.Columns["OrderID"];
                 this.columnCustomerID = this.Columns["CustomerID"];
                 this.columnOrderDate = this.Columns["OrderDate"];
-                this.columnRoastDate = this.Columns["RoastDate"];
+                this.columnPrepDate = this.Columns["PrepDate"];
                 this.columnItemTypeID = this.Columns["ItemTypeID"];
                 this.columnQuantityOrdered = this.Columns["QuantityOrdered"];
                 this.columnRequiredByDate = this.Columns["RequiredByDate"];
@@ -601,8 +601,8 @@ namespace TrackerSQL.DataSets
                 this.Columns.Add(this.columnCustomerID);
                 this.columnOrderDate = new DataColumn("OrderDate", typeof(DateTime), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnOrderDate);
-                this.columnRoastDate = new DataColumn("RoastDate", typeof(DateTime), (string)null, MappingType.Element);
-                this.Columns.Add(this.columnRoastDate);
+                this.columnPrepDate = new DataColumn("PrepDate", typeof(DateTime), (string)null, MappingType.Element);
+                this.Columns.Add(this.columnPrepDate);
                 this.columnItemTypeID = new DataColumn("ItemTypeID", typeof(int), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnItemTypeID);
                 this.columnQuantityOrdered = new DataColumn("QuantityOrdered", typeof(float), (string)null, MappingType.Element);
@@ -774,7 +774,7 @@ namespace TrackerSQL.DataSets
             private DataColumn columnContactAltLastName;
             private DataColumn columnDepartment;
             private DataColumn columnBillingAddress;
-            private DataColumn columnCity;
+            private DataColumn columnAreaID;
             private DataColumn columnStateOrProvince;
             private DataColumn columnPostalCode;
             private DataColumn _columnCountry_Region;
@@ -873,7 +873,7 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public DataColumn CityColumn => this.columnCity;
+            public DataColumn AreaIDColumn => this.columnAreaID;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1021,7 +1021,7 @@ namespace TrackerSQL.DataSets
               string ContactAltLastName,
               string Department,
               string BillingAddress,
-              TrackerDataSet.CityTblRow parentCityTblRowByCustomerCityRelation,
+              TrackerDataSet.AreaTblRow parentAreaTblRowByCustomerAreaRelation,
               string StateOrProvince,
               string PostalCode,
               string _Country_Region,
@@ -1089,8 +1089,8 @@ namespace TrackerSQL.DataSets
         (object) NormallyResponds,
         (object) Notes
                 };
-                if (parentCityTblRowByCustomerCityRelation != null)
-                    objArray[9] = parentCityTblRowByCustomerCityRelation[0];
+                if (parentAreaTblRowByCustomerAreaRelation != null)
+                    objArray[9] = parentAreaTblRowByCustomerAreaRelation[0];
                 if (parentItemTypeTblRowByPrimaryItemPrefernce != null)
                     objArray[22] = parentItemTypeTblRowByPrimaryItemPrefernce[0];
                 if (parentItemTypeTblRowBySecondaryItemPreference != null)
@@ -1139,7 +1139,7 @@ namespace TrackerSQL.DataSets
                 this.columnContactAltLastName = this.Columns["ContactAltLastName"];
                 this.columnDepartment = this.Columns["Department"];
                 this.columnBillingAddress = this.Columns["BillingAddress"];
-                this.columnCity = this.Columns["City"];
+                this.columnAreaID = this.Columns["AreaID"];
                 this.columnStateOrProvince = this.Columns["StateOrProvince"];
                 this.columnPostalCode = this.Columns["PostalCode"];
                 this._columnCountry_Region = this.Columns["Country/Region"];
@@ -1190,8 +1190,8 @@ namespace TrackerSQL.DataSets
                 this.Columns.Add(this.columnDepartment);
                 this.columnBillingAddress = new DataColumn("BillingAddress", typeof(string), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnBillingAddress);
-                this.columnCity = new DataColumn("City", typeof(int), (string)null, MappingType.Element);
-                this.Columns.Add(this.columnCity);
+                this.columnAreaID = new DataColumn("AreaID", typeof(int), (string)null, MappingType.Element);
+                this.Columns.Add(this.columnAreaID);
                 this.columnStateOrProvince = new DataColumn("StateOrProvince", typeof(string), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnStateOrProvince);
                 this.columnPostalCode = new DataColumn("PostalCode", typeof(string), (string)null, MappingType.Element);
@@ -1751,18 +1751,18 @@ namespace TrackerSQL.DataSets
 
         [XmlSchemaProvider("GetTypedTableSchema")]
         [Serializable]
-        public class CityTblDataTable : TypedTableBase<TrackerDataSet.CityTblRow>
+        public class AreaTblDataTable : TypedTableBase<TrackerDataSet.AreaTblRow>
         {
             private DataColumn columnID;
-            private DataColumn columnCity;
+            private DataColumn columnAreaName;
             private DataColumn columnRoastingDay;
             private DataColumn columnDeliveryDelay;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public CityTblDataTable()
+            public AreaTblDataTable()
             {
-                this.TableName = "CityTbl";
+                this.TableName = "AreaTbl";
                 this.BeginInit();
                 this.InitClass();
                 this.EndInit();
@@ -1770,7 +1770,7 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            internal CityTblDataTable(DataTable table)
+            internal AreaTblDataTable(DataTable table)
             {
                 this.TableName = table.TableName;
                 if (table.CaseSensitive != table.DataSet.CaseSensitive)
@@ -1785,7 +1785,7 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            protected CityTblDataTable(SerializationInfo info, StreamingContext context)
+            protected AreaTblDataTable(SerializationInfo info, StreamingContext context)
               : base(info, context)
             {
                 this.InitVars();
@@ -1797,7 +1797,7 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public DataColumn CityColumn => this.columnCity;
+            public DataColumn AreaNameColumn => this.columnAreaName;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
@@ -1814,36 +1814,36 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public TrackerDataSet.CityTblRow this[int index]
+            public TrackerDataSet.AreaTblRow this[int index]
             {
-                get => (TrackerDataSet.CityTblRow)this.Rows[index];
+                get => (TrackerDataSet.AreaTblRow)this.Rows[index];
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public event TrackerDataSet.CityTblRowChangeEventHandler CityTblRowChanging;
+            public event TrackerDataSet.AreaTblRowChangeEventHandler AreaTblRowChanging;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public event TrackerDataSet.CityTblRowChangeEventHandler CityTblRowChanged;
+            public event TrackerDataSet.AreaTblRowChangeEventHandler AreaTblRowChanged;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public event TrackerDataSet.CityTblRowChangeEventHandler CityTblRowDeleting;
+            public event TrackerDataSet.AreaTblRowChangeEventHandler AreaTblRowDeleting;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public event TrackerDataSet.CityTblRowChangeEventHandler CityTblRowDeleted;
+            public event TrackerDataSet.AreaTblRowChangeEventHandler AreaTblRowDeleted;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public void AddCityTblRow(TrackerDataSet.CityTblRow row) => this.Rows.Add((DataRow)row);
+            public void AddAreaTblRow(TrackerDataSet.AreaTblRow row) => this.Rows.Add((DataRow)row);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public TrackerDataSet.CityTblRow AddCityTblRow(string City, int RoastingDay, int DeliveryDelay)
+            public TrackerDataSet.AreaTblRow AddAreaTblRow(string AreaName, int RoastingDay, int DeliveryDelay)
             {
-                TrackerDataSet.CityTblRow row = (TrackerDataSet.CityTblRow)this.NewRow();
+                TrackerDataSet.AreaTblRow row = (TrackerDataSet.AreaTblRow)this.NewRow();
                 object[] objArray = new object[4]
                 {
         null,
-        (object) City,
+        (object) AreaName,
         (object) RoastingDay,
         (object) DeliveryDelay
                 };
@@ -1854,9 +1854,9 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public TrackerDataSet.CityTblRow FindByID(int ID)
+            public TrackerDataSet.AreaTblRow FindByID(int ID)
             {
-                return (TrackerDataSet.CityTblRow)this.Rows.Find(new object[1]
+                return (TrackerDataSet.AreaTblRow)this.Rows.Find(new object[1]
                 {
         (object) ID
                 });
@@ -1866,16 +1866,16 @@ namespace TrackerSQL.DataSets
             [DebuggerNonUserCode]
             public override DataTable Clone()
             {
-                TrackerDataSet.CityTblDataTable cityTblDataTable = (TrackerDataSet.CityTblDataTable)base.Clone();
-                cityTblDataTable.InitVars();
-                return (DataTable)cityTblDataTable;
+                TrackerDataSet.AreaTblDataTable AreaTblDataTable = (TrackerDataSet.AreaTblDataTable)base.Clone();
+                AreaTblDataTable.InitVars();
+                return (DataTable)AreaTblDataTable;
             }
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             protected override DataTable CreateInstance()
             {
-                return (DataTable)new TrackerDataSet.CityTblDataTable();
+                return (DataTable)new TrackerDataSet.AreaTblDataTable();
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1883,7 +1883,7 @@ namespace TrackerSQL.DataSets
             internal void InitVars()
             {
                 this.columnID = this.Columns["ID"];
-                this.columnCity = this.Columns["City"];
+                this.columnAreaName = this.Columns["AreaName"];
                 this.columnRoastingDay = this.Columns["RoastingDay"];
                 this.columnDeliveryDelay = this.Columns["DeliveryDelay"];
             }
@@ -1894,8 +1894,8 @@ namespace TrackerSQL.DataSets
             {
                 this.columnID = new DataColumn("ID", typeof(int), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnID);
-                this.columnCity = new DataColumn("City", typeof(string), (string)null, MappingType.Element);
-                this.Columns.Add(this.columnCity);
+                this.columnAreaName = new DataColumn("AreaName", typeof(string), (string)null, MappingType.Element);
+                this.Columns.Add(this.columnAreaName);
                 this.columnRoastingDay = new DataColumn("RoastingDay", typeof(int), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnRoastingDay);
                 this.columnDeliveryDelay = new DataColumn("DeliveryDelay", typeof(int), (string)null, MappingType.Element);
@@ -1909,32 +1909,32 @@ namespace TrackerSQL.DataSets
                 this.columnID.AutoIncrementStep = -1L;
                 this.columnID.AllowDBNull = false;
                 this.columnID.Unique = true;
-                this.columnCity.MaxLength = (int)byte.MaxValue;
+                this.columnAreaName.MaxLength = (int)byte.MaxValue;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public TrackerDataSet.CityTblRow NewCityTblRow() => (TrackerDataSet.CityTblRow)this.NewRow();
+            public TrackerDataSet.AreaTblRow NewAreaTblRow() => (TrackerDataSet.AreaTblRow)this.NewRow();
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             protected override DataRow NewRowFromBuilder(DataRowBuilder builder)
             {
-                return (DataRow)new TrackerDataSet.CityTblRow(builder);
+                return (DataRow)new TrackerDataSet.AreaTblRow(builder);
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            protected override Type GetRowType() => typeof(TrackerDataSet.CityTblRow);
+            protected override Type GetRowType() => typeof(TrackerDataSet.AreaTblRow);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             protected override void OnRowChanged(DataRowChangeEventArgs e)
             {
                 base.OnRowChanged(e);
-                if (this.CityTblRowChanged == null)
+                if (this.AreaTblRowChanged == null)
                     return;
-                this.CityTblRowChanged((object)this, new TrackerDataSet.CityTblRowChangeEvent((TrackerDataSet.CityTblRow)e.Row, e.Action));
+                this.AreaTblRowChanged((object)this, new TrackerDataSet.AreaTblRowChangeEvent((TrackerDataSet.AreaTblRow)e.Row, e.Action));
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1942,9 +1942,9 @@ namespace TrackerSQL.DataSets
             protected override void OnRowChanging(DataRowChangeEventArgs e)
             {
                 base.OnRowChanging(e);
-                if (this.CityTblRowChanging == null)
+                if (this.AreaTblRowChanging == null)
                     return;
-                this.CityTblRowChanging((object)this, new TrackerDataSet.CityTblRowChangeEvent((TrackerDataSet.CityTblRow)e.Row, e.Action));
+                this.AreaTblRowChanging((object)this, new TrackerDataSet.AreaTblRowChangeEvent((TrackerDataSet.AreaTblRow)e.Row, e.Action));
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1952,9 +1952,9 @@ namespace TrackerSQL.DataSets
             protected override void OnRowDeleted(DataRowChangeEventArgs e)
             {
                 base.OnRowDeleted(e);
-                if (this.CityTblRowDeleted == null)
+                if (this.AreaTblRowDeleted == null)
                     return;
-                this.CityTblRowDeleted((object)this, new TrackerDataSet.CityTblRowChangeEvent((TrackerDataSet.CityTblRow)e.Row, e.Action));
+                this.AreaTblRowDeleted((object)this, new TrackerDataSet.AreaTblRowChangeEvent((TrackerDataSet.AreaTblRow)e.Row, e.Action));
             }
 
             [DebuggerNonUserCode]
@@ -1962,14 +1962,14 @@ namespace TrackerSQL.DataSets
             protected override void OnRowDeleting(DataRowChangeEventArgs e)
             {
                 base.OnRowDeleting(e);
-                if (this.CityTblRowDeleting == null)
+                if (this.AreaTblRowDeleting == null)
                     return;
-                this.CityTblRowDeleting((object)this, new TrackerDataSet.CityTblRowChangeEvent((TrackerDataSet.CityTblRow)e.Row, e.Action));
+                this.AreaTblRowDeleting((object)this, new TrackerDataSet.AreaTblRowChangeEvent((TrackerDataSet.AreaTblRow)e.Row, e.Action));
             }
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public void RemoveCityTblRow(TrackerDataSet.CityTblRow row) => this.Rows.Remove((DataRow)row);
+            public void RemoveAreaTblRow(TrackerDataSet.AreaTblRow row) => this.Rows.Remove((DataRow)row);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1997,7 +1997,7 @@ namespace TrackerSQL.DataSets
                 typedTableSchema.Attributes.Add((XmlSchemaObject)new XmlSchemaAttribute()
                 {
                     Name = "tableTypeName",
-                    FixedValue = nameof(CityTblDataTable)
+                    FixedValue = nameof(AreaTblDataTable)
                 });
                 typedTableSchema.Particle = (XmlSchemaParticle)xmlSchemaSequence;
                 XmlSchema schemaSerializable = trackerDataSet.GetSchemaSerializable();
@@ -2094,20 +2094,20 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public DateTime RoastDate
+            public DateTime PrepDate
             {
                 get
                 {
                     try
                     {
-                        return (DateTime)this[this.tableOrdersTbl.RoastDateColumn];
+                        return (DateTime)this[this.tableOrdersTbl.PrepDateColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'RoastDate' in table 'OrdersTbl' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'PrepDate' in table 'OrdersTbl' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableOrdersTbl.RoastDateColumn] = (object)value;
+                set => this[this.tableOrdersTbl.PrepDateColumn] = (object)value;
             }
 
             [DebuggerNonUserCode]
@@ -2282,11 +2282,11 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public bool IsRoastDateNull() => this.IsNull(this.tableOrdersTbl.RoastDateColumn);
+            public bool IsPrepDateNull() => this.IsNull(this.tableOrdersTbl.PrepDateColumn);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public void SetRoastDateNull() => this[this.tableOrdersTbl.RoastDateColumn] = Convert.DBNull;
+            public void SetPrepDateNull() => this[this.tableOrdersTbl.PrepDateColumn] = Convert.DBNull;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -2520,20 +2520,20 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public int City
+            public int AreaID
             {
                 get
                 {
                     try
                     {
-                        return (int)this[this.tableCustomersTbl.CityColumn];
+                        return (int)this[this.tableCustomersTbl.AreaIDColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'City' in table 'CustomersTbl' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'AreaID' in table 'CustomersTbl' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCustomersTbl.CityColumn] = (object)value;
+                set => this[this.tableCustomersTbl.AreaIDColumn] = (object)value;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -3031,13 +3031,13 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public TrackerDataSet.CityTblRow CityTblRow
+            public TrackerDataSet.AreaTblRow AreaTblRow
             {
                 get
                 {
-                    return (TrackerDataSet.CityTblRow)this.GetParentRow(this.Table.ParentRelations["CustomerCityRelation"]);
+                    return (TrackerDataSet.AreaTblRow)this.GetParentRow(this.Table.ParentRelations["CustomerAreaRelation"]);
                 }
-                set => this.SetParentRow((DataRow)value, this.Table.ParentRelations["CustomerCityRelation"]);
+                set => this.SetParentRow((DataRow)value, this.Table.ParentRelations["CustomerAreaRelation"]);
             }
 
             [DebuggerNonUserCode]
@@ -3142,11 +3142,11 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public bool IsCityNull() => this.IsNull(this.tableCustomersTbl.CityColumn);
+            public bool IsAreaNull() => this.IsNull(this.tableCustomersTbl.AreaIDColumn);
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public void SetCityNull() => this[this.tableCustomersTbl.CityColumn] = Convert.DBNull;
+            public void SetAreaNull() => this[this.tableCustomersTbl.AreaIDColumn] = Convert.DBNull;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -3693,42 +3693,42 @@ namespace TrackerSQL.DataSets
             }
         }
 
-        public class CityTblRow : DataRow
+        public class AreaTblRow : DataRow
         {
-            private TrackerDataSet.CityTblDataTable tableCityTbl;
+            private TrackerDataSet.AreaTblDataTable tableAreaTbl;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            internal CityTblRow(DataRowBuilder rb)
+            internal AreaTblRow(DataRowBuilder rb)
               : base(rb)
             {
-                this.tableCityTbl = (TrackerDataSet.CityTblDataTable)this.Table;
+                this.tableAreaTbl = (TrackerDataSet.AreaTblDataTable)this.Table;
             }
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             public int ID
             {
-                get => (int)this[this.tableCityTbl.IDColumn];
-                set => this[this.tableCityTbl.IDColumn] = (object)value;
+                get => (int)this[this.tableAreaTbl.IDColumn];
+                set => this[this.tableAreaTbl.IDColumn] = (object)value;
             }
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public string City
+            public string AreaName
             {
                 get
                 {
                     try
                     {
-                        return (string)this[this.tableCityTbl.CityColumn];
+                        return (string)this[this.tableAreaTbl.AreaNameColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'City' in table 'CityTbl' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'AreaName' in table 'AreaTbl' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCityTbl.CityColumn] = (object)value;
+                set => this[this.tableAreaTbl.AreaNameColumn] = (object)value;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -3739,14 +3739,14 @@ namespace TrackerSQL.DataSets
                 {
                     try
                     {
-                        return (int)this[this.tableCityTbl.RoastingDayColumn];
+                        return (int)this[this.tableAreaTbl.RoastingDayColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'RoastingDay' in table 'CityTbl' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'RoastingDay' in table 'AreaTbl' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCityTbl.RoastingDayColumn] = (object)value;
+                set => this[this.tableAreaTbl.RoastingDayColumn] = (object)value;
             }
 
             [DebuggerNonUserCode]
@@ -3757,48 +3757,48 @@ namespace TrackerSQL.DataSets
                 {
                     try
                     {
-                        return (int)this[this.tableCityTbl.DeliveryDelayColumn];
+                        return (int)this[this.tableAreaTbl.DeliveryDelayColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'DeliveryDelay' in table 'CityTbl' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'DeliveryDelay' in table 'AreaTbl' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCityTbl.DeliveryDelayColumn] = (object)value;
+                set => this[this.tableAreaTbl.DeliveryDelayColumn] = (object)value;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public bool IsCityNull() => this.IsNull(this.tableCityTbl.CityColumn);
+            public bool IsAreaNull() => this.IsNull(this.tableAreaTbl.AreaNameColumn);
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public void SetCityNull() => this[this.tableCityTbl.CityColumn] = Convert.DBNull;
+            public void SetAreaNull() => this[this.tableAreaTbl.AreaNameColumn] = Convert.DBNull;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public bool IsRoastingDayNull() => this.IsNull(this.tableCityTbl.RoastingDayColumn);
+            public bool IsRoastingDayNull() => this.IsNull(this.tableAreaTbl.RoastingDayColumn);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public void SetRoastingDayNull() => this[this.tableCityTbl.RoastingDayColumn] = Convert.DBNull;
+            public void SetRoastingDayNull() => this[this.tableAreaTbl.RoastingDayColumn] = Convert.DBNull;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public bool IsDeliveryDelayNull() => this.IsNull(this.tableCityTbl.DeliveryDelayColumn);
+            public bool IsDeliveryDelayNull() => this.IsNull(this.tableAreaTbl.DeliveryDelayColumn);
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             public void SetDeliveryDelayNull()
             {
-                this[this.tableCityTbl.DeliveryDelayColumn] = Convert.DBNull;
+                this[this.tableAreaTbl.DeliveryDelayColumn] = Convert.DBNull;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
             public TrackerDataSet.CustomersTblRow[] GetCustomersTblRows()
             {
-                return this.Table.ChildRelations["CustomerCityRelation"] == null ? new TrackerDataSet.CustomersTblRow[0] : (TrackerDataSet.CustomersTblRow[])this.GetChildRows(this.Table.ChildRelations["CustomerCityRelation"]);
+                return this.Table.ChildRelations["CustomerAreaRelation"] == null ? new TrackerDataSet.CustomersTblRow[0] : (TrackerDataSet.CustomersTblRow[])this.GetChildRows(this.Table.ChildRelations["CustomerAreaRelation"]);
             }
         }
 
@@ -3872,14 +3872,14 @@ namespace TrackerSQL.DataSets
         }
 
         [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-        public class CityTblRowChangeEvent : EventArgs
+        public class AreaTblRowChangeEvent : EventArgs
         {
-            private TrackerDataSet.CityTblRow eventRow;
+            private TrackerDataSet.AreaTblRow eventRow;
             private DataRowAction eventAction;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public CityTblRowChangeEvent(TrackerDataSet.CityTblRow row, DataRowAction action)
+            public AreaTblRowChangeEvent(TrackerDataSet.AreaTblRow row, DataRowAction action)
             {
                 this.eventRow = row;
                 this.eventAction = action;
@@ -3887,7 +3887,7 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public TrackerDataSet.CityTblRow Row => this.eventRow;
+            public TrackerDataSet.AreaTblRow Row => this.eventRow;
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]

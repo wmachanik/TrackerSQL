@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#"  MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" CodeBehind="NewOrder.aspx.cs" Inherits="TrackerDotNet.Pages.NewOrder" %>
+<%@ Page Language="C#"  MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" CodeBehind="NewOrder.aspx.cs" Inherits="TrackerSQL.Pages.NewOrder" %>
 
 <%--<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajc1" %>--%>
 <asp:Content ID="cntOrderEditHdr" ContentPlaceHolderID="HeadContent" runat="server">
@@ -177,7 +177,7 @@
       </asp:DetailsView>
       <asp:ObjectDataSource ID="odsOrderDetail" runat="server" OldValuesParameterFormatString="original_{0}" 
         InsertMethod="InsertOrder" SelectMethod="GetData" 
-        TypeName="TrackerDotNet.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter"
+        TypeName="TrackerSQL.DataSets.OrdersDataSetTableAdapters.OrdersTableAdapter"
         UpdateMethod="UpdateByOrderID">
         <InsertParameters>
           <asp:Parameter Name="CustomerId" Type="Int32" />
@@ -216,12 +216,12 @@
     </Triggers>
   </asp:UpdatePanel>
   <asp:ObjectDataSource ID="odsCompanyNames" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetCustomerName" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.CustomersLkupTableAdapter">
+    SelectMethod="GetCustomerName" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.CustomersLkupTableAdapter">
   </asp:ObjectDataSource>
   <asp:ObjectDataSource ID="odsItemTypes" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetItems" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.ItemTypeLkupTableAdapter">
+    SelectMethod="GetItems" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.ItemTypeLkupTableAdapter">
   </asp:ObjectDataSource>
   <asp:ObjectDataSource ID="odsDeliveryBy" runat="server" OldValuesParameterFormatString="original_{0}"
-    SelectMethod="GetPeople" TypeName="TrackerDotNet.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
+    SelectMethod="GetPeople" TypeName="TrackerSQL.DataSets.LookUpDatSetsTableAdapters.PersonsLkupTableAdapter">
   </asp:ObjectDataSource>
 </asp:Content>

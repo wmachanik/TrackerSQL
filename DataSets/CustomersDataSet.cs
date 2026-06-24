@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.DataSets.CustomersDataSet
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -291,7 +291,7 @@ namespace TrackerSQL.DataSets
             private DataColumn columnCustomerType;
             private DataColumn columnEquipTypeName;
             private DataColumn columnCoffeePreference;
-            private DataColumn columnCity;
+            private DataColumn columnAreaID;
             private DataColumn columnItemDesc;
             private DataColumn columnPriPrefQty;
             private DataColumn columnAbbreviation;
@@ -419,7 +419,7 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public DataColumn CityColumn => this.columnCity;
+            public DataColumn AreaIDColumn => this.columnAreaID;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
@@ -515,7 +515,7 @@ namespace TrackerSQL.DataSets
               string CustomerType,
               string EquipTypeName,
               int CoffeePreference,
-              string City,
+              string AreaName,
               string ItemDesc,
               float PriPrefQty,
               string Abbreviation,
@@ -551,7 +551,7 @@ namespace TrackerSQL.DataSets
         (object) CustomerType,
         (object) EquipTypeName,
         (object) CoffeePreference,
-        (object) City,
+        (object) AreaName,
         (object) ItemDesc,
         (object) PriPrefQty,
         (object) Abbreviation,
@@ -609,7 +609,7 @@ namespace TrackerSQL.DataSets
                 this.columnCustomerType = this.Columns["CustomerType"];
                 this.columnEquipTypeName = this.Columns["EquipTypeName"];
                 this.columnCoffeePreference = this.Columns["CoffeePreference"];
-                this.columnCity = this.Columns["City"];
+                this.columnAreaID = this.Columns["AreaID"];
                 this.columnItemDesc = this.Columns["ItemDesc"];
                 this.columnPriPrefQty = this.Columns["PriPrefQty"];
                 this.columnAbbreviation = this.Columns["Abbreviation"];
@@ -667,8 +667,8 @@ namespace TrackerSQL.DataSets
                 this.Columns.Add(this.columnEquipTypeName);
                 this.columnCoffeePreference = new DataColumn("CoffeePreference", typeof(int), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnCoffeePreference);
-                this.columnCity = new DataColumn("City", typeof(string), (string)null, MappingType.Element);
-                this.Columns.Add(this.columnCity);
+                this.columnAreaID = new DataColumn("AreaID", typeof(string), (string)null, MappingType.Element);
+                this.Columns.Add(this.columnAreaID);
                 this.columnItemDesc = new DataColumn("ItemDesc", typeof(string), (string)null, MappingType.Element);
                 this.Columns.Add(this.columnItemDesc);
                 this.columnPriPrefQty = new DataColumn("PriPrefQty", typeof(float), (string)null, MappingType.Element);
@@ -712,7 +712,7 @@ namespace TrackerSQL.DataSets
                 this.columnAltEmailAddress.MaxLength = (int)byte.MaxValue;
                 this.columnCustomerType.MaxLength = 30;
                 this.columnEquipTypeName.MaxLength = 50;
-                this.columnCity.MaxLength = (int)byte.MaxValue;
+                this.columnAreaID.MaxLength = (int)byte.MaxValue;
                 this.columnItemDesc.MaxLength = 50;
                 this.columnAbbreviation.MaxLength = 5;
                 this.columnMachineSN.MaxLength = 50;
@@ -1223,20 +1223,20 @@ namespace TrackerSQL.DataSets
 
             [DebuggerNonUserCode]
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
-            public string City
+            public string AreaName
             {
                 get
                 {
                     try
                     {
-                        return (string)this[this.tableCustomers.CityColumn];
+                        return (string)this[this.tableCustomers.AreaIDColumn];
                     }
                     catch (InvalidCastException ex)
                     {
-                        throw new StrongTypingException("The value for column 'City' in table 'Customers' is DBNull.", (Exception)ex);
+                        throw new StrongTypingException("The value for column 'AreaID' in table 'Customers' is DBNull.", (Exception)ex);
                     }
                 }
-                set => this[this.tableCustomers.CityColumn] = (object)value;
+                set => this[this.tableCustomers.AreaIDColumn] = (object)value;
             }
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -1647,11 +1647,11 @@ namespace TrackerSQL.DataSets
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public bool IsCityNull() => this.IsNull(this.tableCustomers.CityColumn);
+            public bool IsAreaNull() => this.IsNull(this.tableCustomers.AreaIDColumn);
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]
-            public void SetCityNull() => this[this.tableCustomers.CityColumn] = Convert.DBNull;
+            public void SetAreaNull() => this[this.tableCustomers.AreaIDColumn] = Convert.DBNull;
 
             [GeneratedCode("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
             [DebuggerNonUserCode]

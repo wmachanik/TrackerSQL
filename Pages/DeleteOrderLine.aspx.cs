@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.Pages.DeleteOrderLine
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -7,13 +7,14 @@
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
 
 //- only form later versions #nullable disable
 namespace TrackerSQL.Pages
 {
     public partial class DeleteOrderLine : Page
     {
+        private readonly OrdersRepository _ordersRepository = new OrdersRepository();
         protected DetailsView dvDeleteOrderItem;
         protected SqlDataSource sdsOrderLine;
         protected Button btnDelete;
@@ -43,14 +44,12 @@ namespace TrackerSQL.Pages
 
         protected void btnDelete_Click(object sender, EventArgs e)
         {
-            if (this.Request.QueryString["OrderId"] == null)
+            if (!int.TryParse(Request.QueryString["OrderId"], out int orderLineId) || orderLineId <= 0)
                 return;
-            string strSQL = "DELETE FROM OrdersTbl WHERE OrderID = " + this.Request.QueryString["OrderId"].ToString();
-            TrackerDb trackerDb = new TrackerDb();
-            string str = trackerDb.ExecuteNonQuerySQL(strSQL);
-            trackerDb.Close();
-            this.ltrlStatus.Text = string.IsNullOrEmpty(str) ? "Item Deleted" : "Error deleting item: " + str;
-            this.ReturnToDetailPage();
+
+            bool deleted = _ordersRepository.DeleteOrderLineById(orderLineId);
+            ltrlStatus.Text = deleted ? "Item Deleted" : "Error deleting item.";
+            ReturnToDetailPage();
         }
 
         protected void btnReturn_Click(object sender, EventArgs e) => this.ReturnToDetailPage();

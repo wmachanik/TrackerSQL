@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Web;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
@@ -17,6 +18,25 @@ namespace TrackerSQL.Managers
     public class CoffeeCheckupManager
     {
         private readonly CoffeeCheckupEmailManager _emailManager;
+        private readonly ItemsRepository _itemsRepository = new ItemsRepository();
+        private readonly ItemPackagingsRepository _itemPackagingsRepository = new ItemPackagingsRepository();
+        private readonly SysDataRepository _sysDataRepository = new SysDataRepository();
+        private readonly ContactsRepository _contactsRepository = new ContactsRepository();
+        private readonly ContactsUsageRepository _contactsUsageRepository = new ContactsUsageRepository();
+        private readonly RecurringOrdersRepository _recurringOrdersRepository = new RecurringOrdersRepository();
+        private readonly OrdersRepository _ordersRepository = new OrdersRepository();
+        private readonly SentRemindersLogRepository _sentRemindersLogRepository = new SentRemindersLogRepository();
+        private readonly TempCoffeeCheckupRepository _tempCoffeeCheckupRepository = new TempCoffeeCheckupRepository();
+        private readonly CoffeeCheckupRepository _coffeeCheckupRepository = new CoffeeCheckupRepository();
+        private readonly ContactTrackedServiceItemsRepository _contactTrackedServiceItemsRepository = new ContactTrackedServiceItemsRepository();
+        private readonly ContactsItemUsageRepository _contactsItemUsageRepository = new ContactsItemUsageRepository();
+        private readonly AreasRepository _areasRepository = new AreasRepository();
+
+        private sealed class RecurringCheckupContext
+        {
+            public RecurringOrderSummary Summary { get; set; }
+            public DateTime PrepDate { get; set; }
+        }
 
         // Constants moved from code-behind for better organization to system cosntatns
         // private const int CONST_FORCEREMINDERDELAYCOUNT = 4;
@@ -27,7 +47,7 @@ namespace TrackerSQL.Managers
         // MISSING: Static caching for frequently accessed lookup data
         private static Dictionary<int, string> _cachedItemDescriptions;
         private static Dictionary<int, string> _cachedItemSKUs;
-        private static Dictionary<int, string> _cachedCityNames;
+        private static Dictionary<int, string> _cachedAreaNames;
         private static Dictionary<int, string> _cachedPackagingDescriptions;
         private static List<int> _cachedInternalCustomerIds;
         private static DateTime _cacheExpiry = DateTime.MinValue;
@@ -50,15 +70,14 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                var temp = new TempCoffeeCheckup();
-                var contacts = temp.GetAllContacts("CustomerID");
+                var contacts = _tempCoffeeCheckupRepository.GetAllContacts("CustomerID");
                 if (contacts == null || contacts.Count == 0)
                     return false;
 
-                // Heuristic: at least one contact has a NextPrepDate or NextDeliveryDate == today or later
+                // Heuristic: at least one contact has a NextPreperationDate or NextDeliveryDate == today or later
                 var today = TimeZoneUtils.Now().Date;
                 bool anyValid = contacts.Any(c =>
-                    c.NextPrepDate.Date >= today ||
+                    c.NextPreperationDate.Date >= today ||
                     c.NextDeliveryDate.Date >= today);
 
                 return anyValid;
@@ -74,13 +93,13 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Main entry point for processing coffee checkup reminders
         /// </summary>
-        public BatchSendResult ProcessCoffeeCheckupReminders(SendCheckEmailTextsData emailData)
+        public BatchSendResult ProcessCoffeeCheckupReminders(SendCheckEmailTexts emailData)
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             try
             {
-                // NEW: Freshness guard – prevent sending with stale (yesterday/older) prep data
+                // NEW: Freshness guard ? prevent sending with stale (yesterday/older) prep data
                 if (!TempDataIsFresh())
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
@@ -149,15 +168,15 @@ namespace TrackerSQL.Managers
                 };
             }
         }
+
         /// <summary>
         /// Processes reminder batch using the existing logic - ENHANCED WITH PROPER TEST MODE HANDLING
         /// </summary>
-        private BatchSendResult ProcessRemindersBatch(List<ContactToRemindWithItems> allContacts, SendCheckEmailTextsData emailData)
+        private BatchSendResult ProcessRemindersBatch(List<ContactToRemindWithItems> allContacts, SendCheckEmailTexts emailData)
         {
             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Processing batch with {allContacts.Count} contacts");
 
             var totalResult = new BatchSendResult();
-            var customersTbl = new CustomersTbl();
 
             // Check if we're in test mode
             var testEmailClient = new EmailMailKitCls();
@@ -183,7 +202,7 @@ namespace TrackerSQL.Managers
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"Processing contact {processed}: {contact.CompanyName} (ID: {contact.CustomerID})");
 
                     string orderType = GetOrderType(contact);
-                    if (!UpdateCustomerReminderData(contact, customersTbl))
+                    if (!UpdateCustomerReminderData(contact))
                     {
                         failedContacts.Add($"{contact.CompanyName} - Database update failed");
                         continue;
@@ -228,7 +247,7 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Updates customer reminder data in database
         /// </summary>
-        private bool UpdateCustomerReminderData(ContactToRemindWithItems contact, CustomersTbl customersTbl)
+        private bool UpdateCustomerReminderData(ContactToRemindWithItems contact)
         {
             try
             {
@@ -236,28 +255,26 @@ namespace TrackerSQL.Managers
 
                 if (contact.ReminderCount < SystemConstants.CheckupConstants.MaxReminders)
                 {
-                    // Handle forced delay for frequent reminders
                     if (contact.ReminderCount >= SystemConstants.CheckupConstants.ForceReminderDelayCount)
                     {
                         int delayDays = 10 * (contact.ReminderCount - SystemConstants.CheckupConstants.ForceReminderDelayCount + 1);
-                        new ClientUsageTbl().ForceNextCoffeeDate(
-                            contact.NextPrepDate.AddDays(delayDays),
-                            contact.CustomerID);
+                        _contactsUsageRepository.ForceNextCoffeeDate(
+                            (int)contact.CustomerID,
+                            contact.NextPreperationDate.AddDays(delayDays));
                     }
 
-                    customersTbl.SetSentReminderAndIncrementReminderCount(
+                    _contactsRepository.SetSentReminderAndIncrementReminderCount(
                         TimeZoneUtils.Now().Date,
-                        contact.CustomerID);
+                        (int)contact.CustomerID);
 
                     return true;
                 }
-                else
-                {
-                    customersTbl.DisableCustomer(contact.CustomerID,
-                        $"Disabled on {TimeZoneUtils.Now():d} - exceeded max reminder limit");
-                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"Customer {contact.CompanyName} disabled - exceeded max reminder limit");
-                    return false;
-                }
+
+                _contactsRepository.DisableContact(
+                    (int)contact.CustomerID,
+                    $"Disabled on {TimeZoneUtils.Now():d} - exceeded max reminder limit");
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"Customer {contact.CompanyName} disabled - exceeded max reminder limit");
+                return false;
             }
             catch (Exception ex)
             {
@@ -304,7 +321,7 @@ namespace TrackerSQL.Managers
             List<ContactToRemindWithItems> recurringContacts,
             List<ContactToRemindWithItems> autoFulfillContacts,
             List<ContactToRemindWithItems> reminderOnlyContacts,
-            SendCheckEmailTextsData emailData)
+            SendCheckEmailTexts emailData)
         {
             var totalResult = new BatchSendResult();
 
@@ -337,12 +354,12 @@ namespace TrackerSQL.Managers
             {
                 // Ensure roast dates are current
                 var trackerTools = new TrackerTools();
-                if (!trackerTools.IsNextRoastDateByCityTodays())
+                if (!trackerTools.IsNextPreperationDateByAreaTodays())
                 {
-                    trackerTools.SetNextRoastDateByCity();
+                    trackerTools.SetNextPreperationDateByArea();
                 }
 
-                CityDeliveryMatrix.EnsureBuilt();
+                AreaDeliveryMatrix.EnsureBuilt();
 
                 // Build reminder list and populate temp tables
                 SetListOfContactsToSendReminderTo(reminderWindowDays);
@@ -366,13 +383,12 @@ namespace TrackerSQL.Managers
             if (!closureProvider.IsThereAHolodayComing(today, reminderWindowDays))
                 return -1;  // tell them that there are no holidays coming
 
-            var temp = new TempCoffeeCheckup();
-            var contacts = temp.GetAllContacts("CustomerID"); // prepared list
+            var contacts = _tempCoffeeCheckupRepository.GetAllContacts("CustomerID"); // prepared list
 
             int updated = 0;
             foreach (var c in contacts)
             {
-                var prep = c.NextPrepDate;
+                var prep = c.NextPreperationDate;
                 var del = c.NextDeliveryDate;
 
                 if (!closureProvider.IsClosed(prep, true) && !closureProvider.IsClosed(del, false))
@@ -395,14 +411,7 @@ namespace TrackerSQL.Managers
         // Minimal DAL update; adjust table/column names if they differ
         private void UpdateTempContactDates(long customerId, DateTime nextPrep, DateTime nextDelivery)
         {
-            using (var db = new TrackerDb())
-            {
-               const string sql = "UPDATE TempCoffeeCheckupTbl SET NextPrepDate = ?, NextDeliveryDate = ? WHERE CustomerID = ?";
-                db.AddParams(nextPrep.Date, DbType.Date);
-                db.AddParams(nextDelivery.Date, DbType.Date);
-                db.AddWhereParams(customerId, DbType.Int32);
-                db.ExecuteNonQuerySQLWithParams(sql, db.Params, db.WhereParams);
-            }
+            _tempCoffeeCheckupRepository.UpdateContactDates((int)customerId, nextPrep, nextDelivery);
         }
         // MISSING: All the cache methods
         /// <summary>
@@ -425,7 +434,7 @@ namespace TrackerSQL.Managers
             {
                 try
                 {
-                    _cachedItemDescriptions[itemId] = ItemTypeTbl.GetItemTypeDescById(itemId);
+                    _cachedItemDescriptions[itemId] = _itemsRepository.GetItemDescById(itemId);
                 }
                 catch (Exception ex)
                 {
@@ -458,7 +467,7 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
-                        _cachedItemSKUs[itemId] = new ItemTypeTbl().GetItemTypeSKU(itemId);
+                        _cachedItemSKUs[itemId] = _itemsRepository.GetItemSku(itemId);
                     }
                     catch (Exception ex)
                     {
@@ -472,34 +481,34 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// QUICK WIN: Cached city names for GridView display
+        /// QUICK WIN: Cached Area names for GridView display
         /// </summary>
-        public string GetCachedCityName(int cityId)
+        public string GetCachedAreaName(int AreaId)
         {
-            if (cityId <= 0) return string.Empty;
+            if (AreaId <= 0) return string.Empty;
 
             lock (_cacheLock)
             {
-                if (_cachedCityNames == null || DateTime.Now > _cacheExpiry)
+                if (_cachedAreaNames == null || DateTime.Now > _cacheExpiry)
                 {
-                    _cachedCityNames = new Dictionary<int, string>();
+                    _cachedAreaNames = new Dictionary<int, string>();
                     UpdateCacheExpiry();
                 }
 
-                if (!_cachedCityNames.ContainsKey(cityId))
+                if (!_cachedAreaNames.ContainsKey(AreaId))
                 {
                     try
                     {
-                        _cachedCityNames[cityId] = new CityTblDAL().GetCityName(cityId);
+                        _cachedAreaNames[AreaId] = _areasRepository.GetAreaName(AreaId);
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Error caching city name for ID {cityId}: {ex.Message}");
-                        _cachedCityNames[cityId] = $"City {cityId}"; // Fallback
+                        AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Error caching Area name for ID {AreaId}: {ex.Message}");
+                        _cachedAreaNames[AreaId] = $"Area {AreaId}"; // Fallback
                     }
                 }
 
-                return _cachedCityNames[cityId];
+                return _cachedAreaNames[AreaId];
             }
         }
 
@@ -522,7 +531,7 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
-                        _cachedPackagingDescriptions[packagingId] = new PackagingTbl().GetPackagingDesc(packagingId);
+                        _cachedPackagingDescriptions[packagingId] = _itemPackagingsRepository.GetPackagingDescById(packagingId);
                     }
                     catch (Exception ex)
                     {
@@ -543,7 +552,7 @@ namespace TrackerSQL.Managers
             {
                 _cachedItemDescriptions = null;
                 _cachedItemSKUs = null;
-                _cachedCityNames = null;
+                _cachedAreaNames = null;
                 _cachedPackagingDescriptions = null;
                 _cachedInternalCustomerIds = null;
                 _cacheExpiry = DateTime.MinValue;
@@ -574,7 +583,7 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
-                        _cachedItemSKUs[uomKeyHash] = new ItemTypeTbl().GetItemUnitOfMeasure(itemId);
+                        _cachedItemSKUs[uomKeyHash] = _itemsRepository.GetItemUnitOfMeasure(itemId);
                     }
                     catch (Exception ex)
                     {
@@ -605,9 +614,8 @@ namespace TrackerSQL.Managers
                 GetCachedInternalCustomerIds();
 
                 // Pre-cache commonly used item types (coffee service types)
-                var itemTypeTbl = new ItemTypeTbl();
-                var coffeeItems = itemTypeTbl.GetAllItemIDsofServiceType(SystemConstants.ServiceTypeConstants.Coffee);  // 2
-                coffeeItems.AddRange(itemTypeTbl.GetAllItemIDsofServiceType(SystemConstants.ServiceTypeConstants.GroupItem)); //21
+                var coffeeItems = _itemsRepository.GetItemIdsByServiceType(SystemConstants.ServiceTypeConstants.Coffee);
+                coffeeItems.AddRange(_itemsRepository.GetItemIdsByServiceType(SystemConstants.ServiceTypeConstants.GroupItem));
 
                 foreach (var itemId in coffeeItems.Take(20)) // Cache top 20 most common items
                 {
@@ -717,7 +725,7 @@ namespace TrackerSQL.Managers
                 var internalCustomerIds = GetCachedInternalCustomerIds();
 
                 // Use existing method but with optimizations
-                var allContacts = new TempCoffeeCheckup().GetAllContactAndItems();
+                var allContacts = _tempCoffeeCheckupRepository.GetAllContactAndItems();
 
                 // Filter in memory instead of multiple DB calls per customer
                 var eligibleContacts = allContacts.Where(contact =>
@@ -760,7 +768,7 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
-                        _cachedInternalCustomerIds = new SysDataTbl().GetInternalCustomerIdsList();
+                        _cachedInternalCustomerIds = _sysDataRepository.GetInternalContactIds();
                         UpdateCacheExpiry();
                         AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Cached {_cachedInternalCustomerIds.Count} internal customer IDs");
                     }
@@ -820,16 +828,15 @@ namespace TrackerSQL.Managers
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Final contact list - {recurringContacts.Count} recurring customers, {reminderContacts.Count} reminder customers, {allContacts.Count} total");
 
-                TempCoffeeCheckup tempCoffeeCheckup = new TempCoffeeCheckup();
+                TempCoffeeCheckupRepository tempCoffeeCheckup = _tempCoffeeCheckupRepository;
                 if (!tempCoffeeCheckup.DeleteAllContactRecords() || !tempCoffeeCheckup.DeleteAllContactItems())
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "CoffeeCheckupManager: Error deleting old temp tables");
                     throw new InvalidOperationException("Error deleting old temp tables");
                 }
 
-                ItemTypeTbl itemTypeTbl = new ItemTypeTbl();
-                List<int> idsofServiceType = itemTypeTbl.GetAllItemIDsofServiceType(2);
-                idsofServiceType.AddRange(itemTypeTbl.GetAllItemIDsofServiceType(21));
+                List<int> idsofServiceType = _itemsRepository.GetItemIdsByServiceType(SystemConstants.ServiceTypeConstants.Coffee);
+                idsofServiceType.AddRange(_itemsRepository.GetItemIdsByServiceType(SystemConstants.ServiceTypeConstants.GroupItem));
 
                 bool success = false;
                 for (int index1 = 0; index1 < allContacts.Count; ++index1)
@@ -861,11 +868,7 @@ namespace TrackerSQL.Managers
         }
         private HashSet<long> GetAllReoccurringOrderCustomerIds()
         {
-            var reoccuringOrderDal = new ReoccuringOrderDAL();
-            var allOrders = reoccuringOrderDal.GetAll(1, "CustomersTbl.CustomerID");
-            return allOrders != null
-                ? new HashSet<long>(allOrders.Where(o => o.Enabled).Select(o => o.CustomerID))
-                : new HashSet<long>();
+            return new HashSet<long>(_recurringOrdersRepository.GetEnabledContactIds().Select(id => (long)id));
         }
         /// <summary>
         /// Enhanced order conflict detection - checks for any existing orders that would conflict
@@ -875,14 +878,14 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                var orderCheckTbl = new OrderCheckTbl();
+                var orderCheck = _coffeeCheckupRepository;
 
                 // Check for any coffee orders in the date range
-                bool hasConflicts = orderCheckTbl.HasCoffeeOrdersInDateRange(customerId, checkStartDate, checkEndDate);
+                bool hasConflicts = orderCheck.HasCoffeeOrdersInDateRange(customerId, checkStartDate, checkEndDate);
 
                 if (hasConflicts)
                 {
-                    var orders = orderCheckTbl.GetCoffeeOrdersInDateRange(customerId, checkStartDate, checkEndDate);
+                    var orders = orderCheck.GetCoffeeOrdersInDateRange(customerId, checkStartDate, checkEndDate);
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Customer {customerId} has {orders.Count} coffee orders in date range {checkStartDate:yyyy-MM-dd} to {checkEndDate:yyyy-MM-dd}");
                 }
 
@@ -897,52 +900,53 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Fetch recurring orders limited by window end (raw, un-normalized).
         /// </summary>
-        private List<ReoccuringOrderExtData> LoadRawRecurringOrders(DateTime windowEnd)
+        private List<RecurringCheckupContext> LoadRawRecurringOrders(DateTime windowEnd)
         {
-            var reoccuringOrderDal = new ReoccuringOrderDAL();
-            string whereFilter = $"NextDateRequired <= #{windowEnd:yyyy-MM-dd}# ";
-            return reoccuringOrderDal.GetAll(1, "CustomersTbl.CustomerID", whereFilter) ?? new List<ReoccuringOrderExtData>();
+            return _recurringOrdersRepository.GetEnabledSummariesDueByDate(windowEnd)
+                .Select(summary => new RecurringCheckupContext { Summary = summary })
+                .ToList();
         }
 
         /// <summary>
         /// Recalculates (Prep/Delivery), clamps past dates, filters into the active window.
-        /// Mirrors prior inline logic – no behavior change.
+        /// Mirrors prior inline logic ? no behavior change.
         /// </summary>
-        private List<ReoccuringOrderExtData> NormalizeAndFilterRecurringOrders(
-            List<ReoccuringOrderExtData> raw,
+        private List<RecurringCheckupContext> NormalizeAndFilterRecurringOrders(
+            List<RecurringCheckupContext> raw,
             DateTime windowStart,
             DateTime windowEnd)
         {
-            var result = new List<ReoccuringOrderExtData>();
-            var dal = new ReoccuringOrderDAL();
+            var result = new List<RecurringCheckupContext>();
 
             foreach (var order in raw)
             {
-                // Recalc next dates
-                var calc = dal.CalculateNextDatesRequired(order);
+                var calc = _recurringOrdersRepository.CalculatePrepDeliveryDates(order.Summary);
                 order.PrepDate = calc.PrepDate;
 
-                if (order.NextDateRequired != calc.DeliveryDate)
+                if (order.Summary.NextDateRequired != calc.DeliveryDate)
                 {
-                    order.NextDateRequired = calc.DeliveryDate;
-                    dal.UpdateReoccuringOrder(order, order.ReoccuringOrderID, false);
+                    order.Summary.NextDateRequired = calc.DeliveryDate;
+                    _recurringOrdersRepository.UpdateItemNextDateRequired(
+                        order.Summary.RecurringOrderItemID,
+                        calc.DeliveryDate);
                 }
 
-                // Clamp if earlier than window start
-                if (order.NextDateRequired < windowStart)
+                if (order.Summary.NextDateRequired < windowStart)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                        $"RecurringClamp: OrderID={order.ReoccuringOrderID} Cust={order.CustomerID} NextDateRequired was {order.NextDateRequired:yyyy-MM-dd}, clamped to {windowStart:yyyy-MM-dd}");
-                    order.NextDateRequired = windowStart;
+                        $"RecurringClamp: OrderItemID={order.Summary.RecurringOrderItemID} Cust={order.Summary.ContactID} NextDateRequired was {order.Summary.NextDateRequired:yyyy-MM-dd}, clamped to {windowStart:yyyy-MM-dd}");
+                    order.Summary.NextDateRequired = windowStart;
                 }
 
                 bool isValid =
-                    order.NextDateRequired != SystemConstants.DatabaseConstants.SystemMinDate &&
-                    order.NextDateRequired >= windowStart &&
-                    order.NextDateRequired <= windowEnd;
+                    order.Summary.NextDateRequired != SystemConstants.DatabaseConstants.SystemMinDate &&
+                    order.Summary.NextDateRequired >= windowStart &&
+                    order.Summary.NextDateRequired <= windowEnd;
 
                 if (isValid)
+                {
                     result.Add(order);
+                }
             }
 
             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
@@ -956,88 +960,83 @@ namespace TrackerSQL.Managers
         /// Handles expiry, conflicts, matrix mapping, closure adjustment.
         /// </summary>
         private List<ContactToRemindWithItems> BuildRecurringContacts(
-            List<ReoccuringOrderExtData> validOrders,
+            List<RecurringCheckupContext> validOrders,
             DateTime windowStart,
             DateTime windowEnd,
             DateTime minReminderDate)
         {
             var contacts = new List<ContactToRemindWithItems>();
-            var reoccuringOrderDal = new ReoccuringOrderDAL();
 
             foreach (var order in validOrders)
             {
                 try
                 {
-                    // Expired?
-                    if (order.RequireUntilDate > minReminderDate && order.NextDateRequired > order.RequireUntilDate)
+                    var summary = order.Summary;
+                    long contactId = summary.ContactID ?? 0;
+
+                    if (summary.RequireUntilDate > minReminderDate && summary.NextDateRequired > summary.RequireUntilDate)
                     {
-                        order.Enabled = false;
-                        reoccuringOrderDal.UpdateReoccuringOrder(order, order.ReoccuringOrderID);
+                        _recurringOrdersRepository.DisableRecurringOrder(summary.RecurringOrderID);
                         AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                            $"BuildRecurringContacts: Disabled expired OrderID={order.ReoccuringOrderID}");
+                            $"BuildRecurringContacts: Disabled expired OrderID={summary.RecurringOrderID}");
                         continue;
                     }
 
-                    // Conflicts?
-                    if (HasConflictingOrders(order.CustomerID, order.ItemRequiredID, windowStart, windowEnd))
+                    if (HasConflictingOrders(contactId, summary.ItemRequiredID ?? 0, windowStart, windowEnd))
                     {
                         AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                            $"BuildRecurringContacts: Conflict skip OrderID={order.ReoccuringOrderID} Cust={order.CustomerID}");
+                            $"BuildRecurringContacts: Conflict skip OrderItemID={summary.RecurringOrderItemID} Cust={contactId}");
                         continue;
                     }
 
-                    // Get or create contact
-                    var contact = contacts.FirstOrDefault(c => c.CustomerID == order.CustomerID);
+                    var contact = contacts.FirstOrDefault(c => c.CustomerID == contactId);
                     if (contact == null)
                     {
-                        contact = new ContactToRemindWithItems().GetCustomerDetails(order.CustomerID);
+                        contact = _coffeeCheckupRepository.GetCustomerDetails(contactId);
                         if (contact == null)
                         {
                             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                                $"BuildRecurringContacts: Missing contact details Cust={order.CustomerID}");
+                                $"BuildRecurringContacts: Missing contact details Cust={contactId}");
                             continue;
                         }
                         contacts.Add(contact);
                     }
 
-                    int cityId = contact.CityID > 0 ? contact.CityID : new CityTblDAL().GetCityIdByCustomerId(order.CustomerID);
-
-                    var closest = CityDeliveryMatrix.ChooseClosest(cityId, order.NextDateRequired);
+                    int areaId = contact.AreaID > 0 ? contact.AreaID : _areasRepository.GetAreaIdByContactId(contactId);
+                    var closest = AreaDeliveryMatrix.ChooseClosest(areaId, summary.NextDateRequired ?? windowStart);
                     if (closest.HasValue)
                     {
                         var chosenDelivery = closest.Value.delivery;
                         var chosenPrep = closest.Value.prep;
 
-                        if (chosenDelivery != order.NextDateRequired.Date)
+                        if (chosenDelivery != summary.NextDateRequired?.Date)
                         {
                             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                                $"MatrixAdjust: Cust={order.CustomerID} OrigDel={order.NextDateRequired:yyyy-MM-dd} -> {chosenDelivery:yyyy-MM-dd}");
-                            order.NextDateRequired = chosenDelivery;
+                                $"MatrixAdjust: Cust={contactId} OrigDel={summary.NextDateRequired:yyyy-MM-dd} -> {chosenDelivery:yyyy-MM-dd}");
+                            summary.NextDateRequired = chosenDelivery;
                         }
                         order.PrepDate = chosenPrep;
                     }
 
-                    contact.NextDeliveryDate = order.NextDateRequired.Date < minReminderDate
+                    contact.NextDeliveryDate = summary.NextDateRequired?.Date < minReminderDate
                         ? minReminderDate
-                        : order.NextDateRequired.Date;
+                        : summary.NextDateRequired?.Date ?? minReminderDate;
 
-                    contact.NextPrepDate = order.PrepDate < minReminderDate
+                    contact.NextPreperationDate = order.PrepDate < minReminderDate
                         ? minReminderDate
                         : order.PrepDate;
 
-                    // Closure adjust (per-contact layer – may later be centralized)
                     ApplyClosureAdjustment(contact);
 
-                    // Add item line
                     contact.ItemsContactRequires.Add(new ItemContactRequires
                     {
-                        CustomerID = order.CustomerID,
+                        CustomerID = contactId,
                         AutoFulfill = false,
-                        ReoccurID = order.ReoccuringOrderID,
+                        ReoccurID = summary.RecurringOrderItemID,
                         ReoccurOrder = true,
-                        ItemID = order.ItemRequiredID,
-                        ItemQty = order.QtyRequired,
-                        ItemPackagID = order.PackagingID
+                        ItemID = summary.ItemRequiredID ?? 0,
+                        ItemQty = summary.QtyRequired ?? 0.0,
+                        ItemPackagID = summary.ItemPackagingID ?? 0
                     });
 
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
@@ -1046,7 +1045,7 @@ namespace TrackerSQL.Managers
                 catch (Exception ex)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                        $"BuildRecurringContacts: Error OrderID={order.ReoccuringOrderID} {ex.Message}");
+                        $"BuildRecurringContacts: Error OrderItemID={order.Summary?.RecurringOrderItemID} {ex.Message}");
                 }
             }
 
@@ -1054,11 +1053,11 @@ namespace TrackerSQL.Managers
         }
         private List<ContactToRemindWithItems> GetRecurringContactsNeedingReminder(int reminderWindowDays)
         {
-            var minReminderDate = new SysDataTbl().GetMinReminderDate();
+            var minReminderDate = _sysDataRepository.GetMinReminderDate();
             var windowStart = TimeZoneUtils.Now().Date;
             var windowEnd = windowStart.AddDays(reminderWindowDays);
 
-            CityDeliveryMatrix.EnsureBuilt();
+            AreaDeliveryMatrix.EnsureBuilt();
 
             var rawOrders = LoadRawRecurringOrders(windowEnd);
             if (rawOrders.Count == 0)
@@ -1078,13 +1077,13 @@ namespace TrackerSQL.Managers
         // Add near other private helpers
         private bool ApplyClosureAdjustment(ContactToRemindWithItems contact)
         {
-            var origPrep = contact.NextPrepDate;
+            var origPrep = contact.NextPreperationDate;
             var origDel = contact.NextDeliveryDate;
 
             var adj = _holidayProvider.AdjustPair(origPrep, origDel);
             if (!adj.WasAdjusted) return false;
 
-            contact.NextPrepDate = adj.Prep;
+            contact.NextPreperationDate = adj.Prep;
             contact.NextDeliveryDate = adj.Delivery;
 
             // Append to contact notes (if not already)
@@ -1149,22 +1148,34 @@ namespace TrackerSQL.Managers
         //            throw new NotSupportedException($"Unsupported recurrence type {recurrenceType}");
         //    }
         //}
-        private bool IsRecentlyProcessed(ReoccuringOrderExtData order)
+        private bool IsRecentlyProcessed(RecurringCheckupContext order)
         {
-            var recurrenceType = ReoccuranceTypeTbl.GetRecurrenceType(order.ReoccuranceTypeID);
-            int daysSinceLastProcessed = (TimeZoneUtils.Now().Date - order.DateLastDone).Days;
+            var summary = order?.Summary;
+            if (summary == null)
+            {
+                return false;
+            }
+
+            int recurrenceType = summary.RecurringTypeID ?? 0;
+            DateTime lastDone = summary.DateLastDone ?? SystemConstants.DatabaseConstants.SystemMinDate;
+            int daysSinceLastProcessed = (TimeZoneUtils.Now().Date - lastDone).Days;
             int minimumDays = 0;
 
-            if (recurrenceType == ReoccuranceTypeTbl.RecurrenceType.Weekly)
-                minimumDays = order.ReoccuranceValue * 7;
-            else if (recurrenceType == ReoccuranceTypeTbl.RecurrenceType.Monthly)
+            if (recurrenceType == 1)
+            {
+                minimumDays = (summary.Value ?? 1) * 7;
+            }
+            else if (recurrenceType == 5)
+            {
                 minimumDays = GetMinimumRecurringDays();
+            }
 
             bool result = minimumDays > 0 && daysSinceLastProcessed < minimumDays;
             if (result)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Skipping recurring item {order.ReoccuringOrderID} - processed only {daysSinceLastProcessed} days ago (minimum: {minimumDays})");
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Skipping recurring item {summary.RecurringOrderItemID} - processed only {daysSinceLastProcessed} days ago (minimum: {minimumDays})");
             }
+
             return result;
         }
 
@@ -1175,8 +1186,7 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                List<ContactsThayMayNeedData> thatMayNeedNextWeek = new ContactsThatMayNeedNextWeek().GetContactsThatMayNeedNextWeek(reminderWindowDays);
-                CustomerTrackedServiceItems trackedServiceItems = new CustomerTrackedServiceItems();
+                List<ContactMayNeedReminder> thatMayNeedNextWeek = _coffeeCheckupRepository.GetContactsThatMayNeedNextWeek(reminderWindowDays);
 
                 // Initialize exclusion set if not provided
                 excludeCustomerIds = excludeCustomerIds ?? new HashSet<long>();
@@ -1187,53 +1197,55 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
+                        var candidate = thatMayNeedNextWeek[index1];
+
                         // BUG FIX: Skip customers that have recurring orders
-                        if (excludeCustomerIds.Contains(thatMayNeedNextWeek[index1].CustomerData.CustomerID))
+                        if (excludeCustomerIds.Contains(candidate.ContactID))
                         {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Skipping {thatMayNeedNextWeek[index1].CustomerData.CompanyName} - customer has recurring orders");
+                            AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Skipping {candidate.CompanyName} - customer has recurring orders");
                             continue;
                         }
 
-                        List<CustomerTrackedServiceItems.CustomerTrackedServiceItemsData> byCustomerTypeId =
-                            trackedServiceItems.GetAllByCustomerTypeID(thatMayNeedNextWeek[index1].CustomerData.CustomerTypeID);
+                        List<ContactTrackedServiceItem> byCustomerTypeId =
+                            _contactTrackedServiceItemsRepository.GetByContactTypeId(candidate.ContactTypeID);
 
                         // Build contact info
                         ContactToRemindWithItems toRemindWithItems = new ContactToRemindWithItems
                         {
-                            CustomerID = thatMayNeedNextWeek[index1].CustomerData.CustomerID,
-                            CompanyName = thatMayNeedNextWeek[index1].CustomerData.CompanyName,
-                            ContactFirstName = thatMayNeedNextWeek[index1].CustomerData.ContactFirstName,
-                            ContactAltFirstName = thatMayNeedNextWeek[index1].CustomerData.ContactAltFirstName,
-                            EmailAddress = thatMayNeedNextWeek[index1].CustomerData.EmailAddress,
-                            AltEmailAddress = thatMayNeedNextWeek[index1].CustomerData.AltEmailAddress,
-                            CityID = thatMayNeedNextWeek[index1].CustomerData.City,
-                            CustomerTypeID = thatMayNeedNextWeek[index1].CustomerData.CustomerTypeID,
-                            enabled = thatMayNeedNextWeek[index1].CustomerData.enabled,
-                            EquipTypeID = thatMayNeedNextWeek[index1].CustomerData.EquipType,
-                            TypicallySecToo = thatMayNeedNextWeek[index1].CustomerData.TypicallySecToo,
-                            PreferedAgentID = thatMayNeedNextWeek[index1].CustomerData.PreferedAgent,
-                            SalesAgentID = thatMayNeedNextWeek[index1].CustomerData.SalesAgentID,
-                            UsesFilter = thatMayNeedNextWeek[index1].CustomerData.UsesFilter,
-                            AlwaysSendChkUp = thatMayNeedNextWeek[index1].CustomerData.AlwaysSendChkUp,
-                            RequiresPurchOrder = thatMayNeedNextWeek[index1].RequiresPurchOrder,
-                            ReminderCount = thatMayNeedNextWeek[index1].CustomerData.ReminderCount,
-                            NextPrepDate = thatMayNeedNextWeek[index1].NextRoastDateByCityData.PrepDate.Date,
-                            NextDeliveryDate = thatMayNeedNextWeek[index1].NextRoastDateByCityData.DeliveryDate.Date,
-                            NextCoffee = thatMayNeedNextWeek[index1].ClientUsageData.NextCoffeeBy.Date,
-                            NextClean = thatMayNeedNextWeek[index1].ClientUsageData.NextCleanOn.Date,
-                            NextDescal = thatMayNeedNextWeek[index1].ClientUsageData.NextDescaleEst.Date,
-                            NextFilter = thatMayNeedNextWeek[index1].ClientUsageData.NextFilterEst.Date,
-                            NextService = thatMayNeedNextWeek[index1].ClientUsageData.NextServiceEst.Date
+                            CustomerID = candidate.ContactID,
+                            CompanyName = candidate.CompanyName,
+                            ContactFirstName = candidate.ContactFirstName,
+                            ContactAltFirstName = candidate.ContactAltFirstName,
+                            EmailAddress = candidate.EmailAddress,
+                            AltEmailAddress = candidate.AltEmailAddress,
+                            AreaID = candidate.AreaID,
+                            CustomerTypeID = candidate.ContactTypeID,
+                            enabled = candidate.Enabled,
+                            EquipTypeID = candidate.EquipTypeID,
+                            TypicallySecToo = candidate.TypicallySecToo,
+                            PreferredAgentID = candidate.PreferredAgentID,
+                            SalesAgentID = candidate.SalesAgentID,
+                            UsesFilter = candidate.UsesFilter,
+                            AlwaysSendChkUp = candidate.AlwaysSendChkUp,
+                            RequiresPurchOrder = candidate.RequiresPurchOrder,
+                            ReminderCount = candidate.ReminderCount,
+                            autofulfill = candidate.AutoFulfill,
+                            NextPreperationDate = candidate.PrepDate.Date,
+                            NextDeliveryDate = candidate.DeliveryDate.Date,
+                            NextCoffee = candidate.NextCoffeeBy.Date,
+                            NextClean = candidate.NextCleanOn.Date,
+                            NextDescal = candidate.NextDescaleEst.Date,
+                            NextFilter = candidate.NextFilterEst.Date,
+                            NextService = candidate.NextServiceEst.Date
                         };
 
                         // Process service items for this customer - ONLY LAST ORDERED ITEMS (no recurring)
-                        ItemUsageTbl itemUsageTbl = new ItemUsageTbl();
                         bool addedAnyItems = false;
 
                         for (int index2 = 0; index2 < byCustomerTypeId.Count; ++index2)
                         {
                             DateTime serviceDate;
-                            switch (byCustomerTypeId[index2].ServiceTypeID)
+                            switch (byCustomerTypeId[index2].ItemServiceTypeID)
                             {
                                 case 1: serviceDate = toRemindWithItems.NextClean; break;
                                 case 2: serviceDate = toRemindWithItems.NextCoffee; break;
@@ -1245,24 +1257,24 @@ namespace TrackerSQL.Managers
 
                             // Check if service is due within delivery window
                             if (serviceDate > TimeZoneUtils.Now().AddYears(-1) &&
-                                serviceDate <= thatMayNeedNextWeek[index1].NextRoastDateByCityData.DeliveryDate)
+                                serviceDate <= candidate.DeliveryDate)
                             {
-                                List<ItemUsageTbl> lastItemsUsed = itemUsageTbl.GetLastItemsUsed(
-                                    thatMayNeedNextWeek[index1].CustomerData.CustomerID,
-                                    byCustomerTypeId[index2].ServiceTypeID);
+                                List<ContactsItemUsage> lastItemsUsed = _contactsItemUsageRepository.GetLastItemsUsed(
+                                    (int)candidate.ContactID,
+                                    byCustomerTypeId[index2].ItemServiceTypeID);
 
                                 // Add items this customer typically uses - ONLY LAST ORDERED ITEMS
                                 for (int index3 = 0; index3 < lastItemsUsed.Count; ++index3)
                                 {
                                     ItemContactRequires itemRequired = new ItemContactRequires
                                     {
-                                        CustomerID = thatMayNeedNextWeek[index1].CustomerData.CustomerID,
-                                        AutoFulfill = thatMayNeedNextWeek[index1].CustomerData.autofulfill,
+                                        CustomerID = candidate.ContactID,
+                                        AutoFulfill = candidate.AutoFulfill,
                                         ReoccurID = 0, // NOT a recurring item
                                         ReoccurOrder = false, // NOT a recurring order
-                                        ItemID = lastItemsUsed[index3].ItemProvidedID,
-                                        ItemQty = lastItemsUsed[index3].AmountProvided,
-                                        ItemPackagID = lastItemsUsed[index3].PackagingID
+                                        ItemID = lastItemsUsed[index3].ItemProvidedID ?? 0,
+                                        ItemQty = lastItemsUsed[index3].QtyProvided ?? 0.0,
+                                        ItemPackagID = lastItemsUsed[index3].ItemPackagingID ?? 0
                                     };
 
                                     toRemindWithItems.ItemsContactRequires.Add(itemRequired);
@@ -1297,7 +1309,7 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Sends a batch of reminders for contacts of the same type - moved from code-behind
         /// </summary>
-        private BatchSendResult SendReminderBatch(List<ContactToRemindWithItems> contacts, string batchType, SendCheckEmailTextsData emailData)
+        private BatchSendResult SendReminderBatch(List<ContactToRemindWithItems> contacts, string batchType, SendCheckEmailTexts emailData)
         {
             var result = new BatchSendResult();
 
@@ -1314,7 +1326,7 @@ namespace TrackerSQL.Managers
                 {
                     try
                     {
-                        var emailTextData = new SendCheckEmailTextsData
+                        var emailTextData = new SendCheckEmailTexts
                         {
                             Header = UrlTextDecoder.DecodePossiblyUrlEncoded(emailData.Header),
                             Body = UrlTextDecoder.DecodePossiblyUrlEncoded(emailData.Body),
@@ -1357,7 +1369,7 @@ namespace TrackerSQL.Managers
                         {
                             string adjustedDatesLabel = MessageProvider.Format(
                                 MessageKeys.CoffeeCheckup.AdjustedDatesLabel,
-                                contact.NextPrepDate.ToString("yyyy-MM-dd"),
+                                contact.NextPreperationDate.ToString("yyyy-MM-dd"),
                                 contact.NextDeliveryDate.ToString("yyyy-MM-dd"));
 
                             emailTextData.Footer += "<br/><strong>" + adjustedDatesLabel + "</strong>";
@@ -1434,7 +1446,7 @@ namespace TrackerSQL.Managers
             qs["CustomerID"] = contact.CustomerID.ToString();
             qs["DeliveryDate"] = contact.NextDeliveryDate.ToString("yyyy-MM-dd");
 
-            // Token (customer + delivery date in UTC) – encode only the token value
+            // Token (customer + delivery date in UTC) ? encode only the token value
             string token = OrderViewTokenHelper.CreateCustomerDeliveryToken(
                 contact.CustomerID,
                 contact.NextDeliveryDate.ToUniversalTime());
@@ -1452,7 +1464,7 @@ namespace TrackerSQL.Managers
 
         // Centralised creation so defaults / future changes happen in one place.
         private OrderTblData CreateBaseOrder(ContactToRemindWithItems contact,
-            DateTime roastDate,
+            DateTime PrepDate,
             DateTime deliveryDate,
             string orderType)
         {
@@ -1468,9 +1480,9 @@ namespace TrackerSQL.Managers
             {
                 CustomerID = contact.CustomerID,
                 OrderDate = TimeZoneUtils.Now().Date,
-                RoastDate = roastDate,
+                PrepDate = PrepDate,
                 RequiredByDate = deliveryDate,
-                ToBeDeliveredBy = contact.PreferedAgentID < 0 ? 3 : contact.PreferedAgentID,
+                ToBeDeliveredBy = contact.PreferredAgentID < 0 ? 3 : contact.PreferredAgentID,
                 Confirmed = false,
                 InvoiceDone = false,
                 PurchaseOrder = string.Empty,
@@ -1490,14 +1502,14 @@ namespace TrackerSQL.Managers
                 bool isRecurringBatch = pOrderType.IndexOf("recurring", StringComparison.OrdinalIgnoreCase) >= 0;
 
                 // NEW: Trust dates already set on the contact (from recurring resolution / matrix)
-                DateTime optimalRoastDate = pContact.NextPrepDate.Date;
+                DateTime optimalPrepDate = pContact.NextPreperationDate.Date;
                 DateTime optimalDeliveryDate = pContact.NextDeliveryDate.Date;
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                    $"CreateOrderForContact: Using pre-assigned dates Cust={pContact.CustomerID} Prep={optimalRoastDate:yyyy-MM-dd} Delivery={optimalDeliveryDate:yyyy-MM-dd} (IsRecurringBatch={isRecurringBatch})");
+                    $"CreateOrderForContact: Using pre-assigned dates Cust={pContact.CustomerID} Prep={optimalPrepDate:yyyy-MM-dd} Delivery={optimalDeliveryDate:yyyy-MM-dd} (IsRecurringBatch={isRecurringBatch})");
 
                 // Build base order object (one object reused per line)
-                OrderTblData pOrderData = CreateBaseOrder(pContact, optimalRoastDate, optimalDeliveryDate, pOrderType);
+                OrderTblData pOrderData = CreateBaseOrder(pContact, optimalPrepDate, optimalDeliveryDate, pOrderType);
 
                 var testEmailClient = new EmailMailKitCls();
                 bool isTestMode = testEmailClient.IsTestMode;
@@ -1511,8 +1523,6 @@ namespace TrackerSQL.Managers
                         hasAutoFulfillItem = true;
                 }
 
-                ReoccuringOrderDAL reoccuringOrderDal = new ReoccuringOrderDAL();
-                OrderTbl orderTbl = new OrderTbl();
                 string errorMessage = string.Empty;
 
                 for (int i = 0; i < pContact.ItemsContactRequires.Count && string.IsNullOrEmpty(errorMessage); i++)
@@ -1523,16 +1533,17 @@ namespace TrackerSQL.Managers
                     pOrderData.PackagingID = line.ItemPackagID;
                     pOrderData.PrepTypeID = line.ItemPrepID;
 
-                    errorMessage = orderTbl.InsertNewOrderLine(pOrderData);
+                    errorMessage = _ordersRepository.InsertNewOrderLine(pOrderData) > 0
+                        ? string.Empty
+                        : "Failed to insert order line";
 
                     if (line.ReoccurOrder)
                     {
-                        // Only update recurrence anchor to today's order date (existing behavior)
                         DateTime dateToSet = pOrderData.OrderDate;
-                        reoccuringOrderDal.SetReoccuringOrderDates(dateToSet, line.ReoccurID);
+                        _recurringOrdersRepository.SetRecurringOrderItemDates(dateToSet, line.ReoccurID);
 
                         AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                            $"CreateOrderForContact: Updated recurring order {line.ReoccurID} LastDone={dateToSet:yyyy-MM-dd}");
+                            $"CreateOrderForContact: Updated recurring order item {line.ReoccurID} LastDone={dateToSet:yyyy-MM-dd}");
                     }
                 }
 
@@ -1558,21 +1569,21 @@ namespace TrackerSQL.Managers
                 bool hasRecurring = contact.ItemsContactRequires.Any(x => x.ReoccurOrder);
                 bool hasAutoFulFill = contact.ItemsContactRequires.Any(x => x.AutoFulfill);
 
-                var logEntry = new SentRemindersLogTbl
+                var logEntry = new SentRemindersLog
                 {
-                    CustomerID = contact.CustomerID,
+                    ContactID = (int)contact.CustomerID,
                     DateSentReminder = TimeZoneUtils.Now().Date,
-                    NextPrepDate = contact.NextPrepDate.Date,
+                    NextPreperationDate = contact.NextPreperationDate.Date,
                     ReminderSent = wasSuccessful,
                     HadAutoFulfilItem = hasAutoFulFill,
-                    HadReoccurItems = hasRecurring
+                    HadRecurrItems = hasRecurring
                 };
 
                 string logMode = isTestMode ? "[TEST MODE]" : "[PRODUCTION]";
-                logEntry.InsertLogItem(logEntry);
+                _sentRemindersLogRepository.InsertLogItem(logEntry);
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                    $"CoffeeCheckupManager: {logMode} Logged reminder Cust={contact.CustomerID} Prep={contact.NextPrepDate:yyyy-MM-dd} Sent={wasSuccessful} Recurring={hasRecurring} AutoFulfill={hasAutoFulFill}");
+                    $"CoffeeCheckupManager: {logMode} Logged reminder Cust={contact.CustomerID} Prep={contact.NextPreperationDate:yyyy-MM-dd} Sent={wasSuccessful} Recurring={hasRecurring} AutoFulfill={hasAutoFulFill}");
             }
             catch (Exception ex)
             {
@@ -1632,8 +1643,7 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "CoffeeCheckupManager: Getting eligible customers using OrderCheckTbl");
 
-                var orderCheckTbl = new OrderCheckTbl();
-                var databaseCustomers = orderCheckTbl.GetCustomersWithoutOrderConflicts(SystemConstants.CheckupConstants.MaxReminders);
+                var databaseCustomers = _coffeeCheckupRepository.GetCustomersWithoutOrderConflicts(SystemConstants.CheckupConstants.MaxReminders);
 
                 var eligibleCustomers = new List<ContactToRemindWithItems>();
 
@@ -1648,17 +1658,17 @@ namespace TrackerSQL.Managers
                         ContactAltFirstName = dbCustomer.ContactAltFirstName,
                         EmailAddress = dbCustomer.EmailAddress,
                         AltEmailAddress = dbCustomer.AltEmailAddress,
-                        CityID = dbCustomer.CityID,
+                        AreaID = dbCustomer.AreaID,
                         CustomerTypeID = dbCustomer.CustomerTypeID,
                         enabled = dbCustomer.Enabled,
                         EquipTypeID = dbCustomer.EquipTypeID,
                         TypicallySecToo = dbCustomer.TypicallySecToo,
-                        PreferedAgentID = dbCustomer.PreferedAgentID,
+                        PreferredAgentID = dbCustomer.PreferredAgentID,
                         SalesAgentID = dbCustomer.SalesAgentID,
                         UsesFilter = dbCustomer.UsesFilter,
                         AlwaysSendChkUp = dbCustomer.AlwaysSendChkUp,
                         ReminderCount = dbCustomer.ReminderCount,
-                        NextPrepDate = dbCustomer.NextPrepDate,
+                        NextPreperationDate = dbCustomer.NextPreperationDate,
                         NextDeliveryDate = dbCustomer.NextDeliveryDate,
                         NextCoffee = dbCustomer.NextCoffee,
                         NextClean = dbCustomer.NextClean,
@@ -1668,7 +1678,7 @@ namespace TrackerSQL.Managers
                     };
 
                     // Get typical items for this customer
-                    var typicalItems = orderCheckTbl.GetCustomerTypicalItems(dbCustomer.CustomerID);
+                    var typicalItems = _coffeeCheckupRepository.GetCustomerTypicalItems(dbCustomer.CustomerID);
                     contact.ItemsContactRequires = typicalItems.Select(item => new ItemContactRequires
                     {
                         CustomerID = dbCustomer.CustomerID,
@@ -1701,14 +1711,8 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                var reoccuringOrderDal = new ReoccuringOrderDAL();
-                var recurringOrder = reoccuringOrderDal.GetByReoccuringOrderByID(reoccurId);
-                if (recurringOrder != null)
-                {
-                    var recurrenceType = ReoccuranceTypeTbl.GetRecurrenceType(recurringOrder.ReoccuranceTypeID);
-                    return recurrenceType == ReoccuranceTypeTbl.RecurrenceType.Monthly;
-                }
-                return false;
+                var recurringOrder = _recurringOrdersRepository.GetSummaryByRecurringOrderItemId(reoccurId);
+                return recurringOrder?.RecurringTypeID == 5;
             }
             catch (Exception ex)
             {
@@ -1717,22 +1721,23 @@ namespace TrackerSQL.Managers
             }
         }
 
-        /// <summary>
-        /// Gets the target day of month for a recurring order
-        /// </summary>
         private int GetTargetDayOfMonth(int reoccurId)
         {
             try
             {
-                var reoccuringOrderDal = new ReoccuringOrderDAL();
-                var recurringOrder = reoccuringOrderDal.GetByReoccuringOrderByID(reoccurId);
-                return recurringOrder?.ReoccuranceValue ?? 0;
+                var recurringOrder = _recurringOrdersRepository.GetSummaryByRecurringOrderItemId(reoccurId);
+                return recurringOrder?.Value ?? 0;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: Error getting target day for {reoccurId}: {ex.Message}");
                 return 0;
             }
+        }
+
+        public bool IsHolidayComingInWindow(int daysWindow)
+        {
+            return _holidayProvider.IsThereAHolodayComing(TimeZoneUtils.Now().Date, daysWindow);
         }
 
         public static int GetReminderWindowDays()

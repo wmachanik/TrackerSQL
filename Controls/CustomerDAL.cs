@@ -1,26 +1,26 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.control.CustomerDAL
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Decompiled with JetBrains decompiler
+// Type: TrackerSQL.control.CustomerDAL
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Generic;
 using System.Data;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 //- only form later versions #nullable disable
-namespace TrackerDotNet.Controls
+namespace TrackerSQL.Controls
 {
     public class CustomerDAL
     {
-        private const string CONST_SELECTCUSTOMERS = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince, PostalCode, [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID, SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled,PredictionDisabled, AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes FROM CustomersTbl";
+        private const string CONST_SELECTCUSTOMERS = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, Area, StateOrProvince, PostalCode, [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID, SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled,PredictionDisabled, AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes FROM CustomersTbl";
 
         public static List<CustomerData> GetAllCustomers(string SortBy)
         {
             List<CustomerData> allCustomers = new List<CustomerData>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince, PostalCode, [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID, SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled,PredictionDisabled, AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes FROM CustomersTbl";
+            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, Area, StateOrProvince, PostalCode, [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID, SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled,PredictionDisabled, AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes FROM CustomersTbl";
             if (!string.IsNullOrEmpty(SortBy))
                 strSQL = $"{strSQL} ORDER BY {SortBy}";
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
@@ -38,7 +38,7 @@ namespace TrackerDotNet.Controls
                         ContactAltLastName = dataReader["ContactAltLastName"] == DBNull.Value ? "" : dataReader["ContactAltLastName"].ToString(),
                         Department = dataReader["Department"] == DBNull.Value ? "" : dataReader["Department"].ToString(),
                         BillingAddress = dataReader["BillingAddress"] == DBNull.Value ? "" : dataReader["BillingAddress"].ToString(),
-                        City = dataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["City"]),
+                        Area = dataReader["Area"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["Area"]),
                         StateOrProvince = dataReader["StateOrProvince"] == DBNull.Value ? "" : dataReader["StateOrProvince"].ToString(),
                         PostalCode = dataReader["PostalCode"] == DBNull.Value ? "" : dataReader["PostalCode"].ToString(),
                         Region = dataReader["Region"] == DBNull.Value ? "" : dataReader["Region"].ToString(),

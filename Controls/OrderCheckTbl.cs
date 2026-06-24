@@ -14,14 +14,14 @@ namespace TrackerSQL.Controls
         private const string CONST_CUSTOMERS_WITHOUT_CONFLICTS = @"
             SELECT DISTINCT 
                 c.CustomerID, c.CompanyName, c.ContactFirstName, c.ContactAltFirstName,
-                c.EmailAddress, c.AltEmailAddress, c.City, c.CustomerTypeID, c.enabled,
+                c.EmailAddress, c.AltEmailAddress, c.AreaID, c.CustomerTypeID, c.enabled,
                 c.EquipType, c.TypicallySecToo, c.PreferedAgent, c.SalesAgentID,
                 c.UsesFilter, c.AlwaysSendChkUp, c.autofulfill, c.ReminderCount,
                 cu.NextCoffeeBy, cu.NextCleanOn, cu.NextDescaleEst, cu.NextFilterEst, cu.NextServiceEst,
                 nrd.PrepDate, nrd.DeliveryDate
             FROM (((CustomersTbl c 
                 INNER JOIN ClientUsageTbl cu ON c.CustomerID = cu.CustomerID)
-                LEFT JOIN NextRoastDateByCityTbl nrd ON c.City = nrd.CityID)
+                LEFT JOIN NextPreperationDateByAreaTbl nrd ON c.AreaID = nrd.AreaID)
                 LEFT JOIN CustomerTrackedServiceItemsTbl ctsi ON c.CustomerTypeID = ctsi.CustomerTypeID)
             WHERE c.enabled = 1 
               AND c.ReminderCount < ? 
@@ -84,12 +84,12 @@ namespace TrackerSQL.Controls
                             ContactAltFirstName = dataReader["ContactAltFirstName"]?.ToString() ?? "",
                             EmailAddress = dataReader["EmailAddress"]?.ToString() ?? "",
                             AltEmailAddress = dataReader["AltEmailAddress"]?.ToString() ?? "",
-                            CityID = dataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["City"]),
+                            AreaID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]),
                             CustomerTypeID = dataReader["CustomerTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerTypeID"]),
                             Enabled = dataReader["enabled"] != DBNull.Value && Convert.ToBoolean(dataReader["enabled"]),
                             EquipTypeID = dataReader["EquipType"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["EquipType"]),
                             TypicallySecToo = dataReader["TypicallySecToo"] != DBNull.Value && Convert.ToBoolean(dataReader["TypicallySecToo"]),
-                            PreferedAgentID = dataReader["PreferedAgent"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferedAgent"]),
+                            PreferredAgentID = dataReader["PreferedAgent"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferedAgent"]),
                             SalesAgentID = dataReader["SalesAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SalesAgentID"]),
                             UsesFilter = dataReader["UsesFilter"] != DBNull.Value && Convert.ToBoolean(dataReader["UsesFilter"]),
                             AlwaysSendChkUp = dataReader["AlwaysSendChkUp"] != DBNull.Value && Convert.ToBoolean(dataReader["AlwaysSendChkUp"]),
@@ -100,7 +100,7 @@ namespace TrackerSQL.Controls
                             NextDescal = dataReader["NextDescaleEst"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextDescaleEst"]),
                             NextFilter = dataReader["NextFilterEst"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextFilterEst"]),
                             NextService = dataReader["NextServiceEst"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextServiceEst"]),
-                            NextPrepDate = dataReader["PrepDate"] == DBNull.Value ? DateTime.Now.AddDays(1) : Convert.ToDateTime(dataReader["PrepDate"]),
+                            NextPreperationDate = dataReader["PrepDate"] == DBNull.Value ? DateTime.Now.AddDays(1) : Convert.ToDateTime(dataReader["PrepDate"]),
                             NextDeliveryDate = dataReader["DeliveryDate"] == DBNull.Value ? DateTime.Now.AddDays(2) : Convert.ToDateTime(dataReader["DeliveryDate"])
                         });
                     }
@@ -234,12 +234,12 @@ namespace TrackerSQL.Controls
         public string ContactAltFirstName { get; set; }
         public string EmailAddress { get; set; }
         public string AltEmailAddress { get; set; }
-        public int CityID { get; set; }
+        public int AreaID { get; set; }
         public int CustomerTypeID { get; set; }
         public bool Enabled { get; set; }
         public int EquipTypeID { get; set; }
         public bool TypicallySecToo { get; set; }
-        public int PreferedAgentID { get; set; }
+        public int PreferredAgentID { get; set; }
         public int SalesAgentID { get; set; }
         public bool UsesFilter { get; set; }
         public bool AlwaysSendChkUp { get; set; }
@@ -250,7 +250,7 @@ namespace TrackerSQL.Controls
         public DateTime NextDescal { get; set; }
         public DateTime NextFilter { get; set; }
         public DateTime NextService { get; set; }
-        public DateTime NextPrepDate { get; set; }
+        public DateTime NextPreperationDate { get; set; }
         public DateTime NextDeliveryDate { get; set; }
     }
 

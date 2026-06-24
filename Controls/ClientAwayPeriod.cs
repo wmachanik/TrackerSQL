@@ -2,6 +2,7 @@ using System;
 
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class ClientAwayPeriod
     {
         public int AwayPeriodID { get; set; }

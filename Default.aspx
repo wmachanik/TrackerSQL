@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true"
+<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.master" AutoEventWireup="true"
     CodeBehind="Default.aspx.cs" Inherits="TrackerSQL.Default" %>
 
 <%--<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>--%>
@@ -43,7 +43,7 @@
                     <p>Manage existing orders and deliveries</p>
                 </div>
                 <div class="dashboard-card">
-                    <h4><a href="Pages/ReoccuringOrders.aspx">Recurring Orders</a></h4>
+                    <h4><a href="Pages/RecurringOrders.aspx">Recurring Orders</a></h4>
                     <p>Set up and manage recurring orders</p>
                 </div>
             </div>

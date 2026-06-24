@@ -1,0 +1,92 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for ItemServiceTypesTbl - Item service types (Coffee, Cleaning, Group, etc.)
+    /// </summary>
+    public class ItemServiceTypesRepository : RepositoryBase<ItemServiceType>
+    {
+        protected override string TableName => "ItemServiceTypesTbl";
+        protected override string KeyColumn => "ItemServiceTypeID";
+
+        /// <summary>
+        /// Gets all item service types, ordered by ItemServiceTypeID
+        /// </summary>
+        [DataObjectMethod(DataObjectMethodType.Select, true)]
+        public override List<ItemServiceType> GetAll()
+        {
+            var list = new List<ItemServiceType>();
+            string sql = "SELECT ItemServiceTypeID, ItemServiceType, Description, ItemPackagingID, ItemPrepTypeID FROM ItemServiceTypesTbl ORDER BY ItemServiceTypeID";
+            
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql))
+                {
+                    if (rdr != null)
+                    {
+                        while (rdr.Read())
+                        {
+                            list.Add(new ItemServiceType
+                            {
+                                ItemServiceTypeID = (int)rdr["ItemServiceTypeID"],
+                                ServiceTypeName = rdr["ItemServiceType"]?.ToString() ?? string.Empty,
+                                Description = rdr["Description"]?.ToString(),
+                                ItemPackagingID = rdr["ItemPackagingID"] != DBNull.Value ? (int)rdr["ItemPackagingID"] : 0,
+                                ItemPrepTypeID = rdr["ItemPrepTypeID"] != DBNull.Value ? (int)rdr["ItemPrepTypeID"] : 0
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+                    $"ItemServiceTypesRepository.GetAll failed: {ex.Message}");
+            }
+            
+            return list;
+        }
+
+        /// <summary>
+        /// Gets an item service type by ID
+        /// </summary>
+        [DataObjectMethod(DataObjectMethodType.Select, false)]
+        public override ItemServiceType GetById(int id)
+        {
+            string sql = "SELECT ItemServiceTypeID, ItemServiceType, Description, ItemPackagingID, ItemPrepTypeID FROM ItemServiceTypesTbl WHERE ItemServiceTypeID = @Id";
+            var p = new List<DBParameter> { new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" } };
+            
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql, p))
+                {
+                    if (rdr != null && rdr.Read())
+                    {
+                        return new ItemServiceType
+                        {
+                            ItemServiceTypeID = (int)rdr["ItemServiceTypeID"],
+                            ServiceTypeName = rdr["ItemServiceType"]?.ToString() ?? string.Empty,
+                            Description = rdr["Description"]?.ToString(),
+                            ItemPackagingID = rdr["ItemPackagingID"] != DBNull.Value ? (int)rdr["ItemPackagingID"] : 0,
+                            ItemPrepTypeID = rdr["ItemPrepTypeID"] != DBNull.Value ? (int)rdr["ItemPrepTypeID"] : 0
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+                    $"ItemServiceTypesRepository.GetById({id}) failed: {ex.Message}");
+            }
+            
+            return null;
+        }
+    }
+}

@@ -1,27 +1,61 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.SiteMaster
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
-using System;
+﻿using System;
+using System.Web;
 using System.Web.UI;
-using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+using TrackerSQL.Classes;
 
 namespace TrackerSQL
 {
     public partial class SiteMaster : MasterPage
     {
+        protected Panel pnlApplicationError;
+        protected Label lblApplicationError;
+        protected HyperLink lnkViewLogs;
+        protected LinkButton btnDismissAppError;
+
         protected void Page_Load(object sender, EventArgs e)
         {
-            string currentPage = Request.AppRelativeCurrentExecutionFilePath.ToUpper();
+            BindApplicationErrorBanner();
+            HighlightCurrentMenuItem();
+        }
 
+        private void BindApplicationErrorBanner()
+        {
+            if (pnlApplicationError == null || lblApplicationError == null)
+                return;
+
+            ApplicationErrorInfo error = ApplicationErrorNotifier.GetPending();
+            if (error == null)
+            {
+                pnlApplicationError.Visible = false;
+                return;
+            }
+
+            pnlApplicationError.Visible = true;
+
+            string sourceText = string.IsNullOrWhiteSpace(error.Source)
+                ? string.Empty
+                : $" Source: {HttpUtility.HtmlEncode(error.Source)}.";
+
+            lblApplicationError.Text =
+                $" At {error.OccurredAt:yyyy-MM-dd HH:mm}.{sourceText} " +
+                $"{HttpUtility.HtmlEncode(error.Summary)} " +
+                $"Check {HttpUtility.HtmlEncode(error.LogHint)} for details.";
+        }
+
+        protected void btnDismissAppError_Click(object sender, EventArgs e)
+        {
+            ApplicationErrorNotifier.Clear();
+            pnlApplicationError.Visible = false;
+        }
+
+        private void HighlightCurrentMenuItem()
+        {
+            string currentPage = Request.AppRelativeCurrentExecutionFilePath.ToUpper();
             bool parentSelected = false;
 
             foreach (MenuItem menuItem in NavigationMenu.Items)
             {
-                // Compare URLs without query strings
                 string menuUrl = ResolveUrl(menuItem.NavigateUrl).ToUpper();
                 if (currentPage == menuUrl)
                 {
@@ -36,18 +70,15 @@ namespace TrackerSQL
                         if (currentPage == childUrl)
                         {
                             childItem.Selected = true;
-                            menuItem.Selected = true; // Select parent too
+                            menuItem.Selected = true;
                             parentSelected = true;
                         }
                     }
                 }
             }
 
-            // Special case for home page
             if ((currentPage.Contains("DEFAULT.ASPX") || currentPage.EndsWith("/")) && !parentSelected)
-            {
                 NavigationMenu.Items[0].Selected = true;
-            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -73,7 +73,7 @@ namespace TrackerSQL.Classes
                     using (SqlCommand createCmd = new SqlCommand(createQuery, conn))
                     {
                         createCmd.ExecuteNonQuery();
-                        AppLogger.WriteLog("system", "✅ Created UserPreferences table in QOnTSecurity.");
+                        AppLogger.WriteLog("system", "? Created UserPreferences table in QOnTSecurity.");
                     }
                 }
             }

@@ -1,0 +1,78 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class PersonsRepository : RepositoryBase<Person>
+    {
+        protected override string TableName => "PeopleTbl";
+        protected override string KeyColumn => "PersonID";
+
+        protected override string CoreColumns => "PersonID, Person AS PersonName, Abbreviation, Enabled, NormalDeliveryDoW, SecurityUsername";
+        protected override string LookupColumns => "PersonID, Abbreviation";
+
+        public void Insert(Person person)
+        {
+            const string sql = "INSERT INTO PeopleTbl (Person, Abbreviation, Enabled, NormalDeliveryDoW, SecurityUsername) VALUES (@PersonName, @Abbreviation, @Enabled, @NormalDeliveryDoW, @SecurityUsername)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PersonName", DataValue = person.PersonName, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Abbreviation", DataValue = person.Abbreviation ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Enabled", DataValue = person.Enabled ?? true, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@NormalDeliveryDoW", DataValue = person.NormalDeliveryDoW ?? 0, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SecurityUsername", DataValue = person.SecurityUsername ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(Person person)
+        {
+            const string sql = "UPDATE PeopleTbl SET Person = @PersonName, Abbreviation = @Abbreviation, Enabled = @Enabled, NormalDeliveryDoW = @NormalDeliveryDoW, SecurityUsername = @SecurityUsername WHERE PersonID = @PersonID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PersonName", DataValue = person.PersonName, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Abbreviation", DataValue = person.Abbreviation ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Enabled", DataValue = person.Enabled ?? true, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@NormalDeliveryDoW", DataValue = person.NormalDeliveryDoW ?? 0, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SecurityUsername", DataValue = person.SecurityUsername ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PersonID", DataValue = person.PersonID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int personID)
+        {
+            const string sql = "DELETE FROM PeopleTbl WHERE PersonID = @PersonID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PersonID", DataValue = personID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public override List<Person> GetAll(string SortBy)
+        {
+            var list = new List<Person>();
+            string sql = "SELECT PersonID, Person AS PersonName, Abbreviation, Enabled, NormalDeliveryDoW, SecurityUsername FROM PeopleTbl";
+            if (!string.IsNullOrWhiteSpace(SortBy))
+            {
+                string orderBy = SortBy.Equals("PersonName", System.StringComparison.OrdinalIgnoreCase) ? "Person" : SortBy;
+                sql += " ORDER BY " + orderBy;
+            }
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql))
+            {
+                while (rdr.Read()) list.Add(DbMapper.Map<Person>(rdr));
+            }
+            return list;
+        }
+    }
+}

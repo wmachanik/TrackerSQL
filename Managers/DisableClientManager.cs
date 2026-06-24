@@ -3,11 +3,20 @@ using System.Configuration;
 using System.Security.Cryptography;
 using System.Text;
 using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
     public class DisableClientManager
     {
+        /// <summary>
+        /// Disables a contact from the token-validated email link flow.
+        /// </summary>
+        public static bool DisableFromEmailLink(int contactId, bool disableAll)
+        {
+            return new ContactsRepository().ApplyEmailDisableChoice(contactId, disableAll);
+        }
+
         private const int MIN_SECRET_LENGTH = 32;
         private const int TOKEN_VALIDITY_HOURS = 24;
 

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ItemGroups.aspx.cs" Inherits="TrackerSQL.Pages.ItemGroups" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ItemGroups.aspx.cs" Inherits="TrackerSQL.Pages.ItemGroups" %>
 
 <asp:Content ID="cntItemGroupsHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -123,21 +123,21 @@
     </Triggers>
   </asp:UpdatePanel>
   <%# GiveInStatus() %>
-  <asp:ObjectDataSource ID="odsItemGroups" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl"
+  <asp:ObjectDataSource ID="odsItemGroups" runat="server" TypeName="TrackerSQL.Managers.ItemGroupDataSource"
     SelectMethod="GetAllGroupTypeItems" OldValuesParameterFormatString="original_{0}"></asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItemsNotInGroup" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl"
+  <asp:ObjectDataSource ID="odsItemsNotInGroup" runat="server" TypeName="TrackerSQL.Managers.ItemGroupDataSource"
     SelectMethod="GetAllItemsNotInItemGroup" OldValuesParameterFormatString="original_{0}">
     <SelectParameters>
-      <asp:ControlParameter ControlID="ddlGroupItems" Name="pGroupItemTypeID" PropertyName="SelectedValue" Type="Int32" />
+      <asp:ControlParameter ControlID="ddlGroupItems" Name="groupItemTypeId" PropertyName="SelectedValue" Type="Int32" />
     </SelectParameters>
   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItemInGroup" runat="server" DataObjectTypeName="TrackerSQL.Controls.ItemGroupTbl"
-    DeleteMethod="DeleteItemGroup" InsertMethod="InsertItemGroup" SelectMethod="GetAllByGroupItemTypeID" SortParameterName="SortBy"
-    TypeName="TrackerSQL.Controls.ItemGroupTbl" UpdateMethod="UpdateItemGroup">
+  <asp:ObjectDataSource ID="odsItemInGroup" runat="server" DataObjectTypeName="TrackerSQL.Models.ItemGroupGridRow"
+    DeleteMethod="DeleteItemGroup" InsertMethod="InsertItemGroup" SelectMethod="GetAllByGroupItemTypeId" SortParameterName="sortBy"
+    TypeName="TrackerSQL.Managers.ItemGroupDataSource">
     <SelectParameters>
-      <asp:ControlParameter ControlID="ddlGroupItems" Name="pGroupItemID" PropertyName="SelectedValue" Type="Int32" />
-      <asp:Parameter Name="SortBy" Type="String" />
+      <asp:ControlParameter ControlID="ddlGroupItems" Name="groupItemId" PropertyName="SelectedValue" Type="Int32" />
+      <asp:Parameter Name="sortBy" Type="String" />
     </SelectParameters>
   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItemTypes" runat="server" SelectMethod="GetAllItemDesc" TypeName="TrackerSQL.Controls.ItemTypeTbl" />
+  <asp:ObjectDataSource ID="odsItemTypes" runat="server" SelectMethod="GetAllItemDesc" TypeName="TrackerSQL.Managers.ItemGroupDataSource" />
 </asp:Content>

@@ -1,19 +1,22 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.CustomerSummary
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
 // Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 //- only form later versions #nullable disable
+using System;
+
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class CustomerSummary
     {
         private long _CustomerID;
         private string _CompanyName;
         private string _ContactFirstName;
         private string _ContactLastName;
-        private string _City;
+        private string _AreaName;
         private string _PhoneNumber;
         private string _EmailAddress;
         private string _DeliveryBy;
@@ -28,7 +31,7 @@ namespace TrackerSQL.Controls
             this._CompanyName = string.Empty;
             this._ContactFirstName = string.Empty;
             this._ContactLastName = string.Empty;
-            this._City = string.Empty;
+            this._AreaName = string.Empty;
             this._PhoneNumber = string.Empty;
             this._EmailAddress = string.Empty;
             this._DeliveryBy = string.Empty;
@@ -62,10 +65,10 @@ namespace TrackerSQL.Controls
             set => this._ContactLastName = value;
         }
 
-        public string City
+        public string AreaName
         {
-            get => this._City;
-            set => this._City = value;
+            get => this._AreaName;
+            set => this._AreaName = value;
         }
 
         public string PhoneNumber

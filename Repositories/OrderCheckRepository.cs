@@ -1,0 +1,144 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for OrderCheck entity
+    /// Auto-generated: 2026-06-02 13:35:41
+    /// </summary>
+    public class OrderCheckRepository : RepositoryBase<OrderCheck>
+    {
+        protected override string TableName => "OrderCheckTbl";
+        protected override string KeyColumn => "ID";
+
+        /// <summary>
+        /// Maps a DataReader row to a OrderCheck object
+        /// </summary>
+        protected override OrderCheck Map(IDataReader reader)
+        {
+            return DbMapper.Map<OrderCheck>(reader);
+        }
+
+        /// <summary>
+        /// Gets all OrderCheck records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<OrderCheck> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }
+
+        /// <summary>
+        /// Gets a single OrderCheck by ID
+        /// </summary>
+        public OrderCheck GetById(int id)
+        {
+            string sql = `$"SELECT * FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            return ExecuteQuerySingle(sql, parameters);
+        }
+
+        /// <summary>
+        /// Inserts a new OrderCheck record
+        /// </summary>
+        public int Insert(OrderCheck entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize INSERT statement based on POCO properties
+            // This is a template - adjust column names as needed
+            string sql = @"
+                INSERT INTO OrderCheckTbl (
+                    -- Add column names here
+                )
+                VALUES (
+                    -- Add parameter names here (@Param1, @Param2, etc.)
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Example:
+                // new DBParameter { DataValue = entity.PropertyName, DataDbType = DbType.String, ParamName = "@PropertyName" }
+            };
+
+            return ExecuteScalar<int>(sql, parameters);
+        }
+
+        /// <summary>
+        /// Updates an existing OrderCheck record
+        /// </summary>
+        public bool Update(OrderCheck entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize UPDATE statement based on POCO properties
+            string sql = @"
+                UPDATE OrderCheckTbl
+                SET 
+                    -- Add column = @Param pairs here
+                WHERE ID = @Id";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Don't forget to add the ID parameter
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Deletes a OrderCheck record by ID
+        /// </summary>
+        public bool Delete(int id)
+        {
+            string sql = `$"DELETE FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        // TODO: Add custom methods from legacy OrderCheckTbl.cs here
+        // Example:
+        // public int GetCustomCount()
+        // {
+        //     string sql = "SELECT COUNT(*) FROM OrderCheckTbl WHERE CustomCondition";
+        //     return ExecuteScalar<int>(sql);
+        // }
+    }
+
+        /// <summary>
+        /// Gets all OrderCheck records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<OrderCheck> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }}
+

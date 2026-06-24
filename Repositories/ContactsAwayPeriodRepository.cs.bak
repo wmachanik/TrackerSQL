@@ -1,0 +1,189 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class ContactsAwayPeriodRepository : RepositoryBase<ContactsAwayPeriod>
+    {
+        protected override string TableName => "ContactsAwayPeriodTbl";
+        protected override string KeyColumn => "AwayPeriodID";
+
+        /// <summary>
+        /// Get away periods with company name and reason description for list view
+        /// </summary>
+        public List<ContactsAwaySummary> GetAwaySummaries(string sortBy, string whereFilter)
+        {
+            var list = new List<ContactsAwaySummary>();
+
+            string sql = @"SELECT a.AwayPeriodID, a.ContactID, c.CompanyName, a.AwayStartDate, a.AwayEndDate, 
+                           a.ReasonID, r.ReasonDesc
+                           FROM ContactsAwayPeriodTbl a
+                           INNER JOIN ContactsTbl c ON a.ContactID = c.ContactID
+                           LEFT OUTER JOIN AwayReasonTbl r ON a.ReasonID = r.AwayReasonID";
+
+            if (!string.IsNullOrWhiteSpace(whereFilter))
+            {
+                // Convert Access-style date literals to SQL Server format
+                string sqlFilter = whereFilter
+                    .Replace("#", "'")  // Access uses # for date delimiters, SQL Server uses '
+                    .Replace("CompanyName", "c.CompanyName");
+                sql += " WHERE " + sqlFilter;
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                string orderBy = sortBy;
+                if (sortBy.Equals("CompanyName", StringComparison.OrdinalIgnoreCase))
+                    orderBy = "c.CompanyName";
+                sql += " ORDER BY " + orderBy;
+            }
+            else
+            {
+                sql += " ORDER BY a.AwayStartDate DESC";
+            }
+
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql))
+                {
+                    while (rdr != null && rdr.Read())
+                    {
+                        list.Add(new ContactsAwaySummary
+                        {
+                            AwayPeriodID = rdr["AwayPeriodID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["AwayPeriodID"]),
+                            ContactID = rdr["ContactID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ContactID"]),
+                            CompanyName = rdr["CompanyName"] as string ?? string.Empty,
+                            AwayStartDate = rdr["AwayStartDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(rdr["AwayStartDate"]),
+                            AwayEndDate = rdr["AwayEndDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(rdr["AwayEndDate"]),
+                            ReasonID = rdr["ReasonID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["ReasonID"]),
+                            ReasonDesc = rdr["ReasonDesc"] as string ?? string.Empty
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactsAwayPeriodRepository.GetAwaySummaries error: " + ex.Message + " | SQL: " + sql);
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Get currently away contacts (where today falls between start and end date)
+        /// </summary>
+        public List<ContactsAwaySummary> GetCurrentlyAway(string sortBy = "CompanyName")
+        {
+            var today = TimeZoneUtils.Now().Date;
+            string whereFilter = $"a.AwayStartDate <= '{today:yyyy-MM-dd}' AND a.AwayEndDate >= '{today:yyyy-MM-dd}'";
+            return GetAwaySummariesWithRawFilter(sortBy, whereFilter);
+        }
+
+        /// <summary>
+        /// Internal method that takes a pre-formatted SQL WHERE clause
+        /// </summary>
+        private List<ContactsAwaySummary> GetAwaySummariesWithRawFilter(string sortBy, string whereFilter)
+        {
+            var list = new List<ContactsAwaySummary>();
+
+            string sql = @"SELECT a.AwayPeriodID, a.ContactID, c.CompanyName, a.AwayStartDate, a.AwayEndDate, 
+                           a.ReasonID, r.ReasonDesc
+                           FROM ContactsAwayPeriodTbl a
+                           INNER JOIN ContactsTbl c ON a.ContactID = c.ContactID
+                           LEFT OUTER JOIN AwayReasonTbl r ON a.ReasonID = r.AwayReasonID";
+
+            if (!string.IsNullOrWhiteSpace(whereFilter))
+            {
+                sql += " WHERE " + whereFilter;
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                string orderBy = sortBy;
+                if (sortBy.Equals("CompanyName", StringComparison.OrdinalIgnoreCase))
+                    orderBy = "c.CompanyName";
+                sql += " ORDER BY " + orderBy;
+            }
+            else
+            {
+                sql += " ORDER BY a.AwayStartDate DESC";
+            }
+
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql))
+                {
+                    while (rdr != null && rdr.Read())
+                    {
+                        list.Add(new ContactsAwaySummary
+                        {
+                            AwayPeriodID = rdr["AwayPeriodID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["AwayPeriodID"]),
+                            ContactID = rdr["ContactID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ContactID"]),
+                            CompanyName = rdr["CompanyName"] as string ?? string.Empty,
+                            AwayStartDate = rdr["AwayStartDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(rdr["AwayStartDate"]),
+                            AwayEndDate = rdr["AwayEndDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(rdr["AwayEndDate"]),
+                            ReasonID = rdr["ReasonID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["ReasonID"]),
+                            ReasonDesc = rdr["ReasonDesc"] as string ?? string.Empty
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactsAwayPeriodRepository.GetAwaySummariesWithRawFilter error: " + ex.Message + " | SQL: " + sql);
+            }
+
+            return list;
+        }
+
+        public void Insert(ContactsAwayPeriod awayPeriod)
+        {
+            const string sql = @"INSERT INTO ContactsAwayPeriodTbl (ContactID, AwayStartDate, AwayEndDate, ReasonID) 
+                                 VALUES (@ContactID, @AwayStartDate, @AwayEndDate, @ReasonID)";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = awayPeriod.ContactID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@AwayStartDate", DataValue = awayPeriod.AwayStartDate, DataDbType = DbType.DateTime },
+                new DBParameter { ParamName = "@AwayEndDate", DataValue = awayPeriod.AwayEndDate, DataDbType = DbType.DateTime },
+                new DBParameter { ParamName = "@ReasonID", DataValue = awayPeriod.ReasonID ?? (object)DBNull.Value, DataDbType = DbType.Int32 }
+            };
+
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(ContactsAwayPeriod awayPeriod)
+        {
+            const string sql = @"UPDATE ContactsAwayPeriodTbl 
+                                 SET ContactID = @ContactID, AwayStartDate = @AwayStartDate, AwayEndDate = @AwayEndDate, ReasonID = @ReasonID 
+                                 WHERE AwayPeriodID = @AwayPeriodID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = awayPeriod.ContactID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@AwayStartDate", DataValue = awayPeriod.AwayStartDate, DataDbType = DbType.DateTime },
+                new DBParameter { ParamName = "@AwayEndDate", DataValue = awayPeriod.AwayEndDate, DataDbType = DbType.DateTime },
+                new DBParameter { ParamName = "@ReasonID", DataValue = awayPeriod.ReasonID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@AwayPeriodID", DataValue = awayPeriod.AwayPeriodID, DataDbType = DbType.Int32 }
+            };
+
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int awayPeriodID)
+        {
+            const string sql = "DELETE FROM ContactsAwayPeriodTbl WHERE AwayPeriodID = @AwayPeriodID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@AwayPeriodID", DataValue = awayPeriodID, DataDbType = DbType.Int32 }
+            };
+
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

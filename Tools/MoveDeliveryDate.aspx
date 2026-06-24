@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Move Delivery Date" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MoveDeliveryDate.aspx.cs" Inherits="TrackerSQL.Tools.MoveDeliveryDate" %>
+<%@ Page Title="Move Delivery Date" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="MoveDeliveryDate.aspx.cs" Inherits="TrackerSQL.Tools.MoveDeliveryDate" %>
 <asp:Content ID="cntMoveDeliveryDateHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntMoveDeliveryDateBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -19,10 +19,10 @@
             <td>Old Delivery Date</td>
             <td>
               <asp:DropDownList ID="OldDeliveryDateDDL" runat="server" DataTextFormatString="{0:d}" 
-                DataSourceID="odsCityDeliveryDates" DataTextField="Date" DataValueField="Date"></asp:DropDownList>
-              <asp:ObjectDataSource ID="odsCityDeliveryDates" runat="server" 
+                DataSourceID="odsAreaDeliveryDates" DataTextField="Date" DataValueField="Date"></asp:DropDownList>
+              <asp:ObjectDataSource ID="odsAreaDeliveryDates" runat="server" 
                 SelectMethod="GetAllDeliveryDates" 
-                TypeName="TrackerSQL.Controls.NextRoastDateByCityTbl">
+                TypeName="TrackerSQL.Managers.NextPrepDateDataSource">
               </asp:ObjectDataSource>
             </td>
           </tr>
@@ -46,10 +46,10 @@
       </table>
       <br />
       <asp:Literal ID="StatusLiteral" Text="" runat="server" />
-      <asp:GridView ID="gvPrepData" runat="server" AllowPaging="True" CssClass="AutoWidthFrm" 
-          AutoGenerateColumns="False" DataSourceID="sdsCityPrepDates" AllowSorting="true" >
+        <asp:GridView ID="gvPrepData" runat="server" AllowPaging="True" CssClass="AutoWidthFrm" 
+          AutoGenerateColumns="False" AllowSorting="true" >
           <Columns>
-            <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" />
+            <asp:BoundField DataField="Area" HeaderText="Area" SortExpression="Area" />
             <asp:BoundField DataField="PreperationDate" DataFormatString="{0:d}" 
               HeaderText="PreperationDate" SortExpression="PreperationDate" />
             <asp:BoundField DataField="DeliveryDate" DataFormatString="{0:d}" 
@@ -60,11 +60,6 @@
               HeaderText="NextDeliveryDate" SortExpression="NextDeliveryDate" />
           </Columns>
         </asp:GridView>
-        <asp:SqlDataSource ID="sdsCityPrepDates" runat="server" 
-          ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>" 
-          ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>" 
-          SelectCommand="SELECT CityTbl.City, NextRoastDateByCityTbl.PreperationDate, NextRoastDateByCityTbl.DeliveryDate, NextRoastDateByCityTbl.NextPreperationDate, NextRoastDateByCityTbl.NextDeliveryDate FROM (NextRoastDateByCityTbl LEFT OUTER JOIN CityTbl ON NextRoastDateByCityTbl.CityID = CityTbl.ID) ORDER BY NextRoastDateByCityTbl.DeliveryDate, CityTbl.City">
-        </asp:SqlDataSource>
     </ContentTemplate>
     <Triggers>
       <asp:AsyncPostBackTrigger ControlID="btnMove" EventName="Click" />

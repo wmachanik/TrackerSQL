@@ -1,25 +1,21 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.RepairStatusChange
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
 using AjaxControlToolkit;
 using System;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
 using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL.Pages
 {
     public partial class RepairStatusChange : Page
     {
         private const string CONST_SESSION_REPAIRDATA = "RepairDataUsed";
         private static string prevPage = string.Empty;
+        private readonly RepairManager _repairManager = new RepairManager();
+
         protected ScriptManager scrmRepairStaus;
         protected UpdatePanel upnlRepairStaus;
         protected HtmlTable tblRepairStatus;
@@ -35,14 +31,6 @@ namespace TrackerSQL.Pages
         protected ObjectDataSource odsEquipTypes;
         protected ObjectDataSource odsRepairStatuses;
 
-        protected void Page_PreInit(object sender, EventArgs e)
-        {
-            //if (new CheckBrowser().fBrowserIsMobile())
-            //    this.MasterPageFile = "~/MobileSite.master";
-            //else
-            //    this.MasterPageFile = "~/Site.master";
-        }
-
         protected void Page_Load(object sender, EventArgs e)
         {
             if (this.IsPostBack)
@@ -56,17 +44,17 @@ namespace TrackerSQL.Pages
 
         public string GetCompanyName(long pCompanyID)
         {
-            return pCompanyID > 0L ? new CompanyNames().GetCompanyNameByCompanyID(pCompanyID) : string.Empty;
+            return pCompanyID > 0L ? new ContactsRepository().GetContactNameById((int)pCompanyID) : string.Empty;
         }
 
         public string GetMachineDesc(int pEquipID)
         {
-            return pEquipID > 0 ? new EquipTypeTbl().GetEquipName(pEquipID) : string.Empty;
+            return pEquipID > 0 ? new EquipTypesRepository().GetEquipTypeName(pEquipID) : string.Empty;
         }
 
         private void PutDataFromForm(int pRepairID)
         {
-            RepairsTbl repairById = new RepairsTbl().GetRepairById(pRepairID);
+            RepairFormData repairById = _repairManager.GetRepairFormDataById(pRepairID);
             if (repairById == null)
                 return;
             this.lblRepairID.Text = repairById.RepairID.ToString();
@@ -75,7 +63,7 @@ namespace TrackerSQL.Pages
             this.ddlRepairStatuses.DataBind();
             this.ltrlMachineSerialNumber.Text = repairById.MachineSerialNumber;
             this.ddlRepairStatuses.SelectedValue = repairById.RepairStatusID.ToString();
-            this.Session["RepairDataUsed"] = (object)repairById;
+            this.Session["RepairDataUsed"] = repairById;
         }
 
         private void ReturnToPrevPage()
@@ -88,16 +76,14 @@ namespace TrackerSQL.Pages
 
         private void UpdateRecord()
         {
-            RepairsTbl pRepair = (RepairsTbl)this.Session["RepairDataUsed"];
+            RepairFormData pRepair = (RepairFormData)this.Session["RepairDataUsed"];
             int int32 = Convert.ToInt32(this.ddlRepairStatuses.SelectedValue);
             if (pRepair.RepairStatusID == int32)
                 return;
             
             pRepair.RepairStatusID = int32;
             
-            // Use RepairManager instead of calling method on RepairsTbl
-            var repairManager = new RepairManager();
-            string result = repairManager.HandleStatusChange(pRepair);
+            string result = _repairManager.HandleStatusChange(pRepair);
             
             if (!string.IsNullOrWhiteSpace(result))
                 this.ltrlStatus.Text = result;
@@ -110,7 +96,6 @@ namespace TrackerSQL.Pages
             this.UpdateRecord();
             string status = this.ltrlStatus.Text;
 
-            // Show popup only if there's a relevant message
             if (!string.IsNullOrWhiteSpace(status) && !status.Contains("Record Updated"))
             {
                 showMessageBox msgBox = new showMessageBox(this.Page, "Repair Status Update", status);

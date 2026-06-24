@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.test.XMLtoSQL
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -274,19 +274,16 @@ namespace TrackerSQL.test
                             cmd.errString = this.RunCommand(cmd.sql);
                             cmd.result = string.IsNullOrWhiteSpace(cmd.errString);
 
-                            // Post‑verification for CREATE TABLE
+                            // Post-verification for CREATE TABLE
                             if (cmd.result && cmd.type == "create" && cmd.sql.Trim().ToLower().StartsWith("create table"))
                             {
                                 string created = ExtractCreatedTableName(cmd.sql);
                                 if (!string.IsNullOrEmpty(created))
                                 {
-                                    using (var verify = new TrackerDb())
+                                    if (!TableExists(created))
                                     {
-                                        if (!verify.TableExists(created))
-                                        {
-                                            cmd.errString = "CREATE reported success but table not found: " + created;
-                                            cmd.result = false;
-                                        }
+                                        cmd.errString = "CREATE reported success but table not found: " + created;
+                                        cmd.result = false;
                                     }
                                 }
                             }
@@ -394,7 +391,7 @@ namespace TrackerSQL.test
                     foreach (var file in sqlCommandFiles)
                     {
                         html.AppendLine($"<div class='file-item xml-file' onclick=\"selectFile('{file.FullName.Replace("\\", "\\\\")}')\">");
-                        html.AppendLine($"📄 {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm}, {file.Length} bytes)</small>");
+                        html.AppendLine($"?? {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm}, {file.Length} bytes)</small>");
                         html.AppendLine("</div>");
                     }
                     html.AppendLine("<br/>");
@@ -409,7 +406,7 @@ namespace TrackerSQL.test
                     foreach (var file in otherFiles)
                     {
                         html.AppendLine($"<div class='file-item' onclick=\"selectFile('{file.FullName.Replace("\\", "\\\\")}')\">");
-                        html.AppendLine($"📄 {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm})</small>");
+                        html.AppendLine($"?? {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm})</small>");
                         html.AppendLine("</div>");
                     }
                 }
@@ -422,16 +419,45 @@ namespace TrackerSQL.test
             }
         }
 
-        private DataSet RunSelect(string pSQL) => new TrackerDb().ReturnDataSet(pSQL);
+        private static bool TableExists(string tableName)
+        {
+            using (var db = new TrackerSQLDb())
+            {
+                var result = db.ExecuteScalar(
+                    "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @TableName",
+                    new List<DBParameter>
+                    {
+                        new DBParameter { ParamName = "@TableName", DataValue = tableName, DataDbType = DbType.String }
+                    });
+                return result != null;
+            }
+        }
+
+        private DataSet RunSelect(string pSQL)
+        {
+            var ds = new DataSet();
+            using (var db = new TrackerSQLDb())
+            using (var reader = db.ExecuteReader(pSQL))
+            {
+                ds.Load(reader, LoadOption.OverwriteChanges, "Results");
+            }
+            return ds;
+        }
 
         private string RunCommand(string pSQL)
         {
-            var db = new TrackerDb();
-            string err = db.ExecuteNonQuerySQL(pSQL);
-            if (string.IsNullOrEmpty(err) && !string.IsNullOrEmpty(db.ErrorResult))
-                err = db.ErrorResult;
-            db.Close();
-            return err;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    db.ExecuteNonQuery(pSQL);
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
         private class SQLCommand

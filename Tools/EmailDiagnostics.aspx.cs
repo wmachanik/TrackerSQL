@@ -1,4 +1,4 @@
-﻿using MailKit.Security;
+using MailKit.Security;
 using MimeKit;
 using System;
 using System.Collections.Concurrent;
@@ -76,7 +76,7 @@ namespace TrackerSQL.Tools
             lblResult.Text = "";
             upGlobal.Update(); // force the update panel to refresh early
 
-            lblGlobalStatus.Text = "Sending test email... ⏳";
+            lblGlobalStatus.Text = "Sending test email... ?";
 
             var emailSettings = GetEmailSettings();
             var email = new EmailMailKitCls(emailSettings);
@@ -84,7 +84,7 @@ namespace TrackerSQL.Tools
 
             if (!email.SetEmailFromTo(txtFrom.Text, txtTo.Text))
             {
-                lblResult.Text = "⚠️ Invalid email addresses.";
+                lblResult.Text = "?? Invalid email addresses.";
                 return;
             }
 
@@ -95,7 +95,7 @@ namespace TrackerSQL.Tools
 
             lblResult.Text = email.GetFormattedResultMessage(success);
 
-            lblGlobalStatus.Text = "Test email completed. ✅ ";
+            lblGlobalStatus.Text = "Test email completed. ? ";
         }
         void SetOrAdd(KeyValueConfigurationCollection settings, string key, string value)
         {
@@ -122,11 +122,11 @@ namespace TrackerSQL.Tools
                 SetOrAdd(appSettings, "SysEmailFrom", settingsObj.FromAddress);
 
                 config.Save();
-                lblResult.Text = "✅ Settings saved to web.config.";
+                lblResult.Text = "? Settings saved to web.config.";
             }
             catch (Exception ex)
             {
-                lblResult.Text = "❌ Failed to save: " + ex.Message;
+                lblResult.Text = "? Failed to save: " + ex.Message;
             }
         }
         protected void btnDiagnostics_Click(object sender, EventArgs e)
@@ -148,7 +148,7 @@ namespace TrackerSQL.Tools
 
             if (!File.Exists(logPath))
             {
-                litLogOutput.Text = "<div style='color:red;'>❌ Log file not found.</div>";
+                litLogOutput.Text = "<div style='color:red;'>? Log file not found.</div>";
                 return;
             }
 
@@ -230,14 +230,14 @@ namespace TrackerSQL.Tools
                             bool sent = email.SendEmail();
 
                             string resultLine = sent
-                                ? $"<tr><td>{port}</td><td>{option}</td><td>✅ Success</td><td><button onclick=\"applyCombo('{port}', '{option}')\">Apply This</button></td></tr>"
-                                : $"<tr><td>{port}</td><td>{option}</td><td>❌ Failed - {System.Web.HttpUtility.HtmlEncode(email.LastErrorSummary ?? "Unknown error")}</td><td>—</td></tr>";
+                                ? $"<tr><td>{port}</td><td>{option}</td><td>? Success</td><td><button onclick=\"applyCombo('{port}', '{option}')\">Apply This</button></td></tr>"
+                                : $"<tr><td>{port}</td><td>{option}</td><td>? Failed - {System.Web.HttpUtility.HtmlEncode(email.LastErrorSummary ?? "Unknown error")}</td><td>�</td></tr>";
 
                             progress.Results.Add(resultLine);
                         }
                         catch (Exception exCombo)
                         {
-                            progress.Results.Add($"<tr><td colspan='4'>⚠️ Error for port {combo.port}, option {combo.option}: {System.Web.HttpUtility.HtmlEncode(exCombo.Message)}</td></tr>");
+                            progress.Results.Add($"<tr><td colspan='4'>?? Error for port {combo.port}, option {combo.option}: {System.Web.HttpUtility.HtmlEncode(exCombo.Message)}</td></tr>");
                         }
 
                         progress.Completed++;
@@ -246,7 +246,7 @@ namespace TrackerSQL.Tools
                 }
                 catch (Exception exThread)
                 {
-                    string errorHtml = $"<tr><td colspan='4'>🚨 Fatal error: {System.Web.HttpUtility.HtmlEncode(exThread.Message)}</td></tr>";
+                    string errorHtml = $"<tr><td colspan='4'>?? Fatal error: {System.Web.HttpUtility.HtmlEncode(exThread.Message)}</td></tr>";
                     progress.Results.Add(errorHtml);
                     progress.Completed = progress.Total;
                 }
@@ -306,18 +306,18 @@ namespace TrackerSQL.Tools
         //                timeout: 15000
         //            );
 
-        //            string status = sent ? "✅ Success" : $"❌ Failed - {email.LastErrorSummary}";
+        //            string status = sent ? "? Success" : $"? Failed - {email.LastErrorSummary}";
         //            results.Add(Tuple.Create(port, option, status));
         //        }
         //    }
-        //    lblNoResults.Text = results.Count == 0 ? "⚠️ No results to display." : "";
+        //    lblNoResults.Text = results.Count == 0 ? "?? No results to display." : "";
         //    phComboResults.Visible = results.Count > 0;
         //    var summary = string.Join(Environment.NewLine, results.Select(r => $"Port {r.Item1}, Option {r.Item2}: {r.Item3}"));
         //    File.AppendAllText(Server.MapPath("~/App_Data/smtp_combos.log"), $"[{TimeZoneUtils.Now()}]\r\n{summary}\r\n----------------------\r\n");
 
 
         //    BuildComboResultsTable(results);
-        //    lblProgress.Text = $"✅ Completed. {results.Count} combinations tested.";
+        //    lblProgress.Text = $"? Completed. {results.Count} combinations tested.";
         //    lblGlobalStatus.Text = "Testing combos - done...";
         //    ScriptManager.RegisterStartupScript(this, GetType(), "hideSpinner", "document.getElementById('spinner').style.display='none';", true);
 
@@ -368,7 +368,7 @@ namespace TrackerSQL.Tools
             txtPort.Text = parts[0];
             ddlSocketOption.SelectedValue = parts[1];
             chkSSL.Checked = (parts[1] != "None");
-            lblResult.Text = $"✅ Applied Port {parts[0]} + {parts[1]}";
+            lblResult.Text = $"? Applied Port {parts[0]} + {parts[1]}";
         }
 
         protected void btnClearCombosLog_Click(object sender, EventArgs e)
@@ -379,16 +379,16 @@ namespace TrackerSQL.Tools
                 if (File.Exists(path))
                 {
                     File.WriteAllText(path, "");
-                    lblClearLogStatus.Text = "✅ Log file cleared.";
+                    lblClearLogStatus.Text = "? Log file cleared.";
                 }
                 else
                 {
-                    lblClearLogStatus.Text = "⚠️ Log file not found.";
+                    lblClearLogStatus.Text = "?? Log file not found.";
                 }
             }
             catch (Exception ex)
             {
-                lblClearLogStatus.Text = "❌ Error clearing log: " + ex.Message;
+                lblClearLogStatus.Text = "? Error clearing log: " + ex.Message;
             }
         }
     }

@@ -1,371 +1,111 @@
-﻿using System;
-using System.Web.UI;
-using TrackerSQL.Classes;
-using TrackerSQL.Controls;
-using TrackerSQL.Managers;
+using System;
 using System.Configuration;
-using System.Collections.Generic;
-using System.Linq;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
+using TrackerSQL.Managers;
 
 namespace TrackerSQL
 {
     public partial class DisableClient : Page
     {
-        protected System.Web.UI.HtmlControls.HtmlGenericControl confirmationSection;
-        protected System.Web.UI.HtmlControls.HtmlGenericControl successSection;
-        protected Label CompanyNameLabel;
-        protected Label CompanyNameSuccessLabel;
-        protected Button btnConfirmDisable;
-        //protected Literal ltrlContactEmail;
-        //protected Literal ltrlContactEmailSuccess;
-
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack)
-            {
-                LoadContactEmail();
-                LoadCustomerInfo();
-            }
+            SetContactEmail();
+
+            if (IsPostBack)
+                return;
+
+            ShowConfirmation();
+            LoadContact();
         }
 
-        private void LoadContactEmail()
-        {
-            try
-            {
-                string systemEmail = ConfigHelper.GetString("SysFromEmail", "info@quaffee.co.za");                
-                string emailLink = $"<a href='mailto:{systemEmail}'>{systemEmail}</a>";
-                
-                if (ltrlContactEmail != null)
-                    ltrlContactEmail.Text = emailLink;
-                if (ltrlContactEmailSuccess != null)
-                    ltrlContactEmailSuccess.Text = emailLink;
-                    
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Using contact email {systemEmail}");
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error loading contact email: {ex.Message}");
-                string fallbackLink = "<a href='mailto:info@quaffee.co.za'>info@quaffee.co.za</a>";
-                if (ltrlContactEmail != null)
-                    ltrlContactEmail.Text = fallbackLink;
-                if (ltrlContactEmailSuccess != null)
-                    ltrlContactEmailSuccess.Text = fallbackLink;
-            }
-        }
-
-        private void LoadCustomerInfo()
-        {
-            try
-            {
-                string customerIdStr = Request.QueryString[SystemConstants.UrlParameterConstants.CustomerID];
-                string token = Request.QueryString["token"];
-
-                if (string.IsNullOrEmpty(customerIdStr) || string.IsNullOrEmpty(token))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidParams));
-                    return;
-                }
-
-                if (!int.TryParse(customerIdStr, out int customerId))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidParams));
-                    return;
-                }
-
-                if (!DisableClientManager.ValidateToken(customerIdStr, token))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidToken));
-                    return;
-                }
-
-                var companyNames = new CompanyNames();
-                string companyName = companyNames.GetCompanyNameByCompanyID(customerId);
-
-                if (string.IsNullOrEmpty(companyName))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorCustomerNotFound));
-                    return;
-                }
-
-                CompanyNameLabel.Text = companyName;
-                CompanyNameSuccessLabel.Text = companyName;
-
-                confirmationSection.Visible = true;
-                successSection.Visible = false;
-
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Loaded disable page for customer {customerId} ({companyName})");
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error loading customer info: {ex.Message}");
-                ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
-            }
-        }
         protected void btnConfirmDisable_Click(object sender, EventArgs e)
         {
-            try
+            if (!TryGetContactId(out var contactId) || !IsValidToken(contactId))
             {
-                string customerIdStr = Request.QueryString[SystemConstants.UrlParameterConstants.CustomerID];
-                string token = Request.QueryString["token"];
-
-                if (!int.TryParse(customerIdStr, out int customerId))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidParams));
-                    return;
-                }
-
-                if (!DisableClientManager.ValidateToken(customerIdStr, token))
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidToken));
-                    return;
-                }
-
-                string companyName = CompanyNameLabel.Text;
-                var recurringOrdersInfo = CheckRecurringOrders(customerId);
-
-                var customersTbl = new CustomersTbl();
-                string disableReason = $"Disabled by customer request on {TimeZoneUtils.Now():yyyy-MM-dd HH:mm} via email link";
-
-                // Page purpose: disable only prediction/reminder emails — set PredictionDisabled=true
-                bool remindersResult = customersTbl.DisableCustomerReminders(customerId, disableReason);
-
-                if (remindersResult)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Customer {customerId} ({companyName}) - PredictionDisabled set true via email link");
-
-                    // Notify admin so they are aware (recurring orders still need manual action if present)
-                    NotifyAdministrator(customerId, companyName, recurringOrdersInfo);
-
-                    // Send acknowledgement to customer
-                    SendCustomerRemindersDisabledEmail(customerId, companyName);
-
-                    confirmationSection.Visible = false;
-                    successSection.Visible = true;
-                }
-                else
-                {
-                    ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
-                }
+                ShowInvalidRequest("Invalid or expired disable link.");
+                return;
             }
-            catch (Exception ex)
+
+            var contact = new ContactsRepository().GetById(contactId);
+            if (contact == null)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error disabling reminders: {ex.Message}");
-                ShowError(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
+                ShowInvalidRequest("Contact not found.");
+                return;
             }
+
+            bool disableAll = rblDisableChoice.SelectedValue == "disable_all";
+            if (!DisableClientManager.DisableFromEmailLink(contactId, disableAll))
+            {
+                ShowInvalidRequest("Unable to update contact. Please try again or contact us.");
+                return;
+            }
+
+            CompanyNameSuccessLabel.Text = Server.HtmlEncode(contact.CompanyName ?? string.Empty);
+            ShowSuccess();
         }
 
-        private void SendCustomerRemindersDisabledEmail(int customerId, string companyName)
+        private void LoadContact()
         {
-            try
+            if (!TryGetContactId(out var contactId) || !IsValidToken(contactId))
             {
-                var emailManager = new CoffeeCheckupEmailManager();
-                var customersTbl = new CustomersTbl();
-                var customerData = customersTbl.GetCustomerByCustomerID(customerId);
-                if (customerData == null) return;
-
-                string customerEmail = !string.IsNullOrWhiteSpace(customerData.EmailAddress) ? customerData.EmailAddress : customerData.AltEmailAddress;
-                if (string.IsNullOrWhiteSpace(customerEmail)) return;
-
-                string subject = MessageProvider.Get(MessageKeys.DisableClient.RemindersDisabledSubject);
-                string bodyTemplate = MessageProvider.Get(MessageKeys.DisableClient.RemindersDisabledMessage);
-                string systemEmail = ConfigHelper.GetString("SysFromEmail", "info@quaffee.co.za");
-                string body = string.Format(bodyTemplate, companyName, systemEmail);
-
-                bool emailSent = emailManager.SendDirectEmail(customerEmail, subject, body);
-                if (emailSent)
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Reminders-disabled acknowledgement sent to {customerEmail} for customer {customerId}");
-                else
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Failed to send reminders-disabled acknowledgement to {customerEmail} for customer {customerId}");
+                ShowInvalidRequest("Invalid or expired disable link.");
+                return;
             }
-            catch (Exception ex)
+
+            var contact = new ContactsRepository().GetById(contactId);
+            if (contact == null)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error sending reminders-disabled acknowledgement: {ex.Message}");
+                ShowInvalidRequest("Contact not found.");
+                return;
             }
+
+            CompanyNameLabel.Text = Server.HtmlEncode(contact.CompanyName ?? string.Empty);
+            CompanyNameSuccessLabel.Text = CompanyNameLabel.Text;
         }
-        private RecurringOrdersInfo CheckRecurringOrders(int customerId)
+
+        private void SetContactEmail()
         {
-            var recurringInfo = new RecurringOrdersInfo();
-            
-            try
-            {
-                var reoccuringOrderDal = new ReoccuringOrderDAL();
-                
-                // Use GetAll and filter by customer ID
-                var allRecurringOrders = reoccuringOrderDal.GetAll(1, "CustomersTbl.CustomerID"); // 1 = enabled only
-                var customerRecurringOrders = allRecurringOrders.Where(ro => ro.CustomerID == customerId).ToList();
-                
-                recurringInfo.TotalRecurringOrders = customerRecurringOrders?.Count ?? 0;
-                
-                if (recurringInfo.TotalRecurringOrders > 0)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Found {recurringInfo.TotalRecurringOrders} recurring orders for customer {customerId}");
-                    
-                    foreach (var recurringOrder in customerRecurringOrders)
-                    {
-                        try
-                        {
-                            //var itemTypeTbl = new ItemTypeTbl();
-                            string itemDesc = ItemTypeTbl.GetItemTypeDescById(recurringOrder.ItemRequiredID);
-                            recurringInfo.RecurringOrderDetails.Add($"- {itemDesc} (Qty: {recurringOrder.QtyRequired}) - ID: {recurringOrder.ReoccuringOrderID}");
-                            
-                            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Found recurring order {recurringOrder.ReoccuringOrderID} for customer {customerId} - MANUAL DISABLE REQUIRED");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error processing recurring order {recurringOrder.ReoccuringOrderID}: {ex.Message}");
-                        }
-                    }
-                    
-                    // Mark all as needing manual action since we can't disable automatically
-                    recurringInfo.FailedToDisable = recurringInfo.TotalRecurringOrders;
-                }
-                else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: No recurring orders found for customer {customerId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error checking recurring orders for customer {customerId}: {ex.Message}");
-            }
-            
-            return recurringInfo;
+            string email = ConfigurationManager.AppSettings["SysEmailFrom"] ?? "orders@quaffee.co.za";
+            string encodedEmail = Server.HtmlEncode(email);
+            string mailTo = "<a href=\"mailto:" + encodedEmail + "\">" + encodedEmail + "</a>";
+            ltrlContactEmail.Text = mailTo;
+            ltrlContactEmailSuccess.Text = mailTo;
         }
 
-        private void SendCustomerGoodbyeEmail(int customerId, string companyName)
+        private bool TryGetContactId(out int contactId)
         {
-            try
-            {
-                var emailManager = new CoffeeCheckupEmailManager();
-                
-                var customersTbl = new CustomersTbl();
-                var customerData = customersTbl.GetCustomerByCustomerID(customerId);
-                
-                if (customerData == null)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Could not find customer data for goodbye email - Customer {customerId}");
-                    return;
-                }
-                
-                string customerEmail = !string.IsNullOrEmpty(customerData.EmailAddress) 
-                    ? customerData.EmailAddress 
-                    : customerData.AltEmailAddress;
-                
-                if (string.IsNullOrEmpty(customerEmail))
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: No email address found for customer {customerId} - skipping goodbye email");
-                    return;
-                }
-                
-                // Use MessageProvider for all email content
-                string subject = MessageProvider.Get(MessageKeys.DisableClient.GoodbyeSubject);
-                string systemEmail =  ConfigHelper.GetString("SysFromEmail","info@quaffee.co.za");
-                
-                string body = MessageProvider.GetFormattedHtmlEmail(
-                    MessageKeys.DisableClient.GoodbyeHeader,
-                    MessageKeys.DisableClient.GoodbyeMessage,
-                    MessageKeys.DisableClient.GoodbyeWhatThisMeans,
-                    MessageKeys.DisableClient.GoodbyeReenableInstructions,
-                    MessageKeys.DisableClient.GoodbyeStillNeedCoffee,
-                    MessageKeys.DisableClient.GoodbyeThankYou,
-                    MessageKeys.DisableClient.GoodbyeFooter,
-                    companyName,
-                    systemEmail
-                );
-                
-                bool emailSent = emailManager.SendDirectEmail(customerEmail, subject, body);
-                
-                if (emailSent)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Goodbye email sent successfully to {customerEmail} for customer {customerId}");
-                }
-                else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Failed to send goodbye email to {customerEmail} for customer {customerId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error sending goodbye email to customer {customerId}: {ex.Message}");
-            }
+            return int.TryParse(Request.QueryString[SystemConstants.UrlParameterConstants.CustomerID], out contactId);
         }
 
-        private void NotifyAdministrator(int customerId, string companyName, RecurringOrdersInfo recurringInfo)
+        private bool IsValidToken(int contactId)
         {
-            try
-            {
-                var emailManager = new CoffeeCheckupEmailManager();
-                
-                string subject = string.Format(MessageProvider.Get(MessageKeys.DisableClient.AdminSubjectTemplate), companyName);
-                
-                string body = string.Format(MessageProvider.Get(MessageKeys.DisableClient.AdminBodyHeader),
-                    customerId,
-                    companyName,
-                    TimeZoneUtils.Now().ToString("yyyy-MM-dd HH:mm"));
-                
-                if (recurringInfo.TotalRecurringOrders > 0)
-                {
-                    body += string.Format(MessageProvider.Get(MessageKeys.DisableClient.AdminRecurringFound),
-                        recurringInfo.TotalRecurringOrders,
-                        recurringInfo.DisabledRecurringOrders,
-                        recurringInfo.FailedToDisable);
-                    
-                    if (recurringInfo.RecurringOrderDetails.Any())
-                    {
-                        body += "\nRecurring orders found:\n" + string.Join("\n", recurringInfo.RecurringOrderDetails) + "\n";
-                    }
-                    
-                    // Always show manual action message if there are recurring orders
-                    body += "\n⚠️ MANUAL ACTION REQUIRED: Please disable these recurring orders manually in the system.\n" +
-                           "Go to Recurring Orders page and disable all orders for this customer.\n\n";
-                }
-                else
-                {
-                    body += MessageProvider.Get(MessageKeys.DisableClient.AdminRecurringNone);
-                }
-                
-                body += MessageProvider.Get(MessageKeys.DisableClient.AdminFooter);
-
-                bool notificationSent = emailManager.SendAdminNotification(subject, body);
-                
-                if (notificationSent)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Admin notification sent for customer {customerId}");
-                }
-                else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Failed to send admin notification for customer {customerId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Failed to send admin notification: {ex.Message}");
-            }
+            return DisableClientManager.ValidateToken(contactId.ToString(), Request.QueryString["token"]);
         }
 
-        private void ShowError(string errorMessage)
+        private void ShowConfirmation()
         {
-            confirmationSection.Visible = false;
-            successSection.Visible = false;
-
-            var errorDiv = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
-            errorDiv.Attributes["class"] = "content";
-            errorDiv.InnerHtml = $"<h2 style='color: #dc3545;'>{MessageProvider.Get(MessageKeys.DisableClient.ErrorHeader)}</h2>" +
-                               $"<p style='font-size: 16px; margin: 20px 0;'>{errorMessage}</p>" +
-                               $"<p style='font-size: 14px; color: #666;'>{MessageProvider.Get(MessageKeys.DisableClient.HelpMessage)} {ltrlContactEmail?.Text ?? "<a href='mailto:info@quaffee.co.za'>info@quaffee.co.za</a>"}</p>";
-
-            frmDisable.Controls.Add(errorDiv);
-
-            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DisableClient: Error displayed - {errorMessage}");
+            confirmationSection.Style["display"] = "block";
+            successSection.Style["display"] = "none";
         }
-    }
 
-    public class RecurringOrdersInfo
-    {
-        public int TotalRecurringOrders { get; set; } = 0;
-        public int DisabledRecurringOrders { get; set; } = 0;
-        public int FailedToDisable { get; set; } = 0;
-        public List<string> RecurringOrderDetails { get; set; } = new List<string>();
+        private void ShowSuccess()
+        {
+            confirmationSection.Style["display"] = "none";
+            successSection.Style["display"] = "block";
+            btnConfirmDisable.Enabled = false;
+        }
+
+        private void ShowInvalidRequest(string message)
+        {
+            CompanyNameLabel.Text = Server.HtmlEncode(message);
+            CompanyNameSuccessLabel.Text = Server.HtmlEncode(message);
+            btnConfirmDisable.Enabled = false;
+            rblDisableChoice.Enabled = false;
+            ShowConfirmation();
+        }
     }
 }

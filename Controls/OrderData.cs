@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.OrderData
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -14,14 +14,14 @@ namespace TrackerSQL.Controls
 {
     public class OrderData
     {
-        private const string CONST_SELECTDISTINCTORDERS = "SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustomerID, OrdersTbl.OrderDate,  OrdersTbl.RoastDate, OrdersTbl.RequiredByDate,OrdersTbl.ToBeDeliveredBy, PersonsTbl.Person, OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.Notes, OrdersTbl.ItemTypeID, OrdersTbl.QuantityOrdered  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)";
-        private const string CONST_UPDATEORDER = "UPDATE OrdersTbl SET CustomerID = ?, OrderDate = ?, RoastDate = ?, RequiredByDate = ?, ToBeDeliveredBy = ?,  ItemTypeID = ?, QuantityOrdered = ?, Confirmed = ?, Done = ?, Notes = ?  WHERE OrderID = ?";
-        private const string CONST_UPDATEORDERDATES = "UPDATE OrdersTbl SET RoastDate = ? WHERE CustomerID = ? AND OrderDate = ?";
+        private const string CONST_SELECTDISTINCTORDERS = "SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustomerID, OrdersTbl.OrderDate,  OrdersTbl.PrepDate, OrdersTbl.RequiredByDate,OrdersTbl.ToBeDeliveredBy, PersonsTbl.Person, OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.Notes, OrdersTbl.ItemTypeID, OrdersTbl.QuantityOrdered  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)";
+        private const string CONST_UPDATEORDER = "UPDATE OrdersTbl SET CustomerID = ?, OrderDate = ?, PrepDate = ?, RequiredByDate = ?, ToBeDeliveredBy = ?,  ItemTypeID = ?, QuantityOrdered = ?, Confirmed = ?, Done = ?, Notes = ?  WHERE OrderID = ?";
+        private const string CONST_UPDATEORDERDATES = "UPDATE OrdersTbl SET PrepDate = ? WHERE CustomerID = ? AND OrderDate = ?";
         private string _CompanyName;
         private int _OrderID;
         private long _CustomerID;
         private DateTime _OrderDate;
-        private DateTime _RoastDate;
+        private DateTime _PrepDate;
         private DateTime _RequiredByDate;
         private int _ToBeDeliveredBy;
         private int _ItemTypeID;
@@ -35,7 +35,7 @@ namespace TrackerSQL.Controls
         {
             this._CompanyName = string.Empty;
             this._CustomerID = 0;
-            this._OrderDate = this._RoastDate = this._RequiredByDate = DateTime.MinValue;
+            this._OrderDate = this._PrepDate = this._RequiredByDate = DateTime.MinValue;
             this._Person = string.Empty;
             this._Confirmed = this._Done = false;
             this._ItemTypeID = 0;
@@ -67,10 +67,10 @@ namespace TrackerSQL.Controls
             set => this._OrderDate = value;
         }
 
-        public DateTime RoastDate
+        public DateTime PrepDate
         {
-            get => this._RoastDate;
-            set => this._RoastDate = value;
+            get => this._PrepDate;
+            set => this._PrepDate = value;
         }
 
         public DateTime RequiredByDate
@@ -146,7 +146,7 @@ namespace TrackerSQL.Controls
         public List<OrderData> GetDistinctOrders(bool pOrderDone, string pSearchFor, string pSearchValue)
         {
             List<OrderData> distinctOrders = new List<OrderData>();
-            string strSQL = "SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustomerID, OrdersTbl.OrderDate,  OrdersTbl.RoastDate, OrdersTbl.RequiredByDate,OrdersTbl.ToBeDeliveredBy, PersonsTbl.Person, OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.Notes, OrdersTbl.ItemTypeID, OrdersTbl.QuantityOrdered  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)";
+            string strSQL = "SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName, OrdersTbl.CustomerID As CustomerID, OrdersTbl.OrderDate,  OrdersTbl.PrepDate, OrdersTbl.RequiredByDate,OrdersTbl.ToBeDeliveredBy, PersonsTbl.Person, OrdersTbl.Confirmed,  OrdersTbl.Done, OrdersTbl.Notes, OrdersTbl.ItemTypeID, OrdersTbl.QuantityOrdered  FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)";
             if (pSearchFor != "none" && !string.IsNullOrEmpty(pSearchFor))
             {
                 switch (pSearchFor)
@@ -155,7 +155,7 @@ namespace TrackerSQL.Controls
                         strSQL = $"{strSQL} AND CustomersTbl.CompanyName LIKE '%{pSearchValue}%'";
                         break;
                     case "PrepDate":
-                        strSQL = $"{strSQL} AND OrdersTbl.RoastDate= #{pSearchValue}#";
+                        strSQL = $"{strSQL} AND OrdersTbl.PrepDate= #{pSearchValue}#";
                         break;
                 }
             }
@@ -171,7 +171,7 @@ namespace TrackerSQL.Controls
                         CompanyName = dataReader["CompanyName"] == DBNull.Value ? string.Empty : dataReader["CompanyName"].ToString(),
                         CustomerID = dataReader["CustomerID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerID"]),
                         OrderDate = dataReader["OrderDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["OrderDate"]).Date,
-                        RoastDate = dataReader["RoastDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["RoastDate"]).Date,
+                        PrepDate = dataReader["PrepDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["PrepDate"]).Date,
                         RequiredByDate = dataReader["RequiredByDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["RequiredByDate"]).Date,
                         ToBeDeliveredBy = dataReader["ToBeDeliveredBy"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ToBeDeliveredBy"].ToString()),
                         ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"].ToString()),
@@ -199,7 +199,7 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)NewOrderData.CustomerID, DbType.Int64, "@CustomerID");
             trackerDb.AddParams((object)NewOrderData.OrderDate, DbType.Date, "@OrderDate");
-            trackerDb.AddParams((object)NewOrderData.RoastDate, DbType.Date, "@RoastDate");
+            trackerDb.AddParams((object)NewOrderData.PrepDate, DbType.Date, "@PrepDate");
             trackerDb.AddParams((object)NewOrderData.RequiredByDate, DbType.Date, "@RequiredByDate");
             trackerDb.AddParams((object)NewOrderData.ToBeDeliveredBy, DbType.Int32, "@ToBeDeliveredBy");
             trackerDb.AddParams((object)NewOrderData.ItemTypeID, DbType.Int32, "@ItemTypeID");
@@ -208,7 +208,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)NewOrderData.Done, DbType.Boolean, "@Done");
             trackerDb.AddParams(NewOrderData.Notes == null ? (object)string.Empty : (object)NewOrderData.Notes, DbType.String, "@Notes");
             trackerDb.AddWhereParams((object)orig_OrderID, DbType.Int64, "@OrderID");
-            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("UPDATE OrdersTbl SET CustomerID = ?, OrderDate = ?, RoastDate = ?, RequiredByDate = ?, ToBeDeliveredBy = ?,  ItemTypeID = ?, QuantityOrdered = ?, Confirmed = ?, Done = ?, Notes = ?  WHERE OrderID = ?"));
+            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("UPDATE OrdersTbl SET CustomerID = ?, OrderDate = ?, PrepDate = ?, RequiredByDate = ?, ToBeDeliveredBy = ?,  ItemTypeID = ?, QuantityOrdered = ?, Confirmed = ?, Done = ?, Notes = ?  WHERE OrderID = ?"));
             trackerDb.Close();
             return flag;
         }

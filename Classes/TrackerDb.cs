@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.classes.TrackerDb
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -16,15 +16,17 @@ using System.Linq;
 using System.Web;
 using System.Web.Configuration;
 
-//- only form later versions #nullable disable
+// this is an old class used for OleDb code is retained for reference but should not be used for new code - use RepositoryBase and related classes in the Sql folder instead
+
 namespace TrackerSQL.Classes
 {
+    [Obsolete("DO NOT USE TrackerDb - MIGRATION IN PROGRESS")]
     public class TrackerDb : IDisposable
     {
         /*/ Moved to SystemConstants:
-        public const string CONST_CONSTRING = "Tracker08ConnectionString"; → SystemConstants.DatabaseConstants.ConnectionStringName
-        public const int CONST_INVALIDID = -1;                             → SystemConstants.DatabaseConstants.InvalidID
-        public const string CONST_INVALIDIDSTR = "-1";                     → SystemConstants.DatabaseConstants.InvalidIDStr
+        public const string CONST_CONSTRING = "Tracker08ConnectionString"; ? SystemConstants.DatabaseConstants.ConnectionStringName
+        public const int CONST_INVALIDID = -1;                             ? SystemConstants.DatabaseConstants.InvalidID
+        public const string CONST_INVALIDIDSTR = "-1";                     ? SystemConstants.DatabaseConstants.InvalidIDStr
         */
         public const string SQLTABLENAME_LOGTBL = "LogTbl";
         public const string SQLTABLENAME_SECTIONTYPESTBL = "SectionTypesTbl";
@@ -614,7 +616,7 @@ namespace TrackerSQL.Classes
                     }
                 }
 
-                // ✅ This automatically closes connection when reader is closed
+                // ? This automatically closes connection when reader is closed
                 dataReader = this._command.ExecuteReader(); // CommandBehavior.CloseConnection);
             }
             catch (OleDbException ex)

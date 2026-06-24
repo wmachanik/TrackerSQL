@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.CustomersWithDatesAndUsageTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -11,17 +11,18 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class CustomersWithDatesAndUsageTbl
     {
-        private const string CONST_SQL_CUSTOMERSUSAGE_SELECT = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName,  CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.City,  CustomersTbl.StateOrProvince AS Province, CustomersTbl.PostalCode, CustomersTbl.[Country/Region] AS Region, CustomersTbl.PhoneNumber,  CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress, CustomersTbl.AltEmailAddress,  CustomersTbl.ContractNo, CustomersTbl.CustomerTypeID, CustomersTbl.EquipType, CustomersTbl.CoffeePreference, CustomersTbl.PriPrefQty, CustomersTbl.PrefPrepTypeID, CustomersTbl.PrefPackagingID, CustomersTbl.SecondaryPreference, CustomersTbl.SecPrefQty, CustomersTbl.TypicallySecToo,  CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.MachineSN, CustomersTbl.UsesFilter, CustomersTbl.autofulfill, CustomersTbl.enabled, CustomersTbl.PredictionDisabled, CustomersTbl.AlwaysSendChkUp, CustomersTbl.NormallyResponds, CustomersTbl.ReminderCount,  CustomersTbl.LastDateSentReminder, CustomersTbl.Notes, NextRoastDateByCityTbl.CityID, NextRoastDateByCityTbl.DeliveryDate,  NextRoastDateByCityTbl.PreperationDate, NextRoastDateByCityTbl.DeliveryOrder, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount  FROM  (NextRoastDateByCityTbl RIGHT OUTER JOIN CustomersTbl ON NextRoastDateByCityTbl.CityID = CustomersTbl.City), ClientUsageTbl.CustomerID = CustomersTbl.CustomerID  WHERE (CustomersTbl.CustomerID = ?)";
+        private const string CONST_SQL_CUSTOMERSUSAGE_SELECT = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName,  CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.Area,  CustomersTbl.StateOrProvince AS Province, CustomersTbl.PostalCode, CustomersTbl.[Country/Region] AS Region, CustomersTbl.PhoneNumber,  CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress, CustomersTbl.AltEmailAddress,  CustomersTbl.ContractNo, CustomersTbl.CustomerTypeID, CustomersTbl.EquipType, CustomersTbl.CoffeePreference, CustomersTbl.PriPrefQty, CustomersTbl.PrefPrepTypeID, CustomersTbl.PrefPackagingID, CustomersTbl.SecondaryPreference, CustomersTbl.SecPrefQty, CustomersTbl.TypicallySecToo,  CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.MachineSN, CustomersTbl.UsesFilter, CustomersTbl.autofulfill, CustomersTbl.enabled, CustomersTbl.PredictionDisabled, CustomersTbl.AlwaysSendChkUp, CustomersTbl.NormallyResponds, CustomersTbl.ReminderCount,  CustomersTbl.LastDateSentReminder, CustomersTbl.Notes, NextPreperationDateByAreaTbl.AreaID, NextPreperationDateByAreaTbl.DeliveryDate,  NextPreperationDateByAreaTbl.PreperationDate, NextPreperationDateByAreaTbl.DeliveryOrder, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount  FROM  (NextPreperationDateByAreaTbl RIGHT OUTER JOIN CustomersTbl ON NextPreperationDateByAreaTbl.AreaID = CustomersTbl.Area), ClientUsageTbl.CustomerID = CustomersTbl.CustomerID  WHERE (CustomersTbl.CustomerID = ?)";
         private CustomersTbl _Customer;
-        private NextRoastDateByCityTbl _NextRoastDateByCity;
+        private NextPreperationDateByAreaTbl _NextPreperationDateByArea;
         private ClientUsageTbl _ClientUsage;
 
         public CustomersWithDatesAndUsageTbl()
         {
             this._Customer = new CustomersTbl();
-            this._NextRoastDateByCity = new NextRoastDateByCityTbl();
+            this._NextPreperationDateByArea = new NextPreperationDateByAreaTbl();
             this._ClientUsage = new ClientUsageTbl();
         }
 
@@ -31,10 +32,10 @@ namespace TrackerSQL.Controls
             set => this._Customer = value;
         }
 
-        public NextRoastDateByCityTbl NextRoastDateByCity
+        public NextPreperationDateByAreaTbl NextPreperationDateByArea
         {
-            get => this._NextRoastDateByCity;
-            set => this._NextRoastDateByCity = value;
+            get => this._NextPreperationDateByArea;
+            set => this._NextPreperationDateByArea = value;
         }
 
         public ClientUsageTbl ClientUsage
@@ -48,7 +49,7 @@ namespace TrackerSQL.Controls
             CustomersWithDatesAndUsageTbl withDatesAndUsage = (CustomersWithDatesAndUsageTbl)null;
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddWhereParams((object)pCustomerID, DbType.Int64);
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName,  CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.City,  CustomersTbl.StateOrProvince AS Province, CustomersTbl.PostalCode, CustomersTbl.[Country/Region] AS Region, CustomersTbl.PhoneNumber,  CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress, CustomersTbl.AltEmailAddress,  CustomersTbl.ContractNo, CustomersTbl.CustomerTypeID, CustomersTbl.EquipType, CustomersTbl.CoffeePreference, CustomersTbl.PriPrefQty, CustomersTbl.PrefPrepTypeID, CustomersTbl.PrefPackagingID, CustomersTbl.SecondaryPreference, CustomersTbl.SecPrefQty, CustomersTbl.TypicallySecToo,  CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.MachineSN, CustomersTbl.UsesFilter, CustomersTbl.autofulfill, CustomersTbl.enabled, CustomersTbl.PredictionDisabled, CustomersTbl.AlwaysSendChkUp, CustomersTbl.NormallyResponds, CustomersTbl.ReminderCount,  CustomersTbl.LastDateSentReminder, CustomersTbl.Notes, NextRoastDateByCityTbl.CityID, NextRoastDateByCityTbl.DeliveryDate,  NextRoastDateByCityTbl.PreperationDate, NextRoastDateByCityTbl.DeliveryOrder, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount  FROM  (NextRoastDateByCityTbl RIGHT OUTER JOIN CustomersTbl ON NextRoastDateByCityTbl.CityID = CustomersTbl.City), ClientUsageTbl.CustomerID = CustomersTbl.CustomerID  WHERE (CustomersTbl.CustomerID = ?)");
+            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName,  CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.AreaID,  CustomersTbl.StateOrProvince AS Province, CustomersTbl.PostalCode, CustomersTbl.[Country/Region] AS Region, CustomersTbl.PhoneNumber,  CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress, CustomersTbl.AltEmailAddress,  CustomersTbl.ContractNo, CustomersTbl.CustomerTypeID, CustomersTbl.EquipType, CustomersTbl.CoffeePreference, CustomersTbl.PriPrefQty, CustomersTbl.PrefPrepTypeID, CustomersTbl.PrefPackagingID, CustomersTbl.SecondaryPreference, CustomersTbl.SecPrefQty, CustomersTbl.TypicallySecToo,  CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.MachineSN, CustomersTbl.UsesFilter, CustomersTbl.autofulfill, CustomersTbl.enabled, CustomersTbl.PredictionDisabled, CustomersTbl.AlwaysSendChkUp, CustomersTbl.NormallyResponds, CustomersTbl.ReminderCount,  CustomersTbl.LastDateSentReminder, CustomersTbl.Notes, NextPreperationDateByAreaTbl.AreaID, NextPreperationDateByAreaTbl.DeliveryDate,  NextPreperationDateByAreaTbl.PreperationDate, NextPreperationDateByAreaTbl.DeliveryOrder, LastCupCount, NextCoffeeBy, NextCleanOn, NextFilterEst, NextDescaleEst, NextServiceEst, DailyConsumption, FilterAveCount, DescaleAveCount, ServiceAveCount, CleanAveCount  FROM  (NextPreperationDateByAreaTbl RIGHT OUTER JOIN CustomersTbl ON NextPreperationDateByAreaTbl.AreaID = CustomersTbl.Area), ClientUsageTbl.CustomerID = CustomersTbl.CustomerID  WHERE (CustomersTbl.CustomerID = ?)");
             if (dataReader != null)
             {
                 if (dataReader.Read())
@@ -63,7 +64,7 @@ namespace TrackerSQL.Controls
                     withDatesAndUsage.Customer.ContactAltLastName = dataReader["ContactAltLastName"] == DBNull.Value ? string.Empty : dataReader["ContactAltLastName"].ToString();
                     withDatesAndUsage.Customer.Department = dataReader["Department"] == DBNull.Value ? string.Empty : dataReader["Department"].ToString();
                     withDatesAndUsage.Customer.BillingAddress = dataReader["BillingAddress"] == DBNull.Value ? string.Empty : dataReader["BillingAddress"].ToString();
-                    withDatesAndUsage.Customer.City = dataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["City"]);
+                    withDatesAndUsage.Customer.AreaID    = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]);
                     withDatesAndUsage.Customer.Province = dataReader["Province"] == DBNull.Value ? string.Empty : dataReader["Province"].ToString();
                     withDatesAndUsage.Customer.PostalCode = dataReader["PostalCode"] == DBNull.Value ? string.Empty : dataReader["PostalCode"].ToString();
                     withDatesAndUsage.Customer.Region = dataReader["Region"] == DBNull.Value ? string.Empty : dataReader["Region"].ToString();
@@ -94,10 +95,10 @@ namespace TrackerSQL.Controls
                     withDatesAndUsage.Customer.ReminderCount = dataReader["xxx"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["xxx"]);
                     withDatesAndUsage.Customer.LastDateSentReminder = dataReader["LastDateSentReminder"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["LastDateSentReminder"]);
                     withDatesAndUsage.Customer.Notes = dataReader["Notes"] == DBNull.Value ? string.Empty : dataReader["Notes"].ToString();
-                    withDatesAndUsage.NextRoastDateByCity.CityID = dataReader["CityID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CityID"]);
-                    withDatesAndUsage.NextRoastDateByCity.DeliveryDate = dataReader["DeliveryDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["DeliveryDate"]).Date;
-                    withDatesAndUsage.NextRoastDateByCity.PrepDate = dataReader["PreperationDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["PreperationDate"]).Date;
-                    withDatesAndUsage.NextRoastDateByCity.DeliveryOrder = dataReader["DeliveryOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["DeliveryOrder"]);
+                    withDatesAndUsage.NextPreperationDateByArea.AreaID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]);
+                    withDatesAndUsage.NextPreperationDateByArea.DeliveryDate = dataReader["DeliveryDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["DeliveryDate"]).Date;
+                    withDatesAndUsage.NextPreperationDateByArea.PrepDate = dataReader["PreperationDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["PreperationDate"]).Date;
+                    withDatesAndUsage.NextPreperationDateByArea.DeliveryOrder = dataReader["DeliveryOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["DeliveryOrder"]);
                     withDatesAndUsage.ClientUsage.LastCupCount = dataReader["LastCupCount"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["LastCupCount"]);
                     withDatesAndUsage.ClientUsage.NextCoffeeBy = dataReader["NextCoffeeBy"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["NextCoffeeBy"]).Date;
                     withDatesAndUsage.ClientUsage.NextCleanOn = dataReader["NextCleanOn"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["NextCleanOn"]).Date;

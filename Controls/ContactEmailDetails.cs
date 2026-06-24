@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ContactEmailDetails
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -11,6 +11,7 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class ContactEmailDetails
     {
         private const string CONST_SQLGETCONTACTEMAILDETAILS = "SELECT ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, EmailAddress, AltEmailAddress, CustomerID  FROM CustomersTbl WHERE (CustomerID = ?)";
@@ -84,14 +85,6 @@ namespace TrackerSQL.Controls
             }
             trackerDb.Close();
             return contactsEmailDetails;
-        }
-
-        public ContactEmailDetails fuckyou()
-        {
-            return new ContactEmailDetails()
-            {
-                FirstName = "fuck you"
-            };
         }
     }
 }

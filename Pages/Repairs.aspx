@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Repair List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Repairs.aspx.cs" Inherits="TrackerSQL.Pages.Repairs" %>
+<%@ Page Title="Repair List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Repairs.aspx.cs" Inherits="TrackerSQL.Pages.Repairs" %>
 
 <asp:Content ID="cntRepairsHdr" ContentPlaceHolderID="HeadContent" runat="server">
 
@@ -129,7 +129,7 @@
                             </EditItemTemplate>
                             <ItemTemplate>
                                 <asp:HyperLink ID="CustomerHyperLink" runat="server" Text='<%# GetCompanyName((long)Eval("CustomerID")) %>'
-                                    NavigateUrl='<%# Eval("CustomerID", "~/Pages/CustomerDetails.aspx?ID={0}") %>' />
+                                    NavigateUrl='<%# Eval("CustomerID", "~/Pages/ContactDetails.aspx?ID={0}") %>' />
                             </ItemTemplate>
                         </asp:TemplateField>
                         <asp:BoundField DataField="DateLogged" HeaderText="Logged" HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3"
@@ -164,9 +164,9 @@
                 </asp:GridView>
                 <asp:ObjectDataSource ID="odsRepairs" runat="server"
                     SortParameterName="SortBy" SelectMethod="GetRepairsByStatusAndDateRange"
-                    TypeName="TrackerSQL.Controls.RepairsTbl"
+                    TypeName="TrackerSQL.Managers.RepairManager"
                     OldValuesParameterFormatString="original_{0}"
-                    DataObjectTypeName="TrackerSQL.Controls.RepairsTbl"
+                    DataObjectTypeName="TrackerSQL.Models.RepairFormData"
                     DeleteMethod="DeleteRepair" InsertMethod="InsertRepair"
                     UpdateMethod="UpdateRepair">
                     <DeleteParameters>
@@ -185,7 +185,7 @@
                     </SelectParameters>
                 </asp:ObjectDataSource>
                 <asp:ObjectDataSource ID="odsRepairsStatuses" runat="server"
-                    SelectMethod="GetAll" TypeName="TrackerSQL.Controls.RepairStatusesTbl"
+                    SelectMethod="GetRepairStatuses" TypeName="TrackerSQL.Managers.RepairLookupDataSource"
                     OldValuesParameterFormatString="original_{0}">
                     <SelectParameters>
                         <asp:Parameter DefaultValue="RepairStatusID" Name="SortBy" Type="String" />

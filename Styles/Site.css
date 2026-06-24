@@ -1,4 +1,5 @@
 ﻿/* DEFAULTS
+    Rev: 20260521-1
 ----------------------------------------------------------*/
 :root {
     --primary-brown: #302a20;
@@ -1424,19 +1425,36 @@ button,
         opacity: 0.6;
     }
 
+/* Icon + label inside green buttons (e.g. Order Detail Undo) */
+.btn-undo img {
+    height: 16px;
+    width: 16px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border: none;
+    background: transparent;
+    pointer-events: none;
+}
+
+.btn-undo span {
+    vertical-align: middle;
+    color: #fff;
+}
+
 /* ============================================ */
 /* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
 /* ============================================ */
 
 /* Exclude Ajax ComboBox buttons from global styling */
-.ajax__combobox_buttoncontainer button,
+/*.ajax__combobox_buttoncontainer button,
 .ajax__combobox_buttoncontainer input[type="button"],
+*/
 *[id*="ComboBox"] button,
 *[id*="ComboBox"] input[type="button"],
-*[class*="combobox"] button,
-*[class*="combobox"] input[type="button"],
 .ajax__combobox_button,
-.ajax__combobox_dropdownbutton {
+.ajax__combobox_dropdownbutton,
+*[class*="combobox"] button,
+*[class*="combobox"] input[type="button"] {
     /*background: transparent !important;*/
     border: #595939 !important;
     padding: initial !important;
@@ -2801,7 +2819,7 @@ table.InputFrm {
         }
 
     /* FIXED: Override the global combo box button styling for TblFlex ONLY */
-    .TblFlex .ajax__combobox_buttoncontainer button,
+    /*.TblFlex .ajax__combobox_buttoncontainer button,
     .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
     .TblFlex .ajax__combobox_button,
     .TblFlex .ajax__combobox_dropdownbutton {
@@ -2813,9 +2831,9 @@ table.InputFrm {
         font-family: inherit !important;
         color: #333 !important;
         display: inline-block !important;
-        box-sizing: border-box !important;
+        box-sizing: border-box !important;*/
         /*border-radius: 0 4px 4px 0 !important;*/
-        text-decoration: none !important;
+        /*text-decoration: none !important;
         cursor: pointer !important;
         transition: none !important;
         opacity: 1 !important;
@@ -2830,7 +2848,7 @@ table.InputFrm {
             background: #e8e8e8 !important;
             border: 1px solid #999 !important;
             color: #333 !important;
-        }
+        }*/
 
     .TblFlex input[type="submit"]:hover,
     .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover,
@@ -4042,4 +4060,98 @@ td.wordwrap {
 
     .status-message strong {
         font-weight: 600;
+    }
+/* ========================= */
+/*  CALENDAR FIX             */
+/* ========================= */
+/* Wrapper */
+.calendar-popup {
+    z-index: 10000;
+    background: #fff;
+    border: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+    /* Container */
+    .calendar-popup .ajax__calendar_container {
+        background-color: #fff;
+        border: none;
+    }
+
+    /* Header */
+    .calendar-popup .ajax__calendar_header {
+        background-color: #f5f5f5;
+        text-align: center;
+        font-weight: bold;
+        padding: 5px;
+        position: relative;
+    }
+
+    /* Title (month/year) */
+    .calendar-popup .ajax__calendar_title {
+        cursor: pointer;
+    }
+
+    /* Navigation arrows (no image dependency) */
+    .calendar-popup .ajax__calendar_prev,
+    .calendar-popup .ajax__calendar_next {
+        position: absolute;
+        top: 5px;
+        width: 20px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .calendar-popup .ajax__calendar_prev {
+        left: 5px;
+    }
+
+    .calendar-popup .ajax__calendar_next {
+        right: 5px;
+    }
+
+    /* Use characters instead of images */
+    .calendar-popup .ajax__calendar_prev:after {
+        content: "<";
+    }
+
+    .calendar-popup .ajax__calendar_next:after {
+        content: ">";
+    }
+
+    /* Days grid */
+    .calendar-popup .ajax__calendar_body table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .calendar-popup td {
+        text-align: center;
+        padding: 4px;
+        cursor: pointer;
+    }
+
+        /* Hover */
+        .calendar-popup td:hover {
+            background-color: #e6f2ff;
+        }
+
+    /* Selected date */
+    .calendar-popup .ajax__calendar_active {
+        background-color: #0078d7;
+        color: #fff;
+    }
+
+    /* Today */
+    .calendar-popup .ajax__calendar_today {
+        border: 1px solid #0078d7;
+    }
+
+    /* Month/year view background fix */
+    .calendar-popup .ajax__calendar_months,
+    .calendar-popup .ajax__calendar_years {
+        background-color: #fff;
     }

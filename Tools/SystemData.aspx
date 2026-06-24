@@ -5,65 +5,135 @@
 
 <asp:Content ID="cntSystemDataBdy" ContentPlaceHolderID="MainContent" runat="server">
     <h1>System Data</h1>
-    Test
-    <asp:ObjectDataSource ID="odsSystemData" runat="server"
-        TypeName="TrackerSQL.Controls.SysDataTbl"
-        SelectMethod="GetAll"
-        UpdateMethod="Update"
-        DataObjectTypeName="TrackerSQL.Controls.SysDataTbl"></asp:ObjectDataSource>
+    
+    <asp:ScriptManager ID="smSystemData" runat="server" EnablePartialRendering="true" />
+    
+    <asp:UpdateProgress ID="updtPrgSystemData" runat="server" AssociatedUpdatePanelID="upnlSystemData">
+        <ProgressTemplate>
+            <div style="text-align: left; padding: 10px;">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;please wait...
+            </div>
+        </ProgressTemplate>
+    </asp:UpdateProgress>
 
-    <asp:ObjectDataSource ID="odsItemTypes" runat="server"
-        TypeName="TrackerSQL.Controls.ItemTypeTbl"
-        SelectMethod="GetAll"></asp:ObjectDataSource>
-    <div class="responsive-layout-container">
-        <asp:DetailsView ID="dvSystemData" runat="server"
-            AutoGenerateRows="False"
-            DataSourceID="odsSystemData"
-            CssClass="TblFlex"
-            OnItemUpdated="dvSystemData_ItemUpdated"
-            OnDataBound="dvSystemData_DataBound">
-            <Fields>
-                <asp:BoundField DataField="ID" HeaderText="ID" ReadOnly="true" />
+    <asp:ObjectDataSource ID="odsSysData" runat="server"
+        TypeName="TrackerSQL.Tools.SystemData"
+        SelectMethod="GetSystemDataForBinding"
+        UpdateMethod="UpdateSystemData"
+        DataObjectTypeName="TrackerSQL.Models.SysData">
+    </asp:ObjectDataSource>
 
-                <asp:CheckBoxField DataField="DoReoccuringOrders"
-                    HeaderText="Do Reoccuring Orders"
-                    SortExpression="DoReoccuringOrders" />
+    <asp:ObjectDataSource ID="odsItemServiceTypes" runat="server"
+        TypeName="TrackerSQL.Repositories.ItemServiceTypesRepository"
+        SelectMethod="GetAll">
+    </asp:ObjectDataSource>
+    
+    <asp:UpdatePanel ID="upnlSystemData" runat="server" ChildrenAsTriggers="true" UpdateMode="Always">
+        <ContentTemplate>
+            <div class="responsive-layout-container">
+                <asp:DetailsView ID="dvSystemData" runat="server"
+                    AutoGenerateRows="False"
+                    CssClass="TblFlex table-auto-width"
+                    DataSourceID="odsSysData"
+                    OnItemUpdated="dvSystemData_ItemUpdated"
+                    OnDataBound="dvSystemData_DataBound"
+                    OnModeChanging="dvSystemData_ModeChanging"
+                    DefaultMode="ReadOnly">
+                    <Fields>
+                        <asp:BoundField DataField="ID" HeaderText="ID" ReadOnly="true" />
 
-                <asp:BoundField DataField="LastReoccurringDate"
-                    HeaderText="Last Reoccurring Date"
-                    SortExpression="LastReoccurringDate"
-                    DataFormatString="{0:d}"
-                    ApplyFormatInEditMode="true" />
+                        <asp:CheckBoxField DataField="DoRecurringOrders"
+                            HeaderText="Do Recurring Orders"
+                            SortExpression="DoRecurringOrders" />
 
-                <asp:BoundField DataField="DateLastPrepDateCalcd"
-                    HeaderText="Date Last Prep Date Calculated"
-                    SortExpression="DateLastPrepDateCalcd"
-                    DataFormatString="{0:d}"
-                    ApplyFormatInEditMode="true" />
+                        <asp:TemplateField HeaderText="Last Reoccurring Date" SortExpression="LastRecurringDate">
+                            <ItemTemplate>
+                                <%# Eval("LastRecurringDate", "{0:d}") ?? "(not set)" %>
+                            </ItemTemplate>
+                            <EditItemTemplate>
+                                <asp:TextBox ID="txtLastRecurringDate" runat="server" 
+                                    Text='<%# Bind("LastRecurringDate", "{0:MM/dd/yyyy}") %>'
+                                    Width="120px" />
 
-                <asp:BoundField DataField="MinReminderDate"
-                    HeaderText="Min Reminder Date"
-                    SortExpression="MinReminderDate"
-                    DataFormatString="{0:d}"
-                    ApplyFormatInEditMode="true" />
+                                <asp:ImageButton ID="imgCalendarRecurringDate" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
+                                    AlternateText="Select date" Style="vertical-align: middle;" />
 
-                <asp:BoundField DataField="GroupItemTypeID"
-                    HeaderText="Group Item Type #"
-                    SortExpression="GroupItemTypeID" />
+                                <ajaxToolkit:calendarextender ID="calLastRecurringDate" runat="server"
+                                    TargetControlID="txtLastRecurringDate" PopupButtonID="imgCalendarRecurringDate"
+                                    Format="MM/dd/yyyy" CssClass="calendar-popup" />
+                            </EditItemTemplate>
+                        </asp:TemplateField>
 
-                <asp:BoundField DataField="InternalCustomerIds"
-                    HeaderText="Internal Customer IDs"
-                    SortExpression="InternalCustomerIds" />
+                        <asp:TemplateField HeaderText="Date Last Prep Date Calculated" SortExpression="DateLastPrepDateCalcd">
+                            <ItemTemplate>
+                                <%# Eval("DateLastPrepDateCalcd", "{0:d}") ?? "(not set)" %>
+                            </ItemTemplate>
+                            <EditItemTemplate>
+                                <asp:TextBox ID="txtDateLastPrepDateCalcd" runat="server" 
+                                    Text='<%# Bind("DateLastPrepDateCalcd", "{0:MM/dd/yyyy}") %>'
+                                    Width="120px" />
 
-                <asp:CommandField ShowEditButton="True" ButtonType="Image"
-                    EditImageUrl="~/images/imgButtons/EditItem.gif"
-                    UpdateImageUrl="~/images/imgButtons/UpdateItem.gif"
-                    CancelImageUrl="~/images/imgButtons/CancelItem.gif"
-                    ItemStyle-HorizontalAlign="Center"
-                    ItemStyle-CssClass="command-field-padding" />
-            </Fields>
-        </asp:DetailsView>
-    </div>
+                                <asp:ImageButton ID="imgCalendarPrepDate" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
+                                    AlternateText="Select date" Style="vertical-align: middle;" />
 
-    <asp:Label ID="lblMessage" runat="server" ForeColor="Green" Visible="false"></asp:Label>
+                                <ajaxtoolkit:calendarextender id="calDateLastPrepDateCalcd" runat="server"
+                                    targetcontrolid="txtDateLastPrepDateCalcd" popupbuttonid="imgCalendarPrepDate"
+                                    format="MM/dd/yyyy" cssclass="calendar-popup" />
+                            </EditItemTemplate>
+                        </asp:TemplateField>
+
+                        <asp:TemplateField HeaderText="Min Reminder Date" SortExpression="MinReminderDate">
+                            <ItemTemplate>
+                                <%# Eval("MinReminderDate", "{0:d}") ?? "(not set)" %>
+                            </ItemTemplate>
+                            <EditItemTemplate>
+                                <asp:TextBox ID="txtMinReminderDate" runat="server" 
+                                    Text='<%# Bind("MinReminderDate", "{0:MM/dd/yyyy}") %>'
+                                    Width="120px" />
+
+                                <asp:ImageButton ID="imgMinReminderDate" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
+                                    AlternateText="Select date" Style="vertical-align: middle;" />
+
+                                <ajaxtoolkit:calendarextender id="calMinReminderDate" runat="server"
+                                    targetcontrolid="txtMinReminderDate" popupbuttonid="imgMinReminderDate"
+                                    format="MM/dd/yyyy"
+                                    cssclass="calendar-popup" />
+                            </EditItemTemplate>
+                        </asp:TemplateField>
+
+                        <asp:TemplateField HeaderText="Group Service Type (used for group items)" SortExpression="GroupItemServiceTypeID">
+                            <ItemTemplate>
+                                <%# GetItemServiceTypeName((int?)Eval("GroupItemServiceTypeID")) %>
+                            </ItemTemplate>
+                            <EditItemTemplate>
+                                <asp:DropDownList ID="ddlGroupItemServiceTypeID" runat="server"
+                                    DataSourceID="odsItemServiceTypes"
+                                    DataTextField="ServiceTypeName"
+                                    DataValueField="ItemServiceTypeID"
+                                    SelectedValue='<%# Bind("GroupItemServiceTypeID") %>'
+                                    AppendDataBoundItems="true">
+                                    <asp:ListItem Value="" Text="(none)" />
+                                </asp:DropDownList>
+                            </EditItemTemplate>
+                        </asp:TemplateField>
+
+                        <asp:BoundField DataField="InternalContactIDs"
+                            HeaderText="Internal Contact IDs"
+                            SortExpression="InternalContactIDs"
+                            NullDisplayText="(none)" />
+
+                        <asp:CommandField ShowEditButton="True" ButtonType="Image"
+                            EditImageUrl="~/images/imgButtons/EditItem.gif"
+                            UpdateImageUrl="~/images/imgButtons/UpdateItem.gif"
+                            CancelImageUrl="~/images/imgButtons/CancelItem.gif"
+                            ItemStyle-HorizontalAlign="Center"
+                            ItemStyle-CssClass="command-field-padding" />
+                    </Fields>
+                </asp:DetailsView>
+            </div>
+
+            <asp:Label ID="lblMessage" runat="server" ForeColor="Green" Visible="false"></asp:Label>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 </asp:Content>

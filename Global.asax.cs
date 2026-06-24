@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Web;
 using System.Web.UI;
@@ -39,6 +39,7 @@ namespace TrackerSQL
 
                 // Log the error with better error handling
                 LogError(lastError);
+                ApplicationErrorNotifier.Notify(lastError, "Application_Error");
 
                 // Get clean error message
                 Exception root = lastError.InnerException ?? lastError;
@@ -111,7 +112,7 @@ namespace TrackerSQL
                 try
                 {
                     string tempPath = Path.GetTempPath();
-                    string logPath = Path.Combine(tempPath, "TrackerDotNet_ErrorLog.txt");
+                    string logPath = Path.Combine(tempPath, "TrackerSQL_ErrorLog.txt");
                     File.AppendAllText(logPath, logEntry);
                     return; // Success
                 }

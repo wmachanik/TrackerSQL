@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.Pages.PreperationSummary
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -7,12 +7,11 @@
 using AjaxControlToolkit;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL.Pages
 {
     public partial class PreperationSummary : Page
@@ -20,7 +19,7 @@ namespace TrackerSQL.Pages
         private const string CONST_GROUPTTOTAL = "GroupTotal";
         private const string CONST_LINENO = "LineNo";
         private const string CONST_WEEKDESC = "WeekDesc";
-        private const int CONST_NUMWEEKS = 9;
+
         protected ScriptManager scrmOrderDetail;
         protected UpdateProgress udtpPrepSummary;
         protected UpdatePanel udtpnlPrepSummary;
@@ -28,35 +27,27 @@ namespace TrackerSQL.Pages
         protected CalendarExtender tbxDateFrom_CalendarExtender;
         protected TextBox tbxDateTo;
         protected CalendarExtender tbxDateTo_CalendarExtender;
-        protected DropDownList ddlFilterByRoastDate;
+        protected DropDownList ddlFilterByPrepDate;
         protected Button GoBtn;
         protected Button ResetBtn;
         protected Button BackBtn;
         protected Button ForwardBtn;
         protected GridView gvPreperationSummary;
         protected Literal ltrlDates;
-        protected void Page_PreInit(object sender, EventArgs e)
-        {
-            //bool flag = new CheckBrowser().fBrowserIsMobile();
-            //this.Session["RunningOnMoble"] = (object)flag;
-            //if (flag)
-            //    this.MasterPageFile = "~/MobileSite.master";
-            //else
-            //    this.MasterPageFile = "~/Site.master";
-        }
+
         protected List<DateTime> ListOfDatesOnDoW(DayOfWeek pDoW)
         {
             List<DateTime> dateTimeList = new List<DateTime>();
             DateTime date = TimeZoneUtils.Now().AddDays((double)(pDoW - TimeZoneUtils.Now().DayOfWeek)).Date;
             for (int index = 0; index < 12; ++index)
-                dateTimeList.Add(date.AddDays((double)(7 * index - 63 /*0x3F*/)));
+                dateTimeList.Add(date.AddDays((double)(7 * index - 63)));
             return dateTimeList;
         }
 
         protected void ZeroViewStateVals()
         {
-            this.ViewState["GroupTotal"] = (object)0.0;
-            this.ViewState["LineNo"] = (object)1;
+            this.ViewState[CONST_GROUPTTOTAL] = 0.0;
+            this.ViewState[CONST_LINENO] = 1;
         }
 
         protected DateTime GetFirstDoW(DateTime pDate)
@@ -91,71 +82,81 @@ namespace TrackerSQL.Pages
 
         protected void GoBtn_Click(object sender, EventArgs e)
         {
-            string str = "SELECT ItemTypeTbl.ItemDesc, ROUND(SUM(OrdersTbl.QuantityOrdered),2) AS Quantity FROM (OrdersTbl INNER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID)";
-            bool flag = this.ddlFilterByRoastDate.SelectedValue.Equals("RoastDate");
-            string strSQL = (!flag ? str + "  WHERE (OrdersTbl.RequiredByDate >= ?) AND (OrdersTbl.RequiredByDate <= ?) " : str + " WHERE (OrdersTbl.RoastDate >= ?) AND (OrdersTbl.RoastDate <= ?) ") + " AND (ItemTypeTbl.ServiceTypeID = 2) GROUP BY ItemTypeTbl.ItemDesc";
-            TrackerDb trackerDb = new TrackerDb();
-            DateTime dateTime = Convert.ToDateTime(this.tbxDateFrom.Text);
-            trackerDb.AddWhereParams((object)dateTime, DbType.Date, "@RoastDateFrom");
-            trackerDb.AddWhereParams((object)Convert.ToDateTime(this.tbxDateTo.Text), DbType.Date, "@RoastDateTo");
-            double a = (double)(dateTime.DayOfYear / 7);
-            this.ViewState["WeekDesc"] = (object)$"Y{dateTime.Year.ToString()} Wk {Convert.ToString(Math.Ceiling(a) + 1.0)}";
-            this.ltrlDates.Text = $"{(flag ? (object)"Roast Date" : (object)"Prep Date")} - From: {this.tbxDateFrom.Text} to {this.tbxDateTo.Text}";
-            this.ZeroViewStateVals();
-            this.gvPreperationSummary.DataSource = (object)trackerDb.ReturnDataSet(strSQL);
-            this.gvPreperationSummary.DataBind();
+            try
+            {
+                DateTime dateFrom = Convert.ToDateTime(this.tbxDateFrom.Text);
+                DateTime dateTo = Convert.ToDateTime(this.tbxDateTo.Text);
+                bool usePrepDate = this.ddlFilterByPrepDate.SelectedValue.Equals("PrepDate");
+
+                var repository = new PreperationSummaryRepository();
+                var summaryItems = repository.GetPreperationSummary(dateFrom, dateTo, usePrepDate);
+
+                double weekNumber = (double)(dateFrom.DayOfYear / 7);
+                this.ViewState[CONST_WEEKDESC] = $"Y{dateFrom.Year} Wk {Convert.ToString(Math.Ceiling(weekNumber) + 1.0)}";
+                this.ltrlDates.Text = $"{(usePrepDate ? "Prep Date" : "Delivery/Required By Date")} - From: {this.tbxDateFrom.Text} to {this.tbxDateTo.Text}";
+
+                this.ZeroViewStateVals();
+                this.gvPreperationSummary.DataSource = summaryItems;
+                this.gvPreperationSummary.DataBind();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "PreperationSummary GoBtn_Click error: " + ex.Message);
+                this.ltrlDates.Text = "<span style='color:red;'>Error loading data: " + Server.HtmlEncode(ex.Message) + "</span>";
+            }
         }
 
         protected void gvPreperationSummary_RowDataBound(object sender, GridViewRowEventArgs e)
         {
             if (e.Row.RowType == DataControlRowType.Header)
-                ((Label)e.Row.FindControl("lblDescHdr")).Text = this.ViewState["WeekDesc"].ToString() + ":Ln1";
-            if (e.Row.RowType == DataControlRowType.DataRow)
             {
-                Label control1 = (Label)e.Row.FindControl("lblItemDesc");
-                Label control2 = (Label)e.Row.FindControl("lblQty");
-                Label control3 = (Label)e.Row.FindControl("lblDescItem");
-                double num1 = Convert.ToDouble(control2.Text);
-                this.ViewState["GroupTotal"] = (object)((this.ViewState["GroupTotal"] == null ? 0.0 : (double)this.ViewState["GroupTotal"]) + num1);
-                int num2 = (int)this.ViewState["LineNo"];
-                control3.Text = $"{this.ViewState["WeekDesc"].ToString()}-Ln:{num2}>{num1}kgs of {control1.Text}";
-                this.ViewState["LineNo"] = (object)(num2 + 1);
+                var headerLabel = e.Row.FindControl("lblDescHdr") as Label;
+                if (headerLabel != null)
+                    headerLabel.Text = this.ViewState[CONST_WEEKDESC]?.ToString() + ":Ln1";
             }
-            else
+            else if (e.Row.RowType == DataControlRowType.DataRow)
             {
-                if (e.Row.RowType != DataControlRowType.Footer)
-                    return;
-                double num = this.ViewState["GroupTotal"] == null ? 0.0 : (double)this.ViewState["GroupTotal"];
-                ((Label)e.Row.FindControl("lblTotalQty")).Text = num.ToString();
+                var lblItemDesc = e.Row.FindControl("lblItemDesc") as Label;
+                var lblQty = e.Row.FindControl("lblQty") as Label;
+                var lblDescItem = e.Row.FindControl("lblDescItem") as Label;
+
+                if (lblItemDesc != null && lblQty != null && lblDescItem != null)
+                {
+                    double quantity = Convert.ToDouble(lblQty.Text);
+                    this.ViewState[CONST_GROUPTTOTAL] = (double)this.ViewState[CONST_GROUPTTOTAL] + quantity;
+
+                    int lineNo = (int)this.ViewState[CONST_LINENO];
+                    lblDescItem.Text = $"{this.ViewState[CONST_WEEKDESC]}-Ln:{lineNo}>{quantity}kgs of {lblItemDesc.Text}";
+                    this.ViewState[CONST_LINENO] = lineNo + 1;
+                }
             }
-        }
-
-        protected void ddlDateFrom_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            this.ZeroViewStateVals();
-        }
-
-        protected void ddlDateTo_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            this.ZeroViewStateVals();
+            else if (e.Row.RowType == DataControlRowType.Footer)
+            {
+                var lblTotalQty = e.Row.FindControl("lblTotalQty") as Label;
+                if (lblTotalQty != null)
+                {
+                    double total = this.ViewState[CONST_GROUPTTOTAL] == null ? 0.0 : (double)this.ViewState[CONST_GROUPTTOTAL];
+                    lblTotalQty.Text = total.ToString();
+                }
+            }
         }
 
         protected void BackBtn_Click(object sender, EventArgs e)
         {
             this.ZeroViewStateVals();
-            DateTime dateTime1 = Convert.ToDateTime(this.tbxDateFrom.Text).AddDays(-7.0);
-            DateTime dateTime2 = Convert.ToDateTime(this.tbxDateTo.Text).AddDays(-7.0);
-            this.tbxDateFrom.Text = $"{dateTime1:d}";
-            this.tbxDateTo.Text = $"{dateTime2:d}";
+            DateTime dateFrom = Convert.ToDateTime(this.tbxDateFrom.Text).AddDays(-7.0);
+            DateTime dateTo = Convert.ToDateTime(this.tbxDateTo.Text).AddDays(-7.0);
+            this.tbxDateFrom.Text = $"{dateFrom:d}";
+            this.tbxDateTo.Text = $"{dateTo:d}";
         }
 
         protected void ForwardBtn_Click(object sender, EventArgs e)
         {
             this.ZeroViewStateVals();
-            DateTime dateTime1 = Convert.ToDateTime(this.tbxDateFrom.Text).AddDays(7.0);
-            DateTime dateTime2 = Convert.ToDateTime(this.tbxDateTo.Text).AddDays(7.0);
-            this.tbxDateFrom.Text = $"{dateTime1:d}";
-            this.tbxDateTo.Text = $"{dateTime2:d}";
+            DateTime dateFrom = Convert.ToDateTime(this.tbxDateFrom.Text).AddDays(7.0);
+            DateTime dateTo = Convert.ToDateTime(this.tbxDateTo.Text).AddDays(7.0);
+            this.tbxDateFrom.Text = $"{dateFrom:d}";
+            this.tbxDateTo.Text = $"{dateTo:d}";
         }
 
         protected void ResetBtn_Click(object sender, EventArgs e) => this.ResetDates();

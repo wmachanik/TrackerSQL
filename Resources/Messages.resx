@@ -255,7 +255,7 @@
   <data name="CoffeeCheckup.TableNextDispatchDate" xml:space="preserve">
     <value>Next estimate dispatch date</value>
   </data>
-  <data name="CoffeeCheckup.TableNextPrepDate" xml:space="preserve">
+  <data name="CoffeeCheckup.TableNextPreperationDate" xml:space="preserve">
     <value>Next estimate prep date</value>
   </data>
   <data name="CoffeeCheckup.TableType" xml:space="preserve">
@@ -312,14 +312,14 @@
   <data name="DeliveryCalculation.ErrorCalculatingOccurrence" xml:space="preserve">
     <value>Error calculating monthly occurrence for day {0}: {1}</value>
   </data>
-  <data name="DeliveryCalculation.ErrorCalculatingRoastDate" xml:space="preserve">
+  <data name="DeliveryCalculation.ErrorCalculatingPrepDate" xml:space="preserve">
     <value>Error calculating roast date from delivery {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorCalculatingWeekly" xml:space="preserve">
     <value>Error calculating weekly delivery for customer {0}: {1}</value>
   </data>
-  <data name="DeliveryCalculation.ErrorFindingCityDate" xml:space="preserve">
-    <value>Error finding city delivery date for customer {0}: {1}</value>
+  <data name="DeliveryCalculation.ErrorFindingAreaDate" xml:space="preserve">
+    <value>Error finding Area delivery date for customer {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorFindingClosestDate" xml:space="preserve">
     <value>Error finding closest delivery date: {0}</value>
@@ -330,23 +330,23 @@
   <data name="DeliveryCalculation.FoundNextDeliveryCycle" xml:space="preserve">
     <value>Found next delivery cycle {0} after {1} days</value>
   </data>
-  <data name="DeliveryCalculation.InvalidRoastDate" xml:space="preserve">
+  <data name="DeliveryCalculation.InvalidPrepDate" xml:space="preserve">
     <value>Invalid roast date for customer {0}, using target date</value>
   </data>
   <data name="DeliveryCalculation.NextOccurrenceCalculated" xml:space="preserve">
     <value>Next monthly occurrence for day {0}: {1}</value>
   </data>
-  <data name="DeliveryCalculation.OptimalCityDateFound" xml:space="preserve">
-    <value>City roast date {0}, optimal delivery {1}</value>
+  <data name="DeliveryCalculation.OptimalAreaDateFound" xml:space="preserve">
+    <value>Area roast date {0}, optimal delivery {1}</value>
   </data>
   <data name="DeliveryCalculation.OptimalDateCalculated" xml:space="preserve">
     <value>Target date {0}, optimal delivery {1}</value>
   </data>
-  <data name="DeliveryCalculation.RoastDateCalculated" xml:space="preserve">
+  <data name="DeliveryCalculation.PrepDateCalculated" xml:space="preserve">
     <value>Delivery {0}, calculated roast date {1}</value>
   </data>
-  <data name="DeliveryCalculation.UsingCityDeliveryDate" xml:space="preserve">
-    <value>Using city delivery date {0} ({1} days from target)</value>
+  <data name="DeliveryCalculation.UsingAreaDeliveryDate" xml:space="preserve">
+    <value>Using Area delivery date {0} ({1} days from target)</value>
   </data>
   <data name="DeliveryCalculation.UsingFallbackDate" xml:space="preserve">
     <value>Using fallback target date {0}</value>

@@ -1,0 +1,129 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for UsedItemGroup entity
+    /// Auto-generated: 2026-06-02 13:35:41
+    /// </summary>
+    public class UsedItemGroupRepository : RepositoryBase<UsedItemGroup>
+    {
+        protected override string TableName => "UsedItemGroupTbl";
+        protected override string KeyColumn => "UsedItemGroupID";
+
+        /// <summary>
+        /// Maps a DataReader row to a UsedItemGroup object
+        /// </summary>
+        protected override UsedItemGroup Map(IDataReader reader)
+        {
+            return DbMapper.Map<UsedItemGroup>(reader);
+        }
+
+        /// <summary>
+        /// Gets all UsedItemGroup records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<UsedItemGroup> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }
+
+        /// <summary>
+        /// Gets a single UsedItemGroup by ID
+        /// </summary>
+        public UsedItemGroup GetById(int id)
+        {
+            string sql = `$"SELECT * FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            return ExecuteQuerySingle(sql, parameters);
+        }
+
+        /// <summary>
+        /// Inserts a new UsedItemGroup record
+        /// </summary>
+        public int Insert(UsedItemGroup entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize INSERT statement based on POCO properties
+            // This is a template - adjust column names as needed
+            string sql = @"
+                INSERT INTO UsedItemGroupTbl (
+                    -- Add column names here
+                )
+                VALUES (
+                    -- Add parameter names here (@Param1, @Param2, etc.)
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Example:
+                // new DBParameter { DataValue = entity.PropertyName, DataDbType = DbType.String, ParamName = "@PropertyName" }
+            };
+
+            return ExecuteScalar<int>(sql, parameters);
+        }
+
+        /// <summary>
+        /// Updates an existing UsedItemGroup record
+        /// </summary>
+        public bool Update(UsedItemGroup entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize UPDATE statement based on POCO properties
+            string sql = @"
+                UPDATE UsedItemGroupTbl
+                SET 
+                    -- Add column = @Param pairs here
+                WHERE UsedItemGroupID = @Id";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Don't forget to add the ID parameter
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Deletes a UsedItemGroup record by ID
+        /// </summary>
+        public bool Delete(int id)
+        {
+            string sql = `$"DELETE FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        // TODO: Add custom methods from legacy UsedItemGroupTbl.cs here
+        // Example:
+        // public int GetCustomCount()
+        // {
+        //     string sql = "SELECT COUNT(*) FROM UsedItemGroupTbl WHERE CustomCondition";
+        //     return ExecuteScalar<int>(sql);
+        // }
+    }
+}

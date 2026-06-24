@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderEntry.aspx.cs"
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderEntry.aspx.cs"
   MaintainScrollPositionOnPostback="true" Inherits="TrackerSQL.Pages.OrderEntry" %>
 <asp:Content ID="cntOrderEntryHder" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -33,8 +33,8 @@
       </table>
    </div>
 
-  <asp:ObjectDataSource ID="odsDistinctOrders" runat="server" TypeName="TrackerSQL.Controls.OrderData" 
-    SelectMethod="GetDistinctOrders" OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Controls.OrderData" UpdateMethod="UpdateOrderData" >
+  <asp:ObjectDataSource ID="odsDistinctOrders" runat="server" TypeName="TrackerSQL.Managers.OrderEntryDataSource" 
+    SelectMethod="GetDistinctOrders" OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Models.OrderEntryListItem" UpdateMethod="UpdateOrderData" >
     <SelectParameters>
       <asp:ControlParameter ControlID="chkbxOrderDone" Name="pOrderDone" 
         PropertyName="Checked" Type="Boolean" 
@@ -54,7 +54,11 @@
     <Columns>
         <asp:CommandField ButtonType="Image" ShowEditButton="True" EditImageUrl="~/images/imgButtons/EditItem.gif"
             UpdateImageUrl="~/images/imgButtons/UpdateItem.gif" CancelImageUrl="~/images/imgButtons/CancelItem.gif" />
-        <asp:BoundField DataField="OrderID" HeaderText="OrderID" SortExpression="OrderID" ReadOnly="true" />
+        <asp:TemplateField HeaderText="OrderID" SortExpression="OrderID">
+            <ItemTemplate>
+                <asp:LinkButton ID="lnkOrderId" runat="server" CommandName="Select" Text='<%# Eval("OrderID") %>' CausesValidation="false" />
+            </ItemTemplate>
+        </asp:TemplateField>
         <asp:TemplateField HeaderText="Company Name" SortExpression="CompanyName">
             <EditItemTemplate>
               <asp:DropDownList ID="ddlCompany" runat="server" DataSourceID="odsCompanys"  Font-Size="X-Small"
@@ -70,7 +74,7 @@
         <asp:BoundField DataField="OrderDate" HeaderText="Order Date" SortExpression="OrderDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
         <ItemStyle Width="7em" />
         </asp:BoundField>
-        <asp:BoundField DataField="RoastDate" HeaderText="Roast Date" SortExpression="RoastDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
+        <asp:BoundField DataField="PrepDate" HeaderText="Roast Date" SortExpression="PrepDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
         <ItemStyle Width="7em" />
         </asp:BoundField>
         <asp:TemplateField HeaderText="Person" SortExpression="Person">
@@ -112,7 +116,7 @@
     ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>" 
     ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>" 
    
-    SelectCommand="SELECT DISTINCT CustomersTbl.CompanyName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.RoastDate, OrdersTbl.RequiredByDate, PersonsTbl.Person, OrdersTbl.Confirmed, OrdersTbl.Done FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)">
+    SelectCommand="SELECT DISTINCT CustomersTbl.CompanyName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.PrepDate, OrdersTbl.RequiredByDate, PersonsTbl.Person, OrdersTbl.Confirmed, OrdersTbl.Done FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)">
     <SelectParameters>
       <asp:ControlParameter ControlID="chkbxOrderDone" Name="Done" 
         PropertyName="Checked" Type="Boolean" 
@@ -126,24 +130,21 @@
   <br />
 
 
-  <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerSQL.Controls.CompanyNames"
-    SelectMethod="GetAll" OldValuesParameterFormatString="original_{0}">
+  <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
+    SelectMethod="GetCompanyNames" OldValuesParameterFormatString="original_{0}">
   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerSQL.Controls.PersonsTbl"
-      SortParameterName="SortBy" SelectMethod="GetAll"
-      OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Controls.PersonsTbl" DeleteMethod="DeletePerson" InsertMethod="InsertPerson" UpdateMethod="UpdatePerson">
-      <DeleteParameters>
-          <asp:Parameter Name="pPersonID" Type="Int32" />
-      </DeleteParameters>
-      <SelectParameters>
-        <asp:Parameter DefaultValue="Abbreviation" Name="SortBy" Type="String" />
-      </SelectParameters>
-   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Controls.ItemTypeTbl"
-      SortParameterName="SortBy" SelectMethod="GetAll"
+  <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
+      SortParameterName="sortBy" SelectMethod="GetPersons"
       OldValuesParameterFormatString="original_{0}">
       <SelectParameters>
-        <asp:Parameter DefaultValue="ItemDesc" Name="SortBy" Type="String" />
+        <asp:Parameter DefaultValue="Abbreviation" Name="sortBy" Type="String" />
+      </SelectParameters>
+   </asp:ObjectDataSource>
+  <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
+      SortParameterName="sortBy" SelectMethod="GetItems"
+      OldValuesParameterFormatString="original_{0}">
+      <SelectParameters>
+        <asp:Parameter DefaultValue="" Name="sortBy" Type="String" />
       </SelectParameters>
   </asp:ObjectDataSource>
 

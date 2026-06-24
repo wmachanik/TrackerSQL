@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.CustomersTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -22,9 +22,9 @@ namespace TrackerSQL.Controls
         public const string CONST_STR_CustomerID_GENERALOROTHER = "9";
         private const int CONST_MAXREMINDERS = 10;
         //private const string CONST_CONSTRING = "Tracker08ConnectionString";
-        private const string CONST_SQL_CUSTOMERS_SELECT = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
-        private const string CONST_SQL_CUSTOMERS_INSERT = "INSERT INTO CustomersTbl (CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince, PostalCode, [Country/Region], PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled, PredictionDisabled,  AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?)";
-        private const string CONST_SQL_CUSTOMERS_UPDATE = "UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, City = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?";
+        private const string CONST_SQL_CUSTOMERS_SELECT = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
+        private const string CONST_SQL_CUSTOMERS_INSERT = "INSERT INTO CustomersTbl (CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince, PostalCode, [Country/Region], PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled, PredictionDisabled,  AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?)";
+        private const string CONST_SQL_CUSTOMERS_UPDATE = "UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, AreaID = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_SELECT_REMINDERCOUNT = "SELECT ReminderCount FROM CustomersTbl WHERE CustomersTbl.CustomerID = ?";
         private const string CONST_SQL_CUSTOMERS_SELECT_EQUIPINFO = "SELECT EquipType, MachineSN FROM CustomersTbl WHERE (CustomersTbl.CustomerID = ?)";
 
@@ -34,10 +34,10 @@ namespace TrackerSQL.Controls
         private const string CONST_SQL_CUSTOMERS_DISABLEIFREMINDERTOHIGH = "UPDATE CustomersTbl SET enabled = false, Notes = ? + [Notes] WHERE (CustomerID = ?) AND (ReminderCount > ?)";
 
         private const string CONST_SQL_CUSTOMERS_UPDATE_EQUIPINFO = "UPDATE CustomersTbl SET EquipType =?, MachineSN = ? WHERE (CustomersTbl.CustomerID = ?)";
-        private const string CONST_SQL_SELECTONBYCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName = ?)";
+        private const string CONST_SQL_SELECTONBYCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName = ?)";
 
-        private const string CONST_SQL_SELECTONCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName ALIKE '?')";
-        private const string CONST_SQL_SELECTONCUSTOMERSEMAIL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (EmailAddress ALIKE '?') OR (AltEmailAddress ALIKE '?')";
+        private const string CONST_SQL_SELECTONCUSTOMERSNAME = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName ALIKE '?')";
+        private const string CONST_SQL_SELECTONCUSTOMERSEMAIL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (EmailAddress ALIKE '?') OR (AltEmailAddress ALIKE '?')";
 
         private const string CONST_SQL_CUSTOMERS_RESET_REMINDERCOUNT = "UPDATE CustomersTbl SET ReminderCount = 0";
         private const string CONST_SQL_CUSTOMERS_RESET_REMINDERCOUNT_FORCEENABLE = ", enabled = true";
@@ -52,7 +52,7 @@ namespace TrackerSQL.Controls
         private string _ContactAltLastName;
         private string _Department;
         private string _BillingAddress;
-        private int _City;
+        private int _AreaID;
         private string _Province;
         private string _PostalCode;
         private string _Region;
@@ -96,7 +96,7 @@ namespace TrackerSQL.Controls
             this._ContactAltLastName = string.Empty;
             this._Department = string.Empty;
             this._BillingAddress = string.Empty;
-            this._City = 0;
+            this._AreaID = 0;
             this._Province = string.Empty;
             this._PostalCode = string.Empty;
             this._Region = string.Empty;
@@ -184,10 +184,10 @@ namespace TrackerSQL.Controls
             set => this._BillingAddress = value;
         }
 
-        public int City
+        public int AreaID
         {
-            get => this._City;
-            set => this._City = value;
+            get => this._AreaID;
+            set => this._AreaID = value;
         }
 
         public string Province
@@ -389,7 +389,7 @@ namespace TrackerSQL.Controls
                 ContactAltLastName = pDataReader["ContactAltLastName"] == DBNull.Value ? "" : pDataReader["ContactAltLastName"].ToString(),
                 Department = pDataReader["Department"] == DBNull.Value ? "" : pDataReader["Department"].ToString(),
                 BillingAddress = pDataReader["BillingAddress"] == DBNull.Value ? "" : pDataReader["BillingAddress"].ToString(),
-                City = pDataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["City"]),
+                AreaID = pDataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["AreaID"]),
                 Province = pDataReader["Province"] == DBNull.Value ? "" : pDataReader["Province"].ToString(),
                 PostalCode = pDataReader["PostalCode"] == DBNull.Value ? "" : pDataReader["PostalCode"].ToString(),
                 Region = pDataReader["Region"] == DBNull.Value ? "" : pDataReader["Region"].ToString(),
@@ -436,7 +436,7 @@ namespace TrackerSQL.Controls
                 ContactAltLastName = pDataReader["ContactAltLastName"] == DBNull.Value ? "" : pDataReader["ContactAltLastName"].ToString(),
                 Department = pDataReader["Department"] == DBNull.Value ? "" : pDataReader["Department"].ToString(),
                 BillingAddress = pDataReader["BillingAddress"] == DBNull.Value ? "" : pDataReader["BillingAddress"].ToString(),
-                City = pDataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["City"]),
+                AreaID = pDataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["AreaID"]),
                 Province = pDataReader["Province"] == DBNull.Value ? "" : pDataReader["Province"].ToString(),
                 PostalCode = pDataReader["PostalCode"] == DBNull.Value ? "" : pDataReader["PostalCode"].ToString(),
                 PhoneNumber = pDataReader["PhoneNumber"] == DBNull.Value ? "" : pDataReader["PhoneNumber"].ToString(),
@@ -455,7 +455,7 @@ namespace TrackerSQL.Controls
         {
             List<CustomersTbl> allCustomers = new List<CustomersTbl>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
+            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
             if (!string.IsNullOrEmpty(SortBy))
                 strSQL = $"{strSQL} ORDER BY {SortBy}";
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
@@ -526,7 +526,7 @@ namespace TrackerSQL.Controls
         {
             CustomersTbl customersByCustomerID = new CustomersTbl();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
+            string strSQL = "SELECT CustomerID, CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  [Country/Region] AS Region, PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN,  UsesFilter, autofulfill, enabled, PredictionDisabled, AlwaysSendChkUp, NormallyResponds,  ReminderCount, LastDateSentReminder, Notes FROM CustomersTbl";
             if (pCustomerID > 0L)
             {
                 strSQL += " WHERE CustomerID = ? ";
@@ -563,7 +563,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)pThisCustomerTblData.ContactAltLastName, DbType.String, "@ContactAltLastName");
             trackerDb.AddParams((object)pThisCustomerTblData.Department, DbType.String, "@Department");
             trackerDb.AddParams((object)pThisCustomerTblData.BillingAddress, DbType.String, "@BillingAddress");
-            trackerDb.AddParams((object)pThisCustomerTblData.City, DbType.Int32, "@City");
+            trackerDb.AddParams((object)pThisCustomerTblData.AreaID, DbType.Int32, "@AreaID");
             trackerDb.AddParams((object)pThisCustomerTblData.Province, DbType.String, "@Province");
             trackerDb.AddParams((object)pThisCustomerTblData.PostalCode, DbType.String, "@PostalCode");
             trackerDb.AddParams((object)pThisCustomerTblData.Region, DbType.String, "@Region");
@@ -594,7 +594,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)pThisCustomerTblData.NormallyResponds, DbType.Boolean, "@NormallyResponds");
             trackerDb.AddParams((object)pThisCustomerTblData.ReminderCount, DbType.Int32, "@ReminderCount");
             trackerDb.AddParams((object)pThisCustomerTblData.Notes, DbType.String, "@Notes");
-            pErrorStr = trackerDb.ExecuteNonQuerySQL("INSERT INTO CustomersTbl (CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince, PostalCode, [Country/Region], PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled, PredictionDisabled,  AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?)");
+            pErrorStr = trackerDb.ExecuteNonQuerySQL("INSERT INTO CustomersTbl (CompanyName, ContactTitle, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince, PostalCode, [Country/Region], PhoneNumber, Extension, FaxNumber, CellNumber, EmailAddress, AltEmailAddress, ContractNo, CustomerTypeID, EquipType, CoffeePreference, PriPrefQty, PrefPrepTypeID, PrefPackagingID,  SecondaryPreference, SecPrefQty, TypicallySecToo, PreferedAgent, SalesAgentID, MachineSN, UsesFilter, autofulfill, enabled, PredictionDisabled,  AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?)");
             bool flag = string.IsNullOrEmpty(pErrorStr);
             trackerDb.Close();
             return flag;
@@ -611,7 +611,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)pThisCustomerTblData.ContactAltLastName, DbType.String);
             trackerDb.AddParams((object)pThisCustomerTblData.Department, DbType.String);
             trackerDb.AddParams((object)pThisCustomerTblData.BillingAddress, DbType.String);
-            trackerDb.AddParams((object)pThisCustomerTblData.City, DbType.Int32);
+            trackerDb.AddParams((object)pThisCustomerTblData.AreaID, DbType.Int32);
             trackerDb.AddParams((object)pThisCustomerTblData.Province, DbType.String);
             trackerDb.AddParams((object)pThisCustomerTblData.PostalCode, DbType.String);
             trackerDb.AddParams((object)pThisCustomerTblData.Region, DbType.String);
@@ -643,7 +643,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)pThisCustomerTblData.ReminderCount, DbType.Int32);
             trackerDb.AddParams((object)pThisCustomerTblData.Notes, DbType.String);
             trackerDb.AddWhereParams((object)CustomerIDToUpdate, DbType.Int64);
-            string str = trackerDb.ExecuteNonQuerySQL("UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, City = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?");
+            string str = trackerDb.ExecuteNonQuerySQL("UPDATE CustomersTbl SET CompanyName = ?, ContactTitle = ?, ContactFirstName = ?, ContactLastName = ?,  ContactAltFirstName = ?, ContactAltLastName = ?, Department = ?, BillingAddress = ?, AreaID = ?,  StateOrProvince = ?, PostalCode = ?, [Country/Region] = ?, PhoneNumber = ?, Extension = ?,  FaxNumber = ?, CellNumber = ?, EmailAddress = ?, AltEmailAddress = ?, ContractNo = ?, CustomerTypeID = ?, EquipType = ?, CoffeePreference = ?, PriPrefQty = ?, PrefPrepTypeID = ?, PrefPackagingID = ?,  SecondaryPreference = ?, SecPrefQty = ?, TypicallySecToo = ?, PreferedAgent = ?, SalesAgentID = ?,  MachineSN = ?, UsesFilter = ?, autofulfill = ?, enabled = ?, PredictionDisabled = ?,  AlwaysSendChkUp = ?, NormallyResponds = ?, ReminderCount = ?, Notes = ? WHERE CustomersTbl.CustomerID = ?");
 
             trackerDb.Close();
             return str;
@@ -860,7 +860,7 @@ namespace TrackerSQL.Controls
         {
             CustomersTbl customerByName = new CustomersTbl();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName = ?)";
+            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName = ?)";
             trackerDb.AddWhereParams((object)pCustomerName);
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             if (dataReader != null)
@@ -879,7 +879,7 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             if (!pCustomerName.Contains("%"))
                 pCustomerName = $"%{pCustomerName}%";
-            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName ALIKE '?')";
+            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (CompanyName ALIKE '?')";
             trackerDb.AddWhereParams((object)pCustomerName);
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             if (dataReader != null)
@@ -898,7 +898,7 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             if (!pEmail.Contains("%"))
                 pEmail += "%";
-            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, City, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (EmailAddress ALIKE '?') OR (AltEmailAddress ALIKE '?')".Replace("?", pEmail);
+            string strSQL = "SELECT CustomerID, CompanyName, ContactFirstName, ContactLastName, ContactAltFirstName, ContactAltLastName, Department, BillingAddress, AreaID, StateOrProvince AS Province, PostalCode,  PhoneNumber, FaxNumber, CellNumber, EmailAddress, AltEmailAddress,  PreferedAgent, SalesAgentID, MachineSN, enabled FROM CustomersTbl WHERE (EmailAddress ALIKE '?') OR (AltEmailAddress ALIKE '?')".Replace("?", pEmail);
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             if (dataReader != null)
             {

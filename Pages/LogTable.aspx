@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Log List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="LogTable.aspx.cs" Inherits="TrackerSQL.Pages.LogTable" %>
+<%@ Page Title="Log List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="LogTable.aspx.cs" Inherits="TrackerSQL.Pages.LogTable" %>
 <asp:Content ID="cntLogHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntLogBdy" ContentPlaceHolderID="MainContent" runat="server">

@@ -1,0 +1,105 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for SysDataTbl - System configuration and runtime settings
+    /// </summary>
+    public class SysDataRepository : RepositoryBase<SysData>
+    {
+        protected override string TableName => "SysDataTbl";
+        protected override string KeyColumn => "ID";
+
+        /// <summary>
+        /// Gets system data by ID (typically only ID=1 exists for singleton system config)
+        /// </summary>
+        public SysData GetSystemData()
+        {
+            return GetById(1); // System data is singleton, always ID=1
+        }
+
+        /// <summary>
+        /// Updates system data record with all fields
+        /// </summary>
+        public void UpdateSystemData(SysData data)
+        {
+            if (data == null)
+                throw new ArgumentNullException(nameof(data));
+
+            try
+            {
+                // NOTE: GroupItemServiceTypeID column actually stores ServiceTypeId
+                string sql = $@"
+                    UPDATE {TableName}
+                    SET 
+                        DoRecurringOrders = @DoRecurringOrders,
+                        LastRecurringDate = @LastRecurringDate,
+                        DateLastPrepDateCalcd = @DateLastPrepDateCalcd,
+                        MinReminderDate = @MinReminderDate,
+                        GroupItemServiceTypeID = @GroupItemServiceTypeID,
+                        InternalContactIDs = @InternalContactIDs
+                    WHERE ID = @ID";
+
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter 
+                    { 
+                        ParamName = "@ID", 
+                        DataValue = data.ID, 
+                        DataDbType = DbType.Int32 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@DoRecurringOrders", 
+                        DataValue = data.DoRecurringOrders ?? (object)DBNull.Value, 
+                        DataDbType = DbType.Boolean 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@LastRecurringDate", 
+                        DataValue = data.LastRecurringDate ?? (object)DBNull.Value, 
+                        DataDbType = DbType.DateTime 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@DateLastPrepDateCalcd", 
+                        DataValue = data.DateLastPrepDateCalcd ?? (object)DBNull.Value, 
+                        DataDbType = DbType.DateTime 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@MinReminderDate", 
+                        DataValue = data.MinReminderDate ?? (object)DBNull.Value, 
+                        DataDbType = DbType.DateTime 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@GroupItemServiceTypeID", 
+                        DataValue = data.GroupItemServiceTypeID ?? (object)DBNull.Value, 
+                        DataDbType = DbType.Int32 
+                    },
+                    new DBParameter 
+                    { 
+                        ParamName = "@InternalContactIDs", 
+                        DataValue = string.IsNullOrWhiteSpace(data.InternalContactIDs) ? (object)DBNull.Value : data.InternalContactIDs, 
+                        DataDbType = DbType.String 
+                    }
+                };
+
+                ExecNonQuery(sql, parameters);
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+                    $"SysDataRepository: System data updated successfully. ID={data.ID}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+                    $"SysDataRepository.UpdateSystemData failed: {ex.Message}");
+                throw;
+            }
+        }
+    }
+}

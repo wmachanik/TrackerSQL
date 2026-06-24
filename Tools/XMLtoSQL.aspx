@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="XMLtoSQL.aspx.cs"
+<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="XMLtoSQL.aspx.cs"
   Inherits="TrackerSQL.test.XMLtoSQL" %>
 
 <asp:Content ID="cntXMLtoSQLHdr" ContentPlaceHolderID="HeadContent" runat="server">

@@ -1,4 +1,4 @@
-﻿<%@ Import Namespace="System" %>
+<%@ Import Namespace="System" %>
 <%@ Import Namespace="System.Text" %>
 <%@ Import Namespace="System.Security" %>
 <%@ Import Namespace="System.Security.Cryptography" %>

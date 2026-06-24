@@ -1,8 +1,8 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerDotNet.DataSets.CustomersDataSetTableAdapters.CustomersTableAdapter
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Decompiled with JetBrains decompiler
+// Type: TrackerSQL.DataSets.CustomersDataSetTableAdapters.CustomersTableAdapter
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.CodeDom.Compiler;
@@ -15,7 +15,7 @@ using System.Data.OleDb;
 using System.Diagnostics;
 
 #nullable disable
-namespace TrackerDotNet.DataSets.CustomersDataSetTableAdapters;
+namespace TrackerSQL.DataSets.CustomersDataSetTableAdapters;
 
 [DesignerCategory("code")]
 [Designer("Microsoft.VSDesigner.DataSource.Design.TableAdapterDesigner, Microsoft.VSDesigner, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]

@@ -8,11 +8,11 @@ using TrackerSQL.Controls;
 namespace TrackerSQL.Classes
 {
     /// <summary>
-    /// Represents one prep/delivery schedule row for a city.
+    /// Represents one prep/delivery schedule row for a Area.
     /// </summary>
     public class DateMatrixRow
     {
-        public int CityID { get; set; }
+        public int AreaID { get; set; }
         public DateTime PrepDate { get; set; }
         public DateTime DeliveryDate { get; set; }
         public int PrepDayOfWeek { get; set; } // 0..6
@@ -35,11 +35,11 @@ namespace TrackerSQL.Classes
     }
 
     /// <summary>
-    /// Caching builder for city prep/delivery matrix.
+    /// Caching builder for Area prep/delivery matrix.
     /// Features:
     ///  - Expand-in-place for larger horizons
     ///  - TTL-based expiration
-    ///  - Optional invalidation when City prep data recalculated
+    ///  - Optional invalidation when Area prep data recalculated
     ///  - Optional SQL-based build (Numbers table variant)
     /// </summary>
     public static class DateMatrixBuilder
@@ -47,7 +47,7 @@ namespace TrackerSQL.Classes
         private static readonly object _lock = new object();
 
         private static List<DateMatrixRow> _rows = new List<DateMatrixRow>();
-        private static Dictionary<int, List<DateMatrixRow>> _rowsByCity = new Dictionary<int, List<DateMatrixRow>>();
+        private static Dictionary<int, List<DateMatrixRow>> _rowsByArea = new Dictionary<int, List<DateMatrixRow>>();
 
         private static DateTime _builtAtUtc = DateTime.MinValue;
         private static DateTime _horizonEnd = DateTime.MinValue;
@@ -77,7 +77,7 @@ namespace TrackerSQL.Classes
                 bool needRebuild = false;
                 bool needExtend = false;
 
-                // Source calc date used to detect changes in City prep plan
+                // Source calc date used to detect changes in Area prep plan
                 DateTime latestSourceCalc = GetSysPrepCalcDate();
                 if (_rebuildOnSourceChange && latestSourceCalc > _sourceCalcDate && _sourceCalcDate != DateTime.MinValue)
                 {
@@ -109,7 +109,7 @@ namespace TrackerSQL.Classes
             lock (_lock)
             {
                 _rows.Clear();
-                _rowsByCity.Clear();
+                _rowsByArea.Clear();
                 _builtAtUtc = DateTime.MinValue;
                 _horizonEnd = DateTime.MinValue;
                 _horizonStart = DateTime.MinValue;
@@ -118,21 +118,21 @@ namespace TrackerSQL.Classes
             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "DateMatrixBuilder: Cleared matrix");
         }
 
-        public static DateMatrixMatch? FindBestForCity(int cityId, DateTime target)
+        public static DateMatrixMatch? FindBestForArea(int AreaId, DateTime target)
         {
             target = target.Date;
             var today = TimeZoneUtils.Now().Date;
 
-            List<DateMatrixRow> cityRows;
+            List<DateMatrixRow> AreaRows;
             lock (_lock)
             {
-                if (!_rowsByCity.TryGetValue(cityId, out cityRows) || cityRows.Count == 0)
+                if (!_rowsByArea.TryGetValue(AreaId, out AreaRows) || AreaRows.Count == 0)
                     return null;
             }
 
             DateMatrixMatch? TryMatch(DateTime d, DateMatchKind kind)
             {
-                var row = cityRows.FirstOrDefault(r => r.DeliveryDate == d);
+                var row = AreaRows.FirstOrDefault(r => r.DeliveryDate == d);
                 if (row == null) return null;
                 return new DateMatrixMatch { Delivery = row.DeliveryDate, Prep = row.PrepDate, MatchKind = kind };
             }
@@ -150,7 +150,7 @@ namespace TrackerSQL.Classes
                 if (m != null) return m;
             }
             // 4 first future >= target
-            var future = cityRows
+            var future = AreaRows
                 .Where(r => r.DeliveryDate >= target)
                 .OrderBy(r => r.DeliveryDate)
                 .FirstOrDefault();
@@ -164,7 +164,7 @@ namespace TrackerSQL.Classes
                 };
             }
             // 5 absolute closest
-            var closest = cityRows
+            var closest = AreaRows
                 .OrderBy(r => Math.Abs((r.DeliveryDate - target).TotalDays))
                 .ThenBy(r => r.DeliveryDate)
                 .First();
@@ -180,7 +180,7 @@ namespace TrackerSQL.Classes
         private static void BuildNew(DateTime start, DateTime end)
         {
             _rows.Clear();
-            _rowsByCity.Clear();
+            _rowsByArea.Clear();
 
             _sourceCalcDate = GetSysPrepCalcDate();
 
@@ -224,17 +224,17 @@ namespace TrackerSQL.Classes
 
         private static void BuildInMemory(DateTime startDate, DateTime endDate)
         {
-            var rules = new CityPrepDaysTbl().GetAll();
+            var rules = new AreaPrepDaysTbl().GetAll();
             if (rules == null || rules.Count == 0)
                 return;
 
-            var byCity = rules.GroupBy(r => r.CityID).ToDictionary(g => g.Key, g => g.ToList());
+            var byArea = rules.GroupBy(r => r.AreaID).ToDictionary(g => g.Key, g => g.ToList());
             var today = TimeZoneUtils.Now().Date;
 
             for (var day = startDate; day <= endDate; day = day.AddDays(1))
             {
                 var dow = (int)day.DayOfWeek;
-                foreach (var kv in byCity)
+                foreach (var kv in byArea)
                 {
                     foreach (var rule in kv.Value)
                     {
@@ -245,7 +245,7 @@ namespace TrackerSQL.Classes
                             if (delivery < today) continue;
                             _rows.Add(new DateMatrixRow
                             {
-                                CityID = kv.Key,
+                                AreaID = kv.Key,
                                 PrepDate = day,
                                 DeliveryDate = delivery,
                                 PrepDayOfWeek = dow
@@ -264,15 +264,15 @@ namespace TrackerSQL.Classes
 
                 string sql = @"
 SELECT 
-    cp.CityID,
+    cp.AreaID,
     DateAdd('d', n.N, ?) AS PrepDate,
     DateAdd('d', n.N + cp.DeliveryDelayDays, ?) AS DeliveryDate,
     (Weekday(DateAdd('d', n.N, ?), 1) - 1) AS PrepDayOfWeek,
     cp.PrepDayOfWeekID
-FROM CityPrepDaysTbl cp
+FROM AreaPrepDaysTbl cp
 INNER JOIN Numbers n ON n.N BETWEEN 0 AND ?
 WHERE (Weekday(DateAdd('d', n.N, ?), 1) - 1) = cp.PrepDayOfWeekID
-ORDER BY cp.CityID, PrepDate";
+ORDER BY cp.AreaID, PrepDate";
 
                 using (var db = new TrackerDb())
                 {
@@ -293,7 +293,7 @@ ORDER BY cp.CityID, PrepDate";
 
                             _rows.Add(new DateMatrixRow
                             {
-                                CityID = Convert.ToInt32(rdr["CityID"]),
+                                AreaID = Convert.ToInt32(rdr["AreaID"]),
                                 PrepDate = prep.Date,
                                 DeliveryDate = delivery.Date,
                                 PrepDayOfWeek = Convert.ToInt32(rdr["PrepDayOfWeek"])
@@ -320,8 +320,8 @@ ORDER BY cp.CityID, PrepDate";
 
         private static void IndexRows()
         {
-            _rowsByCity = _rows
-                .GroupBy(r => r.CityID)
+            _rowsByArea = _rows
+                .GroupBy(r => r.AreaID)
                 .ToDictionary(g => g.Key, g => g.OrderBy(x => x.DeliveryDate).ToList());
         }
 
@@ -329,11 +329,11 @@ ORDER BY cp.CityID, PrepDate";
         {
             // Re-index only appended subset
             var appended = _rows.Where(r => r.DeliveryDate >= start && r.DeliveryDate <= end).ToList();
-            foreach (var g in appended.GroupBy(r => r.CityID))
+            foreach (var g in appended.GroupBy(r => r.AreaID))
             {
-                if (!_rowsByCity.TryGetValue(g.Key, out var list))
+                if (!_rowsByArea.TryGetValue(g.Key, out var list))
                 {
-                    _rowsByCity[g.Key] = g.OrderBy(x => x.DeliveryDate).ToList();
+                    _rowsByArea[g.Key] = g.OrderBy(x => x.DeliveryDate).ToList();
                 }
                 else
                 {

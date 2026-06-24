@@ -1,0 +1,92 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+using TrackerSQL.Classes;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class ItemPackagingsRepository : RepositoryBase<ItemPackaging>
+    {
+        protected override string TableName => "ItemPackagingsTbl";
+        protected override string KeyColumn => "ItemPackagingID";
+        protected override string CoreColumns => "ItemPackagingID, ItemPrepDescription AS ItemPackagingDesc, AdditionalNotes, Symbol, Colour, BGColour";
+        protected override string LookupColumns => "ItemPackagingID, ItemPrepDescription AS ItemPackagingDesc";
+
+        public override ItemPackaging GetById(int id)
+        {
+            string sql = "SELECT ItemPackagingID, ItemPrepDescription AS ItemPackagingDesc, AdditionalNotes, Symbol, Colour, BGColour FROM ItemPackagingsTbl WHERE ItemPackagingID = @Id";
+            var p = new List<DBParameter> { new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" } };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, p))
+            {
+                if (rdr != null && rdr.Read())
+                {
+                    return DbMapper.Map<ItemPackaging>(rdr);
+                }
+            }
+            return null;
+        }
+
+        public override List<ItemPackaging> GetAll(string SortBy)
+        {
+            var list = new List<ItemPackaging>();
+            string sql = "SELECT ItemPackagingID, ItemPrepDescription AS ItemPackagingDesc, AdditionalNotes, Symbol, Colour, BGColour FROM ItemPackagingsTbl";
+            if (!string.IsNullOrWhiteSpace(SortBy))
+            {
+                string orderBy = SortBy.Equals("ItemPackagingDesc", System.StringComparison.OrdinalIgnoreCase) ? "ItemPrepDescription" : SortBy;
+                sql += " ORDER BY " + orderBy;
+            }
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql))
+            {
+                while (rdr.Read()) list.Add(DbMapper.Map<ItemPackaging>(rdr));
+            }
+            return list;
+        }
+
+        public void Insert(ItemPackaging packaging)
+        {
+            const string sql = "INSERT INTO ItemPackagingsTbl (ItemPrepDescription, AdditionalNotes, Symbol, Colour, BGColour) VALUES (@ItemPackagingDesc, @AdditionalNotes, @Symbol, @Colour, @BGColour)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ItemPackagingDesc", DataValue = packaging.ItemPackagingDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@AdditionalNotes", DataValue = packaging.AdditionalNotes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Symbol", DataValue = packaging.Symbol ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Colour", DataValue = packaging.Colour, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@BGColour", DataValue = packaging.BGColour ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(ItemPackaging packaging)
+        {
+            const string sql = "UPDATE ItemPackagingsTbl SET ItemPrepDescription = @ItemPackagingDesc, AdditionalNotes = @AdditionalNotes, Symbol = @Symbol, Colour = @Colour, BGColour = @BGColour WHERE ItemPackagingID = @ItemPackagingID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ItemPackagingDesc", DataValue = packaging.ItemPackagingDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@AdditionalNotes", DataValue = packaging.AdditionalNotes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Symbol", DataValue = packaging.Symbol ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Colour", DataValue = packaging.Colour, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@BGColour", DataValue = packaging.BGColour ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ItemPackagingID", DataValue = packaging.ItemPackagingID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int itemPackagingID)
+        {
+            const string sql = "DELETE FROM ItemPackagingsTbl WHERE ItemPackagingID = @ItemPackagingID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ItemPackagingID", DataValue = itemPackagingID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

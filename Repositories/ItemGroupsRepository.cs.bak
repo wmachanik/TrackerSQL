@@ -1,0 +1,12 @@
+using TrackerSQL.Classes.Poco;
+namespace TrackerSQL.Classes.Sql
+{
+    public class ItemGroupsRepository : RepositoryBase<ItemGroup>
+    {
+        protected override string TableName => "ItemGroupsTbl";
+        protected override string KeyColumn => "ItemGroupID";
+
+        protected override string CoreColumns => "ItemGroupID, GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled";
+        protected override string LookupColumns => "ItemGroupID, GroupItemServiceTypeID";
+    }
+}

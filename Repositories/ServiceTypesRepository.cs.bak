@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for ServiceTypesTbl - Service types (Coffee, Cleaning, Descaling, etc.)
+    /// </summary>
+    public class ServiceTypesRepository : RepositoryBase<ServiceType>
+    {
+        protected override string TableName => "ServiceTypesTbl";
+        protected override string KeyColumn => "ServiceTypeId";
+
+        /// <summary>
+        /// Gets all service types, ordered by ServiceTypeId
+        /// </summary>
+        public List<ServiceType> GetAll()
+        {
+            return GetAll("ServiceTypeId");
+        }
+
+        /// <summary>
+        /// Gets a service type by ID
+        /// </summary>
+        public ServiceType GetById(int id)
+        {
+            string sql = "SELECT ServiceTypeId, ServiceType FROM ServiceTypesTbl WHERE ServiceTypeId = @Id ORDER BY ServiceTypeId";
+            var p = new List<DBParameter> { new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" } };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, p))
+            {
+                if (rdr != null && rdr.Read())
+                {
+                    return new ServiceType
+                    {
+                        ServiceTypeId = (int)rdr["ServiceTypeId"],
+                        ServiceTypeName = rdr["ServiceType"]?.ToString() ?? string.Empty
+                    };
+                }
+            }
+            return null;
+        }
+    }
+}

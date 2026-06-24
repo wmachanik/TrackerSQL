@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TrackerSQL.Controls;
+using TrackerSQL.Managers;
 using TrackerSQL.Classes;
 
 namespace TrackerSQL.Tools

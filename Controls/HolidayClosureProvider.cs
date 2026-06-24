@@ -70,9 +70,9 @@ namespace TrackerSQL.Controls
                 var list = new List<HolidayClosure>();
 
                 const string sql = "SELECT ID, ClosureDate, DaysClosed, AppliesToPrep, AppliesToDelivery, ShiftStrategy, Description FROM HolidayClosureTbl";
-                using (var db = new TrackerDb())
+                using (var db = new TrackerSQLDb())
                 {
-                    using (var rdr = db.ExecuteSQLGetDataReader(sql))
+                    using (var rdr = db.ExecuteReader(sql))
                     {
                         if (rdr != null)
                         {

@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.RepairsTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -101,7 +101,7 @@ namespace TrackerSQL.Controls
                 return GetAllRepairsOfStatus(sortBy, repairStatus);
             }
 
-            // ✅ Define clean SQL with aliases for JOIN
+            // ? Define clean SQL with aliases for JOIN
             const string CONST_SQL_SELECT_WITH_JOIN = "SELECT r.RepairID, r.CustomerID, r.ContactName, r.ContactEmail, r.JobCardNumber, r.DateLogged, r.LastStatusChange, r.MachineTypeID, r.MachineSerialNumber, " +
                                                        "r.SwopOutMachineID, r.MachineConditionID, r.TakenFrother, r.TakenBeanLid, r.TakenWaterLid, r.BrokenFrother, r.BrokenBeanLid, r.BrokenWaterLid, " +
                                                        "r.RepairFaultID, r.RepairFaultDesc, r.RepairStatusID, r.RelatedOrderID, r.Notes " +
@@ -113,27 +113,27 @@ namespace TrackerSQL.Controls
             var parameters = new List<DBParameter>();
             var whereConditions = new List<string>();
 
-            // Add status filter - ✅ Use correct field names based on whether we're using JOIN
+            // Add status filter - ? Use correct field names based on whether we're using JOIN
             if (!string.IsNullOrEmpty(repairStatus) && int.TryParse(repairStatus, out int statusId) && !repairStatus.Equals("OPEN"))
             {
-                whereConditions.Add("RepairsTbl.RepairStatusID = ?"); // ✅ Use full table name for non-JOIN
+                whereConditions.Add("RepairsTbl.RepairStatusID = ?"); // ? Use full table name for non-JOIN
                 parameters.Add(new DBParameter { DataValue = statusId, DataDbType = DbType.Int32 });
             }
             else if (repairStatus == "OPEN" || string.IsNullOrEmpty(repairStatus))
             {
-                whereConditions.Add($"RepairsTbl.RepairStatusID <> {CONST_REPAIR_DONESTR}"); // ✅ Use full table name
+                whereConditions.Add($"RepairsTbl.RepairStatusID <> {CONST_REPAIR_DONESTR}"); // ? Use full table name
             }
 
-            // Add date filters - ✅ Use correct field names
+            // Add date filters - ? Use correct field names
             if (fromDateNullable.HasValue)
             {
-                whereConditions.Add("RepairsTbl.DateLogged >= ?"); // ✅ Use full table name for non-JOIN
+                whereConditions.Add("RepairsTbl.DateLogged >= ?"); // ? Use full table name for non-JOIN
                 parameters.Add(new DBParameter { DataValue = fromDateNullable.Value.Date, DataDbType = DbType.DateTime });
             }
 
             if (toDateNullable.HasValue)
             {
-                whereConditions.Add("RepairsTbl.DateLogged < ?"); // ✅ Use full table name for non-JOIN
+                whereConditions.Add("RepairsTbl.DateLogged < ?"); // ? Use full table name for non-JOIN
                 parameters.Add(new DBParameter { DataValue = toDateNullable.Value.Date.AddDays(1), DataDbType = DbType.DateTime });
             }
 
@@ -143,10 +143,10 @@ namespace TrackerSQL.Controls
                 switch (filterBy)
                 {
                     case "CompanyID":
-                        // ✅ Use JOIN SQL and aliases for company search
+                        // ? Use JOIN SQL and aliases for company search
                         needsJoin = true;
                         string companySearchText = filterText.Contains("%") ? filterText : $"%{filterText}%";
-                        whereConditions.Clear(); // ✅ Clear previous conditions and rebuild with aliases
+                        whereConditions.Clear(); // ? Clear previous conditions and rebuild with aliases
                         parameters.Clear();
 
                         // Rebuild all conditions with aliases when using JOIN
@@ -178,13 +178,13 @@ namespace TrackerSQL.Controls
 
                     case "MachineSerialNumber":
                         string serialSearchText = filterText.Contains("%") ? filterText : $"%{filterText}%";
-                        whereConditions.Add("RepairsTbl.MachineSerialNumber LIKE ?"); // ✅ Use full table name for non-JOIN
+                        whereConditions.Add("RepairsTbl.MachineSerialNumber LIKE ?"); // ? Use full table name for non-JOIN
                         parameters.Add(new DBParameter { DataValue = serialSearchText, DataDbType = DbType.String });
                         break;
                 }
             }
 
-            // ✅ Use the appropriate SQL based on whether we need a JOIN
+            // ? Use the appropriate SQL based on whether we need a JOIN
             if (needsJoin)
             {
                 sql = CONST_SQL_SELECT_WITH_JOIN;

@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
-//using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
@@ -12,13 +11,36 @@ namespace TrackerSQL.Managers
     {
         public bool Success { get; set; }
         public string Message { get; set; }
-        public ClientUsageTbl OriginalUsage { get; set; }
-        public ClientUsageTbl UpdatedUsage { get; set; }
+        public CustomerUsageDisplay OriginalUsage { get; set; }
+        public CustomerUsageDisplay UpdatedUsage { get; set; }
     }
 
     public class OrderDoneManager
     {
-        public OrderDoneManager() { }
+        private readonly ContactsUsageRepository _contactsUsageRepository;
+        private readonly TempOrdersLinesRepository _tempOrdersLinesRepository;
+        private readonly TempOrdersHeaderRepository _tempOrdersHeaderRepository;
+        private readonly OrdersRepository _ordersRepository;
+        private readonly ContactsRepository _contactsRepository;
+        private readonly ContactsItemUsageRepository _contactsItemUsageRepository;
+        private readonly ContactUsageLinesRepository _contactUsageLinesRepository;
+        private readonly RecurringOrdersRepository _recurringOrdersRepository;
+        private readonly ItemsRepository _itemsRepository;
+        private readonly ItemGroupsRepository _itemGroupsRepository;
+
+        public OrderDoneManager()
+        {
+            _contactsUsageRepository = new ContactsUsageRepository();
+            _tempOrdersLinesRepository = new TempOrdersLinesRepository();
+            _tempOrdersHeaderRepository = new TempOrdersHeaderRepository();
+            _ordersRepository = new OrdersRepository();
+            _contactsRepository = new ContactsRepository();
+            _contactsItemUsageRepository = new ContactsItemUsageRepository();
+            _contactUsageLinesRepository = new ContactUsageLinesRepository();
+            _recurringOrdersRepository = new RecurringOrdersRepository();
+            _itemsRepository = new ItemsRepository();
+            _itemGroupsRepository = new ItemGroupsRepository();
+        }
 
         public static OrderDoneResult CompleteOrder(
             int customerId,
@@ -27,15 +49,37 @@ namespace TrackerSQL.Managers
             string cupCountText,
             string statusKey)
         {
+            return new OrderDoneManager().CompleteOrderInternal(customerId, deliveryDate, stockText, cupCountText, statusKey);
+        }
+
+        private OrderDoneResult CompleteOrderInternal(
+            int customerId,
+            DateTime deliveryDate,
+            string stockText,
+            string cupCountText,
+            string statusKey)
+        {
             var result = new OrderDoneResult();
+            if (!TempOrderSession.TryResolve(out int tempHeaderId, out int orderId))
+            {
+                result.Success = false;
+                result.Message = MessageProvider.Get(MessageKeys.Order.NoTempOrder);
+                return result;
+            }
+
+            var tempHeader = _tempOrdersHeaderRepository.GetById(tempHeaderId);
+            if (tempHeader == null || tempHeader.ContactID != customerId)
+            {
+                result.Success = false;
+                result.Message = MessageProvider.Get(MessageKeys.Order.NoTempOrder);
+                return result;
+            }
+
             var trackerTools = new TrackerTools();
             trackerTools.SetTrackerSessionErrorString(string.Empty);
 
-            var clientUsageTbl = new ClientUsageTbl();
-            var originalUsage = clientUsageTbl.GetUsageData(customerId);
-
-            var tempOrdersDal = new TempOrdersDAL();
-            bool hasCoffee = tempOrdersDal.HasCoffeeInTempOrder();
+            var originalUsage = _contactsUsageRepository.GetByContactId(customerId);
+            bool hasCoffee = _tempOrdersLinesRepository.HasCoffeeInTempOrder(tempHeaderId);
 
             if (!string.IsNullOrEmpty(trackerTools.GetTrackerSessionErrorString()))
             {
@@ -52,35 +96,36 @@ namespace TrackerSQL.Managers
             }
 
             double pStock = string.IsNullOrEmpty(stockText) ? 0.0 : Math.Round(Convert.ToDouble(stockText), SystemConstants.DatabaseConstants.NumDecimalPoints);
-            var generalTrackerDbTools = new GeneralTrackerDbTools();
-            var latestUsageData = generalTrackerDbTools.GetLatestUsageData(customerId, 2);
+            var latestUsageData = GetLatestUsageData(customerId, 2);
 
             bool pIsActual = !string.IsNullOrEmpty(cupCountText);
             int pCupCount = 0;
             if (pIsActual)
+            {
                 pCupCount = Convert.ToInt32(cupCountText);
+            }
 
             if (pCupCount < 1 || pCupCount < latestUsageData.LastCount)
             {
-                pCupCount = generalTrackerDbTools.CalcEstCupCount(customerId, latestUsageData, hasCoffee);
+                pCupCount = CalcEstCupCount(customerId, latestUsageData, hasCoffee);
                 pIsActual = false;
             }
 
-            // this is suppose to close a repair order if it exists, but does nto seem to work
-            //var repairManager = new RepairManager();
-            //repairManager.SetStatusDoneByTempOrder();
-            int updatedCupCount = AddItemsToClientUsageTbl(customerId, pIsActual, pCupCount, pStock, deliveryDate);
+            int updatedCupCount = AddItemsToUsageTables(customerId, tempHeaderId, pIsActual, pCupCount, pStock, deliveryDate);
 
-            if (!clientUsageTbl.UpdateUsageCupCount(customerId, updatedCupCount))
+            if (!_contactsUsageRepository.UpdateLastCupCount(customerId, updatedCupCount))
             {
                 result.Success = false;
                 result.Message = "Error updating last count";
                 return result;
             }
 
-            generalTrackerDbTools.UpdatePredictions(customerId, updatedCupCount);
-            tempOrdersDal.MarkTempOrdersItemsAsDone();
-            generalTrackerDbTools.ResetCustomerReminderCount(customerId, hasCoffee);
+            UpdatePredictions(customerId, updatedCupCount);
+            if (orderId > 0)
+                _ordersRepository.MarkDoneForOrderId(orderId);
+            else
+                _ordersRepository.MarkDoneForTempOrderHeader(tempHeaderId);
+            _contactsRepository.ResetReminderCount(customerId, hasCoffee);
 
             string sentStatus = null;
             if (!string.IsNullOrEmpty(statusKey))
@@ -88,61 +133,61 @@ namespace TrackerSQL.Managers
                 sentStatus = SendOrderStatusEmail(customerId, statusKey);
             }
 
-            // set the date if the customer is a reoccruing order customer:
-            SyncReoccurringOrderLastDone(customerId, deliveryDate);
-            // now delete the relevant date from the temp orders table
-            tempOrdersDal.KillTempOrdersData();
+            SyncReoccurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
+            TempOrderSession.CleanupCompletedOrder(orderId, tempHeaderId);
 
             result.Success = sentStatus == null;
             result.Message = sentStatus ?? "Order done email sent successfully.";
-            result.OriginalUsage = originalUsage;
-            result.UpdatedUsage = clientUsageTbl.GetUsageData(customerId);
+            result.OriginalUsage = CustomerUsageDisplay.FromContactsUsage(originalUsage);
+            result.UpdatedUsage = CustomerUsageDisplay.FromContactsUsage(_contactsUsageRepository.GetByContactId(customerId));
 
             return result;
         }
 
-        public static int AddItemsToClientUsageTbl(long pCustomerID, bool pIsActual, int pCupCount, double pStock, DateTime pDeliveryDate)
+        private int AddItemsToUsageTables(int contactId, int tempHeaderId, bool pIsActual, int pCupCount, double pStock, DateTime pDeliveryDate)
         {
-            List<ClientUsageFromTempOrder> all = new ClientUsageFromTempOrder().GetAll(pCustomerID);
-            List<ItemUsageTbl> itemUsageTblList = new List<ItemUsageTbl>();
-            List<ClientUsageLinesTbl> clientUsageLinesTblList = new List<ClientUsageLinesTbl>();
+            List<TempOrderUsageLine> all = _tempOrdersLinesRepository.GetUsageLinesForContact(contactId, tempHeaderId);
             int index1 = 0;
             string str = pIsActual ? "actual count" : "estimate count";
+
             if (pStock > 0.0)
             {
                 pCupCount -= Convert.ToInt32(Math.Round(pStock * 100.0, 0));
                 str = $"{str}; Stock of: {pCupCount.ToString()}";
             }
+
             while (all.Count > index1)
             {
-                ClientUsageLinesTbl clientUsageLinesTbl = new ClientUsageLinesTbl();
-                clientUsageLinesTbl.CustomerID = all[index1].CustomerID;
-                clientUsageLinesTbl.LineDate = pDeliveryDate;
-                clientUsageLinesTbl.ServiceTypeID = all[index1].ServiceTypeID;
-                clientUsageLinesTbl.Qty = 0.0;
-                clientUsageLinesTbl.CupCount = pCupCount;
-                clientUsageLinesTbl.Notes = str;
+                var summaryLine = new ContactUsageLine
+                {
+                    ContactID = all[index1].ContactID,
+                    UsageDate = pDeliveryDate,
+                    ItemServiceTypeID = all[index1].ItemServiceTypeID,
+                    Qty = 0.0,
+                    CupCount = pCupCount,
+                    Notes = str
+                };
+
+                int serviceTypeId = all[index1].ItemServiceTypeID;
                 do
                 {
-                    clientUsageLinesTbl.Qty += all[index1].Qty * all[index1].UnitsPerQty;
-                    itemUsageTblList.Add(new ItemUsageTbl()
+                    summaryLine.Qty += all[index1].Qty * all[index1].UnitsPerQty;
+                    _contactsItemUsageRepository.InsertUsageLine(new ContactsItemUsage
                     {
-                        CustomerID = all[index1].CustomerID,
-                        ItemDate = pDeliveryDate,
+                        ContactID = all[index1].ContactID,
+                        DeliveryDate = pDeliveryDate,
                         ItemProvidedID = all[index1].ItemID,
-                        AmountProvided = all[index1].Qty,
-                        PackagingID = all[index1].PackagingID,
+                        QtyProvided = all[index1].Qty,
+                        ItemPackagingID = all[index1].ItemPackagingID,
                         Notes = str
                     });
                     ++index1;
                 }
-                while (all.Count > index1 && clientUsageLinesTbl.ServiceTypeID == all[index1].ServiceTypeID);
-                clientUsageLinesTblList.Add(clientUsageLinesTbl);
+                while (all.Count > index1 && serviceTypeId == all[index1].ItemServiceTypeID);
+
+                _contactUsageLinesRepository.InsertUsageLine(summaryLine);
             }
-            for (int index2 = 0; index2 < clientUsageLinesTblList.Count; ++index2)
-                clientUsageLinesTblList[index2].InsertItemsUsed(clientUsageLinesTblList[index2]);
-            for (int index3 = 0; index3 < itemUsageTblList.Count; ++index3)
-                itemUsageTblList[index3].InsertItemsUsed(itemUsageTblList[index3]);
+
             return pCupCount;
         }
 
@@ -150,12 +195,20 @@ namespace TrackerSQL.Managers
         {
             if (statusKey == null)
             {
-                return "❌ Status key is null.";
+                return "? Status key is null.";
             }
-            var customer = new CustomersTbl().GetCustomerByCustomerID(customerId);
+
+            var customer = new ContactsRepository().GetById((int)customerId);
+            if (customer == null)
+            {
+                return "? Contact not found.";
+            }
+
             string recipient = !string.IsNullOrWhiteSpace(customer.EmailAddress) ? customer.EmailAddress : customer.AltEmailAddress;
             if (string.IsNullOrWhiteSpace(recipient))
-                return "❌ No recipient email address found.";
+            {
+                return "? No recipient email address found.";
+            }
 
             var emailSettings = new EmailSettings();
             emailSettings.SetRecipient(recipient);
@@ -177,41 +230,30 @@ namespace TrackerSQL.Managers
             bool success = email.SendEmail();
             if (success)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"✅ Order done message sent to {recipient}");
-
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"? Order done message sent to {recipient}");
             }
             else
             {
-                // Log the error
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"❌ Failed to send email to {recipient}: {email.myResults.sResult}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"? Failed to send email to {recipient}: {email.myResults.sResult}");
             }
-            string message = success
-                ? null
-                : $"❌ Failed to send email to {recipient}: {email.myResults.sResult}";
 
-            return message;
+            return success ? null : $"? Failed to send email to {recipient}: {email.myResults.sResult}";
         }
 
-        // Add helper (adjust service type IDs to your real constants)
         private static bool IsCoffeeOrConsumableServiceType(int serviceType)
         {
-            return serviceType == SystemConstants.ServiceTypeConstants.Coffee
-        // || serviceType == SystemConstants.ServiceTypeConstants.Consumable   // enable when constant available
-        ;
-        }
-        private static bool IsCoffeeOrConsumable(int itemId)
-        {
-            int serviceType = TrackerSQL.Controls.ItemTypeTbl.GetServiceTypeForItem(itemId);
-            return IsCoffeeOrConsumableServiceType(serviceType);
+            return serviceType == SystemConstants.ServiceTypeConstants.Coffee;
         }
 
-        private static void SyncReoccurringOrderLastDone(int customerId, DateTime deliveryDate)
+        private bool IsCoffeeOrConsumable(int itemId)
         {
-            var reoccurDal = new ReoccuringOrderDAL();
-            var reoccurOrders = reoccurDal.GetAll(ReoccuringOrderDAL.CONST_ENABLEDONLY, "",
-                $"ReoccuringOrderTbl.CustomerID = {customerId}");
+            return IsCoffeeOrConsumableServiceType(_itemsRepository.GetServiceTypeForItem(itemId));
+        }
 
-            var deliveredItems = new ClientUsageFromTempOrder().GetAll(customerId);
+        private void SyncReoccurringOrderLastDone(int customerId, int tempHeaderId, DateTime deliveryDate)
+        {
+            var reoccurOrders = _recurringOrdersRepository.GetEnabledSummariesByContactId(customerId);
+            var deliveredItems = _tempOrdersLinesRepository.GetUsageLinesForContact(customerId, tempHeaderId);
 
             AppLogger.WriteLog(SystemConstants.LogTypes.System,
                 $"SyncReoccurringOrderLastDone: Cust={customerId} RecurCnt={reoccurOrders.Count} DeliveredCnt={deliveredItems.Count}");
@@ -220,63 +262,126 @@ namespace TrackerSQL.Managers
             {
                 foreach (var item in deliveredItems)
                 {
-                    // Only coffee / consumable items should move DateLastDone
                     if (!IsCoffeeOrConsumable(item.ItemID))
+                    {
                         continue;
+                    }
 
                     if (OrderMatchesReoccuringOrder(item, reoccurOrder))
                     {
-                        reoccurDal.SetReoccuringOrderDates(deliveryDate, reoccurOrder.ReoccuringOrderID, true);
+                        _recurringOrdersRepository.SetRecurringOrderItemDates(
+                            deliveryDate,
+                            reoccurOrder.RecurringOrderItemID,
+                            orderDone: true);
+
                         AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                            $"Recurring updated (Cust={customerId}, RecID={reoccurOrder.ReoccuringOrderID}) using delivered ItemID={item.ItemID}");
-                        break; // stop inner loop once matched
+                            $"Recurring updated (Cust={customerId}, RecItemID={reoccurOrder.RecurringOrderItemID}) using delivered ItemID={item.ItemID}");
+                        break;
                     }
                 }
             }
         }
-        // Helper to check if an item is a group item
-        private static bool IsGroupItem(int itemTypeId)
+
+        private bool IsGroupItem(int itemTypeId)
         {
-            // This assumes group items are flagged by ServiceTypeConstants.GroupItem
-            // Adjust if your schema uses a different approach
-            return TrackerSQL.Controls.ItemTypeTbl.GetServiceTypeForItem(itemTypeId) == SystemConstants.ServiceTypeConstants.GroupItem;
+            return _itemsRepository.GetServiceTypeForItem(itemTypeId) == SystemConstants.ServiceTypeConstants.GroupItem;
         }
-        // Helper: cache-friendly check
-        private static bool GroupContainsCoffeeOrConsumable(IEnumerable<int> groupItemIds)
+
+        private bool GroupContainsCoffeeOrConsumable(IEnumerable<int> groupItemIds)
         {
             foreach (var id in groupItemIds)
             {
-                if (IsCoffeeOrConsumable(id)) return true;
+                if (IsCoffeeOrConsumable(id))
+                {
+                    return true;
+                }
             }
-            return false;        }
 
-        // Helper method to compare delivered item and reoccurring order
-        private static bool OrderMatchesReoccuringOrder(ClientUsageFromTempOrder deliveredItem, ReoccuringOrderExtData reoccurOrder)
+            return false;
+        }
+
+        private bool OrderMatchesReoccuringOrder(TempOrderUsageLine deliveredItem, RecurringOrderSummary reoccurOrder)
         {
-            if (IsGroupItem(reoccurOrder.ItemRequiredID))
+            int itemRequiredId = reoccurOrder.ItemRequiredID ?? 0;
+
+            if (IsGroupItem(itemRequiredId))
             {
-                var groupItemIds = TrackerSQL.Controls.ItemGroupTbl.GetItemIdsForGroup(reoccurOrder.ItemRequiredID);
+                var groupItemIds = _itemGroupsRepository.GetItemIdsForGroup(itemRequiredId);
 
                 if (groupItemIds.Contains(deliveredItem.ItemID))
+                {
                     return true;
+                }
 
                 if (IsCoffeeOrConsumable(deliveredItem.ItemID) && GroupContainsCoffeeOrConsumable(groupItemIds))
+                {
                     return true;
+                }
 
                 return false;
             }
 
-            // Non-group logic:
-            // Coffee / consumable items are treated as interchangeable by service type (broad match)
-            // All other service types require an exact ItemID match.
-            bool requiredIsCoffeeLike = IsCoffeeOrConsumable(reoccurOrder.ItemRequiredID);
+            bool requiredIsCoffeeLike = IsCoffeeOrConsumable(itemRequiredId);
             bool deliveredIsCoffeeLike = IsCoffeeOrConsumable(deliveredItem.ItemID);
 
             if (requiredIsCoffeeLike && deliveredIsCoffeeLike)
-                return true; // any coffee/consumable satisfies the recurring coffee/consumable order
+            {
+                return true;
+            }
 
-            // For non-coffee (e.g. maintenance, accessories, equipment-linked, etc.) require exact item.
-            return deliveredItem.ItemID == reoccurOrder.ItemRequiredID;
+            return deliveredItem.ItemID == itemRequiredId;
+        }
+
+        private struct LineUsageData
+        {
+            public int LastCount;
+            public double LastQty;
+            public DateTime UsageDate;
+        }
+
+        private LineUsageData GetLatestUsageData(int contactId, int serviceTypeId)
+        {
+            var line = _contactUsageLinesRepository.GetLatestUsageLine(contactId, serviceTypeId);
+            return new LineUsageData
+            {
+                LastCount = line?.CupCount ?? 0,
+                LastQty = line?.Qty ?? 0,
+                UsageDate = line?.UsageDate ?? DateTime.MinValue
+            };
+        }
+
+        private int CalcEstCupCount(int contactId, LineUsageData usageData, bool hasCoffee)
+        {
+            if (usageData.UsageDate <= DateTime.MinValue)
+            {
+                return 0;
+            }
+
+            double dailyAverage = _contactsUsageRepository.GetByContactId(contactId)?.DailyConsumption
+                ?? SystemConstants.BusinessConstants.TypicalAverageConsumption;
+            if (dailyAverage <= 0)
+            {
+                dailyAverage = SystemConstants.BusinessConstants.TypicalAverageConsumption;
+            }
+
+            int daysSince = (TimeZoneUtils.Now().Date - usageData.UsageDate.Date).Days;
+            double estimate = !hasCoffee || usageData.LastQty == 0.0
+                ? usageData.LastCount + (daysSince * dailyAverage)
+                : usageData.LastCount + (usageData.LastQty * 100.0);
+
+            return Convert.ToInt32(Math.Round(estimate));
+        }
+
+        private void UpdatePredictions(int contactId, int lastCupCount)
+        {
+            var usage = _contactsUsageRepository.GetByContactId(contactId);
+            if (usage == null || lastCupCount <= 0)
+            {
+                return;
+            }
+
+            usage.LastCupCount = lastCupCount;
+            _contactsUsageRepository.Update(usage);
         }
     }
 }

@@ -1,11 +1,19 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
     public class OrderDetailManager
     {
+        private readonly ItemsRepository _itemsRepository;
+
+        public OrderDetailManager()
+        {
+            _itemsRepository = new ItemsRepository();
+        }
+
         public bool SendOrderConfirmation(ContactEmailDetails contact, OrderHeaderData header,List<OrderLineData> orderLines,
             string notes, out string statusMessage)
         {
@@ -82,10 +90,9 @@ namespace TrackerSQL.Managers
             email.AddToBody("<ul>");
             foreach (var line in orderLines)
             {
-                // If you have a method to get the sort order for the item:
-                int sortOrder = new ItemTypeTbl().GetItemSortOrder(line.ItemID);
+                int sortOrder = _itemsRepository.GetItemSortOrder(line.ItemID);
 
-                if (sortOrder == ItemTypeTbl.ItemTypeConstants.NotesSortOrder)
+                if (sortOrder == SystemConstants.ItemConstants.NotesSortOrder)
                 {
                     // This is a "notes" line
                     string cleanedNotes = EmailUtils.CleanNoteText(notes);

@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ActiveDeliveryData
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -13,6 +13,8 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    //--- Legacy Control that is moved to POCO and Repos. We are marking as obsolete and will remove in future release. Please use ActiveDeliveryDateRepository instead.
+    [Obsolete("Active DeliveryData REMOVED - DO NOT USE", true)]
     public class ActiveDeliveryData
     {
         //private const string CONST_CONSTRING = "Tracker08ConnectionString";  SystemConstants.DatabaseConstants.ConnectionStringName

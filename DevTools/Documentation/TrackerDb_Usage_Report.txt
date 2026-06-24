@@ -1,0 +1,618 @@
+﻿TrackerDb Usage Analysis Report
+================================
+Generated: 2026-06-02 10:38:39
+
+SUMMARY
+-------
+Total Files Scanned: 391
+Files with TrackerDb Usage: 65
+Total Pattern Matches: 1638
+
+FILES REQUIRING MIGRATION
+=========================
+
+
+CONTROLS - TABLE CLASSES
+------------------------
+
+File: Controls\CustomersTbl.cs
+  Total Matches: 168
+    - AddParams : 85
+    - AddWhereParams : 15
+    - ExecuteNonQuerySQL : 7
+    - ExecuteSQLGetDataReader : 8
+    - NewTrackerDb : 18
+    - TrackerDbClose : 17
+    - TrackerDbVariable : 18
+
+File: Controls\TempOrdersLinesTbl.cs
+  Total Matches: 23
+    - AddParams : 6
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\TransactionTypesTbl.cs
+  Total Matches: 23
+    - AddParams : 5
+    - AddWhereParams : 2
+    - ExecuteNonQuerySQL : 2
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\OrderCheckTbl.cs
+  Total Matches: 24
+    - AddWhereParams : 8
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\SectionTypesTbl.cs
+  Total Matches: 24
+    - AddParams : 5
+    - AddWhereParams : 3
+    - ExecuteNonQuerySQL : 2
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\OrderItemTbl.cs
+  Total Matches: 25
+    - AddParams : 10
+    - AddWhereParams : 7
+    - ExecuteNonQuerySQL : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\InvoiceTypeTbl.cs
+  Total Matches: 25
+    - AddParams : 6
+    - AddWhereParams : 3
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\SysDataTbl.cs
+  Total Matches: 26
+    - AddParams : 5
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 1
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 5
+    - TrackerDbClose : 5
+    - TrackerDbVariable : 5
+
+File: Controls\LogTbl.cs
+  Total Matches: 26
+    - AddParams : 14
+    - ExecuteNonQuerySQL : 2
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 3
+    - TrackerDbClose : 3
+    - TrackerDbVariable : 3
+
+File: Controls\AreaPrepDaysTbl.cs
+  Total Matches: 27
+    - AddParams : 8
+    - AddWhereParams : 3
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\PackagingTbl.cs
+  Total Matches: 28
+    - AddParams : 10
+    - AddWhereParams : 2
+    - ExecuteNonQuerySQL : 2
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\EquipTypeTbl.cs
+  Total Matches: 28
+    - AddParams : 7
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 5
+    - TrackerDbClose : 5
+    - TrackerDbVariable : 5
+
+File: Controls\TempOrdersHeaderTbl.cs
+  Total Matches: 28
+    - AddParams : 8
+    - ExecuteNonQuerySQL : 2
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 5
+    - TrackerDbClose : 5
+    - TrackerDbVariable : 5
+
+File: Controls\PriceLevelsTbl.cs
+  Total Matches: 32
+    - AddParams : 8
+    - AddWhereParams : 4
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 5
+    - TrackerDbClose : 5
+    - TrackerDbVariable : 5
+
+File: Controls\RepairStatusesTbl.cs
+  Total Matches: 32
+    - AddParams : 10
+    - AddWhereParams : 4
+    - ExecuteSQLGetDataReader : 5
+    - NewTrackerDb : 7
+    - TrackerDbClose : 3
+    - TrackerDbVariable : 3
+
+File: Controls\PaymentTermsTbl.cs
+  Total Matches: 36
+    - AddParams : 12
+    - AddWhereParams : 4
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 5
+    - TrackerDbClose : 5
+    - TrackerDbVariable : 5
+
+File: Controls\MachineConditionsTbl.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\TrackedServiceItemTbl.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\CustomerTypeTbl.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ItemUnitsTbl.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ReoccuranceTypeTbl.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ClientUsageTbl.cs
+  Total Matches: 42
+    - AddParams : 12
+    - AddWhereParams : 6
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 6
+    - TrackerDbClose : 6
+    - TrackerDbVariable : 6
+
+File: Controls\ClientUsageLinesTbl.cs
+  Total Matches: 45
+    - AddParams : 12
+    - AddWhereParams : 7
+    - ExecuteSQLGetDataReader : 5
+    - NewTrackerDb : 7
+    - TrackerDbClose : 7
+    - TrackerDbVariable : 7
+
+File: Controls\ItemUsageTbl.cs
+  Total Matches: 45
+    - AddParams : 13
+    - AddWhereParams : 8
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 6
+    - TrackerDbClose : 6
+    - TrackerDbVariable : 6
+
+File: Controls\RepairsTbl.cs
+  Total Matches: 47
+    - AddParams : 22
+    - AddWhereParams : 3
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 7
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 7
+
+File: Controls\SentRemindersLogTbl.cs
+  Total Matches: 48
+    - AddParams : 12
+    - AddWhereParams : 4
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 5
+    - NewTrackerDb : 8
+    - TrackerDbClose : 8
+    - TrackerDbVariable : 8
+
+File: Controls\PersonsTbl.cs
+  Total Matches: 49
+    - AddParams : 10
+    - AddWhereParams : 7
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 5
+    - NewTrackerDb : 8
+    - TrackerDbClose : 8
+    - TrackerDbVariable : 8
+
+File: Controls\ItemTypeTbl.cs
+  Total Matches: 5
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\CustomersWithDatesAndUsageTbl.cs
+  Total Matches: 5
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\UsedItemGroupTbl.cs
+  Total Matches: 51
+    - AddParams : 12
+    - AddWhereParams : 11
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 7
+    - TrackerDbClose : 7
+    - TrackerDbVariable : 7
+
+File: Controls\NextPrepDateByAreaTbl.cs
+  Total Matches: 55
+    - AddParams : 13
+    - AddWhereParams : 6
+    - ExecuteNonQuerySQL : 4
+    - ExecuteSQLGetDataReader : 5
+    - NewTrackerDb : 9
+    - TrackerDbClose : 9
+    - TrackerDbVariable : 9
+
+File: Controls\OrderTbl.cs
+  Total Matches: 71
+    - AddParams : 19
+    - AddWhereParams : 15
+    - ExecuteNonQuerySQL : 7
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 10
+    - TrackerDbClose : 8
+    - TrackerDbVariable : 9
+
+File: Controls\ItemGroupTbl.cs
+  Total Matches: 78
+    - AddParams : 11
+    - AddWhereParams : 17
+    - ExecuteNonQuerySQL : 5
+    - ExecuteSQLGetDataReader : 8
+    - NewTrackerDb : 13
+    - TrackerDbClose : 12
+    - TrackerDbVariable : 12
+
+File: Controls\RepairFaultsTbl.cs
+  Total Matches: 9
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\ServiceTypeTbl.cs
+  Total Matches: 9
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\CustomersAccInfoTbl.cs
+  Total Matches: 92
+    - AddParams : 58
+    - AddWhereParams : 6
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 7
+    - TrackerDbClose : 7
+    - TrackerDbVariable : 7
+
+CONTROLS - DATA ACCESS
+----------------------
+
+File: Controls\AreaTblDAL.cs
+  Total Matches: 19
+    - AddWhereParams : 3
+    - ExecuteSQLGetDataReader : 4
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\OrderDetailDAL.cs
+  Total Matches: 36
+    - AddParams : 14
+    - AddWhereParams : 6
+    - ExecuteNonQuerySQL : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 4
+    - TrackerDbClose : 4
+    - TrackerDbVariable : 4
+
+File: Controls\CustomerDAL.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\CustomerSummaryDAL.cs
+  Total Matches: 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ReoccuringOrderDAL.cs
+  Total Matches: 61
+    - AddParams : 26
+    - AddWhereParams : 6
+    - ExecuteNonQuerySQL : 5
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 7
+    - TrackerDbClose : 8
+    - TrackerDbVariable : 6
+
+File: Controls\TempOrdersDAL.cs
+  Total Matches: 8
+    - ExecuteNonQuerySQL : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+CONTROLS - OTHER
+----------------
+
+File: Controls\CompanyNames.cs
+  Total Matches: 13
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 3
+    - TrackerDbClose : 3
+    - TrackerDbVariable : 3
+
+File: Controls\SendCheckEmailTextsData.cs
+  Total Matches: 14
+    - AddParams : 5
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\ContactType.cs
+  Total Matches: 16
+    - AddParams : 3
+    - AddWhereParams : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 3
+    - TrackerDbClose : 3
+    - TrackerDbVariable : 3
+
+File: Controls\OrderData.cs
+  Total Matches: 20
+    - AddParams : 10
+    - AddWhereParams : 2
+    - ExecuteNonQuerySQL : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\ContactEmailDetails.cs
+  Total Matches: 5
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ContactToRemindWithItems.cs
+  Total Matches: 5
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ClientUsageFromTempOrder.cs
+  Total Matches: 5
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\TempCoffeeCheckup.cs
+  Total Matches: 60
+    - AddParams : 31
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 4
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 7
+    - TrackerDbClose : 7
+    - TrackerDbVariable : 7
+
+File: Controls\ContactsThatMayNeedNextWeek.cs
+  Total Matches: 7
+    - AddWhereParams : 3
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\ActiveDeliveryData.cs
+  Total Matches: 8
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Controls\OrderCheck.cs
+  Total Matches: 8
+    - AddWhereParams : 4
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Controls\HolidayClosureProvider.cs
+  Total Matches: 9
+    - AddParams : 6
+    - AddWhereParams : 1
+    - NewTrackerDb : 2
+
+File: Controls\CustomerTrackedServiceItems.cs
+  Total Matches: 9
+    - AddWhereParams : 1
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+CLASSES
+-------
+
+File: Classes\GeneralTrackerDbTools.cs
+  Total Matches: 13
+    - AddParams : 5
+    - AddWhereParams : 1
+    - ExecuteNonQuerySQL : 2
+    - NewTrackerDb : 2
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 2
+
+File: Classes\DateMatrixBuilder.cs
+  Total Matches: 9
+    - AddWhereParams : 5
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 2
+
+File: Classes\TrackerTools.cs
+  Total Matches: 9
+    - ExecuteSQLGetDataReader : 2
+    - NewTrackerDb : 3
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+PAGES
+-----
+
+File: Pages\ViewMyOrder.aspx.cs
+  Total Matches: 11
+    - AddWhereParams : 8
+    - NewTrackerDb : 3
+
+File: Pages\DeliverySheet.aspx.cs
+  Total Matches: 12
+    - AddWhereParams : 3
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 2
+    - TrackerDbClose : 2
+    - TrackerDbVariable : 2
+
+File: Pages\DeleteOrderLine.aspx.cs
+  Total Matches: 4
+    - ExecuteNonQuerySQL : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+File: Pages\NewOrderDetail.aspx.cs
+  Total Matches: 6
+    - AddWhereParams : 2
+    - ExecuteSQLGetDataReader : 1
+    - NewTrackerDb : 1
+    - TrackerDbClose : 1
+    - TrackerDbVariable : 1
+
+OTHER
+-----
+
+File: Managers\CoffeeCheckupManager.cs
+  Total Matches: 4
+    - AddParams : 2
+    - AddWhereParams : 1
+    - NewTrackerDb : 1
+
+TOOLS
+-----
+
+File: Tools\XMLtoSQL.aspx.cs
+  Total Matches: 4
+    - ExecuteNonQuerySQL : 1
+    - NewTrackerDb : 3
+
+OTHER
+-----
+
+File: test\ShowTableStruct.aspx.cs
+  Total Matches: 9
+    - ExecuteSQLGetDataReader : 3
+    - NewTrackerDb : 3
+    - TrackerDbVariable : 3
+
+
+MIGRATION PRIORITY RECOMMENDATIONS
+===================================
+
+PHASE 1 - CRITICAL (Week 1)
+---------------------------
+  - Controls\CustomersTbl.cs (168 usages)
+  - Controls\ItemTypeTbl.cs (5 usages)
+
+PHASE 2 - HIGH IMPACT (Week 2)
+-------------------------------
+  - Controls\ClientUsageTbl.cs (42 usages)
+  - Controls\ItemUsageTbl.cs (45 usages)
+  - Controls\PersonsTbl.cs (49 usages)
+  - Controls\OrderDetailDAL.cs (36 usages)
+  - Controls\ReoccuringOrderDAL.cs (61 usages)
+
+PHASE 3 - SUPPORTING TABLES (Week 3)
+-------------------------------------
+  All *Tbl.cs and *DAL.cs files not in Phase 1 or 2
+
+PHASE 4 - LOOKUP TABLES (Week 4)
+---------------------------------
+  Simple CRUD operations, logging, configuration

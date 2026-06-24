@@ -1,11 +1,10 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36127.28
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackerSQL", "TrackerSQL.csproj", "{51B5AB93-A0CF-44B1-B486-35FB769AC98A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigrationRunner", "Migrations\MigrationRunner\MigrationRunner.csproj", "{6B007ED7-6BD0-CAC9-AB6A-91BDE9A672C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

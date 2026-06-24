@@ -1,0 +1,12 @@
+using TrackerSQL.Classes.Poco;
+namespace TrackerSQL.Classes.Sql
+{
+    public class ContactTypesRepository : RepositoryBase<ContactType>
+    {
+        protected override string TableName => "ContactTypesTbl";
+        protected override string KeyColumn => "ContactTypeID";
+
+        protected override string CoreColumns => "ContactTypeID, ContactTypeDesc";
+        protected override string LookupColumns => "ContactTypeID, ContactTypeDesc";
+    }
+}

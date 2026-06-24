@@ -1,64 +1,64 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System;
 using System.Web.UI;
-using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Managers;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Tools
 {
-  public partial class MoveDeliveryDate : System.Web.UI.Page
-  {
-    protected void Page_Load(object sender, EventArgs e)
+    public partial class MoveDeliveryDate : Page
     {
-      if (!IsPostBack)
-      {
-//        OldDeliveryDateTextBox.Text = String.Format("{0:d}", TimeZoneUtils.Now().Date);
-        NewDeliveryDateTextBox.Text = String.Format("{0:d}", TimeZoneUtils.Now().AddDays(1).Date);
-      }
+        private readonly NextPrepDateByAreaRepository _repository = new NextPrepDateByAreaRepository();
+        private readonly NextPrepDateDataSource _dataSource = new NextPrepDateDataSource();
 
-    }
-
-    protected void btnMove_Click(object sender, EventArgs e)
-    {
-      DateTime _OldDate = Convert.ToDateTime(OldDeliveryDateDDL.SelectedValue);
-      DateTime _NewDate = Convert.ToDateTime(NewDeliveryDateTextBox.Text);
-
-      if ((_OldDate == System.DateTime.MinValue) || (_NewDate == System.DateTime.MinValue))
-      {
-        StatusLiteral.Text = "new and old dates must be valid";
-      }
-      else
-      {
-
-        TrackerSQL.Controls.NextRoastDateByCityTbl _NRD = new NextRoastDateByCityTbl();
-        int _numRecs = 0;
-        string _result = _NRD.MoveDeliveryDate(_OldDate, _NewDate, ref _numRecs);
-
-        if (String.IsNullOrEmpty(_result))
+        protected void Page_Load(object sender, EventArgs e)
         {
-          List<int> _NRDIDs = _NRD.GetAllIDsByDate(_OldDate);
-          foreach (int _NRDID in _NRDIDs)
-          {
-            _result += _NRD.UpdateDeliveryDateByID(_NRDID,_OldDate);
-            _numRecs++;
-          }
-          if (!String.IsNullOrEmpty(_result))
-            StatusLiteral.Text = "ERROR: " + _result;
-          else
-            StatusLiteral.Text = String.Format("Move done: {0}record(s) updated.", _numRecs);
-
-          gvPrepData.DataBind();
-          OldDeliveryDateDDL.DataBind();
+            if (!IsPostBack)
+            {
+                NewDeliveryDateTextBox.Text = string.Format("{0:d}", TimeZoneUtils.Now().AddDays(1).Date);
+                BindPrepGrid();
+            }
         }
-        else
+
+        protected void btnMove_Click(object sender, EventArgs e)
         {
-          StatusLiteral.Text = "ERROR: " + _result;
-        }
-      }
+            try
+            {
+                DateTime oldDate = Convert.ToDateTime(OldDeliveryDateDDL.SelectedValue);
+                DateTime newDate = Convert.ToDateTime(NewDeliveryDateTextBox.Text);
 
+                if (oldDate == DateTime.MinValue || newDate == DateTime.MinValue)
+                {
+                    StatusLiteral.Text = "New and old dates must be valid";
+                    return;
+                }
+
+                int numRecs = _repository.MoveDeliveryDate(oldDate, newDate);
+                StatusLiteral.Text = numRecs >= 0
+                    ? $"Move done: {numRecs} record(s) updated."
+                    : "ERROR: Failed to move delivery dates.";
+
+                if (numRecs >= 0)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                        $"MoveDeliveryDate: Moved delivery dates from {oldDate:yyyy-MM-dd} to {newDate:yyyy-MM-dd}. {numRecs} records updated.");
+                }
+
+                BindPrepGrid();
+                OldDeliveryDateDDL.DataBind();
+            }
+            catch (Exception ex)
+            {
+                StatusLiteral.Text = $"ERROR: {ex.Message}";
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    $"MoveDeliveryDate error: {ex.Message}");
+            }
+        }
+
+        private void BindPrepGrid()
+        {
+            gvPrepData.DataSource = _dataSource.GetAreaPrepDateGrid();
+            gvPrepData.DataBind();
+        }
     }
-  }
 }

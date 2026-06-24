@@ -1,0 +1,61 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class RepairStatusesRepository : RepositoryBase<RepairStatus>
+    {
+        protected override string TableName => "RepairStatusesTbl";
+        protected override string KeyColumn => "RepairStatusID";
+
+        protected override string CoreColumns => "RepairStatusID, RepairStatusDesc, EmailContact, SortOrder, Notes, StatusNote";
+        protected override string LookupColumns => "RepairStatusID, RepairStatusDesc";
+
+        public void Insert(RepairStatus repairStatus)
+        {
+            const string sql = "INSERT INTO RepairStatusesTbl (RepairStatusDesc, EmailContact, SortOrder, Notes, StatusNote) VALUES (@RepairStatusDesc, @EmailContact, @SortOrder, @Notes, @StatusNote)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@RepairStatusDesc", DataValue = repairStatus.RepairStatusDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EmailContact", DataValue = repairStatus.EmailContact ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@SortOrder", DataValue = repairStatus.SortOrder ?? 0, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@Notes", DataValue = repairStatus.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@StatusNote", DataValue = repairStatus.StatusNote ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(RepairStatus repairStatus)
+        {
+            const string sql = "UPDATE RepairStatusesTbl SET RepairStatusDesc = @RepairStatusDesc, EmailContact = @EmailContact, SortOrder = @SortOrder, Notes = @Notes, StatusNote = @StatusNote WHERE RepairStatusID = @RepairStatusID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@RepairStatusDesc", DataValue = repairStatus.RepairStatusDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EmailContact", DataValue = repairStatus.EmailContact ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@SortOrder", DataValue = repairStatus.SortOrder ?? 0, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@Notes", DataValue = repairStatus.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@StatusNote", DataValue = repairStatus.StatusNote ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@RepairStatusID", DataValue = repairStatus.RepairStatusID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int repairStatusID)
+        {
+            const string sql = "DELETE FROM RepairStatusesTbl WHERE RepairStatusID = @RepairStatusID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@RepairStatusID", DataValue = repairStatusID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

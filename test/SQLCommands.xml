@@ -5,7 +5,7 @@
     [TOHeaderID] AUTOINCREMENT,
     [CustomerID] INT ,
     [OrderDate] DateTime,
-    [RoastDate]  DateTime,
+    [PrepDate]  DateTime,
     [RequiredByDate]  DateTime ,
     [ToBeDeliveredByID] INT ,
     [Confirmed] YESNO,

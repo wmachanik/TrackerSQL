@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
 using TrackerSQL.Classes;
 
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class CustomersAwayTbl
     {
         /// <summary>
@@ -16,48 +16,51 @@ namespace TrackerSQL.Controls
             var result = new List<ClientAwayPeriod>();
             try
             {
+                // SQL Server uses ContactsAwayPeriodTbl and ContactsTbl (not ClientAwayPeriodTbl/CustomersTbl)
                 string sql =
-                    "SELECT c.CompanyName, a.AwayPeriodID, a.AwayStartDate, a.AwayEndDate, r.ReasonDesc " +
-                    "FROM (ClientAwayPeriodTbl a " +
-                    "INNER JOIN CustomersTbl c ON a.ClientID = c.CustomerID) " +
-                    "INNER JOIN AwayReasonTbl r ON a.ReasonID = r.AwayReasonID";
+                    @"SELECT c.CompanyName, a.AwayPeriodID, a.AwayStartDate, a.AwayEndDate, r.ReasonDesc 
+                      FROM ContactsAwayPeriodTbl a 
+                      INNER JOIN ContactsTbl c ON a.ContactID = c.ContactID
+                      LEFT JOIN AwayReasonsTbl r ON a.ReasonID = r.ReasonID";
 
-                var db = new TrackerDb();
+                var parameters = new List<DBParameter>();
 
                 // Add WHERE clause if needed
                 if (!string.IsNullOrWhiteSpace(whereFilter))
                 {
-                    // NOTE: whereFilter comes from UI/session in this app; left as-is to match existing pattern.
-                    sql += " WHERE " + whereFilter;
+                    // Convert Access-style date literals to SQL Server format
+                    string sqlFilter = whereFilter.Replace("#", "'");
+                    sql += " WHERE " + sqlFilter;
                 }
                 else
                 {
                     // Default: show all customers whose away period ends today or in the future
                     DateTime yesterday = TimeZoneUtils.Now().Date.AddDays(-1);
-                    sql += " WHERE a.AwayEndDate >= ?";
-                    db.AddWhereParams(yesterday, DbType.DateTime);
+                    sql += " WHERE a.AwayEndDate >= @EndDate";
+                    parameters.Add(new DBParameter { ParamName = "@EndDate", DataValue = yesterday, DataDbType = DbType.DateTime });
                 }
 
                 // Add ORDER BY if specified
                 if (!string.IsNullOrWhiteSpace(sortBy))
                 {
-                    sql += $" ORDER BY {sortBy}";
+                    string orderBy = sortBy;
+                    if (sortBy.Equals("CompanyName", StringComparison.OrdinalIgnoreCase))
+                        orderBy = "c.CompanyName";
+                    sql += $" ORDER BY {orderBy}";
                 }
 
-                var ds = db.ReturnDataSet(sql);
-                db.Close();
-
-                if (ds != null && ds.Tables.Count > 0)
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql, parameters))
                 {
-                    foreach (DataRow row in ds.Tables[0].Rows)
+                    while (rdr != null && rdr.Read())
                     {
                         var item = new ClientAwayPeriod
                         {
-                            CompanyName = row["CompanyName"]?.ToString(),
-                            AwayPeriodID = row["AwayPeriodID"] != DBNull.Value ? Convert.ToInt32(row["AwayPeriodID"]) : 0,
-                            AwayStartDate = row["AwayStartDate"] != DBNull.Value ? Convert.ToDateTime(row["AwayStartDate"]) : DateTime.MinValue,
-                            AwayEndDate = row["AwayEndDate"] != DBNull.Value ? Convert.ToDateTime(row["AwayEndDate"]) : DateTime.MinValue,
-                            ReasonDesc = row["ReasonDesc"]?.ToString()
+                            CompanyName = rdr["CompanyName"]?.ToString(),
+                            AwayPeriodID = rdr["AwayPeriodID"] != DBNull.Value ? Convert.ToInt32(rdr["AwayPeriodID"]) : 0,
+                            AwayStartDate = rdr["AwayStartDate"] != DBNull.Value ? Convert.ToDateTime(rdr["AwayStartDate"]) : DateTime.MinValue,
+                            AwayEndDate = rdr["AwayEndDate"] != DBNull.Value ? Convert.ToDateTime(rdr["AwayEndDate"]) : DateTime.MinValue,
+                            ReasonDesc = rdr["ReasonDesc"]?.ToString()
                         };
                         result.Add(item);
                     }
@@ -67,7 +70,7 @@ namespace TrackerSQL.Controls
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"GetCustomersAway error: {ex.Message}")
+                    $"GetCustomersAway error: {ex.Message}"
                 );
             }
             return result;
@@ -80,22 +83,26 @@ namespace TrackerSQL.Controls
         {
             try
             {
-                const string sql = "INSERT INTO ClientAwayPeriodTbl (ClientID, AwayStartDate, AwayEndDate, ReasonID) VALUES (?, ?, ?, ?)";
-                var db = new TrackerDb();
-                db.AddParams(customerId, DbType.Int32);
-                db.AddParams(startDate, DbType.DateTime);
-                db.AddParams(endDate, DbType.DateTime);
-                db.AddParams(reasonId, DbType.Int32);
+                const string sql = "INSERT INTO ContactsAwayPeriodTbl (ContactID, AwayStartDate, AwayEndDate, ReasonID) VALUES (@ContactID, @StartDate, @EndDate, @ReasonID)";
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@ContactID", DataValue = customerId, DataDbType = DbType.Int32 },
+                    new DBParameter { ParamName = "@StartDate", DataValue = startDate, DataDbType = DbType.DateTime },
+                    new DBParameter { ParamName = "@EndDate", DataValue = endDate, DataDbType = DbType.DateTime },
+                    new DBParameter { ParamName = "@ReasonID", DataValue = reasonId, DataDbType = DbType.Int32 }
+                };
 
-                string err = db.ExecuteNonQuerySQL(sql);
-                db.Close();
-                return err ?? "";
+                using (var db = new TrackerSQLDb())
+                {
+                    db.ExecuteNonQuery(sql, parameters);
+                }
+                return "";
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"InsertAwayPeriod error: {ex.Message}")
+                    $"InsertAwayPeriod error: {ex.Message}"
                 );
                 return ex.Message;
             }
@@ -108,23 +115,27 @@ namespace TrackerSQL.Controls
         {
             try
             {
-                const string sql = "UPDATE ClientAwayPeriodTbl SET ClientID=?, AwayStartDate=?, AwayEndDate=?, ReasonID=? WHERE AwayPeriodID=?";
-                var db = new TrackerDb();
-                db.AddParams(customerId, DbType.Int32);
-                db.AddParams(startDate, DbType.DateTime);
-                db.AddParams(endDate, DbType.DateTime);
-                db.AddParams(reasonId, DbType.Int32);
-                db.AddWhereParams(awayPeriodId, DbType.Int32);
+                const string sql = "UPDATE ContactsAwayPeriodTbl SET ContactID=@ContactID, AwayStartDate=@StartDate, AwayEndDate=@EndDate, ReasonID=@ReasonID WHERE AwayPeriodID=@AwayPeriodID";
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@ContactID", DataValue = customerId, DataDbType = DbType.Int32 },
+                    new DBParameter { ParamName = "@StartDate", DataValue = startDate, DataDbType = DbType.DateTime },
+                    new DBParameter { ParamName = "@EndDate", DataValue = endDate, DataDbType = DbType.DateTime },
+                    new DBParameter { ParamName = "@ReasonID", DataValue = reasonId, DataDbType = DbType.Int32 },
+                    new DBParameter { ParamName = "@AwayPeriodID", DataValue = awayPeriodId, DataDbType = DbType.Int32 }
+                };
 
-                string err = db.ExecuteNonQuerySQL(sql);
-                db.Close();
-                return err ?? "";
+                using (var db = new TrackerSQLDb())
+                {
+                    db.ExecuteNonQuery(sql, parameters);
+                }
+                return "";
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"UpdateAwayPeriod error: {ex.Message}")
+                    $"UpdateAwayPeriod error: {ex.Message}"
                 );
                 return ex.Message;
             }
@@ -138,39 +149,41 @@ namespace TrackerSQL.Controls
             ClientAwayPeriod result = null;
             try
             {
-                var db = new TrackerDb();
-                db.AddWhereParams(awayPeriodId, DbType.Int32);
-
                 string sql =
-                    "SELECT a.*, c.CompanyName, r.ReasonDesc " +
-                    "FROM (ClientAwayPeriodTbl a " +
-                    "INNER JOIN CustomersTbl c ON a.ClientID = c.CustomerID) " +
-                    "INNER JOIN AwayReasonTbl r ON a.ReasonID = r.AwayReasonID " +
-                    "WHERE a.AwayPeriodID = ?";
+                    @"SELECT a.AwayPeriodID, a.ContactID AS ClientID, c.CompanyName, a.AwayStartDate, a.AwayEndDate, a.ReasonID, r.ReasonDesc 
+                      FROM ContactsAwayPeriodTbl a 
+                      INNER JOIN ContactsTbl c ON a.ContactID = c.ContactID
+                      LEFT JOIN AwayReasonsTbl r ON a.ReasonID = r.ReasonID 
+                      WHERE a.AwayPeriodID = @AwayPeriodID";
 
-                var ds = db.ReturnDataSet(sql);
-                db.Close();
-
-                if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                var parameters = new List<DBParameter>
                 {
-                    var row = ds.Tables[0].Rows[0];
-                    result = new ClientAwayPeriod
+                    new DBParameter { ParamName = "@AwayPeriodID", DataValue = awayPeriodId, DataDbType = DbType.Int32 }
+                };
+
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql, parameters))
+                {
+                    if (rdr != null && rdr.Read())
                     {
-                        AwayPeriodID = Convert.ToInt32(row["AwayPeriodID"]),
-                        ClientID = Convert.ToInt32(row["ClientID"]),
-                        CompanyName = row["CompanyName"].ToString(),
-                        AwayStartDate = Convert.ToDateTime(row["AwayStartDate"]),
-                        AwayEndDate = Convert.ToDateTime(row["AwayEndDate"]),
-                        ReasonID = Convert.ToInt32(row["ReasonID"]),
-                        ReasonDesc = row["ReasonDesc"].ToString()
-                    };
+                        result = new ClientAwayPeriod
+                        {
+                            AwayPeriodID = Convert.ToInt32(rdr["AwayPeriodID"]),
+                            ClientID = Convert.ToInt32(rdr["ClientID"]),
+                            CompanyName = rdr["CompanyName"].ToString(),
+                            AwayStartDate = Convert.ToDateTime(rdr["AwayStartDate"]),
+                            AwayEndDate = Convert.ToDateTime(rdr["AwayEndDate"]),
+                            ReasonID = rdr["ReasonID"] != DBNull.Value ? Convert.ToInt32(rdr["ReasonID"]) : 0,
+                            ReasonDesc = rdr["ReasonDesc"]?.ToString() ?? ""
+                        };
+                    }
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"GetAwayPeriodById error: {ex.Message}")
+                    $"GetAwayPeriodById error: {ex.Message}"
                 );
             }
             return result;
@@ -181,9 +194,19 @@ namespace TrackerSQL.Controls
         /// </summary>
         public static DataTable GetAllAwayReasons()
         {
-            var db = new TrackerDb();
-            var dt = db.ReturnDataSet("SELECT AwayReasonID, ReasonDesc FROM AwayReasonTbl ORDER BY ReasonDesc").Tables[0];
-            db.Close();
+            var dt = new DataTable();
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader("SELECT ReasonID AS AwayReasonID, ReasonDesc FROM AwayReasonsTbl ORDER BY ReasonDesc"))
+                {
+                    dt.Load(rdr);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, $"GetAllAwayReasons error: {ex.Message}");
+            }
             return dt;
         }
 
@@ -194,54 +217,62 @@ namespace TrackerSQL.Controls
         {
             try
             {
-                const string sql = "DELETE FROM ClientAwayPeriodTbl WHERE AwayPeriodID = ?";
-                var db = new TrackerDb();
-                db.AddWhereParams(awayPeriodId, DbType.Int32);
-                string err = db.ExecuteNonQuerySQL(sql);
-                db.Close();
-                return err ?? "";
+                const string sql = "DELETE FROM ContactsAwayPeriodTbl WHERE AwayPeriodID = @AwayPeriodID";
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@AwayPeriodID", DataValue = awayPeriodId, DataDbType = DbType.Int32 }
+                };
+
+                using (var db = new TrackerSQLDb())
+                {
+                    db.ExecuteNonQuery(sql, parameters);
+                }
+                return "";
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"DeleteAwayPeriod error: {ex.Message}")
+                    $"DeleteAwayPeriod error: {ex.Message}"
                 );
                 return ex.Message;
             }
         }
+
         public bool IsCustomerAwayOnDate(long customerId, DateTime date)
         {
             try
             {
                 const string sql =
-                    "SELECT COUNT(*) AS Cnt " +
-                    "FROM ClientAwayPeriodTbl a " +
-                    "WHERE a.ClientID = ? AND a.AwayStartDate <= ? AND a.AwayEndDate >= ?";
+                    @"SELECT COUNT(*) AS Cnt 
+                      FROM ContactsAwayPeriodTbl a 
+                      WHERE a.ContactID = @ContactID AND a.AwayStartDate <= @CheckDate AND a.AwayEndDate >= @CheckDate";
 
-                var db = new TrackerDb();
-                db.AddWhereParams(customerId, DbType.Int64);
-                db.AddWhereParams(date.Date, DbType.DateTime); // order matters
-                db.AddWhereParams(date.Date, DbType.DateTime);
-
-                var ds = db.ReturnDataSet(sql);
-                db.Close();
-
-                if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                var parameters = new List<DBParameter>
                 {
-                    int cnt = Convert.ToInt32(ds.Tables[0].Rows[0]["Cnt"]);
-                    return cnt > 0;
+                    new DBParameter { ParamName = "@ContactID", DataValue = customerId, DataDbType = DbType.Int64 },
+                    new DBParameter { ParamName = "@CheckDate", DataValue = date.Date, DataDbType = DbType.DateTime }
+                };
+
+                using (var db = new TrackerSQLDb())
+                {
+                    var result = db.ExecuteScalar(sql, parameters);
+                    if (result != null && result != DBNull.Value)
+                    {
+                        return Convert.ToInt32(result) > 0;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"IsCustomerAwayOnDate error: {ex.Message}")
+                    $"IsCustomerAwayOnDate error: {ex.Message}"
                 );
             }
             return false;
         }
+
         /// <summary>
         /// Returns a set of CustomerIDs with any away period overlapping [windowStart, windowEnd].
         /// Overlap: AwayStart <= windowEnd AND AwayEnd >= windowStart
@@ -252,24 +283,23 @@ namespace TrackerSQL.Controls
             try
             {
                 string sql =
-                    "SELECT DISTINCT a.ClientID " +
-                    "FROM ClientAwayPeriodTbl a " +
-                    "WHERE a.AwayStartDate <= ? AND a.AwayEndDate >= ?";
+                    @"SELECT DISTINCT a.ContactID 
+                      FROM ContactsAwayPeriodTbl a 
+                      WHERE a.AwayStartDate <= @WindowEnd AND a.AwayEndDate >= @WindowStart";
 
-                var db = new TrackerDb();
-                // Access/Jet: param order matters; bind in SQL order
-                db.AddWhereParams(windowEnd, DbType.DateTime);
-                db.AddWhereParams(windowStart, DbType.DateTime);
-
-                var ds = db.ReturnDataSet(sql);
-                db.Close();
-
-                if (ds != null && ds.Tables.Count > 0)
+                var parameters = new List<DBParameter>
                 {
-                    foreach (DataRow row in ds.Tables[0].Rows)
+                    new DBParameter { ParamName = "@WindowEnd", DataValue = windowEnd, DataDbType = DbType.DateTime },
+                    new DBParameter { ParamName = "@WindowStart", DataValue = windowStart, DataDbType = DbType.DateTime }
+                };
+
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sql, parameters))
+                {
+                    while (rdr != null && rdr.Read())
                     {
-                        if (row["ClientID"] != DBNull.Value)
-                            result.Add(Convert.ToInt64(row["ClientID"]));
+                        if (rdr["ContactID"] != DBNull.Value)
+                            result.Add(Convert.ToInt64(rdr["ContactID"]));
                     }
                 }
             }
@@ -277,7 +307,7 @@ namespace TrackerSQL.Controls
             {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Customers,
-                    MessageProvider.Format(MessageKeys.Common.ErrorGeneric, $"GetAwayCustomerIds error: {ex.Message}")
+                    $"GetAwayCustomerIds error: {ex.Message}"
                 );
             }
             return result;

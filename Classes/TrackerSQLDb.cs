@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Classes
 {
@@ -174,6 +175,59 @@ namespace TrackerSQL.Classes
             return dt;
         }
 
+        public TResult ExecuteScalar<TResult>(string sql, List<DBParameter> parameters = null)
+        {
+            object result = ExecuteScalar(sql, parameters);
+
+            if (result == null || result == DBNull.Value)
+            {
+                return default(TResult);
+            }
+
+            if (result is TResult)
+            {
+                return (TResult)result;
+            }
+
+            Type targetType = typeof(TResult);
+            Type underlyingType = Nullable.GetUnderlyingType(targetType);
+
+            if (underlyingType != null)
+            {
+                targetType = underlyingType;
+            }
+
+            if (targetType.IsEnum)
+            {
+                if (result is string)
+                {
+                    return (TResult)Enum.Parse(targetType, result.ToString());
+                }
+
+                return (TResult)Enum.ToObject(targetType, result);
+            }
+
+            if (targetType == typeof(Guid))
+            {
+                return (TResult)(object)new Guid(result.ToString());
+            }
+
+            return (TResult)Convert.ChangeType(result, targetType);
+        }
+
+        public TResult ExecuteQuerySingle<TResult>(string sql, List<DBParameter> parameters = null)
+            where TResult : new()
+        {
+            using (var rdr = ExecuteReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read())
+                {
+                    return DbMapper.Map<TResult>(rdr);
+                }
+            }
+
+            return default(TResult);
+        }
         public object ExecuteScalar(string sql, List<DBParameter> parameters = null)
         {
             try

@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.CustomerSummaryDAL
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -12,9 +12,10 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class CustomerSummaryDAL
     {
-        private const string CONST_SQL_SUMMARYDATA = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
+        private const string CONST_SQL_SUMMARYDATA = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, Area.AreaName,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  Area ON CustomersTbl.Area = Area.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
 
         public static List<CustomerSummary> GetAllCustomerSummarys(string SortBy)
         {
@@ -33,7 +34,7 @@ namespace TrackerSQL.Controls
         {
             List<CustomerSummary> customerSummarys = new List<CustomerSummary>();
             TrackerDb trackerDb = new TrackerDb();
-            string strSQL = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, CityTbl.City,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  CityTbl ON CustomersTbl.City = CityTbl.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
+            string strSQL = "SELECT CustomersTbl.CustomerID, CustomersTbl.CompanyName, CustomersTbl.ContactFirstName, CustomersTbl.ContactLastName, Area.AreaName,  CustomersTbl.PhoneNumber, CustomersTbl.EmailAddress, PersonsTbl.Abbreviation AS DeliveryBy, EquipTypeTbl.EquipTypeName, CustomersTbl.MachineSN,  CustomersTbl.autofulfill, CustomersTbl.enabled  FROM (((CustomersTbl LEFT OUTER JOIN PersonsTbl ON CustomersTbl.PreferedAgent = PersonsTbl.PersonID) LEFT OUTER JOIN  Area ON CustomersTbl.Area = Area.ID) LEFT OUTER JOIN EquipTypeTbl ON CustomersTbl.EquipType = EquipTypeTbl.EquipTypeId) ";
             string str = "";
             switch (IsEnabled)
             {
@@ -60,7 +61,7 @@ namespace TrackerSQL.Controls
                         CompanyName = dataReader["CompanyName"] == DBNull.Value ? "" : dataReader["CompanyName"].ToString(),
                         ContactFirstName = dataReader["ContactFirstName"] == DBNull.Value ? "" : dataReader["ContactFirstName"].ToString(),
                         ContactLastName = dataReader["ContactLastName"] == DBNull.Value ? "" : dataReader["ContactLastName"].ToString(),
-                        City = dataReader["City"] == DBNull.Value ? "" : dataReader["City"].ToString(),
+                        AreaName = dataReader["AreaName"] == DBNull.Value ? "" : dataReader["AreaName"].ToString(),
                         PhoneNumber = dataReader["PhoneNumber"] == DBNull.Value ? "" : dataReader["PhoneNumber"].ToString(),
                         EmailAddress = dataReader["EmailAddress"] == DBNull.Value ? "" : dataReader["EmailAddress"].ToString(),
                         DeliveryBy = dataReader["DeliveryBy"] == DBNull.Value ? "" : dataReader["DeliveryBy"].ToString(),

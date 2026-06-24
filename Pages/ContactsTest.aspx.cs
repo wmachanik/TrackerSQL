@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 using System.Web.UI;
-using TrackerDotNet.Classes.Sql;
+using TrackerSQL.Repositories;
 using TrackerSQL.Classes;
 
 namespace TrackerSQL.Pages
@@ -43,11 +43,11 @@ namespace TrackerSQL.Pages
                     using (var db = new TrackerSQLDb())
                     {
                         var sql = @"SELECT TOP 5 c.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                                          a.AreaName AS City, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
+                                          a.AreaName AS Area, c.PhoneNumber, c.EmailAddress, p.Abbreviation AS DeliveryBy,
                                           e.EquipTypeName, c.MachineSN, c.AutoFulfill, c.Enabled
                                    FROM ContactsTbl c
-                                   LEFT OUTER JOIN PeopleTbl p ON c.PreferedAgentID = p.PersonID
-                                   LEFT OUTER JOIN AreasTbl a ON c.Area = a.AreaID
+                                   LEFT OUTER JOIN PeopleTbl p ON c.PreferredAgentID = p.PersonID
+                                   LEFT OUTER JOIN AreasTbl a ON c.AreaID = a.AreaID
                                    LEFT OUTER JOIN EquipTypesTbl e ON c.EquipTypeID = e.EquipTypeID
                                    WHERE c.Enabled = 1
                                    ORDER BY c.CompanyName";
@@ -91,7 +91,7 @@ namespace TrackerSQL.Pages
                         sb.AppendLine($"<li><strong>CompanyName</strong>: {first.CompanyName}</li>");
                         sb.AppendLine($"<li><strong>ContactFirstName</strong>: {first.ContactFirstName}</li>");
                         sb.AppendLine($"<li><strong>ContactLastName</strong>: {first.ContactLastName}</li>");
-                        sb.AppendLine($"<li><strong>City</strong>: {first.City}</li>");
+                        sb.AppendLine($"<li><strong>AreaName</strong>: {first.AreaName}</li>");
                         sb.AppendLine($"<li><strong>PhoneNumber</strong>: {first.PhoneNumber}</li>");
                         sb.AppendLine($"<li><strong>EmailAddress</strong>: {first.EmailAddress}</li>");
                         sb.AppendLine($"<li><strong>DeliveryBy</strong>: {first.DeliveryBy}</li>");

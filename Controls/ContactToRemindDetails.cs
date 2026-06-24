@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ContactToRemindDetails
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -10,6 +10,7 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls    
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class ContactToRemindDetails
     {
         private int _TCCID;
@@ -18,13 +19,13 @@ namespace TrackerSQL.Controls
         private string _ContactTitle;
         private string _ContactFirstName;
         private string _ContactAltFirstName;
-        private int _CityID;
+        private int _AreaID;
         private string _EmailAddress;
         private string _AltEmailAddress;
         private int _CustomerTypeID;
         private int _EquipTypeID;
         private bool _TypicallySecToo;
-        private int _PreferedAgentID;
+        private int _PreferredAgentID;
         private int _SalesAgentID;
         private bool _UsesFilter;
         private bool _autofulfill;
@@ -34,7 +35,7 @@ namespace TrackerSQL.Controls
         private string _Notes;
         private bool _RequiresPurchOrder;
         private DateTime _LastDateSentReminder;
-        private DateTime _NextPrepDate;
+        private DateTime _NextPreperationDate;
         private DateTime _NextDeliveryDate;
         private DateTime _NextCoffee;
         private DateTime _NextClean;
@@ -50,20 +51,20 @@ namespace TrackerSQL.Controls
             this._ContactTitle = string.Empty;
             this._ContactFirstName = string.Empty;
             this._ContactAltFirstName = string.Empty;
-            this._CityID = 0;
+            this._AreaID = 0;
             this._EmailAddress = string.Empty;
             this._AltEmailAddress = string.Empty;
             this._CustomerTypeID = 0;
             this._EquipTypeID = 0;
             this._TypicallySecToo = false;
-            this._PreferedAgentID = 0;
+            this._PreferredAgentID = 0;
             this._SalesAgentID = 0;
             this._UsesFilter = false;
             this._enabled = this._autofulfill = false;
             this._AlwaysSendChkUp = this._RequiresPurchOrder = false;
             this._ReminderCount = 0;
             this._Notes = string.Empty;
-            this._NextPrepDate = this._NextDeliveryDate = TimeZoneUtils.Now().Date;
+            this._NextPreperationDate = this._NextDeliveryDate = TimeZoneUtils.Now().Date;
             this._LastDateSentReminder = this._NextCoffee = this._NextClean = this._NextFilter = this._NextService = DateTime.MinValue;
         }
 
@@ -103,10 +104,10 @@ namespace TrackerSQL.Controls
             set => this._ContactAltFirstName = value;
         }
 
-        public int CityID
+        public int AreaID
         {
-            get => this._CityID;
-            set => this._CityID = value;
+            get => this._AreaID;
+            set => this._AreaID = value;
         }
 
         public string EmailAddress
@@ -139,10 +140,10 @@ namespace TrackerSQL.Controls
             set => this._TypicallySecToo = value;
         }
 
-        public int PreferedAgentID
+        public int PreferredAgentID
         {
-            get => this._PreferedAgentID;
-            set => this._PreferedAgentID = value;
+            get => this._PreferredAgentID;
+            set => this._PreferredAgentID = value;
         }
 
         public int SalesAgentID
@@ -197,10 +198,10 @@ namespace TrackerSQL.Controls
             set => this._LastDateSentReminder = value;
         }
 
-        public DateTime NextPrepDate
+        public DateTime NextPreperationDate
         {
-            get => this._NextPrepDate;
-            set => this._NextPrepDate = value;
+            get => this._NextPreperationDate;
+            set => this._NextPreperationDate = value;
         }
 
         public DateTime NextDeliveryDate

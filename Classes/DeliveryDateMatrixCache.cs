@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TrackerDotNet.Controls;
+using TrackerSQL.Controls;
 
-namespace TrackerDotNet.Classes
+namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Caches per-city prep/delivery pairs for a rolling horizon to allow

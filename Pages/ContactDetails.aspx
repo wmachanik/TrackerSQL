@@ -316,31 +316,31 @@
         </ContentTemplate>
     </asp:UpdatePanel>
 
-    <asp:ObjectDataSource ID="odsAreas" runat="server" TypeName="TrackerDotNet.Classes.Sql.AreasRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsAreas" runat="server" TypeName="TrackerSQL.Repositories.AreasRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="AreaName" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerDotNet.Classes.Sql.ItemsRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Repositories.ItemsRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="ItemDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerDotNet.Classes.Sql.EquipTypesRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerSQL.Repositories.EquipTypesRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="EquipTypeName" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsContactTypes" runat="server" TypeName="TrackerDotNet.Classes.Sql.ContactTypesRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsContactTypes" runat="server" TypeName="TrackerSQL.Repositories.ContactTypesRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="ContactTypeDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerDotNet.Classes.Sql.PersonsRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerSQL.Repositories.PersonsRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="Abbreviation" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsItemPackagingTypes" runat="server" TypeName="TrackerDotNet.Classes.Sql.ItemPackagingsRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsItemPackagingTypes" runat="server" TypeName="TrackerSQL.Repositories.ItemPackagingsRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="ItemPackagingDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsInvoiceTypes" runat="server" TypeName="TrackerDotNet.Classes.Sql.InvoiceTypesRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsInvoiceTypes" runat="server" TypeName="TrackerSQL.Repositories.InvoiceTypesRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="InvoiceTypeDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPaymentTerms" runat="server" TypeName="TrackerDotNet.Classes.Sql.PaymentTermsRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsPaymentTerms" runat="server" TypeName="TrackerSQL.Repositories.PaymentTermsRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="PaymentTermDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPriceLevels" runat="server" TypeName="TrackerDotNet.Classes.Sql.PriceLevelsRepository" SelectMethod="GetAll">
+    <asp:ObjectDataSource ID="odsPriceLevels" runat="server" TypeName="TrackerSQL.Repositories.PriceLevelsRepository" SelectMethod="GetAll">
         <SelectParameters><asp:Parameter DefaultValue="PriceLevelDesc" Name="SortBy" Type="String" /></SelectParameters>
     </asp:ObjectDataSource>
 </asp:Content>

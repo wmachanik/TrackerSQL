@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.TempCoffeeCheckup
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -14,9 +14,9 @@ namespace TrackerSQL.Controls
 {
     public class TempCoffeeCheckup
     {
-        private const string CONST_SQL_SELECTALLCONTACTS = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, CityID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferedAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPrepDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl";
+        private const string CONST_SQL_SELECTALLCONTACTS = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferredAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl";
         private const string CONST_SQL_SELECTCONTACTITEMSBYCUST = "SELECT TCIID, CustomerID, ItemID, ItemQty, ItemPrepID, ItemPackagID, AutoFulfill, ReoccurOrderId  FROM TempCoffeecheckupItemsTbl WHERE CustomerID = ?";
-        private const string CONST_SQL_INSERTNEWCONTACTS = "INSERT INTO TempCoffeecheckupCustomerTbl (CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, CityID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,   PreferedAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPrepDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,   NextDescal, NextService) VALUES (?, ? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,?)";
+        private const string CONST_SQL_INSERTNEWCONTACTS = "INSERT INTO TempCoffeecheckupCustomerTbl (CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,   PreferredAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,   NextDescal, NextService) VALUES (?, ? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,?)";
         private const string CONST_SQL_INSERTNEWITEMS = "INSERT INTO TempCoffeecheckupItemsTbl  (CustomerID, ItemID, ItemQty, ItemPrepID, ItemPackagID, AutoFulfill, ReoccurOrderId)  VALUES ( ?, ? ,? ,? ,? ,? ,? )";
         private const string CONST_SQL_DELETEALLCONTACTS = "DELETE * FROM TempCoffeecheckupCustomerTbl";
         private const string CONST_SQL_DELETEALLITEMS = "DELETE * FROM TempCoffeecheckupItemsTbl";
@@ -26,7 +26,7 @@ namespace TrackerSQL.Controls
         public List<ContactToRemindDetails> GetAllContacts(string SortBy)
         {
             List<ContactToRemindDetails> allContacts = new List<ContactToRemindDetails>();
-            string strSQL = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, CityID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferedAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPrepDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY CompanyName");
+            string strSQL = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferredAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY CompanyName");
             TrackerDb trackerDb = new TrackerDb();
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             if (dataReader != null)
@@ -39,20 +39,20 @@ namespace TrackerSQL.Controls
                         CompanyName = dataReader["CompanyName"] == DBNull.Value ? string.Empty : dataReader["CompanyName"].ToString(),
                         ContactFirstName = dataReader["ContactFirstName"] == DBNull.Value ? string.Empty : dataReader["ContactFirstName"].ToString(),
                         ContactAltFirstName = dataReader["ContactAltFirstName"] == DBNull.Value ? string.Empty : dataReader["ContactAltFirstName"].ToString(),
-                        CityID = dataReader["CityID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CityID"]),
+                        AreaID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]),
                         EmailAddress = dataReader["EmailAddress"] == DBNull.Value ? string.Empty : dataReader["EmailAddress"].ToString(),
                         AltEmailAddress = dataReader["AltEmailAddress"] == DBNull.Value ? string.Empty : dataReader["AltEmailAddress"].ToString(),
-                        CustomerTypeID = dataReader["CityID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CityID"]),
+                        CustomerTypeID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]),
                         EquipTypeID = dataReader["EquipTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["EquipTypeID"]),
                         TypicallySecToo = dataReader["TypicallySecToo"] != DBNull.Value && Convert.ToBoolean(dataReader["TypicallySecToo"]),
-                        PreferedAgentID = dataReader["PreferedAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferedAgentID"]),
+                        PreferredAgentID = dataReader["PreferredAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferredAgentID"]),
                         SalesAgentID = dataReader["SalesAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SalesAgentID"]),
                         UsesFilter = dataReader["UsesFilter"] != DBNull.Value && Convert.ToBoolean(dataReader["UsesFilter"]),
                         enabled = dataReader["enabled"] != DBNull.Value && Convert.ToBoolean(dataReader["enabled"]),
                         AlwaysSendChkUp = dataReader["AlwaysSendChkUp"] != DBNull.Value && Convert.ToBoolean(dataReader["AlwaysSendChkUp"]),
                         RequiresPurchOrder = dataReader["RequiresPurchOrder"] != DBNull.Value && Convert.ToBoolean(dataReader["RequiresPurchOrder"]),
                         ReminderCount = dataReader["ReminderCount"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReminderCount"]),
-                        NextPrepDate = dataReader["NextPrepDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextPrepDate"]).Date,
+                        NextPreperationDate = dataReader["NextPreperationDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date,
                         NextDeliveryDate = dataReader["NextDeliveryDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextDeliveryDate"]).Date,
                         NextCoffee = dataReader["NextCoffee"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextCoffee"]).Date,
                         NextClean = dataReader["NextClean"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextClean"]).Date,
@@ -108,7 +108,7 @@ namespace TrackerSQL.Controls
         public List<ContactToRemindWithItems> GetAllContactAndItems(string SortBy)
         {
             List<ContactToRemindWithItems> allContactAndItems = new List<ContactToRemindWithItems>();
-            string strSQL = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, CityID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferedAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPrepDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY CompanyName");
+            string strSQL = "SELECT TCCID, CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,  PreferredAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,  NextDescal, NextService FROM TempCoffeecheckupCustomerTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY CompanyName");
             TrackerDb trackerDb = new TrackerDb();
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
             if (dataReader != null)
@@ -121,20 +121,20 @@ namespace TrackerSQL.Controls
                     toRemindWithItems.CompanyName = dataReader["CompanyName"] == DBNull.Value ? string.Empty : dataReader["CompanyName"].ToString();
                     toRemindWithItems.ContactFirstName = dataReader["ContactFirstName"] == DBNull.Value ? string.Empty : dataReader["ContactFirstName"].ToString();
                     toRemindWithItems.ContactAltFirstName = dataReader["ContactAltFirstName"] == DBNull.Value ? string.Empty : dataReader["ContactAltFirstName"].ToString();
-                    toRemindWithItems.CityID = dataReader["CityID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CityID"]);
+                    toRemindWithItems.AreaID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]);
                     toRemindWithItems.EmailAddress = dataReader["EmailAddress"] == DBNull.Value ? string.Empty : dataReader["EmailAddress"].ToString();
                     toRemindWithItems.AltEmailAddress = dataReader["AltEmailAddress"] == DBNull.Value ? string.Empty : dataReader["AltEmailAddress"].ToString();
-                    toRemindWithItems.CustomerTypeID = dataReader["CityID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CityID"]);
+                    toRemindWithItems.CustomerTypeID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]);
                     toRemindWithItems.EquipTypeID = dataReader["EquipTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["EquipTypeID"]);
                     toRemindWithItems.TypicallySecToo = dataReader["TypicallySecToo"] != DBNull.Value && Convert.ToBoolean(dataReader["TypicallySecToo"]);
-                    toRemindWithItems.PreferedAgentID = dataReader["PreferedAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferedAgentID"]);
+                    toRemindWithItems.PreferredAgentID = dataReader["PreferredAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PreferredAgentID"]);
                     toRemindWithItems.SalesAgentID = dataReader["SalesAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SalesAgentID"]);
                     toRemindWithItems.UsesFilter = dataReader["UsesFilter"] != DBNull.Value && Convert.ToBoolean(dataReader["UsesFilter"]);
                     toRemindWithItems.enabled = dataReader["enabled"] != DBNull.Value && Convert.ToBoolean(dataReader["enabled"]);
                     toRemindWithItems.AlwaysSendChkUp = dataReader["AlwaysSendChkUp"] != DBNull.Value && Convert.ToBoolean(dataReader["AlwaysSendChkUp"]);
                     toRemindWithItems.RequiresPurchOrder = dataReader["RequiresPurchOrder"] != DBNull.Value && Convert.ToBoolean(dataReader["RequiresPurchOrder"]);
                     toRemindWithItems.ReminderCount = dataReader["ReminderCount"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReminderCount"]);
-                    toRemindWithItems.NextPrepDate = dataReader["NextPrepDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextPrepDate"]).Date;
+                    toRemindWithItems.NextPreperationDate = dataReader["NextPreperationDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date;
                     toRemindWithItems.NextDeliveryDate = dataReader["NextDeliveryDate"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextDeliveryDate"]).Date;
                     toRemindWithItems.NextCoffee = dataReader["NextCoffee"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextCoffee"]).Date;
                     toRemindWithItems.NextClean = dataReader["NextClean"] == DBNull.Value ? DateTime.MaxValue : Convert.ToDateTime(dataReader["NextClean"]).Date;
@@ -157,27 +157,27 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)pHeaderData.CompanyName, DbType.String, "@CompanyName");
             trackerDb.AddParams((object)pHeaderData.ContactFirstName, DbType.String, "@ContactFirstName");
             trackerDb.AddParams((object)pHeaderData.ContactAltFirstName, DbType.String, "@ContactAltFirstName");
-            trackerDb.AddParams((object)pHeaderData.CityID, DbType.Int32, "@CityID");
+            trackerDb.AddParams((object)pHeaderData.AreaID, DbType.Int32, "@AreaID");
             trackerDb.AddParams((object)pHeaderData.EmailAddress, DbType.String, "@EmailAddress");
             trackerDb.AddParams((object)pHeaderData.AltEmailAddress, DbType.String, "@AltEmailAddress");
-            trackerDb.AddParams((object)pHeaderData.CityID, DbType.Int32, "@CityID");
+            trackerDb.AddParams((object)pHeaderData.AreaID, DbType.Int32, "@AreaID");
             trackerDb.AddParams((object)pHeaderData.EquipTypeID, DbType.Int32, "@EquipTypeID");
             trackerDb.AddParams((object)pHeaderData.TypicallySecToo, DbType.Boolean, "@TypicallySecToo");
-            trackerDb.AddParams((object)pHeaderData.PreferedAgentID, DbType.Int32, "@PreferedAgentID");
+            trackerDb.AddParams((object)pHeaderData.PreferredAgentID, DbType.Int32, "@PreferredAgentID");
             trackerDb.AddParams((object)pHeaderData.SalesAgentID, DbType.Int32, "@SalesAgentID");
             trackerDb.AddParams((object)pHeaderData.UsesFilter, DbType.Boolean, "@UsesFilter");
             trackerDb.AddParams((object)pHeaderData.enabled, DbType.Boolean, "@enabled");
             trackerDb.AddParams((object)pHeaderData.AlwaysSendChkUp, DbType.Boolean, "@AlwaysSendChkUp");
             trackerDb.AddParams((object)pHeaderData.RequiresPurchOrder, DbType.Boolean, "@RequiresPurchOrder");
             trackerDb.AddParams((object)pHeaderData.ReminderCount, DbType.Int32, "@ReminderCount");
-            trackerDb.AddParams((object)pHeaderData.NextPrepDate, DbType.Date, "@NextPrepDate");
+            trackerDb.AddParams((object)pHeaderData.NextPreperationDate, DbType.Date, "@NextPreperationDate");
             trackerDb.AddParams((object)pHeaderData.NextDeliveryDate, DbType.Date, "@NextDeliveryDate");
             trackerDb.AddParams((object)pHeaderData.NextCoffee, DbType.Date, "@NextCoffee");
             trackerDb.AddParams((object)pHeaderData.NextClean, DbType.Date, "@NextClean");
             trackerDb.AddParams((object)pHeaderData.NextFilter, DbType.Date, "@NextFilter");
             trackerDb.AddParams((object)pHeaderData.NextDescal, DbType.Date, "@NextDescal");
             trackerDb.AddParams((object)pHeaderData.NextService, DbType.Date, "@NextService");
-            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("INSERT INTO TempCoffeecheckupCustomerTbl (CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, CityID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,   PreferedAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPrepDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,   NextDescal, NextService) VALUES (?, ? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,?)"));
+            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("INSERT INTO TempCoffeecheckupCustomerTbl (CustomerID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress, CustomerTypeID, EquipTypeID, TypicallySecToo,   PreferredAgentID, SalesAgentID, UsesFilter, [enabled], AlwaysSendChkUp, RequiresPurchOrder, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter,   NextDescal, NextService) VALUES (?, ? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,?)"));
             trackerDb.Close();
             return flag;
         }

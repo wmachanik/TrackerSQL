@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="DisableClient.aspx.cs" Inherits="TrackerSQL.DisableClient" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="DisableClient.aspx.cs" Inherits="TrackerSQL.DisableClient" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -102,7 +102,7 @@
             <!-- Confirmation Section (shown initially) -->
             <div id="confirmationSection" runat="server" class="confirmation-section">
                 <div class="content">
-                    <h2>📧 Disable Coffee Checkup Reminders?</h2>
+                    <h2>?? Disable Coffee Checkup Reminders?</h2>
                     <p style="font-size: 18px; margin: 20px 0;">
                         You are about to disable coffee checkup reminders for:
                    
@@ -111,7 +111,7 @@
                         <asp:Label ID="CompanyNameLabel" Text="Loading..." runat="server" />
                     </div>
                     <p style="font-size: 16px; color: #666; margin: 25px 0;">
-                        ⚠️ <strong>This will stop all future coffee checkup reminder emails.</strong><br />
+                        ?? <strong>This will stop all future coffee checkup reminder emails.</strong><br />
                         You can always re-enable reminders by contacting us directly.
                     </p>
                     <div id="disableOptions">
@@ -130,13 +130,13 @@
                         OnClick="btnConfirmDisable_Click"
                         OnClientClick="return confirm('Are you sure you want to disable coffee checkup reminders? This action will stop all future reminder emails.');" />
 
-                    <a href="http://www.quaffee.co.za" class="btn btn-secondary">Cancel & Keep Reminders
+                    <a href="https://www.quaffee.co.za" class="btn btn-secondary">Cancel & Keep Reminders
                     </a>
                 </div>
 
                 <div style="margin-top: 20px; font-size: 14px; color: #666;">
                     <p>
-                        💡 <strong>Need help instead?</strong><br />
+                        ?? <strong>Need help instead?</strong><br />
                         Contact us at
                         <asp:Literal ID="ltrlContactEmail" runat="server" />
                         or call us to update your preferences.  
@@ -147,7 +147,7 @@
             <!-- Success Section (shown after confirmation) -->
             <div id="successSection" runat="server" class="success-message">
                 <div class="content">
-                    <h2 style="color: #28a745;">✅ Reminders Disabled Successfully</h2>
+                    <h2 style="color: #28a745;">? Reminders Disabled Successfully</h2>
                     <p style="font-size: 18px; margin: 20px 0;">
                         Coffee checkup reminders have been disabled for:
                    
@@ -173,7 +173,7 @@
             </div>
 
             <div class="footer">
-                <p>Visit our website: <a href="http://www.quaffee.co.za" style="color: #2c5530; font-weight: bold;">www.quaffee.co.za</a></p>
+               <p>Visit our website: <a href="https://www.quaffee.co.za" style="color: #2c5530; font-weight: bold;">www.quaffee.co.za</a></p>
                 <p style="font-size: 12px; color: #999;">
                     This page allows you to manage your coffee checkup reminder preferences.
                

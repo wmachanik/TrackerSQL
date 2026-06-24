@@ -1,4 +1,4 @@
-Ôªø// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ReoccuringOrderDAL
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -200,7 +200,7 @@ namespace TrackerSQL.Controls
 
                         if (isFirstTime)
                         {
-                            // For first-time monthly: aim for this month‚Äôs target if still upcoming, else next month.
+                            // For first-time monthly: aim for this monthís target if still upcoming, else next month.
                             int daysInThisMonth = DateTime.DaysInMonth(today.Year, today.Month);
                             int thisMonthTargetDay = Math.Min(targetDay, daysInThisMonth);
                             DateTime candidate = new DateTime(today.Year, today.Month, thisMonthTargetDay);
@@ -229,7 +229,7 @@ namespace TrackerSQL.Controls
 
                 default:
                     {
-                        // Fallback treat as weekly ‚Äúimmediate‚Äù
+                        // Fallback treat as weekly ìimmediateî
                         DateTime anchor = isFirstTime ? today : reoccuranceOrder.DateLastDone.AddDays(7);
                         if (anchor < today) anchor = today;
                         return deliveryDateCalculator.CalculateOptimalWeeklyDeliveryDates(
@@ -284,7 +284,7 @@ namespace TrackerSQL.Controls
                 // (If already past, we leave DateLastDone as min so existing logic will advance correctly.)
                 if (thisMonthTarget >= today)
                 {
-                    // Set synthetic last-done to previous month‚Äôs target so downstream
+                    // Set synthetic last-done to previous monthís target so downstream
                     // logic that does AddMonths(1) yields thisMonthTarget.
                     DateTime prevMonth = thisMonthTarget.AddMonths(-1);
                     newOrder.DateLastDone = prevMonth;

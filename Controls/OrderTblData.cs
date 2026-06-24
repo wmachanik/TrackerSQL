@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.OrderTblData
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -14,7 +14,7 @@ namespace TrackerSQL.Controls
         private int _OrderID;
         private long _CustomerID;
         private DateTime _OrderDate;
-        private DateTime _RoastDate;
+        private DateTime _PrepDate;
         private int _ToBeDeliveredBy;
         private bool _Confirmed;
         private bool _Done;
@@ -33,7 +33,7 @@ namespace TrackerSQL.Controls
             this._OrderID = 0;
             this._CustomerID = 0;
             this._OrderDate = DateTime.MinValue;
-            this._RoastDate = DateTime.MinValue;
+            this._PrepDate = DateTime.MinValue;
             this._ToBeDeliveredBy = 0;
             this._Confirmed = false;
             this._Done = this._Packed = this._InvoiceDone = false;
@@ -63,10 +63,10 @@ namespace TrackerSQL.Controls
             set => this._OrderDate = value;
         }
 
-        public DateTime RoastDate
+        public DateTime PrepDate
         {
-            get => this._RoastDate;
-            set => this._RoastDate = value;
+            get => this._PrepDate;
+            set => this._PrepDate = value;
         }
 
         public int ToBeDeliveredBy

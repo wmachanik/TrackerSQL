@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.TempOrdersHeaderTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -14,15 +14,15 @@ namespace TrackerSQL.Controls
 {
     public class TempOrdersHeaderTbl
     {
-        private const string CONST_SQL_SELECT = "SELECT TOHeaderID, CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes FROM TempOrdersHeaderTbl"; 
+        private const string CONST_SQL_SELECT = "SELECT TOHeaderID, CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes FROM TempOrdersHeaderTbl"; 
         private const string CONST_SQL_GETLASTHEADERID = "SELECT TOP 1 TOHeaderID FROM TempOrdersHeaderTbl ORDER By TOHeaderID DESC";
-        private const string CONST_SQL_INSERT = "INSERT INTO TempOrdersHeaderTbl (CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes)  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        private const string CONST_SQL_INSERT = "INSERT INTO TempOrdersHeaderTbl (CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes)  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         private const string CONST_SQL_MARKTEMPORDERSASDONE = "UPDATE OrdersTbl SET OrdersTbl.Done = True WHERE CustomderId = ? AND EXISTS (SELECT RequiredByDate FROM TempOrdersHeaderTbl  WHERE (RequiredByDate = OrdersTbl.RequiredByDate))";
         private const string CONST_SQL_DELETEALL = "DELETE * FROM TempOrdersHeaderTbl";
         private int _TOHeaderID;
         private long _CustomerID;
         private DateTime _OrderDate;
-        private DateTime _RoastDate;
+        private DateTime _PrepDate;
         private DateTime _RequiredByDate;
         private int _ToBeDeliveredByID;
         private bool _Confirmed;
@@ -34,7 +34,7 @@ namespace TrackerSQL.Controls
             this._TOHeaderID = 0;
             this._CustomerID = 0;
             this._OrderDate = TimeZoneUtils.Now().Date;
-            this._RoastDate = TimeZoneUtils.Now().Date;
+            this._PrepDate = TimeZoneUtils.Now().Date;
             this._RequiredByDate = TimeZoneUtils.Now().Date;
             this._ToBeDeliveredByID = 0;
             this._Confirmed = false;
@@ -60,10 +60,10 @@ namespace TrackerSQL.Controls
             set => this._OrderDate = value;
         }
 
-        public DateTime RoastDate
+        public DateTime PrepDate
         {
-            get => this._RoastDate;
-            set => this._RoastDate = value;
+            get => this._PrepDate;
+            set => this._PrepDate = value;
         }
 
         public DateTime RequiredByDate
@@ -112,7 +112,7 @@ namespace TrackerSQL.Controls
                         TOHeaderID = dataReader["TOHeaderID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["TOHeaderID"]),
                         CustomerID = dataReader["CustomerID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerID"]),
                         OrderDate = dataReader["OrderDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["OrderDate"]).Date,
-                        RoastDate = dataReader["RoastDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["RoastDate"]).Date,
+                        PrepDate = dataReader["PrepDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["PrepDate"]).Date,
                         RequiredByDate = dataReader["RequiredByDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["RequiredByDate"]).Date,
                         ToBeDeliveredByID = dataReader["ToBeDeliveredByID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ToBeDeliveredByID"]),
                         Confirmed = dataReader["Confirmed"] != DBNull.Value && Convert.ToBoolean(dataReader["Confirmed"]),
@@ -138,7 +138,7 @@ namespace TrackerSQL.Controls
                         TOHeaderID = dataReader["TOHeaderID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["TOHeaderID"]),
                         CustomerID = dataReader["CustomerID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["CustomerID"]),
                         OrderDate = dataReader["OrderDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["OrderDate"]).Date,
-                        RoastDate = dataReader["RoastDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["RoastDate"]).Date,
+                        PrepDate = dataReader["PrepDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["PrepDate"]).Date,
                         RequiredByDate = dataReader["RequiredByDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["RequiredByDate"]).Date,
                         ToBeDeliveredByID = dataReader["ToBeDeliveredByID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ToBeDeliveredByID"]),
                         Confirmed = dataReader["Confirmed"] != DBNull.Value && Convert.ToBoolean(dataReader["Confirmed"]),
@@ -156,13 +156,13 @@ namespace TrackerSQL.Controls
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)pHeaderData.CustomerID, DbType.Int64, "@CustomerID");
             trackerDb.AddParams((object)pHeaderData.OrderDate, DbType.Date, "@OrderDate");
-            trackerDb.AddParams((object)pHeaderData.RoastDate, DbType.Date, "@RoastDate");
+            trackerDb.AddParams((object)pHeaderData.PrepDate, DbType.Date, "@PrepDate");
             trackerDb.AddParams((object)pHeaderData.RequiredByDate, DbType.Date, "@RequiredByDate");
             trackerDb.AddParams((object)pHeaderData.ToBeDeliveredByID, DbType.Int32, "@ToBeDeliveredByID");
             trackerDb.AddParams((object)pHeaderData.Confirmed, DbType.Boolean, "@Confirmed");
             trackerDb.AddParams((object)pHeaderData.Done, DbType.Boolean, "@Done");
             trackerDb.AddParams((object)pHeaderData.Notes, DbType.String, "@Notes");
-            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("INSERT INTO TempOrdersHeaderTbl (CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes)  VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
+            bool flag = string.IsNullOrEmpty(trackerDb.ExecuteNonQuerySQL("INSERT INTO TempOrdersHeaderTbl (CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Notes)  VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
             trackerDb.Close();
             return flag;
         }

@@ -1,0 +1,2003 @@
+﻿/* DEFAULTS
+/*  
+    TrackerSQL - Site.css
+    Main Stylesheet
+
+    VERSION: 20260518-1
+
+    LAST UPDATED: 2026-05-18   - REV 1
+    IMPORTANT: When making CSS changes, update the version number both here 
+    and in Site.Master link tag: <link href="~/Styles/Site.css?v=20260512-2" ... />
+
+    Version Format: YYYYMMDD-n 
+    - YYYYMMDD = Date (e.g., 20260421 = April 21, 2026)
+    - n = Revision number for that day (1, 2, 3, etc.)
+
+    Change Log:
+    - 20260518-1: co-pilot (not vs) Correction of Calendar pop up styles.
+    - 20260514-4: Correction of Calendar pop up styles.
+    - 20260513-1: Trying to fix auto width table is results-table so it does nto take the whole screen
+    - 20260428-1: Fixed recurring order toolbar layout (flexbox single line)
+                  Added pending calculation indicator styling
+                  Right-aligned Next Date column in recurring orders list
+    - 20260423-4: Grouped recurring orders by contact with stacked recurring-order list layout
+                  Added recurring-order summary styles for grouped display in results tables
+    - 20260423-3: Allowed explicit control widths inside results tables to override global fill-width rules
+                  Added compact column utility for narrow code and numeric columns
+                  Supports moving command column to the first position on wide editable grids
+    - 20260423-2: Added opt-in sticky first command column support for wide editable grids
+                  Keeps action buttons visible while horizontal scrolling
+    - 20260423-1: Removed forced fixed-width results-table layout defaults
+                  Made action/icon columns compact without stretching data columns
+                  Changed results tables to fluid auto-sizing with horizontal scroll
+    - 20260421-1: Fixed responsive layout for action buttons at 1024px breakpoint
+                  Removed nested media queries bug
+
+----------------------------------------------------------*/
+:root {
+    --primary-brown: #302a20;
+    --secondary-brown: #595939;
+    --light-brown: #d0d0b9;
+    --primary-green: #4e664d;
+    --light-green: #e5f0d4;
+    --secondary-green: #EDEBD2; /* linen leaf apparatnmely */
+}
+
+body {
+    background-color: var(--light-brown);
+    font-size: .90em;
+    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", sans-serif, Helvetica, Verdana, sans-serif;
+    margin: 10px;
+    padding: 0px;
+    color: #696969;
+    padding-top: 60px;
+}
+
+a:link,
+a:visited {
+    color: #03b34a;
+}
+
+a:hover {
+    color: #1dbf60;
+    text-decoration: none;
+}
+
+a:active {
+    color: #03b34a;
+}
+
+p {
+    margin-bottom: 10px;
+    line-height: 1.2em;
+}
+/* HEADINGS   ----------------------------------------------------------*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-size: 1.5em;
+    color: #607060;
+    font-variant: small-caps;
+    text-transform: none;
+    font-weight: 300;
+    margin-bottom: 0px;
+    margin-top: 10px;
+}
+
+h1 {
+    font-size: 1.6em;
+    padding-bottom: 4px;
+    margin-bottom: 0px;
+}
+
+h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+h4 {
+    font-size: 1.1em;
+}
+
+h5,
+h6 {
+    font-size: 1em;
+}
+/*----------------------------------------------------------*/
+.page {
+    width: 99%;
+    background-color: #fff;
+    padding-top: 10px;
+    margin: auto;
+    border: 0px solid transparent;
+}
+
+.minipage {
+    background-color: #fff;
+    margin: auto;
+    border: 1px solid #496077;
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    width: 100%;
+    height: 60px; /* Add fixed height (adjust as needed) */
+    background: #302a20;
+    border-bottom: 1px solid white;
+    /* Optional: add a subtle shadow for separation */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+    /* Prevent text wrapping in header cells */
+    .header td {
+        white-space: nowrap;
+    }
+
+        /* Allow menu to wrap normally */
+        .header td:nth-child(2) {
+            white-space: normal;
+            width: 100%;
+        }
+
+    .header h1 {
+        font-weight: 700;
+        margin: 0px;
+        padding: 0px 0px 0px 6px;
+        color: #f9f9f9;
+        border: none;
+        font-size: 2em;
+        display: inline-block;
+    }
+
+.main {
+    padding: 0px 12px;
+    margin: 12px 8px 8px 8px;
+    min-height: 420px;
+}
+
+.minimain {
+    padding: 0px 12px;
+    margin: 6px 12px 8px 4px;
+}
+
+.leftCol {
+    padding: 6px 0px;
+    margin: 12px 8px 8px 8px;
+    width: 200px;
+    min-height: 200px;
+}
+
+.footer {
+    color: var(--primary-brown); /* Even lighter gray */
+    font-weight: normal;
+    padding: 12px 2px 12px 2px;
+    margin: 0px auto;
+    text-align: center;
+    line-height: normal;
+    font-size: 1.1em; /* Smaller text */
+    background: transparent; /* Ensure no background */
+}
+/* ======================= */
+/* CONSOLIDATED MENU STYLES */
+/* ======================= */
+
+/* Menu background container */
+.menuBG {
+    background-color: #302a20 !important;
+    padding: 4px 0;
+    width: 96%;
+    margin: 0px auto 5px auto;
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: large;
+}
+
+/* Menu structure */
+.menu ul {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .menu ul li {
+        position: relative;
+        margin: 0 2px;
+    }
+
+        /* Base menu item styles */
+        .menu ul li a {
+            display: block;
+            padding: 8px 12px;
+            text-decoration: none !important;
+            /*background-color: #595939; /* Original brown */
+            color: #fff !important;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            /* Hover states */
+            .menu ul li a:hover {
+                background-color: #d0d0b9 !important;
+                color: #595939 !important;
+                transform: translateY(-2px);
+            }
+
+            /* Active/selected item styles */
+            .menu ul li a:active,
+            .menu ul li a.selected {
+                background-color: #4e664d !important;
+                color: #fff !important;
+                transform: translateY(0);
+            }
+
+            /* Disabled item styles */
+            .menu ul li a:disabled {
+                background-color: #ccc;
+                color: #666;
+                pointer-events: none;
+                transform: none;
+            }
+
+/* Selected item styles */
+.StaticSelectedStyle > a,
+.DynamicSelectedStyle > a {
+    background-color: #d0d0b9 !important;
+    color: #595939 !important;
+    font-weight: bold !important;
+    font-style: italic !important;
+    border-bottom: 3px solid #4e664d !important;
+}
+
+/* Submenu styling */
+.menu ul ul {
+    display: none;
+    position: absolute;
+    background-color: #302a20;
+    border: 1px solid #4e664d;
+    border-radius: 4px;
+    padding: 5px 0;
+    min-width: 180px;
+    z-index: 100;
+}
+
+.menu ul li:hover > ul {
+    display: block;
+}
+
+.menu ul ul li {
+    margin: 3px 0;
+    width: 100%;
+}
+
+    .menu ul ul li a {
+        margin: 0 5px;
+        padding: 6px 10px;
+        /*background-color: #302a20;*/
+    }
+
+        /* Enhance submenu item hover effects */
+        .menu ul ul li a:hover {
+            background-color: #595939 !important;
+            color: #fff !important;
+            transform: translateY(-2px);
+        }
+
+/* ============================================ */
+/* IMPROVED RESPONSIVE MENU SYSTEM             */
+/* ============================================ */
+
+/* Medium screens (960px - 800px): Make menu more compact but keep horizontal */
+@media (max-width: 960px) and (min-width: 800px) {
+    .menuBG {
+        font-size: medium !important; /* Reduced from large */
+        padding: 3px 0 !important;
+    }
+
+    .menu ul li a {
+        padding: 6px 8px !important; /* Reduced padding */
+        font-size: 0.9em !important; /* Slightly smaller text */
+    }
+
+    .menu ul li {
+        margin: 0 1px !important; /* Tighter spacing */
+    }
+}
+
+/* Smaller medium screens (800px - 600px): Even more compact horizontal menu */
+@media (max-width: 800px) and (min-width: 600px) {
+    .menuBG {
+        font-size: small !important; /* Even smaller */
+        padding: 2px 0 !important;
+    }
+
+    .menu ul {
+        flex-wrap: nowrap !important; /* Prevent wrapping */
+        overflow-x: auto !important; /* Allow horizontal scroll if needed */
+        -webkit-overflow-scrolling: touch !important;
+        padding: 0 2px !important;
+    }
+
+        .menu ul li {
+            flex-shrink: 0 !important; /* Prevent shrinking */
+            margin: 0 1px !important;
+        }
+
+            .menu ul li a {
+                padding: 4px 6px !important; /* Very compact */
+                font-size: 0.8em !important; /* Smaller text */
+                white-space: nowrap !important;
+            }
+}
+
+/* Mobile screens (600px and below): Vertical menu only for very small screens */
+@media (max-width: 600px) {
+    .menu ul {
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: wrap; /* Reset to allow wrapping vertically */
+        overflow-x: visible !important; /* Reset overflow */
+    }
+
+        .menu ul li {
+            width: 90%;
+            margin: 3px 0;
+            flex-shrink: 1 !important; /* Reset shrinking */
+        }
+
+            .menu ul li a {
+                padding: 8px 12px !important; /* Reset to full padding */
+                font-size: 1em !important; /* Reset font size */
+            }
+
+        .menu ul ul {
+            position: static;
+            width: 90%;
+            margin-left: 10%;
+        }
+
+    .header table {
+        display: block;
+    }
+
+    .header td {
+        display: block;
+        width: 100% !important;
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    .loginDisplay {
+        display: block !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+        font-size: 0.8em !important;
+    }
+}
+
+/* ============================================ */
+/* MOBILE LANDSCAPE MENU & TITLE FIX            */
+/* ============================================ */
+
+@media (max-width: 600px) and (orientation: landscape) {
+    /* Reduce header height for landscape */
+    .header {
+        height: 45px !important;
+    }
+
+    body {
+        padding-top: 45px !important;
+    }
+
+    /* Make QOnT title smaller in landscape */
+    .header h1 {
+        font-size: 1.4em !important;
+        padding: 0px 0px 0px 4px !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+    }
+
+    /* Make the menu container more compact */
+    .menuBG {
+        padding: 2px 0 !important;
+        font-size: small !important;
+    }
+
+    .menu ul {
+        flex-direction: row !important; /* Force horizontal in landscape */
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 0 2px !important;
+        margin: 0 !important;
+    }
+
+        .menu ul li {
+            width: auto !important; /* Reset width for horizontal layout */
+            flex-shrink: 0 !important;
+            margin: 0 1px !important;
+            min-width: auto !important;
+        }
+
+            .menu ul li a {
+                padding: 4px 6px !important;
+                font-size: 0.8em !important;
+                white-space: nowrap !important;
+                line-height: 1.2 !important;
+            }
+
+    /* Make login display smaller */
+    .loginDisplay {
+        font-size: 0.85em !important;
+        padding: 4px !important;
+        margin-right: 8px !important;
+        display: inline-block !important; /* Reset to inline for landscape */
+        text-align: right !important; /* Reset alignment */
+    }
+
+    /* Adjust table cell heights */
+    .header table td {
+        vertical-align: middle !important;
+        padding: 2px 4px !important;
+        display: table-cell !important; /* Reset to table-cell for landscape */
+    }
+
+    .header table {
+        display: table !important; /* Reset to table layout for landscape */
+    }
+}
+
+/* For very narrow landscape screens */
+@media (max-width: 500px) and (orientation: landscape) {
+    .header {
+        height: 40px !important;
+    }
+
+    body {
+        padding-top: 40px !important;
+    }
+
+    .header h1 {
+        font-size: 1.2em !important;
+        padding-left: 2px !important;
+    }
+
+    .menu ul li a {
+        padding: 3px 4px !important;
+        font-size: 0.75em !important;
+    }
+
+    .loginDisplay {
+        font-size: 0.75em !important;
+        padding: 2px !important;
+        margin-right: 4px !important;
+    }
+
+    .menu ul li {
+        margin: 0 !important;
+    }
+}
+
+/* Mobile portrait mode - only for very small screens */
+@media (max-width: 600px) and (orientation: portrait) {
+    .menu ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+        .menu ul li {
+            width: 90%;
+            margin: 3px 0;
+        }
+
+        .menu ul ul {
+            position: static;
+            width: 90%;
+            margin-left: 10%;
+        }
+}
+
+/* Default mobile behavior - updated breakpoint */
+@media (max-width: 600px) {
+    .header table {
+        display: block;
+    }
+
+    .header td {
+        display: block;
+        width: 100% !important;
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    .loginDisplay {
+        display: block !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+        font-size: 0.8em !important;
+    }
+}
+
+/* ======================= */
+/* END OF MENU STYLES   */
+/* ======================= */
+/* FORM ELEMENTS   
+/* ======================= */
+
+fieldset {
+    margin: 1em 0px;
+    padding: 1em;
+    border: 1px solid #ccc;
+}
+
+    fieldset p {
+        margin: 2px 12px 10px 10px;
+    }
+
+    fieldset.login label,
+    fieldset.register label,
+    fieldset.changePassword label {
+        display: block;
+    }
+
+    fieldset label.inline {
+        display: inline;
+    }
+
+legend {
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 2px 4px 8px 4px;
+}
+
+input.textEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+input.passwordEntry {
+    width: 320px;
+    border: 1px solid #ccc;
+}
+
+div.accountInfo {
+    width: 42%;
+}
+/* MISC  ----------------------------------------------------------*/
+
+.title {
+    display: block;
+    float: left;
+    text-align: left;
+    width: 100%;
+}
+
+.loginDisplay {
+    font-size: 0.9em;
+    display: inline-block;
+    text-align: right;
+    padding: 8px;
+    color: White;
+    text-decoration: underline;
+    white-space: nowrap;
+    vertical-align: top;
+    margin-right: 12px;
+}
+
+    .loginDisplay a:link {
+        color: white;
+    }
+
+    .loginDisplay a:visited {
+        color: white;
+    }
+
+    .loginDisplay a:hover {
+        color: white;
+    }
+
+.failureNotification {
+    font-size: 1.2em;
+    color: Red;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.submitButton {
+    text-align: right;
+    padding-right: 10px;
+}
+
+.floatRight {
+    float: right;
+}
+
+/* table input styles */
+h2.InputFrm {
+    border: solid 1px #C0C090;
+    padding: 2px 5px 2px 2px;
+    margin: 0px 0px 0px 0px;
+    background-color: #CCCC99;
+    color: White;
+    letter-spacing: 2px;
+    font-family: sans-serif, Helvetica;
+    font-weight: bold;
+    font-size: large;
+    width: 100%;
+    padding-bottom: 2px;
+    margin-bottom: 8px;
+}
+/*-User making contact with us form-*/
+table.InputFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 5px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: 100%;
+}
+
+tb.rowC {
+    text-align: center;
+    vertical-align: middle;
+}
+
+table.TblCoffee {
+    font: normal 90%/150% "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif, Helvetica, sans-serif;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 1px 1em 0;
+    color: #000;
+    padding: 0;
+}
+
+    table.TblCoffee a {
+        color: #523A0B;
+        text-decoration: none;
+        border-bottom: 1px dotted;
+        padding: 0;
+    }
+
+        table.TblCoffee a:visited {
+            color: #444;
+            font-weight: normal;
+        }
+
+            table.TblCoffee a:visited:after {
+                content: "\00A0\221A";
+            }
+
+        table.TblCoffee a:hover {
+            border-bottom-style: solid;
+        }
+
+.TblCoffee input[type='submit']:disabled,
+.TblCoffee input[type='submit']:disabled:hover {
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif;
+    background-color: #aaa;
+    border: 1px #aaa;
+}
+
+table.TblCoffee thead th,
+table.TblCoffee thead td,
+table.TblCoffee tfoot th,
+table.TblCoffee tfoot td {
+    border: 1px solid #523A0B;
+    background: #EBE5D9;
+    font-size: 12px;
+    display: table-cell;
+}
+
+table.TblCoffee th {
+    font-weight: bold;
+    line-height: normal;
+    border: 1px solid #523A0B;
+    padding: 0.25em 0.5em;
+    text-align: left;
+    font-size: 12px;
+}
+
+table.TblCoffee tbody th,
+table.TblCoffee td {
+    padding: 0.25em 0.1em 0.25em;
+    border: 1px solid #523A0B;
+    vertical-align: top;
+    display: table-cell;
+}
+
+table.TblCoffee tbody th {
+    font-weight: normal;
+    white-space: nowrap;
+    display: table-cell;
+}
+
+    table.TblCoffee tbody th a:link,
+    table.TblCoffee tbody th a:visited {
+        font-weight: bold;
+    }
+
+table.TblCoffee tbody td,
+table.TblCoffee tbody th {
+    border: 1px solid #fff;
+    border: 1px solid #111;
+    display: table-cell;
+}
+
+table.TblCoffee tbody tr:nth-child(odd) th,
+table.TblCoffee tbody tr:nth-child(odd) td {
+    border-color: #EBE5D9;
+    background: #F7F4EE;
+    border: 1px solid #111;
+}
+
+table.TblCoffee tbody tr:hover td,
+table.TblCoffee tbody tr:hover th {
+    background: #ffffee;
+    border-color: #523A0B;
+}
+
+table.TblCoffee caption {
+    font-family: Georgia, Times, serif;
+    font-weight: normal;
+    font-size: 1.4em;
+    text-align: left;
+    margin: 0;
+    padding: 0.5em 0.25em;
+}
+/* new table styles */
+table.TblZebra {
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    text-align: left;
+    border: 1px solid #9FCF9F;
+    page-break-inside: avoid;
+    padding: 0;
+    margin-bottom: 1px;
+}
+    table.TblZebra tr:nth-child(odd) {
+        padding: 0;
+        background: #EaF2E3;
+    }
+    table.TblZebra tr:nth-child(even) {
+        padding: 0;
+        background: #FFF;
+    }
+    table.TblZebra th {
+        color: Green;
+        border: 0;
+        border-bottom: 1px solid #797;
+        font-size: 16px;
+        padding-left: 4px;
+        font-weight: bold;
+        background: #e9f9e3;
+    }
+    table.TblZebra tr:hover td {
+        background-color: #E0EFD0;
+        display: table-cell;
+    }
+    table.TblZebra tr:hover a:not(.plain) {
+        color: #FFF;
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+        background-color: Green;
+        /* display: table-cell;*/
+    }
+    table.TblZebra tr a:not(.plain) {
+        padding: .2em;
+        padding-left: .5em;
+        padding-right: .5em;
+        /*display: table-cell;*/
+    }
+    table.TblZebra td {
+        padding: .3em;
+        font-size: 14px;
+        display: table-cell;
+    }
+
+/*Simple table*/
+
+.TblSimple {
+    border-top: 1px solid #a3a360;
+    border-left: 1px solid #a3a360;
+    padding: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+table.TblSimple {
+    background: #fffff9;
+    height: auto;
+    line-height: 1.5em;
+    border-radius: 15px;
+    padding: 10px 10px;
+    /*
+        -webkit-border-radius: 15px;
+        -moz-border-radius: 15px;
+        -o-border-radius: 15px;
+    */
+}
+
+.TblSimple th {
+    border-right: 1px solid #898;
+    border-bottom: 1px solid #898;
+    text-align: left;
+    padding: 5px;
+}
+
+.TblSimple td {
+    border-right: 1px solid #E9E9D0;
+    border-bottom: 1px solid #E9E9D0;
+    text-align: left;
+    padding: 2px 4px 2px 2px;
+    display: table-cell;
+}
+
+.TblSimple th {
+    background-color: #9dD49c;
+    font-size: 120%;
+}
+
+.TblSimple tr:nth-child(even) {
+    background: #fff;
+}
+
+.TblSimple tr:nth-child(odd) {
+    background: #f3f9e9;
+}
+/*-User making contact with us form-*/
+
+table.InputFrm {
+    background-color: #fff;
+    color: #1f2f20;
+    border: solid 5px #BB9999;
+    padding: 6px 4px 6px 4px;
+    width: 100%;
+}
+
+/*One Col Style Tble*/
+
+.TblLHColHdr {
+    font-family: Calibri, sans-serif, "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+    font-size: 12px;
+    min-width: 480px;
+    text-align: left;
+    padding: 0;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #d0d090;
+}
+
+    .TblLHColHdr th {
+        font-size: 14px;
+        font-weight: normal;
+        color: #103010;
+        padding: 12px 15px;
+    }
+
+    .TblLHColHdr td {
+        color: #60A060;
+        border-top: 1px solid #c0c090;
+        padding: 10px 15px;
+        display: table-cell;
+    }
+
+.TblLHCol-first {
+    background: #F0FFF0;
+    font-weight: bold;
+    color: #092909;
+    border-right: 10px solid transparent;
+    border-left: 10px solid transparent;
+}
+
+.TblLHCol-brown {
+    background: #F9F9e0;
+    font-weight: bold;
+    color: #292909;
+    vertical-align: middle;
+}
+
+.TblLHColHdr tr:hover td {
+    color: #373;
+    background: #aea;
+}
+/* ============================================ */
+/* RESPONSIVE LAYOUT SYSTEM                   */
+/* ============================================ */
+
+.responsive-layout-container {
+    background: var(--light-green);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 0px;
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    gap: 20px;
+    grid-template-areas: "main detail" "footer footer";
+}
+
+.layout-main-panel {
+    min-width: 0;
+    max-width: none;
+}
+
+.layout-detail-panel {
+    min-width: 0;
+    max-width: none;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 15px;
+    padding: 15px;
+    border: 1px solid #E9E9D0;
+}
+
+.layout-footer-panel {
+    grid-area: footer; /* Always stays in footer row */
+    background: var(--secondary-green);
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin-top: 15px;
+    /* Center the buttons */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    /* Keep existing button styling */
+    .layout-footer-panel input[type="submit"],
+    .layout-footer-panel button,
+    .layout-footer-panel .btn {
+        background-color: var(--primary-green) !important;
+        color: #fff !important;
+        border: 1px solid var(--primary-green) !important;
+        padding: 6px 6px !important;
+        border-radius: 4px !important;
+        font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+        font-size: 0.9em !important;
+        min-width: 40px !important;
+        height: 32px !important;
+        white-space: nowrap !important;
+        margin: 0 2px;
+    }
+
+/* Keep existing panel positioning */
+.layout-panel-top {
+    flex: 1;
+    margin-bottom: 15px;
+}
+
+.layout-panel-bottom {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Mobile responsive - switch to single column */
+@media (max-width: 768px) {
+    .responsive-layout-container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "main"
+            "detail"
+            "footer";
+        gap: 15px;
+    }
+
+    .layout-main-panel,
+    .layout-detail-panel {
+        min-width: 0;
+        max-width: none;
+    }
+
+    .layout-footer-panel {
+        margin-top: 10px;
+    }
+
+    .layout-detail-panel {
+        justify-content: flex-start;
+    }
+
+    .layout-panel-bottom {
+        margin-top: 15px;
+    }
+    /* Mobile button improvements for layout-footer-panel */
+    .layout-footer-panel {
+        gap: 12px; /* Increase gap between buttons when wrapping */
+        padding: 15px 12px; /* Add more padding on mobile */
+    }
+
+        /* Make buttons smaller on mobile */
+        .layout-footer-panel input[type="submit"],
+        .layout-footer-panel button,
+        .layout-footer-panel .btn {
+            padding: 4px 8px !important; /* Smaller padding */
+            font-size: 0.8em !important; /* Smaller font */
+            min-width: 50px !important; /* Smaller min-width */
+            height: 28px !important; /* Smaller height */
+            margin: 4px 2px !important; /* Add vertical margin for wrapping */
+        }
+}
+
+/* Extra small mobile - even smaller buttons */
+@media (max-width: 480px) {
+    .layout-footer-panel {
+        gap: 8px;
+        padding: 12px 8px;
+    }
+
+        .layout-footer-panel input[type="submit"],
+        .layout-footer-panel button,
+        .layout-footer-panel .btn {
+            padding: 3px 6px !important;
+            font-size: 0.75em !important;
+            min-width: 45px !important;
+            height: 26px !important;
+            margin: 3px 1px !important;
+        }
+}
+/* ============================================ */
+/* TblFlex - Clean Generic Responsive Table    */
+/* ============================================ */
+
+.TblFlex {
+    width: auto;
+    max-width: 100%;
+    background: #fff;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.95em;
+    border: 1px solid rgba(78, 102, 77, 0.3);
+    table-layout: auto;
+}
+
+    /* Clean solid header */
+    .TblFlex th,
+    .TblFlex thead th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 0.9em;
+        padding: 8px 10px;
+        text-align: left;
+        border: none !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* Body cell styling with reduced padding */
+    .TblFlex td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(78, 102, 77, 0.2);
+        border-right: none;
+        border-left: none;
+        vertical-align: middle;
+        text-align: left;
+        transition: background-color 0.2s ease;
+        display: table-cell;
+    }
+
+    /* Clean alternating row colors */
+    .TblFlex tbody tr:nth-child(even) td,
+    .TblFlex tr:nth-child(even) td {
+        background: var(--light-green) !important;
+    }
+
+    .TblFlex tbody tr:nth-child(odd) td,
+    .TblFlex tr:nth-child(odd) td {
+        background: #fff !important;
+    }
+
+    /* Ensure header doesn't get alternating colors */
+    .TblFlex thead tr,
+    .TblFlex thead tr th,
+    .TblFlex thead tr:nth-child(even),
+    .TblFlex thead tr:nth-child(odd),
+    .TblFlex thead tr:nth-child(even) th,
+    .TblFlex thead tr:nth-child(odd) th {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Simple hover effect */
+    .TblFlex tbody tr:hover td,
+    .TblFlex tr:hover td {
+        background: rgba(78, 102, 77, 0.15) !important;
+    }
+
+    /* FIXED: Header hover - ensure text stays visible and background stays same */
+    .TblFlex thead tr:hover,
+    .TblFlex thead tr:hover th,
+    .TblFlex th:hover {
+        background: var(--primary-green) !important;
+        color: #fff !important;
+    }
+
+    /* Generic form controls within table */
+    .TblFlex input[type="text"],
+    .TblFlex select,
+    .TblFlex textarea {
+        width: 100%;
+        max-width: 180px;
+        padding: 4px 6px;
+        border: 1px solid rgba(78, 102, 77, 0.4);
+        border-radius: 4px;
+        font-size: 0.9em;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+        .TblFlex input[type="text"]:focus,
+        .TblFlex select:focus,
+        .TblFlex textarea:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 1px rgba(78, 102, 77, 0.3);
+            outline: none;
+        }
+
+    /* FIXED: Override the global combo box button styling for TblFlex ONLY */
+    .TblFlex .ajax__combobox_buttoncontainer button,
+    .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+    .TblFlex .ajax__combobox_button,
+    .TblFlex .ajax__combobox_dropdownbutton {
+        min-width: 18px !important;
+        min-height: 1em;
+        height: 1.8em !important;
+        padding: initial;
+        font-size: 12px !important;
+        font-family: inherit !important;
+        color: #333 !important;
+        display: inline-block !important;
+        box-sizing: border-box !important;
+        /*border-radius: 0 4px 4px 0 !important;*/
+        text-decoration: none !important;
+        cursor: pointer !important;
+        transition: none !important;
+        opaArea: 1 !important;
+        visibility: visible !important;
+        width: 18px !important;
+    }
+
+        .TblFlex .ajax__combobox_buttoncontainer button:hover,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"]:hover,
+        .TblFlex .ajax__combobox_button:hover,
+        .TblFlex .ajax__combobox_dropdownbutton:hover {
+            background: #e8e8e8 !important;
+            border: 1px solid #999 !important;
+            color: #333 !important;
+        }
+
+    .TblFlex input[type="submit"]:hover,
+    .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover,
+    .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]):hover {
+        background: var(--secondary-brown) !important;
+    }
+
+    /* Image buttons - simple styling */
+    .TblFlex img {
+        max-height: 16px;
+        max-width: 16px;
+        border-radius: 2px;
+    }
+
+    /* Auto-width for button columns */
+    .TblFlex td:first-child,
+    .TblFlex th:first-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .TblFlex td:last-child,
+    .TblFlex th:last-child {
+        width: auto;
+        white-space: nowrap;
+    }
+
+/* ============================================ */
+/* Responsive Design                           */
+/* ============================================ */
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .TblFlex {
+        font-size: 1em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 6px 8px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: auto;
+        }
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+    .TblFlex {
+        font-size: 0.9em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+            max-width: 120px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 140px;
+        }
+}
+
+/* Mobile breakpoint - much more compact */
+@media (max-width: 768px) {
+    .TblFlex {
+        font-size: 0.8em;
+        border-radius: 6px;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 4px 6px;
+        }
+
+        .TblFlex th {
+            font-size: 0.8em;
+            padding: 6px 6px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 120px;
+            font-size: 0.85em;
+            padding: 3px 5px;
+        }
+
+        /* Smaller combo box buttons on mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 16px !important;
+            min-width: 16px !important;
+            height: auto !important;
+            padding: 1px 2px !important;
+            font-size: 10px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 3px 6px !important;
+            font-size: 0.75em !important;
+            height: 20px !important;
+            min-width: 12px !important;
+        }
+
+        .TblFlex img {
+            max-height: 16px;
+            max-width: 16px;
+        }
+
+        /* Hide less important columns on mobile */
+        .TblFlex .hide-mobile,
+        .TblFlex th.hide-mobile,
+        .TblFlex td.hide-mobile {
+            display: none !important;
+        }
+}
+
+/* Small mobile breakpoint - super compact */
+@media (max-width: 480px) {
+    .TblFlex {
+        border-radius: 4px;
+        font-size: 0.75em;
+    }
+
+        .TblFlex th,
+        .TblFlex td {
+            padding: 3px 4px;
+        }
+
+        .TblFlex th {
+            font-size: 0.75em;
+            padding: 4px 4px;
+        }
+
+        .TblFlex input[type="text"],
+        .TblFlex select,
+        .TblFlex textarea {
+            max-width: 90px;
+            font-size: 0.8em;
+            padding: 2px 4px;
+        }
+
+        /* Even smaller combo box buttons on small mobile */
+        .TblFlex .ajax__combobox_buttoncontainer button,
+        .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+        .TblFlex .ajax__combobox_button,
+        .TblFlex .ajax__combobox_dropdownbutton {
+            width: 14px !important;
+            min-width: 14px !important;
+            padding: 1px !important;
+            font-size: 9px !important;
+        }
+
+        .TblFlex input[type="submit"],
+        .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
+        .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
+            padding: 2px 4px !important;
+            font-size: 0.7em !important;
+            height: 20px !important;
+            min-width: 25px !important;
+        }
+
+        .TblFlex img {
+            max-height: 16px;
+            max-width: 16px;
+        }
+
+        /* Hide additional columns on small mobile */
+        .TblFlex .hide-small-mobile,
+        .TblFlex th.hide-small-mobile,
+        .TblFlex td.hide-small-mobile {
+            display: none !important;
+        }
+}
+
+/* ============================================ */
+/* EMPTY DATA STYLING                         */
+/* ============================================ */
+
+.TblFlex .empty-data,
+.TblFlex .simpleLightBrownForm {
+    text-align: center;
+    padding: 20px 15px;
+    color: var(--secondary-brown);
+    font-style: italic;
+    background: var(--light-green);
+    border-radius: 6px;
+    margin: 10px;
+}
+
+    .TblFlex .empty-data h2,
+    .TblFlex .simpleLightBrownForm h2,
+.results-table:has(.col-priority-4),
+.results-table:has(.col-priority-5),
+table.results-table:has(.col-priority-4),
+table.results-table:has(.col-priority-5) {
+    min-width: 100%;
+}
+table.results-table:has(.col-priority-3) {
+        table-layout: fixed !important;
+    }
+
+        .results-table:has(.col-priority-3) .col-priority-1,
+        table.results-table:has(.col-priority-3) .col-priority-1 {
+            width: fit-content !important;
+        }
+
+        .results-table:has(.col-priority-3) .col-priority-2,
+        table.results-table:has(.col-priority-3) .col-priority-2 {
+            width: fit-content !important;
+        }
+
+        .results-table:has(.col-priority-3) .col-priority-3,
+        table.results-table:has(.col-priority-3) .col-priority-3 {
+            width: fit-content !important;
+        }
+        
+/* Enhanced mobile hiding classes */
+@media (max-width: 768px) {
+    .hide-mobile-Area,
+    .hide-mobile-equipment,
+    .hide-mobile-serial,
+    .hide-mobile-details,
+    th.hide-mobile-Area,
+    th.hide-mobile-equipment,
+    th.hide-mobile-serial,
+    th.hide-mobile-details,
+    td.hide-mobile-Area,
+    td.hide-mobile-equipment,
+    td.hide-mobile-serial,
+    td.hide-mobile-details {
+        display: none !important;
+    }
+}
+
+input[type="submit"], button, .btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 1.1em !important;
+    min-width: 40px !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+/* ============================================ */
+/* MOBILE COLUMN HIDING UTILITY CLASSES         */
+/* ============================================ */
+
+.col-priority-1 {
+    display: table-cell !important;
+}
+
+.col-priority-2,
+.col-priority-3,
+.col-priority-4,
+.col-priority-5 {
+    display: table-cell;
+}
+
+@media (max-width: 1600px) {
+    .col-priority-5,
+    th.col-priority-5,
+    td.col-priority-5 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .col-priority-3,
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-3,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-3,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+
+    .results-table,
+    table.results-table {
+        width: max-content !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .col-priority-2,
+    .col-priority-3,
+    .col-priority-4,
+    .col-priority-5,
+    th.col-priority-2,
+    th.col-priority-3,
+    th.col-priority-4,
+    th.col-priority-5,
+    td.col-priority-2,
+    td.col-priority-3,
+    td.col-priority-4,
+    td.col-priority-5 {
+        display: none !important;
+    }
+
+    .results-table,
+    table.results-table {
+        width: max-content !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
+    }
+}
+
+/* Enhanced mobile hiding classes */
+@media (max-width: 768px) {
+    .hide-mobile-Area,
+    .hide-mobile-equipment,
+    .hide-mobile-serial,
+    .hide-mobile-details,
+    th.hide-mobile-Area,
+    th.hide-mobile-equipment,
+    th.hide-mobile-serial,
+    th.hide-mobile-details,
+    td.hide-mobile-Area,
+    td.hide-mobile-equipment,
+    td.hide-mobile-serial,
+    td.hide-mobile-details {
+        display: none !important;
+    }
+}
+/* Compact first or last column ONLY when it contains an image button */
+.results-table td:first-child:has(input[type="image"]),
+.results-table td:last-child:has(input[type="image"]) {
+    width: 1%;
+    /*    max-width: 32px; - causing 2 buttons to over lap*/
+    min-width: 16px;
+    text-align: center !important;
+    padding: 4px 8px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+}
+
+/* ADDITIONAL: Better table container handling */
+@media (max-width: 768px) {
+    .results-container {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        padding: 8px 4px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .results-table,
+    table.results-table {
+        border-spacing: 0 !important;
+    }
+}
+
+/* ADDITIONAL: Special handling for GridView controls */
+@media (max-width: 768px) {
+    /* Target ASP.NET GridView containers */
+    div[id*="gvCustomers"],
+    div[id*="GridView"],
+    .GridView {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+        /* GridView table sizing */
+        div[id*="gvCustomers"] table,
+        div[id*="GridView"] table,
+        .GridView table {
+            table-layout: auto !important;
+            width: max-content !important;
+            min-width: 100% !important;
+        }
+
+    /* Handle UpdatePanel containers */
+    div[id*="upnl"] {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+/* ============================================ */
+/* SELECTED ROW OVERRIDE - SIMPLIFIED         */
+/* ============================================ */
+/* Fixes the fact that the grid view does not add a selected row class, so we use hese hard coded colours */
+/* Override any GridView row that has the selected background color applied inline */
+.results-table tr[style*="background-color:#63CB66"],
+.results-table tr[style*="background-color: #63CB66"],
+.results-table tr[style*="background-color:#63cb66"],
+.results-table tr[style*="background-color: #63cb66"],
+table.results-table tr[style*="background-color:#63CB66"],
+table.results-table tr[style*="background-color: #63CB66"],
+table.results-table tr[style*="background-color:#63cb66"],
+table.results-table tr[style*="background-color: #63cb66"],
+#gvCities tr[style*="background-color:#63CB66"],
+#gvCities tr[style*="background-color: #63CB66"],
+#gvCities tr[style*="background-color:#63cb66"],
+#gvCities tr[style*="background-color: #63cb66"] {
+    background-color: #63cb66 !important;
+}
+
+    /* Target the cells within selected rows */
+    .results-table tr[style*="background-color:#63CB66"] td,
+    .results-table tr[style*="background-color: #63CB66"] td,
+    .results-table tr[style*="background-color:#63cb66"] td,
+    .results-table tr[style*="background-color: #63cb66"] td,
+    table.results-table tr[style*="background-color:#63CB66"] td,
+    table.results-table tr[style*="background-color: #63CB66"] td,
+    table.results-table tr[style*="background-color:#63cb66"] td,
+    table.results-table tr[style*="background-color: #63cb66"] td,
+    #gvCities tr[style*="background-color:#63CB66"] td,
+    #gvCities tr[style*="background-color: #63CB66"] td,
+    #gvCities tr[style*="background-color:#63cb66"] td,
+    #gvCities tr[style*="background-color: #63cb66"] td {
+        background-color: #63cb66 !important;
+        color: #4e664d !important;
+        font-weight: bold !important;
+    }
+
+/* ============================================== */
+/* CLEAN BASE CALENDAR from chandanprogramming    */
+/* ============================================== */
+
+.ajax__calendar_container {
+    background-color: #ffffff;
+    border: 1px solid #d0d0d0;
+}
+.ajax__calendar_title {
+    background-color: #d0d0d0;
+    padding: 3px;
+}
+.ajax__calendar_body {
+    border: 0px;
+}
+.ajax__calendar_container TD {
+    padding: 0px;
+    margin: 0px;
+    font-size: 11px;
+}
+.ajax__calendar .ajax__calendar_dayname {
+    border-bottom: 1px solid #000;
+}
+.ajax__calendar_dayname {
+    height: 17px;
+    width: 18px;
+    text-align: right;
+    padding: 0px 2px;
+}
+.ajax__calendar .ajax__calendar_active .ajax__calendar_day {
+    background-color: #edf9ff;
+    border: 1px solid #0066cc;
+    color: #0066cc;
+}
+.ajax__calendar .ajax__calendar_day {
+    border: 1px solid #ffffff;
+}
+.ajax__calendar .ajax__calendar_active .ajax__calendar_day {
+    background-color: #000000;
+    color: #ffffff;
+}
+.ajax__calendar .ajax__calendar_day {
+    border: 1px solid #ffffff;
+}
+.ajax__calendar_day {
+    height: 17px;
+    width: 18px;
+    text-align: right;
+    padding: 0px 2px;
+    cursor: pointer;
+}
+.ajax__calendar_today {
+    background-color: #d0d0d0;
+    color: #545454;
+}
+
+.ajax__calendar_hover .ajax__calendar_today {
+    color: #000000;
+}
+/* Complex form layout for milti col forms */
+.complex-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.complex-form-section {
+    background: var(--light-brown);
+    border-radius: 15px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    .complex-form-section h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: var(--primary-green);
+        border-bottom: 2px solid var(--primary-green);
+        padding-bottom: 8px;
+    }
+
+    /* Tab container styling for complex forms */
+    .complex-form-section .ajax__tab_container {
+        width: 100% !important;
+        margin: 10px 0;
+    }
+
+    .complex-form-section .ajax__tab_body {
+        padding: 15px !important;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+    }
+
+.button-toolbar-rounded {
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 15px;
+    background-color: var(--light-green);
+    margin: 10px 2px;
+    border: 1px solid rgba(78, 102, 77, 0.2);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ============================================ */
+/* DASHBOARD STYLES                           */
+/* ============================================ */
+
+.dashboard-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.dashboard-link {
+    /*flex: 1 1 300px;*/
+    min-width: 280px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.dashboard-card {
+    background: #fff;
+    border: 2px solid var(--light-green);
+    border-radius: 8px;
+    padding: 10px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+    .dashboard-card h4 {
+        color: var(--primary-green);
+        margin: 0 0 8px 0;
+        font-size: 1.1em;
+        font-weight: 600;
+    }
+
+    .dashboard-card p {
+        color: var(--secondary-brown);
+        margin: 0;
+        font-size: 0.9em;
+        line-height: 1.3;
+    }
+
+.dashboard-link:hover .dashboard-card {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: var(--primary-green);
+}
+
+    .dashboard-link:hover .dashboard-card h4 {
+        color: var(--primary-brown);
+    }
+
+/* Special styling for "Add/New" buttons */
+.dashboard-link.btn-add .dashboard-card {
+    border-color: var(--primary-green);
+    background: linear-gradient(135deg, var(--light-green) 0%, #fff 100%);
+}
+
+.dashboard-link.btn-add:hover .dashboard-card {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-brown) 100%);
+    border-color: var(--primary-brown);
+}
+
+    .dashboard-link.btn-add:hover .dashboard-card h4,
+    .dashboard-link.btn-add:hover .dashboard-card p {
+        color: #fff;
+    }
+/* SystemTools: compact cards/buttons via a single wrapper */
+.dashboard-links.tools-dashboard {
+    gap: 8px; /* tighter spacing than default if needed */
+}
+
+    /* Let cards size to content (default had fixed heights) */
+    .dashboard-links.tools-dashboard .dashboard-card {
+        height: auto;
+        padding: 8px 10px;
+    }
+
+        /* Slightly smaller titles and no extra paragraph margins */
+        .dashboard-links.tools-dashboard .dashboard-card h4 {
+            margin: 0 0 4px 0;
+            font-size: 1em;
+        }
+
+        .dashboard-links.tools-dashboard .dashboard-card p {
+            margin: 0 0 6px 0;
+            font-size: 0.9em;
+            line-height: 1.25;
+        }
+
+    /* Compact buttons inside cards */
+    .dashboard-links.tools-dashboard input[type="submit"],
+    .dashboard-links.tools-dashboard button {
+        height: 28px !important;
+        padding: 3px 10px !important;
+        font-size: 0.9em !important;
+        min-width: 100px !important;
+    }
+
+/* ============================================ */
+/* MOBILE MENU - HIDDEN ON DESKTOP              */
+/* ============================================ */
+/* Hide mobile menu on desktop (default) */
+.mobile-header-content,
+.mobile-nav-menu {
+    display: none !important;
+}
+
+.hamburger-button {
+    display: none !important;
+}
+
+/* Show mobile menu only on tablets and below */
+@media (max-width: 1024px) {
+    .mobile-header-content {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-header-content {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: #302a20;
+        border-bottom: 1px solid white;
+    }
+
+    .mobile-title {
+        color: lightgreen;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+
+    .hamburger-button {
+        display: block !important;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .hamburger-icon {
+        width: 30px;
+        height: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    .hamburger-icon span {
+        display: block;
+        height: 3px;
+        background-color: #30FFAF;
+        width: 100%;
+        transition: 0.3s;
+    }
+
+    .hamburger-button.open .hamburger-icon span:nth-child(1) {
+        transform: rotate(45deg) translate(8px, 8px);
+    }
+
+    .hamburger-button.open .hamburger-icon span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger-button.open .hamburger-icon span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+    }
+
+    .mobile-nav-menu {
+        display: none !important;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #d0d0b9;
+        z-index: 9999;
+        overflow-y: auto;
+    }
+
+    .mobile-nav-menu.mobile-menu-open {
+        display: block !important;
+    }
+
+    .mobile-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mobile-nav-list li {
+        padding: 12px 16px;
+        border-bottom: 1px solid #c0c0a9;
+    }
+
+    .mobile-nav-list a {
+        color: #4e664d;
+        text-decoration: none;
+        font-weight: 500;
+        display: block;
+    }
+
+    .mobile-nav-list a:hover {
+        color: #302a20;
+        background-color: #e5f0d4;
+    }
+
+    .mobile-login-user {
+        display: block;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #4e664d;
+    }
+
+    .mobile-login-link {
+        display: block;
+        padding: 12px 16px;
+        color: #4e664d;
+        text-decoration: none;
+    }
+
+    .mobile-login-link:hover {
+        background-color: #e5f0d4;
+    }
+}
+/* ===== FORCE HIDE MOBILE MENU ON DESKTOP ===== */
+.mobile-header-content,
+.mobile-nav-menu,
+.hamburger-button {
+    display: none !important;
+}
+
+/* Only show on small screens */
+@media (max-width: 768px) {
+    .mobile-header-content {
+        display: flex !important;
+    }
+
+    .mobile-nav-menu {
+        display: block !important;
+    }
+
+    .hamburger-button {
+        display: block !important;
+    }
+}

@@ -1,17 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using TrackerSQL.Controls;
+using TrackerSQL.Repositories;
+using TrackerSQL.Models;
 
 namespace TrackerSQL.Classes
 {
     /// <summary>
-    /// Calculates optimal delivery dates based on city delivery schedules and recurring order requirements
+    /// Calculates optimal delivery dates based on area delivery schedules and recurring order requirements
     /// Follows project standards with MessageProvider logging and proper error handling
     /// </summary>
     public class DateCalculator
     {
         private readonly TrackerTools _trackerTools;
-        private readonly CityTblDAL _cityTblDAL;
+        private readonly AreasRepository _areasRepository;
 
         public const int WEEKLY_INTERVAL = 1;
         public const int BIWEEKLY_INTERVAL = 2;
@@ -35,9 +36,9 @@ namespace TrackerSQL.Classes
         public DateCalculator()
         {
             _trackerTools = new TrackerTools();
-            _cityTblDAL = new CityTblDAL();
+            _areasRepository = new AreasRepository();
         }
-        private static bool IsDeliveryValidForRules(DateTime deliveryDate, List<CityPrepDaysTbl> rules)
+        private static bool IsDeliveryValidForRules(DateTime deliveryDate, List<PrepRule> rules)
         {
             foreach (var rule in rules)
             {
@@ -53,16 +54,15 @@ namespace TrackerSQL.Classes
             {
                 var today = TimeZoneUtils.Now().Date;
 
-                // 1. Anchor (recurrence target) – this must remain stable so filtering/window logic still works
+                // 1. Anchor (recurrence target) � this must remain stable so filtering/window logic still works
                 DateTime targetDate = CalculateNextMonthlyOccurrence(targetDayOfMonth, lastOrderDate).Date;
                 if (targetDate < today) targetDate = today; // never schedule in past
 
-                // 2. Get city prep rules (if missing, just return target unchanged)
-                int cityId = _cityTblDAL.GetCityIdByCustomerId(customerId);
-                var rules = (cityId == 0) ? null : _cityTblDAL.GetPrepRulesForCity(cityId);
+                // 2. Get area prep rules (if missing, just return target unchanged)
+                var rules = _areasRepository.GetPrepRulesForContact((int)customerId);
                 if (rules == null || rules.Count == 0)
                 {
-                    var prepFallback = CalculateRoastDateFromDelivery(targetDate);
+                    var prepFallback = CalculatePrepDateFromDelivery(targetDate);
                     return new PrepDeliveryPair(prepFallback, targetDate);
                 }
 
@@ -90,7 +90,7 @@ namespace TrackerSQL.Classes
                 }
 
                 // 5. None matched: return target unmodified (do NOT widen search here to avoid pushing outside window)
-                var fallbackPrepDate = CalculateRoastDateFromDelivery(targetDate);
+                var fallbackPrepDate = CalculatePrepDateFromDelivery(targetDate);
                 return new PrepDeliveryPair(fallbackPrepDate, targetDate);
             }
             catch (Exception ex)
@@ -98,18 +98,18 @@ namespace TrackerSQL.Classes
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                     $"DateCalculator: Monthly calc failed for customer {customerId}: {ex.Message}");
                 var delivery = TimeZoneUtils.Now().Date;
-                var prep = CalculateRoastDateFromDelivery(delivery);
+                var prep = CalculatePrepDateFromDelivery(delivery);
                 return new PrepDeliveryPair(prep, delivery);
             }
         }
         /// <summary>
         /// Calculates the optimal delivery date for a weekly recurring order:
-        /// chooses the delivery date (from city schedule) closest to today (>= today).
+        /// chooses the delivery date (from area schedule) closest to today (>= today).
         /// The recurrence engine (outside) should have already ensured we are in/near
         /// the appropriate cycle; this method focuses on "closest to now".
         /// </summary>
         /// <param name="customerId">Customer ID</param>
-        /// <param name="lastOrderDate">Date of last order</param>
+        /// <param name="calculatedDeliveryDate">Target delivery date to center search on</param>
         /// <returns>Optimal delivery date</returns>
         public PrepDeliveryPair CalculateOptimalWeeklyDeliveryDates(long customerId, DateTime calculatedDeliveryDate)
         {
@@ -119,7 +119,7 @@ namespace TrackerSQL.Classes
                 var today = TimeZoneUtils.Now().Date;
                 if (anchor < today) anchor = today; // safety
 
-                var pair = FindBestCityDeliveryDate(
+                var pair = FindBestAreaDeliveryDate(
                     customerId,
                     centerDate: anchor,
                     mode: DeliverySelectionMode.ClosestToTargetDate,
@@ -134,32 +134,32 @@ namespace TrackerSQL.Classes
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                     $"DateCalculator: Weekly calc failed for customer {customerId}: {ex.Message}");
                 var delivery = TimeZoneUtils.Now().Date.AddDays(1);
-                var prep = CalculateRoastDateFromDelivery(delivery);
+                var prep = CalculatePrepDateFromDelivery(delivery);
                 return new PrepDeliveryPair(prep, delivery);
             }
         }
         /// <summary>
         /// Calculates the roast date from a delivery date (typically 1-2 days before)
         /// </summary>
-        public DateTime CalculateRoastDateFromDelivery(DateTime deliveryDate)
+        public DateTime CalculatePrepDateFromDelivery(DateTime deliveryDate)
         {
             try
             {
-                DateTime roastDate = deliveryDate.AddDays(-1);
+                DateTime PrepDate = deliveryDate.AddDays(-1);
                 DateTime today = TimeZoneUtils.Now().Date;
-                if (roastDate < today)
-                    roastDate = today;
+                if (PrepDate < today)
+                    PrepDate = today;
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    MessageProvider.Format(MessageKeys.DeliveryCalculation.RoastDateCalculated,
-                        deliveryDate, roastDate));
+                    MessageProvider.Format(MessageKeys.DeliveryCalculation.PrepDateCalculated,
+                        deliveryDate, PrepDate));
 
-                return roastDate;
+                return PrepDate;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    MessageProvider.Format(MessageKeys.DeliveryCalculation.ErrorCalculatingRoastDate,
+                    MessageProvider.Format(MessageKeys.DeliveryCalculation.ErrorCalculatingPrepDate,
                         deliveryDate, ex.Message));
                 return deliveryDate.AddDays(-1);
             }
@@ -196,13 +196,32 @@ namespace TrackerSQL.Classes
             DateTime cycleMonth = lastOrderDate.AddMonths(1);
             DateTime nextOccurrence = BuildMonthlyTargetDate(cycleMonth, targetDayOfMonth);
 
-            // If the target day in that month is earlier than the day-of-month of the last order
-            // (e.g. last=29 Sep, target day=1 → gives 1 Oct only 2 days later),
-            // skip ahead one more month to enforce a full-cycle gap (result: 1 Nov).
-            if (targetDayOfMonth < lastOrderDate.Day)
+            // Only apply the 20-day minimum if next occurrence is in the SAME month as last order
+            // This prevents legitimate next-month orders from being incorrectly skipped
+            int daysSinceLastOrder = (nextOccurrence - lastOrderDate).Days;
+            int minMonthlyInterval = SystemConstants.CheckupConstants.DefaultMinimumMonthlyRecurringDays; // 20 days default
+
+            // Only apply minimum interval check if nextOccurrence is in the same month as lastOrderDate
+            // This catches cases where targetDayOfMonth is earlier in month than lastOrderDate.Day
+            bool isSameMonthAndYear = (nextOccurrence.Year == lastOrderDate.Year &&
+                                       nextOccurrence.Month == lastOrderDate.Month);
+
+            if (isSameMonthAndYear && daysSinceLastOrder < minMonthlyInterval)
             {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    $"Monthly recurrence: Same month and interval too short ({daysSinceLastOrder} days). Skipping to next month. " +
+                    $"Last: {lastOrderDate:yyyy-MM-dd}, Calculated: {nextOccurrence:yyyy-MM-dd}");
+
                 cycleMonth = cycleMonth.AddMonths(1);
                 nextOccurrence = BuildMonthlyTargetDate(cycleMonth, targetDayOfMonth);
+            }
+            else if (!isSameMonthAndYear && daysSinceLastOrder < minMonthlyInterval)
+            {
+                // Already moved to next month, but interval is short (e.g., March 23 -> April 1 = 9 days)
+                // This is VALID - it's a legitimate next-month occurrence, don't skip it
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    $"Monthly recurrence: Next month occurrence accepted despite short interval ({daysSinceLastOrder} days). " +
+                    $"Last: {lastOrderDate:yyyy-MM-dd}, Next: {nextOccurrence:yyyy-MM-dd}");
             }
 
             // Still ensure we never return a past date relative to today
@@ -228,38 +247,38 @@ namespace TrackerSQL.Classes
             return new DateTime(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month, day);
         }
         /// <summary>
-        /// Finds the optimal delivery date based on customer's city delivery schedule
+        /// Finds the optimal delivery date based on customer's area delivery schedule
         /// </summary>
-        private DateTime FindOptimalCityDeliveryDate(long customerId, DateTime targetDate)
+        private DateTime FindOptimalAreaDeliveryDate(long customerId, DateTime targetDate)
         {
             try
             {
-                // Get customer's city delivery schedule using existing infrastructure
+                // Get customer's area delivery schedule using existing infrastructure
                 DateTime dummyDate = DateTime.MinValue;
-                DateTime customerRoastDate = _trackerTools.GetNextRoastDateByCustomerID(customerId, ref dummyDate);
+                DateTime customerPrepDate = _trackerTools.GetNextPreperationDateByCustomerID(customerId, ref dummyDate);
 
-                if (customerRoastDate == DateTime.MinValue || customerRoastDate < TimeZoneUtils.Now().Date.AddDays(-30))
+                if (customerPrepDate == DateTime.MinValue || customerPrepDate < TimeZoneUtils.Now().Date.AddDays(-30))
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Orders, MessageProvider.Format(
-                        MessageKeys.DeliveryCalculation.InvalidRoastDate,
+                        MessageKeys.DeliveryCalculation.InvalidPrepDate,
                         customerId));
 
                     return targetDate; // Fallback to target date
                 }
 
                 // Find the delivery date closest to our target
-                DateTime optimalDate = FindClosestAvailableDeliveryDate(customerRoastDate, targetDate);
+                DateTime optimalDate = FindClosestAvailableDeliveryDate(customerPrepDate, targetDate);
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders, MessageProvider.Format(
-                    MessageKeys.DeliveryCalculation.OptimalCityDateFound,
-                    customerRoastDate, optimalDate));
+                    MessageKeys.DeliveryCalculation.OptimalAreaDateFound,
+                    customerPrepDate, optimalDate));
 
                 return optimalDate;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders, MessageProvider.Format(
-                    MessageKeys.DeliveryCalculation.ErrorFindingCityDate,
+                    MessageKeys.DeliveryCalculation.ErrorFindingAreaDate,
                     customerId, ex.Message));
 
                 return targetDate; // Fallback to target date
@@ -269,23 +288,23 @@ namespace TrackerSQL.Classes
         /// <summary>
         /// Finds the closest available delivery date to the target date
         /// </summary>
-        private DateTime FindClosestAvailableDeliveryDate(DateTime cityDeliveryDate, DateTime targetDate)
+        private DateTime FindClosestAvailableDeliveryDate(DateTime AreaDeliveryDate, DateTime targetDate)
         {
             try
             {
-                // If city delivery date is within 7 days of target, use it
-                double daysDifference = Math.Abs((cityDeliveryDate - targetDate).TotalDays);
+                // If Area delivery date is within 7 days of target, use it
+                double daysDifference = Math.Abs((AreaDeliveryDate - targetDate).TotalDays);
 
                 if (daysDifference <= 7)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Orders, MessageProvider.Format(
-                        MessageKeys.DeliveryCalculation.UsingCityDeliveryDate,
-                        cityDeliveryDate, daysDifference));
+                        MessageKeys.DeliveryCalculation.UsingAreaDeliveryDate,
+                        AreaDeliveryDate, daysDifference));
 
-                    return cityDeliveryDate;
+                    return AreaDeliveryDate;
                 }
 
-                // Otherwise, use GetClosestNextRoastDate to find next available date
+                // Otherwise, use GetClosestNextPreperationDate to find next available date
                 DateTime searchDate = targetDate;
                 int maxSearchDays = 14; // Search up to 2 weeks ahead
 
@@ -294,15 +313,15 @@ namespace TrackerSQL.Classes
                     try
                     {
                         // Use existing TrackerTools method
-                        DateTime testRoastDate = _trackerTools.GetClosestNextRoastDate(searchDate);
+                        DateTime testPrepDate = _trackerTools.GetClosestNextPreperationDate(searchDate);
 
-                        if (testRoastDate > searchDate && testRoastDate != DateTime.MinValue)
+                        if (testPrepDate > searchDate && testPrepDate != DateTime.MinValue)
                         {
                             AppLogger.WriteLog(SystemConstants.LogTypes.Orders, MessageProvider.Format(
                                 MessageKeys.DeliveryCalculation.FoundNextDeliveryCycle,
-                                testRoastDate, i));
+                                testPrepDate, i));
 
-                            return testRoastDate;
+                            return testPrepDate;
                         }
                     }
                     catch (Exception)
@@ -331,7 +350,7 @@ namespace TrackerSQL.Classes
         }
         /// <summary>
         /// New unified search:
-        /// Enumerates candidate prep days within ±SEARCH_RADIUS of centerDate.
+        /// Enumerates candidate prep days within �SEARCH_RADIUS of centerDate.
         /// For each matching prep rule, calculates delivery = prep + delay.
         /// Filters out delivery dates in the past (relative to today).
         /// Selection modes:
@@ -339,7 +358,7 @@ namespace TrackerSQL.Classes
         /// - minDeliveryDate: delivery must be >= this (e.g. recurrence anchor)
         /// Selection mode determines metric.
         /// </summary>
-        private PrepDeliveryPair FindBestCityDeliveryDate(
+        private PrepDeliveryPair FindBestAreaDeliveryDate(
             long customerId,
             DateTime centerDate,
             DeliverySelectionMode mode,
@@ -347,22 +366,18 @@ namespace TrackerSQL.Classes
             DateTime? minDeliveryDate,
             bool requireFuturePrep)
         {
-            int cityId = _cityTblDAL.GetCityIdByCustomerId(customerId);
+            var prepRules = _areasRepository.GetPrepRulesForContact((int)customerId);
             var today = TimeZoneUtils.Now().Date;
             centerDate = centerDate.Date;
 
-            if (cityId == 0)
-                return new PrepDeliveryPair(centerDate.AddDays(-1) < today ? today : centerDate.AddDays(-1), centerDate);
-
-            var prepRules = _cityTblDAL.GetPrepRulesForCity(cityId);
             if (prepRules == null || prepRules.Count == 0)
-                return new PrepDeliveryPair(CalculateRoastDateFromDelivery(centerDate), centerDate);
+                return new PrepDeliveryPair(CalculatePrepDateFromDelivery(centerDate), centerDate);
 
-            var byDow = new Dictionary<int, List<CityPrepDaysTbl>>();
+            var byDow = new Dictionary<int, List<PrepRule>>();
             foreach (var r in prepRules)
             {
                 if (!byDow.ContainsKey(r.PrepDayOfWeekID))
-                    byDow[r.PrepDayOfWeekID] = new List<CityPrepDaysTbl>();
+                    byDow[r.PrepDayOfWeekID] = new List<PrepRule>();
                 byDow[r.PrepDayOfWeekID].Add(r);
             }
 
@@ -382,7 +397,7 @@ namespace TrackerSQL.Classes
                     DateTime candidatePrep = centerDate.AddDays(offset).Date;
                     int dow = (int)candidatePrep.DayOfWeek;
 
-                    List<CityPrepDaysTbl> rulesForDay;
+                    List<PrepRule> rulesForDay;
                     if (!byDow.TryGetValue(dow, out rulesForDay))
                         continue;
 
@@ -446,7 +461,7 @@ namespace TrackerSQL.Classes
             // Fallback
             var fallbackDelivery = centerDate < minDel ? minDel : centerDate;
             if (fallbackDelivery < today) fallbackDelivery = today;
-            var fallbackPrep = CalculateRoastDateFromDelivery(fallbackDelivery);
+            var fallbackPrep = CalculatePrepDateFromDelivery(fallbackDelivery);
             return new PrepDeliveryPair(fallbackPrep, fallbackDelivery);
         }
         /// <summary>
@@ -455,25 +470,21 @@ namespace TrackerSQL.Classes
         /// Accepts only delivery dates >= targetDate and >= minDate.
         /// Falls back to targetDate if none found.
         /// </summary>
-        private PrepDeliveryPair old_FindClosestCityDeliveryDate(long customerId, DateTime targetDate, DateTime minDate)
+        private PrepDeliveryPair old_FindClosestAreaDeliveryDate(long customerId, DateTime targetDate, DateTime minDate)
         {
-            int cityId = _cityTblDAL.GetCityIdByCustomerId(customerId);
+            var prepRules = _areasRepository.GetPrepRulesForContact((int)customerId);
             targetDate = targetDate.Date;
             minDate = minDate.Date;
 
-            if (cityId == 0)
+            if (prepRules == null || prepRules.Count == 0)
                 return new PrepDeliveryPair(targetDate.AddDays(-1), targetDate);
 
-            var prepDays = _cityTblDAL.GetPrepRulesForCity(cityId);
-            if (prepDays == null || prepDays.Count == 0)
-                return new PrepDeliveryPair(targetDate.AddDays(-1), targetDate);
-
-            var byDow = new Dictionary<int, List<CityPrepDaysTbl>>();
-            foreach (var p in prepDays)
+            var byDow = new Dictionary<int, List<PrepRule>>();
+            foreach (var p in prepRules)
             {
                 int key = p.PrepDayOfWeekID;
                 if (!byDow.ContainsKey(key))
-                    byDow[key] = new List<CityPrepDaysTbl>();
+                    byDow[key] = new List<PrepRule>();
                 byDow[key].Add(p);
             }
 
@@ -482,7 +493,7 @@ namespace TrackerSQL.Classes
             DateTime bestPrep = DateTime.MaxValue;
             bool found = false;
 
-            // Offsets searched in “balanced” order: 0, +1, -1, +2, -2, ...
+            // Offsets searched in balanced order: 0, +1, -1, +2, -2, ...
             for (int radius = 0; radius <= searchRadius; radius++)
             {
                 int[] offsets;
@@ -496,7 +507,7 @@ namespace TrackerSQL.Classes
                     DateTime candidatePrep = targetDate.AddDays(offset).Date;
                     int dow = (int)candidatePrep.DayOfWeek;
 
-                    List<CityPrepDaysTbl> rulesForDow;
+                    List<PrepRule> rulesForDow;
                     if (!byDow.TryGetValue(dow, out rulesForDow))
                         continue;
 
@@ -545,74 +556,7 @@ namespace TrackerSQL.Classes
                 $"DateCalculator: Fallback delivery {targetDate:yyyy-MM-dd} (no schedule match) for customer {customerId}");
             return new PrepDeliveryPair(fallbackPrep, targetDate);
         }
-        /// <summary>
-        /// Finds the closest delivery date for a customer based on their city's prep/delivery schedule and a target date.
-        /// </summary>
-        //private DateTime FindClosestCityDeliveryDate(long customerId, DateTime targetDate, DateTime minDate)
-        //{
-        //    int cityId = _cityTblDAL.GetCityIdByCustomerId(customerId);
-        //    if (cityId == 0)
-        //        return targetDate;
-
-        //    List<CityPrepDaysTbl> prepDays = _cityTblDAL.GetPrepRulesForCity(cityId);
-        //    if (prepDays == null || prepDays.Count == 0)
-        //        return targetDate;
-
-        //    DateTime earliestDelivery = DateTime.MaxValue;
-
-        //    // Search a window of prep dates around the target date (e.g., ±7 days)
-        //    for (int offset = -7; offset <= 7; offset++)
-        //    {
-        //        DateTime candidatePrep = targetDate.AddDays(offset);
-
-        //        foreach (var prep in prepDays)
-        //        {
-        //            if ((int)candidatePrep.DayOfWeek != prep.PrepDayOfWeekID)
-        //                continue;
-
-        //            DateTime candidateDelivery = candidatePrep.AddDays(prep.DeliveryDelayDays);
-
-        //            // Only consider delivery dates on or after targetDate and minDate
-        //            if (candidateDelivery >= targetDate && candidateDelivery >= minDate && candidateDelivery < earliestDelivery)
-        //            {
-        //                earliestDelivery = candidateDelivery;
-        //            }
-        //        }
-        //    }
-
-        //    return earliestDelivery == DateTime.MaxValue ? targetDate : earliestDelivery;
-        //}
-        public List<ReoccuringOrderExtData> FilterAndUpdateRecurringOrdersDates(List<ReoccuringOrderExtData> reoccuringOrders,
-            DateTime? windowStart = null, DateTime? windowEnd = null)
-        {
-            var validOrders = new List<ReoccuringOrderExtData>();
-            var reoccuringOrderDal = new ReoccuringOrderDAL();
-
-            foreach (var order in reoccuringOrders)
-            {
-                // Always recalculate next required date using LastDone date and recurrence type
-                var calculatedNextDates = reoccuringOrderDal.CalculateNextDatesRequired(order);
-
-                order.PrepDate = calculatedNextDates.PrepDate;
-                // Update legacy/broken records if needed
-                if (order.NextDateRequired != calculatedNextDates.DeliveryDate)
-                {
-                    order.NextDateRequired = calculatedNextDates.DeliveryDate;
-                    reoccuringOrderDal.UpdateReoccuringOrder(order, order.ReoccuringOrderID, false);
-                }
-
-                // Only keep records where next required date is <= windowEnd and not min date
-                bool isValid = order.NextDateRequired != SystemConstants.DatabaseConstants.SystemMinDate;
-                if (windowEnd.HasValue)
-                    isValid &= order.NextDateRequired <= windowEnd.Value;
-                if (windowStart.HasValue)
-                    isValid &= order.NextDateRequired >= windowStart.Value;
-
-                if (isValid)
-                    validOrders.Add(order);
-            }
-            return validOrders;
-        }
+      
         public static DateTime StartOfWeek(DateTime dt, DayOfWeek startOfWeek)
         {
             int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7;

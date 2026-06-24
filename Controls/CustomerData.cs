@@ -1,12 +1,15 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.CustomerData
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
 // Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 //- only form later versions #nullable disable
+using System;
+
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class CustomerData
     {
         private long _CustomerID;
@@ -18,7 +21,7 @@ namespace TrackerSQL.Controls
         private string _ContactAltLastName;
         private string _Department;
         private string _BillingAddress;
-        private int _City;
+        private int _Area;
         private string _StateOrProvince;
         private string _PostalCode;
         private string _Region;
@@ -54,7 +57,7 @@ namespace TrackerSQL.Controls
         {
             this._CustomerID = 0;
             this._CompanyName = this._ContactTitle = this._ContactFirstName = this._ContactLastName = this._ContactAltFirstName = this._ContactAltLastName = this._Department = this._BillingAddress = "";
-            this._City = 0;
+            this._Area = 0;
             this._StateOrProvince = this._PostalCode = this._Region = this._PhoneNumber = this._Extension = this._FaxNumber = this._CellNumber = this._EmailAddress = this._AltEmailAddress = this._ContractNo = "";
             this._CustomerTypeID = this._EquipType = this._CoffeePreference = 0;
             this._PriPrefQty = 0.0;
@@ -122,10 +125,10 @@ namespace TrackerSQL.Controls
             set => this._BillingAddress = value;
         }
 
-        public int City
+        public int Area
         {
-            get => this._City;
-            set => this._City = value;
+            get => this._Area;
+            set => this._Area = value;
         }
 
         public string StateOrProvince

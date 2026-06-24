@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -28,6 +28,15 @@ namespace TrackerSQL.Classes
             }
             return "UnknownUser";
         }
+        /// <summary>
+        /// Writes a log entry and flags the session so Site.Master can warn the user.
+        /// </summary>
+        public static void WriteError(string logName, string message, string source = null)
+        {
+            WriteLog(logName, message);
+            ApplicationErrorNotifier.Notify(message, source, BuildLogHint(logName));
+        }
+
         /// <summary>
         /// Primary log method with user resolution from context.
         /// </summary>
@@ -98,6 +107,14 @@ namespace TrackerSQL.Classes
             {
                 // Optional: suppress trim failure
             }
+        }
+
+        private static string BuildLogHint(string logName)
+        {
+            if (string.IsNullOrWhiteSpace(logName))
+                logName = "general";
+
+            return $"App_Data/{logName}.log, App_Data/ErrorLog.txt (or System → Log Viewer)";
         }
     }
 }

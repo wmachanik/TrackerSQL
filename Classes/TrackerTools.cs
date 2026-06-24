@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.classes.TrackerTools
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -10,7 +10,9 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Web;
-using TrackerSQL.Controls;
+using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 //- only form later versions #nullable disable
 namespace TrackerSQL.Classes
@@ -19,7 +21,7 @@ namespace TrackerSQL.Classes
     {
         public const string CONST_STR_NULLDATE = "1980/01/01";
         public const string CONST_SESSION_DATAACCESSERROR = "DataAccessError";
-        //public const string CONST_POREQUIRED = "!!!PO required!!!"; → SystemConstants.UIConstants.PORequiredText
+        //public const string CONST_POREQUIRED = "!!!PO required!!!"; ? SystemConstants.UIConstants.PORequiredText
         // all moved in to SystemConstants
         //public const int CONST_SERVTYPECLEAN = 1;
         //public const int CONST_SERVTYPECOFFEE = 2;
@@ -84,15 +86,15 @@ namespace TrackerSQL.Classes
         //public static DateTime CONST_NULLDATE = DateTime.MinValue;
         //public static DateTime STATIC_TrackerMinDate = DateTime.Parse("1980/01/01").Date;
 
-        public int GetDaysToRoastDate(DateTime pThisDate)
+        public int GetDaysToPrepDate(DateTime pThisDate)
         {
             DayOfWeek pRoastDayOfWeek = DayOfWeek.Tuesday;
             if (pThisDate.DayOfWeek == DayOfWeek.Tuesday && pThisDate.Hour >= 10 || ((pThisDate.DayOfWeek == DayOfWeek.Wednesday ? 1 : 0) | (pThisDate.DayOfWeek != DayOfWeek.Thursday ? 0 : (pThisDate.Hour < 10 ? 1 : 0))) != 0)
                 pRoastDayOfWeek = DayOfWeek.Thursday;
-            return this.GetDaysToRoastDate(pThisDate, pRoastDayOfWeek);
+            return this.GetDaysToPrepDate(pThisDate, pRoastDayOfWeek);
         }
 
-        public int GetDaysToRoastDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
+        public int GetDaysToPrepDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
         {
             DayOfWeek dayOfWeek = pThisDate.DayOfWeek;
             if (pRoastDayOfWeek < DayOfWeek.Sunday || pRoastDayOfWeek > DayOfWeek.Saturday)
@@ -123,101 +125,156 @@ namespace TrackerSQL.Classes
             AppLogger.WriteLog(SystemConstants.LogTypes.System, $"ParseUserDate: Could not parse date string '{dateString}' with format '{SystemConstants.FormatConstants.DateFormat}'. Returning SystemMinDate.");
             return SystemConstants.DatabaseConstants.SystemMinDate;
         }
-        public int NumDaysTillNextRoast() => this.GetDaysToRoastDate(TimeZoneUtils.Now().Date);
+        public int NumDaysTillNextRoast() => this.GetDaysToPrepDate(TimeZoneUtils.Now().Date);
 
         public int NumDaysTillNextRoast(DayOfWeek pRoastDayOfWeek)
         {
-            return this.GetDaysToRoastDate(TimeZoneUtils.Now().Date, pRoastDayOfWeek);
+            return this.GetDaysToPrepDate(TimeZoneUtils.Now().Date, pRoastDayOfWeek);
         }
 
         public DateTime RemoveTimePortion(DateTime pDate) => pDate.Date;
 
-        public DateTime GetClosestNextRoastDate(DateTime pThisDate)
+        public DateTime GetClosestNextPreperationDate(DateTime pThisDate)
         {
-            return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToRoastDate(pThisDate) - 7)));
+            return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToPrepDate(pThisDate) - 7)));
         }
 
-        public DateTime GetClosestNextRoastDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
+        public DateTime GetClosestNextPreperationDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
         {
-            return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToRoastDate(pThisDate, pRoastDayOfWeek) - 7)));
+            return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToPrepDate(pThisDate, pRoastDayOfWeek) - 7)));
         }
 
-        public bool RoastDateIsBtw(DateTime pRoastDate) => this.RoastDateIsBtw(pRoastDate, 1L);
+        public bool PrepDateIsBtw(DateTime pPrepDate) => this.PrepDateIsBtw(pPrepDate, 1L);
 
-        public bool RoastDateIsBtw(DateTime pRoastDate, long pOrderId)
+        public bool PrepDateIsBtw(DateTime pPrepDate, long pOrderId)
         {
-            DateTime closestNextRoastDate1 = this.GetClosestNextRoastDate(TimeZoneUtils.Now().AddDays(-7.0), DayOfWeek.Monday);
-            DateTime closestNextRoastDate2 = this.GetClosestNextRoastDate(TimeZoneUtils.Now().Date, DayOfWeek.Monday);
-            return closestNextRoastDate1 <= pRoastDate && pRoastDate < closestNextRoastDate2;
+            DateTime closestNextPreperationDate1 = this.GetClosestNextPreperationDate(TimeZoneUtils.Now().AddDays(-7.0), DayOfWeek.Monday);
+            DateTime closestNextPreperationDate2 = this.GetClosestNextPreperationDate(TimeZoneUtils.Now().Date, DayOfWeek.Monday);
+            return closestNextPreperationDate1 <= pPrepDate && pPrepDate < closestNextPreperationDate2;
         }
 
-        public bool IsNextRoastDateByCityTodays()
+        public bool IsNextPreperationDateByAreaTodays()
         {
-            bool flag = false;
-            IDataReader dataReader = new TrackerDb().ExecuteSQLGetDataReader("SELECT DateLastPrepDateCalcd FROM SysDataTbl WHERE (ID = 1)");
-            if (dataReader != null && dataReader.Read())
+            var sysData = new SysDataRepository().GetById(1);
+            if (sysData?.DateLastPrepDateCalcd == null)
             {
-                DateTime dateTime = TimeZoneUtils.Now().Date;
-                if (dateTime.Hour >= 14)
-                    dateTime = dateTime.AddDays(1.0);
-                flag = dateTime.Date == Convert.ToDateTime(dataReader["DateLastPrepDateCalcd"].ToString()).Date;
-                dataReader.Close();
+                return false;
             }
-            return flag;
+
+            DateTime dateTime = TimeZoneUtils.Now().Date;
+            if (dateTime.Hour >= 14)
+            {
+                dateTime = dateTime.AddDays(1.0);
+            }
+
+            return dateTime.Date == sysData.DateLastPrepDateCalcd.Value.Date;
         }
 
-        private string UpdateOrInsertCityNextRstDate(
-          int pCityID,
+        private string UpdateOrInsertAreaNextPreperationDate(
+          int pAreaID,
           TrackerTools.PrepAndDeliveryData pThisPrepAndDeliveryData,
           TrackerTools.PrepAndDeliveryData pNextPrepAndDeliveryData)
         {
-            string empty = string.Empty;
-            NextRoastDateByCityTbl pNextRoastCityTbl = new NextRoastDateByCityTbl();
-            pNextRoastCityTbl.CityID = (Int32)pCityID;
-            pNextRoastCityTbl.PrepDate = pThisPrepAndDeliveryData.PrepDate;
-            pNextRoastCityTbl.DeliveryDate = pThisPrepAndDeliveryData.DeliveryDate;
-            pNextRoastCityTbl.DeliveryOrder = pThisPrepAndDeliveryData.SortOrder;
-            pNextRoastCityTbl.NextPrepDate = pNextPrepAndDeliveryData.PrepDate;
-            pNextRoastCityTbl.NextDeliveryDate = pNextPrepAndDeliveryData.DeliveryDate;
-            TrackerDb trackerDb = new TrackerDb();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT CityID FROM NextRoastDateByCityTbl WHERE CityID = " + pCityID.ToString());
-            string str;
-            if (dataReader != null && dataReader.Read())
+            try
             {
-                str = pNextRoastCityTbl.UpdatePrepDataForCity(pCityID, pNextRoastCityTbl);
-                dataReader.Close();
+                using (var db = new TrackerSQLDb())
+                {
+                    // First check if record exists
+                    string checkSql = "SELECT AreaID FROM NextPreperationDateByAreasTbl WHERE AreaID = @AreaID";
+                    var checkParams = new List<DBParameter>
+                    {
+                        new DBParameter 
+                        { 
+                            DataValue = pAreaID, 
+                            DataDbType = System.Data.DbType.Int32, 
+                            ParamName = "@AreaID" 
+                        }
+                    };
+                    
+                    var existingId = db.ExecuteScalar(checkSql, checkParams);
+                    
+                    if (existingId != null)
+                    {
+                        // UPDATE existing record
+                        string updateSql = @"
+                            UPDATE NextPreperationDateByAreasTbl 
+                            SET PreperationDate = @PrepDate,
+                                DeliveryDate = @DeliveryDate,
+                                DeliveryOrder = @DeliveryOrder,
+                                NextPreperationDate = @NextPreperationDate,
+                                NextDeliveryDate = @NextDeliveryDate
+                            WHERE AreaID = @AreaID";
+                        
+                        var updateParams = new List<DBParameter>
+                        {
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@PrepDate" },
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@DeliveryDate" },
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.SortOrder, DataDbType = System.Data.DbType.Int32, ParamName = "@DeliveryOrder" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreperationDate" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextDeliveryDate" },
+                            new DBParameter { DataValue = pAreaID, DataDbType = System.Data.DbType.Int32, ParamName = "@AreaID" }
+                        };
+                        
+                        db.ExecuteNonQuery(updateSql, updateParams);
+                        return string.Empty; // Success
+                    }
+                    else
+                    {
+                        // INSERT new record
+                        string insertSql = @"
+                            INSERT INTO NextPreperationDateByAreasTbl 
+                            (AreaID, PreperationDate, DeliveryDate, DeliveryOrder, NextPreperationDate, NextDeliveryDate)
+                            VALUES 
+                            (@AreaID, @PrepDate, @DeliveryDate, @DeliveryOrder, @NextPreperationDate, @NextDeliveryDate)";
+                        
+                        var insertParams = new List<DBParameter>
+                        {
+                            new DBParameter { DataValue = pAreaID, DataDbType = System.Data.DbType.Int32, ParamName = "@AreaID" },
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@PrepDate" },
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@DeliveryDate" },
+                            new DBParameter { DataValue = pThisPrepAndDeliveryData.SortOrder, DataDbType = System.Data.DbType.Int32, ParamName = "@DeliveryOrder" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreperationDate" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextDeliveryDate" }
+                        };
+                        
+                        db.ExecuteNonQuery(insertSql, insertParams);
+                        return string.Empty; // Success
+                    }
+                }
             }
-            else
-                str = pNextRoastCityTbl.InsertPrepDataForCity(pNextRoastCityTbl);
-            trackerDb.Close();
-            return str;
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Database, 
+                    $"UpdateOrInsertAreaNextPreperationDate error for AreaID {pAreaID}: {ex.Message}");
+                return ex.Message;
+            }
         }
 
         private byte GetCorrectedDOW(byte pDOW) => pDOW == (byte)0 ? (byte)1 : (byte)((int)pDOW - 1);
 
         private TrackerTools.PrepAndDeliveryData GetPreAndDeliveryDate(
           int pIdx,
-          int pCityID,
-          List<CityPrepDaysTbl> pCityPrepDays,
+          int pAreaID,
+          List<AreaPrepDays> pAreaPrepDays,
           DateTime pForThisDate)
         {
             TrackerTools.PrepAndDeliveryData preAndDeliveryDate = new TrackerTools.PrepAndDeliveryData();
             byte _ThisDatesDOW = (byte)pForThisDate.DayOfWeek;
-            int index1 = pCityPrepDays.FindIndex(pIdx, (Predicate<CityPrepDaysTbl>)(x => x.CityID == pCityID));
+            int index1 = pAreaPrepDays.FindIndex(pIdx, x => x.AreaID == pAreaID);
             if (index1 > -1)
             {
-                byte correctedDow = this.GetCorrectedDOW(pCityPrepDays[index1].PrepDayOfWeekID);
-                int deliveryDelayDays = pCityPrepDays[index1].DeliveryDelayDays;
-                int deliveryOrder = pCityPrepDays[index1].DeliveryOrder;
-                int index2 = pCityPrepDays.FindIndex(index1, (Predicate<CityPrepDaysTbl>)(x => x.CityID != pCityID));
+                byte correctedDow = this.GetCorrectedDOW((byte)(pAreaPrepDays[index1].PrepDayOfWeekID ?? 0));
+                int deliveryDelayDays = pAreaPrepDays[index1].DeliveryDelayDays ?? 0;
+                int deliveryOrder = pAreaPrepDays[index1].DeliveryOrder ?? 0;
+                int index2 = pAreaPrepDays.FindIndex(index1, x => x.AreaID != pAreaID);
                 if (index2 > -1)
                 {
-                    int index3 = pCityPrepDays.FindIndex(index1, index2 - index1, (Predicate<CityPrepDaysTbl>)(x => (int)this.GetCorrectedDOW(x.PrepDayOfWeekID) >= (int)_ThisDatesDOW));
+                    int index3 = pAreaPrepDays.FindIndex(index1, index2 - index1, x => (int)this.GetCorrectedDOW((byte)(x.PrepDayOfWeekID ?? 0)) >= (int)_ThisDatesDOW);
                     if (index3 > -1)
                     {
-                        correctedDow = this.GetCorrectedDOW(pCityPrepDays[index3].PrepDayOfWeekID);
-                        deliveryDelayDays = pCityPrepDays[index3].DeliveryDelayDays;
-                        deliveryOrder = pCityPrepDays[index3].DeliveryOrder;
+                        correctedDow = this.GetCorrectedDOW((byte)(pAreaPrepDays[index3].PrepDayOfWeekID ?? 0));
+                        deliveryDelayDays = pAreaPrepDays[index3].DeliveryDelayDays ?? 0;
+                        deliveryOrder = pAreaPrepDays[index3].DeliveryOrder ?? 0;
                     }
                 }
                 preAndDeliveryDate.PrepDate = (int)correctedDow < (int)_ThisDatesDOW ? pForThisDate.AddDays((double)(7 - (int)_ThisDatesDOW + (int)correctedDow)) : pForThisDate.AddDays((double)((int)correctedDow - (int)_ThisDatesDOW));
@@ -226,67 +283,103 @@ namespace TrackerSQL.Classes
             }
             return preAndDeliveryDate;
         }
-        public void SetNextRoastDateByCity()
+        public int SetNextPreperationDateByArea()
         {
-            // Load all rows ordered by CityID, PrepDayOfWeekID (as before)
-            List<CityPrepDaysTbl> all = new CityPrepDaysTbl().GetAll("CityID, PrepDayOfWeekID");
+            List<AreaPrepDays> all = new AreaPrepDaysRepository().GetAll("AreaID, PrepDayOfWeekID");
+            if (all.Count == 0)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "SetNextPreperationDateByArea: no rows in AreaPrepDaysTbl — cannot calculate dates.");
+                return 0;
+            }
 
-            // Anchor date: if now >= 14:00, use tomorrow; else today
             var now = TimeZoneUtils.Now();
             DateTime anchorDate = now.Hour >= 14 ? now.Date.AddDays(1) : now.Date;
 
-            // Determine the first index of each CityID in the 'all' list (so we can call GetPreAndDeliveryDate correctly)
-            var cityStartIndex = new Dictionary<int, int>();
+            var AreaStartIndex = new Dictionary<int, int>();
             for (int i = 0; i < all.Count; i++)
             {
-                int cityId = all[i].CityID;
-                if (!cityStartIndex.ContainsKey(cityId))
-                    cityStartIndex[cityId] = i;
+                int AreaId = all[i].AreaID;
+                if (!AreaStartIndex.ContainsKey(AreaId))
+                    AreaStartIndex[AreaId] = i;
             }
 
-            // Read holiday window (reuse CoffeeCheckupReminderWindowDays)
             int windowDays = ConfigHelper.GetInt("CoffeeCheckupReminderWindowDays", 9);
             if (windowDays <= 0) windowDays = 9;
 
             var closureProvider = new HolidayClosureProvider();
-            bool holidayInWindow = closureProvider.IsThereAHolodayComing(TimeZoneUtils.Now().Date, windowDays);
-
-            // Process each city once
-            foreach (var kvp in cityStartIndex.OrderBy(k => k.Key))
+            bool holidayInWindow = false;
+            try
             {
-                int cityId = kvp.Key;
+                holidayInWindow = closureProvider.IsThereAHolodayComing(TimeZoneUtils.Now().Date, windowDays);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "SetNextPreperationDateByArea: holiday check skipped: " + ex.Message);
+            }
+
+            int areasUpdated = 0;
+            foreach (var kvp in AreaStartIndex.OrderBy(k => k.Key))
+            {
+                int AreaId = kvp.Key;
+                if (AreaId <= 0)
+                    continue;
+
                 int startIdx = kvp.Value;
-
-                // Current window (based on anchorDate)
-                var thisPair = this.GetPreAndDeliveryDate(startIdx, cityId, all, anchorDate);
-
-                // Next window starts the day after the current delivery (or prep if same-day)
+                var thisPair = this.GetPreAndDeliveryDate(startIdx, AreaId, all, anchorDate);
                 DateTime nextAnchor = (thisPair.PrepDate == thisPair.DeliveryDate)
                     ? thisPair.PrepDate.AddDays(1).Date
                     : thisPair.DeliveryDate.Date;
-
-                var nextPair = this.GetPreAndDeliveryDate(startIdx, cityId, all, nextAnchor);
+                var nextPair = this.GetPreAndDeliveryDate(startIdx, AreaId, all, nextAnchor);
 
                 if (holidayInWindow)
-                {
                     closureProvider = HandleHolidayClosures(closureProvider, thisPair, nextPair);
+
+                if (!HasValidPrepDates(thisPair) || !HasValidPrepDates(nextPair))
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                        $"SetNextPreperationDateByArea: skipping AreaID {AreaId} — could not calculate prep/delivery dates.");
+                    continue;
                 }
 
-                // Persist for this city
-                this.UpdateOrInsertCityNextRstDate(cityId, thisPair, nextPair);
+                string updateResult = this.UpdateOrInsertAreaNextPreperationDate(AreaId, thisPair, nextPair);
+                if (!string.IsNullOrEmpty(updateResult))
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                        $"SetNextPreperationDateByArea: AreaID {AreaId} update failed: {updateResult}");
+                    continue;
+                }
+
+                areasUpdated++;
             }
 
-            // Mark last calculated date
-            using (TrackerDb trackerDb = new TrackerDb())
+            using (var trackerSQLDb = new TrackerSQLDb())
             {
-                trackerDb.ExecuteNonQuerySQLWithParams(
-                    "UPDATE SysDataTbl SET DateLastPrepDateCalcd = ? WHERE ID=1",
+                trackerSQLDb.ExecuteNonQuery(
+                    "UPDATE SysDataTbl SET DateLastPrepDateCalcd = @DateLastPrepDateCalcd WHERE ID = 1",
                     new List<DBParameter>
                     {
-                new DBParameter { DataValue = TimeZoneUtils.Now().Date, DataDbType = DbType.Date }
-                    }
-                );
+                        new DBParameter
+                        {
+                            ParamName = "@DateLastPrepDateCalcd",
+                            DataValue = TimeZoneUtils.Now().Date,
+                            DataDbType = DbType.Date
+                        }
+                    });
             }
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                $"SetNextPreperationDateByArea: updated {areasUpdated} of {AreaStartIndex.Count} areas from {all.Count} prep-day rows.");
+
+            return areasUpdated;
+        }
+
+        private static bool HasValidPrepDates(TrackerTools.PrepAndDeliveryData pair)
+        {
+            return pair != null
+                && pair.PrepDate > DateTime.MinValue
+                && pair.DeliveryDate > DateTime.MinValue;
         }
 
         private static HolidayClosureProvider HandleHolidayClosures(HolidayClosureProvider closureProvider, PrepAndDeliveryData thisPair, PrepAndDeliveryData nextPair)
@@ -316,9 +409,9 @@ namespace TrackerSQL.Classes
         }
 
         /*
-public void SetNextRoastDateByCity()
+public void SetNextPreperationDateByArea()
 {
-   List<CityPrepDaysTbl> all = new CityPrepDaysTbl().GetAll("CityID, PrepDayOfWeekID");
+   List<AreaPrepDays> all = new AreaPrepDaysRepository().GetAll("AreaID, PrepDayOfWeekID");
    DateTime minValue = DateTime.MinValue;
    TrackerTools.PrepAndDeliveryData prepAndDeliveryData1 = new TrackerTools.PrepAndDeliveryData();
    TrackerTools.PrepAndDeliveryData prepAndDeliveryData2 = new TrackerTools.PrepAndDeliveryData();
@@ -329,15 +422,15 @@ public void SetNextRoastDateByCity()
 label_6:
    while (num < all.Count)
    {
-       int cityId = all[num].CityID;
-       TrackerTools.PrepAndDeliveryData preAndDeliveryDate1 = this.GetPreAndDeliveryDate(num, cityId, all, pForThisDate1);
+       int AreaId = all[num].AreaID;
+       TrackerTools.PrepAndDeliveryData preAndDeliveryDate1 = this.GetPreAndDeliveryDate(num, AreaId, all, pForThisDate1);
        DateTime pForThisDate2 = preAndDeliveryDate1.PrepDate == preAndDeliveryDate1.DeliveryDate ? preAndDeliveryDate1.PrepDate.AddDays(1.0).Date : preAndDeliveryDate1.DeliveryDate.Date;
-       TrackerTools.PrepAndDeliveryData preAndDeliveryDate2 = this.GetPreAndDeliveryDate(num, cityId, all, pForThisDate2);
-       this.UpdateOrInsertCityNextRstDate(cityId, preAndDeliveryDate1, preAndDeliveryDate2);
+       TrackerTools.PrepAndDeliveryData preAndDeliveryDate2 = this.GetPreAndDeliveryDate(num, AreaId, all, pForThisDate2);
+       this.UpdateOrInsertAreaNextPreperationDate(AreaId, preAndDeliveryDate1, preAndDeliveryDate2);
        ++num;
        while (true)
        {
-           if (num < all.Count && cityId == all[num].CityID)
+           if (num < all.Count && AreaId == all[num].AreaID)
                ++num;
            else
                goto label_6;
@@ -355,34 +448,66 @@ label_6:
    trackerDb.Close();
 }
 */
-        public DateTime GetNextRoastDateByCustomerID(long pCustID, ref DateTime pDelivery)
+        public DateTime GetNextPreperationDateByCustomerID(long pCustID, ref DateTime pDelivery)
         {
-            if (!this.IsNextRoastDateByCityTodays())
-                this.SetNextRoastDateByCity();
-            NextRoastDateByCityTbl prepDataForCustomer = new NextRoastDateByCityTbl().GetPrepDataForCustomer(pCustID);
-            pDelivery = prepDataForCustomer.DeliveryDate;
-            return prepDataForCustomer.PrepDate;
+            if (!this.IsNextPreperationDateByAreaTodays())
+                this.SetNextPreperationDateByArea();
+
+            var prepDataForCustomer = LoadPrepDataForContact(pCustID);
+            if (!HasValidPrepDates(prepDataForCustomer))
+            {
+                this.SetNextPreperationDateByArea();
+                prepDataForCustomer = LoadPrepDataForContact(pCustID);
+            }
+
+            pDelivery = prepDataForCustomer.DeliveryDate ?? DateTime.MinValue;
+            return prepDataForCustomer.PreperationDate ?? DateTime.MinValue;
         }
 
-        public TrackerTools.ContactPreferedItems RetrieveCustomerPrefs(long _CustID)
+        private static NextPreperationDateByArea LoadPrepDataForContact(long contactId)
         {
-            TrackerDb trackerDb = new TrackerDb();
-            TrackerTools.ContactPreferedItems contactPreferedItems = new TrackerTools.ContactPreferedItems(_CustID);
-            string strSQL = "SELECT CustomersTbl.PreferedAgent, CustomersTbl.CoffeePreference, CustomersTbl.PriPrefQty, CustomersTbl.PrefPackagingID, CustomersAccInfoTbl.RequiresPurchOrder  FROM (CustomersTbl LEFT OUTER JOIN CustomersAccInfoTbl ON CustomersTbl.CustomerID = CustomersAccInfoTbl.CustomerID) WHERE CustomersTbl.CustomerID = " + _CustID.ToString();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-            if (dataReader != null)
+            return new NextPrepDateByAreaRepository().GetPrepDataForContact((int)contactId);
+        }
+
+        private static bool HasValidPrepDates(NextPreperationDateByArea prepData)
+        {
+            return prepData != null
+                && prepData.PreperationDate.HasValue
+                && prepData.PreperationDate.Value > DateTime.MinValue
+                && prepData.DeliveryDate.HasValue
+                && prepData.DeliveryDate.Value > DateTime.MinValue;
+        }
+
+        public TrackerTools.ContactPreferedItems RetrieveCustomerPrefs(long custId)
+        {
+            var contactPreferedItems = new TrackerTools.ContactPreferedItems(custId);
+            const string sql = @"
+                SELECT c.PreferredAgentID, c.ItemPrefID, c.PriPrefQty, c.PrefItemPackagingID, a.RequiresPurchOrder
+                FROM ContactsTbl c
+                LEFT OUTER JOIN ContactsAccInfoTbl a ON c.ContactID = a.ContactID
+                WHERE c.ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
             {
-                if (dataReader.Read())
+                new DBParameter { ParamName = "@ContactID", DataValue = custId, DataDbType = DbType.Int64 }
+            };
+
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read())
                 {
-                    contactPreferedItems.PreferredDeliveryByID = dataReader["PreferedAgent"] == DBNull.Value ? 3 : (int)dataReader["PreferedAgent"];
-                    contactPreferedItems.PreferedItem = dataReader["CoffeePreference"] == DBNull.Value ? 0 : (int)dataReader["CoffeePreference"];
-                    contactPreferedItems.PreferedQty = dataReader["PriPrefQty"] == DBNull.Value ? 1.0 : Convert.ToDouble(dataReader["PriPrefQty"]);
-                    contactPreferedItems.PrefPackagingID = dataReader["PrefPackagingID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["PrefPackagingID"]);
-                    contactPreferedItems.RequiresPurchOrder = dataReader["RequiresPurchOrder"] == DBNull.Value ? false : (bool)dataReader["RequiresPurchOrder"];
+                    int preferredAgentId = rdr["PreferredAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["PreferredAgentID"]);
+                    contactPreferedItems.PreferredDeliveryByID = preferredAgentId > 0
+                        ? preferredAgentId
+                        : SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
+                    contactPreferedItems.PreferedItem = rdr["ItemPrefID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemPrefID"]);
+                    contactPreferedItems.PreferedQty = rdr["PriPrefQty"] == DBNull.Value ? 1.0 : Convert.ToDouble(rdr["PriPrefQty"]);
+                    contactPreferedItems.PrefPackagingID = rdr["PrefItemPackagingID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["PrefItemPackagingID"]);
+                    contactPreferedItems.RequiresPurchOrder = rdr["RequiresPurchOrder"] != DBNull.Value && Convert.ToBoolean(rdr["RequiresPurchOrder"]);
                 }
-                dataReader.Close();
             }
-            trackerDb.Close();
+
             return contactPreferedItems;
         }
 
@@ -425,12 +550,18 @@ label_6:
           int pItemTypeID,
           DateTime pDeliveryDate)
         {
-            if (pContactID != SystemConstants.DatabaseConstants.InvalidID && pItemTypeID != SystemConstants.DatabaseConstants.InvalidID)
+            if (pContactID == SystemConstants.DatabaseConstants.InvalidID || pItemTypeID == SystemConstants.DatabaseConstants.InvalidID)
             {
-                SysDataTbl sysDataTbl = new SysDataTbl();
-                if (new ItemTypeTbl().GetItemTypeFromID(pItemTypeID).ServiceTypeID == sysDataTbl.GetGroupItemTypeID())
-                    pItemTypeID = new UsedItemGroupTbl().GetNextGroupItem(pContactID, pItemTypeID, pDeliveryDate).ItemTypeID;
+                return pItemTypeID;
             }
+
+            var groupServiceTypeId = new SysDataRepository().GetGroupItemServiceTypeId();
+            var itemServiceTypeId = new ItemsRepository().GetItemServiceTypeId(pItemTypeID);
+            if (itemServiceTypeId.HasValue && groupServiceTypeId.HasValue && itemServiceTypeId.Value == groupServiceTypeId.Value)
+            {
+                return new UsedItemGroupRepository().GetNextGroupItemId(pContactID, pItemTypeID, pDeliveryDate);
+            }
+
             return pItemTypeID;
         }
         public static DateTime? ConvertToNullableDateTime(object dateObj)
@@ -551,6 +682,125 @@ label_6:
             {
                 get => this._SortOrder;
                 set => this._SortOrder = value;
+            }
+        }
+        ///// <summary>
+        ///// Modern SQL Server version of SetNextPreperationDateByArea
+        ///// Returns count of areas processed
+        ///// </summary>
+        //public int SetNextPreperationDateByAreaModern()
+        //{
+        //    try
+        //    {
+        //        // Load all rows using modern SQL instead of legacy AreaPrepDaysTbl
+        //        List<AreaPrepDaysTbl> all = GetAreaPrepDaysFromSQL();
+                
+        //        if (all == null || all.Count == 0)
+        //        {
+        //            AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+        //                "TrackerTools.SetNextPreperationDateByAreaModern: No area prep days found");
+        //            return 0;
+        //        }
+
+        //        // Anchor date: if now >= 14:00, use tomorrow; else today
+        //        var now = TimeZoneUtils.Now();
+        //        DateTime anchorDate = now.Hour >= 14 ? now.Date.AddDays(1) : now.Date;
+
+        //        // Determine the first index of each AreaID in the 'all' list
+        //        var AreaStartIndex = new Dictionary<int, int>();
+        //        for (int i = 0; i < all.Count; i++)
+        //        {
+        //            int AreaId = all[i].AreaID;
+        //            if (!AreaStartIndex.ContainsKey(AreaId))
+        //                AreaStartIndex[AreaId] = i;
+        //        }
+
+        //        // Read holiday window
+        //        int windowDays = ConfigHelper.GetInt("CoffeeCheckupReminderWindowDays", 9);
+        //        if (windowDays <= 0) windowDays = 9;
+
+        //        var closureProvider = new HolidayClosureProvider();
+        //        bool holidayInWindow = closureProvider.IsThereAHolodayComing(TimeZoneUtils.Now().Date, windowDays);
+
+        //        // Process each Area once
+        //        int areasProcessed = 0;
+        //        foreach (var kvp in AreaStartIndex.OrderBy(k => k.Key))
+        //        {
+        //            int AreaId = kvp.Key;
+        //            int startIdx = kvp.Value;
+
+        //            // Current window (based on anchorDate)
+        //            var thisPair = this.GetPreAndDeliveryDate(startIdx, AreaId, all, anchorDate);
+
+        //            // Next window starts the day after the current delivery
+        //            DateTime nextAnchor = (thisPair.PrepDate == thisPair.DeliveryDate)
+        //                ? thisPair.PrepDate.AddDays(1).Date
+        //                : thisPair.DeliveryDate.Date;
+
+        //            var nextPair = this.GetPreAndDeliveryDate(startIdx, AreaId, all, nextAnchor);
+
+        //            if (holidayInWindow)
+        //            {
+        //                closureProvider = HandleHolidayClosures(closureProvider, thisPair, nextPair);
+        //            }
+
+        //            // Persist for this Area
+        //            this.UpdateOrInsertAreaNextPreperationDate(AreaId, thisPair, nextPair);
+        //            areasProcessed++;
+        //        }
+
+        //        // Mark last calculated date using modern SQL
+        //        UpdateSysDataLastPrepDateCalculated();
+
+        //        AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+        //            $"TrackerTools.SetNextPreperationDateByAreaModern: Processed {areasProcessed} areas");
+                
+        //        return areasProcessed;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        AppLogger.WriteLog(SystemConstants.LogTypes.System, 
+        //            $"TrackerTools.SetNextPreperationDateByAreaModern error: {ex.Message}");
+        //        throw;
+        //    }
+        //}
+
+        /// <summary>
+        /// Get all area prep days from SQL Server instead of legacy Controls class
+        /// </summary>
+        private List<AreaPrepDays> GetAreaPrepDaysFromSQL()
+        {
+            return new AreaPrepDaysRepository().GetAll("AreaID, PrepDayOfWeekID");
+        }
+
+        /// <summary>
+        /// Update SysData last prep date calculated using modern SQL
+        /// </summary>
+        private void UpdateSysDataLastPrepDateCalculated()
+        {
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    string sql = "UPDATE SysDataTbl SET DateLastPrepDateCalcd = @Date WHERE ID = 1";
+                    var parameters = new List<DBParameter>
+                    {
+                        new DBParameter 
+                        { 
+                            DataValue = TimeZoneUtils.Now().Date, 
+                            DataDbType = System.Data.DbType.Date, 
+                            ParamName = "@Date" 
+                        }
+                    };
+                    
+                    db.ExecuteNonQuery(sql, parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Database, 
+                    $"UpdateSysDataLastPrepDateCalculated error: {ex.Message}");
+                throw;
             }
         }
     }

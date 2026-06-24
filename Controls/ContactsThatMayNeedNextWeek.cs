@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ContactsThatMayNeedNextWeek
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -12,39 +12,53 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
+
     public class ContactsThatMayNeedNextWeek
     {
-        private const string CONST_SELECT_CONTACTSTHATMAYNEEDNEXTWEEK = "SELECT CustomersTbl.CustomerID AS ContactID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName,  CustomersTbl.ContactLastName, CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.City, CustomersTbl.PostalCode, CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.PhoneNumber, CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress,  CustomersTbl.AltEmailAddress, CustomersTbl.UsesFilter, CustomersTbl.EquipType, CustomersTbl.CustomerTypeID, CustomersTbl.TypicallySecToo, CustomersTbl.PriPrefQty, CustomersTbl.SecPrefQty, CustomersTbl.ReminderCount,  CustomersTbl.autofulfill, CustomersTbl.AlwaysSendChkUp, CustomersAccInfoTbl.RequiresPurchOrder, CustomersTbl.enabled, CustomersTbl.Notes,  ClientUsageTbl.LastCupCount, ClientUsageTbl.NextCoffeeBy, ClientUsageTbl.NextCleanOn, ClientUsageTbl.NextFilterEst,  ClientUsageTbl.NextDescaleEst, ClientUsageTbl.NextServiceEst, ClientUsageTbl.DailyConsumption,  NextRoastDateByCityTbl.PreperationDate, NextRoastDateByCityTbl.DeliveryDate, NextRoastDateByCityTbl.NextPreperationDate, NextRoastDateByCityTbl.NextDeliveryDate FROM ((((CustomersTbl INNER JOIN ClientUsageTbl ON CustomersTbl.CustomerID = ClientUsageTbl.CustomerID) LEFT OUTER JOIN CustomersAccInfoTbl ON CustomersTbl.CustomerID = CustomersAccInfoTbl.CustomerID) LEFT OUTER JOIN NextRoastDateByCityTbl ON CustomersTbl.City = NextRoastDateByCityTbl.CityID) LEFT OUTER JOIN ItemNoStockItemQry ON CustomersTbl.CoffeePreference = ItemNoStockItemQry.ItemTypeID)  WHERE ((LastDateSentReminder IS Null) OR (LastDateSentReminder <> ?)) AND (CustomersTbl.enabled=True)  AND (CustomersTbl.PredictionDisabled=False)  AND ((ClientUsageTbl.NextCoffeeBy > ?) AND ((NextRoastDateByCityTbl.NextDeliveryDate<=DateAdd('d', 9, ClientUsageTbl.NextCoffeeBy)) OR CustomersTbl.AlwaysSendChkUp=True) ) AND (NOT Exists  (SELECT  OrdersTbl.CustomerID FROM OrdersTbl   WHERE (OrdersTbl.CustomerID=CustomersTbl.CustomerID) AND (OrdersTbl.RoastDate>=Date() AND   OrdersTbl.RoastDate<=DateAdd('d',9,Date()))\t ))  ORDER BY CustomersTbl.CompanyName";
+        private const string CONST_SELECT_CONTACTSTHATMAYNEEDNEXTWEEK = "SELECT CustomersTbl.CustomerID AS ContactID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName,  CustomersTbl.ContactLastName, CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.AreaID, CustomersTbl.PostalCode, CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.PhoneNumber, CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber, CustomersTbl.EmailAddress,  CustomersTbl.AltEmailAddress, CustomersTbl.UsesFilter, CustomersTbl.EquipType, CustomersTbl.CustomerTypeID, CustomersTbl.TypicallySecToo, CustomersTbl.PriPrefQty, CustomersTbl.SecPrefQty, CustomersTbl.ReminderCount,  CustomersTbl.autofulfill, CustomersTbl.AlwaysSendChkUp, CustomersAccInfoTbl.RequiresPurchOrder, CustomersTbl.enabled, CustomersTbl.Notes,  ClientUsageTbl.LastCupCount, ClientUsageTbl.NextCoffeeBy, ClientUsageTbl.NextCleanOn, ClientUsageTbl.NextFilterEst,  ClientUsageTbl.NextDescaleEst, ClientUsageTbl.NextServiceEst, ClientUsageTbl.DailyConsumption,  NextPreperationDateByAreaTbl.PreperationDate, NextPreperationDateByAreaTbl.DeliveryDate, NextPreperationDateByAreaTbl.NextPreperationDate, NextPreperationDateByAreaTbl.NextDeliveryDate FROM ((((CustomersTbl INNER JOIN ClientUsageTbl ON CustomersTbl.CustomerID = ClientUsageTbl.CustomerID) LEFT OUTER JOIN CustomersAccInfoTbl ON CustomersTbl.CustomerID = CustomersAccInfoTbl.CustomerID) LEFT OUTER JOIN NextPreperationDateByAreaTbl ON CustomersTbl.Area = NextPreperationDateByAreaTbl.AreaID) LEFT OUTER JOIN ItemNoStockItemQry ON CustomersTbl.CoffeePreference = ItemNoStockItemQry.ItemTypeID)  WHERE ((LastDateSentReminder IS Null) OR (LastDateSentReminder <> ?)) AND (CustomersTbl.enabled=True)  AND (CustomersTbl.PredictionDisabled=False)  AND ((ClientUsageTbl.NextCoffeeBy > ?) AND ((NextPreperationDateByAreaTbl.NextDeliveryDate<=DateAdd('d', 9, ClientUsageTbl.NextCoffeeBy)) OR CustomersTbl.AlwaysSendChkUp=True) ) AND (NOT Exists  (SELECT  OrdersTbl.CustomerID FROM OrdersTbl   WHERE (OrdersTbl.CustomerID=CustomersTbl.CustomerID) AND (OrdersTbl.PrepDate>=Date() AND   OrdersTbl.PrepDate<=DateAdd('d',9,Date()))\t ))  ORDER BY CustomersTbl.CompanyName";
 
         public List<ContactsThayMayNeedData> GetContactsThatMayNeedNextWeek(int reminderWindowDays = 9)
         {
             List<ContactsThayMayNeedData> thatMayNeedNextWeek = new List<ContactsThayMayNeedData>();
             TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)TimeZoneUtils.Now().Date, DbType.Date);
+            // Use last checkup date instead of Now() to avoid filtering out customers
+            // whose NextDeliveryDate is between last checkup and now
+            DateTime baselineDate = TimeZoneUtils.Now().Date;
+            SentRemindersLogTbl remindersLog = new SentRemindersLogTbl();
+            DateTime lastCheckupDate = remindersLog.GetLastSuccessfulCheckupDate();
+            // For filtering purposes, use the earlier of last checkup date or now
+            // This ensures we don't miss customers who need coffee soon but whose
+            // Area delivery date was in the past relative to NOW, but after last checkup
+            DateTime deliveryFilterDate = lastCheckupDate < baselineDate ? lastCheckupDate : baselineDate;
+            AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                $"ContactsThatMayNeedNextWeek: Using deliveryFilterDate={deliveryFilterDate:yyyy-MM-dd} (LastCheckup={lastCheckupDate:yyyy-MM-dd}, Now={baselineDate:yyyy-MM-dd})");
+
+            trackerDb.AddWhereParams((object)baselineDate, DbType.Date);
             SysDataTbl sysDataTbl = new SysDataTbl();
             trackerDb.AddWhereParams((object)sysDataTbl.GetMinReminderDate().Date, DbType.Date);
-
+            trackerDb.AddWhereParams((object)deliveryFilterDate, DbType.Date);
             // Use string interpolation to inject the window into the SQL
             string sql = $@"
                 SELECT CustomersTbl.CustomerID AS ContactID, CustomersTbl.CompanyName, CustomersTbl.ContactTitle, CustomersTbl.ContactFirstName,
-                CustomersTbl.ContactLastName, CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.City,
+                CustomersTbl.ContactLastName, CustomersTbl.ContactAltFirstName, CustomersTbl.ContactAltLastName, CustomersTbl.Department, CustomersTbl.BillingAddress, CustomersTbl.AreaID,
                 CustomersTbl.PostalCode, CustomersTbl.PreferedAgent, CustomersTbl.SalesAgentID, CustomersTbl.PhoneNumber, CustomersTbl.Extension, CustomersTbl.FaxNumber, CustomersTbl.CellNumber,
                 CustomersTbl.EmailAddress,  CustomersTbl.AltEmailAddress, CustomersTbl.UsesFilter, CustomersTbl.EquipType, CustomersTbl.CustomerTypeID, CustomersTbl.TypicallySecToo, CustomersTbl.PriPrefQty,
                 CustomersTbl.SecPrefQty, CustomersTbl.ReminderCount,  CustomersTbl.autofulfill, CustomersTbl.AlwaysSendChkUp, CustomersAccInfoTbl.RequiresPurchOrder, CustomersTbl.enabled,
                 CustomersTbl.Notes,  ClientUsageTbl.LastCupCount, ClientUsageTbl.NextCoffeeBy, ClientUsageTbl.NextCleanOn, ClientUsageTbl.NextFilterEst,  ClientUsageTbl.NextDescaleEst,
-                ClientUsageTbl.NextServiceEst, ClientUsageTbl.DailyConsumption,  NextRoastDateByCityTbl.PreperationDate, NextRoastDateByCityTbl.DeliveryDate,
-                NextRoastDateByCityTbl.NextPreperationDate, NextRoastDateByCityTbl.NextDeliveryDate
+                ClientUsageTbl.NextServiceEst, ClientUsageTbl.DailyConsumption,  NextPreperationDateByAreaTbl.PreperationDate, NextPreperationDateByAreaTbl.DeliveryDate,
+                NextPreperationDateByAreaTbl.NextPreperationDate, NextPreperationDateByAreaTbl.NextDeliveryDate
                 FROM ((((CustomersTbl INNER JOIN ClientUsageTbl ON CustomersTbl.CustomerID = ClientUsageTbl.CustomerID)
                 LEFT OUTER JOIN CustomersAccInfoTbl ON CustomersTbl.CustomerID = CustomersAccInfoTbl.CustomerID)
-                LEFT OUTER JOIN NextRoastDateByCityTbl ON CustomersTbl.City = NextRoastDateByCityTbl.CityID)
+                LEFT OUTER JOIN NextPreperationDateByAreaTbl ON CustomersTbl.AreaID = NextPreperationDateByAreaTbl.AreaID)
                 LEFT OUTER JOIN ItemNoStockItemQry ON CustomersTbl.CoffeePreference = ItemNoStockItemQry.ItemTypeID)
                 WHERE ((LastDateSentReminder IS Null) OR (LastDateSentReminder <> ?)) AND (CustomersTbl.enabled=True)
                 AND (CustomersTbl.PredictionDisabled=False)  AND ((ClientUsageTbl.NextCoffeeBy > ?)
-                AND ((NextRoastDateByCityTbl.NextDeliveryDate<=DateAdd('d', {reminderWindowDays}, ClientUsageTbl.NextCoffeeBy))
+                AND ((NextPreperationDateByAreaTbl.NextDeliveryDate<=DateAdd('d', {reminderWindowDays}, ClientUsageTbl.NextCoffeeBy))
                 OR CustomersTbl.AlwaysSendChkUp=True) ) AND
                 (NOT Exists (SELECT  OrdersTbl.CustomerID FROM OrdersTbl
-                WHERE (OrdersTbl.CustomerID=CustomersTbl.CustomerID) AND (OrdersTbl.RoastDate>=Date()
-                AND OrdersTbl.RoastDate<=DateAdd('d',{reminderWindowDays},Date())) )) 
+                WHERE (OrdersTbl.CustomerID=CustomersTbl.CustomerID) AND (OrdersTbl.PrepDate>=Date()
+                AND OrdersTbl.PrepDate<=DateAdd('d',{reminderWindowDays},Date())) )) 
                 ORDER BY CustomersTbl.CompanyName";
 
             IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(sql);
@@ -63,7 +77,7 @@ namespace TrackerSQL.Controls
             ContactAltLastName = dataReader["ContactAltLastName"] == DBNull.Value ? string.Empty : dataReader["ContactAltLastName"].ToString(),
             Department = dataReader["Department"] == DBNull.Value ? string.Empty : dataReader["Department"].ToString(),
             BillingAddress = dataReader["BillingAddress"] == DBNull.Value ? string.Empty : dataReader["BillingAddress"].ToString(),
-            City = dataReader["City"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["City"]),
+            AreaID = dataReader["AreaID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["AreaID"]),
             PostalCode = dataReader["PostalCode"] == DBNull.Value ? string.Empty : dataReader["PostalCode"].ToString(),
             PreferedAgent = dataReader["PreferedAgent"] == DBNull.Value ? 3 : Convert.ToInt32(dataReader["PreferedAgent"]),
             SalesAgentID = dataReader["SalesAgentID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SalesAgentID"]),
@@ -95,10 +109,10 @@ namespace TrackerSQL.Controls
             NextServiceEst = dataReader["NextServiceEst"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextServiceEst"]).Date,
             DailyConsumption = dataReader["DailyConsumption"] == DBNull.Value ? 0.0 : Convert.ToDouble(dataReader["DailyConsumption"])
           },
-                        NextRoastDateByCityData = {
+                        NextPreperationDateByAreaData = {
             PrepDate = dataReader["PreperationDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["PreperationDate"]).Date,
             DeliveryDate = dataReader["DeliveryDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["DeliveryDate"]).Date,
-            NextPrepDate = dataReader["NextPreperationDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date,
+            NextPreperationDate = dataReader["NextPreperationDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextPreperationDate"]).Date,
             NextDeliveryDate = dataReader["NextDeliveryDate"] == DBNull.Value ? TimeZoneUtils.Now().Date : Convert.ToDateTime(dataReader["NextDeliveryDate"]).Date
           }
                     });

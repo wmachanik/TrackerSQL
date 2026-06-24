@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.Pages.SendCoffeeCheckup
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -14,20 +14,23 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
 using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
     public partial class SendCoffeeCheckup : System.Web.UI.Page
     {
-        private static Dictionary<int, string> _cachedCityNames = new Dictionary<int, string>();
+        private static Dictionary<int, string> _cachedAreaNames = new Dictionary<int, string>();
         private static Dictionary<int, string> _cachedItemDescriptions = new Dictionary<int, string>();
         private int reminderWindowDays = SystemConstants.CheckupConstants.DefaultReminderWindowDays; // CoffeeCheckupManager.GetReminderWindowDays(); // fallback
 
 
         // Business logic manager - PROPERLY INITIALIZED
         private readonly CoffeeCheckupManager _coffeeCheckupManager;
+        private readonly TempCoffeeCheckupRepository _tempCoffeeCheckupRepository = new TempCoffeeCheckupRepository();
+        private readonly SentRemindersLogRepository _sentRemindersLogRepository = new SentRemindersLogRepository();
         
         public SendCoffeeCheckup()
         {
@@ -42,10 +45,8 @@ namespace TrackerSQL.Pages
                 // NEW: Clear any stale temp data from a previous session to avoid showing old results
                 try
                 {
-                    var temp = new TempCoffeeCheckup();
-                    // Keep order consistent with existing cleanup usage elsewhere
-                    temp.DeleteAllContactRecords();
-                    temp.DeleteAllContactItems();
+                    _tempCoffeeCheckupRepository.DeleteAllContactRecords();
+                    _tempCoffeeCheckupRepository.DeleteAllContactItems();
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
                         "SendCoffeeCheckup: Cleared previous TempCoffeeCheckup data on initial page load.");
                 }
@@ -132,8 +133,7 @@ namespace TrackerSQL.Pages
                 bool holidayInWindow = adjustedCount != -1;
 
                 // Refresh UI
-                odsContactsToSendCheckup.DataBind();
-                gvCustomerCheckup.DataBind();
+                BindCheckupGrids();
 
                 int customerCount = GetCustomerCount();
                 stopwatch.Stop();
@@ -218,7 +218,7 @@ namespace TrackerSQL.Pages
                 btnPrepData.Text = "Refresh Data";
                 btnPrepData.Visible = true;
                 
-                //ltrlCustomerStatus.Text = $"✅ Ready! Found <strong>{customerCount}</strong> customers eligible for coffee reminders. " +
+                //ltrlCustomerStatus.Text = $"? Ready! Found <strong>{customerCount}</strong> customers eligible for coffee reminders. " +
                 //                         $"<small>(Loaded in {stopwatch.ElapsedMilliseconds / 1000.0:F1}s)</small>";
                 
                 ltrlStatus.Text = $"<div style='background-color: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin: 5px 0; text-align: left;'>" +
@@ -255,6 +255,33 @@ namespace TrackerSQL.Pages
             }
         }
         */
+        private void BindCheckupGrids()
+        {
+            gvCustomerCheckup.DataSource = _tempCoffeeCheckupRepository.GetAllContacts("CompanyName");
+            gvCustomerCheckup.DataBind();
+            BindContactItemsGrid();
+        }
+
+        private void BindContactItemsGrid()
+        {
+            if (gvCustomerCheckup.SelectedIndex < 0 || gvCustomerCheckup.SelectedDataKey == null)
+            {
+                gvItemsToConfirm.DataSource = null;
+                gvItemsToConfirm.DataBind();
+                return;
+            }
+
+            long contactId = Convert.ToInt64(gvCustomerCheckup.SelectedDataKey.Value);
+            gvItemsToConfirm.DataSource = _tempCoffeeCheckupRepository.GetContactItems(contactId);
+            gvItemsToConfirm.DataBind();
+        }
+
+        protected void gvCustomerCheckup_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            BindContactItemsGrid();
+            upnlContactItems.Update();
+        }
+
         /// <summary>
         /// Get count of prepared customers
         /// </summary>
@@ -262,8 +289,7 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                var tempCheckup = new TempCoffeeCheckup();
-                var customers = tempCheckup.GetAllContacts("CustomerID");
+                var customers = _tempCoffeeCheckupRepository.GetAllContacts("CustomerID");
                 return customers?.Count ?? 0;
             }
             catch (Exception ex)
@@ -274,13 +300,13 @@ namespace TrackerSQL.Pages
         }
 
         // FIXED: Remove duplicate and use cached versions
-        protected string GetCityName(int cityId)
+        protected string GetAreaName(int AreaId)
         {
-            if (!_cachedCityNames.ContainsKey(cityId))
+            if (!_cachedAreaNames.ContainsKey(AreaId))
             {
-                _cachedCityNames[cityId] = _coffeeCheckupManager.GetCachedCityName(cityId);
+                _cachedAreaNames[AreaId] = _coffeeCheckupManager.GetCachedAreaName(AreaId);
             }
-            return _cachedCityNames[cityId];
+            return _cachedAreaNames[AreaId];
         }
 
         protected string GetItemDesc(int itemId)
@@ -298,17 +324,16 @@ namespace TrackerSQL.Pages
             
             try
             {
-                UpdateStatus("🔄 Starting coffee checkup process...");
+                UpdateStatus("?? Starting coffee checkup process...");
                 
                 // Prepare email data from UI
-                var emailData = new SendCheckEmailTextsData {
+                var emailData = new SendCheckEmailTexts {
                     Header = this.tbxEmailIntro.Text,
                     Body = this.tbxEmailBody.Text,
                     Footer = this.tbxEmailFooter.Text
                 };
                 // If a holiday is within window, append a friendly note from Messages.resx (before signature)
-                var closureProvider = new HolidayClosureProvider();
-                if (closureProvider.IsThereAHolodayComing(TimeZoneUtils.Now().Date, reminderWindowDays))
+                if (_coffeeCheckupManager.IsHolidayComingInWindow(reminderWindowDays))
                 {
                     string holidayNote = MessageProvider.Get(MessageKeys.CoffeeCheckup.HolidayClosureEmailNote);
                     if (string.IsNullOrWhiteSpace(holidayNote))
@@ -319,22 +344,22 @@ namespace TrackerSQL.Pages
                 }
 
 
-                UpdateStatus("📋 Processing customers...");
+                UpdateStatus("?? Processing customers...");
                 
                 // Use the manager to process reminders
                 var batchResult = _coffeeCheckupManager.ProcessCoffeeCheckupReminders(emailData);
                 
-                UpdateStatus($"✅ Complete! Sent: {batchResult.TotalSent}, Failed: {batchResult.TotalFailed}");
+                UpdateStatus($"? Complete! Sent: {batchResult.TotalSent}, Failed: {batchResult.TotalFailed}");
 
                 // Enhanced status message
                 string statusMessage = $"Coffee checkup process completed!\n\n" +
-                                     $"📧 Emails sent successfully: {batchResult.TotalSent}\n" +
-                                     $"❌ Failed to send: {batchResult.TotalFailed}\n" +
-                                     $"📊 Total customers processed: {batchResult.TotalSent + batchResult.TotalFailed}";
+                                     $"?? Emails sent successfully: {batchResult.TotalSent}\n" +
+                                     $"? Failed to send: {batchResult.TotalFailed}\n" +
+                                     $"?? Total customers processed: {batchResult.TotalSent + batchResult.TotalFailed}";
 
                 if (batchResult.TotalFailed > 0)
                 {
-                    statusMessage += "\n\n⚠️ Check the results page for details about failed emails.";
+                    statusMessage += "\n\n?? Check the results page for details about failed emails.";
                 }
 
                 var statusMsg = new showMessageBox(this.Page, 
@@ -346,7 +371,7 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                UpdateStatus($"❌ Error: {ex.Message}");
+                UpdateStatus($"? Error: {ex.Message}");
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Error in btnSend_Click: {ex.Message}");
                 
                 var errorMsg = new showMessageBox(this.Page, 
@@ -359,10 +384,10 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                UpdateStatus("🧪 Starting test mode...");
+                UpdateStatus("?? Starting test mode...");
 
                 // Get test contact
-                var allContacts = new TempCoffeeCheckup().GetAllContactAndItems();
+                var allContacts = _tempCoffeeCheckupRepository.GetAllContactAndItems();
                 if (!allContacts.Any())
                 {
                     this.ltrlStatus.Text = "No test contacts available. Run 'Prep Data' first.";
@@ -375,12 +400,12 @@ namespace TrackerSQL.Pages
                 // Validate eligibility
                 if (!_coffeeCheckupManager.ValidateCustomerEligibility(testContact))
                 {
-                    this.ltrlStatus.Text = $"❌ Test customer {testContact.CompanyName} is not eligible for reminders";
+                    this.ltrlStatus.Text = $"? Test customer {testContact.CompanyName} is not eligible for reminders";
                     return;
                 }
 
                 // Prepare email data
-                var emailData = new SendCheckEmailTextsData
+                var emailData = new SendCheckEmailTexts
                 {
                     Header = this.tbxEmailIntro.Text,
                     Body = this.tbxEmailBody.Text,
@@ -390,12 +415,12 @@ namespace TrackerSQL.Pages
                 // Process single customer test
                 var testResult = _coffeeCheckupManager.ProcessCoffeeCheckupReminders(emailData);
 
-                this.ltrlStatus.Text = $"✅ Test completed: Sent: {testResult.TotalSent}, Failed: {testResult.TotalFailed}";
+                this.ltrlStatus.Text = $"? Test completed: Sent: {testResult.TotalSent}, Failed: {testResult.TotalFailed}";
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"TEST: Completed - Sent: {testResult.TotalSent}, Failed: {testResult.TotalFailed}");
             }
             catch (Exception ex)
             {
-                this.ltrlStatus.Text = $"❌ Test failed: {ex.Message}";
+                this.ltrlStatus.Text = $"? Test failed: {ex.Message}";
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"TEST ERROR: {ex.Message}");
             }
         }
@@ -404,13 +429,12 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                UpdateStatus("🗑️ Clearing today's reminder data...");
+                UpdateStatus("??? Clearing today's reminder data...");
 
                 // Clear today's sent reminder log entries
-                var sentRemindersLogTbl = new SentRemindersLogTbl();
-                int deletedCount = sentRemindersLogTbl.DeleteTodaysEntries(TimeZoneUtils.Now().Date);
+                int deletedCount = _sentRemindersLogRepository.DeleteTodaysEntries();
 
-                UpdateStatus($"✅ Cleared {deletedCount} reminder entries from today");
+                UpdateStatus($"? Cleared {deletedCount} reminder entries from today");
 
                 var successMsg = new showMessageBox(this.Page,
                     "Data Cleared",
@@ -420,7 +444,7 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                UpdateStatus($"❌ Error clearing data: {ex.Message}");
+                UpdateStatus($"? Error clearing data: {ex.Message}");
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Error clearing today's data: {ex.Message}");
 
                 var errorMsg = new showMessageBox(this.Page,
@@ -434,16 +458,11 @@ namespace TrackerSQL.Pages
             try
             {
                 DateTime sentDate = TimeZoneUtils.Now().Date;
-
-                // Get the statistics from the database
-                var sentRemindersLogTbl = new SentRemindersLogTbl();
-                int totalReminders = sentRemindersLogTbl.GetEntriesCountForDate(sentDate);
-
-                // Count unique customers and success/fail by iterating through the results
-                var dayResults = sentRemindersLogTbl.GetAllByDate(sentDate, "CustomerID");
-                int uniqueCustomers = dayResults.Select(r => r.CustomerID).Distinct().Count();
-                int successful = dayResults.Count(r => r.ReminderSent);
-                int failed = dayResults.Count(r => !r.ReminderSent);
+                int totalReminders = _sentRemindersLogRepository.GetEntriesCountForDate(sentDate);
+                var dayResults = _sentRemindersLogRepository.GetAllByDate(sentDate, "ContactID");
+                int uniqueCustomers = dayResults.Select(r => r.ContactID).Distinct().Count();
+                int successful = dayResults.Count(r => r.ReminderSent == true);
+                int failed = dayResults.Count(r => r.ReminderSent != true);
 
                 string redirectUrl = $"{this.ResolveUrl("~/Pages/SentRemindersSheet.aspx")}" +
                                    $"?LastSentDate={sentDate:yyyy-MM-dd}" +
@@ -458,7 +477,7 @@ namespace TrackerSQL.Pages
             catch (Exception redirectEx)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Redirect failed: {redirectEx.Message}");
-                UpdateStatus("✅ Process completed successfully!");
+                UpdateStatus("? Process completed successfully!");
             }
         }
 
@@ -470,7 +489,7 @@ namespace TrackerSQL.Pages
 
         private void LoadEmailTexts()
         {
-            SendCheckEmailTextsData texts = new SendCheckEmailTextsData().GetTexts();
+            var texts = new SendCheckEmailTextsRepository().GetTexts();
             if (texts.SCEMTID <= 0)
                 return;
             this.ltrlEmailTextID.Text = texts.SCEMTID.ToString();
@@ -483,11 +502,13 @@ namespace TrackerSQL.Pages
         {
             if (string.IsNullOrWhiteSpace(this.ltrlEmailTextID.Text))
                 return;
-            SendCheckEmailTextsData pEmailTextsData = new SendCheckEmailTextsData();
-            pEmailTextsData.Header = HttpUtility.HtmlEncode(this.tbxEmailIntro.Text);
-            pEmailTextsData.Body = HttpUtility.HtmlEncode(this.tbxEmailBody.Text);
-            pEmailTextsData.Footer = HttpUtility.HtmlEncode(this.tbxEmailFooter.Text);
-            this.ltrlStatus.Text = pEmailTextsData.UpdateTexts(pEmailTextsData, Convert.ToInt32(this.ltrlEmailTextID.Text));
+            var pEmailTextsData = new SendCheckEmailTexts
+            {
+                Header = HttpUtility.HtmlEncode(this.tbxEmailIntro.Text),
+                Body = HttpUtility.HtmlEncode(this.tbxEmailBody.Text),
+                Footer = HttpUtility.HtmlEncode(this.tbxEmailFooter.Text)
+            };
+            this.ltrlStatus.Text = new SendCheckEmailTextsRepository().UpdateTexts(pEmailTextsData, Convert.ToInt32(this.ltrlEmailTextID.Text));
         }
 
         protected void btnReload_Click(object sender, EventArgs e) => this.LoadEmailTexts();
@@ -510,9 +531,9 @@ namespace TrackerSQL.Pages
         //    try
         //    {
         //        // Make sure matrix is current (TTL respected by EnsureBuilt)
-        //        CityDeliveryMatrix.EnsureBuilt();
+        //        AreaDeliveryMatrix.EnsureBuilt();
 
-        //        var rows = CityDeliveryMatrix.GetSnapshot();
+        //        var rows = AreaDeliveryMatrix.GetSnapshot();
         //        if (rows == null || rows.Count == 0)
         //        {
         //            ltrlMatrixDump.Text = "<div style='padding:6px;background:#fff3cd;color:#856404;border:1px solid #ffeeba;border-radius:4px;'>No matrix rows found.</div>";
@@ -522,7 +543,7 @@ namespace TrackerSQL.Pages
         //            var sb = new System.Text.StringBuilder();
         //            sb.Append("<table style='border-collapse:collapse;font-size:12px;'>");
         //            sb.Append("<tr style='background:#e9ecef;'>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>CityID</th>");
+        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>AreaID</th>");
         //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Prep</th>");
         //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Delivery</th>");
         //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Next Prep</th>");
@@ -532,10 +553,10 @@ namespace TrackerSQL.Pages
         //            foreach (var r in rows)
         //            {
         //                sb.Append("<tr>");
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;text-align:center;'>{0}</td>", r.CityID);
+        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;text-align:center;'>{0}</td>", r.AreaID);
         //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.PrepDate);
         //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.DeliveryDate);
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.NextPrepDate);
+        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.NextPreperationDate);
         //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.NextDeliveryDate);
         //                sb.Append("</tr>");
         //            }

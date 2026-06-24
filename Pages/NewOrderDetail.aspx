@@ -1,5 +1,5 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="NewOrderDetail.aspx.cs"
-    Inherits="TrackerDotNet.Pages.NewOrderDetail" MaintainScrollPositionOnPostback="true" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="NewOrderDetail.aspx.cs"
+    Inherits="TrackerSQL.Pages.NewOrderDetail" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntOrderDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">
@@ -42,7 +42,7 @@
                                 <tr>
                                     <td>
                                         <asp:HyperLink runat="server" Text="Contact" ID="IDCustomerHdr"
-                                            NavigateUrl='<%# Bind("CustomerID") == null ? "." : Bind("CustomerID", "~/Pages/CustomerDetails.aspx?ID={0}") %>' />
+                                            NavigateUrl='<%# Bind("CustomerID") == null ? "." : Bind("CustomerID", "~/Pages/ContactDetails.aspx?ID={0}") %>' />
                                     </td>
                                     <td>
                                         <ajaxToolkit:ComboBox ID="cboContacts" runat="server" DataSourceID="sdsCompanys"
@@ -148,7 +148,7 @@
                                                 </ajaxToolkit:ComboBox>
                                             </EditItemTemplate>
                                             <ItemTemplate>
-                                                <asp:Label ID="lblItemDesc" runat="server" Text='<%# TrackerDotNet.Controls.ItemTypeTbl.GetItemTypeDescById(Convert.ToInt32(Eval("ItemTypeID"))) %>' />
+                                                <asp:Label ID="lblItemDesc" runat="server" Text='<%# TrackerSQL.Controls.ItemTypeTbl.GetItemTypeDescById(Convert.ToInt32(Eval("ItemTypeID"))) %>' />
                                             </ItemTemplate>
                                         </asp:TemplateField>
                                         <asp:TemplateField HeaderText="Qty"
@@ -281,7 +281,7 @@
         SelectCommand="SELECT IIF([enabled], [CompanyName], '_' + [CompanyName]) As CompanyName, [CustomerID] FROM [CustomersTbl] ORDER BY [enabled], [CompanyName]"></asp:SqlDataSource>
 
     <asp:ObjectDataSource ID="odsOrderDetail" runat="server"
-        TypeName="TrackerDotNet.Controls.OrderDetailDAL" SelectMethod="LoadOrderDetailData"
+        TypeName="TrackerSQL.Controls.OrderDetailDAL" SelectMethod="LoadOrderDetailData"
         UpdateMethod="UpdateOrderDetails"
         StartRowIndexParameterName="StartRowIndex"
         MaximumRowsParameterName="MaximumRows"

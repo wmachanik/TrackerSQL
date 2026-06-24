@@ -29,7 +29,7 @@ private static bool IsProperDatetimeColumn(string sourceTable, string columnName
     // Lines 837-847: TempCoffeecheckupCustomerTbl datetime columns
     if (sourceTable.Equals("TempCoffeecheckupCustomerTbl", ...))
     {
-        return col == "nextprepdate" || 
+        return col == "NextPreperationDate" || 
                col == "nextdeliverydate" || 
                col == "nextcoffee" ||          // ? FIXED!
                col == "nextclean" ||           // ? FIXED!

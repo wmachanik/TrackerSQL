@@ -1,16 +1,10 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.Repairs
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
 using AjaxControlToolkit;
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
 using TrackerSQL.Managers;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
@@ -65,7 +59,6 @@ namespace TrackerSQL.Pages
 
         private void RestoreFilterSettings()
         {
-            // Restore repair status dropdown selection
             if (Session["RepairStatusSelection"] != null)
             {
                 string savedRepairStatus = Session["RepairStatusSelection"].ToString();
@@ -75,7 +68,6 @@ namespace TrackerSQL.Pages
                 }
             }
 
-            // Restore filter by dropdown selection
             if (Session["RepairFilterBySelection"] != null)
             {
                 string savedFilterBy = Session["RepairFilterBySelection"].ToString();
@@ -85,13 +77,11 @@ namespace TrackerSQL.Pages
                 }
             }
 
-            // Restore filter text
             if (Session["RepairFilterByText"] != null)
             {
                 tbxFilterBy.Text = Session["RepairFilterByText"].ToString();
             }
 
-            // Restore date filter dropdown selection
             if (Session["RepairDateFilterSelection"] != null)
             {
                 string savedDateFilter = Session["RepairDateFilterSelection"].ToString();
@@ -101,7 +91,6 @@ namespace TrackerSQL.Pages
                 }
             }
 
-            // Restore custom date range if it was selected
             if (ddlDateFilter.SelectedValue == "Custom")
             {
                 divCustomDateRange.Visible = true;
@@ -121,7 +110,6 @@ namespace TrackerSQL.Pages
                 divCustomDateRange.Visible = false;
             }
 
-            // Only initialize with defaults if no existing filter settings
             if (Session["RepairDateFilterSelection"] == null && Session["RepairStatusSelection"] == null)
             {
                 InitializeDateFilters();
@@ -130,7 +118,6 @@ namespace TrackerSQL.Pages
 
         private void InitializeDateFilters()
         {
-            // Set default values only if no existing settings
             Session["RepairFilterFromDate"] = null;
             Session["RepairFilterToDate"] = null;
             Session["RepairDateFilterSelection"] = "All";
@@ -146,32 +133,29 @@ namespace TrackerSQL.Pages
 
         public string GetCompanyName(long pCompanyID)
         {
-            return pCompanyID > 0L ? new CompanyNames().GetCompanyNameByCompanyID(pCompanyID) : string.Empty;
+            return pCompanyID > 0L ? new ContactsRepository().GetContactNameById((int)pCompanyID) : string.Empty;
         }
 
         public string GetMachineDesc(int pEquipID)
         {
-            return pEquipID > 0 ? new EquipTypeTbl().GetEquipName(pEquipID) : string.Empty;
+            return pEquipID > 0 ? new EquipTypesRepository().GetEquipTypeName(pEquipID) : string.Empty;
         }
 
         public string GetRepairFaultDesc(int pRepairFaultID)
         {
-            return pRepairFaultID > 0 ? new RepairFaultsTbl().GetRepairFaultDesc(pRepairFaultID) : string.Empty;
+            return pRepairFaultID > 0 ? new RepairFaultsRepository().GetRepairFaultDesc(pRepairFaultID) : string.Empty;
         }
 
         public string GetRepairStatusDesc(int pRepairStatusID)
         {
-            return pRepairStatusID > 0 ? new RepairStatusesTbl().GetRepairStatusDesc(pRepairStatusID) : string.Empty;
+            return pRepairStatusID > 0 ? new RepairStatusesRepository().GetRepairStatusDesc(pRepairStatusID) : string.Empty;
         }
 
         protected void btnGo_Click(object sender, EventArgs e)
         {
-            // Save current filter settings
             Session["RepairFilterBySelection"] = ddlFilterBy.SelectedValue;
             Session["RepairFilterByText"] = tbxFilterBy.Text;
-            // ✅ FIX: Clear any previous messages
             lblFilter.Text = "";
-            // Trigger the data refresh
             this.odsRepairs.DataBind();
             this.upnlRepairsSummary.Update();
         }
@@ -187,7 +171,6 @@ namespace TrackerSQL.Pages
             this.tbxFromDate.Text = "";
             this.tbxToDate.Text = "";
             
-            // Reset all filter session variables
             Session["RepairFilterFromDate"] = null;
             Session["RepairFilterToDate"] = null;
             Session["RepairDateFilterSelection"] = "All";
@@ -202,14 +185,12 @@ namespace TrackerSQL.Pages
 
         protected void tbxFilterBy_TextChanged(object sender, EventArgs e)
         {
-            // Save current filter text
             Session["RepairFilterByText"] = tbxFilterBy.Text;
             
             if (string.IsNullOrWhiteSpace(this.tbxFilterBy.Text) || this.ddlFilterBy.SelectedIndex != 0)
                 return;
             this.ddlFilterBy.SelectedIndex = 1;
             
-            // Save the updated filter by selection
             Session["RepairFilterBySelection"] = ddlFilterBy.SelectedValue;
             
             this.upnlSelection.Update();
@@ -217,24 +198,19 @@ namespace TrackerSQL.Pages
 
         protected void ddlRepairStatus_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Save the current selection
             Session["RepairStatusSelection"] = ddlRepairStatus.SelectedValue;
 
-            // ✅ FIX: If "Done" status is selected and no date filter is active, default to "This Month"
-            if (ddlRepairStatus.SelectedValue == "7" && // Done status
+            if (ddlRepairStatus.SelectedValue == "7" &&
                 (Session["RepairFilterFromDate"] == null && Session["RepairFilterToDate"] == null) &&
                 ddlDateFilter.SelectedValue == "All")
             {
-                // Set date filter to This Month to avoid huge result sets
                 ddlDateFilter.SelectedValue = "ThisMonth";
                 Session["RepairDateFilterSelection"] = "ThisMonth";
                 ApplyDateFilter("ThisMonth");
 
-                // Show feedback to user
                 lblFilter.Text = "Note: Date filter set to 'This Month' to limit results when viewing Done repairs.";
                 lblFilter.ForeColor = System.Drawing.Color.Blue;
 
-                // Update the date filter panel
                 this.upnlSelection.Update();
             }
             this.odsRepairs.DataBind();
@@ -245,32 +221,26 @@ namespace TrackerSQL.Pages
         {
             string selectedFilter = ddlDateFilter.SelectedValue;
 
-            // Save the current selection
             Session["RepairDateFilterSelection"] = selectedFilter;
 
-            // Show/hide custom date range controls
             divCustomDateRange.Visible = (selectedFilter == "Custom");
 
             if (selectedFilter != "Custom")
             {
-                // Clear custom date inputs
                 tbxFromDate.Text = "";
                 tbxToDate.Text = "";
 
-                // Apply predefined date filter
                 ApplyDateFilter(selectedFilter);
                 lblFilter.Text = "";
             }
             else
             {
-                // ✅ FIX: Set default custom dates to last month and today
                 var today = TimeZoneUtils.Now().Date;
                 var oneMonthAgo = today.AddMonths(-1);
 
                 tbxFromDate.Text = oneMonthAgo.ToString("yyyy-MM-dd");
                 tbxToDate.Text = today.ToString("yyyy-MM-dd");
 
-                // ✅ Automatically apply the default range
                 Session["RepairFilterFromDate"] = oneMonthAgo;
                 Session["RepairFilterToDate"] = today;
 
@@ -280,7 +250,6 @@ namespace TrackerSQL.Pages
 
             this.upnlSelection.Update();
 
-            // ✅ Always refresh data, including custom with defaults
             this.odsRepairs.DataBind();
             this.upnlRepairsSummary.Update();
         }
@@ -290,7 +259,6 @@ namespace TrackerSQL.Pages
             DateTime? fromDate = null;
             DateTime? toDate = null;
 
-            // Parse custom date range
             if (!string.IsNullOrEmpty(tbxFromDate.Text))
             {
                 if (DateTime.TryParse(tbxFromDate.Text, out DateTime parsedFromDate))
@@ -307,7 +275,6 @@ namespace TrackerSQL.Pages
                 }
             }
 
-            // Set session variables for custom date range
             Session["RepairFilterFromDate"] = fromDate;
             Session["RepairFilterToDate"] = toDate;
             Session["RepairDateFilterSelection"] = "Custom";
@@ -315,7 +282,6 @@ namespace TrackerSQL.Pages
             lblFilter.Text = $"Applied custom range: {fromDate?.ToString("yyyy-MM-dd")} to {toDate?.ToString("yyyy-MM-dd")}";
             lblFilter.ForeColor = System.Drawing.Color.Blue;
 
-            // Refresh the grid
             this.odsRepairs.DataBind();
             this.upnlRepairsSummary.Update();
         }
@@ -354,13 +320,11 @@ namespace TrackerSQL.Pages
 
                 case "ALL":
                 default:
-                    // No date filtering
                     fromDate = null;
                     toDate = null;
                     break;
             }
 
-            // Set session variables for date filtering
             Session["RepairFilterFromDate"] = fromDate;
             Session["RepairFilterToDate"] = toDate;
         }

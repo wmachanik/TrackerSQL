@@ -6,7 +6,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head runat="server">
     <title>QOnT</title>
-    <link href="~/Styles/Site.css?v=20250922" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20260521-1" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -63,6 +63,24 @@
         @keyframes pulse {
             from { opacity: 0.6; }
             to { opacity: 1; }
+        }
+
+        .app-error-banner {
+            background: #fdecea;
+            border: 1px solid #c0392b;
+            color: #7b241c;
+            padding: 10px 12px;
+            margin: 0 0 12px 0;
+            border-radius: 4px;
+        }
+
+        .app-error-banner-actions {
+            margin-top: 8px;
+        }
+
+        .app-error-banner-actions a,
+        .app-error-banner-actions input {
+            margin-right: 12px;
         }
         
         /* Hide loading overlay when page is loaded */
@@ -160,7 +178,7 @@
                                             Value="Contact List" />
                                         <asp:MenuItem NavigateUrl="~/Pages/ContactDetails.aspx" Text="New Contact"
                                             Value="New Contact" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/CustomersAway.aspx" Text="Contacts Away" Value="ContactsAway" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/ContactsAway.aspx" Text="Contacts Away" Value="ContactsAway" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SendCoffeeCheckup.aspx" Text="Send Checkup"
                                             Value="Send Checkup" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SentRemindersSheet.aspx" Text="View List of reminders sent"
@@ -171,8 +189,8 @@
                                             Value="New Order"></asp:MenuItem>
                                         <asp:MenuItem NavigateUrl="~/Pages/OrderEntry.aspx" Text="View/Edit Orders"
                                             Value="View/Edit Orders"></asp:MenuItem>
-                                        <asp:MenuItem NavigateUrl="~/Pages/ReoccuringOrders.aspx"
-                                            Text="Reoccuring Orders" ToolTip="Reoccuring Orders" Value="Reoccuring Orders"></asp:MenuItem>
+                                        <asp:MenuItem NavigateUrl="~/Pages/RecurringOrders.aspx"
+                                            Text="Recurring Orders" ToolTip="Recurring Orders" Value="Recurring Orders"></asp:MenuItem>
                                     </asp:MenuItem>
                                     <asp:MenuItem Selectable="False" Text="Repairs" Value="Repairs">
                                         <asp:MenuItem NavigateUrl="~/Pages/Repairs.aspx" Text="Repairs"
@@ -181,7 +199,7 @@
                                             Value="New Repair"></asp:MenuItem>
                                     </asp:MenuItem>
                                     <asp:MenuItem Selectable="False" Text="Preperation" Value="Prep">
-                                        <asp:MenuItem NavigateUrl="~/Pages/CoffeeRequired.aspx" Text="Required Sheet"
+                                        <asp:MenuItem NavigateUrl="~/Pages/ItemsRequired.aspx" Text="Required Sheet"
                                             Value="Required Sheet"></asp:MenuItem>
                                         <asp:MenuItem NavigateUrl="~/Pages/DeliverySheet.aspx" Text="Delivery Sheet"
                                             Value="Delivery Sheet"></asp:MenuItem>
@@ -233,7 +251,7 @@
                             </LoggedInTemplate>
                         </asp:LoginView>
                         <br />
-                        <span class="small" style="font-style: normal; text-decoration: none">v2.2.2.3</span>
+                        <span class="small" style="font-style: normal; text-decoration: none">v3.0.0.1</span>
                     </td>
                 </tr>
             </table>
@@ -253,9 +271,10 @@
             <ul class="mobile-nav-list">
                 <li><a href="/Default.aspx">🏠 Home</a></li>
                 <li><a href="/Pages/Contacts.aspx">👥 Contacts</a></li>
-                <li><a href="/Pages/CustomersAway.aspx">🛫 Contacts Away</a></li>
+                <li><a href="/Pages/ContactsAway.aspx">🛫 Contacts Away</a></li>
                 <li><a href="/Pages/SendCoffeeCheckup.aspx">☕ Send Checkup</a></li>
                 <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">📋 New Order</a></li>
+                <li><a href="/Pages/ItemsRequired.aspx">📋 Items Required</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">🚚 Deliveries</a></li>
                 <li><a href="/Pages/Repairs.aspx">🔧 Repairs</a></li>
                 <li><a href="/Pages/Lookups.aspx">📊 Lookup Tables</a></li>
@@ -276,6 +295,14 @@
         </nav>
         <div class="page">
             <div class="main">
+                <asp:Panel ID="pnlApplicationError" runat="server" Visible="false" CssClass="app-error-banner">
+                    <strong>Application problem recorded</strong>
+                    <asp:Label ID="lblApplicationError" runat="server" />
+                    <div class="app-error-banner-actions">
+                        <asp:HyperLink ID="lnkViewLogs" runat="server" NavigateUrl="~/Tools/LogViewer.aspx" Text="Open Log Viewer" />
+                        <asp:LinkButton ID="btnDismissAppError" runat="server" Text="Dismiss" OnClick="btnDismissAppError_Click" CausesValidation="false" />
+                    </div>
+                </asp:Panel>
                 <asp:ContentPlaceHolder ID="MainContent" runat="server" />
                 <br />
             </div>
@@ -287,3 +314,4 @@
 
 </body>
 </html>
+

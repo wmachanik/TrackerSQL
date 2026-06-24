@@ -1,13 +1,13 @@
 using System;
-using System.Configuration;
-using System.Data;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.UI;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
 using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
@@ -17,6 +17,10 @@ namespace TrackerSQL.Pages
         private DateTime _deliveryUtc;
         private bool _tokenValid;
         private readonly IOrderChangeRequestService _changeReqService = new OrderChangeRequestLoggingService();
+        private readonly OrdersRepository _ordersRepository = new OrdersRepository();
+        private readonly ContactsRepository _contactsRepository = new ContactsRepository();
+        private readonly ItemsRepository _itemsRepository = new ItemsRepository();
+        private readonly ItemPackagingsRepository _packagingsRepository = new ItemPackagingsRepository();
         private bool _hadQueryDate;
         private DateTime _queryDeliveryDate;
         private string _queryNotes;
@@ -90,69 +94,6 @@ namespace TrackerSQL.Pages
             errBox.InnerText = msg;
         }
 
-        private DataTable FetchOrderLinesExact(long customerId, DateTime requiredDateLocal)
-        {
-            const string sql = @"
-SELECT OrderID, ItemTypeID, QuantityOrdered, PackagingID, RequiredByDate, Notes
-FROM OrderTbl
-WHERE CustomerID = ?
-  AND RequiredByDate = ?
-ORDER BY OrderID";
-
-            using (var db = new TrackerDb())
-            {
-                db.AddWhereParams(customerId, DbType.Int64);
-                db.AddWhereParams(requiredDateLocal.Date, DbType.Date);
-
-                var ds = db.ReturnDataSet(sql, db.WhereParams);
-                if (ds == null || ds.Tables.Count == 0) return new DataTable();
-                var table = ds.Tables["objDataSet"] ?? ds.Tables[0];
-                return table;
-            }
-        }
-
-        private DataTable FetchOrderLinesRange(long customerId, DateTime centerLocal)
-        {
-            const string sql = @"
-SELECT OrderID, ItemTypeID, QuantityOrdered, PackagingID, RequiredByDate, Notes
-FROM OrderTbl
-WHERE CustomerID = ?
-  AND RequiredByDate BETWEEN ? AND ?
-ORDER BY RequiredByDate, OrderID";
-
-            using (var db = new TrackerDb())
-            {
-                db.AddWhereParams(customerId, DbType.Int64);
-                db.AddWhereParams(centerLocal.AddDays(-1).Date, DbType.Date);
-                db.AddWhereParams(centerLocal.AddDays(1).Date, DbType.Date);
-
-                var ds = db.ReturnDataSet(sql, db.WhereParams);
-                if (ds == null || ds.Tables.Count == 0) return new DataTable();
-                var table = ds.Tables["objDataSet"] ?? ds.Tables[0];
-                return table;
-            }
-        }
-
-        private DataTable FetchOrderLinesExactWithNotes(long customerId, DateTime requiredDateLocal, string notes)
-        {
-            const string sql = @"
-SELECT OrderID, ItemTypeID, QuantityOrdered, PackagingID, RequiredByDate, Notes
-FROM OrderTbl
-WHERE CustomerID = ?
-  AND RequiredByDate = ?
-  AND Notes = ?
-ORDER BY OrderID";
-            using (var db = new TrackerDb())
-            {
-                db.AddWhereParams(customerId, DbType.Int64);
-                db.AddWhereParams(requiredDateLocal.Date, DbType.Date);
-                db.AddWhereParams(notes ?? string.Empty, DbType.String);
-                var ds = db.ReturnDataSet(sql, db.WhereParams);
-                if (ds == null || ds.Tables.Count == 0) return new DataTable();
-                return ds.Tables["objDataSet"] ?? ds.Tables[0];
-            }
-        }
-
         private void LoadOrder()
         {
             if (_custId <= 0)
@@ -170,7 +111,7 @@ ORDER BY OrderID";
 
             var tried = new StringBuilder();
 
-            var dynamicList = new System.Collections.Generic.List<DateTime>();
+            var dynamicList = new List<DateTime>();
             if (_hadQueryDate) dynamicList.Add(_queryDeliveryDate);
             if (_hadQueryDate)
             {
@@ -188,13 +129,13 @@ ORDER BY OrderID";
             {
                 foreach (var cand in candidates)
                 {
-                    var dtN = FetchOrderLinesExactWithNotes(_custId, cand, _queryNotes);
-                    tried.AppendLine($"(NOTES) Tried {cand:yyyy-MM-dd} rows={dtN.Rows.Count}");
-                    if (dtN.Rows.Count > 0)
+                    var lines = _ordersRepository.GetPublicOrderLines(_custId, cand, _queryNotes);
+                    tried.AppendLine($"(NOTES) Tried {cand:yyyy-MM-dd} rows={lines.Count}");
+                    if (lines.Count > 0)
                     {
                         AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                             $"ViewMyOrder: notes-match {cand:yyyy-MM-dd} tokenUtc={tokenUtc:yyyy-MM-dd}");
-                        RenderOrder(dtN, cand);
+                        RenderOrder(lines, cand);
                         return;
                     }
                 }
@@ -202,36 +143,37 @@ ORDER BY OrderID";
 
             foreach (var cand in candidates)
             {
-                var dt = FetchOrderLinesExact(_custId, cand);
-                tried.AppendLine($"Tried {cand:yyyy-MM-dd} rows={dt.Rows.Count}");
-                if (dt.Rows.Count > 0)
+                var lines = _ordersRepository.GetPublicOrderLines(_custId, cand, null);
+                tried.AppendLine($"Tried {cand:yyyy-MM-dd} rows={lines.Count}");
+                if (lines.Count > 0)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                         $"ViewMyOrder: match {cand:yyyy-MM-dd} tokenUtc={tokenUtc:yyyy-MM-dd} queryDate={(_hadQueryDate ? _queryDeliveryDate.ToString("yyyy-MM-dd") : "n/a")}");
-                    RenderOrder(dt, cand);
+                    RenderOrder(lines, cand);
                     return;
                 }
             }
 
             DateTime rangeCenter = _hadQueryDate ? _queryDeliveryDate : tokenAsLocal;
-            var rangeDt = FetchOrderLinesRange(_custId, rangeCenter);
-            tried.AppendLine($"Range fallback center={rangeCenter:yyyy-MM-dd} rows={rangeDt.Rows.Count}");
+            var rangeLines = _ordersRepository.GetPublicOrderLinesInRange(
+                _custId,
+                rangeCenter.AddDays(-1),
+                rangeCenter.AddDays(1));
+            tried.AppendLine($"Range fallback center={rangeCenter:yyyy-MM-dd} rows={rangeLines.Count}");
 
-            if (rangeDt.Rows.Count > 0)
+            if (rangeLines.Count > 0)
             {
-                DateTime chosen = rangeDt.AsEnumerable()
-                    .GroupBy(r => Convert.ToDateTime(r["RequiredByDate"]).Date)
+                DateTime chosen = rangeLines
+                    .GroupBy(line => line.RequiredByDate.Date)
                     .OrderByDescending(g => g.Count())
                     .ThenBy(g => g.Key)
                     .First().Key;
 
-                var final = rangeDt.Select($"RequiredByDate = #{chosen:MM/dd/yyyy}#");
-                var finalTable = rangeDt.Clone();
-                foreach (var r in final) finalTable.ImportRow(r);
+                var finalLines = rangeLines.Where(line => line.RequiredByDate.Date == chosen).ToList();
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                     $"ViewMyOrder: range fallback chose {chosen:yyyy-MM-dd} tokenUtc={tokenUtc:yyyy-MM-dd}");
-                RenderOrder(finalTable, chosen);
+                RenderOrder(finalLines, chosen);
                 return;
             }
 
@@ -243,58 +185,42 @@ ORDER BY OrderID";
             ShowError("No order lines found for that delivery date.");
         }
 
-        private void RenderOrder(DataTable dt, DateTime effectiveDeliveryLocal)
+        private void RenderOrder(IList<PublicOrderLineView> lines, DateTime effectiveDeliveryLocal)
         {
-            string customerName;
-            try
-            {
-                customerName = CustomersTbl.GetCustomerNameById(_custId);
-            }
-            catch
-            {
-                customerName = null;
-            }
-
+            string customerName = _contactsRepository.GetContactNameById((int)_custId);
             if (string.IsNullOrEmpty(customerName))
             {
                 ShowError("Customer not found.");
                 return;
             }
 
-            var itemTbl = new ItemTypeTbl();
-            var packTbl = new PackagingTbl();
-
             string sharedNotes = string.Empty;
             var sbRows = new StringBuilder();
             int lineCount = 0;
 
-            foreach (DataRow r in dt.Rows)
+            foreach (var line in lines)
             {
                 lineCount++;
-                int itemTypeId = Convert.ToInt32(r["ItemTypeID"]);
-                double qty = Convert.ToDouble(r["QuantityOrdered"]);
-                int packagingId = r["PackagingID"] == DBNull.Value ? 0 : Convert.ToInt32(r["PackagingID"]);
-
                 string itemDesc;
-                try { itemDesc = ItemTypeTbl.GetItemTypeDescById(itemTypeId); }
-                catch { itemDesc = "Item " + itemTypeId; }
+                try { itemDesc = _itemsRepository.GetItemDescById(line.ItemTypeID); }
+                catch { itemDesc = "Item " + line.ItemTypeID; }
 
                 string uom = string.Empty;
-                try { uom = itemTbl.GetItemUnitOfMeasure(itemTypeId); } catch { }
+                try { uom = _itemsRepository.GetItemUnitOfMeasure(line.ItemTypeID); } catch { }
 
                 string pkgDesc = "-";
-                if (packagingId > 0)
+                if (line.PackagingID > 0)
                 {
-                    try { pkgDesc = packTbl.GetPackagingDesc(packagingId) ?? "-"; } catch { }
+                    try { pkgDesc = _packagingsRepository.GetPackagingDescById(line.PackagingID) ?? "-"; } catch { }
                 }
 
-                if (string.IsNullOrEmpty(sharedNotes) && r["Notes"] != DBNull.Value)
-                    sharedNotes = Convert.ToString(r["Notes"]);
+                if (string.IsNullOrEmpty(sharedNotes) && !string.IsNullOrEmpty(line.Notes))
+                    sharedNotes = line.Notes;
 
                 sbRows.Append("<tr>")
                       .Append("<td>").Append(HttpUtility.HtmlEncode(itemDesc)).Append("</td>")
                       .Append("<td>").Append(HttpUtility.HtmlEncode(pkgDesc)).Append("</td>")
-                      .Append("<td>").Append(qty.ToString("0.###")).Append("</td>")
+                      .Append("<td>").Append(line.QuantityOrdered.ToString("0.###")).Append("</td>")
                       .Append("<td>").Append(HttpUtility.HtmlEncode(uom)).Append("</td>")
                       .Append("</tr>");
             }

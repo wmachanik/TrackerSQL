@@ -1,0 +1,9 @@
+using TrackerSQL.Classes.Poco;
+namespace TrackerSQL.Classes.Sql
+{
+    public class HolidayClosuresRepository : RepositoryBase<HolidayClosure>
+    {
+        protected override string TableName => "HolidayClosuresTbl";
+        protected override string KeyColumn => "HolidayClosureID";
+    }
+}

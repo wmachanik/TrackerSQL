@@ -1,74 +1,437 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
+    public class EnsureOrderResult
+    {
+        public string Error { get; set; } = string.Empty;
+        public bool IsConflict { get; set; }
+        public int OrderId { get; set; }
+        public int ConflictingOrderId { get; set; }
+        public bool Success => string.IsNullOrEmpty(Error) && OrderId > 0;
+    }
+
     public class OrderManager
     {
-        public string AddOrderLine(OrderHeaderData headerData, OrderTblData orderData)
+        private readonly OrdersRepository _ordersRepository;
+        private readonly TempOrdersHeaderRepository _tempOrdersHeaderRepository;
+        private readonly TempOrdersLinesRepository _tempOrdersLinesRepository;
+        private readonly ContactsRepository _contactsRepository;
+        private readonly ItemsRepository _itemsRepository;
+        private readonly ItemPackagingsRepository _itemPackagingsRepository;
+        private readonly ContactsItemUsageRepository _contactsItemUsageRepository;
+        private readonly PersonsRepository _personsRepository;
+
+        public OrderManager()
         {
-            TrackerTools trackerTools = new TrackerTools();
-            orderData.ItemTypeID = trackerTools.ChangeItemIfGroupToNextItemInGroup(orderData.CustomerID, orderData.ItemTypeID, orderData.RequiredByDate);
-            OrderTbl orderTbl = new OrderTbl();
-            return orderTbl.InsertNewOrderLine(orderData);
+            _ordersRepository = new OrdersRepository();
+            _tempOrdersHeaderRepository = new TempOrdersHeaderRepository();
+            _tempOrdersLinesRepository = new TempOrdersLinesRepository();
+            _contactsRepository = new ContactsRepository();
+            _itemsRepository = new ItemsRepository();
+            _itemPackagingsRepository = new ItemPackagingsRepository();
+            _contactsItemUsageRepository = new ContactsItemUsageRepository();
+            _personsRepository = new PersonsRepository();
         }
+
+        public class AddOrderLineResult
+        {
+            public string Error { get; set; } = string.Empty;
+            public int OrderId { get; set; }
+            public bool Success => string.IsNullOrEmpty(Error) && OrderId > 0;
+        }
+
+        public OrderHeaderData GetOrderHeader(int orderId)
+        {
+            return orderId > 0 ? _ordersRepository.GetOrderHeaderByOrderId(orderId) : null;
+        }
+
+        public int GetOrderLineCount(int orderId)
+        {
+            return _ordersRepository.GetOrderLineCount(orderId);
+        }
+
+        /// <summary>
+        /// Finds an order for the same contact and required-by date (and notes for sundry).
+        /// </summary>
+        public int? FindExistingOrderForHeader(OrderHeaderData header)
+        {
+            if (header == null || header.CustomerID <= 0 || header.RequiredByDate <= DateTime.MinValue)
+                return null;
+
+            return _ordersRepository.FindOrderIdByRequiredByDate(
+                header.CustomerID,
+                header.RequiredByDate,
+                header.Notes ?? string.Empty);
+        }
+
+        /// <summary>
+        /// Creates a new header or returns a conflict when another order already exists for contact + date.
+        /// </summary>
+        public EnsureOrderResult EnsureOrderHeader(OrderHeaderData header, int? currentOrderId = null, bool useExistingIfFound = false)
+        {
+            var result = new EnsureOrderResult();
+            if (header == null || header.CustomerID <= 0)
+            {
+                result.Error = "Please select a contact.";
+                return result;
+            }
+
+            if (header.RequiredByDate <= DateTime.MinValue)
+            {
+                result.Error = "Required-by date is missing.";
+                return result;
+            }
+
+            if (header.ToBeDeliveredBy <= 0)
+                header.ToBeDeliveredBy = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
+
+            int? existingId = FindExistingOrderForHeader(header);
+            if (currentOrderId.HasValue && currentOrderId.Value > 0)
+            {
+                if (existingId.HasValue && existingId.Value != currentOrderId.Value)
+                {
+                    result.IsConflict = true;
+                    result.ConflictingOrderId = existingId.Value;
+                    result.Error = $"Another order (#{existingId.Value}) already exists for this contact and delivery date.";
+                    return result;
+                }
+
+                if (!_ordersRepository.UpdateOrderHeaderByOrderId(currentOrderId.Value, header))
+                {
+                    result.Error = "Failed to update order header.";
+                    return result;
+                }
+
+                result.OrderId = currentOrderId.Value;
+                return result;
+            }
+
+            if (existingId.HasValue)
+            {
+                if (!useExistingIfFound)
+                {
+                    result.IsConflict = true;
+                    result.ConflictingOrderId = existingId.Value;
+                    result.Error = $"Order #{existingId.Value} already exists for this contact and delivery date.";
+                    return result;
+                }
+
+                result.OrderId = existingId.Value;
+                return result;
+            }
+
+            int newOrderId = _ordersRepository.InsertOrderHeader(ToOrderTblData(header));
+            if (newOrderId <= 0)
+            {
+                result.Error = "Failed to create order header.";
+                return result;
+            }
+
+            result.OrderId = newOrderId;
+            return result;
+        }
+
+        public bool UpdateOrderHeader(int orderId, OrderHeaderData header)
+        {
+            if (orderId <= 0 || header == null)
+                return false;
+
+            header.OrderID = orderId;
+            return _ordersRepository.UpdateOrderHeaderByOrderId(orderId, header);
+        }
+
+        public AddOrderLineResult AddOrderLineToOrder(int orderId, int itemTypeId, double quantity, int packagingId)
+        {
+            var result = new AddOrderLineResult { OrderId = orderId };
+            if (orderId <= 0)
+            {
+                result.Error = "Order is not saved yet.";
+                return result;
+            }
+
+            var header = GetOrderHeader(orderId);
+            if (header == null)
+            {
+                result.Error = "Order not found.";
+                return result;
+            }
+
+            var line = ToOrderTblData(header);
+            line.ItemTypeID = itemTypeId;
+            line.QuantityOrdered = quantity;
+            line.PackagingID = packagingId;
+
+            line.ItemTypeID = new TrackerTools().ChangeItemIfGroupToNextItemInGroup(
+                line.CustomerID, line.ItemTypeID, line.RequiredByDate);
+
+            int lineId = _ordersRepository.AddLineToExistingOrder(orderId, line);
+            if (lineId <= 0)
+            {
+                result.Error = "Failed to add order line.";
+                return result;
+            }
+
+            return result;
+        }
+
+        private static OrderTblData ToOrderTblData(OrderHeaderData header)
+        {
+            return new OrderTblData
+            {
+                CustomerID = header.CustomerID,
+                OrderDate = header.OrderDate.Date,
+                PrepDate = header.PrepDate.Date,
+                RequiredByDate = header.RequiredByDate.Date,
+                ToBeDeliveredBy = header.ToBeDeliveredBy > 0
+                    ? header.ToBeDeliveredBy
+                    : SystemConstants.DeliveryConstants.DefaultDeliveryPersonID,
+                PurchaseOrder = header.PurchaseOrder ?? string.Empty,
+                Notes = header.Notes ?? string.Empty,
+                Confirmed = header.Confirmed,
+                Done = header.Done,
+                InvoiceDone = header.InvoiceDone
+            };
+        }
+
+        public AddOrderLineResult AddOrderLine(OrderHeaderData headerData, OrderTblData orderData, int? existingOrderId = null)
+        {
+            return AddOrderLines(headerData, new[] { orderData }, existingOrderId);
+        }
+
+        public AddOrderLineResult AddOrderLines(OrderHeaderData headerData, IEnumerable<OrderTblData> lines, int? existingOrderId = null)
+        {
+            var result = new AddOrderLineResult();
+            if (headerData == null)
+            {
+                result.Error = "Order header data is missing";
+                return result;
+            }
+
+            if (lines == null)
+            {
+                result.Error = "No order lines to add";
+                return result;
+            }
+
+            int orderId = existingOrderId ?? 0;
+            var trackerTools = new TrackerTools();
+
+            foreach (var orderData in lines)
+            {
+                if (orderData == null)
+                    continue;
+
+                ApplyHeaderToOrderLine(headerData, orderData);
+
+                orderData.ItemTypeID = trackerTools.ChangeItemIfGroupToNextItemInGroup(
+                    orderData.CustomerID, orderData.ItemTypeID, orderData.RequiredByDate);
+
+                if (orderId <= 0)
+                {
+                    orderId = _ordersRepository.InsertNewOrderLine(orderData);
+                    if (orderId <= 0)
+                    {
+                        result.Error = "Failed to create order";
+                        return result;
+                    }
+                }
+                else
+                {
+                    int lineId = _ordersRepository.AddLineToExistingOrder(orderId, orderData);
+                    if (lineId <= 0)
+                    {
+                        result.Error = "Failed to add order line";
+                        return result;
+                    }
+                }
+            }
+
+            result.OrderId = orderId;
+            return result;
+        }
+
+        private static void ApplyHeaderToOrderLine(OrderHeaderData header, OrderTblData line)
+        {
+            if (line.CustomerID <= 0 && header.CustomerID > 0)
+                line.CustomerID = header.CustomerID;
+
+            if (line.ToBeDeliveredBy <= 0 && header.ToBeDeliveredBy > 0)
+                line.ToBeDeliveredBy = header.ToBeDeliveredBy;
+
+            if (line.OrderDate <= DateTime.MinValue && header.OrderDate > DateTime.MinValue)
+                line.OrderDate = header.OrderDate;
+
+            if (line.PrepDate <= DateTime.MinValue && header.PrepDate > DateTime.MinValue)
+                line.PrepDate = header.PrepDate;
+
+            if (line.RequiredByDate <= DateTime.MinValue && header.RequiredByDate > DateTime.MinValue)
+                line.RequiredByDate = header.RequiredByDate;
+
+            if (string.IsNullOrEmpty(line.Notes) && !string.IsNullOrEmpty(header.Notes))
+                line.Notes = header.Notes;
+
+            if (string.IsNullOrEmpty(line.PurchaseOrder) && !string.IsNullOrEmpty(header.PurchaseOrder))
+                line.PurchaseOrder = header.PurchaseOrder;
+
+            line.Confirmed = header.Confirmed;
+            line.Done = header.Done;
+            line.InvoiceDone = header.InvoiceDone;
+        }
+
+        public string DeleteOrderLine(int orderLineId)
+        {
+            return _ordersRepository.DeleteOrderLineById(orderLineId) ? string.Empty : "Failed to delete order line";
+        }
+
+        public List<ContactLookup> GetContactLookups()
+        {
+            return _contactsRepository.GetAllCompanyNames();
+        }
+
+        public List<Person> GetDeliveryPersons(string sortBy = "Abbreviation")
+        {
+            return _personsRepository.GetAllEnabled(sortBy);
+        }
+
+        public List<OrderItemLookup> GetItemLookups(string sortBy = "")
+        {
+            return _itemsRepository.GetOrderItemLookups(sortBy);
+        }
+
+        public List<OrderPackagingLookup> GetPackagingLookups()
+        {
+            var list = new List<OrderPackagingLookup>();
+            foreach (var packaging in _itemPackagingsRepository.GetAll("ItemPrepDescription"))
+            {
+                list.Add(new OrderPackagingLookup
+                {
+                    PackagingID = packaging.ItemPackagingID,
+                    Description = packaging.ItemPackagingDesc ?? string.Empty
+                });
+            }
+
+            return list;
+        }
+
+        public List<OrderDetailData> GetOrderLines(int orderId)
+        {
+            if (orderId <= 0)
+                return new List<OrderDetailData>();
+
+            return _ordersRepository.LoadOrderDetailDataByOrderId(orderId);
+        }
+
+        public bool UpdateOrderLine(
+            long orderLineId,
+            long contactId,
+            int itemTypeId,
+            DateTime deliveryDate,
+            double quantityOrdered,
+            int packagingId)
+        {
+            if (orderLineId <= 0)
+                return false;
+
+            int resolvedItemId = new TrackerTools().ChangeItemIfGroupToNextItemInGroup(
+                contactId, itemTypeId, deliveryDate);
+
+            return _ordersRepository.UpdateOrderLine(
+                orderLineId,
+                resolvedItemId,
+                quantityOrdered,
+                packagingId);
+        }
+
         public string DeleteOrderItem(int orderId)
         {
-            return new OrderTbl().DeleteOrderById(orderId);
+            return _ordersRepository.DeleteOrderById(orderId) ? string.Empty : "Failed to delete order";
+        }
+
+        public string MarkItemAsInvoiced(int orderId)
+        {
+            return _ordersRepository.UpdateSetInvoicedByOrderId(true, orderId)
+                ? string.Empty
+                : "Failed to mark invoiced";
         }
 
         public string MarkItemAsInvoiced(long customerId, DateTime deliveryDate, string notes)
         {
-            return new OrderTbl().UpdateSetInvoiced(true, customerId, deliveryDate, notes);
+            return _ordersRepository.UpdateSetInvoiced(true, customerId, deliveryDate, notes)
+                ? string.Empty
+                : "Failed to mark invoiced";
         }
 
         public string UnDoOrderItem(int orderId)
         {
-            return new OrderTbl().UpdateSetDoneByID(false, orderId);
+            return _ordersRepository.UpdateSetDoneById(false, orderId) ? string.Empty : "Failed to undo order";
         }
 
         public void MoveOrderDeliveryDate(DateTime newDate, int orderId)
         {
-            new OrderTbl().UpdateOrderDeliveryDate(newDate, orderId);
+            _ordersRepository.UpdateOrderDeliveryDate(newDate, orderId);
         }
 
         public bool CompleteOrderDelivery(OrderHeaderData headerData, List<TempOrderLineData> orderLines)
         {
-            TempOrdersDAL tempOrdersDal = new TempOrdersDAL();
-            if (!tempOrdersDal.KillTempOrdersData())
-                return false;
+            TempOrderSession.CleanupCurrentTempOrder();
 
-            TempOrdersData tempOrder = new TempOrdersData();
-            tempOrder.HeaderData = new TempOrdersHeaderTbl
+            var header = new TempOrdersHeader
             {
-                CustomerID = headerData.CustomerID,
+                ContactID = (int)headerData.CustomerID,
                 OrderDate = headerData.OrderDate,
-                RoastDate = headerData.RoastDate,
+                PrepDate = headerData.PrepDate,
                 RequiredByDate = headerData.RequiredByDate,
                 ToBeDeliveredByID = headerData.ToBeDeliveredBy,
                 Confirmed = headerData.Confirmed,
                 Done = headerData.Done,
                 Notes = headerData.Notes
             };
-            tempOrder.OrdersLines = orderLines.Select(line =>
-            {
-                var tbl = line.ToTempOrdersLinesTbl();
-                tbl.ServiceTypeID = new ItemTypeTbl().GetServiceID(tbl.ItemID);
-                return tbl;
-            }).ToList();
 
-            return tempOrdersDal.Insert(tempOrder);
+            int headerId = _tempOrdersHeaderRepository.InsertHeader(header);
+            if (headerId <= 0)
+            {
+                return false;
+            }
+
+            foreach (var line in orderLines)
+            {
+                int? serviceTypeId = line.ServiceTypeID > 0
+                    ? line.ServiceTypeID
+                    : _itemsRepository.GetItemServiceTypeId(line.ItemID);
+
+                if (!_tempOrdersLinesRepository.InsertLine(new TempOrdersLine
+                {
+                    TOHeaderID = headerId,
+                    ItemID = line.ItemID,
+                    Qty = line.Qty,
+                    ItemPackagingID = line.PackagingID,
+                    ItemServiceTypeID = serviceTypeId,
+                    OriginalOrderID = line.OriginalOrderID
+                }))
+                {
+                    TempOrderSession.CleanupCurrentTempOrder();
+                    return false;
+                }
+            }
+
+            TempOrderSession.BeginOrderDoneWorkflow(
+                headerId,
+                orderLines.Select(line => line.OriginalOrderID));
+            return true;
         }
         // NEW METHODS: Move business logic from OrderDetail
 
         /// <summary>
         /// Calculates roast and delivery dates based on business rules
         /// </summary>
-        public (DateTime roastDate, DateTime deliveryDate) CalculateOrderDates(DateTime orderDate)
+        public (DateTime PrepDate, DateTime deliveryDate) CalculateOrderDates(DateTime orderDate)
         {
             // Move the complex date calculation logic from InitializeNewOrderMode
             int num = orderDate.DayOfWeek <= DayOfWeek.Tuesday || orderDate.DayOfWeek >= DayOfWeek.Friday ?
@@ -76,10 +439,10 @@ namespace TrackerSQL.Managers
                        (orderDate.DayOfWeek >= DayOfWeek.Friday ? (int)(8 - orderDate.DayOfWeek) : (int)(3 - orderDate.DayOfWeek)) :
                        (int)(1 - orderDate.DayOfWeek)) : (int)(3 - orderDate.DayOfWeek);
 
-            DateTime roastDate = orderDate.AddDays((double)num);
-            DateTime deliveryDate = roastDate.DayOfWeek >= DayOfWeek.Friday ? roastDate.AddDays(3.0) : roastDate.AddDays(1.0);
+            DateTime PrepDate = orderDate.AddDays((double)num);
+            DateTime deliveryDate = PrepDate.DayOfWeek >= DayOfWeek.Friday ? PrepDate.AddDays(3.0) : PrepDate.AddDays(1.0);
 
-            return (roastDate, deliveryDate);
+            return (PrepDate, deliveryDate);
         }
 
         /// <summary>
@@ -129,10 +492,10 @@ namespace TrackerSQL.Managers
                 // Try email lookup first if provided
                 if (!string.IsNullOrEmpty(email))
                 {
-                    List<CustomersTbl> customerWithEmailLike = new CustomersTbl().GetAllCustomerWithEmailLIKE(email);
-                    if (customerWithEmailLike.Count > 0)
+                    var contacts = _contactsRepository.SearchByEmailLike(email);
+                    if (contacts.Count > 0)
                     {
-                        result.CustomerID = customerWithEmailLike[0].CustomerID;
+                        result.CustomerID = contacts[0].ContactID;
                         result.CustomerFound = true;
                         result.Success = true;
                         result.FoundByEmail = true;
@@ -221,16 +584,13 @@ namespace TrackerSQL.Managers
                 }
 
                 // Get last items used for coffee (ServiceTypeID = 2)
-                List<ItemUsageTbl> lastItemsUsed = new ItemUsageTbl().GetLastItemsUsed(customerId, 2);
+                List<ContactsItemUsage> lastItemsUsed = _contactsItemUsageRepository.GetLastItemsUsed((int)customerId, 2);
 
                 if (lastItemsUsed.Count > 0)
                 {
-                    //AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Found {lastItemsUsed.Count} last items used for customer {customerId}");
-
-                    // Convert each last item used to OrderLineData
-                    foreach (ItemUsageTbl itemUsage in lastItemsUsed)
+                    foreach (ContactsItemUsage itemUsage in lastItemsUsed)
                     {
-                        if (itemUsage.ItemProvidedID > 0)
+                        if (itemUsage.ItemProvidedID.HasValue && itemUsage.ItemProvidedID.Value > 0)
                         {
                             var orderLine = CreateOrderLineFromLastUsage(customerId, itemUsage);
                             if (orderLine != null)
@@ -271,7 +631,7 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Sets customer-specific roast and delivery dates based on their city (like SetPrepAndDeliveryValues in NewOrderDetail)
+        /// Sets customer-specific roast and delivery dates based on their Area (like SetPrepAndDeliveryValues in NewOrderDetail)
         /// </summary>
         private void SetCustomerSpecificDates(long customerId)
         {
@@ -281,7 +641,7 @@ namespace TrackerSQL.Managers
 
                 TrackerTools trackerTools = new TrackerTools();
                 DateTime deliveryDate = DateTime.MinValue; // This will be set by reference
-                DateTime roastDate = trackerTools.GetNextRoastDateByCustomerID(customerId, ref deliveryDate);
+                DateTime PrepDate = trackerTools.GetNextPreperationDateByCustomerID(customerId, ref deliveryDate);
                 DateTime orderDate = TimeZoneUtils.Now().Date;
 
                 // Update session with customer-specific dates
@@ -289,10 +649,10 @@ namespace TrackerSQL.Managers
                 if (context?.Session != null)
                 {
                     context.Session[SystemConstants.SessionConstants.BoundDeliveryDate] = deliveryDate.Date;
-                    // Note: RoastDate and OrderDate would need session constants if you want to store them
+                    // Note: PrepDate and OrderDate would need session constants if you want to store them
                 }
 
-                AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Customer-specific dates set - Order: {orderDate:yyyy-MM-dd}, Roast: {roastDate:yyyy-MM-dd}, Delivery: {deliveryDate:yyyy-MM-dd}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Customer-specific dates set - Order: {orderDate:yyyy-MM-dd}, Roast: {PrepDate:yyyy-MM-dd}, Delivery: {deliveryDate:yyyy-MM-dd}");
             }
             catch (Exception ex)
             {
@@ -303,27 +663,26 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Creates an OrderLineData from last usage (doesn't insert, just creates the data object)
         /// </summary>
-        private OrderLineData CreateOrderLineFromLastUsage(long customerId, ItemUsageTbl itemUsage)
+        private OrderLineData CreateOrderLineFromLastUsage(long customerId, ContactsItemUsage itemUsage)
         {
             try
             {
-                // Apply group item logic if needed
                 TrackerTools trackerTools = new TrackerTools();
                 int finalItemTypeId = trackerTools.ChangeItemIfGroupToNextItemInGroup(
                     customerId,
-                    itemUsage.ItemProvidedID,
-                    DateTime.Now); // Use current date for group item calculation
+                    itemUsage.ItemProvidedID ?? 0,
+                    DateTime.Now);
 
-                // Get item name for display
-                string itemName = ItemTypeTbl.GetItemTypeDescById(finalItemTypeId);
-                string packagingName = itemUsage.PackagingID > 0 ? GetPackagingDesc(itemUsage.PackagingID) : string.Empty;
+                string itemName = _itemsRepository.GetItemDescById(finalItemTypeId);
+                int packagingId = itemUsage.ItemPackagingID ?? 0;
+                string packagingName = packagingId > 0 ? GetPackagingDesc(packagingId) : string.Empty;
 
                 var orderLine = new OrderLineData
                 {
                     ItemID = finalItemTypeId,
                     ItemName = itemName,
-                    Qty = itemUsage.AmountProvided,
-                    PackagingID = itemUsage.PackagingID,
+                    Qty = itemUsage.QtyProvided ?? 0.0,
+                    PackagingID = packagingId,
                     PackagingName = packagingName
                 };
 
@@ -352,7 +711,7 @@ namespace TrackerSQL.Managers
                     DateTime.Now);
 
                 // Get item name for display
-                string itemName = ItemTypeTbl.GetItemTypeDescById(finalItemTypeId);
+                string itemName = _itemsRepository.GetItemDescById(finalItemTypeId);
                 string packagingName = preferences.PrefPackagingID > 0 ? GetPackagingDesc(preferences.PrefPackagingID) : string.Empty;
 
                 var orderLine = new OrderLineData
@@ -381,7 +740,7 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                return packagingID > 0 ? new PackagingTbl().GetPackagingDesc(packagingID) : string.Empty;
+                return packagingID > 0 ? _itemPackagingsRepository.GetPackagingDescById(packagingID) : string.Empty;
             }
             catch
             {
@@ -391,7 +750,7 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Adds an order line based on last usage data
         /// </summary>
-        private bool AddOrderLineFromLastUsage(long customerId, ItemUsageTbl itemUsage)
+        private bool AddOrderLineFromLastUsage(long customerId, ContactsItemUsage itemUsage)
         {
             try
             {
@@ -402,7 +761,7 @@ namespace TrackerSQL.Managers
                 {
                     CustomerID = customerId,
                     OrderDate = sessionData.OrderDate,
-                    RoastDate = sessionData.RoastDate,
+                    PrepDate = sessionData.PrepDate,
                     RequiredByDate = sessionData.RequiredByDate,
                     ToBeDeliveredBy = sessionData.ToBeDeliveredBy,
                     PurchaseOrder = sessionData.PurchaseOrder ?? string.Empty,
@@ -410,9 +769,9 @@ namespace TrackerSQL.Managers
                     InvoiceDone = sessionData.InvoiceDone,
                     Done = sessionData.Done,
                     Notes = sessionData.Notes ?? string.Empty,
-                    ItemTypeID = itemUsage.ItemProvidedID,
-                    QuantityOrdered = itemUsage.AmountProvided,
-                    PackagingID = itemUsage.PackagingID
+                    ItemTypeID = itemUsage.ItemProvidedID ?? 0,
+                    QuantityOrdered = itemUsage.QtyProvided ?? 0.0,
+                    PackagingID = itemUsage.ItemPackagingID ?? 0
                 };
 
                 // Apply group item logic if needed
@@ -423,10 +782,7 @@ namespace TrackerSQL.Managers
                     orderData.RequiredByDate);
 
                 // Insert the order line
-                OrderTbl orderTbl = new OrderTbl();
-                string result = orderTbl.InsertNewOrderLine(orderData);
-
-                bool success = string.IsNullOrEmpty(result);
+                bool success = _ordersRepository.InsertNewOrderLine(orderData) > 0;
 
                 if (success)
                 {
@@ -434,7 +790,7 @@ namespace TrackerSQL.Managers
                 }
                 else
                 {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Error adding last order item for customer {customerId}: {result}");
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Error adding last order item for customer {customerId}");
                 }
 
                 return success;
@@ -460,7 +816,7 @@ namespace TrackerSQL.Managers
                 {
                     CustomerID = customerId,
                     OrderDate = sessionData.OrderDate,
-                    RoastDate = sessionData.RoastDate,
+                    PrepDate = sessionData.PrepDate,
                     RequiredByDate = sessionData.RequiredByDate,
                     ToBeDeliveredBy = sessionData.ToBeDeliveredBy,
                     PurchaseOrder = sessionData.PurchaseOrder ?? string.Empty,
@@ -481,10 +837,7 @@ namespace TrackerSQL.Managers
                     orderData.RequiredByDate);
 
                 // Insert the order line
-                OrderTbl orderTbl = new OrderTbl();
-                string result = orderTbl.InsertNewOrderLine(orderData);
-
-                bool success = string.IsNullOrEmpty(result);
+                bool success = _ordersRepository.InsertNewOrderLine(orderData) > 0;
 
                 if (success)
                 {
@@ -492,7 +845,7 @@ namespace TrackerSQL.Managers
                 }
                 else
                 {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Error adding preferred item for customer {customerId}: {result}");
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Error adding preferred item for customer {customerId}");
                 }
 
                 return success;
@@ -538,8 +891,8 @@ namespace TrackerSQL.Managers
 
                     // Calculate order and roast dates
                     sessionData.OrderDate = TimeZoneUtils.Now().Date;
-                    var (roastDate, deliveryDate) = CalculateOrderDates(sessionData.OrderDate);
-                    sessionData.RoastDate = roastDate;
+                    var (PrepDate, deliveryDate) = CalculateOrderDates(sessionData.OrderDate);
+                    sessionData.PrepDate = PrepDate;
 
                     // Use session delivery date if available, otherwise calculated
                     if (sessionData.RequiredByDate == DateTime.MinValue)
@@ -569,7 +922,7 @@ namespace TrackerSQL.Managers
         {
             public long CustomerID { get; set; }
             public DateTime OrderDate { get; set; }
-            public DateTime RoastDate { get; set; }
+            public DateTime PrepDate { get; set; }
             public DateTime RequiredByDate { get; set; }
             public int ToBeDeliveredBy { get; set; }
             public string PurchaseOrder { get; set; }
@@ -630,15 +983,16 @@ namespace TrackerSQL.Managers
             public int ServiceTypeID { get; set; }
             public int OriginalOrderID { get; set; }
 
-            public TempOrdersLinesTbl ToTempOrdersLinesTbl()
+            public TempOrdersLine ToTempOrdersLine(int headerId, int? itemServiceTypeId)
             {
-                return new TempOrdersLinesTbl
+                return new TempOrdersLine
                 {
-                    ItemID = this.ItemID,
-                    Qty = this.Qty,
-                    PackagingID = this.PackagingID,
-                    ServiceTypeID = this.ServiceTypeID,
-                    OriginalOrderID = this.OriginalOrderID
+                    TOHeaderID = headerId,
+                    ItemID = ItemID,
+                    Qty = Qty,
+                    ItemPackagingID = PackagingID,
+                    ItemServiceTypeID = itemServiceTypeId ?? ServiceTypeID,
+                    OriginalOrderID = OriginalOrderID
                 };
             }
         }

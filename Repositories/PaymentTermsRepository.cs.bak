@@ -1,0 +1,63 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class PaymentTermsRepository : RepositoryBase<PaymentTerm>
+    {
+        protected override string TableName => "PaymentTermsTbl";
+        protected override string KeyColumn => "PaymentTermID";
+
+        protected override string CoreColumns => "PaymentTermID, PaymentTermDesc, PaymentDays, DayOfMonth, UseDays, Enabled, Notes";
+        protected override string LookupColumns => "PaymentTermID, PaymentTermDesc";
+
+        public void Insert(PaymentTerm paymentTerm)
+        {
+            const string sql = "INSERT INTO PaymentTermsTbl (PaymentTermDesc, PaymentDays, DayOfMonth, UseDays, Enabled, Notes) VALUES (@PaymentTermDesc, @PaymentDays, @DayOfMonth, @UseDays, @Enabled, @Notes)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PaymentTermDesc", DataValue = paymentTerm.PaymentTermDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PaymentDays", DataValue = paymentTerm.PaymentDays, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@DayOfMonth", DataValue = paymentTerm.DayOfMonth, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@UseDays", DataValue = paymentTerm.UseDays ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Enabled", DataValue = paymentTerm.Enabled ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = paymentTerm.Notes ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(PaymentTerm paymentTerm)
+        {
+            const string sql = "UPDATE PaymentTermsTbl SET PaymentTermDesc = @PaymentTermDesc, PaymentDays = @PaymentDays, DayOfMonth = @DayOfMonth, UseDays = @UseDays, Enabled = @Enabled, Notes = @Notes WHERE PaymentTermID = @PaymentTermID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PaymentTermDesc", DataValue = paymentTerm.PaymentTermDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PaymentDays", DataValue = paymentTerm.PaymentDays, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@DayOfMonth", DataValue = paymentTerm.DayOfMonth, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@UseDays", DataValue = paymentTerm.UseDays ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Enabled", DataValue = paymentTerm.Enabled ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = paymentTerm.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PaymentTermID", DataValue = paymentTerm.PaymentTermID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Delete(int paymentTermID)
+        {
+            const string sql = "DELETE FROM PaymentTermsTbl WHERE PaymentTermID = @PaymentTermID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PaymentTermID", DataValue = paymentTermID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

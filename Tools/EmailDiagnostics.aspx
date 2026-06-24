@@ -1,4 +1,4 @@
-Ôªø<%@ Page Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
+<%@ Page Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajax" %>
 
@@ -22,8 +22,8 @@
         
         <ajax:TabContainer ID="TabContainer1" runat="server" ActiveTabIndex="0" CssClass="ajax-tabs">
 
-            <!-- üì® Email Test Tab -->
-            <ajax:TabPanel ID="TabEmail" runat="server" HeaderText="üì® Test Email">
+            <!-- ?? Email Test Tab -->
+            <ajax:TabPanel ID="TabEmail" runat="server" HeaderText="?? Test Email">
                 <ContentTemplate>
                     <asp:UpdateProgress ID="uprgEmailTest" runat="server" AssociatedUpdatePanelID="upGlobal">
                         <ProgressTemplate>
@@ -58,7 +58,7 @@
                                         <div class="input-with-toggle">
                                             <asp:TextBox ID="txtPass" runat="server" TextMode="Password"
                                                 title="Enter your password"
-                                                placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢" />
+                                                placeholder="ïïïïïïïï" />
 
                                             <div class="checkbox-label">
                                                 <asp:CheckBox ID="chkShowPwd" runat="server"
@@ -127,8 +127,8 @@
                 </ContentTemplate>
             </ajax:TabPanel>
 
-            <!-- üß™ Diagnostics Tab -->
-            <ajax:TabPanel ID="TabDiag" runat="server" HeaderText="üß™ Diagnostics">
+            <!-- ?? Diagnostics Tab -->
+            <ajax:TabPanel ID="TabDiag" runat="server" HeaderText="?? Diagnostics">
                 <ContentTemplate>
                     <asp:UpdateProgress ID="uprgEmailDiag" runat="server" AssociatedUpdatePanelID="upDiag">
                         <ProgressTemplate>
@@ -186,7 +186,7 @@
 
     <div>
     </div>
-    <div id="spinner" style="display: none;">‚è≥ Testing...</div>
+    <div id="spinner" style="display: none;">? Testing...</div>
     <script type="text/javascript">
         function showSpinner() {
             document.getElementById("spinner").style.display = "block";
@@ -215,7 +215,7 @@
         function applyCombo(port, option) {
             document.getElementById('<%= txtPort.ClientID %>').value = port;
             document.getElementById('<%= ddlSocketOption.ClientID %>').value = option;
-            document.getElementById("progressStatus").innerText = "‚úÖ Applied: Port " + port + ", Option " + option;
+            document.getElementById("progressStatus").innerText = "? Applied: Port " + port + ", Option " + option;
         }
 
         function pollProgress(key, btnRef) {

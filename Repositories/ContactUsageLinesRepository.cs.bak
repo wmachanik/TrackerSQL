@@ -1,0 +1,9 @@
+using TrackerSQL.Classes.Poco;
+namespace TrackerSQL.Classes.Sql
+{
+    public class ContactUsageLinesRepository : RepositoryBase<ContactUsageLine>
+    {
+        protected override string TableName => "ContactsItemSvcSummaryTbl";
+        protected override string KeyColumn => "ContactsItemSvcSummaryId";
+    }
+}

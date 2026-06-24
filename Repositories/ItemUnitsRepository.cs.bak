@@ -1,0 +1,13 @@
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class ItemUnitsRepository : RepositoryBase<ItemUnit>
+    {
+        protected override string TableName => "ItemUnitsTbl";
+        protected override string KeyColumn => "ItemUnitID";
+
+        protected override string CoreColumns => "ItemUnitID, ItemUnitDesc";
+        protected override string LookupColumns => "ItemUnitID, ItemUnitDesc";
+    }
+}

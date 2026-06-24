@@ -15,7 +15,7 @@ namespace TrackerSQL.Controls
     public class OrderItemTbl
     {
         private const string CONST_ORDERSLINES_SELECT = "SELECT ItemTypeID, QuantityOrdered, PrepTypeID FROM OrdersTbl WHERE ";
-        private const string CONST_ORDERSSUMMARY_SELECT = "SELECT CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, InvoiceDone, PurchaseOrder, Notes  FROM OrdersTbl WHERE ";
+        private const string CONST_ORDERSSUMMARY_SELECT = "SELECT CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, InvoiceDone, PurchaseOrder, Notes  FROM OrdersTbl WHERE ";
 
         public List<OrderHeaderData> LoadOrderSummary(
           long CustomerID,
@@ -25,7 +25,7 @@ namespace TrackerSQL.Controls
           int StartRowIndex)
         {
             List<OrderHeaderData> orderHeaderDataList = new List<OrderHeaderData>();
-            string str1 = "SELECT CustomerID, OrderDate, RoastDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, InvoiceDone, PurchaseOrder, Notes  FROM OrdersTbl WHERE ";
+            string str1 = "SELECT CustomerID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredBy, Confirmed, Done, InvoiceDone, PurchaseOrder, Notes  FROM OrdersTbl WHERE ";
             TrackerDb trackerDb = new TrackerDb();
             string strSQL;
             if (CustomerID == 9L)
@@ -51,7 +51,7 @@ namespace TrackerSQL.Controls
                         {
                             CustomerID = Convert.ToInt32(dataReader[nameof(CustomerID)]),
                             OrderDate = (DateTime)dataReader["OrderDate"],
-                            RoastDate = (DateTime)dataReader["RoastDate"],
+                            PrepDate = (DateTime)dataReader["PrepDate"],
                             RequiredByDate = (DateTime)dataReader["RequiredByDate"],
                             ToBeDeliveredBy = dataReader["ToBeDeliveredBy"] == DBNull.Value ? 3 : (int)dataReader["ToBeDeliveredBy"],
                             Confirmed = dataReader["Confirmed"] != DBNull.Value && (bool)dataReader["Confirmed"],
@@ -84,7 +84,7 @@ namespace TrackerSQL.Controls
         public bool UpdateOrderDetails(
           long CustomerID,
           DateTime OrderDate,
-          DateTime RoastDate,
+          DateTime PrepDate,
           int ToBeDeliveredBy,
           DateTime RequiredByDate,
           bool Confirmed,
@@ -96,11 +96,11 @@ namespace TrackerSQL.Controls
           DateTime OriginalDeliveryDate,
           string OriginalNotes)
         {
-            string str = "UPDATE OrdersTbl SET CustomerID = ?, OrderDate= ?, RoastDate= ?, ToBeDeliveredBy= ?, RequiredByDate = ?, Confirmed= ?, Done= ?, InvoiceDone = ?, PurchaseOrder = ?, Notes = ? WHERE ";
+            string str = "UPDATE OrdersTbl SET CustomerID = ?, OrderDate= ?, PrepDate= ?, ToBeDeliveredBy= ?, RequiredByDate = ?, Confirmed= ?, Done= ?, InvoiceDone = ?, PurchaseOrder = ?, Notes = ? WHERE ";
             TrackerDb trackerDb = new TrackerDb();
             trackerDb.AddParams((object)CustomerID, DbType.Int64, "@CustomerID");
             trackerDb.AddParams((object)OrderDate, DbType.Date, "@OrderDate");
-            trackerDb.AddParams((object)RoastDate, DbType.Date, "@RoastDate");
+            trackerDb.AddParams((object)PrepDate, DbType.Date, "@PrepDate");
             trackerDb.AddParams((object)ToBeDeliveredBy, DbType.Int32, "@ToBeDeliveredBy");
             trackerDb.AddParams((object)RequiredByDate, DbType.Date, "@RequiredByDate");
             trackerDb.AddParams((object)Confirmed, DbType.Boolean, "@Confirmed");

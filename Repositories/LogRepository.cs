@@ -1,0 +1,144 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for Log entity
+    /// Auto-generated: 2026-06-02 13:35:41
+    /// </summary>
+    public class LogRepository : RepositoryBase<Log>
+    {
+        protected override string TableName => "LogTbl";
+        protected override string KeyColumn => "LogID";
+
+        /// <summary>
+        /// Maps a DataReader row to a Log object
+        /// </summary>
+        protected override Log Map(IDataReader reader)
+        {
+            return DbMapper.Map<Log>(reader);
+        }
+
+        /// <summary>
+        /// Gets all Log records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<Log> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }
+
+        /// <summary>
+        /// Gets a single Log by ID
+        /// </summary>
+        public Log GetById(int id)
+        {
+            string sql = `$"SELECT * FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            return ExecuteQuerySingle(sql, parameters);
+        }
+
+        /// <summary>
+        /// Inserts a new Log record
+        /// </summary>
+        public int Insert(Log entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize INSERT statement based on POCO properties
+            // This is a template - adjust column names as needed
+            string sql = @"
+                INSERT INTO LogTbl (
+                    -- Add column names here
+                )
+                VALUES (
+                    -- Add parameter names here (@Param1, @Param2, etc.)
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Example:
+                // new DBParameter { DataValue = entity.PropertyName, DataDbType = DbType.String, ParamName = "@PropertyName" }
+            };
+
+            return ExecuteScalar<int>(sql, parameters);
+        }
+
+        /// <summary>
+        /// Updates an existing Log record
+        /// </summary>
+        public bool Update(Log entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize UPDATE statement based on POCO properties
+            string sql = @"
+                UPDATE LogTbl
+                SET 
+                    -- Add column = @Param pairs here
+                WHERE LogID = @Id";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Don't forget to add the ID parameter
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Deletes a Log record by ID
+        /// </summary>
+        public bool Delete(int id)
+        {
+            string sql = `$"DELETE FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        // TODO: Add custom methods from legacy LogTbl.cs here
+        // Example:
+        // public int GetCustomCount()
+        // {
+        //     string sql = "SELECT COUNT(*) FROM LogTbl WHERE CustomCondition";
+        //     return ExecuteScalar<int>(sql);
+        // }
+    }
+
+        /// <summary>
+        /// Gets all Log records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<Log> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }}
+

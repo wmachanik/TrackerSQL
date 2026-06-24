@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using TrackerDotNet.Classes.Poco;
-using TrackerDotNet.Classes.Sql;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 using TrackerSQL.Classes; // for TimeZoneUtils, AppLogger
 
 namespace TrackerSQL.Pages
@@ -107,13 +107,13 @@ namespace TrackerSQL.Pages
                 ReminderCountLabel.Text = (contact.ReminderCount ?? 0).ToString();
                 LastReminderLabel.Text = contact.LastDateSentReminder.HasValue ? contact.LastDateSentReminder.Value.ToString("yyyy-MM-dd") : "never";
 
-                TrySelectDropDownByValue(ddlAreas, contact.Area);
+                TrySelectDropDownByValue(ddlAreas, contact.AreaID);
                 TrySelectDropDownByValue(ddlContactTypes, contact.ContactTypeID);
                 TrySelectDropDownByValue(ddlEquipTypes, contact.EquipTypeID);
                 TrySelectDropDownByValue(ddlFirstPreference, contact.ItemPrefID);
                 TrySelectDropDownByValue(ddlItemPackagingTypes, contact.PrefItemPackagingID);
 
-                TrySelectDropDownByValue(ddlDeliveryBy, contact.PreferedAgentID);
+                TrySelectDropDownByValue(ddlDeliveryBy, contact.PreferredAgentID);
                 TrySelectDropDownByValue(ddlAgent, contact.SalesAgentID);
 
                 PriPrefQtyTextBox.Text = contact.PriPrefQty.HasValue ? contact.PriPrefQty.Value.ToString("0.##") : string.Empty;
@@ -121,7 +121,7 @@ namespace TrackerSQL.Pages
 
                 // Accounts section defaults - if you have ContactsAccInfo, use repository to load it.
                 var accRepo = new ContactsAccInfoRepository();
-                var acc = accRepo.GetByCustomerId(id);
+                var acc = accRepo.GetByContactId(id);
                 if (acc != null)
                 {
                     accFullCoNameTextBox.Text = acc.FullCoName;
@@ -169,26 +169,26 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                var usageRepo = new TrackerDotNet.Classes.Sql.ContactsUsageRepository();
+                var usageRepo = new TrackerSQL.Repositories.ContactsUsageRepository();
                 var usage = usageRepo.GetByContactId(contactId);
-                
+
                 if (usage != null)
                 {
                     gvPrediction.DataSource = new[] { usage };
                 }
                 else
                 {
-                    gvPrediction.DataSource = new List<TrackerDotNet.Classes.Sql.ContactsUsage>();
+                    gvPrediction.DataSource = new List<TrackerSQL.Models.ContactsUsage>();
                 }
                 gvPrediction.DataBind();
 
-                var itemsRepo = new TrackerDotNet.Classes.Sql.ContactsItemUsageRepository();
+                var itemsRepo = new TrackerSQL.Repositories.ContactsItemUsageRepository();
                 var items = itemsRepo.GetByContactId(contactId, "DeliveryDate DESC");
 
                 if (items != null && items.Count > 0)
                 {
                     var itemLookup = new ItemsRepository().GetAll("ItemDesc");
-                    var prepLookup = new ItemPrepTypesRepository().GetAll("ItemPrepTypeName");
+                    var prepLookup = new ItemPrepTypesRepository().GetAll("ItemPrepTypeDesc");
                     var packLookup = new ItemPackagingsRepository().GetAll("ItemPackagingDesc");
 
                     var uiItems = items.ConvertAll(x => new {
@@ -196,7 +196,7 @@ namespace TrackerSQL.Pages
                         ItemDate = x.DeliveryDate,
                         ItemProvided = x.ItemProvidedID.HasValue ? (itemLookup.Find(i => i.ItemID == x.ItemProvidedID.Value)?.ItemDesc ?? x.ItemProvidedID.Value.ToString()) : string.Empty,
                         AmountProvided = x.QtyProvided,
-                        PrepType = x.ItemPrepTypeID.HasValue ? (prepLookup.Find(p => p.ItemPrepID == x.ItemPrepTypeID.Value)?.ItemPrepTypeName ?? x.ItemPrepTypeID.Value.ToString()) : string.Empty,
+                        PrepType = x.ItemPrepTypeID.HasValue ? (prepLookup.Find(p => p.ItemPrepID == x.ItemPrepTypeID.Value)?.ItemPrepTypeDesc ?? x.ItemPrepTypeID.Value.ToString()) : string.Empty,
                         Packaging = x.ItemPackagingID.HasValue ? (packLookup.Find(p => p.ItemPackagingID == x.ItemPackagingID.Value)?.ItemPackagingDesc ?? x.ItemPackagingID.Value.ToString()) : string.Empty,
                         Notes = x.Notes
                     });

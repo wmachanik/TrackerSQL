@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -68,19 +68,19 @@ namespace TrackerSQL.Tools
 
     }
 
-    class AreaToCityMap
+    class AreaToAreaMap
     {
       string _Area;
-      int _CityID;
+      int _AreaID;
 
-      public AreaToCityMap()
+      public AreaToAreaMap()
       {
         _Area = string.Empty;
-        _CityID = CityTblDAL.CONST_DEFAULT_CITYID;
+        _AreaID = AreaTblDAL.CONST_DEFAULT_AreaID;
       }
 
       public string Area { get { return _Area; } set { _Area = value; } }
-      public int CityID { get { return _CityID; } set { _CityID = value; } }
+      public int AreaID { get { return _AreaID; } set { _AreaID = value; } }
 
     }
 
@@ -89,7 +89,7 @@ namespace TrackerSQL.Tools
     private LogFile _LogFile;
     private List<PaymentTermTranslor> _PaymentTermTranslors;
     private List<PriceLevelTranslor> _PriceLevelTranslors;
-    List<AreaToCityMap> _AreaToCityMap;
+    List<AreaToAreaMap> _AreaToAreaMap;
 
     protected void Page_Load(object sender, EventArgs e)
     {
@@ -222,208 +222,208 @@ namespace TrackerSQL.Tools
       return _PriceLevelTranslors;
     }
 
-    private List<AreaToCityMap> MapAreasToCityID()
+    private List<AreaToAreaMap> MapAreasToAreaID()
     {
-      List<AreaToCityMap> _AreaToCityIDs = new List<AreaToCityMap>();
+      List<AreaToAreaMap> _AreaToAreaIDs = new List<AreaToAreaMap>();
 
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Atlantic Seaboard", CityID = 9 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Benoni", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Bloem", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Bloemfontein", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Near CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Northern Suburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: NSuburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Peninsula", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: S.suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Southern", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Southern Peninsula", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Southern Penisula", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Southern Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: SSuburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape town: SSurbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Stellenbosch", CityID = 3 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town: Woodstock", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Atlantic Seaboard", CityID = 9 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Belville", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Constantia", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Hout Bay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:HoutBay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Northern", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Northern Sunurbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Northern Surburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:NSubrubs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:NSuburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Paardien Eiland", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Parow", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Somerset", CityID = 4 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Southern Peninsula", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Southern Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:SSubrbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:SSuburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cape Town:Town2Milnerton", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CBD: Milnerton", CityID = 24 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CBD:Fhk", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Constantia", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: / Tanzaina", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Atlantic Seaboard", CityID = 9 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Beliville", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Belville", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Bishops court", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Brackenfell", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: CDB", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Central", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Century Cty", CityID = 12 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Claremont", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Const", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Constantia", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: Constnaita", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Durbanville", CityID = 16 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: E[[ing", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Epping", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Fhk", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Fish hoek", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Fshk", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Gardens", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: HBay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Hourbay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: Hout Bay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: HoutBay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Kenilworth", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Kuilsriver", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Kuilsrivier", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Melkbos", CityID = 26 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: MID", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Milnerton", CityID = 24 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Montague Gardens", CityID = 12 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Mowbray", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Muizenberg", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Muizenbrg", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: N. Subs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: N/Suburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Newlands", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Noordhoek", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: North", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: North Suburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: Northern Suburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: NSubrbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: NSurbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Paarden", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Peninsula", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Pinelands", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "cpt: plumstead", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Rndbsh", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Rondebosch", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Seapoint", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Simonstown", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SothSurbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: South Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Southern Pen", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Southern Subrubs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Southern Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SouthernS", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: SouthernSurbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SoutherS", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SoutherSubrbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSubrbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSuburb", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSuburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSurbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SSurubs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Sthrn", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SthrnSbrs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: SthrnSubrubs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Toaki", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Tokai", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Town", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Walkin", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Cpt: Westake2Muizenberg", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Westlake", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Westlk", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Woodstock", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT: Wynberg", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "cpt:: Belville", CityID = 15 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:Cllct", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:Const", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:Constantia", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:Noordhoek", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CPT:SSubrbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CT Ssuburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CT: CBD", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "CTP: SSurbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Durban", CityID = 14 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "East London", CityID = 13 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "George", CityID = 19 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "GordonsBay", CityID = 4 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Grahamstown", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Hermanus", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Hout Bay", CityID = 20 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb: East", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb: Honeydew", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb: Midrand", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "JHB: Obs", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb: Sandown", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb: Sandton", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb:Edenvale", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Jhb:Randburg", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesberg", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: Alberton", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: Central West", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: Kempton", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: Midrand", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: North", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg: Rosebank", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Johannesburg:Randburg", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Kakamas", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Kempton Park", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Krugersdorp", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "KZN:Vryheid", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Melkbos", CityID = 26 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Midrand", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Mpumalanga", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Northern Suburbs", CityID = 10 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "other", CityID = 1 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "PE", CityID = 28 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Phalaborwa", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "PMB", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Port Alfred", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Potch", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Pretoria", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Pretoria:Centrurion", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "PTA", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Regional", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Regional: Agulus", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "RegionalSA", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Rhodes", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Rustenberg", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Sandton", CityID = 2 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Secunda", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Somerset", CityID = 4 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Somerset West", CityID = 4 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "South Suburtbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Souther Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Southern Suburbs", CityID = 8 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Stellenbosch", CityID = 3 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Stellenbosch / Paarl", CityID = 3 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Tulbach", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Vereeniging", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Vryheid", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "walkin", CityID = 11 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Welkom", CityID = 5 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Westlake", CityID = 6 });
-      _AreaToCityIDs.Add(new AreaToCityMap { Area = "Witbank", CityID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Atlantic Seaboard", AreaID = 9 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Benoni", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Bloem", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Bloemfontein", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Near CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Northern Suburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: NSuburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Peninsula", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: S.suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Southern", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Southern Peninsula", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Southern Penisula", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Southern Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: SSuburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape town: SSurbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Stellenbosch", AreaID = 3 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town: Woodstock", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Atlantic Seaboard", AreaID = 9 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Belville", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Constantia", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Hout Bay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:HoutBay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Northern", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Northern Sunurbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Northern Surburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:NSubrubs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:NSuburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Paardien Eiland", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Parow", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Somerset", AreaID = 4 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Southern Peninsula", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Southern Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:SSubrbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:SSuburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cape Town:Town2Milnerton", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CBD: Milnerton", AreaID = 24 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CBD:Fhk", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Constantia", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: / Tanzaina", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Atlantic Seaboard", AreaID = 9 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Beliville", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Belville", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Bishops court", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Brackenfell", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: CDB", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Central", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Century Cty", AreaID = 12 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Claremont", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Const", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Constantia", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: Constnaita", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Durbanville", AreaID = 16 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: E[[ing", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Epping", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Fhk", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Fish hoek", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Fshk", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Gardens", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: HBay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Hourbay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: Hout Bay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: HoutBay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Kenilworth", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Kuilsriver", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Kuilsrivier", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Melkbos", AreaID = 26 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: MID", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Milnerton", AreaID = 24 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Montague Gardens", AreaID = 12 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Mowbray", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Muizenberg", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Muizenbrg", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: N. Subs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: N/Suburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Newlands", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Noordhoek", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: North", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: North Suburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: Northern Suburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: NSubrbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: NSurbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Paarden", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Peninsula", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Pinelands", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "cpt: plumstead", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Rndbsh", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Rondebosch", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Seapoint", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Simonstown", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SothSurbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: South Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Southern Pen", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Southern Subrubs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Southern Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SouthernS", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: SouthernSurbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SoutherS", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SoutherSubrbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSubrbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSuburb", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSuburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSurbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SSurubs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Sthrn", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SthrnSbrs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: SthrnSubrubs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Toaki", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Tokai", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Town", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Walkin", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Cpt: Westake2Muizenberg", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Westlake", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Westlk", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Woodstock", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT: Wynberg", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "cpt:: Belville", AreaID = 15 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:Cllct", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:Const", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:Constantia", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:Noordhoek", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CPT:SSubrbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CT Ssuburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CT: CBD", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "CTP: SSurbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Durban", AreaID = 14 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "East London", AreaID = 13 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "George", AreaID = 19 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "GordonsBay", AreaID = 4 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Grahamstown", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Hermanus", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Hout Bay", AreaID = 20 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb: East", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb: Honeydew", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb: Midrand", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "JHB: Obs", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb: Sandown", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb: Sandton", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb:Edenvale", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Jhb:Randburg", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesberg", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: Alberton", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: Central West", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: Kempton", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: Midrand", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: North", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg: Rosebank", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Johannesburg:Randburg", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Kakamas", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Kempton Park", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Krugersdorp", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "KZN:Vryheid", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Melkbos", AreaID = 26 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Midrand", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Mpumalanga", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Northern Suburbs", AreaID = 10 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "other", AreaID = 1 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "PE", AreaID = 28 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Phalaborwa", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "PMB", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Port Alfred", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Potch", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Pretoria", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Pretoria:Centrurion", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "PTA", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Regional", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Regional: Agulus", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "RegionalSA", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Rhodes", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Rustenberg", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Sandton", AreaID = 2 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Secunda", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Somerset", AreaID = 4 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Somerset West", AreaID = 4 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "South Suburtbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Souther Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Southern Suburbs", AreaID = 8 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Stellenbosch", AreaID = 3 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Stellenbosch / Paarl", AreaID = 3 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Tulbach", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Vereeniging", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Vryheid", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "walkin", AreaID = 11 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Welkom", AreaID = 5 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Westlake", AreaID = 6 });
+      _AreaToAreaIDs.Add(new AreaToAreaMap { Area = "Witbank", AreaID = 5 });
 
 
-      return _AreaToCityIDs;
+      return _AreaToAreaIDs;
     }
 
     private List<CustomersTbl> GetAllCustomersWithEmail(string pEmailAddress, out string pEmailFound)
@@ -553,30 +553,30 @@ namespace TrackerSQL.Tools
     }
 
 /*
- * private int GetCityID(string pCityName)
+ * private int GetAreaID(string pAreaName)
     {
       int _ID = 0;
-      if (!string.IsNullOrEmpty(pCityName))
+      if (!string.IsNullOrEmpty(pAreaName))
       {
-        // try get the City ID from the name
-        CityTblDAL _City = new CityTblDAL();
-        _ID = _City.GetCityID(pCityName);
+        // try get the Area ID from the name
+        AreaTblDAL _Area = new AreaTblDAL();
+        _ID = _Area.GetAreaID(pAreaName);
       }
       if (_ID == 0)
-        _ID = CityTblDAL.CONST_DEFAULT_CITYID;
+        _ID = AreaTblDAL.CONST_DEFAULT_AreaID;
 
       return _ID;
     }
 */
     
-    private int FindCity(string pArea, string pShipLines)
+    private int FindArea(string pArea, string pShipLines)
     {
-      int _CityID = CityTblDAL.CONST_DEFAULT_CITYID;
+      int _AreaID = AreaTblDAL.CONST_DEFAULT_AreaID;
 
       /// first see if the area is found, otherwise see if either line5/4 or 3 is part found;
 
-      if ((pArea.Trim().Length > 0) && (_AreaToCityMap.Exists(x => x.Area.Contains(pArea))))
-        _CityID = _AreaToCityMap.Find(x => x.Area.Contains(pArea)).CityID;
+      if ((pArea.Trim().Length > 0) && (_AreaToAreaMap.Exists(x => x.Area.Contains(pArea))))
+        _AreaID = _AreaToAreaMap.Find(x => x.Area.Contains(pArea)).AreaID;
       else
       {
         char[] _whitespace = new char[] { ' ', '\t' };
@@ -586,15 +586,15 @@ namespace TrackerSQL.Tools
         bool _found = false;
         while ((!_found) && (i < _AreaFirstName.Length))
         {
-          if (_AreaToCityMap.Exists(x => x.Area.Contains(_AreaFirstName[i])))
+          if (_AreaToAreaMap.Exists(x => x.Area.Contains(_AreaFirstName[i])))
           {
-            _CityID = _AreaToCityMap.Find(x => x.Area.Contains(_AreaFirstName[i])).CityID;
+            _AreaID = _AreaToAreaMap.Find(x => x.Area.Contains(_AreaFirstName[i])).AreaID;
             _found = true;
           }
           i++;
         }
       }
-      return _CityID;
+      return _AreaID;
     }
     private Double GetDoubleFromString(string pStr)
     {
@@ -746,8 +746,8 @@ namespace TrackerSQL.Tools
         
         /// need to do something else here 
         /// remove postal code or something, this is not working
-        string _city = pDataRow["CUSTFLD1"].ToString();
-        pCustomer.City = FindCity(_city, _NewCustomerAccInfo.ShipAddr3 + " " + _NewCustomerAccInfo.ShipAddr4 + " " + _NewCustomerAccInfo.ShipAddr5);
+        string _Area = pDataRow["CUSTFLD1"].ToString();
+        pCustomer.AreaID = FindArea(_Area, _NewCustomerAccInfo.ShipAddr3 + " " + _NewCustomerAccInfo.ShipAddr4 + " " + _NewCustomerAccInfo.ShipAddr5);
         
         // need to extr postal code look for a group of 4 digits that is on its own or next to text, not numbers
         Match _match = Regex.Match(pCustomer.BillingAddress, @"\\(?<num>\d{4,5})\\");
@@ -808,7 +808,7 @@ namespace TrackerSQL.Tools
       _LogFile = new LogFile(Server.MapPath(CONST_LOGFILENAME), false);
       _PaymentTermTranslors = GetPaymentTermList();
       _PriceLevelTranslors = GetPriceLevelList();
-      _AreaToCityMap = MapAreasToCityID();
+      _AreaToAreaMap = MapAreasToAreaID();
 
       TrackerTools _TT = new TrackerTools();
       string _err = _TT.GetTrackerSessionErrorString();

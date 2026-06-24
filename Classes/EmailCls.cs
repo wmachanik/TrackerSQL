@@ -1,8 +1,8 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: EmailCls
-// Assembly: TrackerDotNet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerDotNet.dll
+// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Configuration;
@@ -10,7 +10,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using System.Web;
-using TrackerDotNet.Classes;
+using TrackerSQL.Classes;
 
 // #nullable disable --- not for this version of C#
 public class EmailCls

@@ -18,20 +18,20 @@ namespace TrackerSQL.Controls
         public const int CONST_NEEDDESCRIPTION_SORT_ORDER = 10;
         public const int CONST_SERVICEITEMID = 36;
         private const string CONST_SQL_SELECT = "SELECT ItemTypeID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl";
-        private const string CONST_SQL_SELECTITEMDESC = "SELECT ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE ItemTypeID = ?";
-        private const string CONST_SQL_SELECTITEMTYPEFROMID = "SELECT SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl WHERE ItemTypeID = ?";
-        private const string CONST_SQL_SELECTITEMSKU = "SELECT SKU FROM ItemTypeTbl WHERE ItemTypeID = ?";
-        private const string CONST_SQL_SELECTSERVICETYPEID = "SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = ?";
+        private const string CONST_SQL_SELECTITEMDESC = "SELECT ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
+        private const string CONST_SQL_SELECTITEMTYPEFROMID = "SELECT SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
+        private const string CONST_SQL_SELECTITEMSKU = "SELECT SKU FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
+        private const string CONST_SQL_SELECTSERVICETYPEID = "SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
         private const string CONST_SQL_SELECTITEMTYPES = "SELECT ItemTypeID, IIF(ItemEnabled, ItemDesc, '_' + ItemDesc) AS ItemDesc FROM ItemTypeTbl";
-        private const string CONST_SQL_SELECT_ITEMDESCISGROUPNAME = "SELECT ItemDesc FROM ItemTypeTbl WHERE ItemDesc = ?";
-        private const string CONST_SQL_SELECTITEMTYPESNOTINITEMGROUP = "SELECT ItemTypeID, ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE (ServiceTypeId = 2) AND (NOT EXISTS (SELECT ItemTypeID FROM ItemGroupTbl WHERE (ItemGroupTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) AND (GroupItemTypeID = ?)))";
-        private const string CONST_SQL_ITEMTYPEUNITS = "SELECT ItemUnitsTbl.UnitOfMeasure FROM (ItemUnitsTbl INNER JOIN ItemTypeTbl ON ItemUnitsTbl.ItemUnitID = ItemTypeTbl.ItemUnitID)  WHERE (ItemTypeTbl.ItemTypeID = ?)";
-        private const string CONST_SQL_ITEMSORTORDER = "SELECT SortOrder FROM ItemTypeTbl WHERE (ItemTypeTbl.ItemTypeID = ?)";
-        private const string CONST_SQL_LISTOFITEMIDSOFSERVICETYPE = "SELECT ItemTypeTbl.ItemTypeID  FROM (ItemTypeTbl LEFT OUTER JOIN ServiceTypesTbl ON ItemTypeTbl.ServiceTypeId = ServiceTypesTbl.ServiceTypeId)  WHERE (ServiceTypesTbl.ServiceTypeId = ?)";
-        private const string CONST_SQL_GETALLITEMSOFSERVICETYPE = "SELECT ItemTypeID, ItemDesc, ItemEnabled, ServiceTypeId FROM ItemTypeTbl WHERE (ServiceTypeId = ?) AND (ItemEnabled = ?) ORDER BY ItemDesc";
-        private const string CONST_SQL_UPDATE = "UPDATE ItemTypeTbl SET SKU = ? , ItemDesc = ?, ItemEnabled = ?, ItemsCharacteritics = ?, ItemDetail = ?,  ServiceTypeId = ?, ReplacementID = ?, ItemShortName = ?, SortOrder = ?, ItemUnitID = ? WHERE ItemTypeID = ?";
-        private const string CONST_SQL_INSERT = "INSERT INTO ItemTypeTbl (ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, ReplacementID, ItemShortName, SortOrder, ItemUnitID)  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        private const string CONST_SQL_DELETEBYID = "DELETE FROM ItemTypeTbl WHERE ItemTypeID = ?";
+        private const string CONST_SQL_SELECT_ITEMDESCISGROUPNAME = "SELECT ItemDesc FROM ItemTypeTbl WHERE ItemDesc = @ItemDesc";
+        private const string CONST_SQL_SELECTITEMTYPESNOTINITEMGROUP = "SELECT ItemTypeID, ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE (ServiceTypeId = 2) AND (NOT EXISTS (SELECT ItemTypeID FROM ItemGroupTbl WHERE (ItemGroupTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) AND (GroupItemTypeID = @GroupItemTypeID)))";
+        private const string CONST_SQL_ITEMTYPEUNITS = "SELECT ItemUnitsTbl.UnitOfMeasure FROM (ItemUnitsTbl INNER JOIN ItemTypeTbl ON ItemUnitsTbl.ItemUnitID = ItemTypeTbl.ItemUnitID)  WHERE (ItemTypeTbl.ItemTypeID = @ItemTypeID)";
+        private const string CONST_SQL_ITEMSORTORDER = "SELECT SortOrder FROM ItemTypeTbl WHERE (ItemTypeTbl.ItemTypeID = @ItemTypeID)";
+        private const string CONST_SQL_LISTOFITEMIDSOFSERVICETYPE = "SELECT ItemTypeTbl.ItemTypeID  FROM (ItemTypeTbl LEFT OUTER JOIN ServiceTypesTbl ON ItemTypeTbl.ServiceTypeId = ServiceTypesTbl.ServiceTypeId)  WHERE (ServiceTypesTbl.ServiceTypeId = @ServiceTypeId)";
+        private const string CONST_SQL_GETALLITEMSOFSERVICETYPE = "SELECT ItemTypeID, ItemDesc, ItemEnabled, ServiceTypeId FROM ItemTypeTbl WHERE (ServiceTypeId = @ServiceTypeId) AND (ItemEnabled = @ItemEnabled) ORDER BY ItemDesc";
+        private const string CONST_SQL_UPDATE = "UPDATE ItemTypeTbl SET SKU = @SKU, ItemDesc = @ItemDesc, ItemEnabled = @ItemEnabled, ItemsCharacteritics = @ItemsCharacteritics, ItemDetail = @ItemDetail, ServiceTypeId = @ServiceTypeId, ReplacementID = @ReplacementID, ItemShortName = @ItemShortName, SortOrder = @SortOrder, ItemUnitID = @ItemUnitID WHERE ItemTypeID = @ItemTypeID";
+        private const string CONST_SQL_INSERT = "INSERT INTO ItemTypeTbl (ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, ReplacementID, ItemShortName, SortOrder, ItemUnitID) VALUES (@ItemDesc, @SKU, @ItemEnabled, @ItemsCharacteritics, @ItemDetail, @ServiceTypeId, @ReplacementID, @ItemShortName, @SortOrder, @ItemUnitID)";
+        private const string CONST_SQL_DELETEBYID = "DELETE FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
         private int _ItemTypeID;
         private string _SKU;
         private string _ItemDesc;
@@ -136,28 +136,32 @@ namespace TrackerSQL.Controls
         {
             List<ItemTypeTbl> all = new List<ItemTypeTbl>();
             string strSQL = "SELECT ItemTypeID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY ItemEnabled, SortOrder, ItemDesc");
-            TrackerDb trackerDb = new TrackerDb();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                while (dataReader.Read())
-                    all.Add(new ItemTypeTbl()
+                using (IDataReader dataReader = db.ExecuteReader(strSQL))
+                {
+                    if (dataReader != null)
                     {
-                        ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
-                        SKU = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString(),
-                        ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
-                        ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]),
-                        ItemsCharacteritics = dataReader["ItemsCharacteritics"] == DBNull.Value ? string.Empty : dataReader["ItemsCharacteritics"].ToString(),
-                        ItemDetail = dataReader["ItemDetail"] == DBNull.Value ? string.Empty : dataReader["ItemDetail"].ToString(),
-                        ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]),
-                        ReplacementID = dataReader["ReplacementID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReplacementID"]),
-                        ItemShortName = dataReader["ItemShortName"] == DBNull.Value ? string.Empty : dataReader["ItemShortName"].ToString(),
-                        SortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]),
-                        ItemUnitID = dataReader["ItemUnitID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemUnitID"])
-                    });
-                dataReader.Close();
+                        while (dataReader.Read())
+                            all.Add(new ItemTypeTbl()
+                            {
+                                ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
+                                SKU = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString(),
+                                ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
+                                ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]),
+                                ItemsCharacteritics = dataReader["ItemsCharacteritics"] == DBNull.Value ? string.Empty : dataReader["ItemsCharacteritics"].ToString(),
+                                ItemDetail = dataReader["ItemDetail"] == DBNull.Value ? string.Empty : dataReader["ItemDetail"].ToString(),
+                                ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]),
+                                ReplacementID = dataReader["ReplacementID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReplacementID"]),
+                                ItemShortName = dataReader["ItemShortName"] == DBNull.Value ? string.Empty : dataReader["ItemShortName"].ToString(),
+                                SortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]),
+                                ItemUnitID = dataReader["ItemUnitID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemUnitID"])
+                            });
+                    }
+                }
             }
-            trackerDb.Close();
+
             return all;
         }
 
@@ -174,19 +178,23 @@ namespace TrackerSQL.Controls
         {
             List<ItemTypeTbl> allItemDesc = new List<ItemTypeTbl>();
             string strSQL = "SELECT ItemTypeID, IIF(ItemEnabled, ItemDesc, '_' + ItemDesc) AS ItemDesc FROM ItemTypeTbl" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY ItemEnabled, SortOrder, ItemDesc");
-            TrackerDb trackerDb = new TrackerDb();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                while (dataReader.Read())
-                    allItemDesc.Add(new ItemTypeTbl()
+                using (IDataReader dataReader = db.ExecuteReader(strSQL))
+                {
+                    if (dataReader != null)
                     {
-                        ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
-                        ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString()
-                    });
-                dataReader.Close();
+                        while (dataReader.Read())
+                            allItemDesc.Add(new ItemTypeTbl()
+                            {
+                                ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
+                                ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString()
+                            });
+                    }
+                }
             }
-            trackerDb.Close();
+
             return allItemDesc;
         }
 
@@ -201,22 +209,29 @@ namespace TrackerSQL.Controls
             List<ItemTypeTbl> itemsNotInItemGroup = new List<ItemTypeTbl>();
             if (!pGroupItemTypeID.Equals(-1))
             {
-                string strSQL = "SELECT ItemTypeID, ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE (ServiceTypeId = 2) AND (NOT EXISTS (SELECT ItemTypeID FROM ItemGroupTbl WHERE (ItemGroupTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) AND (GroupItemTypeID = ?)))" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY ItemEnabled, SortOrder, ItemDesc");
-                TrackerDb trackerDb = new TrackerDb();
-                trackerDb.AddWhereParams((object)pGroupItemTypeID, DbType.Int32, "@GroupItemTypeID");
-                IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-                if (dataReader != null)
+                string strSQL = "SELECT ItemTypeID, ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE (ServiceTypeId = 2) AND (NOT EXISTS (SELECT ItemTypeID FROM ItemGroupTbl WHERE (ItemGroupTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) AND (GroupItemTypeID = @GroupItemTypeID)))" + (!string.IsNullOrEmpty(SortBy) ? " ORDER BY " + SortBy : " ORDER BY ItemEnabled, SortOrder, ItemDesc");
+
+                using (var db = new TrackerSQLDb())
                 {
-                    while (dataReader.Read())
-                        itemsNotInItemGroup.Add(new ItemTypeTbl()
+                    var parameters = new List<DBParameter>
+                    {
+                        new DBParameter { DataValue = pGroupItemTypeID, DataDbType = DbType.Int32, ParamName = "@GroupItemTypeID" }
+                    };
+
+                    using (IDataReader dataReader = db.ExecuteReader(strSQL, parameters))
+                    {
+                        if (dataReader != null)
                         {
-                            ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
-                            ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
-                            ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"])
-                        });
-                    dataReader.Close();
+                            while (dataReader.Read())
+                                itemsNotInItemGroup.Add(new ItemTypeTbl()
+                                {
+                                    ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
+                                    ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
+                                    ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"])
+                                });
+                        }
+                    }
                 }
-                trackerDb.Close();
             }
             return itemsNotInItemGroup;
         }
@@ -226,10 +241,15 @@ namespace TrackerSQL.Controls
         {
             string itemTypeDesc = string.Empty;
             bool enabled = true;
-            using (var trackerDb = new TrackerDb())
+
+            using (var db = new TrackerSQLDb())
             {
-                trackerDb.AddWhereParams(pItemID, DbType.Int32, "@ItemTypeID");
-                using (var dataReader = trackerDb.ExecuteSQLGetDataReader(CONST_SQL_SELECTITEMDESC))  // "SELECT ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE ItemTypeID = ?"))
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (var dataReader = db.ExecuteReader(CONST_SQL_SELECTITEMDESC, parameters))
                 {
                     if (dataReader != null && dataReader.Read())
                     {
@@ -238,6 +258,7 @@ namespace TrackerSQL.Controls
                     }
                 }
             }
+
             if (pCheckIfSoldOut && !enabled)
                 return itemTypeDesc + " SOLD OUT";
             return itemTypeDesc;
@@ -246,9 +267,9 @@ namespace TrackerSQL.Controls
         //public string GetItemTypeDescById(int pItemID, bool pCheckIfSoldOut)
         //{
         //    string itemTypeDesc = string.Empty;
-        //    TrackerDb trackerDb = new TrackerDb();
+        //    using (var trackerDb = new TrackerSQLDb())`n    {;
         //    trackerDb.AddWhereParams((object)pItemID, DbType.Int32, "@ItemTypeID");
-        //    IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(CONST_SQL_SELECTITEMDESC); //   "SELECT ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE ItemTypeID = ?");
+        //    IDataReader dataReader = trackerDb.ExecuteReader(sql, parameters) // TODO: Add parameters list; //   "SELECT ItemDesc, ItemEnabled FROM ItemTypeTbl WHERE ItemTypeID = ?");
         //    if (dataReader != null)
         //    {
         //        if (dataReader.Read())
@@ -257,34 +278,42 @@ namespace TrackerSQL.Controls
         //            if (pCheckIfSoldOut && (dataReader["ItemEnabled"] == DBNull.Value || !Convert.ToBoolean(dataReader["ItemEnabled"])))
         //                itemTypeDesc += " SOLD OUT";
         //        }
-        //        dataReader.Close();
+        //        } // Auto-dispose
         //    }
-        //    trackerDb.Close();
+        //    } // Auto-dispose
         //    return itemTypeDesc;
         //}
 
         public ItemTypeTbl GetItemTypeFromID(int pItemTypeID)
         {
             ItemTypeTbl itemTypeFromId = new ItemTypeTbl();
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemTypeID, DbType.Int32, "@ItemTypeID");
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl WHERE ItemTypeID = ?");
-            if (dataReader.Read())
+
+            using (var db = new TrackerSQLDb())
             {
-                itemTypeFromId.ItemTypeID = pItemTypeID;
-                itemTypeFromId.SKU = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString();
-                itemTypeFromId.ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString();
-                itemTypeFromId.ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]);
-                itemTypeFromId.ItemsCharacteritics = dataReader["ItemsCharacteritics"] == DBNull.Value ? string.Empty : dataReader["ItemsCharacteritics"].ToString();
-                itemTypeFromId.ItemDetail = dataReader["ItemDetail"] == DBNull.Value ? string.Empty : dataReader["ItemDetail"].ToString();
-                itemTypeFromId.ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]);
-                itemTypeFromId.ReplacementID = dataReader["ReplacementID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReplacementID"]);
-                itemTypeFromId.ItemShortName = dataReader["ItemShortName"] == DBNull.Value ? string.Empty : dataReader["ItemShortName"].ToString();
-                itemTypeFromId.SortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]);
-                itemTypeFromId.ItemUnitID = dataReader["ItemUnitID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemUnitID"]);
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemTypeID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeID, ReplacementID, ItemShortName, SortOrder, ItemUnitID FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID", parameters))
+                {
+                    if (dataReader.Read())
+                    {
+                        itemTypeFromId.ItemTypeID = pItemTypeID;
+                        itemTypeFromId.SKU = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString();
+                        itemTypeFromId.ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString();
+                        itemTypeFromId.ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]);
+                        itemTypeFromId.ItemsCharacteritics = dataReader["ItemsCharacteritics"] == DBNull.Value ? string.Empty : dataReader["ItemsCharacteritics"].ToString();
+                        itemTypeFromId.ItemDetail = dataReader["ItemDetail"] == DBNull.Value ? string.Empty : dataReader["ItemDetail"].ToString();
+                        itemTypeFromId.ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]);
+                        itemTypeFromId.ReplacementID = dataReader["ReplacementID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ReplacementID"]);
+                        itemTypeFromId.ItemShortName = dataReader["ItemShortName"] == DBNull.Value ? string.Empty : dataReader["ItemShortName"].ToString();
+                        itemTypeFromId.SortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]);
+                        itemTypeFromId.ItemUnitID = dataReader["ItemUnitID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemUnitID"]);
+                    }
+                }
             }
-            dataReader.Close();
-            trackerDb.Close();
+
             return itemTypeFromId;
         }
 
@@ -292,16 +321,21 @@ namespace TrackerSQL.Controls
         public string GetItemTypeSKU(int pItemID)
         {
             string itemTypeSku = string.Empty;
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemID, DbType.Int32, "@ItemTypeID");
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT SKU FROM ItemTypeTbl WHERE ItemTypeID = ?");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                if (dataReader.Read())
-                    itemTypeSku = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString();
-                dataReader.Close();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT SKU FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID", parameters))
+                {
+                    if (dataReader != null && dataReader.Read())
+                        itemTypeSku = dataReader["SKU"] == DBNull.Value ? string.Empty : dataReader["SKU"].ToString();
+                }
             }
-            trackerDb.Close();
+
             return itemTypeSku;
         }
 
@@ -309,16 +343,21 @@ namespace TrackerSQL.Controls
         public int GetServiceID(int pItemID)
         {
             int serviceId = 0;
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemID, DbType.Int32, "@ItemTypeID");
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = ?");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                if (dataReader.Read())
-                    serviceId = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]);
-                dataReader.Close();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID", parameters))
+                {
+                    if (dataReader != null && dataReader.Read())
+                        serviceId = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"]);
+                }
             }
-            trackerDb.Close();
+
             return serviceId;
         }
 
@@ -326,32 +365,42 @@ namespace TrackerSQL.Controls
         public string GetItemUnitOfMeasure(int pItemID)
         {
             string itemUnitOfMeasure = string.Empty;
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemID, DbType.Int32);
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ItemUnitsTbl.UnitOfMeasure FROM (ItemUnitsTbl INNER JOIN ItemTypeTbl ON ItemUnitsTbl.ItemUnitID = ItemTypeTbl.ItemUnitID)  WHERE (ItemTypeTbl.ItemTypeID = ?)");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                if (dataReader.Read())
-                    itemUnitOfMeasure = dataReader["UnitOfMeasure"] == DBNull.Value ? string.Empty : dataReader["UnitOfMeasure"].ToString();
-                dataReader.Dispose();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT ItemUnitsTbl.UnitOfMeasure FROM (ItemUnitsTbl INNER JOIN ItemTypeTbl ON ItemUnitsTbl.ItemUnitID = ItemTypeTbl.ItemUnitID) WHERE (ItemTypeTbl.ItemTypeID = @ItemTypeID)", parameters))
+                {
+                    if (dataReader != null && dataReader.Read())
+                        itemUnitOfMeasure = dataReader["UnitOfMeasure"] == DBNull.Value ? string.Empty : dataReader["UnitOfMeasure"].ToString();
+                }
             }
-            trackerDb.Close();
+
             return itemUnitOfMeasure;
         }
 
         public int GetItemSortOrder(int pItemID)
         {
             int itemSortOrder = 0;
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemID, DbType.Int32);
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT SortOrder FROM ItemTypeTbl WHERE (ItemTypeTbl.ItemTypeID = ?)");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                if (dataReader.Read())
-                    itemSortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]);
-                dataReader.Dispose();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT SortOrder FROM ItemTypeTbl WHERE (ItemTypeTbl.ItemTypeID = @ItemTypeID)", parameters))
+                {
+                    if (dataReader != null && dataReader.Read())
+                        itemSortOrder = dataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["SortOrder"]);
+                }
             }
-            trackerDb.Close();
+
             return itemSortOrder;
         }
 
@@ -359,16 +408,24 @@ namespace TrackerSQL.Controls
         public List<int> GetAllItemIDsofServiceType(int pServiceTypeID)
         {
             List<int> idsofServiceType = new List<int>();
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pServiceTypeID, DbType.Int32);
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ItemTypeTbl.ItemTypeID  FROM (ItemTypeTbl LEFT OUTER JOIN ServiceTypesTbl ON ItemTypeTbl.ServiceTypeId = ServiceTypesTbl.ServiceTypeId)  WHERE (ServiceTypesTbl.ServiceTypeId = ?)");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                while (dataReader.Read())
-                    idsofServiceType.Add((int)dataReader["ItemTypeID"]);
-                dataReader.Dispose();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pServiceTypeID, DataDbType = DbType.Int32, ParamName = "@ServiceTypeId" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT ItemTypeTbl.ItemTypeID FROM (ItemTypeTbl LEFT OUTER JOIN ServiceTypesTbl ON ItemTypeTbl.ServiceTypeId = ServiceTypesTbl.ServiceTypeId) WHERE (ServiceTypesTbl.ServiceTypeId = @ServiceTypeId)", parameters))
+                {
+                    if (dataReader != null)
+                    {
+                        while (dataReader.Read())
+                            idsofServiceType.Add((int)dataReader["ItemTypeID"]);
+                    }
+                }
             }
-            trackerDb.Close();
+
             return idsofServiceType;
         }
 
@@ -381,23 +438,31 @@ namespace TrackerSQL.Controls
         public List<ItemTypeTbl> GetAllItemsofServiceType(int pServiceTypeID, bool pEnabled)
         {
             List<ItemTypeTbl> itemsofServiceType = new List<ItemTypeTbl>();
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pServiceTypeID, DbType.Int32);
-            trackerDb.AddWhereParams((object)pEnabled, DbType.Boolean);
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ItemTypeID, ItemDesc, ItemEnabled, ServiceTypeId FROM ItemTypeTbl WHERE (ServiceTypeId = ?) AND (ItemEnabled = ?) ORDER BY ItemDesc");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                while (dataReader.Read())
-                    itemsofServiceType.Add(new ItemTypeTbl()
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pServiceTypeID, DataDbType = DbType.Int32, ParamName = "@ServiceTypeId" },
+                    new DBParameter { DataValue = pEnabled, DataDbType = DbType.Boolean, ParamName = "@ItemEnabled" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT ItemTypeID, ItemDesc, ItemEnabled, ServiceTypeId FROM ItemTypeTbl WHERE (ServiceTypeId = @ServiceTypeId) AND (ItemEnabled = @ItemEnabled) ORDER BY ItemDesc", parameters))
+                {
+                    if (dataReader != null)
                     {
-                        ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
-                        ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
-                        ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]),
-                        ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"])
-                    });
-                dataReader.Dispose();
+                        while (dataReader.Read())
+                            itemsofServiceType.Add(new ItemTypeTbl()
+                            {
+                                ItemTypeID = dataReader["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ItemTypeID"]),
+                                ItemDesc = dataReader["ItemDesc"] == DBNull.Value ? string.Empty : dataReader["ItemDesc"].ToString(),
+                                ItemEnabled = dataReader["ItemEnabled"] != DBNull.Value && Convert.ToBoolean(dataReader["ItemEnabled"]),
+                                ServiceTypeID = dataReader["ServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ServiceTypeID"])
+                            });
+                    }
+                }
             }
-            trackerDb.Close();
+
             return itemsofServiceType;
         }
 
@@ -415,81 +480,123 @@ namespace TrackerSQL.Controls
 
         public bool UpdateItem(ItemTypeTbl NewItemType, int original_ItemTypeID)
         {
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddParams((object)NewItemType.SKU, DbType.String);
-            trackerDb.AddParams((object)NewItemType.ItemDesc, DbType.String);
-            trackerDb.AddParams((object)NewItemType.ItemEnabled, DbType.Boolean);
-            trackerDb.AddParams((object)NewItemType.ItemsCharacteritics, DbType.String);
-            trackerDb.AddParams((object)NewItemType.ItemDetail, DbType.String);
-            trackerDb.AddParams((object)NewItemType.ServiceTypeID, DbType.Int32);
-            trackerDb.AddParams((object)NewItemType.ReplacementID, DbType.Int32);
-            trackerDb.AddParams((object)NewItemType.ItemShortName, DbType.String);
-            trackerDb.AddParams((object)NewItemType.SortOrder, DbType.Int32);
-            trackerDb.AddParams((object)NewItemType.ItemUnitID, DbType.Int32);
-            trackerDb.AddWhereParams((object)original_ItemTypeID, DbType.Int32);
-            bool flag = trackerDb.ExecuteNonQuerySQL("UPDATE ItemTypeTbl SET SKU = ? , ItemDesc = ?, ItemEnabled = ?, ItemsCharacteritics = ?, ItemDetail = ?,  ServiceTypeId = ?, ReplacementID = ?, ItemShortName = ?, SortOrder = ?, ItemUnitID = ? WHERE ItemTypeID = ?") == string.Empty;
-            trackerDb.Close();
-            return flag;
+            using (var db = new TrackerSQLDb())
+            {
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = NewItemType.SKU, DataDbType = DbType.String, ParamName = "@SKU" },
+                    new DBParameter { DataValue = NewItemType.ItemDesc, DataDbType = DbType.String, ParamName = "@ItemDesc" },
+                    new DBParameter { DataValue = NewItemType.ItemEnabled, DataDbType = DbType.Boolean, ParamName = "@ItemEnabled" },
+                    new DBParameter { DataValue = NewItemType.ItemsCharacteritics, DataDbType = DbType.String, ParamName = "@ItemsCharacteritics" },
+                    new DBParameter { DataValue = NewItemType.ItemDetail, DataDbType = DbType.String, ParamName = "@ItemDetail" },
+                    new DBParameter { DataValue = NewItemType.ServiceTypeID, DataDbType = DbType.Int32, ParamName = "@ServiceTypeId" },
+                    new DBParameter { DataValue = NewItemType.ReplacementID, DataDbType = DbType.Int32, ParamName = "@ReplacementID" },
+                    new DBParameter { DataValue = NewItemType.ItemShortName, DataDbType = DbType.String, ParamName = "@ItemShortName" },
+                    new DBParameter { DataValue = NewItemType.SortOrder, DataDbType = DbType.Int32, ParamName = "@SortOrder" },
+                    new DBParameter { DataValue = NewItemType.ItemUnitID, DataDbType = DbType.Int32, ParamName = "@ItemUnitID" },
+                    new DBParameter { DataValue = original_ItemTypeID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                int result = db.ExecuteNonQuery("UPDATE ItemTypeTbl SET SKU = @SKU, ItemDesc = @ItemDesc, ItemEnabled = @ItemEnabled, ItemsCharacteritics = @ItemsCharacteritics, ItemDetail = @ItemDetail, ServiceTypeId = @ServiceTypeId, ReplacementID = @ReplacementID, ItemShortName = @ItemShortName, SortOrder = @SortOrder, ItemUnitID = @ItemUnitID WHERE ItemTypeID = @ItemTypeID", parameters);
+                bool flag = result >= 0;
+
+                if (!flag)
+                {
+                    AppLogger.WriteLog("ItemTypeTbl", $"Failed to update item ItemTypeID: {original_ItemTypeID}");
+                }
+
+                return flag;
+            }
         }
 
         [DataObjectMethod(DataObjectMethodType.Insert)]
         public bool InsertItem(ItemTypeTbl NewItemType)
         {
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddParams((object)NewItemType.ItemDesc, DbType.String, "@ItemDesc");
-            trackerDb.AddParams((object)NewItemType.SKU, DbType.String, "@SKU");
-            trackerDb.AddParams((object)NewItemType.ItemEnabled, DbType.Boolean, "@ItemEnabled");
-            trackerDb.AddParams((object)NewItemType.ItemsCharacteritics, DbType.String, "@ItemsCharacteritics");
-            trackerDb.AddParams((object)NewItemType.ItemDetail, DbType.String, "@ItemDetail");
-            trackerDb.AddParams((object)NewItemType.ServiceTypeID, DbType.Int32, "@ServiceTypeID");
-            trackerDb.AddParams((object)NewItemType.ReplacementID, DbType.Int32, "@ReplacementID");
-            trackerDb.AddParams((object)NewItemType.ItemShortName, DbType.String, "@ItemShortName");
-            trackerDb.AddParams((object)NewItemType.SortOrder, DbType.Int32, "@SortOrder");
-            trackerDb.AddParams((object)NewItemType.ItemUnitID, DbType.Int32, "@ItemUnitID");
-            bool flag = trackerDb.ExecuteNonQuerySQL("INSERT INTO ItemTypeTbl (ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, ReplacementID, ItemShortName, SortOrder, ItemUnitID)  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)") == string.Empty;
-            trackerDb.Close();
-            return flag;
+            using (var db = new TrackerSQLDb())
+            {
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = NewItemType.ItemDesc, DataDbType = DbType.String, ParamName = "@ItemDesc" },
+                    new DBParameter { DataValue = NewItemType.SKU, DataDbType = DbType.String, ParamName = "@SKU" },
+                    new DBParameter { DataValue = NewItemType.ItemEnabled, DataDbType = DbType.Boolean, ParamName = "@ItemEnabled" },
+                    new DBParameter { DataValue = NewItemType.ItemsCharacteritics, DataDbType = DbType.String, ParamName = "@ItemsCharacteritics" },
+                    new DBParameter { DataValue = NewItemType.ItemDetail, DataDbType = DbType.String, ParamName = "@ItemDetail" },
+                    new DBParameter { DataValue = NewItemType.ServiceTypeID, DataDbType = DbType.Int32, ParamName = "@ServiceTypeId" },
+                    new DBParameter { DataValue = NewItemType.ReplacementID, DataDbType = DbType.Int32, ParamName = "@ReplacementID" },
+                    new DBParameter { DataValue = NewItemType.ItemShortName, DataDbType = DbType.String, ParamName = "@ItemShortName" },
+                    new DBParameter { DataValue = NewItemType.SortOrder, DataDbType = DbType.Int32, ParamName = "@SortOrder" },
+                    new DBParameter { DataValue = NewItemType.ItemUnitID, DataDbType = DbType.Int32, ParamName = "@ItemUnitID" }
+                };
+
+                int result = db.ExecuteNonQuery("INSERT INTO ItemTypeTbl (ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, ReplacementID, ItemShortName, SortOrder, ItemUnitID) VALUES (@ItemDesc, @SKU, @ItemEnabled, @ItemsCharacteritics, @ItemDetail, @ServiceTypeId, @ReplacementID, @ItemShortName, @SortOrder, @ItemUnitID)", parameters);
+                bool flag = result >= 0;
+
+                if (!flag)
+                {
+                    AppLogger.WriteLog("ItemTypeTbl", $"Failed to insert item: {NewItemType.ItemDesc}");
+                }
+
+                return flag;
+            }
         }
 
         [DataObjectMethod(DataObjectMethodType.Delete)]
         public void DeleteItem(int pItemTypeID)
         {
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pItemTypeID, DbType.Int32);
-            trackerDb.ExecuteNonQuerySQL("DELETE FROM ItemTypeTbl WHERE ItemTypeID = ?");
-            trackerDb.Close();
+            using (var db = new TrackerSQLDb())
+            {
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pItemTypeID, DataDbType = DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                int result = db.ExecuteNonQuery("DELETE FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID", parameters);
+
+                if (result < 0)
+                {
+                    AppLogger.WriteLog("ItemTypeTbl", $"Failed to delete item ItemTypeID: {pItemTypeID}");
+                }
+            }
         }
 
         public bool GroupOfThisNameExists(string pGroupName)
         {
             bool flag = false;
-            TrackerDb trackerDb = new TrackerDb();
-            trackerDb.AddWhereParams((object)pGroupName, DbType.String, "@ItemDesc");
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT ItemDesc FROM ItemTypeTbl WHERE ItemDesc = ?");
-            if (dataReader != null)
+
+            using (var db = new TrackerSQLDb())
             {
-                if (dataReader.Read())
-                    flag = dataReader["ItemDesc"] != DBNull.Value && dataReader["ItemDesc"].Equals((object)pGroupName);
-                dataReader.Dispose();
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = pGroupName, DataDbType = DbType.String, ParamName = "@ItemDesc" }
+                };
+
+                using (IDataReader dataReader = db.ExecuteReader("SELECT ItemDesc FROM ItemTypeTbl WHERE ItemDesc = @ItemDesc", parameters))
+                {
+                    if (dataReader != null && dataReader.Read())
+                        flag = dataReader["ItemDesc"] != DBNull.Value && dataReader["ItemDesc"].Equals((object)pGroupName);
+                }
             }
-            trackerDb.Close();
+
             return flag;
         }
         // Returns the ServiceTypeID for a given item
         public static int GetServiceTypeForItem(int itemId)
         {
-            using (var db = new TrackerDb())
+            using (var db = new TrackerSQLDb())
             {
-                string sql = "SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = ?";
-                db.AddWhereParams(itemId, System.Data.DbType.Int32);
-                using (var reader = db.ExecuteSQLGetDataReader(sql, db.WhereParams))
+                string sql = "SELECT ServiceTypeID FROM ItemTypeTbl WHERE ItemTypeID = @ItemTypeID";
+                var parameters = new List<DBParameter>
+                {
+                    new DBParameter { DataValue = itemId, DataDbType = System.Data.DbType.Int32, ParamName = "@ItemTypeID" }
+                };
+
+                using (var reader = db.ExecuteReader(sql, parameters))
                 {
                     if (reader != null && reader.Read() && reader["ServiceTypeID"] != DBNull.Value)
                         return System.Convert.ToInt32(reader["ServiceTypeID"]);
-                    reader?.Close();
                 }
-                db.Close();
             }
+
             // Fallback to Coffee if not found
             return SystemConstants.ServiceTypeConstants.Coffee;
         }

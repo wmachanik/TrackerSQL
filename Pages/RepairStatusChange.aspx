@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RepairStatusChange.aspx.cs" Inherits="TrackerSQL.Pages.RepairStatusChange" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RepairStatusChange.aspx.cs" Inherits="TrackerSQL.Pages.RepairStatusChange" %>
 
 <asp:Content ID="cntRepairStatusChangeHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -63,17 +63,10 @@
       <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerSQL.Controls.EquipTypeTbl"
-        SortParameterName="SortBy" SelectMethod="GetAll"
-        OldValuesParameterFormatString="original_{0}">
+    <asp:ObjectDataSource ID="odsRepairStatuses" runat="server" SortParameterName="sortBy"
+        SelectMethod="GetRepairStatuses" TypeName="TrackerSQL.Managers.RepairLookupDataSource">
         <SelectParameters>
-            <asp:Parameter DefaultValue="EquipTypeName" Name="SortBy" Type="String" />
-        </SelectParameters>
-    </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsRepairStatuses" runat="server" SortParameterName="SortBy"
-        SelectMethod="GetAll" TypeName="TrackerSQL.Controls.RepairStatusesTbl">
-        <SelectParameters>
-            <asp:Parameter DefaultValue="SortOrder" Name="SortBy" Type="String" />
+            <asp:Parameter DefaultValue="SortOrder" Name="sortBy" Type="String" />
         </SelectParameters>
     </asp:ObjectDataSource>
 

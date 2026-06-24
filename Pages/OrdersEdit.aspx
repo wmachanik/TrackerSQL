@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" 
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" 
   CodeBehind="OrdersEdit.aspx.cs" Inherits="TrackerSQL.Pages.OrdersEdit" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>
@@ -123,22 +123,22 @@
               <asp:Label ID="lblOrderDate" runat="server" Text='<%# Bind("OrderDate", "{0:d}") %>' />
             </ItemTemplate>
           </asp:TemplateField>
-          <asp:TemplateField HeaderText="Roast Date" SortExpression="RoastDate">
+          <asp:TemplateField HeaderText="Roast Date" SortExpression="PrepDate">
             <EditItemTemplate>
-              <asp:TextBox ID="tbxDetailRoastDate" runat="server" 
-                Text='<%# Bind("RoastDate", "{0:d}") %>' Font-Size="Small" />
-              <ajaxToolkit:CalendarExtender ID="tbxRoastDate_CalendarExtender" runat="server" Enabled="True"
-                TargetControlID="tbxDetailRoastDate">
+              <asp:TextBox ID="tbxDetailPrepDate" runat="server" 
+                Text='<%# Bind("PrepDate", "{0:d}") %>' Font-Size="Small" />
+              <ajaxToolkit:CalendarExtender ID="tbxPrepDate_CalendarExtender" runat="server" Enabled="True"
+                TargetControlID="tbxDetailPrepDate">
               </cc1:CalendarExtender>
             </EditItemTemplate>
             <InsertItemTemplate>
-              <asp:TextBox ID="tbxDetailRoastDate" runat="server" Text='<%# Bind("RoastDate", "{0:d}") %>'></asp:TextBox>
-              <ajaxToolkit:CalendarExtender ID="tbxRoastDate_CalendarExtender" runat="server" Enabled="True"
-                TargetControlID="tbxDetailRoastDate">
+              <asp:TextBox ID="tbxDetailPrepDate" runat="server" Text='<%# Bind("PrepDate", "{0:d}") %>'></asp:TextBox>
+              <ajaxToolkit:CalendarExtender ID="tbxPrepDate_CalendarExtender" runat="server" Enabled="True"
+                TargetControlID="tbxDetailPrepDate">
               </cc1:CalendarExtender>
             </InsertItemTemplate>
             <ItemTemplate>
-              <asp:Label ID="lblRoastDate" runat="server" Text='<%# Bind("RoastDate", "{0:d}") %>'></asp:Label>
+              <asp:Label ID="lblPrepDate" runat="server" Text='<%# Bind("PrepDate", "{0:d}") %>'></asp:Label>
             </ItemTemplate>
           </asp:TemplateField>
           <asp:TemplateField HeaderText="Item Type" SortExpression="ItemTypeID">
@@ -246,7 +246,7 @@
         <InsertParameters>
           <asp:Parameter Name="CustomerID" Type="Int32" />
           <asp:Parameter Name="OrderDate" Type="DateTime" />
-          <asp:Parameter Name="RoastDate" Type="DateTime" />
+          <asp:Parameter Name="PrepDate" Type="DateTime" />
           <asp:Parameter Name="ItemTypeID" Type="Int32" />
           <asp:Parameter Name="QuantityOrdered" Type="Decimal" />
           <asp:Parameter Name="RequiredByDate" Type="DateTime" />
@@ -262,7 +262,7 @@
         <UpdateParameters>
           <asp:Parameter Name="CustomerID" Type="Int32" />
           <asp:Parameter Name="OrderDate" Type="DateTime" />
-          <asp:Parameter Name="RoastDate" Type="DateTime" />
+          <asp:Parameter Name="PrepDate" Type="DateTime" />
           <asp:Parameter Name="ItemTypeID" Type="Int32" />
           <asp:Parameter Name="QuantityOrdered" Type="Decimal" />
           <asp:Parameter Name="RequiredByDate" Type="DateTime" />
@@ -327,7 +327,7 @@
             <ItemTemplate>
 <!--              <asp:Label ID="lblCompany" runat="server" Text='<%# Eval("CompanyName") %>'></asp:Label>   -->
               <asp:HyperLink ID="hlCompany" runat="server" 
-                NavigateUrl='<%# Eval("CustomerID", "CustomerDetails.aspx?ID={0}") %>' 
+                NavigateUrl='<%# Eval("CustomerID", "ContactDetails.aspx?ID={0}") %>' 
                 Text='<%# Eval("CompanyName") %>'></asp:HyperLink>
             </ItemTemplate>
           </asp:TemplateField>
@@ -349,22 +349,22 @@
               <asp:Label ID="lblOrderDate" runat="server" Text='<%# Bind("OrderDate", "{0:d}") %>'></asp:Label>
             </ItemTemplate>
           </asp:TemplateField>
-          <asp:TemplateField HeaderText="Roast Date" SortExpression="RoastDate">
+          <asp:TemplateField HeaderText="Roast Date" SortExpression="PrepDate">
             <EditItemTemplate>
-              <asp:TextBox ID="tbxRoastDate" runat="server" 
-                Text='<%# Bind("RoastDate", "{0:d}") %>' Font-Size="Small" Width="5.25em"></asp:TextBox>
-              <ajaxToolkit:CalendarExtender ID="tbxRoastDate_CalendarExtender" runat="server" Enabled="True"
-                TargetControlID="tbxRoastDate">
+              <asp:TextBox ID="tbxPrepDate" runat="server" 
+                Text='<%# Bind("PrepDate", "{0:d}") %>' Font-Size="Small" Width="5.25em"></asp:TextBox>
+              <ajaxToolkit:CalendarExtender ID="tbxPrepDate_CalendarExtender" runat="server" Enabled="True"
+                TargetControlID="tbxPrepDate">
               </cc1:CalendarExtender>
             </EditItemTemplate>
             <InsertItemTemplate>
-              <asp:TextBox ID="tbxRoastDate" runat="server" Text='<%# Bind("RoastDate", "{0:d}") %>'></asp:TextBox>
-              <ajaxToolkit:CalendarExtender ID="tbxRoastDate_CalendarExtender" runat="server" Enabled="True"
-                TargetControlID="tbxRoastDate">
+              <asp:TextBox ID="tbxPrepDate" runat="server" Text='<%# Bind("PrepDate", "{0:d}") %>'></asp:TextBox>
+              <ajaxToolkit:CalendarExtender ID="tbxPrepDate_CalendarExtender" runat="server" Enabled="True"
+                TargetControlID="tbxPrepDate">
               </cc1:CalendarExtender>
             </InsertItemTemplate>
             <ItemTemplate>
-              <asp:Label ID="lblRoastDate" runat="server" Text='<%# Bind("RoastDate", "{0:d}") %>'></asp:Label>
+              <asp:Label ID="lblPrepDate" runat="server" Text='<%# Bind("PrepDate", "{0:d}") %>'></asp:Label>
             </ItemTemplate>
           </asp:TemplateField>
           <asp:TemplateField HeaderText="ItemTypeID" SortExpression="ItemTypeID">
@@ -447,7 +447,7 @@
         <UpdateParameters>
           <asp:Parameter Name="CustomerID" Type="Int32" />
           <asp:Parameter Name="OrderDate" Type="DateTime" />
-          <asp:Parameter Name="RoastDate" Type="DateTime" />
+          <asp:Parameter Name="PrepDate" Type="DateTime" />
           <asp:Parameter Name="ItemTypeID" Type="Int32" />
           <asp:Parameter Name="QuantityOrdered" Type="Decimal" />
           <asp:Parameter Name="RequiredByDate" Type="DateTime" />

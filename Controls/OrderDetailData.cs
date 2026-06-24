@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.OrderDetailData
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -10,6 +10,7 @@ namespace TrackerSQL.Controls
     public class OrderDetailData
     {
         private int _otItemTypeID;
+        private int _otOrderLineID;
         private int _otOrderID;
         private int _otPackagingID;
         private double _otQuantityOrdered;
@@ -17,9 +18,16 @@ namespace TrackerSQL.Controls
         public OrderDetailData()
         {
             this._otItemTypeID = 0;
+            this._otOrderLineID = 0;
             this._otOrderID = 0;
             this._otPackagingID = 0;
             this._otQuantityOrdered = 0.0;
+        }
+
+        public int OrderLineID
+        {
+            get => this._otOrderLineID;
+            set => this._otOrderLineID = value;
         }
 
         public int ItemTypeID

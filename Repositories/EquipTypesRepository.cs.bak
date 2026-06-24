@@ -1,0 +1,44 @@
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    public class EquipTypesRepository : RepositoryBase<EquipType>
+    {
+        protected override string TableName => "EquipTypesTbl";
+        protected override string KeyColumn => "EquipTypeID";
+
+        // Use aliases to match POCO property names
+        protected override string CoreColumns => "EquipTypeID, EquipTypeName, EquipTypeDesc AS EquipTypeDescription";
+        protected override string LookupColumns => "EquipTypeID, EquipTypeName, EquipTypeDesc AS EquipTypeDescription";
+
+        public void Insert(EquipType equipType)
+        {
+            const string sql = "INSERT INTO EquipTypesTbl (EquipTypeName, EquipTypeDesc) VALUES (@EquipTypeName, @EquipTypeDesc)";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@EquipTypeName", DataValue = equipType.EquipTypeName, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EquipTypeDesc", DataValue = equipType.EquipTypeDescription ?? string.Empty, DataDbType = DbType.String }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+
+        public void Update(EquipType equipType)
+        {
+            const string sql = "UPDATE EquipTypesTbl SET EquipTypeName = @EquipTypeName, EquipTypeDesc = @EquipTypeDesc WHERE EquipTypeID = @EquipTypeID";
+            
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@EquipTypeName", DataValue = equipType.EquipTypeName, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EquipTypeDesc", DataValue = equipType.EquipTypeDescription ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EquipTypeID", DataValue = equipType.EquipTypeID, DataDbType = DbType.Int32 }
+            };
+            
+            ExecNonQuery(sql, parameters);
+        }
+    }
+}

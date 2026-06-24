@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Lookup Tables" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+<%@ Page Title="Lookup Tables" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="Lookups.aspx.cs" Inherits="TrackerSQL.Pages.Lookups" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntLookupHdr" ContentPlaceHolderID="HeadContent" runat="server">
@@ -12,7 +12,7 @@
         </ProgressTemplate>
     </asp:UpdateProgress>
     <h2>Tables...</h2>
-    <asp:Label ID="lblStatus" runat="server" />
+    <asp:Label ID="lblStatus" runat="server" ForeColor="Red" />
     <ajaxToolkit:TabContainer ID="tabcLookup" runat="server" ActiveTabIndex="5" CssClass="MyTabStyle" ScrollBars="None" UseVerticalStripPlacement="false">
         <ajaxToolkit:TabPanel runat="server" HeaderText="Items" ID="tabpnlItems">
             <HeaderTemplate>
@@ -32,14 +32,35 @@
                             </div>
                         </div>
                         <div class="results-container scrollable-table-container">
-                            <asp:GridView ID="gvItems" runat="server" DataSourceID="sdsItems" AllowPaging="True"
-                                PageSize="20" CssClass="results-table" Font-Size="Small" AllowSorting="True" AutoGenerateColumns="False"
+                            <asp:GridView ID="gvItems" runat="server" AllowPaging="True"
+                                PageSize="20" CssClass="results-table sticky-first-column" Font-Size="Small" AllowSorting="True" AutoGenerateColumns="False"
                                 OnRowCommand="gvItems_RowCommand" ShowFooter="True" CellPadding="0"
                                 PagerStyle-CssClass="aspNetPager"
-                                DataKeyNames="ItemTypeID">
+                                DataKeyNames="ItemID"
+                                OnPageIndexChanging="gvItems_PageIndexChanging"
+                                OnSorting="gvItems_Sorting"
+                                OnRowEditing="gvItems_RowEditing"
+                                OnRowCancelingEdit="gvItems_RowCancelingEdit"
+                                OnRowUpdating="gvItems_RowUpdating">
                                 <Columns>
-                                    <asp:BoundField DataField="ItemTypeID" HeaderText="ItemTypeID" InsertVisible="True"
-                                        ReadOnly="True" SortExpression="ItemTypeID" Visible="False" />
+                                    <asp:TemplateField ShowHeader="False" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
+                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="AddItem"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="ItemID" HeaderText="ItemID" InsertVisible="True"
+                                        ReadOnly="True" SortExpression="ItemID" Visible="False" />
                                     <asp:TemplateField HeaderText="Item" SortExpression="ItemDesc">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxEItem" runat="server" Text='<%# Bind("ItemDesc") %>'></asp:TextBox>
@@ -51,7 +72,7 @@
                                             <asp:Label ID="lblItem" runat="server" Text='<%# Bind("ItemDesc") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="SKU" SortExpression="SKUDesc">
+                                    <asp:TemplateField HeaderText="SKU" SortExpression="SKUDesc" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxESKU" runat="server" Width="4.5em" Text='<%# Bind("SKU") %>'></asp:TextBox>
                                         </EditItemTemplate>
@@ -62,7 +83,7 @@
                                             <asp:Label ID="lblSKU" runat="server" Text='<%# Bind("SKU") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Enbld" SortExpression="ItemEnabled">
+                                    <asp:TemplateField HeaderText="Enbld" SortExpression="ItemEnabled" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:CheckBox ID="cbxItemEnabled" runat="server" Checked='<%# Bind("ItemEnabled") %>' />
                                         </EditItemTemplate>
@@ -96,53 +117,52 @@
                                             <asp:Label ID="lblItemDetail" runat="server" Text='<%# Bind("ItemDetail") %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Type" SortExpression="ServiceTypeId">
+                                    <asp:TemplateField HeaderText="Type" SortExpression="ItemServiceTypeID">
                                         <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlServiceType" runat="server" DataSourceID="sdsServiceTypes"
+                                            <asp:DropDownList ID="ddlServiceType" runat="server"
                                                 AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
-                                                SelectedValue='<%# Bind("ServiceTypeId") %>' Width="10em">
+                                                SelectedValue='<%# Bind("ItemServiceTypeID") %>' Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:DropDownList ID="ddlServiceType" runat="server" DataSourceID="sdsServiceTypes"
+                                            <asp:DropDownList ID="ddlServiceType" runat="server"
                                                 AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
-                                                SelectedValue='<%# Bind("ServiceTypeId") %>' Width="10em">
+                                                SelectedValue='<%# Bind("ItemServiceTypeID") %>' Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:DropDownList ID="ddlServiceType" runat="server" DataSourceID="sdsServiceTypes"
+                                            <asp:DropDownList ID="ddlServiceType" runat="server"
                                                 AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
-                                                Enabled="False" SelectedValue='<%# Bind("ServiceTypeId") %>' Width="10em">
+                                                Enabled="False" Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Replcment" SortExpression="Replacement">
+                                    <asp:TemplateField HeaderText="Replcment" SortExpression="ReplacementItemID">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                SelectedValue='<%# Bind("Replacement") %>'>
+                                                DataTextField="ItemDesc" DataValueField="ItemID"
+                                                SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                SelectedValue='<%# Bind("Replacement") %>'>
+                                                DataTextField="ItemDesc" DataValueField="ItemID"
+                                                SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                SelectedValue='<%# Bind("Replacement") %>'>
+                                                DataTextField="ItemDesc" DataValueField="ItemID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Abrv" SortExpression="ItemShortName">
+                                    <asp:TemplateField HeaderText="Abrv" SortExpression="ItemShortName" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxItemShortName" runat="server" Width="4em" Text='<%# Bind("ItemShortName") %>'></asp:TextBox>
                                         </EditItemTemplate>
@@ -153,7 +173,7 @@
                                             <asp:Label ID="lblItemShortName" runat="server" Text='<%# Bind("ItemShortName") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Qty" SortExpression="UnitsPerQty">
+                                    <asp:TemplateField HeaderText="Qty" SortExpression="UnitsPerQty" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxUnitsPerQtyr" runat="server" Width="1.1em" Text='<%# Bind("UnitsPerQty") %>'></asp:TextBox>
                                         </EditItemTemplate>
@@ -164,30 +184,30 @@
                                             <asp:Label ID="lblUnitsPerQty" runat="server" Width="1.1em" Text='<%# Bind("UnitsPerQty") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="UoM" SortExpression="UoMID">
+                                    <asp:TemplateField HeaderText="UoM" SortExpression="ItemUnitID" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsItemUnits" DataTextField="UnitOfMeasure"
-                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("UoMID") %>'>
+                                                DataTextField="UnitOfMeasure" Width="6em"
+                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("ItemUnitID") %>'>
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsItemUnits" DataTextField="UnitOfMeasure"
-                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("UoMID") %>'>
+                                                DataTextField="UnitOfMeasure" Width="6em"
+                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("ItemUnitID") %>'>
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="odsItemUnits" DataTextField="UnitOfMeasure"
-                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("UoMID") %>'>
+                                                DataTextField="UnitOfMeasure" Width="6em"
+                                                DataValueField="ItemUnitID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="S/O" SortExpression="SortOrder">
+                                    <asp:TemplateField HeaderText="S/O" SortExpression="SortOrder" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxSortOrder" runat="server" Width="1.1em" Text='<%# Bind("SortOrder") %>'></asp:TextBox>
                                         </EditItemTemplate>
@@ -198,28 +218,12 @@
                                             <asp:Label ID="lblSortOrder" runat="server" Width="1.1em" Text='<%# Bind("SortOrder") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField ShowHeader="False">
-                                        <EditItemTemplate>
-                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
-                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
-                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
-                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
-                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="AddItem"
-                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
                                 </Columns>
                                 <EditRowStyle BackColor="#24BF61" />
                                 <EmptyDataTemplate>
                                     <asp:DetailsView ID="dvItemIns" runat="server" AutoGenerateRows="False" BackColor="White"
-                                        BorderColor="#DEDFDE" BorderStyle="Solid" BorderWidth="1px" CellPadding="4" DataKeyNames="ItemTypeID"
-                                        DataSourceID="sdsItems" OnItemInserted="dvItems_ItemInserted" ForeColor="Black"
+                                        BorderColor="#DEDFDE" BorderStyle="Solid" BorderWidth="1px" CellPadding="4" DataKeyNames="ItemID"
+                                        OnItemInserted="dvItems_ItemInserted" ForeColor="Black"
                                         PagerStyle-CssClass="aspNetPager"
                                         GridLines="Vertical" Width="220px">
                                         <AlternatingRowStyle BackColor="White" />
@@ -229,49 +233,49 @@
                                             <asp:BoundField DataField="ItemsCharacteritics" HeaderText="ItemsCharacteritics"
                                                 SortExpression="ItemsCharacteritics" />
                                             <asp:BoundField DataField="ItemDetail" HeaderText="ItemDetail" SortExpression="ItemDetail" />
-                                            <asp:TemplateField HeaderText="ServiceType" SortExpression="ServiceTypeId">
+                                            <asp:TemplateField HeaderText="ServiceType" SortExpression="ItemServiceTypeID">
                                                 <EditItemTemplate>
-                                                    <asp:DropDownList ID="ddlEditServiceType" runat="server" DataSourceID="sdsServiceTypes"
-                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ServiceTypeId") %>'>
+                                                    <asp:DropDownList ID="ddlEditServiceType" runat="server"
+                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ItemServiceTypeID") %>'>
                                                     </asp:DropDownList>
                                                 </EditItemTemplate>
                                                 <InsertItemTemplate>
-                                                    <asp:DropDownList ID="ddlInsServiceType" runat="server" DataSourceID="sdsServiceTypes"
-                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ServiceTypeId") %>'>
+                                                    <asp:DropDownList ID="ddlInsServiceType" runat="server"
+                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ItemServiceTypeID") %>'>
                                                     </asp:DropDownList>
                                                 </InsertItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:DropDownList ID="ddlServiceType" runat="server" DataSourceID="sdsServiceTypes"
-                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ServiceTypeId") %>'>
+                                                    <asp:DropDownList ID="ddlServiceType" runat="server"
+                                                        DataTextField="ServiceType" DataValueField="ServiceTypeId" SelectedValue='<%# Bind("ItemServiceTypeID") %>'>
                                                     </asp:DropDownList>
                                                 </ItemTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Replacement">
                                                 <EditItemTemplate>
                                                     <asp:DropDownList ID="ddlEditReplacement" runat="server" AppendDataBoundItems="True"
-                                                        DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                        SelectedValue='<%# Bind("Replacement") %>'>
+                                                        DataTextField="ItemDesc" DataValueField="ItemID"
+                                                        SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                         <asp:ListItem Value="0" Text="n/a" />
                                                     </asp:DropDownList>
                                                 </EditItemTemplate>
                                                 <InsertItemTemplate>
                                                     <asp:DropDownList ID="ddlInsReplacement" runat="server" AppendDataBoundItems="True"
-                                                        DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                        SelectedValue='<%# Bind("Replacement") %>'>
+                                                        DataTextField="ItemDesc" DataValueField="ItemID"
+                                                        SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                         <asp:ListItem Value="0" Text="n/a" />
                                                     </asp:DropDownList>
                                                 </InsertItemTemplate>
                                                 <ItemTemplate>
                                                     <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                        DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                        SelectedValue='<%# Bind("Replacement") %>'>
+                                                        DataTextField="ItemDesc" DataValueField="ItemID"
+                                                        SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                         <asp:ListItem Value="0" Text="n/a" />
                                                     </asp:DropDownList>
                                                 </ItemTemplate>
                                                 <FooterTemplate>
                                                     <asp:DropDownList ID="ddlInsReplacement" runat="server" AppendDataBoundItems="True"
-                                                        DataSourceID="odsAllItems" DataTextField="ItemDesc" DataValueField="ItemTypeID"
-                                                        SelectedValue='<%# Bind("Replacement") %>'>
+                                                        DataTextField="ItemDesc" DataValueField="ItemID"
+                                                        SelectedValue='<%# Bind("ReplacementItemID") %>'>
                                                         <asp:ListItem Value="0" Text="n/a" />
                                                     </asp:DropDownList>
                                                 </FooterTemplate>
@@ -299,13 +303,6 @@
                         </div>
                     </ContentTemplate>
                 </asp:UpdatePanel>
-                <asp:ObjectDataSource ID="odsItemUnits" runat="server" SelectMethod="GetAll"
-                    TypeName="TrackerSQL.Controls.ItemUnitsTbl"
-                    OldValuesParameterFormatString="original_{0}">
-                    <SelectParameters>
-                        <asp:Parameter DefaultValue="UnitOfMeasure" Name="SortBy" Type="String" />
-                    </SelectParameters>
-                </asp:ObjectDataSource>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabpnlPeople" runat="server" HeaderText="People">
@@ -323,7 +320,9 @@
                                 AutoGenerateColumns="False" CellPadding="1" PageSize="20" DataKeyNames="PersonID"
                                 OnRowCommand="gvPeople_RowCommand" OnRowUpdating="gvPeople_RowUpdating"
                                 OnRowEditing="gvPeople_RowEditing" OnRowDataBound="gvPeople_RowDataBound"
-                                DataSourceID="odsPeople" CssClass="results-table" ShowFooter="True">
+                                OnPageIndexChanging="gvPeople_PageIndexChanging"
+                                OnSorting="gvPeople_Sorting"
+                                CssClass="results-table" ShowFooter="True">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -344,15 +343,15 @@
                                     </asp:TemplateField>
                                     <asp:BoundField DataField="PersonID" HeaderText="PersonID" InsertVisible="False"
                                         ReadOnly="True" SortExpression="PersonID" />
-                                    <asp:TemplateField HeaderText="Person" SortExpression="Person">
+                                    <asp:TemplateField HeaderText="Person" SortExpression="PersonName">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="tbxPerson" runat="server" Width="8em" Text='<%# Bind("Person") %>' />
+                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="8em" Text='<%# Bind("PersonName") %>' />
                                         </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:TextBox ID="tbxPerson" runat="server" Width="8em" Text="" />
+                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="8em" Text="" />
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="lblPerson" runat="server" Text='<%# Bind("Person") %>' />
+                                            <asp:Label ID="lblPersonName" runat="server" Text='<%# Bind("PersonName") %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Abbreviation" SortExpression="Abbreviation">
@@ -404,8 +403,7 @@
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server"
-                                                SelectedValue='<%# Bind("NormalDeliveryDoW") %>'>
+                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server">
                                                 <asp:ListItem Value="0" Text="0 - Any Day" />
                                                 <asp:ListItem Value="1" Text="1 - Sunday" />
                                                 <asp:ListItem Value="2" Text="2 - Monday" />
@@ -420,12 +418,12 @@
                                     <asp:TemplateField HeaderText="Username" SortExpression="SecurityUsername">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlSecurityNames" runat="server" AppendDataBoundItems="True"
-                                                DataSourceID="sdsUserNames" DataTextField="SecurityUsername" DataValueField="SecurityUsername">
+                                                DataTextField="SecurityUsername" DataValueField="SecurityUsername">
                                                 <asp:ListItem Value="" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:DropDownList ID="ddlSecurityNames" runat="server" DataSourceID="sdsUserNames" AppendDataBoundItems="True"
+                                            <asp:DropDownList ID="ddlSecurityNames" runat="server" AppendDataBoundItems="True"
                                                 DataTextField="SecurityUsername" DataValueField="SecurityUsername">
                                                 <asp:ListItem Value="" Text="n/a" />
                                             </asp:DropDownList>
@@ -442,17 +440,25 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
-        <ajaxToolkit:TabPanel ID="tabpnlEquipment" runat="server" HeaderText="Equipment">
+        <ajaxToolkit:TabPanel ID="tabpnlEquipment" runat="server" HeaderText="Equipment Types">
+            <HeaderTemplate>
+                Equipment Types
+            </HeaderTemplate>
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlEquipment" runat="server" UpdateMode="Conditional">
                     <ContentTemplate>
                         <div class="results-container">
                             <asp:GridView ID="gvEquipment" runat="server" AllowPaging="True" EmptyDataText="No equipment found"
                                 AllowSorting="True" AutoGenerateColumns="False" BackColor="White" ShowFooter="True"
-                                BorderColor="#E7E7FF" BorderStyle="None" BorderWidth="1px" CellPadding="3" DataKeyNames="EquipTypeId"
-                                OnRowCommand="gvEquipment_RowCommand" DataSourceID="odsEquipTypes" PageSize="20"
+                                BorderColor="#E7E7FF" BorderStyle="None" BorderWidth="1px" CellPadding="3" DataKeyNames="EquipTypeID"
+                                OnRowCommand="gvEquipment_RowCommand" PageSize="20"
+                                OnPageIndexChanging="gvEquipment_PageIndexChanging"
+                                OnSorting="gvEquipment_Sorting"
                                 CssClass="results-table"
-                                OnSelectedIndexChanged="gvEquipment_SelectedIndexChanged">
+                                OnSelectedIndexChanged="gvEquipment_SelectedIndexChanged"
+                                OnRowEditing="gvEquipment_RowEditing"
+                                OnRowCancelingEdit="gvEquipment_RowCancelingEdit"
+                                OnRowUpdating="gvEquipment_RowUpdating">
                                 <AlternatingRowStyle BackColor="#F7F7F7" />
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
@@ -475,26 +481,26 @@
                                     <asp:TemplateField HeaderText="EquipTypeName" SortExpression="EquipTypeName">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Text='<%# Bind("EquipTypeName") %>'></asp:TextBox>
-                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeId") %>' />
+                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Text="" />
-                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeId") %>' />
+                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
                                         </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:Label ID="EquipTypeNameLabel" runat="server" Text='<%# Bind("EquipTypeName") %>'></asp:Label>
-                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeId") %>' />
+                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="EquipTypeDesc" SortExpression="EquipTypeDesc">
+                                    <asp:TemplateField HeaderText="EquipTypeDesc" SortExpression="EquipTypeDescription">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text='<%# Bind("EquipTypeDesc") %>'></asp:TextBox>
+                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text='<%# Bind("EquipTypeDescription") %>'></asp:TextBox>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text="" />
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="EquipTypeDescLabel" runat="server" Text='<%# Bind("EquipTypeDesc") %>'></asp:Label>
+                                            <asp:Label ID="EquipTypeDescLabel" runat="server" Text='<%# Bind("EquipTypeDescription") %>'></asp:Label>
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                 </Columns>
@@ -511,53 +517,62 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
-        <ajaxToolkit:TabPanel ID="tabpnlCities" runat="server" HeaderText="Cities">
+        <ajaxToolkit:TabPanel ID="tabpnlAreas" runat="server" HeaderText="Areas">
+            <HeaderTemplate>
+                Areas
+            </HeaderTemplate>
             <ContentTemplate>
-                <asp:UpdatePanel ID="upnlCities" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                <asp:UpdatePanel ID="upnlAreas" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <ContentTemplate>
-                        <div class="responsive-layout-container">
-                            <div class="layout-main-panel">
-                                <div class="results-container">
-                                    <asp:GridView ID="gvCities" runat="server" AllowPaging="True" PageSize="20" AllowSorting="True"
-                                        AutoGenerateColumns="False" BackColor="White" BorderColor="#DEDFDE" BorderStyle="None" CssClass="results-table"
-                                        BorderWidth="1px" CellPadding="4" DataSourceID="sdsCities" ForeColor="Black" DataKeyNames="ID"
-                                        ShowFooter="True" OnRowCommand="gvCities_OnRowCommand" OnSelectedIndexChanged="gvCities_OnSelectedIndexChanged">
+                        <div class="responsive-layout-container" style="display: flex; gap: 20px; width: 90%; height: 600px; box-sizing: border-box;">
+                            <div class="layout-main-panel" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;">
+                                <div class="results-container scrollable-table-container" style="flex: 1; overflow: auto;max-height: 580px;">
+                                    <asp:GridView ID="gvAreas" runat="server" AllowPaging="True" PageSize="20" AllowSorting="True"
+                                        AutoGenerateColumns="False" BackColor="White" BorderColor="#DEDFDE" BorderStyle="None" CssClass="results-table no-sticky-last"
+                                        Style="width: 90%;"
+                                        BorderWidth="1px" CellPadding="4" ForeColor="Black" DataKeyNames="ID"
+                                        ShowFooter="True" OnRowCommand="gvAreas_OnRowCommand" OnSelectedIndexChanged="gvAreas_OnSelectedIndexChanged"
+                                        OnPageIndexChanging="gvAreas_PageIndexChanging"
+                                        OnSorting="gvAreas_Sorting"
+                                        OnRowEditing="gvAreas_RowEditing"
+                                        OnRowCancelingEdit="gvAreas_RowCancelingEdit"
+                                        OnRowUpdating="gvAreas_RowUpdating">
                                         <AlternatingRowStyle BackColor="White" />
                                         <Columns>
                                             <asp:CommandField ShowSelectButton="True" SelectImageUrl="~/images/imgButtons/SelectItem.gif" ButtonType="Image" />
-                                            <asp:TemplateField HeaderText="City" SortExpression="City">
+                                            <asp:TemplateField HeaderText="Area Name" SortExpression="AreaName" ItemStyle-CssClass="wrap"  >
                                                 <EditItemTemplate>
-                                                    <asp:TextBox ID="tbxCity" runat="server" Text='<%# Bind("City") %>'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text='<%# Bind("AreaName") %>'></asp:TextBox>
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblCity" runat="server" Text='<%# Bind("City") %>'></asp:Label>
+                                                    <asp:Label ID="lblAreaName" runat="server" Text='<%# Bind("AreaName") %>'></asp:Label>
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:TextBox ID="tbxCity" runat="server" Text=""></asp:TextBox>
+                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text=""></asp:TextBox>
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="ID" Visible="false">
                                                 <EditItemTemplate>
-                                                    <asp:Label ID="lblCityID" runat="server" Text='<%# Bind("ID") %>' />
+                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("ID") %>' />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblCityID" runat="server" Text='<%# Bind("ID") %>' />
+                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("ID") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate></FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField ShowHeader="False">
                                                 <EditItemTemplate>
-                                                    <asp:ImageButton ID="btnCityUpdate" runat="server" CausesValidation="True" CommandName="Update"
+                                                    <asp:ImageButton ID="btnAreaUpdate" runat="server" CausesValidation="True" CommandName="Update"
                                                         AlternateText="Update" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
-                                                    &nbsp;<asp:ImageButton ID="btnCityCancel" runat="server" CausesValidation="False"
+                                                    &nbsp;<asp:ImageButton ID="btnAreaCancel" runat="server" CausesValidation="False"
                                                         CommandName="Cancel" AlternateText="Cancel" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:ImageButton ID="btnCityEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                    <asp:ImageButton ID="btnAreaEdit" runat="server" CausesValidation="False" CommandName="Edit"
                                                         AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:ImageButton ID="btnCityInsert" runat="server" CommandName="AddCity" AlternateText="Ins"
+                                                    <asp:ImageButton ID="btnAreaInsert" runat="server" CommandName="AddArea" AlternateText="Add"
                                                         ImageUrl="~/images/imgButtons/AddItem.gif" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
@@ -574,11 +589,16 @@
                                     </asp:GridView>
                                 </div>
                             </div>
-                            <div class="layout-detail-panel">
-                                <div class="layout-panel-top scrollable-table-container">
-                                    <asp:GridView ID="gvCityDays" runat="server" AutoGenerateColumns="False"
-                                        CssClass="results-table" DataSourceID="odsCityDays" Visible="false" ShowFooter="true"
-                                        OnRowUpdating="gvCityDays_OnRowUpdating" OnRowCommand="gvCityDays_RowCommand">
+                            <div class="layout-detail-panel" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px;">Delivery Days for Selected Area</h4>
+                                <div class="layout-panel-top scrollable-table-container" style="flex: 1; overflow: auto; max-height: 560px;">
+                                    <asp:GridView ID="gvAreaDays" runat="server" AutoGenerateColumns="False"
+                                        CssClass="results-table" Visible="false" ShowFooter="true" DataKeyNames="AreaPrepDaysID"
+                                        OnRowEditing="gvAreaDays_RowEditing"
+                                        OnRowCancelingEdit="gvAreaDays_RowCancelingEdit"
+                                        OnRowUpdating="gvAreaDays_OnRowUpdating"
+                                        OnRowDeleting="gvAreaDays_RowDeleting"
+                                        OnRowCommand="gvAreaDays_RowCommand">
                                         <EmptyDataTemplate>
                                             <asp:DropDownList ID="ddlPreperationDoW" runat="server">
                                                 <asp:ListItem Value="1">Sunday</asp:ListItem>
@@ -591,7 +611,7 @@
                                             </asp:DropDownList>&nbsp;&nbsp;
                                             <asp:TextBox ID="tbxDeliveryDelay" runat="server" Text="1" />&nbsp;&nbsp;
                                             <asp:TextBox ID="tbxDeliveryOrder" runat="server" Text="20" />&nbsp;&nbsp;&nbsp;
-                                            <asp:Button ID="btnAddCity" runat="server" Text="Add Prep Day" OnClick="btnAddCity_Click" />
+                                            <asp:Button ID="btnAddAreaDay" runat="server" Text="Add Prep Day" OnClick="btnAddAreaDay_Click" />
                                         </EmptyDataTemplate>
                                         <Columns>
                                             <asp:TemplateField HeaderText="Prep Day">
@@ -608,7 +628,7 @@
                                                     </asp:DropDownList>
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:DropDownList ID="ddlPreperationDoW" runat="server" SelectedValue='<%# Bind("PrepDayOfWeekID") %>'>
+                                                    <asp:DropDownList ID="ddlPreperationDoW" runat="server">
                                                         <asp:ListItem Value="0" Text="--select a day--" />
                                                         <asp:ListItem Value="1">Sunday</asp:ListItem>
                                                         <asp:ListItem Value="2">Monday</asp:ListItem>
@@ -635,16 +655,16 @@
                                             <asp:TemplateField HeaderText="Dlvry Delay" SortExpression="DeliveryDelayDays">
                                                 <EditItemTemplate>
                                                     <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text='<%# Bind("DeliveryDelayDays") %>'></asp:TextBox>
-                                                    <asp:HiddenField ID="CityPrepDaysIDHidden" runat="server" Value='<%# Bind("CityPrepDaysID") %>' />
+                                                    <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
                                                     &nbsp;+&nbsp;<asp:Label ID="lblDeliveryDay" runat="server" Width="2em" Text='<%# Bind("DeliveryDelayDays") %>' />
-                                                    =&nbsp;<asp:Label ID="CityNameLabel" runat="server" Text='<%# GetDeliveryDay(Eval("PrepDayOfWeekID").ToString(),Eval("DeliveryDelayDays").ToString()) %>' />
-                                                    <asp:HiddenField ID="CityPrepDaysIDHidden" runat="server" Value='<%# Bind("CityPrepDaysID") %>' />
+                                                    =&nbsp;<asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetDeliveryDay(Eval("PrepDayOfWeekID").ToString(),Eval("DeliveryDelayDays").ToString()) %>' />
+                                                    <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
                                                     <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text='1'></asp:TextBox>
-                                                    <asp:HiddenField ID="CityPrepDaysIDHidden" runat="server" Value='<%# Bind("CityPrepDaysID") %>' />
+                                                    <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Dlvry Order" SortExpression="DeliveryOrder">
@@ -660,16 +680,16 @@
                                             </asp:TemplateField>
                                             <asp:TemplateField ShowHeader="False">
                                                 <EditItemTemplate>
-                                                    <asp:ImageButton ID="btnCityDaysUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                    <asp:ImageButton ID="btnAreaDaysUpdate" runat="server" CausesValidation="False" CommandName="Update"
                                                         AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
                                                     &nbsp;
-                                                    <asp:ImageButton ID="btnCityDaysCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                    <asp:ImageButton ID="btnAreaDaysCancel" runat="server" CausesValidation="False" CommandName="Cancel"
                                                         AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:ImageButton ID="btnCityDaysEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                    <asp:ImageButton ID="btnAreaDaysEdit" runat="server" CausesValidation="False" CommandName="Edit"
                                                         Text="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />&nbsp;
-                                                    <asp:ImageButton ID="btnCityDaysDelete" runat="server" CausesValidation="False" CommandName="Delete" Text="Delete"
+                                                    <asp:ImageButton ID="btnAreaDaysDelete" runat="server" CausesValidation="False" CommandName="Delete" Text="Delete"
                                                         ImageUrl="~/images/imgButtons/Trashcan.gif" />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
@@ -683,17 +703,6 @@
                                 </div>
                             </div>
                         </div>
-                        <asp:ObjectDataSource ID="odsCityDays" runat="server"
-                            DataObjectTypeName="TrackerSQL.Controls.CityPrepDaysTbl"
-                            InsertMethod="InsertCityPrepDay" SelectMethod="GetAllByCityId"
-                            TypeName="TrackerSQL.Controls.CityPrepDaysTbl"
-                            UpdateMethod="UpdateCityPrepDay"
-                            OldValuesParameterFormatString="original_{0}">
-                            <SelectParameters>
-                                <asp:ControlParameter ControlID="gvCities" Name="pCityID"
-                                    PropertyName="SelectedValue" Type="Int32" />
-                            </SelectParameters>
-                        </asp:ObjectDataSource>
 
                     </ContentTemplate>
                 </asp:UpdatePanel>
@@ -706,8 +715,14 @@
                         <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvPackaging" runat="server" AutoGenerateColumns="False" CssClass="TblWhite"
                                 OnRowCommand="gvPackaging_RowCommand" OnRowDataBound="gvPackaging_RowDataBound"
-                                ShowFooter="true" DataSourceID="odsPackaging" AllowPaging="True" PageSize="20"
-                                AllowSorting="True">
+                                ShowFooter="true" AllowPaging="True" PageSize="20"
+                                AllowSorting="True"
+                                OnPageIndexChanging="gvPackaging_PageIndexChanging"
+                                OnSorting="gvPackaging_Sorting"
+                                DataKeyNames="ItemPackagingID"
+                                OnRowEditing="gvPackaging_RowEditing"
+                                OnRowCancelingEdit="gvPackaging_RowCancelingEdit"
+                                OnRowUpdating="gvPackaging_RowUpdating">
                                 <FooterStyle BorderStyle="Dashed" BorderColor="Cornsilk" />
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
@@ -729,18 +744,18 @@
                                             ImageUrl="~/images/imgButtons/Trashcan.gif" />
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Description" SortExpression="Description">
+                                    <asp:TemplateField HeaderText="Description" SortExpression="ItemPackagingDesc">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="TextBoxDescription" runat="server" Text='<%# Bind("Description") %>' />
-                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("PackagingID") %>' />
+                                            <asp:TextBox ID="TextBoxDescription" runat="server" Text='<%# Bind("ItemPackagingDesc") %>' />
+                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("ItemPackagingID") %>' />
                                         </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="LabelDescription" runat="server" Text='<%# Bind("Description") %>' />
-                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("PackagingID") %>' />
+                                            <asp:Label ID="LabelDescription" runat="server" Text='<%# Bind("ItemPackagingDesc") %>' />
+                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("ItemPackagingID") %>' />
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:TextBox ID="TextBoxDescription" runat="server" Text="" />
-                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("PackagingID") %>' />
+                                            <asp:HiddenField ID="hdnPackagingID" runat="server" Value='<%# Bind("ItemPackagingID") %>' />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="AdditionalNotes" SortExpression="AdditionalNotes">
@@ -807,9 +822,14 @@
                 <asp:UpdatePanel ID="gvInvoiceTypesUpdatePanel" runat="server">
                     <ContentTemplate>
                         <div class="responsive-layout-container scrollable-table-container">
-                            <asp:GridView ID="gvInvoiceTypes" runat="server" AllowSorting="True" DataSourceID="odsInvoiceTypes" DataKeyNames="InvoiceTypeID"
+                            <asp:GridView ID="gvInvoiceTypes" runat="server" AllowSorting="True" DataKeyNames="InvoiceTypeID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
-                                OnRowCommand="gvInvoiceTypes_RowCommand">
+                                OnRowCommand="gvInvoiceTypes_RowCommand"
+                                OnPageIndexChanging="gvInvoiceTypes_PageIndexChanging"
+                                OnSorting="gvInvoiceTypes_Sorting"
+                                OnRowEditing="gvInvoiceTypes_RowEditing"
+                                OnRowCancelingEdit="gvInvoiceTypes_RowCancelingEdit"
+                                OnRowUpdating="gvInvoiceTypes_RowUpdating">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -886,9 +906,14 @@
                 <asp:UpdatePanel ID="gvPaymentTermsUpdatePanel" runat="server" ChildrenAsTriggers="true">
                     <ContentTemplate>
                         <div class="responsive-layout-container scrollable-table-container">
-                            <asp:GridView ID="gvPaymentTerms" runat="server" AllowSorting="True" DataSourceID="odsPaymentTerms" DataKeyNames="PaymentTermID"
+                            <asp:GridView ID="gvPaymentTerms" runat="server" AllowSorting="True" DataKeyNames="PaymentTermID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
-                                OnRowCommand="gvPaymentTerms_RowCommand">
+                                OnRowCommand="gvPaymentTerms_RowCommand"
+                                OnPageIndexChanging="gvPaymentTerms_PageIndexChanging"
+                                OnSorting="gvPaymentTerms_Sorting"
+                                OnRowEditing="gvPaymentTerms_RowEditing"
+                                OnRowCancelingEdit="gvPaymentTerms_RowCancelingEdit"
+                                OnRowUpdating="gvPaymentTerms_RowUpdating">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -1001,9 +1026,14 @@
                 <asp:UpdatePanel ID="gvPriceLevelsUpdatePanel" runat="server" ChildrenAsTriggers="true">
                     <ContentTemplate>
                         <div class="responsive-layout-container scrollable-table-container">
-                            <asp:GridView ID="gvPriceLevels" runat="server" AllowSorting="True" DataSourceID="odsPriceLevels" DataKeyNames="PriceLevelID"
+                            <asp:GridView ID="gvPriceLevels" runat="server" AllowSorting="True" DataKeyNames="PriceLevelID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
-                                OnRowCommand="gvPriceLevels_RowCommand">
+                                OnRowCommand="gvPriceLevels_RowCommand"
+                                OnPageIndexChanging="gvPriceLevels_PageIndexChanging"
+                                OnSorting="gvPriceLevels_Sorting"
+                                OnRowEditing="gvPriceLevels_RowEditing"
+                                OnRowCancelingEdit="gvPriceLevels_RowCancelingEdit"
+                                OnRowUpdating="gvPriceLevels_RowUpdating">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -1091,8 +1121,15 @@
                     <ContentTemplate>
                         <div class="results-container">
                             <asp:GridView ID="gvRepairStatuses" runat="server" DataKeyNames="RepairStatusID"
-                                DataSourceID="odsRepairStatuses" AutoGenerateColumns="False" AllowPaging="True" AllowSorting="True"
-                                ShowFooter="True" PageSize="20">
+                                AutoGenerateColumns="False" AllowPaging="True" AllowSorting="True"
+                                ShowFooter="True" PageSize="20"
+                                OnPageIndexChanging="gvRepairStatuses_PageIndexChanging"
+                                OnSorting="gvRepairStatuses_Sorting"
+                                OnRowCommand="gvRepairStatuses_RowCommand"
+                                OnRowEditing="gvRepairStatuses_RowEditing"
+                                OnRowCancelingEdit="gvRepairStatuses_RowCancelingEdit"
+                                OnRowUpdating="gvRepairStatuses_RowUpdating"
+                                OnRowDeleting="gvRepairStatuses_RowDeleting">
                                 <Columns>
                                     <asp:BoundField DataField="RepairStatusID" HeaderText="ID" ReadOnly="True" />
                                     <asp:TemplateField HeaderText="Status">
@@ -1106,7 +1143,7 @@
                                             <asp:TextBox ID="tbxStatusDescFooter" runat="server" Width="12em" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:CheckBoxField DataField="EmailClient" HeaderText="Email Client" />
+                                    <asp:CheckBoxField DataField="EmailContact" HeaderText="Email Contact" />
                                     <asp:BoundField DataField="SortOrder" HeaderText="Sort Order" />
                                     <asp:TemplateField HeaderText="Status Note">
                                         <EditItemTemplate>
@@ -1140,174 +1177,16 @@
                                 </Columns>
                             </asp:GridView>
 
-                            <asp:ObjectDataSource ID="odsRepairStatuses" runat="server"
-                                TypeName="TrackerSQL.Controls.RepairStatusesTbl"
-                                DataObjectTypeName="TrackerSQL.Controls.RepairStatusesTbl"
-                                SelectMethod="GetAll" InsertMethod="Insert" UpdateMethod="Update" DeleteMethod="Delete"
-                                SortParameterName="SortBy"
-                                OnInserted="odsRepairStatuses_Inserted"
-                                OnUpdated="odsRepairStatuses_Updated"
-                                OnDeleted="odsRepairStatuses_Deleted">
-                                <SelectParameters>
-                                    <asp:Parameter Name="SortBy" Type="String" DefaultValue="SortOrder" />
-                                </SelectParameters>
-                                <DeleteParameters>
-                                    <asp:Parameter Name="repairStatusID" Type="Int32" />
-                                </DeleteParameters>
-                            </asp:ObjectDataSource>
                     </ContentTemplate>
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
     </ajaxToolkit:TabContainer>
-    <asp:SqlDataSource ID="sdsItems" runat="server" ConflictDetection="OverwriteChanges"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        OldValuesParameterFormatString="original_{0}" ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT ItemTypeID, ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, iif(IsNull(ReplacementID), 0, ReplacementID) AS Replacement, ItemShortName, SortOrder, UnitsPerQty, iif(IsNull(ItemUnitID), 0, ItemUnitID) AS UoMID FROM ItemTypeTbl WHERE (ItemDesc LIKE ?) ORDER BY SortOrder, ItemDesc"
-        UpdateCommand="UPDATE ItemTypeTbl SET ItemDesc = ?, SKU = ?, ItemEnabled = ?, ItemsCharacteritics = ?, ItemDetail = ?, ServiceTypeId = ?, ReplacementID = ?, ItemShortName = ?, SortOrder = ?, UnitsPerQty = ?, ItemUnitID = ? WHERE (ItemTypeID = ?)"
-        DeleteCommand="DELETE FROM [ItemTypeTbl] WHERE [ItemTypeID] = ? "
-        InsertCommand="INSERT INTO ItemTypeTbl(ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail, ServiceTypeId, ReplacementID, ItemShortName, SortOrder, UnitsPerQty, ItemUnitID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)">
-        <SelectParameters>
-            <asp:SessionParameter DefaultValue="%" Name="?" SessionField="SearchItemContains"
-                DbType="String" />
-        </SelectParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="ItemDesc" Type="String" />
-            <asp:Parameter Name="SKU" Type="String" />
-            <asp:Parameter Name="ItemEnabled" Type="Boolean" />
-            <asp:Parameter Name="ItemsCharacteritics" Type="String" />
-            <asp:Parameter Name="ItemDetail" Type="String" />
-            <asp:Parameter Name="ServiceTypeId" Type="Int32" />
-            <asp:Parameter Name="Replacement" Type="Int32" />
-            <asp:Parameter Name="ItemShortName" Type="String" />
-            <asp:Parameter Name="SortOrder" Type="Int32" />
-            <asp:Parameter Name="UnitsPerQty" Type="Single" />
-            <asp:Parameter Name="UoMID" Type="Int32" />
-            <asp:Parameter Name="original_ItemTypeID" Type="Int32" />
-        </UpdateParameters>
-        <DeleteParameters>
-            <asp:Parameter Name="original_ItemTypeID" Type="Int32" />
-        </DeleteParameters>
-        <InsertParameters>
-            <asp:Parameter Name="ItemDesc" Type="String" />
-            <asp:Parameter Name="SKU" Type="String" />
-            <asp:Parameter Name="ItemEnabled" Type="Boolean" />
-            <asp:Parameter Name="ItemsCharacteritics" Type="String" />
-            <asp:Parameter Name="ItemDetail" Type="String" />
-            <asp:Parameter Name="ServiceTypeId" Type="Int32" />
-            <asp:Parameter Name="ReplacementID" Type="Int32" />
-            <asp:Parameter Name="ItemShortName" Type="String" />
-            <asp:Parameter Name="SortOrder" Type="Int32" />
-            <asp:Parameter Name="UnitsPerQty" Type="Single" />
-            <asp:Parameter Name="UoMID" Type="Int32" />
-        </InsertParameters>
-    </asp:SqlDataSource>
-    <asp:ObjectDataSource ID="odsAllItems" runat="server" SelectMethod="GetAll" TypeName="TrackerSQL.Controls.ItemTypeTbl"
-        OldValuesParameterFormatString="original_{0}">
-        <SelectParameters>
-            <asp:Parameter DefaultValue="ItemDesc" Name="SortBy" Type="String" />
-        </SelectParameters>
-    </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPeople" runat="server" TypeName="TrackerSQL.Controls.PersonsTbl"
-        DataObjectTypeName="TrackerSQL.Controls.PersonsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
-        UpdateMethod="UpdatePerson" OldValuesParameterFormatString="original_{0}" DeleteMethod="DeletePerson"
-        InsertMethod="InsertPerson">
-        <SelectParameters>
-            <asp:Parameter DefaultValue="&quot;Abbreviation&quot;" Name="SortBy" Type="String" />
-        </SelectParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="pPerson" Type="Object" DbType="Object" />
-            <asp:Parameter Name="pOrignal_PersonID" Type="Int32" />
-        </UpdateParameters>
-        <DeleteParameters>
-            <asp:Parameter Name="pPersonID" Type="Int32" />
-        </DeleteParameters>
-    </asp:ObjectDataSource>
+    <%-- REMOVED: sdsItems SqlDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Use ItemsRepository in code-behind --%>
+    <%-- REMOVED: odsAllItems ObjectDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Legacy ItemTypeTbl, use ItemsRepository --%>
+    
     <asp:SqlDataSource ID="sdsUserNames" runat="server"
         ConnectionString="<%$ ConnectionStrings:ApplicationServices %>"
         SelectCommand="SELECT [UserName] AS SecurityUsername FROM [vw_aspnet_Users]" />
-    <asp:ObjectDataSource ID="odsEquipTypes" runat="server" TypeName="TrackerSQL.Controls.EquipTypeTbl"
-        DataObjectTypeName="TrackerSQL.Controls.EquipTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
-        UpdateMethod="UpdateEquipItem" OldValuesParameterFormatString="original_{0}" InsertMethod="InsertEquipObj"
-        OnInserting="odsEquipTypes_OnInserting">
-        <SelectParameters>
-            <asp:Parameter DefaultValue="EquipTypeName" Name="SortBy" Type="String" />
-        </SelectParameters>
-        <InsertParameters>
-            <asp:Parameter DbType="Object" Name="objEquipType" Type="Object" />
-        </InsertParameters>
-    </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsInvoiceTypes" runat="server" TypeName="TrackerSQL.Controls.InvoiceTypeTbl"
-        DataObjectTypeName="TrackerSQL.Controls.InvoiceTypeTbl" SelectMethod="GetAll" SortParameterName="SortBy"
-        UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
-        <DeleteParameters>
-            <asp:Parameter Name="pInvoiceTypeID" Type="Int32" />
-        </DeleteParameters>
-        <SelectParameters>
-            <asp:Parameter DefaultValue="InvoiceTypeDesc" Name="SortBy" Type="String" />
-        </SelectParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="pInvoiceTypeTbl" Type="Object" DbType="Object" />
-            <asp:Parameter Name="pOrignal_InvoiceTypeID" Type="Int32" />
-        </UpdateParameters>
-    </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPaymentTerms" runat="server" TypeName="TrackerSQL.Controls.PaymentTermsTbl"
-        DataObjectTypeName="TrackerSQL.Controls.PaymentTermsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
-        UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
-        <DeleteParameters>
-            <asp:Parameter Name="pPaymentTermID" Type="Int32" />
-        </DeleteParameters>
-        <SelectParameters>
-            <asp:Parameter DefaultValue="PriceDesc" Name="SortBy" Type="String" />
-        </SelectParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="pPaymentTermsTbl" Type="Object" DbType="Object" />
-            <asp:Parameter Name="pOrignal_PaymentTermID" Type="Int32" />
-        </UpdateParameters>
-    </asp:ObjectDataSource>
-    <asp:ObjectDataSource ID="odsPriceLevels" runat="server" TypeName="TrackerSQL.Controls.PriceLevelsTbl"
-        DataObjectTypeName="TrackerSQL.Controls.PriceLevelsTbl" SelectMethod="GetAll" SortParameterName="SortBy"
-        UpdateMethod="Update" OldValuesParameterFormatString="original_{0}" InsertMethod="Insert" DeleteMethod="Delete">
-        <DeleteParameters>
-            <asp:Parameter Name="pPriceLevelID" Type="Int32" />
-        </DeleteParameters>
-        <SelectParameters>
-            <asp:Parameter DefaultValue="PriceDesc" Name="SortBy" Type="String" />
-        </SelectParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="pPriceLevelTbl" Type="Object" DbType="Object" />
-            <asp:Parameter Name="pOrignal_PriceLevelID" Type="Int32" />
-        </UpdateParameters>
-    </asp:ObjectDataSource>
-    <asp:SqlDataSource ID="sdsServiceTypes" runat="server" ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [ServiceTypeId], [ServiceType] FROM [ServiceTypesTbl]"></asp:SqlDataSource>
-    <asp:SqlDataSource ID="sdsReplacementItems" runat="server" ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [ItemTypeID], [ItemDesc] FROM [ItemTypeTbl] ORDER BY [ItemDesc]"></asp:SqlDataSource>
-    <asp:SqlDataSource ID="sdsCities" runat="server" OnSelecting="sdsCities_Selecting"
-        ConflictDetection="CompareAllValues" ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        DeleteCommand="DELETE FROM [CityTbl] WHERE [ID] = ?" InsertCommand="INSERT INTO CityTbl(City) VALUES (?)"
-        OldValuesParameterFormatString="original_{0}" ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [ID], [City] FROM [CityTbl] ORDER BY [City]"
-        UpdateCommand="UPDATE [CityTbl] SET [City] = ? WHERE [ID] = ?">
-        <DeleteParameters>
-            <asp:Parameter Name="original_ID" Type="Int32" />
-            <asp:Parameter Name="original_City" Type="String" />
-        </DeleteParameters>
-        <InsertParameters>
-            <asp:Parameter Name="City" Type="String" />
-        </InsertParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="City" Type="String" />
-            <asp:Parameter Name="RoastingDay" Type="Int32" />
-        </UpdateParameters>
-    </asp:SqlDataSource>
-    <asp:ObjectDataSource runat="server" SelectMethod="GetAll" TypeName="TrackerSQL.Controls.PackagingTbl"
-        ID="odsPackaging" SortParameterName="SortBy" DataObjectTypeName="TrackerSQL.Controls.PackagingTbl"
-        InsertMethod="InsertPackaging" OldValuesParameterFormatString="original_{0}" UpdateMethod="UpdatePackaging">
-        <SelectParameters>
-            <asp:Parameter Name="SortBy" Type="String" DefaultValue="Description" />
-        </SelectParameters>
-    </asp:ObjectDataSource>
+    
 </asp:Content>

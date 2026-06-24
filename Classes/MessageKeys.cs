@@ -214,7 +214,7 @@ namespace TrackerSQL.Classes
             public const string HtmlTableCellAlt = "CoffeeCheckup.HtmlTableCellAlt";
             public const string HtmlTableRowColspan = "CoffeeCheckup.HtmlTableRowColspan";
             public const string TableCompanyContact = "CoffeeCheckup.TableCompanyContact";
-            public const string TableNextPrepDate = "CoffeeCheckup.TableNextPrepDate";
+            public const string TableNextPreperationDate = "CoffeeCheckup.TableNextPreperationDate";
             public const string TableNextDispatchDate = "CoffeeCheckup.TableNextDispatchDate";
             public const string TableType = "CoffeeCheckup.TableType";
             public const string TableListOfItems = "CoffeeCheckup.TableListOfItems";
@@ -234,21 +234,21 @@ namespace TrackerSQL.Classes
             public const string NextOccurrenceCalculated = "DeliveryCalculation.NextOccurrenceCalculated";
             public const string OptimalDateCalculated = "DeliveryCalculation.OptimalDateCalculated";
             public const string WeeklyDateCalculated = "DeliveryCalculation.WeeklyDateCalculated";
-            public const string UsingCityDeliveryDate = "DeliveryCalculation.UsingCityDeliveryDate";
-            public const string InvalidRoastDate = "DeliveryCalculation.InvalidRoastDate";
-            public const string OptimalCityDateFound = "DeliveryCalculation.OptimalCityDateFound";
+            public const string UsingAreaDeliveryDate = "DeliveryCalculation.UsingAreaDeliveryDate";
+            public const string InvalidPrepDate = "DeliveryCalculation.InvalidPrepDate";
+            public const string OptimalAreaDateFound = "DeliveryCalculation.OptimalAreaDateFound";
             public const string FoundNextDeliveryCycle = "DeliveryCalculation.FoundNextDeliveryCycle";
             public const string UsingFallbackDate = "DeliveryCalculation.UsingFallbackDate";
-            public const string RoastDateCalculated = "DeliveryCalculation.RoastDateCalculated";
+            public const string PrepDateCalculated = "DeliveryCalculation.PrepDateCalculated";
             public const string DateInPast = "DeliveryCalculation.DateInPast";
             public const string DateTooFarFuture = "DeliveryCalculation.DateTooFarFuture";
             public const string CalculatedOptimalDates = "DeliveryCalculation.CalculatedOptimalDates";
             public const string ErrorCalculatingDelivery = "DeliveryCalculation.ErrorCalculatingDelivery";
             public const string ErrorCalculatingWeekly = "DeliveryCalculation.ErrorCalculatingWeekly";
             public const string ErrorCalculatingOccurrence = "DeliveryCalculation.ErrorCalculatingOccurrence";
-            public const string ErrorFindingCityDate = "DeliveryCalculation.ErrorFindingCityDate";
+            public const string ErrorFindingAreaDate = "DeliveryCalculation.ErrorFindingAreaDate";
             public const string ErrorFindingClosestDate = "DeliveryCalculation.ErrorFindingClosestDate";
-            public const string ErrorCalculatingRoastDate = "DeliveryCalculation.ErrorCalculatingRoastDate";
+            public const string ErrorCalculatingPrepDate = "DeliveryCalculation.ErrorCalculatingPrepDate";
             public const string ErrorValidatingDate = "DeliveryCalculation.ErrorValidatingDate";
         }
     }

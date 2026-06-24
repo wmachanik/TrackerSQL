@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderDone.aspx.cs"
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderDone.aspx.cs"
     Inherits="TrackerSQL.Pages.OrderDone" %>
 
 <asp:Content ID="cntOrderDoneHdr" ContentPlaceHolderID="HeadContent" runat="server">
@@ -16,7 +16,7 @@
                 <h2>Order Delivered</h2>
                 <div class="responsive-layout-container">
                     <div class="results-table">
-                        <asp:FormView ID="fvOrderDone" runat="server" DataSourceID="sdsOrderDoneHeader"
+                        <asp:FormView ID="fvOrderDone" runat="server" DataSourceID="odsOrderDoneHeader"
                             BackColor="#DEBA84" BorderColor="#DEBA84" BorderStyle="None" BorderWidth="1px"
                             CellPadding="4" CellSpacing="2" GridLines="Both" CssClass="TblFlex">
                             <RowStyle BackColor="#FFF7E7" ForeColor="#292909" />
@@ -57,19 +57,19 @@
                         </asp:FormView>
                         <div style="padding-top: 12px" class="layout-detail-panel">
                             <asp:GridView ID="gvOrderDoeLines" runat="server" AllowSorting="True" AutoGenerateColumns="False"
-                                DataKeyNames="TOLineID" CssClass="TblWhite" DataSourceID="sdsOrderDoneLines">
+                                DataKeyNames="TOLineID" CssClass="TblWhite" DataSourceID="odsOrderDoneLines">
                                 <Columns>
                                     <asp:BoundField DataField="TOLineID" HeaderText="ID" Visible="false" InsertVisible="False"
                                         ReadOnly="True" SortExpression="TOLineID" />
                                     <asp:TemplateField HeaderText="Item" SortExpression="ItemID">
                                         <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="sdsItemTypes" DataTextField="ItemDesc"
+                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes" DataTextField="ItemDesc"
                                                 DataValueField="ItemTypeID" AppendDataBoundItems="True" SelectedValue='<%# Bind("ItemID") %>'>
                                                 <asp:ListItem Value="0">n/a</asp:ListItem>
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="sdsItemTypes" DataTextField="ItemDesc" Enabled="false"
+                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes" DataTextField="ItemDesc" Enabled="false"
                                                 DataValueField="ItemTypeID" AppendDataBoundItems="True" SelectedValue='<%# Eval("ItemID") == null ? "0" : Eval("ItemID").ToString() %>'>
                                                 <asp:ListItem Value="0">n/a</asp:ListItem>
                                             </asp:DropDownList>
@@ -80,13 +80,13 @@
                                     </asp:BoundField>
                                     <asp:TemplateField HeaderText="Packaging" SortExpression="PackagingID">
                                         <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="sdsPackagingTypes"
+                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="odsPackagingTypes"
                                                 DataTextField="Description" DataValueField="PackagingID" SelectedValue='<%# Bind("PackagingID")  %>'>
                                                 <asp:ListItem Value="0">n/a</asp:ListItem>
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="sdsPackagingTypes" Enabled="false"
+                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="odsPackagingTypes" Enabled="false"
                                                 DataTextField="Description" DataValueField="PackagingID" SelectedValue='<%#  Eval("PackagingID") == null ? "0" : Eval("PackagingID").ToString()  %>'>
                                                 <asp:ListItem Value="0">n/a</asp:ListItem>
                                             </asp:DropDownList>
@@ -170,49 +170,42 @@
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
-    <asp:SqlDataSource ID="sdsOrderDoneHeader" runat="server"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT c.CompanyName, h.CustomerID, h.RequiredByDate
-                   FROM TempOrdersHeaderTbl h
-                   INNER JOIN CustomersTbl c ON h.CustomerID = c.CustomerID
-                   WHERE h.CustomerID = ?">
+    <asp:ObjectDataSource ID="odsOrderDoneHeader" runat="server"
+        TypeName="TrackerSQL.Managers.OrderDoneDataSource"
+        SelectMethod="GetHeader">
         <SelectParameters>
-            <asp:Parameter Name="CustomerID" Type="Int32" DefaultValue="0" />
+            <asp:SessionParameter Name="toHeaderId" SessionField="TempOrderHeaderId" Type="Int32" DefaultValue="0" />
         </SelectParameters>
-    </asp:SqlDataSource>
-    <asp:SqlDataSource ID="sdsOrderDoneLines" runat="server"
-        CancelSelectOnNullParameter="True"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [ItemID], [Qty], [PackagingID], [TOLineID] FROM [TempOrdersLinesTbl] "
-        DeleteCommand="DELETE FROM [TempOrdersLinesTbl] WHERE [TOLineID] = ?"
-        InsertCommand="INSERT INTO [TempOrdersLinesTbl] ([ItemID], [Qty], [PackagingID], [TOLineID]) VALUES (?, ?, ?, ?)"
-        UpdateCommand="UPDATE [TempOrdersLinesTbl] SET [ItemID] = ?, [Qty] = ?, [PackagingID] = ? WHERE [TOLineID] = ?">
+    </asp:ObjectDataSource>
+    <asp:ObjectDataSource ID="odsOrderDoneLines" runat="server"
+        TypeName="TrackerSQL.Managers.OrderDoneDataSource"
+        SelectMethod="GetLines"
+        UpdateMethod="UpdateLine"
+        DeleteMethod="DeleteLine"
+        DataObjectTypeName="TrackerSQL.Models.OrderDoneLineView">
+        <SelectParameters>
+            <asp:SessionParameter Name="toHeaderId" SessionField="TempOrderHeaderId" Type="Int32" DefaultValue="0" />
+        </SelectParameters>
+        <UpdateParameters>
+            <asp:Parameter Name="TOLineID" Type="Int32" />
+            <asp:Parameter Name="ItemID" Type="Int32" />
+            <asp:Parameter Name="Qty" Type="Single" />
+            <asp:Parameter Name="PackagingID" Type="Int32" />
+        </UpdateParameters>
         <DeleteParameters>
             <asp:Parameter Name="TOLineID" Type="Int32" />
         </DeleteParameters>
-        <InsertParameters>
-            <asp:Parameter Name="ItemID" Type="Int32" />
-            <asp:Parameter Name="Qty" Type="Single" />
-            <asp:Parameter Name="PackagingID" Type="Int32" />
-            <asp:Parameter Name="TOLineID" Type="Int32" />
-        </InsertParameters>
-        <UpdateParameters>
-            <asp:Parameter Name="ItemID" Type="Int32" />
-            <asp:Parameter Name="Qty" Type="Single" />
-            <asp:Parameter Name="PackagingID" Type="Int32" />
-            <asp:Parameter Name="TOLineID" Type="Int32" />
-        </UpdateParameters>
-    </asp:SqlDataSource>
+    </asp:ObjectDataSource>
 
-    <asp:SqlDataSource ID="sdsItemTypes" runat="server"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [ItemTypeID], [ItemDesc] FROM [ItemTypeTbl] ORDER BY [ItemEnabled], [SortOrder], [ItemDesc]"></asp:SqlDataSource>
+    <asp:ObjectDataSource ID="odsItemTypes" runat="server"
+        TypeName="TrackerSQL.Managers.OrderLookupDataSource"
+        SelectMethod="GetItems">
+        <SelectParameters>
+            <asp:Parameter Name="sortBy" Type="String" DefaultValue="" />
+        </SelectParameters>
+    </asp:ObjectDataSource>
 
-    <asp:SqlDataSource ID="sdsPackagingTypes" runat="server"
-        ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>"
-        ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>"
-        SelectCommand="SELECT [PackagingID], [Description] FROM [PackagingTbl] ORDER BY [Description]"></asp:SqlDataSource>
+    <asp:ObjectDataSource ID="odsPackagingTypes" runat="server"
+        TypeName="TrackerSQL.Managers.OrderLookupDataSource"
+        SelectMethod="GetPackagingTypes" />
 </asp:Content>

@@ -1,0 +1,129 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using TrackerSQL.Classes.Poco;
+
+namespace TrackerSQL.Classes.Sql
+{
+    /// <summary>
+    /// Repository for DeliveryItems entity
+    /// Auto-generated: 2026-06-02 13:35:41
+    /// </summary>
+    public class DeliveryItemsRepository : RepositoryBase<DeliveryItems>
+    {
+        protected override string TableName => "DeliveryItemsTbl";
+        protected override string KeyColumn => "otOrderID";
+
+        /// <summary>
+        /// Maps a DataReader row to a DeliveryItems object
+        /// </summary>
+        protected override DeliveryItems Map(IDataReader reader)
+        {
+            return DbMapper.Map<DeliveryItems>(reader);
+        }
+
+        /// <summary>
+        /// Gets all DeliveryItems records
+        /// </summary>
+        /// <param name="sortColumn">Column to sort by (optional)</param>
+        public List<DeliveryItems> GetAll(string sortColumn = null)
+        {
+            string sql = `$"SELECT * FROM {TableName}"`;
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                sql += `$" ORDER BY {sortColumn}"`;
+            }
+
+            return ExecuteQuery(sql);
+        }
+
+        /// <summary>
+        /// Gets a single DeliveryItems by ID
+        /// </summary>
+        public DeliveryItems GetById(int id)
+        {
+            string sql = `$"SELECT * FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            return ExecuteQuerySingle(sql, parameters);
+        }
+
+        /// <summary>
+        /// Inserts a new DeliveryItems record
+        /// </summary>
+        public int Insert(DeliveryItems entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize INSERT statement based on POCO properties
+            // This is a template - adjust column names as needed
+            string sql = @"
+                INSERT INTO DeliveryItemsTbl (
+                    -- Add column names here
+                )
+                VALUES (
+                    -- Add parameter names here (@Param1, @Param2, etc.)
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Example:
+                // new DBParameter { DataValue = entity.PropertyName, DataDbType = DbType.String, ParamName = "@PropertyName" }
+            };
+
+            return ExecuteScalar<int>(sql, parameters);
+        }
+
+        /// <summary>
+        /// Updates an existing DeliveryItems record
+        /// </summary>
+        public bool Update(DeliveryItems entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            // TODO: Customize UPDATE statement based on POCO properties
+            string sql = @"
+                UPDATE DeliveryItemsTbl
+                SET 
+                    -- Add column = @Param pairs here
+                WHERE otOrderID = @Id";
+
+            var parameters = new List<DBParameter>
+            {
+                // TODO: Add parameters based on POCO properties
+                // Don't forget to add the ID parameter
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        /// <summary>
+        /// Deletes a DeliveryItems record by ID
+        /// </summary>
+        public bool Delete(int id)
+        {
+            string sql = `$"DELETE FROM {TableName} WHERE {KeyColumn} = @Id"`;
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
+            };
+
+            int result = ExecuteNonQuery(sql, parameters);
+            return result > 0;
+        }
+
+        // TODO: Add custom methods from legacy DeliveryItemsTbl.cs here
+        // Example:
+        // public int GetCustomCount()
+        // {
+        //     string sql = "SELECT COUNT(*) FROM DeliveryItemsTbl WHERE CustomCondition";
+        //     return ExecuteScalar<int>(sql);
+        // }
+    }
+}

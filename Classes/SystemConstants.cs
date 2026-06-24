@@ -1,5 +1,4 @@
-﻿using System;
-using TrackerSQL.Controls;
+using System;
 
 namespace TrackerSQL.Classes
 {
@@ -8,7 +7,7 @@ namespace TrackerSQL.Classes
         // Database specific constants
         public static class DatabaseConstants
         {
-            public const int NumDecimalPoints = 4;
+            public const int NumDecimalPoints = 3;
             public const string ConnectionStringName = "Tracker08ConnectionString";
             public const int InvalidID = -1;
             public const string InvalidIDStr = "-1";
@@ -19,7 +18,15 @@ namespace TrackerSQL.Classes
         public static class FormatConstants
         {
             public const string DateFormat = "dd/MM/yyyy";
+
+            /// <summary>Display format for quantities (up to NumDecimalPoints, trailing zeros trimmed).</summary>
             public const string DigitFormat = "0.###";
+
+            public static string FormatQuantity(double value)
+            {
+                return Math.Round(value, DatabaseConstants.NumDecimalPoints)
+                    .ToString(DigitFormat, System.Globalization.CultureInfo.InvariantCulture);
+            }
         }
         // Customer related constants
         public static class CustomerConstants
@@ -98,22 +105,11 @@ namespace TrackerSQL.Classes
             public const string ServiceStr = "10";
         }
 
-        // Payment and Pricing constants
-        public static class PaymentConstants
-        {
-            public const int DefaultPaymentTermID = 5;
-            public const int DefaultPriceLevel = 1;
-        }
-
-        // City and Location constants
-        public static class LocationConstants
-        {
-            public const int DefaultCityID = 1;
-        }
-
         // Item and Product constants
         public static class ItemConstants
         {
+            public const int NotesSortOrder = 10;
+            public const int GroupSortOrder = 15;
             public const int NoteItemTimeID = 100;
             public const int RepairCheckItemID = 36; // "Should this not rather be a repair?"
             public const string WhiteFilterSKU = "8ClarFltr";
@@ -139,6 +135,9 @@ namespace TrackerSQL.Classes
         {
             public const string DataAccessError = "DataAccessError";
             public const string BoundCustomerID = "BoundCustomerID";
+            public const string BoundOrderID = "BoundOrderID";
+            public const string TempOrderHeaderId = "TempOrderHeaderId";
+            public const string TempOrderId = "TempOrderId";
             public const string BoundDeliveryDate = "BoundDeliveryDate";
             public const string BoundNotes = "BoundNotes";
             public const string BoundOldDeliveryDate = "BoundOldDeliveryDate";

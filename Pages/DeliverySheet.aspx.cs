@@ -1,19 +1,13 @@
-﻿// Type: TrackerSQL.Pages.DeliverySheet
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
-using AjaxControlToolkit;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Controls;
+using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 //- only form later versions #nullable disable
 namespace TrackerSQL.Pages
@@ -25,15 +19,15 @@ namespace TrackerSQL.Pages
         public const string CONST_SESSION_DDLSHEETDATE_SELECTED = "DeliverySheetDateItemSelected";
         public const string CONST_SESSION_DDLDELIVERTBY_SELECTED = "DeliverySheetDeliveryByItemSelected";
         public const string CONST_SESSION_SHEETISPRINTING = "SheetIsPrinting";
+
         private const int CONST_ONLYAFEWDELIVERIES = 9;
         private const int CONST_ALOTOFDELIVERIES = 21;
-        private const string CONST_ZZNAME_PREFIX = "_*:";
-        //private const string CONST_IS_ZZNAME = "ZZ";
+
         protected ScriptManager smDelivery;
         protected Panel pnlDeliveryDate;
         protected UpdateProgress uprgDeliveryFilterBy;
         protected UpdatePanel upnlDeliveryFilterBy;
-        protected DropDownList ddlActiveRoastDates;
+        protected DropDownList ddlActivePrepDates;
         protected Button btnGo;
         protected Button btnRefresh;
         protected Label lblDeliveryBy;
@@ -42,7 +36,6 @@ namespace TrackerSQL.Pages
         protected Button btnFind;
         protected Button btnPrint;
         protected HyperLink hlAddDeliveryItem;
-        protected ObjectDataSource odsActiveRoastDates;
         protected UpdatePanel upnlDeliveryItems;
         protected Table tblDeliveries;
         protected TableHeaderCell thcReceivedBy;
@@ -50,14 +43,28 @@ namespace TrackerSQL.Pages
         protected TableHeaderCell thcInStock;
         protected Table tblTotals;
         protected Label ltrlWhichDate;
+        protected Label lblStatus;
+
+        /*
+         * NOTE:
+         * If tbCalendarDate is declared in DeliverySheet.aspx.designer.cs,
+         * do not declare it here as well.
+         *
+         * If this file does not compile because tbCalendarDate is missing,
+         * uncomment the line below.
+         */
+        // protected TextBox tbCalendarDate;
 
         private void Page_PreInit(object sender, EventArgs e)
         {
             bool flag1 = false;
             bool flag2 = new CheckBrowser().fBrowserIsMobile();
+
             this.Session["RunningOnMoble"] = (object)flag2;
+
             if (this.Request.QueryString["Print"] != null)
                 flag1 = this.Request.QueryString["Print"].ToString() == "Y";
+
             if (flag1)
             {
                 this.MasterPageFile = "~/Print.master";
@@ -76,44 +83,116 @@ namespace TrackerSQL.Pages
             this.btnPrint.Visible = !pPrintForm;
             this.pnlDeliveryDate.Visible = !pPrintForm;
             this.ltrlWhichDate.Visible = !pPrintForm;
-            string pActiveDeliveryDate = this.Request.QueryString["DateValue"] == null ? "" : this.Request.QueryString["DateValue"];
-            string pOnlyDeliveryBy = this.Request.QueryString["DeliveryBy"] == null ? "" : this.Request.QueryString["DeliveryBy"];
+
+            string pActiveDeliveryDate = this.Request.QueryString["DateValue"] == null
+                ? ""
+                : this.Request.QueryString["DateValue"];
+
+            string pOnlyDeliveryBy = this.Request.QueryString["DeliveryBy"] == null
+                ? ""
+                : this.Request.QueryString["DeliveryBy"];
+
             if (string.IsNullOrEmpty(pActiveDeliveryDate) && this.Session[CONST_SESSION_SHEETDATE] != null)
             {
                 pActiveDeliveryDate = (string)this.Session[CONST_SESSION_SHEETDATE];
                 this.ltrlWhichDate.Text = pActiveDeliveryDate;
             }
+
             if (string.IsNullOrEmpty(pOnlyDeliveryBy) && this.Session[CONST_SESSION_DELIVERTBY] != null)
                 pOnlyDeliveryBy = (string)this.Session[CONST_SESSION_DELIVERTBY];
+
             if (string.IsNullOrEmpty(pActiveDeliveryDate))
                 return;
+
             this.BuildDeliverySheet(pPrintForm, pActiveDeliveryDate, pOnlyDeliveryBy);
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            bool pPrintForm = this.Request.QueryString["Print"] != null && this.Request.QueryString["Print"].ToString() == "Y";
+            bool pPrintForm =
+                this.Request.QueryString["Print"] != null &&
+                this.Request.QueryString["Print"].ToString() == "Y";
+
             if (this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] == null)
-                this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = (object)$"{TimeZoneUtils.Now().Date}";
+                this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = TimeZoneUtils.Now().Date.ToString("yyyy-MM-dd");
+
             if (!this.IsPostBack)
             {
                 Button control = (Button)this.pnlDeliveryDate.FindControl("btnFind");
+
                 if (control != null)
                     this.Form.DefaultButton = control.UniqueID;
+
+                this.BindActivePrepDates();
                 this.PageInitialize(pPrintForm);
             }
+
             if (pPrintForm)
                 return;
-            this.tblDeliveries.Rows[0].Cells[2].Visible = false;
-            this.tblDeliveries.Rows[0].Cells[3].Visible = false;
-            this.tblDeliveries.Rows[0].Cells[5].Visible = false;
-            if ((bool)this.Session["RunningOnMoble"])
+
+            // Hide print-only columns on the normal page.
+            if (this.tblDeliveries.Rows.Count > 0 && this.tblDeliveries.Rows[0].Cells.Count > 5)
+            {
+                this.tblDeliveries.Rows[0].Cells[2].Visible = false;
+                this.tblDeliveries.Rows[0].Cells[3].Visible = false;
+                this.tblDeliveries.Rows[0].Cells[5].Visible = false;
+            }
+
+            if (this.Session["RunningOnMoble"] != null && (bool)this.Session["RunningOnMoble"])
                 return;
-            TableCellCollection cells = this.tblDeliveries.Rows[0].Cells;
-            TableHeaderCell tableHeaderCell = new TableHeaderCell();
-            tableHeaderCell.Text = "Action";
-            TableHeaderCell cell = tableHeaderCell;
-            cells.Add((TableCell)cell);
+
+            // Add an Action header for non-mobile, non-print views.
+            if (this.tblDeliveries.Rows.Count > 0)
+            {
+                TableCellCollection cells = this.tblDeliveries.Rows[0].Cells;
+
+                if (cells.Count == 0 || cells[cells.Count - 1].Text != "Action")
+                {
+                    TableHeaderCell tableHeaderCell = new TableHeaderCell();
+                    tableHeaderCell.Text = "Action";
+                    cells.Add((TableCell)tableHeaderCell);
+                }
+            }
+        }
+
+        private void BindActivePrepDates()
+        {
+            var repo = new DeliverySheetRepository();
+            var result = repo.GetActiveDeliveryDates();
+
+            if (!result.Success)
+            {
+                ShowPageStatus(result.ErrorMessage, true);
+                ddlActivePrepDates.DataSource = null;
+                ddlActivePrepDates.DataBind();
+                return;
+            }
+
+            ClearPageStatus();
+            ddlActivePrepDates.DataSource = result.Items;
+            ddlActivePrepDates.DataBind();
+
+            if (result.Items.Count == 0)
+                ShowPageStatus("No open delivery dates found. There are no undelivered orders with a required-by date.", false);
+        }
+
+        private void ShowPageStatus(string message, bool isError)
+        {
+            if (lblStatus == null)
+                return;
+
+            lblStatus.Visible = !string.IsNullOrWhiteSpace(message);
+            lblStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
+            lblStatus.ForeColor = isError ? Color.DarkRed : Color.DarkOrange;
+        }
+
+        private void ClearPageStatus()
+        {
+            if (lblStatus != null)
+            {
+                lblStatus.Visible = false;
+                lblStatus.Text = string.Empty;
+            }
         }
 
         protected void BuildDeliverySheet()
@@ -122,310 +201,194 @@ namespace TrackerSQL.Pages
             {
                 string text = this.ltrlWhichDate.Text;
             }
-            this.BuildDeliverySheet(false, this.ltrlWhichDate.Text.Length > 0 ? this.ltrlWhichDate.Text : "2012-01-01", this.ddlDeliveryBy.Items.Count <= 1 || this.ddlDeliveryBy.SelectedIndex <= 0 ? "" : this.ddlDeliveryBy.SelectedValue);
+
+            this.BuildDeliverySheet(
+                false,
+                this.ltrlWhichDate.Text.Length > 0 ? this.ltrlWhichDate.Text : "2012-01-01",
+                this.ddlDeliveryBy.Items.Count <= 1 || this.ddlDeliveryBy.SelectedIndex <= 0
+                    ? ""
+                    : this.ddlDeliveryBy.SelectedValue);
         }
 
         protected void BuildDeliverySheet(bool pPrintForm, string pActiveDeliveryDate, string pOnlyDeliveryBy)
         {
             this.Session[CONST_SESSION_DELIVERTBY] = pOnlyDeliveryBy;
 
-            // Complete SQL with all columns
-            string strSQL = @"SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName AS CoName, OrdersTbl.CustomerID, " +
-                              "OrdersTbl.OrderDate, OrdersTbl.RoastDate,OrdersTbl.ItemTypeID, ItemTypeTbl.ItemDesc, " +
-                              "OrdersTbl.QuantityOrdered, ItemTypeTbl.ItemShortName, ItemTypeTbl.ItemEnabled, " +
-                              "ItemTypeTbl.ReplacementID,  CityPrepDaysTbl.DeliveryOrder,  ItemTypeTbl.SortOrder, " +
-                              "OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, OrdersTbl.PurchaseOrder, OrdersTbl.Confirmed," +
-                              "OrdersTbl.InvoiceDone, OrdersTbl.Done, OrdersTbl.Notes, PackagingTbl.Description AS PackDesc, " +
-                              "PackagingTbl.BGColour, PersonsTbl.Abbreviation " +
-                              "FROM ( ( " +
-                                       "( CityPrepDaysTbl RIGHT OUTER JOIN CustomersTbl ON CityPrepDaysTbl.CityID = CustomersTbl.City )" +
-                                        "RIGHT OUTER JOIN " +
-                                        "( OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID)" +
-                                        " ON CustomersTbl.CustomerID = OrdersTbl.CustomerID" +
-                                      ") LEFT OUTER JOIN PackagingTbl ON OrdersTbl.PackagingID = PackagingTbl.PackagingID) " +
-                                    " LEFT OUTER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID " +
-                              "WHERE (OrdersTbl.RequiredByDate = ?)";
+            // Parse the selected delivery date.
+            // If the value cannot be parsed, fall back to today's date.
+            DateTime requiredDate;
 
-            // Add date parameter using utility method
-            if (!DateTime.TryParse(pActiveDeliveryDate, out DateTime reqDate))
+            if (!DateTime.TryParse(pActiveDeliveryDate, out requiredDate))
             {
-                reqDate = DateTime.Today;
-            }
-            using (TrackerDb trackerDb = new TrackerDb())
-            {
-
-                trackerDb.AddWhereParams(reqDate, DbType.DateTime);
-
-                // Add delivery person filter if specified
-                if (!string.IsNullOrEmpty(pOnlyDeliveryBy))
-                {
-                    strSQL += " AND OrdersTbl.ToBeDeliveredBy = ?";
-
-                    if (int.TryParse(pOnlyDeliveryBy, out int deliveryById))
-                    {
-                        trackerDb.AddWhereParams(deliveryById, DbType.Int32);
-                    }
-                    else
-                    {
-                        trackerDb.AddWhereParams(DBNull.Value, DbType.Int32);
-                    }
-                }
-
-                // Complete SQL
-                strSQL += @" ORDER BY OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, CityPrepDaysTbl.DeliveryOrder," +
-                            "CustomersTbl.CompanyName, ItemTypeTbl.SortOrder";
-
-                // Execute the query
-                using (IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL))
-                {
-                    this.BuildDeliveryTable(dataReader, pPrintForm);
-                }
-                // Explicit close still happens through TrackerDb.Dispose()
+                requiredDate = TimeZoneUtils.Now().Date;
             }
 
-            //IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-            //this.BuildDeliveryTable(dataReader, pPrintForm);
-            //dataReader.Close();
-            //trackerDb.Close();
+            // Add delivery person filter if specified.
+            // The dropdown uses "%" / empty value to mean "all delivery people".
+            int parsedDeliveryById;
+            int? deliveryById = null;
+
+            if (!string.IsNullOrEmpty(pOnlyDeliveryBy) &&
+                pOnlyDeliveryBy != "%" &&
+                int.TryParse(pOnlyDeliveryBy, out parsedDeliveryById))
+            {
+                deliveryById = parsedDeliveryById;
+            }
+
+            // SQL has been moved out of the page into DeliverySheetRepository.
+            // This page now asks the repository for delivery sheet rows only.
+            var repo = new DeliverySheetRepository();
+            var queryResult = repo.GetDeliverySheetRows(requiredDate, deliveryById);
+
+            if (!queryResult.Success)
+            {
+                ShowPageStatus("Could not load delivery sheet: " + queryResult.ErrorMessage, true);
+                BuildDeliveryTable(new DeliverySheetBuildResult(), pPrintForm);
+                return;
+            }
+
+            if (queryResult.Items.Count == 0)
+                ShowPageStatus($"No deliveries found for {requiredDate:yyyy-MM-dd}.", false);
+            else
+                ClearPageStatus();
+
+            var accInfoRepository = new ContactsAccInfoRepository();
+            var manager = new DeliverySheetManager(
+                contactId => accInfoRepository.GetInvoiceTypeIdByContactId((int)contactId) ?? 0);
+
+            var buildResult = manager.Build(queryResult.Items, !pPrintForm);
+
+            // UI rendering stays in the WebForms page.
+            this.BuildDeliveryTable(buildResult, pPrintForm);
         }
 
-        private string StripEmailOut(string pNotes)
-        {
-            int length = pNotes.IndexOf("[#");
-            if (length >= 0)
-            {
-                int num = pNotes.IndexOf("#]");
-                if (num >= 0)
-                    pNotes = $"{pNotes.Substring(0, length)};{pNotes.Substring(num + 2)}";
-            }
-            return pNotes;
-        }
-        private void BuildDeliveryTable(IDataReader pDataReader, bool pPrintForm)
+        /*
+         * NOTE:
+         * The old delivery item processing methods were moved out of the WebForms page.
+         *
+         * Moved to DeliverySheetManager:
+         * - StripEmailOut
+         * - ReadDeliveryItems logic
+         * - Sundry contact handling
+         * - Invoice type prefix handling
+         * - Item HTML generation
+         * - Totals calculation
+         * - Sundry item reordering
+         *
+         * The page should now only handle WebForms UI rendering.
+         */
+
+        private void BuildDeliveryTable(DeliverySheetBuildResult buildResult, bool pPrintForm)
         {
             // Clear previous table rows and totals
             while (1 < this.tblDeliveries.Rows.Count)
                 this.tblDeliveries.Rows.RemoveAt(1);
+
             this.tblTotals.Rows.Clear();
 
-            // Prepare collections for delivery items, delivery by, and item totals
-            var deliveryItemsList = new List<deliveryItems>();
-            var sortedDictionary = new SortedDictionary<string, string>();
-            var itemTotals = new Dictionary<string, ItemTotals>();
+            // Prepare collections for delivery items, delivery by, and item totals.
+            // These are now prepared by DeliverySheetManager instead of being read
+            // directly from an IDataReader in the page.
+            if (buildResult == null)
+                buildResult = new DeliverySheetBuildResult();
 
-            // 1. Read all delivery items from the data reader
-            ReadDeliveryItems(pDataReader, deliveryItemsList, sortedDictionary, itemTotals, pPrintForm);
+            // 1. Delivery items have already been read from SQL by the repository
+            //    and transformed by the manager.
 
-            // 2. Reorder sundry items for display
-            ReorderSundryItems(deliveryItemsList);
+            // 2. Sundry item reordering is now handled by DeliverySheetManager.
 
             // 3. Add delivery rows to the table
-            AddDeliveryRows(deliveryItemsList, pPrintForm);
+            AddDeliveryRows(buildResult.Items, pPrintForm);
 
             // 4. Style the table rows for readability
             ApplyRowStyles();
 
             // 5. Build the totals summary table
-            BuildTotalsTable(itemTotals);
+            BuildTotalsTable(buildResult.Totals);
 
             // 6. Update the delivery by dropdown if not printing
             if (!pPrintForm)
-                UpdateDeliveryByDropdown(sortedDictionary);
+                UpdateDeliveryByDropdown(buildResult.DeliveryPeople);
 
             // 7. Update the UI panel
             this.upnlDeliveryItems.Update();
         }
 
         /// <summary>
-        /// Reads delivery items from the data reader and populates collections.
-        /// </summary>
-        private void ReadDeliveryItems(
-            IDataReader pDataReader,
-            List<deliveryItems> deliveryItemsList,
-            SortedDictionary<string, string> sortedDictionary,
-            Dictionary<string, ItemTotals> itemTotals,
-            bool pPrintForm)
-        {
-            string[] strArray = new string[8] { "", "dN", "d#", "g$", "cS", "s@", "!!", "??" };
-            CustomersAccInfoTbl customersAccInfoTbl = new CustomersAccInfoTbl();
-            string str1 = "";
-
-            while (pDataReader.Read())
-            {
-                bool flag = false;
-                deliveryItems deliveryItems1 = new deliveryItems();
-                deliveryItems1.ContactID = pDataReader["CustomerID"].ToString();
-                deliveryItems1.ContactCompany = pDataReader["CoName"].ToString();
-
-                // Sundry customer handling
-                if (deliveryItems1.ContactCompany.StartsWith(SystemConstants.CustomerConstants.SundryCustomerName))
-                {
-                    deliveryItems1.ContactID = SystemConstants.CustomerConstants.SundryCustomerNamePrefix;
-                    flag = true;
-                    string pNotes = pDataReader["Notes"].ToString();
-                    if (pNotes.Contains(":"))
-                        pNotes = pNotes.Remove(pNotes.IndexOf(":")).Trim();
-                    string str2 = this.StripEmailOut(pNotes);
-                    deliveryItems1.ContactCompany = "_*: " + str2;
-                }
-
-                // Notes handling
-                if (pDataReader["Notes"].ToString().StartsWith("+"))
-                {
-                    deliveryItems1.ContactCompany = $"{deliveryItems1.ContactCompany}[{pDataReader["Notes"].ToString()}]";
-                }
-
-                // Invoice type prefix
-                if (!deliveryItems1.ContactID.Equals(SystemConstants.CustomerConstants.SundryCustomerNamePrefix))
-                {
-                    long result = 0;
-                    if (long.TryParse(deliveryItems1.ContactID, out result))
-                    {
-                        int customersInvoiceType = customersAccInfoTbl.GetCustomersInvoiceType(result);
-                        if (customersInvoiceType > 1)
-                            deliveryItems1.ContactCompany = $"{strArray[customersInvoiceType - 1]}]> {deliveryItems1.ContactCompany}";
-                    }
-                }
-
-                // Done status
-                deliveryItems1.Done = pDataReader["Done"] != DBNull.Value && (bool)pDataReader["Done"];
-                if (deliveryItems1.Done)
-                    deliveryItems1.ContactCompany = "<b>DONE</b>-> " + deliveryItems1.ContactCompany;
-
-                // Delivery by dictionary
-                if (!pPrintForm)
-                {
-                    if (!sortedDictionary.ContainsKey(pDataReader["ToBeDeliveredBy"].ToString()))
-                        sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abbreviation"].ToString();
-                    deliveryItems1.OrderDetailURL = $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?CustomerID={HttpContext.Current.Server.UrlEncode(pDataReader["CustomerID"].ToString())}&DeliveryDate={pDataReader["RequiredByDate"]:d}&Notes={HttpContext.Current.Server.UrlEncode(pDataReader["Notes"].ToString())}";
-                }
-
-                deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abbreviation"]}";
-                deliveryItems1.InvoiceDone = pDataReader["InvoiceDone"] != DBNull.Value && (bool)pDataReader["InvoiceDone"];
-                deliveryItems1.PurchaseOrder = pDataReader["PurchaseOrder"] == DBNull.Value ? string.Empty : pDataReader["PurchaseOrder"].ToString();
-
-                // Item details and totals
-                string key = pDataReader["ItemTypeID"].ToString();
-                string str3 = pDataReader["ItemShortName"].ToString().Length > 0 ? pDataReader["ItemShortName"].ToString() : pDataReader["ItemDesc"].ToString();
-                string str4 = str3;
-                if (!bool.Parse(pDataReader["ItemEnabled"].ToString()))
-                {
-                    str3 = "<span style='background-color: RED; color: WHITE'>SOLD OUT</span> " + str3;
-                    str4 = $">{str4}<";
-                }
-                int num2 = pDataReader["SortOrder"] == DBNull.Value ? 0 : (int)pDataReader["SortOrder"];
-                if (num2 == 10)
-                {
-                    string pNotes = pDataReader["Notes"].ToString();
-                    if (flag && pNotes.Contains(":"))
-                        pNotes = pNotes.Substring(pNotes.IndexOf(":") + 1).Trim();
-                    string str5 = this.StripEmailOut(pNotes);
-                    str3 = $"{str3}: {str5}";
-                }
-                if (pDataReader["PackDesc"].ToString().Length > 0)
-                    deliveryItems1.Items += $"<span style='background-color:{pDataReader["BGColour"]}; padding-top: 1px; padding-bottom:2px'>{pDataReader["QuantityOrdered"]}X{str3} ({pDataReader["PackDesc"]})</span>";
-                else
-                    deliveryItems1.Items += $"<span style='background-color:{pDataReader["BGColour"]}'>{pDataReader["QuantityOrdered"]}X{str3}</span>";
-
-                // Totals calculation
-                if (num2 != 10)
-                {
-                    if (itemTotals.ContainsKey(key))
-                    {
-                        itemTotals[key].TotalsQty += Convert.ToDouble(pDataReader["QuantityOrdered"]);
-                    }
-                    else
-                    {
-                        if (str3.Contains(":"))
-                            str1 = str3.Remove(str3.IndexOf(":"));
-                        itemTotals[key] = new ItemTotals()
-                        {
-                            ItemID = key,
-                            ItemDesc = str4,
-                            TotalsQty = Convert.ToDouble(pDataReader["QuantityOrdered"].ToString()),
-                            ItemOrder = pDataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["SortOrder"].ToString())
-                        };
-                    }
-                }
-                deliveryItemsList.Add(deliveryItems1);
-            }
-            pDataReader.Close();
-        }
-
-        /// <summary>
-        /// Reorders sundry items in the delivery list for display.
-        /// </summary>
-        private void ReorderSundryItems(List<deliveryItems> deliveryItemsList)
-        {
-            int num1 = deliveryItemsList.Count;
-            for (int index1 = 0; index1 < num1; ++index1)
-            {
-                if (deliveryItemsList[index1].ContactCompany.StartsWith("_*:"))
-                {
-                    for (int index2 = index1 + 2; index2 < num1; ++index2)
-                    {
-                        if (deliveryItemsList[index2].ContactCompany.Equals(deliveryItemsList[index1].ContactCompany))
-                        {
-                            deliveryItems item = deliveryItemsList[index2];
-                            deliveryItemsList.RemoveAt(index2);
-                            deliveryItemsList.Insert(index1 + 1, item);
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Adds delivery rows to the deliveries table.
         /// </summary>
-        private void AddDeliveryRows(List<deliveryItems> deliveryItemsList, bool pPrintForm)
+        private void AddDeliveryRows(List<DeliverySheetDisplayItem> deliveryItemsList, bool pPrintForm)
         {
             int index = 0;
             int num1 = deliveryItemsList.Count;
+
             while (index < num1)
             {
                 TableRow row = new TableRow();
 
+                DeliverySheetDisplayItem currentItem = deliveryItemsList[index];
+                string orderDetailUrl = BuildOrderDetailUrl(currentItem);
+
                 // Details cell
                 TableCell cellDetails = new TableCell();
-                cellDetails.Text = deliveryItemsList[index].Details;
+                cellDetails.Text = currentItem.Details;
+
                 if (pPrintForm)
                 {
                     cellDetails.Font.Size = FontUnit.XSmall;
-                    cellDetails.Text = cellDetails.Text.Remove(0, cellDetails.Text.IndexOf(",") + 1);
+
+                    if (cellDetails.Text.Contains(","))
+                        cellDetails.Text = cellDetails.Text.Remove(0, cellDetails.Text.IndexOf(",") + 1);
                 }
                 else
-                    cellDetails.Text = $"<a class='plain' href='{deliveryItemsList[index].OrderDetailURL}'>{cellDetails.Text.Trim()}</a>";
+                {
+                    cellDetails.Text =
+                        $"<a class='plain' href='{orderDetailUrl}'>{cellDetails.Text.Trim()}</a>";
+                }
+
                 row.Cells.Add(cellDetails);
 
-                // Company cell
-                TableCell cellCompany = new TableCell();
+                // Contact cell
+                TableCell cellContact = new TableCell();
+
                 if (pPrintForm)
                 {
-                    string str6 = deliveryItemsList[index].ContactCompany;
-                    if (str6.Contains("]>"))
+                    string contactName = currentItem.ContactName;
+
+                    if (contactName.Contains("]>"))
                     {
-                        int num3 = str6.IndexOf("]>");
-                        str6 = str6.Substring(num3 + 3);
+                        int num3 = contactName.IndexOf("]>");
+                        contactName = contactName.Substring(num3 + 3);
                     }
-                    cellCompany.Text = str6;
+
+                    cellContact.Text = contactName;
                 }
-                else if (deliveryItemsList[index].ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
+                else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {
-                    cellCompany.Text = deliveryItemsList[index].ContactCompany;
+                    cellContact.Text = currentItem.ContactName;
                 }
                 else
                 {
-                    string contactCompany = deliveryItemsList[index].ContactCompany;
-                    if (contactCompany.Contains("]>"))
+                    string contactName = currentItem.ContactName;
+
+                    if (contactName.Contains("]>"))
                     {
-                        int length = contactCompany.IndexOf("]>");
-                        cellCompany.Text = $"{contactCompany.Substring(0, length)} - <a href='./CustomerDetails.aspx?ID={deliveryItemsList[index].ContactID}&'>{contactCompany.Substring(length + 3)}</a>";
+                        int length = contactName.IndexOf("]>");
+
+                        cellContact.Text =
+                            $"{contactName.Substring(0, length)} - " +
+                            $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName.Substring(length + 3)}</a>";
                     }
                     else
-                        cellCompany.Text = $"<a href='./CustomerDetails.aspx?ID={deliveryItemsList[index].ContactID}&'>{contactCompany}</a>";
-                    cellCompany.CssClass = "wordwrap"; // Enable wrapping for long company names
+                    {
+                        cellContact.Text =
+                            $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName}</a>";
+                    }
+
+                    cellContact.CssClass = "wordwrap"; // Enable wrapping for long contact names
                 }
-                row.Cells.Add(cellCompany);
+
+                row.Cells.Add(cellContact);
 
                 // ReceivedBy/Signature cells for print
                 if (pPrintForm)
@@ -445,26 +408,31 @@ namespace TrackerSQL.Pages
 
                 // Items cell
                 TableCell cellItems = new TableCell();
-                if (!string.IsNullOrWhiteSpace(deliveryItemsList[index].PurchaseOrder))
-                    cellItems.Text = $"<b>[PO: {deliveryItemsList[index].PurchaseOrder}]</b>";
-                if (!pPrintForm && deliveryItemsList[index].InvoiceDone)
-                {
-                    cellItems.Text = $"{cellItems.Text}{(string.IsNullOrEmpty(cellItems.Text) ? "" : " ")}<span style='background-color:green; color: white'>$Invcd$</span>";
-                }
-                string format = "<span  style='vertical-align:middle'> <a  href='{0}' class='plain'><img src='../images/imgButtons/EditButton.gif' alt='edit' /></a>";
-                if (!deliveryItemsList[index].InvoiceDone)
-                    format += "&nbsp<a href='{0}&Invoiced=Y' class='plain'><img src='../images/imgButtons/InvoicedButton.gif' alt='invcd' /></a></span>";
-                if (!deliveryItemsList[index].Done)
-                    format += "&nbsp<a href='{0}&Delivered=Y' class='plain'><img src='../images/imgButtons/DoneButton.gif' alt='dlvrd' /></a></span>";
-                string str7 = string.Format(format, deliveryItemsList[index].OrderDetailURL);
 
-                // Add all items for the same company
+                if (!string.IsNullOrWhiteSpace(currentItem.PurchaseOrder))
+                    cellItems.Text = $"<b>[PO: {currentItem.PurchaseOrder}]</b>";
+
+                if (!pPrintForm && currentItem.InvoiceDone)
+                {
+                    cellItems.Text =
+                        $"{cellItems.Text}{(string.IsNullOrEmpty(cellItems.Text) ? "" : " ")}" +
+                        "<span style='background-color:green; color: white'>$Invcd$</span>";
+                }
+
+                string str7 = BuildActionHtml(orderDetailUrl, currentItem);
+
+                // Add all items for the same contact
                 do
                 {
-                    cellItems.Text = cellItems.Text + (string.IsNullOrEmpty(cellItems.Text) ? "" : "; ") + deliveryItemsList[index].Items.ToString();
+                    cellItems.Text =
+                        cellItems.Text +
+                        (string.IsNullOrEmpty(cellItems.Text) ? "" : "; ") +
+                        deliveryItemsList[index].Items;
+
                     ++index;
                 }
-                while (index < num1 && deliveryItemsList[index - 1].ContactCompany == deliveryItemsList[index].ContactCompany);
+                while (index < num1 &&
+                       deliveryItemsList[index - 1].OrderID == deliveryItemsList[index].OrderID);
 
                 row.Cells.Add(cellItems);
 
@@ -473,7 +441,10 @@ namespace TrackerSQL.Pages
                     row.Cells.Add(new TableCell());
 
                 // Action cell for non-mobile, non-print
-                bool flag = (bool)this.Session["RunningOnMoble"];
+                bool flag =
+                    this.Session["RunningOnMoble"] != null &&
+                    (bool)this.Session["RunningOnMoble"];
+
                 if (!pPrintForm && !flag)
                     row.Cells.Add(new TableCell() { Text = str7 });
 
@@ -482,11 +453,46 @@ namespace TrackerSQL.Pages
         }
 
         /// <summary>
+        /// Builds the OrderDetail URL for the delivery row action links.
+        /// </summary>
+        private string BuildOrderDetailUrl(DeliverySheetDisplayItem item)
+        {
+            return $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?OrderID={item.OrderID}";
+        }
+
+        /// <summary>
+        /// Builds the action buttons for edit, invoice done, and delivered.
+        /// </summary>
+        private string BuildActionHtml(string orderDetailUrl, DeliverySheetDisplayItem item)
+        {
+            string html =
+                "<span style='vertical-align:middle'> " +
+                $"<a href='{orderDetailUrl}' class='plain'><img src='../images/imgButtons/EditButton.gif' alt='edit' /></a>";
+
+            if (!item.InvoiceDone)
+            {
+                html +=
+                    $"&nbsp;<a href='{orderDetailUrl}&Invoiced=Y' class='plain'><img src='../images/imgButtons/InvoicedButton.gif' alt='invcd' /></a>";
+            }
+
+            if (!item.Done)
+            {
+                html +=
+                    $"&nbsp;<a href='{orderDetailUrl}&Delivered=Y' class='plain'><img src='../images/imgButtons/DoneButton.gif' alt='dlvrd' /></a>";
+            }
+
+            html += "</span>";
+
+            return html;
+        }
+
+        /// <summary>
         /// Applies height and font styles to the first column of each row.
         /// </summary>
         private void ApplyRowStyles()
         {
             Style s = new Style();
+
             if (this.tblDeliveries.Rows.Count < CONST_ONLYAFEWDELIVERIES)
                 s.Height = new Unit(4.5, UnitType.Em);
             else if (this.tblDeliveries.Rows.Count > CONST_ALOTOFDELIVERIES)
@@ -506,13 +512,11 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// Builds the summary totals table.
         /// </summary>
-        private void BuildTotalsTable(Dictionary<string, ItemTotals> itemTotals)
+        private void BuildTotalsTable(List<DeliverySheetTotal> itemTotals)
         {
-            var dictionary = itemTotals.OrderBy(entry => entry.Value.ItemOrder)
-                .ToDictionary(pair => pair.Key, pair => pair.Value);
-
             TableRow summaryHeaderRow = new TableHeaderRow();
             TableRow summaryItemsRow = new TableRow();
+
             TableHeaderCell cellHeader = new TableHeaderCell();
             cellHeader.Text = "Item";
             cellHeader.Font.Bold = true;
@@ -523,19 +527,20 @@ namespace TrackerSQL.Pages
             cellTotal.Font.Bold = true;
             summaryItemsRow.Cells.Add(cellTotal);
 
-            foreach (var keyValuePair in dictionary)
+            foreach (var itemTotal in itemTotals)
             {
                 TableHeaderCell cellItem = new TableHeaderCell();
-                cellItem.Text = keyValuePair.Value.ItemDesc;
+                cellItem.Text = itemTotal.ItemDesc;
                 cellItem.Font.Bold = true;
                 summaryHeaderRow.Cells.Add(cellItem);
 
                 summaryItemsRow.Cells.Add(new TableCell()
                 {
-                    Text = $"{keyValuePair.Value.TotalsQty:0.00}",
+                    Text = SystemConstants.FormatConstants.FormatQuantity(itemTotal.TotalQty),
                     HorizontalAlign = HorizontalAlign.Right
                 });
             }
+
             this.tblTotals.Rows.Add(summaryHeaderRow);
             this.tblTotals.Rows.Add(summaryItemsRow);
         }
@@ -543,12 +548,14 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// Updates the delivery by dropdown and label visibility.
         /// </summary>
-        private void UpdateDeliveryByDropdown(SortedDictionary<string, string> sortedDictionary)
+        private void UpdateDeliveryByDropdown(List<DeliveryPersonOption> deliveryPeople)
         {
-            bool flag = sortedDictionary.Count > 1;
+            bool flag = deliveryPeople != null && deliveryPeople.Count > 1;
+
             this.ddlDeliveryBy.Items.Clear();
             this.ddlDeliveryBy.Visible = flag;
             this.lblDeliveryBy.Visible = flag;
+
             if (flag)
             {
                 this.ddlDeliveryBy.Items.Add(new ListItem()
@@ -557,360 +564,117 @@ namespace TrackerSQL.Pages
                     Value = "%",
                     Selected = true
                 });
-                foreach (var keyValuePair in sortedDictionary)
+
+                foreach (var person in deliveryPeople)
+                {
                     this.ddlDeliveryBy.Items.Add(new ListItem()
                     {
-                        Text = keyValuePair.Value,
-                        Value = keyValuePair.Key
+                        Text = person.Abbreviation,
+                        Value = person.PersonID
                     });
+                }
             }
         }
-        // old method all in one not very SOLID
-        //private void BuildDeliveryTable(IDataReader pDataReader, bool pPrintForm)
-        //{
-        //    while (1 < this.tblDeliveries.Rows.Count)
-        //        this.tblDeliveries.Rows.RemoveAt(1);
-        //    this.tblTotals.Rows.Clear();
-        //    List<DeliverySheet.deliveryItems> deliveryItemsList = new List<DeliverySheet.deliveryItems>();
-        //    SortedDictionary<string, string> sortedDictionary = new SortedDictionary<string, string>();
-        //    string str1 = "";
-        //    Dictionary<string, DeliverySheet.ItemTotals> source = new Dictionary<string, DeliverySheet.ItemTotals>();
-        //    string[] strArray = new string[8] { "", "dN", "d#",  "g$", "cS", "s@", "!!", "??" };
-        //    CustomersAccInfoTbl customersAccInfoTbl = new CustomersAccInfoTbl();
-        //    int num1 = 0;
-        //    while (pDataReader.Read())
-        //    {
-        //        bool flag = false;
-        //        DeliverySheet.deliveryItems deliveryItems1 = new DeliverySheet.deliveryItems();
-        //        deliveryItems1.ContactID = pDataReader["CustomerID"].ToString();
-        //        deliveryItems1.ContactCompany = pDataReader["CoName"].ToString();
-        //        if (deliveryItems1.ContactCompany.StartsWith(SystemConstants.CustomerConstants.SundryCustomerName))
-        //        {
-        //            deliveryItems1.ContactID = SystemConstants.CustomerConstants.SundryCustomerNamePrefix;
-        //            flag = true;
-        //            string pNotes = pDataReader["Notes"].ToString();
-        //            if (pNotes.Contains(":"))
-        //                pNotes = pNotes.Remove(pNotes.IndexOf(":")).Trim();
-        //            string str2 = this.StripEmailOut(pNotes);
-        //            deliveryItems1.ContactCompany = "_*: " + str2;
-        //        }
-        //        //else if (deliveryItems1.ContactCompany.StartsWith("Stock"))
-        //        //    deliveryItems1.ContactCompany = "STK: " + pDataReader["Notes"].ToString();
-        //        if (pDataReader["Notes"].ToString().StartsWith("+"))
-        //        {
-        //            DeliverySheet.deliveryItems deliveryItems2 = deliveryItems1;
-        //            deliveryItems2.ContactCompany = $"{deliveryItems2.ContactCompany}[{pDataReader["Notes"].ToString()}]";
-        //        }
-        //        if (!deliveryItems1.ContactID.Equals(SystemConstants.CustomerConstants.SundryCustomerNamePrefix))
-        //        {
-        //            long result = 0;
-        //            if (long.TryParse(deliveryItems1.ContactID, out result))
-        //            {
-        //                int customersInvoiceType = customersAccInfoTbl.GetCustomersInvoiceType(result);
-        //                if (customersInvoiceType > 1)
-        //                    deliveryItems1.ContactCompany = $"{strArray[customersInvoiceType - 1]}]> {deliveryItems1.ContactCompany}";
-        //            }
-        //        }
-        //        deliveryItems1.Done = pDataReader["Done"] != DBNull.Value && (bool)pDataReader["Done"];
-        //        if (deliveryItems1.Done)
-        //            deliveryItems1.ContactCompany = "<b>DONE</b>-> " + deliveryItems1.ContactCompany;
-        //        if (!pPrintForm)
-        //        {
-        //            if (!sortedDictionary.ContainsKey(pDataReader["ToBeDeliveredBy"].ToString()))
-        //                sortedDictionary[pDataReader["ToBeDeliveredBy"].ToString()] = pDataReader["Abbreviation"].ToString();
-        //            deliveryItems1.OrderDetailURL = $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?{$"CustomerID={HttpContext.Current.Server.UrlEncode(pDataReader["CustomerID"].ToString())}&DeliveryDate={pDataReader["RequiredByDate"]:d}&Notes={HttpContext.Current.Server.UrlEncode(pDataReader["Notes"].ToString())}"}";
-        //        }
-        //        deliveryItems1.Details = $"{pDataReader["RequiredByDate"]:d}, {pDataReader["Abbreviation"]}";
-        //        deliveryItems1.InvoiceDone = pDataReader["InvoiceDone"] != DBNull.Value && (bool)pDataReader["InvoiceDone"];
-        //        deliveryItems1.PurchaseOrder = pDataReader["PurchaseOrder"] == DBNull.Value ? string.Empty : pDataReader["PurchaseOrder"].ToString();
-        //        string key = pDataReader["ItemTypeID"].ToString();
-        //        string str3 = pDataReader["ItemShortName"].ToString().Length > 0 ? pDataReader["ItemShortName"].ToString() : pDataReader["ItemDesc"].ToString();
-        //        string str4 = str3;
-        //        if (!bool.Parse(pDataReader["ItemEnabled"].ToString()))
-        //        {
-        //            str3 = "<span style='background-color: RED; color: WHITE'>SOLD OUT</span> " + str3;
-        //            str4 = $">{str4}<";
-        //        }
-        //        int num2 = pDataReader["SortOrder"] == DBNull.Value ? 0 : (int)pDataReader["SortOrder"];
-        //        if (num2 == 10)
-        //        {
-        //            string pNotes = pDataReader["Notes"].ToString();
-        //            if (flag && pNotes.Contains(":"))
-        //                pNotes = pNotes.Substring(pNotes.IndexOf(":") + 1).Trim();
-        //            string str5 = this.StripEmailOut(pNotes);
-        //            str3 = $"{str3}: {str5}";
-        //        }
-        //        if (pDataReader["PackDesc"].ToString().Length > 0)
-        //            deliveryItems1.Items += $"<span style='background-color:{pDataReader["BGColour"]}; padding-top: 1px; padding-bottom:2px'>{pDataReader["QuantityOrdered"]}X{str3} ({pDataReader["PackDesc"]})</span>";
-        //        else
-        //            deliveryItems1.Items += $"<span style='background-color:{pDataReader["BGColour"]}'>{pDataReader["QuantityOrdered"]}X{str3}</span>";
-        //        if (num2 != 10)
-        //        {
-        //            if (source.ContainsKey(key))
-        //            {
-        //                source[key].TotalsQty += Convert.ToDouble(pDataReader["QuantityOrdered"]);
-        //            }
-        //            else
-        //            {
-        //                if (str3.Contains(":"))
-        //                    str1 = str3.Remove(str3.IndexOf(":"));
-        //                source[key] = new DeliverySheet.ItemTotals()
-        //                {
-        //                    ItemID = key,
-        //                    ItemDesc = str4,
-        //                    TotalsQty = Convert.ToDouble(pDataReader["QuantityOrdered"].ToString()),
-        //                    ItemOrder = pDataReader["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(pDataReader["SortOrder"].ToString())
-        //                };
-        //            }
-        //        }
-        //        deliveryItemsList.Add(deliveryItems1);
-        //        ++num1;
-        //    }
-        //    pDataReader.Close();
-        //    for (int index1 = 0; index1 < num1; ++index1)
-        //    {
-        //        if (deliveryItemsList[index1].ContactCompany.StartsWith("_*:"))
-        //        {
-        //            for (int index2 = index1 + 2; index2 < num1; ++index2)
-        //            {
-        //                if (deliveryItemsList[index2].ContactCompany.Equals(deliveryItemsList[index1].ContactCompany))
-        //                {
-        //                    DeliverySheet.deliveryItems deliveryItems = deliveryItemsList[index2];
-        //                    deliveryItemsList.RemoveAt(index2);
-        //                    deliveryItemsList.Insert(index1 + 1, deliveryItems);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    int index = 0;
-        //    while (index < num1)
-        //    {
-        //        TableRow row = new TableRow();
-        //        TableCell cellDetails = new TableCell();
-        //        cellDetails.Text = deliveryItemsList[index].Details;
-        //        if (pPrintForm)
-        //        {
-        //            cellDetails.Font.Size = FontUnit.XSmall;
-        //            cellDetails.Text = cellDetails.Text.Remove(0, cellDetails.Text.IndexOf(",") + 1);
-        //        }
-        //        else
-        //            cellDetails.Text = $"<a class='plain' href='{deliveryItemsList[index].OrderDetailURL}'>{cellDetails.Text.Trim()}</a>";
-        //        row.Cells.Add(cellDetails);
-        //        TableCell cellCompany = new TableCell();
-        //        if (pPrintForm)
-        //        {
-        //            string str6 = deliveryItemsList[index].ContactCompany;
-        //            if (str6.Contains("]>"))
-        //            {
-        //                int num3 = str6.IndexOf("]>");
-        //                str6 = str6.Substring(num3 + 3);
-        //            }
-        //            cellCompany.Text = str6;
-        //        }
-        //        else if (deliveryItemsList[index].ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
-        //        {
-        //            cellCompany.Text = deliveryItemsList[index].ContactCompany;
-        //        }
-        //        else
-        //        {
-        //            string contactCompany = deliveryItemsList[index].ContactCompany;
-        //            if (contactCompany.Contains("]>"))
-        //            {
-        //                int length = contactCompany.IndexOf("]>");
-        //                cellCompany.Text = $"{contactCompany.Substring(0, length)} - <a href='./CustomerDetails.aspx?ID={deliveryItemsList[index].ContactID}&'>{contactCompany.Substring(length + 3)}</a>";
-        //            }
-        //            else
-        //                cellCompany.Text = $"<a href='./CustomerDetails.aspx?ID={deliveryItemsList[index].ContactID}&'>{contactCompany}</a>";
-        //            cellCompany.CssClass = "wordwrap";
-        //        }
-        //        row.Cells.Add(cellCompany);
-        //        if (pPrintForm)
-        //        {
-        //            TableCell cellReceivedBy = new TableCell();
-        //            cellReceivedBy.BorderStyle = BorderStyle.Solid;
-        //            cellReceivedBy.BorderWidth = Unit.Pixel(1);
-        //            cellReceivedBy.BorderColor = Color.Green;
-        //            row.Cells.Add(cellReceivedBy);
-        //            TableCell cellSignature = new TableCell();
-        //            cellSignature.BorderStyle = BorderStyle.Solid;
-        //            cellSignature.BorderWidth = Unit.Pixel(1);
-        //            cellSignature.BorderColor = Color.Green;
-        //            row.Cells.Add(cellSignature);
-        //        }
-        //        TableCell cellItems = new TableCell();
-        //        if (!string.IsNullOrWhiteSpace(deliveryItemsList[index].PurchaseOrder))
-        //            cellItems.Text = $"<b>[PO: {deliveryItemsList[index].PurchaseOrder}]</b>";
-        //        if (!pPrintForm && deliveryItemsList[index].InvoiceDone)
-        //        {
-        //            TableCell tableCell = cellItems;
-        //            tableCell.Text = $"{tableCell.Text}{(string.IsNullOrEmpty(cellItems.Text) ? "" : " ")}<span style='background-color:green; color: white'>$Invcd$</span>";
-        //        }
-        //        string format = "<span  style='vertical-align:middle'> <a  href='{0}' class='plain'><img src='../images/imgButtons/EditButton.gif' alt='edit' /></a>";
-        //        if (!deliveryItemsList[index].InvoiceDone)
-        //            format += "&nbsp<a href='{0}&Invoiced=Y' class='plain'><img src='../images/imgButtons/InvoicedButton.gif' alt='invcd' /></a></span>";
-        //        if (!deliveryItemsList[index].Done)
-        //            format += "&nbsp<a href='{0}&Delivered=Y' class='plain'><img src='../images/imgButtons/DoneButton.gif' alt='dlvrd' /></a></span>";
-        //        string str7 = string.Format(format, (object)deliveryItemsList[index].OrderDetailURL);
-        //        do
-        //        {
-        //            TableCell tableCell = cellItems;
-        //            tableCell.Text = tableCell.Text + (string.IsNullOrEmpty(cellItems.Text) ? "" : "; ") + deliveryItemsList[index].Items.ToString();
-        //            ++index;
-        //        }
-        //        while (index < num1 && deliveryItemsList[index - 1].ContactCompany == deliveryItemsList[index].ContactCompany);
-        //        row.Cells.Add(cellItems);
-        //        if (pPrintForm)
-        //            row.Cells.Add(new TableCell());
-        //        bool flag = (bool)this.Session["RunningOnMoble"];
-        //        if (!pPrintForm && !flag)
-        //            row.Cells.Add(new TableCell() { Text = str7 });
-        //        this.tblDeliveries.Rows.Add(row);
-        //    }
-        //    Style s = new Style();
-        //    if (this.tblDeliveries.Rows.Count < CONST_ONLYAFEWDELIVERIES)
-        //        s.Height = new Unit(4.5, UnitType.Em);
-        //    else if (this.tblDeliveries.Rows.Count > CONST_ALOTOFDELIVERIES)
-        //    {
-        //        s.Height = new Unit(0.3, UnitType.Em);
-        //        s.Font.Size = new FontUnit(11.0, UnitType.Pixel);
-        //    }
-        //    else
-        //        s.Height = new Unit(2.0, UnitType.Em);
-        //    foreach (TableRow row in this.tblDeliveries.Rows)
-        //        row.Cells[0].ApplyStyle(s);
-        //    this.tblDeliveries.Rows[0].Cells[1].Text = $"To ({this.tblDeliveries.Rows.Count - 1})";
-        //    Dictionary<string, DeliverySheet.ItemTotals> dictionary = source.OrderBy<KeyValuePair<string, DeliverySheet.ItemTotals>, int>((System.Func<KeyValuePair<string, DeliverySheet.ItemTotals>, int>)(entry => entry.Value.ItemOrder)).ToDictionary<KeyValuePair<string, DeliverySheet.ItemTotals>, string, DeliverySheet.ItemTotals>((System.Func<KeyValuePair<string, DeliverySheet.ItemTotals>, string>)(pair => pair.Key), (System.Func<KeyValuePair<string, DeliverySheet.ItemTotals>, DeliverySheet.ItemTotals>)(pair => pair.Value));
-        //    TableRow summaryHeaderRow = (TableRow)new TableHeaderRow();
-        //    TableRow summaryItemsRow = new TableRow();
-        //    TableHeaderCell cellHeader = new TableHeaderCell();
-        //    cellHeader.Text = "Item";
-        //    cellHeader.Font.Bold = true;
-        //    summaryHeaderRow.Cells.Add((TableCell)cellHeader);
-        //    TableCell cellTotal = new TableCell();
-        //    cellTotal.Text = "Total";
-        //    cellTotal.Font.Bold = true;
-        //    summaryItemsRow.Cells.Add(cellTotal);
-        //    foreach (KeyValuePair<string, DeliverySheet.ItemTotals> keyValuePair in dictionary)
-        //    {
-        //        TableHeaderCell cellItem = new TableHeaderCell();
-        //        cellItem.Text = keyValuePair.Value.ItemDesc;
-        //        cellItem.Font.Bold = true;
-        //        summaryHeaderRow.Cells.Add((TableCell)cellItem);
-        //        summaryItemsRow.Cells.Add(new TableCell()
-        //        {
-        //            Text = $"{keyValuePair.Value.TotalsQty:0.00}",
-        //            HorizontalAlign = HorizontalAlign.Right
-        //        });
-        //    }
-        //    this.tblTotals.Rows.Add(summaryHeaderRow);
-        //    this.tblTotals.Rows.Add(summaryItemsRow);
-        //    if (pPrintForm)
-        //    {
-        //        this.tblTotals.CssClass += " small";
-        //    }
-        //    else
-        //    {
-        //        bool flag = sortedDictionary.Count > 1;
-        //        this.ddlDeliveryBy.Items.Clear();
-        //        this.ddlDeliveryBy.Visible = flag;
-        //        this.lblDeliveryBy.Visible = flag;
-        //        if (flag)
-        //        {
-        //            this.ddlDeliveryBy.Items.Add(new ListItem()
-        //            {
-        //                Text = "--- All ---",
-        //                Value = "%",
-        //                Selected = true
-        //            });
-        //            foreach (KeyValuePair<string, string> keyValuePair in sortedDictionary)
-        //                this.ddlDeliveryBy.Items.Add(new ListItem()
-        //                {
-        //                    Text = keyValuePair.Value,
-        //                    Value = keyValuePair.Key
-        //                });
-        //        }
-        //    }
-        //    this.upnlDeliveryItems.Update();
-        //}
+
+        /*
+         * LEGACY REFERENCE:
+         * The old all-in-one BuildDeliveryTable method was removed from this file.
+         *
+         * Old responsibilities were split as follows:
+         * - SQL/data access: DeliverySheetRepository
+         * - Business/transformation logic: DeliverySheetManager
+         * - UI rendering: DeliverySheet.aspx.cs
+         *
+         * Do not restore the old IDataReader-based method.
+         */
 
         protected void btnPrint_Click(object sender, EventArgs e)
         {
-            if (this.ddlActiveRoastDates == null || this.ddlActiveRoastDates.SelectedIndex <= 0)
+            if (this.ddlActivePrepDates == null || this.ddlActivePrepDates.SelectedIndex <= 0)
                 return;
+
             AppLogger.WriteLog("deliverysheet", "Printed delivery sheet");
-            this.Session[CONST_SESSION_SHEETDATE] = (object)$"{Convert.ToDateTime(this.ddlActiveRoastDates.SelectedValue):yyyy-MM-dd}";
+
+            this.Session[CONST_SESSION_SHEETDATE] =
+                TryGetSelectedDeliveryDate(out DateTime deliveryDate)
+                    ? deliveryDate.ToString("yyyy-MM-dd")
+                    : string.Empty;
+
             this.Response.Redirect("~/Pages/DeliverySheet.aspx?Print=Y");
         }
 
-        protected void ddlActiveRoastDates_SelectedIndexChanged(object sender, EventArgs e)
+        protected void ddlActivePrepDates_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = ddlActiveRoastDates.SelectedValue;
-            this.ltrlWhichDate.Text = $"{Convert.ToDateTime(this.ddlActiveRoastDates.SelectedValue):yyyy-MM-dd}";
+            if (!TryGetSelectedDeliveryDate(out DateTime deliveryDate))
+                return;
+
+            Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = deliveryDate.ToString("yyyy-MM-dd");
+
+            this.ltrlWhichDate.Text = deliveryDate.ToString("yyyy-MM-dd");
+
             this.Session[CONST_SESSION_SHEETDATE] = (object)this.ltrlWhichDate.Text;
             this.Session[CONST_SESSION_DELIVERTBY] = (object)string.Empty;
             this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = (object)string.Empty;
+
             this.ltrlWhichDate.Visible = true;
+
             if (string.IsNullOrEmpty(this.ltrlWhichDate.Text))
                 return;
+
             Button control = (Button)this.pnlDeliveryDate.FindControl("btnGo");
+
             if (control != null)
                 this.Form.DefaultButton = control.UniqueID;
+
             this.SetVarsAndBuildDeliverySheet();
-            AppLogger.WriteLog("deliverysheet", $"Changed roast date to {ddlActiveRoastDates.SelectedValue}");
+
+            AppLogger.WriteLog("deliverysheet", $"Changed delivery date to {ddlActivePrepDates.SelectedValue}");
         }
+
         protected void tbCalendarDate_TextChanged(object sender, EventArgs e)
         {
             string selectedDate = tbCalendarDate.Text.Trim();
+
             if (DateTime.TryParse(selectedDate, out DateTime dt))
             {
                 string value = dt.ToString("yyyy-MM-dd");
-                var item = ddlActiveRoastDates.Items.FindByValue(value);
+                var item = ddlActivePrepDates.Items.FindByValue(value);
+
                 if (item == null)
                 {
                     // Add new date to dropdown (insert after the first item)
-                    ddlActiveRoastDates.Items.Insert(1, new ListItem(dt.ToString("dd-MMM-yyyy (ddd)"), value));
-                    ddlActiveRoastDates.SelectedIndex = 1;
+                    ddlActivePrepDates.Items.Insert(1, new ListItem(dt.ToString("dd-MMM-yyyy (ddd)"), value));
+                    ddlActivePrepDates.SelectedIndex = 1;
                 }
                 else
                 {
-                    ddlActiveRoastDates.ClearSelection();
+                    ddlActivePrepDates.ClearSelection();
                     item.Selected = true;
                 }
+
                 // Update session and UI
-                ddlActiveRoastDates_SelectedIndexChanged(ddlActiveRoastDates, EventArgs.Empty);
+                ddlActivePrepDates_SelectedIndexChanged(ddlActivePrepDates, EventArgs.Empty);
             }
         }
-        protected void ddlActiveRoastDates_DataBound(object sender, EventArgs e)
+
+        protected void ddlActivePrepDates_DataBound(object sender, EventArgs e)
         {
-            // Only set the selected value if not a postback
             if (!IsPostBack)
             {
-                string str1 = Session[CONST_SESSION_DDLSHEETDATE_SELECTED] != null ? ((string)Session[CONST_SESSION_DDLSHEETDATE_SELECTED]).Trim() : "";
-                if (!string.IsNullOrEmpty(str1) && ddlActiveRoastDates.Items.FindByValue(str1) != null)
-                {
-                    ddlActiveRoastDates.SelectedValue = str1;
-                }
-                SetVarsAndBuildDeliverySheet();
+                SelectDeliveryDateFromSession();
+
+                if (TryGetSelectedDeliveryDate(out _))
+                    SetVarsAndBuildDeliverySheet();
             }
-            
+
+            /*
+             * LEGACY REFERENCE:
+             *
+             * Old code also restored ddlDeliveryBy from session here.
+             * The delivery-by dropdown is now rebuilt from DeliverySheetManager output
+             * after delivery rows are loaded.
+             */
         }
-            //bool flag = false;
-            //string str1 = this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] != null ? ((string)this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED]).Trim() : "";
-            //string str2 = this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] != null ? (string)this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] : "";
-            //if (!string.IsNullOrEmpty(str1) && this.ddlActiveRoastDates.Items.FindByValue(str1) != null)
-            //{
-            //    this.ddlActiveRoastDates.SelectedValue = str1;
-            //    flag = true;
-            //}
-            //if (!string.IsNullOrEmpty(str2) && this.ddlDeliveryBy.Items.FindByValue(str2) != null)
-            //{
-            //    this.ddlDeliveryBy.SelectedValue = str2;
-            //    flag = true;
-            //}
-            //if (!flag)
-            //    return;
-            //this.SetVarsAndBuildDeliverySheet();
-        //}
 
         protected void ddlDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -923,117 +687,122 @@ namespace TrackerSQL.Pages
             this.Session[CONST_SESSION_DELIVERTBY] = (object)string.Empty;
             this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = (object)string.Empty;
             this.Session[CONST_SESSION_SHEETDATE] = (object)string.Empty;
+
             this.Response.Redirect("DeliverySheet.aspx");
+        }
+
+        private bool TryGetSelectedDeliveryDate(out DateTime deliveryDate)
+        {
+            deliveryDate = TimeZoneUtils.Now().Date;
+
+            if (this.ddlActivePrepDates == null || this.ddlActivePrepDates.SelectedIndex <= 0)
+                return false;
+
+            string selectedValue = this.ddlActivePrepDates.SelectedValue;
+            if (string.IsNullOrWhiteSpace(selectedValue))
+                return false;
+
+            return DateTime.TryParse(selectedValue, out deliveryDate);
+        }
+
+        private void SelectDeliveryDateFromSession()
+        {
+            string sessionValue = this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] as string;
+            if (string.IsNullOrWhiteSpace(sessionValue))
+                return;
+
+            ListItem exactMatch = this.ddlActivePrepDates.Items.FindByValue(sessionValue);
+            if (exactMatch != null)
+            {
+                this.ddlActivePrepDates.ClearSelection();
+                exactMatch.Selected = true;
+                return;
+            }
+
+            if (!DateTime.TryParse(sessionValue, out DateTime targetDate))
+                return;
+
+            foreach (ListItem item in this.ddlActivePrepDates.Items)
+            {
+                if (string.IsNullOrWhiteSpace(item.Value))
+                    continue;
+
+                if (DateTime.TryParse(item.Value, out DateTime itemDate) && itemDate.Date == targetDate.Date)
+                {
+                    this.ddlActivePrepDates.ClearSelection();
+                    item.Selected = true;
+                    return;
+                }
+            }
         }
 
         protected void SetVarsAndBuildDeliverySheet()
         {
-            this.ltrlWhichDate.Text = $"{Convert.ToDateTime(this.ddlActiveRoastDates.SelectedValue):yyyy-MM-dd}";
-            this.Session[CONST_SESSION_SHEETDATE] = (object)this.ltrlWhichDate.Text;
+            if (!TryGetSelectedDeliveryDate(out DateTime deliveryDate))
+                return;
+
+            this.ltrlWhichDate.Text = deliveryDate.ToString("yyyy-MM-dd");
+            this.Session[CONST_SESSION_SHEETDATE] = this.ltrlWhichDate.Text;
             this.BuildDeliverySheet();
         }
 
         protected void btnGo_Click(object sender, EventArgs e)
         {
-            if (this.ddlActiveRoastDates == null || this.ddlActiveRoastDates.SelectedIndex <= 0)
+            if (this.ddlActivePrepDates == null || this.ddlActivePrepDates.SelectedIndex <= 0)
                 return;
+
             this.SetVarsAndBuildDeliverySheet();
         }
 
         protected void btnFind_Click(object sender, EventArgs e)
         {
-            AppLogger.WriteLog("deliverysheet", $"Searched for client: {tbxFindClient.Text}");
-            string strSQL = $"SELECT DISTINCT OrdersTbl.OrderID, CustomersTbl.CompanyName AS CoName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.RoastDate, OrdersTbl.ItemTypeID, ItemTypeTbl.ItemDesc, OrdersTbl.QuantityOrdered, ItemTypeTbl.ItemShortName, ItemTypeTbl.ItemEnabled, ItemTypeTbl.ReplacementID,  CityPrepDaysTbl.DeliveryOrder,  ItemTypeTbl.SortOrder, OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, OrdersTbl.PurchaseOrder, OrdersTbl.Confirmed, OrdersTbl.InvoiceDone, OrdersTbl.Done, OrdersTbl.Notes, PackagingTbl.Description AS PackDesc, PackagingTbl.BGColour, PersonsTbl.Abbreviation FROM ((((CityPrepDaysTbl RIGHT OUTER JOIN CustomersTbl ON CityPrepDaysTbl.CityID = CustomersTbl.City) RIGHT OUTER JOIN  (OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) ON CustomersTbl.CustomerID = OrdersTbl.CustomerID) LEFT OUTER JOIN   PackagingTbl ON OrdersTbl.PackagingID = PackagingTbl.PackagingID) LEFT OUTER JOIN ItemTypeTbl ON OrdersTbl.ItemTypeID = ItemTypeTbl.ItemTypeID) WHERE (CustomersTbl.CompanyName LIKE '%{this.tbxFindClient.Text}%') AND (OrdersTbl.Done = false) ORDER BY OrdersTbl.RequiredByDate, OrdersTbl.ToBeDeliveredBy, CityPrepDaysTbl.DeliveryOrder, CustomersTbl.CompanyName, ItemTypeTbl.SortOrder";
-            TrackerDb trackerDb = new TrackerDb();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader(strSQL);
-            this.BuildDeliveryTable(dataReader, false);
-            dataReader.Close();
-            trackerDb.Close();
+            AppLogger.WriteLog("deliverysheet", $"Searched for contact: {tbxFindClient.Text}");
+
+            // Search SQL has moved to DeliverySheetRepository.
+            // This removes the old inline SQL and avoids SQL injection from the search textbox.
+            var repo = new DeliverySheetRepository();
+            var queryResult = repo.SearchDeliverySheetRowsByContact(this.tbxFindClient.Text);
+
+            if (!queryResult.Success)
+            {
+                ShowPageStatus("Contact search failed: " + queryResult.ErrorMessage, true);
+                BuildDeliveryTable(new DeliverySheetBuildResult(), false);
+                return;
+            }
+
+            if (queryResult.Items.Count == 0)
+                ShowPageStatus($"No open deliveries found matching '{tbxFindClient.Text.Trim()}'.", false);
+            else
+                ClearPageStatus();
+
+            var accInfoRepository = new ContactsAccInfoRepository();
+            var manager = new DeliverySheetManager(
+                contactId => accInfoRepository.GetInvoiceTypeIdByContactId((int)contactId) ?? 0);
+
+            var buildResult = manager.Build(queryResult.Items, true);
+
+            this.BuildDeliveryTable(buildResult, false);
         }
 
         protected void tbxFindClient_OnTextChanged(object sender, EventArgs e)
         {
             Button control = (Button)this.pnlDeliveryDate.FindControl("btnFind");
+
             if (control != null)
                 this.Form.DefaultButton = control.UniqueID;
+
             this.btnFind_Click(sender, e);
         }
 
-        private class deliveryItems
-        {
-            private string _ContactID;
-            private string _ContactCompany;
-            private string _Details;
-            private string _PurchaseOrder;
-            private bool _Done;
-            private bool _InvoiceDone;
-            private string _Items;
-            private string _OrderDetailURL;
-
-            public deliveryItems()
-            {
-                this._ContactID = this._ContactCompany = this._Details = this._PurchaseOrder = this._Items = this._OrderDetailURL = string.Empty;
-                this._Done = this._InvoiceDone = false;
-            }
-
-            public string ContactID
-            {
-                get => this._ContactID;
-                set => this._ContactID = value;
-            }
-
-            public string ContactCompany
-            {
-                get => this._ContactCompany;
-                set => this._ContactCompany = value;
-            }
-
-            public string Details
-            {
-                get => this._Details;
-                set => this._Details = value;
-            }
-
-            public string PurchaseOrder
-            {
-                get => this._PurchaseOrder;
-                set => this._PurchaseOrder = value;
-            }
-
-            public bool Done
-            {
-                get => this._Done;
-                set => this._Done = value;
-            }
-
-            public bool InvoiceDone
-            {
-                get => this._InvoiceDone;
-                set => this._InvoiceDone = value;
-            }
-
-            public string Items
-            {
-                get => this._Items;
-                set => this._Items = value;
-            }
-
-            public string OrderDetailURL
-            {
-                get => this._OrderDetailURL;
-                set => this._OrderDetailURL = value;
-            }
-        }
-
-        private class ItemTotals
-        {
-            public string ItemID { get; set; }
-
-            public string ItemDesc { get; set; }
-
-            public double TotalsQty { get; set; }
-
-            public int ItemOrder { get; set; }
-        }
+        /*
+         * NOTE:
+         * The old private nested classes deliveryItems and ItemTotals were removed.
+         *
+         * Replaced by Models:
+         * - DeliverySheetDisplayItem
+         * - DeliverySheetTotal
+         * - DeliveryPersonOption
+         * - DeliverySheetBuildResult
+         */
     }
 }

@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.SysDataTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -15,15 +15,15 @@ namespace TrackerSQL.Controls
 {
     public class SysDataTbl
     {
-        private const string CONST_SQL_SELECT = "SELECT ID, LastReoccurringDate, DoReoccuringOrders, DateLastPrepDateCalcd, MinReminderDate, GroupItemTypeID, InternalCustomerIds FROM SysDataTbl WHERE ID = 1";
+        private const string CONST_SQL_SELECT = "SELECT ID, LastRecurringDate, DoReoccuringOrders, DateLastPrepDateCalcd, MinReminderDate, GroupItemTypeID, InternalCustomerIds FROM SysDataTbl WHERE ID = 1";
         private const string CONST_SQL_SELECTMINREMINDERDATE = "SELECT MinReminderDate FROM SysDataTbl WHERE ID = 1";
         private const string CONST_SQL_SELECTGROUPSERVICETYPEID = "SELECT GroupItemTypeID FROM SysDataTbl WHERE ID = 1";
         private const string CONST_SQL_SELECTINTERNALCUSTOMERIDS = "SELECT InternalCustomerIds FROM SysDataTbl WHERE ID = 1";
-        private const string CONST_SQL_UPDATEBYID = "UPDATE SysDataTbl SET LastReoccurringDate = ?, DoReoccuringOrders = ?, DateLastPrepDateCalcd = ?, MinReminderDate = ?, GroupItemTypeID = ?, InternalCustomerIds = ? WHERE (SysDataTbl.ID = ?)";
+        private const string CONST_SQL_UPDATEBYID = "UPDATE SysDataTbl SET LastRecurringDate = ?, DoReoccuringOrders = ?, DateLastPrepDateCalcd = ?, MinReminderDate = ?, GroupItemTypeID = ?, InternalCustomerIds = ? WHERE (SysDataTbl.ID = ?)";
 
 
         private int _ID;
-        private DateTime _LastReoccurringDate;
+        private DateTime _LastRecurringDate;
         private bool _DoReoccuringOrders;
         private DateTime _DateLastPrepDateCalcd;
         private DateTime _MinReminderDate;
@@ -33,7 +33,7 @@ namespace TrackerSQL.Controls
         public SysDataTbl()
         {
             this._ID = 0;
-            this._LastReoccurringDate = TimeZoneUtils.Now().Date;
+            this._LastRecurringDate = TimeZoneUtils.Now().Date;
             this._DoReoccuringOrders = false;
             this._DateLastPrepDateCalcd = TimeZoneUtils.Now().Date;
             this._MinReminderDate = TimeZoneUtils.Now().Date;
@@ -47,10 +47,10 @@ namespace TrackerSQL.Controls
             set => this._ID = value;
         }
 
-        public DateTime LastReoccurringDate
+        public DateTime LastRecurringDate
         {
-            get => this._LastReoccurringDate;
-            set => this._LastReoccurringDate = value;
+            get => this._LastRecurringDate;
+            set => this._LastRecurringDate = value;
         }
 
         public bool DoReoccuringOrders
@@ -97,7 +97,7 @@ namespace TrackerSQL.Controls
                     all.Add(new SysDataTbl()
                     {
                         ID = dataReader["ID"] == DBNull.Value ? 0 : Convert.ToInt32(dataReader["ID"]),
-                        LastReoccurringDate = dataReader["LastReoccurringDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["LastReoccurringDate"]).Date,
+                        LastRecurringDate = dataReader["LastRecurringDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["LastRecurringDate"]).Date,
                         DoReoccuringOrders = dataReader["DoReoccuringOrders"] != DBNull.Value && Convert.ToBoolean(dataReader["DoReoccuringOrders"]),
                         DateLastPrepDateCalcd = dataReader["DateLastPrepDateCalcd"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["DateLastPrepDateCalcd"]).Date,
                         MinReminderDate = dataReader["MinReminderDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dataReader["MinReminderDate"]).Date,
@@ -170,13 +170,13 @@ namespace TrackerSQL.Controls
             if (orig_ID > 0)
             {
                 TrackerDb trackerDb = new TrackerDb();
-                trackerDb.AddParams((object)SysDataItem.LastReoccurringDate, DbType.Date);
+                trackerDb.AddParams((object)SysDataItem.LastRecurringDate, DbType.Date);
                 trackerDb.AddParams((object)SysDataItem.DoReoccuringOrders, DbType.Boolean);
                 trackerDb.AddParams((object)SysDataItem.DateLastPrepDateCalcd, DbType.Date);
                 trackerDb.AddParams((object)SysDataItem.MinReminderDate, DbType.Date);
                 trackerDb.AddParams((object)SysDataItem.GroupItemTypeID, DbType.Int32, "@GroupItemTypeID");
                 trackerDb.AddWhereParams((object)orig_ID, DbType.Int32);
-                str = trackerDb.ExecuteNonQuerySQL("UPDATE SysDataTbl SET LastReoccurringDate = ?, DoReoccuringOrders = ?, DateLastPrepDateCalcd = ?, MinReminderDate = ?, GroupItemTypeID = ?WHERE (SysDataTbl.ID = ?)");
+                str = trackerDb.ExecuteNonQuerySQL("UPDATE SysDataTbl SET LastRecurringDate = ?, DoReoccuringOrders = ?, DateLastPrepDateCalcd = ?, MinReminderDate = ?, GroupItemTypeID = ?WHERE (SysDataTbl.ID = ?)");
                 trackerDb.Close();
             }
             return str;

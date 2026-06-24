@@ -1,4 +1,4 @@
-﻿<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -10,8 +10,8 @@
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TrackerDotNet</RootNamespace>
-    <AssemblyName>TrackerDotNet</AssemblyName>
+    <RootNamespace>TrackerSQL</RootNamespace>
+    <AssemblyName>TrackerSQL</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
@@ -125,20 +125,10 @@
     <Content Include="App_Data\SQLCommands001.xml" />
     <Content Include="App_Data\SQLCommands_AwayPeriod.xml" />
     <Content Include="CleanMigrationTables.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\AddForeignKeys_LATEST.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\CreateTables_LATEST.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\DataMigration_LATEST.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\DiagnoseAndFixAccessSrcDates.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\Fix3FailedTables.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\FixBadDates_ContactsUsageTbl.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\FixContactsItemsPredictedTbl_Dates.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\FixContactUsageTables.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\FixSourceDataDates.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\ManualDropAllTables.sql" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\VerifyMigrationRenames.sql" />
     <Content Include="Default.aspx" />
-    <Content Include="diagnose-contacts-orders.sql" />
+    <Content Include="DevTools\DatabaseTools\diagnose-contacts-orders.sql" />
     <Content Include="DisableClient.aspx" />
+    <Content Include="Documentation\repomix-output.xml" />
     <Content Include="fix-step-n-data-migration.sql" />
     <Content Include="Global.asax" />
     <Content Include="HttpErrorPage.aspx" />
@@ -193,10 +183,12 @@
     <Content Include="images\imgButtons\LastPage.gif" />
     <Content Include="images\imgButtons\LockItem.gif" />
     <Content Include="images\imgButtons\MoveOnADay.gif" />
+    <Content Include="images\imgButtons\NextBtn.png" />
     <Content Include="images\imgButtons\NextPage.gif" />
     <Content Include="images\imgButtons\OpenItem.gif" />
     <Content Include="images\imgButtons\PasteItem.gif" />
     <Content Include="images\imgButtons\Picture.gif" />
+    <Content Include="images\imgButtons\PreviousBtn.png" />
     <Content Include="images\imgButtons\PrevPage.gif" />
     <Content Include="images\imgButtons\SelectItem.gif" />
     <Content Include="images\imgButtons\Shield.gif" />
@@ -210,12 +202,15 @@
     <Content Include="images\logo\QuaffeeLogoWeb.jpg" />
     <Content Include="Migrations\RemigrateDateColumns.sql" />
     <Content Include="Migrations\Scripts\DropAllTables.sql" />
+    <Content Include="Migrations\VerifyMigrationReport.sql" />
+    <Content Include="Migrations\VerifyMigrationReport_FIXED.sql" />
     <Content Include="Pages\ClientList.aspx" />
+    <Content Include="Pages\ItemsRequired.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
     <Content Include="Pages\Contacts.aspx" />
     <Content Include="Pages\ContactsTest.aspx" />
-    <Content Include="Pages\CustomersAway.aspx" />
-    <Content Include="Pages\CustomersAwayDetail.aspx" />
+    <Content Include="Pages\ContactsAway.aspx" />
+    <Content Include="Pages\ContactsAwayDetail.aspx" />
     <Content Include="Pages\DeleteOrderLine.aspx" />
     <Content Include="Pages\DeliverySheet.aspx" />
     <Content Include="Pages\GroupItemDetail.aspx" />
@@ -235,8 +230,8 @@
     <Content Include="Pages\OrderVineyard2Buiten.aspx" />
     <Content Include="Pages\PreperationSummary.aspx" />
     <Content Include="Pages\QuaffeeCoffeeTastingSheet.aspx" />
-    <Content Include="Pages\ReoccuringOrderDetails.aspx" />
-    <Content Include="Pages\ReoccuringOrders.aspx" />
+    <Content Include="Pages\\RecurringOrderDetails.aspx" />
+    <Content Include="Pages\\RecurringOrders.aspx" />
     <Content Include="Pages\RepairDetail.aspx" />
     <Content Include="Pages\Repairs.aspx" />
     <Content Include="Pages\RepairStatusChange.aspx" />
@@ -251,21 +246,12 @@
     <Content Include="Docs\MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md" />
     <Content Include="csv Migrations\MigrationRunner\Metadata\PlanEdits\PlanNormalize.csv" />
     <Content Include="csv Migrations\MigrationRunner\Metadata\PlanEdits\PlanColumns.csv" />
-    <Content Include="Data\Metadata\PlanEdits\Sql\.gitkeep" />
-    <Content Include="Data\Metadata\PlanEdits\TableMigrationReport-Dec-1.csv" />
-    <Content Include="FIXES_READY_FOR_TESTING.md" />
+    <Content Include="Documentation\FIXES_READY_FOR_TESTING.md" />
     <Content Include="Migrations\Scripts\README-DropAllTables.md" />
     <Content Include="Migrations\Scripts\TestDropAllTables.bat" />
     <Content Include="Migrations\Scripts\FixMigrationAfterDrop.bat" />
     <Content Include="Migrations\Scripts\MigrationRunner-MenuOptions.md" />
-    <Content Include="diagnose-contacts-orders.ps1" />
-    <Content Include="diagnose-step-n.ps1" />
-    <Content Include="fix-missing-database.ps1" />
-    <Content Include="FIXED-DROP-COLUMN-ISSUE.md" />
-    <Content Include="regenerate-ddl-and-migrate.ps1" />
-    <Content Include="fix-bad-dates-and-migrate.ps1" />
-    <Content Include="Data\Metadata\README.md" />
-    <Content Include="Data\Metadata\BulkRenameRules.json" />
+    <Content Include="Documentation\FIXED-DROP-COLUMN-ISSUE.md" />
     <Content Include="Migrations\MIGRATION_RENAME_GUIDE.md" />
     <Content Include="Migrations\POST_MIGRATION_CODE_UPDATES.md" />
     <Content Include="Migrations\README_MIGRATION.md" />
@@ -320,6 +306,124 @@
     <Content Include="Migrations\TWO_FIXES_NEED_REGENERATE.md" />
     <Content Include="Migrations\AMBIGUOUS_COLUMN_NAMES_FIX.md" />
     <Content Include="Migrations\REGEX_FIX_BROKEN_PROPER_FIX.md" />
+    <Content Include="Migrations\GITHUB_SUBMISSION_COMPLETE.md" />
+    <Content Include="Migrations\Data\Metadata\TableMigrationReport-20-16-Oct-a.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-09-Mar-26.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-09-Mar-26.xlsx" />
+    <Content Include="Migrations\Data\TableMigrationReport-10-Mar-26.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-10-Mar-26.xlsx" />
+    <Content Include="Migrations\Data\TableMigrationReport-20-16-Oct-a.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-20-oct-a.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-20-oct.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-20-oct.xlsx" />
+    <Content Include="Migrations\Data\TableMigrationReport-28-oct.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-28-oct.xlsx" />
+    <Content Include="Migrations\Data\TableMigrationReport-Nov-06.csv" />
+    <Content Include="Migrations\Data\TableMigrationReport-Nov-06.xlsx" />
+    <Content Include="Documentation\PROJECT_OVERVIEW.md" />
+    <Content Include="Documentation\AI_CONTEXT.md" />
+    <Content Include="Documentation\MIGRATION_GUIDE.md" />
+    <Content Include="Documentation\TABLE_SCHEMA_REFERENCE.md" />
+    <Content Include="Documentation\CODE_STRUCTURE.md" />
+    <Content Include="Documentation\README.md" />
+    <Content Include="Documentation\INDEX.md" />
+    <Content Include="Documentation\WorkInProgress\README.md" />
+    <Content Include="Documentation\WorkInProgress\MIGRATION_TODO.md" />
+    <Content Include="Documentation\WorkInProgress\CURRENT_ISSUES.md" />
+    <Content Include="Documentation\WorkInProgress\COMPLETED_TASKS.md" />
+    <Content Include="Documentation\WorkInProgress\SUMMARY.md" />
+    <Content Include="Documentation\WorkInProgress\INDEX.md" />
+    <Content Include="Documentation\WorkInProgress\TASK_1.2_COMPLETE.md" />
+    <Content Include="Documentation\WorkInProgress\PHASE1_LOOKUPS_COMPLETE.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_PARTIAL_COMPLETE.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_COMPLETE_ALL_TABS.md" />
+    <Content Include="Documentation\ARCHITECTURE_RULES.md" />
+    <Content Include="Documentation\WorkInProgress\ARCHITECTURE_RULES_IMPLEMENTATION.md" />
+    <Content Include="Documentation\WorkInProgress\ITEMS_TAB_TABLE_NAME_FIX.md" />
+    <Content Include="Documentation\WorkInProgress\REPOSITORY_PATTERN_ENFORCEMENT_IN_PROGRESS.md" />
+    <Content Include="Documentation\WorkInProgress\REPOSITORY_PATTERN_RULE_ESTABLISHED.md" />
+    <Content Include="Documentation\WorkInProgress\DELETE_SQLDATASOURCES_NOW.md" />
+    <Content Include="Documentation\WorkInProgress\REPOSITORY_ENFORCEMENT_PHASE1_COMPLETE.md" />
+    <Content Include="Documentation\HARD_PROJECT_RULES.md" />
+    <Content Include="Documentation\WorkInProgress\HARD_RULES_DOCUMENTED.md" />
+    <Content Include="Documentation\REPOSITORY_STANDARDS.md" />
+    <Content Include="Documentation\WorkInProgress\REPOSITORY_STANDARDS_IMPLEMENTED.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_ITEMS_TAB_REPOSITORY_COMPLETE.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_CITIES_GRID_REPOSITORY_COMPLETE.md" />
+    <Content Include="Documentation\WorkInProgress\ITEM_POCO_PROPERTY_ALIAS_FIX.md" />
+    <Content Include="Documentation\NO_ALIAS_PROPERTIES_POLICY.md" />
+    <Content Include="Documentation\WorkInProgress\ITEM_POCO_ALIASES_REMOVED_PROPER_FIX.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_NO_OBJECTDATASOURCE_FINAL_SWEEP.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_GRIDVIEW_EDIT_FIX.md" />
+    <Content Include="Documentation\WorkInProgress\GRIDVIEW_EDIT_ROW_POSITION_FIX.md" />
+    <Content Include="Documentation\WorkInProgress\SERIALIZATION_FIX_SESSION_INSTEAD_OF_VIEWSTATE.md" />
+    <Content Include="Documentation\WorkInProgress\WINDOWS_DEFENDER_FIX.md" />
+    <Content Include="Documentation\WorkInProgress\LOOKUPS_UI_UX_FIXES.md" />
+    <Content Include="Documentation\POST_BUILD_AND_ASSEMBLY_NAMING.md" />
+    <Content Include="Documentation\NAMESPACE_RENAME_TRACKERDOTNET_TO_TRACKERSQL.md" />
+    <Content Include="Documentation\CODE_CLEANUP_DUPLICATE_USINGS.md" />
+    <Content Include="Documentation\AREAS_TAB_FIXES_AND_RENAME.md" />
+    <Content Include="DevTools\CodeQuality\FixDuplicateUsings.ps1" />
+    <Content Include="DevTools\CodeQuality\RenameCitiesToAreas.ps1" />
+    <Content Include="DevTools\CodeQuality\RenameToTrackerSQL.ps1" />
+    <Content Include="DevTools\CodeQuality\ScanCodeQuality.ps1" />
+    <Content Include="DevTools\DatabaseTools\diagnose-contacts-orders.ps1" />
+    <Content Include="DevTools\DatabaseTools\diagnose-step-n.ps1" />
+    <Content Include="DevTools\DatabaseTools\fix-bad-dates-and-migrate.ps1" />
+    <Content Include="DevTools\DatabaseTools\fix-missing-database.ps1" />
+    <Content Include="DevTools\DatabaseTools\regenerate-ddl-and-migrate.ps1" />
+    <Content Include="DevTools\DatabaseTools\test-csv-import.ps1" />
+    <Content Include="DevTools\DatabaseTools\test-csv-line-parsing.ps1" />
+    <Content Include="DevTools\DatabaseTools\test-csv-parser.ps1" />
+    <Content Include="DevTools\DatabaseTools\test-drop-column-fix.ps1" />
+    <Content Include="DevTools\DatabaseTools\test-error-reporting-fix.ps1" />
+    <Content Include="DevTools\Documentation\CODE_CLEANUP_COMPLETE.md" />
+    <Content Include="DevTools\Documentation\NAMESPACE_RENAME_COMPLETE.md" />
+    <Content Include="DevTools\Documentation\QUICK_FIX_WINDOWS_DEFENDER.md" />
+    <Content Include="DevTools\Scripts\OrganizeDevTools.ps1" />
+    <Content Include="DevTools\Scripts\UnblockBinaries.ps1" />
+    <Content Include="DevTools\Documentation\Next_Migration_ClientList.md" />
+    <Content Include="Migrations\RunMigrationAuto.ps1" />
+    <Content Include="Migrations\MIGRATION_FIXES_COMPLETE.md" />
+    <Content Include="Migrations\VERIFICATION_GUIDE.md" />
+    <Content Include="CONTRIBUTING.md" />
+    <Content Include="README.md" />
+    <Content Include="Documentation\WorkInProgress\ROASTDATE_PREPDATE_MIGRATION.md" />
+    <Content Include="Data\Metadata\TableMigrationReport-14-May-26.csv" />
+    <Content Include="DevTools\Documentation\TrackerDb_to_TrackerSQLDb_Migration_Plan.md" />
+    <Content Include="DevTools\Scripts\Find-TrackerDbUsages.ps1" />
+    <Content Include="DevTools\Documentation\Migration_Template.md" />
+    <Content Include="DevTools\Documentation\Quick_Reference_TrackerDb_Migration.md" />
+    <Content Include="DevTools\Documentation\AreaPrepDaysTbl_Migration_Example.md" />
+    <Content Include="DevTools\Documentation\README_TrackerDb_Migration.md" />
+    <Content Include="DevTools\Documentation\Migration_Analysis_Summary.md" />
+    <Content Include="DevTools\Documentation\Migration_Progress_Tracker.md" />
+    <Content Include="DevTools\Scripts\Migrate-TrackerDbFile.ps1" />
+    <Content Include="DevTools\Scripts\Migrate-AllTrackerDbFiles.ps1" />
+    <Content Include="DevTools\Scripts\Generate-PocoClasses.ps1" />
+    <Content Include="DevTools\Documentation\Complete_Migration_Execution_Guide.md" />
+    <Content Include="DevTools\Scripts\Verify-Migration.ps1" />
+    <Content Include="DevTools\Scripts\README.md" />
+    <Content Include="DevTools\QUICK_START_MIGRATION.md" />
+    <Content Include="DevTools\README.md" />
+    <Content Include="DevTools\Documentation\Phase1_Progress_Report.md" />
+    <Content Include="DevTools\Scripts\Analyze-Legacy-Classes.ps1" />
+    <Content Include="DevTools\Scripts\Generate-Repository.ps1" />
+    <Content Include="DevTools\Documentation\Minimal_AI_Repository_Migration_Plan.md" />
+    <Content Include="DevTools\QUICK_START_REPOSITORY_MIGRATION.md" />
+    <Content Include="DevTools\Documentation\Naming_Convention_Reference.md" />
+    <Content Include="DevTools\Documentation\NAMING_CONVENTION_FIX.md" />
+    <Content Include="DevTools\Documentation\Legacy_To_Poco_Mapping.csv" />
+    <Content Include="DevTools\Scripts\Batch-Generate-Repositories.ps1" />
+    <Content Include="DevTools\Scripts\Batch-Generate-Pocos.ps1" />
+    <Content Include="DevTools\Scripts\Master-Generate-All.ps1" />
+    <Content Include="DevTools\Documentation\Zero_AI_CRUD_Fill_Guide.md" />
+    <Content Include="DevTools\ONE_COMMAND_EXECUTION.md" />
+    <Content Include="DevTools\Scripts\Add-Missing-CRUD.ps1" />
+    <Content Include="DevTools\Scripts\Batch-Add-Missing-CRUD.ps1" />
+    <Content Include="DevTools\QUICK_START_ADD_CRUD.md" />
+    <Content Include="DevTools\Documentation\CORRECTED_What_Gets_Added.md" />
+    <Content Include="DevTools\Documentation\RepositoryBase_CRUD_Fix.md" />
     <None Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
@@ -339,7 +443,6 @@
     <Content Include="Tools\AutoClassMaker.aspx" />
     <Content Include="Tools\GenMachineKeys.aspx" />
     <Content Include="Tools\LogViewer.aspx" />
-    <Content Include="Tools\MergeCustomersFromQB.aspx" />
     <Content Include="Tools\MessagesEditor.aspx" />
     <Content Include="Tools\MoveDeliveryDate.aspx" />
     <Content Include="Tools\PrintingTblHeadersTest.htm" />
@@ -421,121 +524,166 @@
     <Compile Include="Administration\UserInformation.aspx.designer.cs">
       <DependentUpon>UserInformation.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Classes\ApplicationErrorNotifier.cs" />
+    <Compile Include="Classes\RepositoryListResult.cs" />
     <Compile Include="Classes\BatchSendResult.cs" />
     <Compile Include="Classes\ChangeRequestSubmission.cs" />
-    <Compile Include="Classes\CityDeliveryMatrix.cs" />
+    <Compile Include="Classes\AreaDeliveryMatrix.cs" />
     <Compile Include="Classes\ConfigHelper.cs" />
-    <Compile Include="Classes\CustomersTbl.cs" />
     <Compile Include="Classes\DateCalculator.cs" />
-    <Compile Include="Classes\DateMatrixBuilder.cs" />
     <Compile Include="Classes\OrderViewTokenHelper.cs" />
-    <Compile Include="Classes\Poco\Area.cs" />
-    <Compile Include="Classes\Poco\AreaPrepDays.cs" />
-    <Compile Include="Classes\Poco\AwayReason.cs" />
-    <Compile Include="Classes\Poco\ClosureDate.cs" />
-    <Compile Include="Classes\Poco\Contact.cs" />
-    <Compile Include="Classes\Poco\ContactsAccInfo.cs" />
-    <Compile Include="Classes\Poco\ContactsAwayPeriod.cs" />
-    <Compile Include="Classes\Poco\ContactsHistoryAndPrediction.cs" />
-    <Compile Include="Classes\Poco\ContactsItemUsage.cs" />
-    <Compile Include="Classes\Poco\ContactSummary.cs" />
-    <Compile Include="Classes\Poco\ContactTrackedServiceItem.cs" />
-    <Compile Include="Classes\Poco\ContactType.cs" />
-    <Compile Include="Classes\Poco\ContactUsage.cs" />
-    <Compile Include="Classes\Poco\ContactUsageItem.cs" />
-    <Compile Include="Classes\Poco\ContactUsageLine.cs" />
-    <Compile Include="Classes\Poco\EquipCondition.cs" />
-    <Compile Include="Classes\Poco\EquipType.cs" />
-    <Compile Include="Classes\Poco\HolidayClosure.cs" />
-    <Compile Include="Classes\Poco\InvoiceType.cs" />
-    <Compile Include="Classes\Poco\Item.cs" />
-    <Compile Include="Classes\Poco\ItemGroup.cs" />
-    <Compile Include="Classes\Poco\ItemPackaging.cs" />
-    <Compile Include="Classes\Poco\ItemPrepType.cs" />
-    <Compile Include="Classes\Poco\ItemServiceType.cs" />
-    <Compile Include="Classes\Poco\ItemUnit.cs" />
-    <Compile Include="Classes\Poco\NextPrepDateByArea.cs" />
-    <Compile Include="Classes\Poco\Order.cs" />
-    <Compile Include="Classes\Poco\OrderLine.cs" />
-    <Compile Include="Classes\Poco\PaymentTerm.cs" />
-    <Compile Include="Classes\Poco\Person.cs" />
-    <Compile Include="Classes\Poco\PriceLevel.cs" />
-    <Compile Include="Classes\Poco\RecurranceType.cs" />
-    <Compile Include="Classes\Poco\RecurringOrder.cs" />
-    <Compile Include="Classes\Poco\RecurringOrderItem.cs" />
-    <Compile Include="Classes\Poco\Repair.cs" />
-    <Compile Include="Classes\Poco\RepairFault.cs" />
-    <Compile Include="Classes\Poco\RepairStatus.cs" />
-    <Compile Include="Classes\Poco\SectionType.cs" />
-    <Compile Include="Classes\Poco\SendCheckupEmailText.cs" />
-    <Compile Include="Classes\Poco\SentRemindersLog.cs" />
-    <Compile Include="Classes\Poco\SysData.cs" />
-    <Compile Include="Classes\Poco\TempCoffeecheckupCustomer.cs" />
-    <Compile Include="Classes\Poco\TempCoffeecheckupItem.cs" />
-    <Compile Include="Classes\Poco\TempOrder.cs" />
-    <Compile Include="Classes\Poco\TempOrdersHeader.cs" />
-    <Compile Include="Classes\Poco\TempOrdersLine.cs" />
-    <Compile Include="Classes\Poco\TotalCountTracker.cs" />
-    <Compile Include="Classes\Poco\TrackedServiceItem.cs" />
-    <Compile Include="Classes\Poco\TransactionType.cs" />
-    <Compile Include="Classes\Poco\UsedItemGroup.cs" />
-    <Compile Include="Classes\Sql\AreaPrepDaysRepository.cs" />
-    <Compile Include="Classes\Sql\AreasRepository.cs" />
-    <Compile Include="Classes\Sql\AwayReasonRepository.cs" />
-    <Compile Include="Classes\Sql\ClosureDatesRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsAccInfoRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsAwayPeriodRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsHistoryAndPredictionRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsItemUsageRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsRepository2.cs" />
-    <Compile Include="Classes\Sql\ContactSummariesRepository.cs" />
-    <Compile Include="Classes\Sql\ContactsUsageRepository.cs" />
-    <Compile Include="Classes\Sql\ContactTrackedServiceItemsRepository.cs" />
-    <Compile Include="Classes\Sql\ContactTypesRepository.cs" />
-    <Compile Include="Classes\Sql\ContactUsageLinesRepository.cs" />
-    <Compile Include="Classes\Sql\DbMapper.cs" />
-    <Compile Include="Classes\Sql\EquipConditionsRepository.cs" />
-    <Compile Include="Classes\Sql\EquipTypesRepository.cs" />
-    <Compile Include="Classes\Sql\HolidayClosuresRepository.cs" />
-    <Compile Include="Classes\Sql\InvoiceTypesRepository.cs" />
-    <Compile Include="Classes\Sql\ItemGroupsRepository.cs" />
-    <Compile Include="Classes\Sql\ItemPackagingsRepository.cs" />
-    <Compile Include="Classes\Sql\ItemPrepTypesRepository.cs" />
-    <Compile Include="Classes\Sql\ItemsRepository.cs" />
-    <Compile Include="Classes\Sql\OrdersRepository.cs" />
-    <Compile Include="Classes\Sql\PaymentTermsRepository.cs" />
-    <Compile Include="Classes\Sql\PersonsRepository.cs" />
-    <Compile Include="Classes\Sql\PriceLevelsRepository.cs" />
-    <Compile Include="Classes\Sql\RecurringOrdersRepository.cs" />
-    <Compile Include="Classes\Sql\RepositoryBase.cs" />
-    <Compile Include="Classes\Sql\TotalCountTrackerRepository.cs" />
+    <Compile Include="Managers\DeliverySheetManager.cs" />
+    <Compile Include="Models\ActiveDeliveryDate.cs" />
+    <Compile Include="Models\ActiveDeliveryWithPerson.cs" />
+    <Compile Include="Models\Area.cs" />
+    <Compile Include="Models\AreaPrepDays.cs" />
+    <Compile Include="Models\AreaPrepDateRow.cs" />
+    <Compile Include="Models\AwayReason.cs" />
+    <Compile Include="Models\ClosureDate.cs" />
+    <Compile Include="Models\Contact.cs" />
+    <Compile Include="Models\CoffeeCheckupModels.cs" />
+    <Compile Include="Models\ContactsAccInfo.cs" />
+    <Compile Include="Models\ContactsAwayPeriod.cs" />
+    <Compile Include="Models\ContactsAwaySummary.cs" />
+    <Compile Include="Models\ContactsItemUsage.cs" />
+    <Compile Include="Models\ContactEmailDetails.cs" />
+    <Compile Include="Models\ContactSummary.cs" />
+    <Compile Include="Models\ContactsUsage.cs" />
+    <Compile Include="Models\CustomerUsageDisplay.cs" />
+    <Compile Include="Models\TempOrderUsageLine.cs" />
+    <Compile Include="Models\ContactTrackedServiceItem.cs" />
+    <Compile Include="Models\ContactType.cs" />
+    <Compile Include="Models\ContactUsage.cs" />
+    <Compile Include="Models\ContactUsageItem.cs" />
+    <Compile Include="Models\ContactUsageLine.cs" />
+    <Compile Include="Models\DeliverySheetModels.cs" />
+    <Compile Include="Models\EquipCondition.cs" />
+    <Compile Include="Models\EquipType.cs" />
+    <Compile Include="Models\HolidayClosure.cs" />
+    <Compile Include="Models\ILookupEntity.cs" />
+    <Compile Include="Models\InactiveContactResult.cs" />
+    <Compile Include="Models\InvoiceType.cs" />
+    <Compile Include="Models\Item.cs" />
+    <Compile Include="Models\ItemGroup.cs" />
+    <Compile Include="Models\ItemGroupGridRow.cs" />
+    <Compile Include="Models\ItemPackaging.cs" />
+    <Compile Include="Models\ItemPrepType.cs" />
+    <Compile Include="Models\ItemServiceType.cs" />
+    <Compile Include="Models\ItemsRequiredSummary.cs" />
+    <Compile Include="Models\ItemUnit.cs" />
+    <Compile Include="Models\ItemUsage.cs" />
+    <Compile Include="Models\NextPrepDateByArea.cs" />
+    <Compile Include="Models\OrderDetailData.cs" />
+    <Compile Include="Models\OrderDoneViewModels.cs" />
+    <Compile Include="Models\OrderEntryListItem.cs" />
+    <Compile Include="Models\OrderHeaderData.cs" />
+    <Compile Include="Models\OrderLookupItem.cs" />
+    <Compile Include="Models\OrderTblData.cs" />
+    <Compile Include="Models\OrderLine.cs" />
+    <Compile Include="Models\Order.cs" />
+    <Compile Include="Models\PaymentTerm.cs" />
+    <Compile Include="Models\Person.cs" />
+    <Compile Include="Models\PreperationSummaryItem.cs" />
+    <Compile Include="Models\PrepRule.cs" />
+    <Compile Include="Models\PriceLevel.cs" />
+    <Compile Include="Models\PublicOrderLineView.cs" />
+    <Compile Include="Models\RecurranceType.cs" />
+    <Compile Include="Models\RecurringOrder.cs" />
+    <Compile Include="Models\RecurringOrderItem.cs" />
+    <Compile Include="Models\RecurringOrderSummary.cs" />
+    <Compile Include="Models\Repair.cs" />
+    <Compile Include="Models\RepairFault.cs" />
+    <Compile Include="Models\RepairFormData.cs" />
+    <Compile Include="Models\RepairStatus.cs" />
+    <Compile Include="Models\SectionType.cs" />
+    <Compile Include="Models\SendCheckupEmailText.cs" />
+    <Compile Include="Models\SentRemindersLog.cs" />
+    <Compile Include="Models\SysData.cs" />
+    <Compile Include="Models\TempCoffeecheckupCustomer.cs" />
+    <Compile Include="Models\TempCoffeecheckupItem.cs" />
+    <Compile Include="Models\TempOrder.cs" />
+    <Compile Include="Models\TempOrdersHeader.cs" />
+    <Compile Include="Models\TempOrdersLine.cs" />
+    <Compile Include="Models\TotalCountTracker.cs" />
+    <Compile Include="Models\TrackedServiceItem.cs" />
+    <Compile Include="Models\TransactionType.cs" />
+    <Compile Include="Models\UsedItemGroup.cs" />
+    <Compile Include="Repositories\AreaPrepDaysRepository.cs" />
+    <Compile Include="Repositories\AreasRepository.cs" />
+    <Compile Include="Repositories\AwayReasonRepository.cs" />
+    <Compile Include="Repositories\ClosureDatesRepository.cs" />
+    <Compile Include="Repositories\CoffeeCheckupRepository.cs" />
+    <Compile Include="Repositories\DeliverySheetRepository.cs" />
+    <Compile Include="Repositories\ContactsAccInfoRepository.cs" />
+    <Compile Include="Repositories\ContactsAwayPeriodRepository.cs" />
+    <Compile Include="Repositories\ContactsItemUsageRepository.cs" />
+    <Compile Include="Repositories\ContactsRepository.cs" />
+    <Compile Include="Repositories\ContactSummariesRepository.cs" />
+    <Compile Include="Repositories\ContactsUsageRepository.cs" />
+    <Compile Include="Repositories\ContactTrackedServiceItemsRepository.cs" />
+    <Compile Include="Repositories\ContactTypesRepository.cs" />
+    <Compile Include="Repositories\ContactUsageLinesRepository.cs" />
+    <Compile Include="Repositories\DbMapper.cs" />
+    <Compile Include="Repositories\DeliveryRepository.cs" />
+    <Compile Include="Repositories\EquipConditionsRepository.cs" />
+    <Compile Include="Repositories\EquipTypesRepository.cs" />
+    <Compile Include="Repositories\HolidayClosuresRepository.cs" />
+    <Compile Include="Repositories\InvoiceTypesRepository.cs" />
+    <Compile Include="Repositories\ItemGroupsRepository.cs" />
+    <Compile Include="Repositories\ItemPackagingsRepository.cs" />
+    <Compile Include="Repositories\ItemPrepTypesRepository.cs" />
+    <Compile Include="Repositories\ItemServiceTypesRepository.cs" />
+    <Compile Include="Repositories\ItemsRepository.cs" />
+    <Compile Include="Repositories\ItemUnitsRepository.cs" />
+    <Compile Include="Repositories\NextPrepDateByAreaRepository.cs" />
+    <Compile Include="Repositories\OrdersRepository.cs" />
+    <Compile Include="Repositories\PaymentTermsRepository.cs" />
+    <Compile Include="Repositories\PersonsRepository.cs" />
+    <Compile Include="Repositories\PreperationSummaryRepository.cs" />
+    <Compile Include="Repositories\PriceLevelsRepository.cs" />
+    <Compile Include="Repositories\RecurranceTypeRepository.cs" />
+    <Compile Include="Repositories\RecurringOrdersRepository.cs" />
+    <Compile Include="Repositories\RepairFaultsRepository.cs" />
+    <Compile Include="Repositories\RepairStatusesRepository.cs" />
+    <Compile Include="Repositories\RepairsRepository.cs" />
+    <Compile Include="Repositories\RepositoryBase.cs" />
+    <Compile Include="Repositories\SendCheckEmailTextsRepository.cs" />
+    <Compile Include="Repositories\SentRemindersLogRepository.cs" />
+    <Compile Include="Repositories\SysDataRepository.cs" />
+    <Compile Include="Repositories\TempCoffeeCheckupRepository.cs" />
+    <Compile Include="Repositories\TempOrdersHeaderRepository.cs" />
+    <Compile Include="Repositories\TempOrdersLinesRepository.cs" />
+    <Compile Include="Repositories\TotalCountTrackerRepository.cs" />
+    <Compile Include="Repositories\UsedItemGroupRepository.cs" />
     <Compile Include="Classes\SystemConstants.cs" />
     <Compile Include="Classes\TrackerSQLDb.cs" />
     <Compile Include="Classes\UrlTextDecoder.cs" />
-    <Compile Include="Controls\ClientAwayPeriod.cs" />
-    <Compile Include="Controls\CustomersAwayTbl.cs" />
-    <Compile Include="Controls\HolidayClosureProvider.cs" />
-    <Compile Include="Controls\OrderCheckTbl.cs" />
-    <Compile Include="Controls\ServiceTypeTbl.cs" />
+    <Compile Include="Managers\ContactTypeDataSource.cs" />
     <Compile Include="Managers\CoffeeCheckupEmailManager.cs" />
     <Compile Include="Classes\MessageType.cs" />
     <Compile Include="Managers\CoffeeCheckupManager.cs" />
     <Compile Include="Managers\CustomerManager.cs" />
     <Compile Include="Managers\DisableClientManager.cs" />
     <Compile Include="Classes\MessageKeys.cs" />
+    <Compile Include="Managers\HolidayClosureProvider.cs" />
+    <Compile Include="Managers\ItemGroupDataSource.cs" />
     <Compile Include="Managers\IOrderChangeRequestService.cs" />
     <Compile Include="Managers\MessagesResourceManager.cs" />
+    <Compile Include="Managers\NextPrepDateDataSource.cs" />
     <Compile Include="Managers\OrderChangeRequestLoggingService.cs" />
     <Compile Include="Managers\OrderDetailManager .cs" />
+    <Compile Include="Managers\OrderDoneDataSource.cs" />
     <Compile Include="Managers\OrderDoneManager.cs" />
     <Compile Include="Managers\OrderManager.cs" />
+    <Compile Include="Managers\OrderDetailDataSource.cs" />
+    <Compile Include="Managers\OrderEntryDataSource.cs" />
+    <Compile Include="Managers\OrderLookupDataSource.cs" />
+    <Compile Include="Managers\TempOrderSession.cs" />
     <Compile Include="Classes\AppLogger.cs" />
     <Compile Include="Classes\CheckBrowser.cs" />
     <Compile Include="Classes\DBParameter.cs" />
     <Compile Include="Classes\EmailMailKitCls.cs" />
     <Compile Include="Classes\EmailUtils.cs" />
-    <Compile Include="Classes\GeneralTrackerDbTools.cs" />
     <Compile Include="Classes\GridViewGroup.cs" />
     <Compile Include="Classes\GridViewGroupList.cs" />
     <Compile Include="Classes\GridViewHelper.cs" />
@@ -549,73 +697,6 @@
     <Compile Include="Classes\TrackerTools.cs" />
     <Compile Include="Classes\UserPreferences.cs" />
     <Compile Include="Classes\UserPreferencesHelper.cs" />
-    <Compile Include="Controls\ActiveDeliveryData.cs" />
-    <Compile Include="Controls\CityPrepDaysTbl.cs" />
-    <Compile Include="Controls\CityTblDAL.cs" />
-    <Compile Include="Controls\CityTblData.cs" />
-    <Compile Include="Controls\ClientUsageFromTempOrder.cs" />
-    <Compile Include="Controls\ClientUsageLinesTbl.cs" />
-    <Compile Include="Controls\ClientUsageTbl.cs" />
-    <Compile Include="Controls\CompanyNames.cs" />
-    <Compile Include="Controls\ContactEmailDetails.cs" />
-    <Compile Include="Controls\ContactsThatMayNeedNextWeek.cs" />
-    <Compile Include="Controls\ContactsThayMayNeedData.cs" />
-    <Compile Include="Controls\ContactToRemindDetails.cs" />
-    <Compile Include="Controls\ContactToRemindWithItems.cs" />
-    <Compile Include="Controls\ContactType.cs" />
-    <Compile Include="Controls\CustomerData.cs" />
-    <Compile Include="Controls\CustomersAccInfoTbl.cs" />
-    <Compile Include="Controls\CustomersTbl.cs" />
-    <Compile Include="Controls\CustomerSummary.cs" />
-    <Compile Include="Controls\CustomerSummaryDAL.cs" />
-    <Compile Include="Controls\CustomersWithDatesAndUsageTbl.cs" />
-    <Compile Include="Controls\CustomerTrackedServiceItems.cs" />
-    <Compile Include="Controls\CustomerTypeTbl.cs" />
-    <Compile Include="Controls\DeliveryItemsTbl.cs" />
-    <Compile Include="Controls\EquipTypeTbl.cs" />
-    <Compile Include="Controls\InvoiceTypeTbl.cs" />
-    <Compile Include="Controls\ItemContactRequires.cs" />
-    <Compile Include="Controls\ItemGroupTbl.cs" />
-    <Compile Include="Controls\ItemTypeTbl.cs" />
-    <Compile Include="Controls\ItemUnitsTbl.cs" />
-    <Compile Include="Controls\ItemUsageTbl.cs" />
-    <Compile Include="Controls\LogTbl.cs" />
-    <Compile Include="Controls\MachineConditionsTbl.cs" />
-    <Compile Include="Controls\NextRoastDateByCityTbl.cs" />
-    <Compile Include="Controls\OrderCheck.cs" />
-    <Compile Include="Controls\OrderCheckData.cs" />
-    <Compile Include="Controls\OrderCls.cs" />
-    <Compile Include="Controls\OrderData.cs" />
-    <Compile Include="Controls\OrderDataControl.cs" />
-    <Compile Include="Controls\OrderDetailDAL.cs" />
-    <Compile Include="Controls\OrderDetailData.cs" />
-    <Compile Include="Controls\OrderHeaderData.cs" />
-    <Compile Include="Controls\OrderItemTbl.cs" />
-    <Compile Include="Controls\OrderTbl.cs" />
-    <Compile Include="Controls\OrderTblData.cs" />
-    <Compile Include="Controls\PackagingTbl.cs" />
-    <Compile Include="Controls\PaymentTermsTbl.cs" />
-    <Compile Include="Controls\PersonsTbl.cs" />
-    <Compile Include="Controls\PriceLevelsTbl.cs" />
-    <Compile Include="Controls\ReoccuranceTypeTbl.cs" />
-    <Compile Include="Controls\ReoccuringOrderDAL.cs" />
-    <Compile Include="Controls\ReoccuringOrderExtData.cs" />
-    <Compile Include="Controls\ReoccuringOrderTbl.cs" />
-    <Compile Include="Controls\RepairFaultsTbl.cs" />
-    <Compile Include="Controls\RepairStatusesTbl.cs" />
-    <Compile Include="Controls\RepairsTbl.cs" />
-    <Compile Include="Controls\SectionTypesTbl.cs" />
-    <Compile Include="Controls\SendCheckEmailTextsData.cs" />
-    <Compile Include="Controls\SentRemindersLogTbl.cs" />
-    <Compile Include="Controls\SysDataTbl.cs" />
-    <Compile Include="Controls\TempCoffeeCheckup.cs" />
-    <Compile Include="Controls\TempOrdersDAL.cs" />
-    <Compile Include="Controls\TempOrdersData.cs" />
-    <Compile Include="Controls\TempOrdersHeaderTbl.cs" />
-    <Compile Include="Controls\TempOrdersLinesTbl.cs" />
-    <Compile Include="Controls\TrackedServiceItemTbl.cs" />
-    <Compile Include="Controls\TransactionTypesTbl.cs" />
-    <Compile Include="Controls\UsedItemGroupTbl.cs" />
     <Compile Include="DataSets\CustomersCls.cs" />
     <Compile Include="DataSets\CustomersDataSet.cs" />
     <Compile Include="DataSets\TrackerDataSet.cs" />
@@ -643,6 +724,7 @@
       <DependentUpon>HttpErrorPage.aspx</DependentUpon>
     </Compile>
     <Compile Include="Managers\PublicOrderViewManager.cs" />
+    <Compile Include="Managers\RepairLookupDataSource.cs" />
     <Compile Include="Managers\RepairManager.cs" />
     <Compile Include="Managers\SecurityManager.cs" />
     <Compile Include="MobileSite.Master.cs">
@@ -655,6 +737,13 @@
     <Compile Include="Pages\ClientList.aspx.designer.cs">
       <DependentUpon>ClientList.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Pages\ItemsRequired.aspx.cs">
+      <DependentUpon>ItemsRequired.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Pages\ItemsRequired.aspx.designer.cs">
+      <DependentUpon>ItemsRequired.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Pages\ContactDetails.aspx.cs">
       <DependentUpon>ContactDetails.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -666,19 +755,22 @@
       <DependentUpon>Contacts.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="Pages\Contacts.aspx.designer.cs">
+      <DependentUpon>Contacts.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Pages\ContactsTest.aspx.cs">
       <DependentUpon>ContactsTest.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="Pages\CustomersAway.aspx.cs">
-      <DependentUpon>CustomersAway.aspx</DependentUpon>
+    <Compile Include="Pages\ContactsAway.aspx.cs">
+      <DependentUpon>ContactsAway.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="Pages\CustomersAway.aspx.designer.cs">
-      <DependentUpon>CustomersAway.aspx</DependentUpon>
+    <Compile Include="Pages\ContactsAway.aspx.designer.cs">
+      <DependentUpon>ContactsAway.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\CustomersAwayDetail.aspx.cs">
-      <DependentUpon>CustomersAwayDetail.aspx</DependentUpon>
+    <Compile Include="Pages\ContactsAwayDetail.aspx.cs">
+      <DependentUpon>ContactsAwayDetail.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Pages\DeleteOrderLine.aspx.cs">
@@ -734,13 +826,6 @@
     <Compile Include="Pages\LeaveApp.aspx.designer.cs">
       <DependentUpon>LeaveApp.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\LogTable.aspx.cs">
-      <DependentUpon>LogTable.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\LogTable.aspx.designer.cs">
-      <DependentUpon>LogTable.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Pages\Lookups.aspx.cs">
       <DependentUpon>Lookups.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -795,19 +880,19 @@
     <Compile Include="Pages\QuaffeeCoffeeTastingSheet.aspx.designer.cs">
       <DependentUpon>QuaffeeCoffeeTastingSheet.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\ReoccuringOrderDetails.aspx.cs">
-      <DependentUpon>ReoccuringOrderDetails.aspx</DependentUpon>
+    <Compile Include="Pages\\RecurringOrderDetails.aspx.cs">
+      <DependentUpon>RecurringOrderDetails.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="Pages\ReoccuringOrderDetails.aspx.designer.cs">
-      <DependentUpon>ReoccuringOrderDetails.aspx</DependentUpon>
+    <Compile Include="Pages\\RecurringOrderDetails.aspx.designer.cs">
+      <DependentUpon>RecurringOrderDetails.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\ReoccuringOrders.aspx.cs">
-      <DependentUpon>ReoccuringOrders.aspx</DependentUpon>
+    <Compile Include="Pages\\RecurringOrders.aspx.cs">
+      <DependentUpon>RecurringOrders.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="Pages\ReoccuringOrders.aspx.designer.cs">
-      <DependentUpon>ReoccuringOrders.aspx</DependentUpon>
+    <Compile Include="Pages\\RecurringOrders.aspx.designer.cs">
+      <DependentUpon>RecurringOrders.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pages\RepairDetail.aspx.cs">
       <DependentUpon>RepairDetail.aspx</DependentUpon>
@@ -908,13 +993,6 @@
     <Compile Include="Tools\EmailDiagnostics.aspx.designer.cs">
       <DependentUpon>EmailDiagnostics.aspx</DependentUpon>
     </Compile>
-    <Compile Include="test\ShowTableStruct.aspx.cs">
-      <DependentUpon>ShowTableStruct.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="test\ShowTableStruct.aspx.designer.cs">
-      <DependentUpon>ShowTableStruct.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Tools\About.aspx.designer.cs">
       <DependentUpon>About.aspx</DependentUpon>
     </Compile>
@@ -933,13 +1011,6 @@
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Tools\LogViewer.aspx.designer.cs" />
-    <Compile Include="Tools\MergeCustomersFromQB.aspx.cs">
-      <DependentUpon>MergeCustomersFromQB.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Tools\MergeCustomersFromQB.aspx.designer.cs">
-      <DependentUpon>MergeCustomersFromQB.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Tools\MessagesEditor.aspx.cs">
       <DependentUpon>MessagesEditor.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -968,6 +1039,10 @@
     <Compile Include="Tools\SystemTools.aspx.designer.cs">
       <DependentUpon>SystemTools.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Tools\TestPeople.aspx.cs">
+      <DependentUpon>TestPeople.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="Tools\TestPeople.aspx.designer.cs">
       <DependentUpon>TestPeople.aspx</DependentUpon>
     </Compile>
@@ -987,12 +1062,9 @@
     <Content Include="Print.master" />
     <Content Include="Site.Master" />
     <Content Include="Pages\Web.config" />
-    <Content Include="VERIFICATION_DIRECTORY_PATH_FIX.md" />
-    <Content Include="test-csv-parser.ps1" />
-    <Content Include="test-csv-import.ps1" />
-    <Content Include="test-error-reporting-fix.ps1" />
-    <Content Include="test-drop-column-fix.ps1" />
-    <Content Include="test-csv-line-parsing.ps1" />
+    <Content Include="Documentation\VERIFICATION_DIRECTORY_PATH_FIX.md" />
+    <Content Include="Documentation\SYSTEM_TOOLS_MODERNIZATION_SUMMARY.md" />
+    <Content Include="Documentation\SYSTEM_TOOLS_CLEANUP_PLAN.md" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -1001,7 +1073,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
+    <Folder Include="Documentation\AI\" />
+    <Folder Include="Migrations\NewFolder1\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Messages.resx">

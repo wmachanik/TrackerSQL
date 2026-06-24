@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.ClientUsageFromTempOrder
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -12,6 +12,7 @@ using TrackerSQL.Classes;
 //- only form later versions #nullable disable
 namespace TrackerSQL.Controls
 {
+    [Obsolete("DO NOT USE Comtrols use Models - MIGRATION IN PROGRESS", true)]
     public class ClientUsageFromTempOrder
     {
         public const string CONST_STR_SELECT = "SELECT TempOrdersHeaderTbl.CustomerID, TempOrdersLinesTbl.ItemID, TempOrdersLinesTbl.ServiceTypeID, TempOrdersLinesTbl.Qty,  ItemTypeTbl.UnitsPerQty, TempOrdersLinesTbl.PackagingID FROM  ((TempOrdersHeaderTbl INNER JOIN TempOrdersLinesTbl ON TempOrdersHeaderTbl.TOHeaderID = TempOrdersLinesTbl.TOHeaderID)  LEFT OUTER JOIN ItemTypeTbl ON TempOrdersLinesTbl.ItemID = ItemTypeTbl.ItemTypeID) WHERE TempOrdersHeaderTbl.CustomerID = ? AND TempOrdersLinesTbl.ServiceTypeID <> 17";

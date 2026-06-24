@@ -1,4 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
+// Decompiled with JetBrains decompiler
 // Type: TrackerSQL.control.DeliveryItemsTbl
 // Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
 // MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
@@ -28,7 +28,7 @@ namespace TrackerSQL.Controls
         private string _ptAbbreviation;
         private double _otQuantityOrdered;
         private DateTime _otOrderDate;
-        private DateTime _otRoastDate;
+        private DateTime _otPrepDate;
         private DateTime _otRequiredDate;
         private bool _itItemEnabled;
         private bool _otConfirmed;
@@ -40,7 +40,7 @@ namespace TrackerSQL.Controls
             this._cpdDeliveryOrder = this._itSortOrder = this._ptBGColour = 0;
             this._ctCompanyName = this._itItemDesc = this._itItemShortName = this._otToBeDeliveredBy = this._otNotes = this._PackDesc = this._ptAbbreviation = "";
             this._otQuantityOrdered = 0.0;
-            this._otOrderDate = this._otRoastDate = this._otRequiredDate = TimeZoneUtils.Now().Date;
+            this._otOrderDate = this._otPrepDate = this._otRequiredDate = TimeZoneUtils.Now().Date;
             this._itItemEnabled = this._otConfirmed = true;
             this._otDone = false;
         }
@@ -141,10 +141,10 @@ namespace TrackerSQL.Controls
             set => this._otOrderDate = value;
         }
 
-        public DateTime otRoastDate
+        public DateTime otPrepDate
         {
-            get => this._otRoastDate;
-            set => this._otRoastDate = value;
+            get => this._otPrepDate;
+            set => this._otPrepDate = value;
         }
 
         public DateTime otRequiredDate

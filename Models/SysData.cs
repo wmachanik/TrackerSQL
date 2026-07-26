@@ -11,7 +11,7 @@ namespace TrackerSQL.Models
     /// - DoRecurringOrders → DoRecurringOrders
     /// - DateLastPrepDateCalcd → DateLastPrepDateCalcd
     /// - MinReminderDate → MinReminderDate
-    /// - GroupItemServiceTypeID → GroupItemServiceTypeID
+    /// - GroupReferenceItemID → GroupReferenceItemID
     /// - InternalContactIDs → InternalContactIDs
     /// </summary>
     public class SysData
@@ -27,11 +27,10 @@ namespace TrackerSQL.Models
         public DateTime? MinReminderDate { get; set; }
 
         /// <summary>
-        /// Group Item Service Type ID - links to ItemServiceTypesTbl
-        /// Used to group items by their service type (Coffee, Cleaning, Group, etc.)
-        /// Column name in database: GroupItemServiceTypeID
+        /// Group reference item ID — links to ItemsTbl (legacy Access GroupItemTypeID).
+        /// Column name in database: GroupReferenceItemID
         /// </summary>
-        public int? GroupItemServiceTypeID { get; set; }
+        public int? GroupReferenceItemID { get; set; }
 
         /// <summary>
         /// Internal Contact IDs

@@ -1,3 +1,7 @@
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — AreaTblDAL
+// Data access / control type: AreaTblDAL.
+//------------------------------------------------------------------------------
 /// <summary>
 /// Data access layer for Area-related operations in the TrackerSQL application.
 /// Provides methods to retrieve Area information, Area names, Area IDs, and Area preparation/delivery rules.
@@ -9,11 +13,6 @@
 /// - GetAreaIdByCustomerId(long customerId): Returns the Area ID for a given customer ID.
 /// - GetPrepRulesForArea(int AreaId): Returns all preparation/delivery rules for a given Area.
 /// </summary>
-// Original from Decompiled with JetBrains decompiler
-// Type: TrackerSQL.control.AreaTblDAL
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
 
 using System;
 using System.Collections.Generic;

@@ -4,162 +4,177 @@
 <asp:Content ID="cntSystemToolsHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntSystemToolsBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <h1>General System Tools</h1>
-    <br />
     <asp:ScriptManager ID="tsmSystemTools" runat="server" />
-    <asp:UpdateProgress ID="uprgSystemTools" runat="server" AssociatedUpdatePanelID="upnlSystemToolsButtons" EnableViewState="true" Visible="true">
-        <ProgressTemplate>
-            <img src="../images/animi/BlueArrowsUpdate.gif" alt="updating" width="16" height="16" />updating.....
-        </ProgressTemplate>
-    </asp:UpdateProgress>
-    <asp:UpdatePanel ID="upnlSystemToolsButtons" runat="server" ChildrenAsTriggers="true" UpdateMode="Always" ViewStateMode="Enabled">
-        <ContentTemplate>
-            <div class="dashboard-links tools-dashboard">
-                <div class="dashboard-links">
 
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>XML file to SQL</h4>
-                            <p>Import data from XML</p>
-                            <asp:Button ID="btnXMLTOSQL" runat="server" Text="Open" PostBackUrl="~/Tools/XMLtoSQL.aspx" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Reset Prep/Delivery Date</h4>
-                            <p>Recalculate next dates</p>
-                            <asp:Button ID="btnResetPrepDates" runat="server" Text="Run" OnClick="btnResetPrepDates_Click" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Move Delivery Date</h4>
-                            <p>Shift delivery schedule</p>
-                            <asp:Button ID="btnMoveDlvryDate" runat="server" Text="Open" PostBackUrl="~/Tools/MoveDeliveryDate.aspx" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Holiday / Closure Dates</h4>
-                            <p>Manage closure calendar</p>
-                            <asp:Button ID="btnHolidayClosures" runat="server" Text="Open" PostBackUrl="~/Tools/HolidayClosures.aspx" ToolTip="Add or remove roast / delivery closure dates" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>System Data</h4>
-                            <p>Manage system settings</p>
-                            <asp:Button ID="btnEditSystemData" runat="server" Text="Open" PostBackUrl="~/Tools/SystemData.aspx" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Log Viewer</h4>
-                            <p>Review system logs</p>
-                            <asp:Button ID="btnLogViewer" runat="server" Text="Open" PostBackUrl="~/Tools/LogViewer.aspx" />
-                        </div>
-                    </div>
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Email Diagnostics</h4>
-                            <p>Test SMTP/email</p>
-                            <asp:Button ID="btnEmailDiagnostics" runat="server" Text="Open" PostBackUrl="~/Tools/EmailDiagnostics.aspx" ToolTip="Test SMTP and email settings" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Set Last Order Date</h4>
-                            <p>Update recurring orders</p>
-                            <asp:Button ID="btnSetLastOrderDate" runat="server" Text="Run" OnClick="btnSetLastOrderDate_Click" />
-                        </div>
-                    </div>
-
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Messages Editor</h4>
-                            <p>Edit resource messages</p>
-                            <asp:Button ID="btnMessagesEditor" runat="server" Text="Open" PostBackUrl="~/Tools/MessagesEditor.aspx" />
-                        </div>
-                    </div>
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Disable Inactive Clients</h4>
-                            <p>Disable clients with no orders in 3+ years</p>
-                            <asp:Button ID="btnDisableInactiveClients" runat="server" Text="Run"
-                                OnClick="btnDisableInactiveClients_Click"
-                                ToolTip="Disables enabled customers whose last usage/order is older than 3 years" />
-                        </div>
-                    </div>
-                    <div class="dashboard-link">
-                        <div class="dashboard-card">
-                            <h4>Set Client Type</h4>
-                            <p>Update client prediction flags</p>
-                            <asp:Button ID="btnSetClientType" runat="server" Text="Open" OnClick="btnSetClientType_Click" />
-                        </div>
-                    </div>
-
-                </div>
+    <asp:Panel ID="pnlSystemTools" runat="server" CssClass="simpleForm page-tone-panel page-tone-tools">
+        <div class="page-tone-header tool-card-header">
+            <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+            <div>
+                <h1 class="page-tone-title">System Tools</h1>
+                <p class="page-tone-subtitle">General maintenance and diagnostics</p>
             </div>
+        </div>
 
-            <asp:Panel ID="pnlResultsSection" CssClass="results-container" Visible="false" runat="server">
-                <div class="status-message">
-                    <asp:Literal ID="ltrlStatus" runat="server" Visible="false" Text="" />
+        <asp:UpdateProgress ID="uprgSystemTools" runat="server" AssociatedUpdatePanelID="upnlSystemToolsButtons"
+            DisplayAfter="0" EnableViewState="true" Visible="true">
+            <ProgressTemplate>
+                <div class="status-message status-info page-tone-progress">
+                    <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                    &nbsp;Please wait...
                 </div>
-                <br />
-                <asp:Panel ID="pnlSetClientType" runat="server" Visible="false">
-                    <table class="TblWhite" width="100%">
-                        <tr valign="top">
-                            <td>
-                                <asp:Label ID="ResultsTitleLabel" runat="server" CssClass="title" Text="" />
-                                <asp:GridView ID="gvResults" runat="server" AutoGenerateColumns="true" AllowSorting="true" CssClass="TblCoffee">
-                                </asp:GridView>
-                            </td>
-                            <td>
-                                <asp:GridView ID="gvCustomerTypes" runat="server" AllowSorting="True" CssClass="TblZebra"
-                                    AutoGenerateColumns="False" DataSourceID="odsCustomerTypes" Visible="false">
-                                    <Columns>
-                                        <asp:BoundField DataField="CustTypeID" HeaderText="CustTypeID" SortExpression="CustTypeID" />
-                                        <asp:BoundField DataField="CustTypeDesc" HeaderText="CustTypeDesc" SortExpression="CustTypeDesc" />
-                                        <asp:BoundField DataField="Notes" HeaderText="Notes" SortExpression="Notes" />
-                                    </Columns>
-                                </asp:GridView>
-                                <asp:ObjectDataSource ID="odsCustomerTypes" runat="server" SortParameterName="sortBy"
-                                    SelectMethod="GetAll" TypeName="TrackerSQL.Managers.ContactTypeDataSource">
-                                    <SelectParameters>
-                                        <asp:Parameter DefaultValue="ContactTypeDesc" Name="sortBy" Type="String" />
-                                    </SelectParameters>
-                                </asp:ObjectDataSource>
-                            </td>
-                        </tr>
-                    </table>
+            </ProgressTemplate>
+        </asp:UpdateProgress>
+
+        <asp:UpdatePanel ID="upnlSystemToolsButtons" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional" ViewStateMode="Enabled">
+            <ContentTemplate>
+                <div class="dashboard-links tools-dashboard">
+                    <div class="dashboard-links">
+
+                        <div class="dashboard-link tool-tone-xml">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Table.png" alt="" />
+                                    <h4>XML file to SQL</h4>
+                                </div>
+                                <p>Import data from XML</p>
+                                <asp:Button ID="btnXMLTOSQL" runat="server" Text="Open" PostBackUrl="~/Tools/XMLtoSQL.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-reset">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Sync.png" alt="" />
+                                    <h4>Reset Prep/Delivery Date</h4>
+                                </div>
+                                <p>Recalculate next dates</p>
+                                <asp:Button ID="btnResetPrepDates" runat="server" Text="Run" OnClick="btnResetPrepDates_Click" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-move">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/MoveOnADay.gif" alt="" />
+                                    <h4>Move Delivery Date</h4>
+                                </div>
+                                <p>Shift delivery schedule</p>
+                                <asp:Button ID="btnMoveDlvryDate" runat="server" Text="Open" PostBackUrl="~/Tools/MoveDeliveryDate.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-holiday">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Calendar.gif" alt="" />
+                                    <h4>Holiday / Closure Dates</h4>
+                                </div>
+                                <p>Manage closure calendar</p>
+                                <asp:Button ID="btnHolidayClosures" runat="server" Text="Open" PostBackUrl="~/Tools/HolidayClosures.aspx" ToolTip="Add or remove roast / delivery closure dates" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-sysdata">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                    <h4>System Data</h4>
+                                </div>
+                                <p>Manage system settings</p>
+                                <asp:Button ID="btnEditSystemData" runat="server" Text="Open" PostBackUrl="~/Tools/SystemData.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-logs">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/View.png" alt="" />
+                                    <h4>Log Viewer</h4>
+                                </div>
+                                <p>Review system logs</p>
+                                <asp:Button ID="btnLogViewer" runat="server" Text="Open" PostBackUrl="~/Tools/LogViewer.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-email">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/World.gif" alt="" />
+                                    <h4>Email Diagnostics</h4>
+                                </div>
+                                <p>Test SMTP/email</p>
+                                <asp:Button ID="btnEmailDiagnostics" runat="server" Text="Open" PostBackUrl="~/Tools/EmailDiagnostics.aspx" ToolTip="Test SMTP and email settings" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-lastorder">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Stopwatch.png" alt="" />
+                                    <h4>Set Last Recurring Order Date</h4>
+                                </div>
+                                <p>Sync DateLastDone from item usage</p>
+                                <asp:Button ID="btnSetLastOrderDate" runat="server" Text="Run" OnClick="btnSetLastOrderDate_Click" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-messages">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/EditItem.gif" alt="" />
+                                    <h4>Messages Editor</h4>
+                                </div>
+                                <p>Edit resource messages</p>
+                                <asp:Button ID="btnMessagesEditor" runat="server" Text="Open" PostBackUrl="~/Tools/MessagesEditor.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-disable">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/LockItem.gif" alt="" />
+                                    <h4>Disable Inactive Clients</h4>
+                                </div>
+                                <p>Disable clients with no orders in 3+ years</p>
+                                <asp:Button ID="btnDisableInactiveClients" runat="server" Text="Run"
+                                    OnClick="btnDisableInactiveClients_Click"
+                                    ToolTip="Disables enabled customers whose last usage/order is older than 3 years" />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <asp:Panel ID="pnlResultsSection" CssClass="results-container page-tone-results" Visible="false" runat="server">
+                    <asp:Panel ID="pnlToolResults" runat="server" Visible="false">
+                        <asp:Label ID="ResultsTitleLabel" runat="server" CssClass="title" Text="" />
+                        <asp:GridView ID="gvResults" runat="server" AutoGenerateColumns="true" AllowSorting="true" CssClass="results-table">
+                        </asp:GridView>
+                    </asp:Panel>
+                    <asp:Panel ID="pnlResetPrepDate" runat="server" Visible="false">
+                        <asp:GridView ID="gvAreaPrepDates" runat="server" AllowPaging="True" CssClass="TblMudZebra"
+                            AutoGenerateColumns="False">
+                            <Columns>
+                                <asp:BoundField DataField="Area" HeaderText="Area" SortExpression="Area" />
+                                <asp:BoundField DataField="PreparationDate" DataFormatString="{0:d}" HeaderText="Preparation Date" SortExpression="PreparationDate" />
+                                <asp:BoundField DataField="DeliveryDate" DataFormatString="{0:d}" HeaderText="Delivery Date" SortExpression="DeliveryDate" />
+                                <asp:BoundField DataField="NextPreparationDate" DataFormatString="{0:d}" HeaderText="Next Preparation Date" SortExpression="NextPreparationDate" />
+                                <asp:BoundField DataField="NextDeliveryDate" DataFormatString="{0:d}" HeaderText="Next Delivery Date" SortExpression="NextDeliveryDate" />
+                            </Columns>
+                        </asp:GridView>
+                    </asp:Panel>
+                    <div class="page-tone-footer">
+                        <div class="status-message" id="pnlStatus" runat="server">
+                            <asp:Literal ID="ltrlStatus" runat="server" />
+                        </div>
+                    </div>
                 </asp:Panel>
-                <asp:Panel ID="pnlResetPrepDate" runat="server" Visible="false">
-                    <asp:GridView ID="gvAreaPrepDates" runat="server" AllowPaging="True" CssClass="TblMudZebra"
-                        AutoGenerateColumns="False">
-                        <Columns>
-                            <asp:BoundField DataField="Area" HeaderText="Area" SortExpression="Area" />
-                            <asp:BoundField DataField="PreperationDate" DataFormatString="{0:d}" HeaderText="PreperationDate" SortExpression="PreperationDate" />
-                            <asp:BoundField DataField="DeliveryDate" DataFormatString="{0:d}" HeaderText="DeliveryDate" SortExpression="DeliveryDate" />
-                            <asp:BoundField DataField="NextPreperationDate" DataFormatString="{0:d}" HeaderText="NextPreperationDate" SortExpression="NextPreperationDate" />
-                            <asp:BoundField DataField="NextDeliveryDate" DataFormatString="{0:d}" HeaderText="NextDeliveryDate" SortExpression="NextDeliveryDate" />
-                        </Columns>
-                    </asp:GridView>
-                </asp:Panel>
-            </asp:Panel>
-        </ContentTemplate>
-        <Triggers>
-            <asp:AsyncPostBackTrigger ControlID="btnSetClientType" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="gvResults" EventName="DataBound" />
-            <asp:AsyncPostBackTrigger ControlID="btnResetPrepDates" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="gvAreaPrepDates" EventName="DataBound" />
-            <asp:AsyncPostBackTrigger ControlID="btnSetLastOrderDate" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="btnDisableInactiveClients" EventName="Click" />
-        </Triggers>
-    </asp:UpdatePanel>
+            </ContentTemplate>
+            <Triggers>
+                <asp:AsyncPostBackTrigger ControlID="btnResetPrepDates" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnSetLastOrderDate" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnDisableInactiveClients" EventName="Click" />
+            </Triggers>
+        </asp:UpdatePanel>
+    </asp:Panel>
 </asp:Content>

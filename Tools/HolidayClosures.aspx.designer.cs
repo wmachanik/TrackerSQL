@@ -42,6 +42,15 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.UpdatePanel upnlHolidayClosures;
 
         /// <summary>
+        /// pnlHolidayClosures control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlHolidayClosures;
+
+        /// <summary>
         /// ddlFilterStrategy control.
         /// </summary>
         /// <remarks>
@@ -211,6 +220,15 @@ namespace TrackerSQL.Tools
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvClosures;
+
+        /// <summary>
+        /// pnlStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
 
         /// <summary>
         /// ltrlStatus control.

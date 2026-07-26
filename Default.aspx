@@ -6,25 +6,34 @@
 <asp:Content ID="HeaderContent" runat="server" ContentPlaceHolderID="HeadContent">
 </asp:Content>
 <asp:Content ID="BodyContent" runat="server" ContentPlaceHolderID="MainContent">
-    <h2>Welcome to Tracker.NET</h2>
+    <h2>Welcome to TrackerSQL.NET</h2>
     
     <!-- Dashboard Grid Layout -->
-    <div class="responsive-layout-container">
+    <div class="responsive-layout-container home-dashboard">
         
         <!-- Contacts Section -->
         <div class="complex-form-section">
             <h3>Contact Management</h3>
             <div class="dashboard-links">
-                <div class="dashboard-card">
-                    <h4><a href="Pages/Contacts.aspx">Contacts</a></h4>
+                <div class="dashboard-card home-tone-contacts">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-new-contact-48.png" alt="" />
+                        <h4><a href="Pages/Contacts.aspx">Contacts</a></h4>
+                    </div>
                     <p>Manage contact information and accounts</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/SendCoffeeCheckup.aspx">Send Checkup</a></h4>
+                <div class="dashboard-card home-tone-checkup">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-send-email-16.png" alt="" />
+                        <h4><a href="Pages/SendCoffeeCheckup.aspx">Send Checkup</a></h4>
+                    </div>
                     <p>Send automated contact checkups</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/SentRemindersSheet.aspx">Reminder History</a></h4>
+                <div class="dashboard-card home-tone-reminders">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/View.png" alt="" />
+                        <h4><a href="Pages/SentRemindersSheet.aspx">Reminder History</a></h4>
+                    </div>
                     <p>View sent reminders and notifications</p>
                 </div>
             </div>
@@ -34,16 +43,25 @@
         <div class="complex-form-section">
             <h3>Order Management</h3>
             <div class="dashboard-links">
-                <div class="dashboard-card btn-add">
-                    <h4><a href="Pages/OrderDetail.aspx?NewOrder=true">New Order</a></h4>
+                <div class="dashboard-card btn-add home-tone-neworder">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-new-order-16.png" alt="" />
+                        <h4><a href="Pages/OrderDetail.aspx?NewOrder=true">New Order</a></h4>
+                    </div>
                     <p>Create a new customer order</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/DeliverySheet.aspx">View &amp; Edit Orders</a></h4>
+                <div class="dashboard-card home-tone-orders">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-view-orders-16.png" alt="" />
+                        <h4><a href="Pages/OrderEntry.aspx">View &amp; Edit Orders</a></h4>
+                    </div>
                     <p>Manage existing orders and deliveries</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/RecurringOrders.aspx">Recurring Orders</a></h4>
+                <div class="dashboard-card home-tone-recurring">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-order-16.png" alt="" />
+                        <h4><a href="Pages/RecurringOrders.aspx">Recurring Orders</a></h4>
+                    </div>
                     <p>Set up and manage recurring orders</p>
                 </div>
             </div>
@@ -53,12 +71,18 @@
         <div class="complex-form-section">
             <h3>Repair Services</h3>
             <div class="dashboard-links">
-                <div class="dashboard-card">
-                    <h4><a href="Pages/Repairs.aspx">Repairs</a></h4>
+                <div class="dashboard-card home-tone-repairs">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-repair-tools-16.png" alt="" />
+                        <h4><a href="Pages/Repairs.aspx">Repairs</a></h4>
+                    </div>
                     <p>View and manage repair requests</p>
                 </div>
-                <div class="dashboard-card btn-add">
-                    <h4><a href="Pages/RepairDetail.aspx">New Repair</a></h4>
+                <div class="dashboard-card btn-add home-tone-newrepair">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-new-repair-30.png" alt="" />
+                        <h4><a href="Pages/RepairDetail.aspx">New Repair</a></h4>
+                    </div>
                     <p>Create a new repair ticket</p>
                 </div>
             </div>
@@ -68,16 +92,25 @@
         <div class="complex-form-section">
             <h3>Preparation &amp; Logistics</h3>
             <div class="dashboard-links">
-                <div class="dashboard-card">
-                    <h4><a href="Pages/CoffeeRequired.aspx">Required Sheet</a></h4>
+                <div class="dashboard-card home-tone-required">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-required-sheet-16.png" alt="" />
+                        <h4><a href="Pages/ItemsRequired.aspx">Required Sheet</a></h4>
+                    </div>
                     <p>View coffee preparation requirements</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/DeliverySheet.aspx">Delivery Sheet</a></h4>
+                <div class="dashboard-card home-tone-delivery">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-delivery-16.png" alt="" />
+                        <h4><a href="Pages/DeliverySheet.aspx">Delivery Sheet</a></h4>
+                    </div>
                     <p>Manage delivery schedules</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/PreperationSummary.aspx">Weekly Summary</a></h4>
+                <div class="dashboard-card home-tone-summary">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-weekly-summary-16.png" alt="" />
+                        <h4><a href="Pages/PreperationSummary.aspx">Weekly Summary</a></h4>
+                    </div>
                     <p>View weekly preparation summary</p>
                 </div>
             </div>
@@ -87,20 +120,50 @@
         <div class="complex-form-section">
             <h3>System Administration</h3>
             <div class="dashboard-links">
-                <div class="dashboard-card">
-                    <h4><a href="Pages/ItemGroups.aspx">Item Groups</a></h4>
+                <div class="dashboard-card home-tone-groups">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-Item-groups-32.png" alt="" />
+                        <h4><a href="Pages/ItemGroups.aspx">Item Groups</a></h4>
+                    </div>
                     <p>Manage product categories</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Pages/Lookups.aspx">Lookups</a></h4>
+                <div class="dashboard-card home-tone-lookups">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-lookups-30.png" alt="" />
+                        <h4><a href="Pages/Lookups.aspx">Lookups</a></h4>
+                    </div>
                     <p>Configure system lookup tables</p>
                 </div>
-                <div class="dashboard-card">
-                    <h4><a href="Tools/SystemTools.aspx">System Tools</a></h4>
+                <div class="dashboard-card home-tone-tools">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/Toolbox.png" alt="" />
+                        <h4><a href="Tools/SystemTools.aspx">System Tools</a></h4>
+                    </div>
                     <p>Access system utilities and tools</p>
                 </div>
             </div>
         </div>
+
+        <!-- User Administration — Administrators role only -->
+        <asp:Panel ID="pnlUserAdministration" runat="server" CssClass="complex-form-section" Visible="false">
+            <h3>User Administration</h3>
+            <div class="dashboard-links">
+                <div class="dashboard-card home-tone-users">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/User group.png" alt="" />
+                        <h4><a href="Administration/ManageUsers.aspx">Manage Users</a></h4>
+                    </div>
+                    <p>Approve, unlock, and review accounts</p>
+                </div>
+                <div class="dashboard-card home-tone-roles">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/Lock.gif" alt="" />
+                        <h4><a href="Administration/ManageRoles.aspx">Manage Roles</a></h4>
+                    </div>
+                    <p>Create, rename, and delete membership roles</p>
+                </div>
+            </div>
+        </asp:Panel>
 
     </div>
 

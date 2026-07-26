@@ -1,5 +1,5 @@
 ﻿/* DEFAULTS
-    Rev: 20260521-1
+    Rev: 20260726-8
 ----------------------------------------------------------*/
 :root {
     --primary-brown: #302a20;
@@ -15,6 +15,8 @@ body {
     font-size: .90em;
     font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", sans-serif, Helvetica, Verdana, sans-serif;
     margin: 10px;
+    margin-left:4px;
+    margin-right: 4px;
     padding: 0px;
     color: #696969;
     padding-top: 60px;
@@ -154,6 +156,72 @@ h6 {
     line-height: normal;
     font-size: 1.1em; /* Smaller text */
     background: transparent; /* Ensure no background */
+}
+
+/* Site-wide page footer (Site.Master) */
+.site-footer {
+    margin: 28px auto 8px;
+    max-width: 96%;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.site-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 14px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(78, 102, 77, 0.28);
+    border-top: 3px solid var(--primary-green);
+    background:
+        linear-gradient(180deg, rgba(78, 102, 77, 0.08) 0%, rgba(237, 235, 210, 0.55) 45%, rgba(255, 255, 255, 0.35) 100%);
+    box-shadow: 0 2px 8px rgba(48, 42, 32, 0.08);
+    color: var(--secondary-brown);
+    font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 0.02em;
+}
+
+.site-footer-brand {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: var(--primary-green);
+    letter-spacing: 0.04em;
+}
+
+.site-footer-tag {
+    color: var(--primary-brown);
+    font-weight: 600;
+}
+
+.site-footer-meta {
+    color: var(--secondary-brown);
+    opacity: 0.9;
+}
+
+.site-footer-sep {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary-green);
+    opacity: 0.55;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        margin: 20px 8px 4px;
+        max-width: none;
+    }
+
+    .site-footer-inner {
+        padding: 12px 14px;
+        gap: 8px 12px;
+        font-size: 0.9em;
+    }
 }
 /* ======================= */
 /* CONSOLIDATED MENU STYLES */
@@ -1124,8 +1192,211 @@ div.simpleLightBrownForm {
     /* Let cards size to content (default had fixed heights) */
     .dashboard-links.tools-dashboard .dashboard-card {
         height: auto;
-        padding: 8px 10px;
+        min-height: 6.5rem;
+        padding: 10px 12px;
+        border-left-width: 6px;
+        border-left-style: solid;
     }
+
+    .dashboard-links.tools-dashboard .tool-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .dashboard-links.tools-dashboard .tool-card-icon {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        flex: 0 0 auto;
+    }
+
+    .dashboard-links.tools-dashboard .tool-card-header h4 {
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .dashboard-links.tools-dashboard .dashboard-card p {
+        margin: 0 0 8px 0;
+    }
+
+    /* Distinct accent per tool (readable on white; avoids purple/glow look) */
+    .tools-dashboard .tool-tone-xml .dashboard-card {
+        border-left-color: #2f6f8f;
+        background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-reset .dashboard-card {
+        border-left-color: #4e664d;
+        background: linear-gradient(135deg, #e5f0d4 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-move .dashboard-card {
+        border-left-color: #c47a2c;
+        background: linear-gradient(135deg, #f8ebda 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-holiday .dashboard-card {
+        border-left-color: #8b3a3a;
+        background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-sysdata .dashboard-card {
+        border-left-color: #5a4a2f;
+        background: linear-gradient(135deg, #efe8da 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-logs .dashboard-card {
+        border-left-color: #3d5a80;
+        background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-email .dashboard-card {
+        border-left-color: #2d7a6f;
+        background: linear-gradient(135deg, #dff2ee 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-lastorder .dashboard-card {
+        border-left-color: #9a6b1f;
+        background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-messages .dashboard-card {
+        border-left-color: #1f6f8a;
+        background: linear-gradient(135deg, #dceef4 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-disable .dashboard-card {
+        border-left-color: #7a3e2e;
+        background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-clienttype .dashboard-card {
+        border-left-color: #3f6b4f;
+        background: linear-gradient(135deg, #e2f0e7 0%, #fff 70%);
+    }
+
+    .tools-dashboard .dashboard-link:hover .dashboard-card {
+        border-left-width: 6px;
+    }
+
+/* Home page: same icon + accent treatment as System Tools */
+.home-dashboard .dashboard-card {
+    height: auto;
+    min-height: 5.5rem;
+    padding: 10px 12px;
+    border-left-width: 6px;
+    border-left-style: solid;
+}
+
+.home-dashboard .tool-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.home-dashboard .tool-card-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.home-dashboard .tool-card-header h4 {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.home-dashboard .dashboard-card p {
+    margin: 0;
+}
+
+.home-dashboard .home-tone-contacts {
+    border-left-color: #3f6b4f;
+    background: linear-gradient(135deg, #e2f0e7 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-checkup {
+    border-left-color: #2d7a6f;
+    background: linear-gradient(135deg, #dff2ee 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-reminders {
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-neworder {
+    border-left-color: #4e664d;
+    background: linear-gradient(135deg, #e5f0d4 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-orders {
+    border-left-color: #c47a2c;
+    background: linear-gradient(135deg, #f8ebda 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-recurring {
+    border-left-color: #2f6f8f;
+    background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-repairs {
+    border-left-color: #9a6b1f;
+    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-newrepair {
+    border-left-color: #5a7a3a;
+    background: linear-gradient(135deg, #eaf3dc 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-required {
+    border-left-color: #8b3a3a;
+    background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-delivery {
+    border-left-color: #7a3e2e;
+    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-summary {
+    border-left-color: #5a4a2f;
+    background: linear-gradient(135deg, #efe8da 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-groups {
+    border-left-color: #1f6f8a;
+    background: linear-gradient(135deg, #dceef4 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-lookups {
+    border-left-color: #4a6b3a;
+    background: linear-gradient(135deg, #e6f0df 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-tools {
+    border-left-color: #302a20;
+    background: linear-gradient(135deg, #ebe7e0 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-users {
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+}
+
+.home-dashboard .home-tone-roles {
+    border-left-color: #4a5d7a;
+    background: linear-gradient(135deg, #e8edf5 0%, #fff 70%);
+}
+
+.home-dashboard .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
         /* Slightly smaller titles and no extra paragraph margins */
         .dashboard-links.tools-dashboard .dashboard-card h4 {
@@ -1425,7 +1696,68 @@ button,
         opacity: 0.6;
     }
 
-/* Icon + label inside green buttons (e.g. Order Detail Undo) */
+/* Icon-only green buttons (e.g. Order Detail Undo) */
+.btn-undo.order-detail-btn-icon img,
+.order-detail-btn-icon img {
+    height: 14px;
+    width: 14px;
+    margin: 0;
+    vertical-align: middle;
+    border: none;
+    background: transparent;
+    pointer-events: none;
+}
+
+.order-detail-save-return-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.92);
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.order-detail-save-return-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+}
+
+.order-detail-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+}
+
+.order-detail-toolbar .order-detail-btn,
+.order-detail-toolbar input[type="submit"].order-detail-btn,
+.order-detail-toolbar button.order-detail-btn {
+    font-size: 0.82em !important;
+    height: 26px !important;
+    min-width: auto !important;
+    max-width: none !important;
+    padding: 2px 8px !important;
+    line-height: 1.2 !important;
+}
+
+.order-detail-toolbar .order-detail-btn-icon {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    padding: 2px 4px !important;
+}
+
+.order-detail-toolbar .order-detail-last-btn {
+    margin-left: auto !important;
+}
+
+/* Icon + label inside green buttons (legacy) */
 .btn-undo img {
     height: 16px;
     width: 16px;
@@ -1445,70 +1777,76 @@ button,
 /* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
 /* ============================================ */
 
-/* Exclude Ajax ComboBox buttons from global styling */
-/*.ajax__combobox_buttoncontainer button,
+/* Exclude Ajax ComboBox buttons from global styling — keep a visible arrow always */
+.ajax__combobox_buttoncontainer button,
 .ajax__combobox_buttoncontainer input[type="button"],
-*/
 *[id*="ComboBox"] button,
 *[id*="ComboBox"] input[type="button"],
-.ajax__combobox_button,
-.ajax__combobox_dropdownbutton,
 *[class*="combobox"] button,
-*[class*="combobox"] input[type="button"] {
-    /*background: transparent !important;*/
-    border: #595939 !important;
-    padding: initial !important;
-    margin: initial !important;
-    min-width: initial !important;
-    height: 1.2em !important;
-    vertical-align: text-bottom;
-    font-size: initial !important;
+*[class*="combobox"] input[type="button"],
+.ajax__combobox_button,
+.ajax__combobox_dropdownbutton {
+    background-color: #e8efe4 !important;
+    background-image: none !important;
+    border: 1px solid #9aab92 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+    max-height: 22px !important;
+    vertical-align: middle;
+    font-size: 0 !important;
     font-family: initial !important;
-    color: #4e664d !important;
-    display: initial !important;
-    box-sizing: initial !important;
-    border-radius: 4px !important;
-    text-decoration: initial !important;
-    cursor: initial !important;
-    transition: initial !important;
+    color: transparent !important;
+    display: inline-block !important;
+    box-sizing: border-box !important;
+    border-radius: 0 4px 4px 0 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: none !important;
     opacity: 1 !important;
     visibility: visible !important;
+    line-height: 0 !important;
+    position: relative !important;
 }
 
-    /* Fix hover state - target ONLY the actual dropdown button */
-    .ajax__combobox_buttoncontainer button:hover,
-    .ajax__combobox_buttoncontainer input[type="button"]:hover,
-    .ajax__combobox_button:hover,
-    .ajax__combobox_dropdownbutton:hover {
-        background: #607060 !important;
-        border: #1f2f20 !important;
-        color: #1f2f20 !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        position: relative !important;
-    }
+/* Always-visible dropdown chevron (not only on hover) */
+.ajax__combobox_buttoncontainer button::after,
+.ajax__combobox_buttoncontainer input[type="button"]::after,
+*[id*="ComboBox"] button::after,
+*[id*="ComboBox"] input[type="button"]::after,
+.ajax__combobox_button::after,
+.ajax__combobox_dropdownbutton::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -35%) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-left: 5px solid transparent !important;
+    border-right: 5px solid transparent !important;
+    border-top: 6px solid #4e664d !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    display: block !important;
+}
 
-        /* Add arrow ONLY to the specific dropdown button elements */
-        .ajax__combobox_buttoncontainer button:hover::after,
-        .ajax__combobox_buttoncontainer input[type="button"]:hover::after,
-        .ajax__combobox_button:hover::after,
-        .ajax__combobox_dropdownbutton:hover::after {
-            content: "";
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 6px solid #1f2f20;
-            pointer-events: none;
-            z-index: 1;
-        }
+.ajax__combobox_buttoncontainer button:hover,
+.ajax__combobox_buttoncontainer input[type="button"]:hover,
+.ajax__combobox_button:hover,
+.ajax__combobox_dropdownbutton:hover,
+*[id*="ComboBox"] button:hover,
+*[id*="ComboBox"] input[type="button"]:hover {
+    background-color: #d5e2cf !important;
+    border-color: #4e664d !important;
+}
 
 /* Ensure text input does NOT get the arrow */
+.ajax__combobox_textboxcontainer input[type="text"]::after,
 .ajax__combobox_textboxcontainer input[type="text"]:hover::after,
+*[id*="ComboBox"] input[type="text"]::after,
 *[id*="ComboBox"] input[type="text"]:hover::after {
     display: none !important;
     content: none !important;
@@ -1621,6 +1959,159 @@ button,
         background-color: #607060 !important;
         border-color: #607060 !important;
     }
+
+/* Explicit filter-panel-btn (Go, Refresh, calendar wrapper) */
+.filter-toolbar .filter-panel-btn {
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 0.9em !important;
+    min-width: 40px !important;
+    max-width: 160px !important;
+    height: 30px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    position: relative;
+}
+
+    .filter-toolbar .filter-panel-btn:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+/* Shared image-button — global green shell + real imgButtons gif/png.
+   Preferred markup (DeliverySheet / labeled actions):
+     <span class="image-button" title="...">
+       <img src="../images/imgButtons/EditItem.gif" alt="" />
+       <asp:HyperLink|LinkButton Text="Edit" ... />
+     </span>
+   Icon and text link MUST be siblings — never nest <img> inside the <a>
+   (`.results-table a { display:table-cell }` + block img stacks icon above label).
+   Icon-only:
+     <span class="image-button"><asp:ImageButton ... /></span>
+   Green chrome is ALWAYS on the span — never on nested table links.
+*/
+span.image-button,
+a.image-button,
+.filter-toolbar span.image-button {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+    font-size: 0.9em !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    height: auto !important;
+    min-height: 30px !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    vertical-align: middle;
+    position: relative;
+}
+
+span.image-button:hover,
+a.image-button:hover,
+.filter-toolbar span.image-button:hover {
+    background-color: #607060 !important;
+    border-color: #607060 !important;
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
+span.image-button > img,
+a.image-button > img {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    flex: 0 0 16px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    position: relative;
+    z-index: 0;
+}
+
+span.image-button > input[type="image"] {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Text action inside the shell — transparent; shell provides the green look.
+   ::after extends the hit target over the sibling icon so icon clicks post back. */
+span.image-button > a,
+span.image-button > span {
+    display: inline !important;
+    flex: 0 0 auto !important;
+    color: #fff !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    font: inherit !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    overflow: visible !important;
+    max-width: none !important;
+    width: auto !important;
+    height: auto !important;
+    cursor: pointer;
+    position: static;
+    z-index: 1;
+}
+
+/* Full-shell click target (covers sibling icon without changing layout) */
+span.image-button > a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+span.image-button > a:hover {
+    color: #fff !important;
+    background: transparent !important;
+    text-decoration: none !important;
+}
+
+.image-button-end {
+    margin-left: auto !important;
+    margin-right: 12px !important;
+    margin-bottom: 12px !important;
+}
 
 /* Special styling for add/new buttons */
 .filter-toolbar .btn-add,
@@ -1942,6 +2433,309 @@ table.results-table {
         /*font-size: .9em !important;*/
         display: table-cell;
     }
+
+/*
+ * results-table width modifiers (combine with results-table):
+ *   results-table-fit  — hug content (max-content); for edit grids
+ *   results-table-full — stretch to container; columns still hug content
+ *                        (table-layout:auto + col-tight / col-fill)
+ * in-panel-grid keeps the fit behaviour for existing pages.
+ */
+.results-table.results-table-fit,
+table.results-table.results-table-fit,
+.results-table.in-panel-grid,
+table.results-table.in-panel-grid {
+    width: max-content !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+}
+
+.results-table.results-table-fit th,
+.results-table.results-table-fit td,
+table.results-table.results-table-fit th,
+table.results-table.results-table-fit td,
+.results-table.in-panel-grid th,
+.results-table.in-panel-grid td,
+table.results-table.in-panel-grid th,
+table.results-table.in-panel-grid td {
+    width: 1% !important;
+    vertical-align: bottom !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/*
+ * Full parent width + content-fit columns.
+ * GridView often renders <tr> directly under <table> (no thead/tbody) — do not
+ * require those wrappers in selectors.
+ * col-tight: width 1% + min-width:max-content → hug text, never crush to "Q…"
+ * col-fill: width 100% → absorbs leftover only
+ */
+.results-table.results-table-full,
+table.results-table.results-table-full {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+}
+
+.results-table.results-table-full th,
+.results-table.results-table-full td,
+table.results-table.results-table-full th,
+table.results-table.results-table-full td {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.results-table.results-table-full th.col-tight,
+.results-table.results-table-full td.col-tight,
+table.results-table.results-table-full th.col-tight,
+table.results-table.results-table-full td.col-tight {
+    width: 1% !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.results-table.results-table-full th.col-fill,
+.results-table.results-table-full td.col-fill,
+table.results-table.results-table-full th.col-fill,
+table.results-table.results-table-full td.col-fill {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+}
+
+.results-table.results-table-full td.col-fill.wrap,
+table.results-table.results-table-full td.col-fill.wrap {
+    white-space: normal !important;
+}
+
+.results-table .col-cmd {
+    width: 1% !important;
+    max-width: none !important;
+    min-width: max-content !important;
+    text-align: left !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    white-space: nowrap !important;
+}
+
+/* Icon-only cmd cells (ImageButtons alone) can stay compact — pages opt in with col-cmd-icon */
+.results-table .col-cmd.col-cmd-icon {
+    max-width: 3.5rem !important;
+    min-width: 0 !important;
+    text-align: center !important;
+}
+
+/* Text command buttons / image-button rows need room (same idea as Recurring Orders meta) */
+.results-table .col-cmd:has(.filter-panel-btn),
+.results-table .col-cmd:has(.image-button),
+.results-table .col-cmd:has(.cmd-button-row),
+table.results-table .col-cmd:has(.cmd-button-row),
+.results-table.results-table-fit td.col-cmd,
+table.results-table.results-table-fit td.col-cmd,
+.results-table.results-table-fit th.col-cmd,
+table.results-table.results-table-fit th.col-cmd {
+    max-width: none !important;
+    width: auto !important;
+    min-width: max-content !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+/* Keep Edit/Delete (or Save/Cancel) on one horizontal line */
+.cmd-button-row,
+span.cmd-button-row {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+    width: max-content !important;
+    max-width: none !important;
+}
+
+.results-table .col-cmd .image-button,
+.results-table .cmd-button-row .image-button {
+    margin: 0 !important;
+    vertical-align: middle;
+    flex-shrink: 0 !important;
+}
+
+.results-table .col-cmd .filter-panel-btn {
+    margin: 0 2px 0 0;
+    vertical-align: middle;
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    font-size: 0.82em !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    padding: 2px 8px !important;
+}
+
+/* Status checkboxes (Confirmed / Invoiced / Done) — keep label glued to checkbox */
+.detail-form-table td.status-flags,
+table.InputFrm td.status-flags {
+    white-space: normal;
+}
+
+.detail-form-table td.status-flags .status-flag,
+table.InputFrm td.status-flags .status-flag {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    margin-right: 1rem;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.detail-form-table td.status-flags .status-flag input[type="checkbox"],
+.detail-form-table td.status-flags .status-flag label,
+.detail-form-table td.status-flags .status-flag > span,
+table.InputFrm td.status-flags .status-flag input[type="checkbox"],
+table.InputFrm td.status-flags .status-flag label,
+table.InputFrm td.status-flags .status-flag > span {
+    display: inline !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 4px 0 0 !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+}
+
+.results-table .col-tight {
+    width: 1% !important;
+    white-space: nowrap !important;
+}
+
+.results-table.in-panel-grid input[type="text"],
+.results-table.in-panel-grid select {
+    width: auto !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
+
+.results-table.in-panel-grid .col-tight input[type="text"] {
+    width: 4.5em !important;
+    min-width: 4em !important;
+    max-width: 6em !important;
+}
+
+.results-table.in-panel-grid input[type="image"],
+.results-table.in-panel-grid img {
+    width: 18px;
+    height: 18px;
+    vertical-align: bottom;
+}
+
+/* ComboBox: keep native toolkit table; glue textbox + arrow (no gap) */
+.results-table .ajax__combobox,
+.TblFlex .ajax__combobox,
+.new-order-item-table .ajax__combobox {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    margin: 0 !important;
+    max-width: 100%;
+}
+
+.results-table .ajax__combobox_inputcontainer,
+.TblFlex .ajax__combobox_inputcontainer,
+.new-order-item-table .ajax__combobox_inputcontainer {
+    display: inline-table !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    vertical-align: middle !important;
+    width: auto !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+    margin: 0 !important;
+}
+
+.results-table .ajax__combobox_textboxcontainer,
+.results-table .ajax__combobox_buttoncontainer,
+.TblFlex .ajax__combobox_textboxcontainer,
+.TblFlex .ajax__combobox_buttoncontainer,
+.new-order-item-table .ajax__combobox_textboxcontainer,
+.new-order-item-table .ajax__combobox_buttoncontainer {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.results-table .ajax__combobox_textboxcontainer,
+.TblFlex .ajax__combobox_textboxcontainer,
+.new-order-item-table .ajax__combobox_textboxcontainer {
+    width: auto !important;
+}
+
+.results-table .ajax__combobox_buttoncontainer,
+.TblFlex .ajax__combobox_buttoncontainer,
+.new-order-item-table .ajax__combobox_buttoncontainer {
+    width: 22px !important;
+    max-width: 22px !important;
+    white-space: nowrap !important;
+}
+
+.results-table .ajax__combobox_textboxcontainer input[type="text"],
+.TblFlex .ajax__combobox_textboxcontainer input[type="text"],
+.new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
+    display: block !important;
+    width: auto !important;
+    min-width: 8em !important;
+    max-width: 18em !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    line-height: 20px !important;
+    padding: 0 6px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+}
+
+.results-table .ajax__combobox_buttoncontainer button,
+.results-table .ajax__combobox_buttoncontainer input[type="button"],
+.TblFlex .ajax__combobox_buttoncontainer button,
+.TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+.new-order-item-table .ajax__combobox_buttoncontainer button,
+.new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
+    display: block !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 20px !important;
+    box-sizing: border-box !important;
+}
+
+.results-table .empty-data {
+    text-align: center;
+    padding: 20px 15px;
+    color: var(--secondary-brown);
+    font-style: italic;
+    background: var(--light-green);
+    border-radius: 6px;
+    margin: 10px;
+    white-space: normal !important;
+}
+
     /* Header styling */
     .results-table th,
     .results-table thead th,
@@ -1952,8 +2746,9 @@ table.results-table {
         font-weight: bold !important;
         font-size: 1em !important;
         text-align: left !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        /* Match data-cell grid lines (was nearly invisible white-on-green) */
+        border-right: 1px solid rgba(224, 224, 224, 0.65) !important;
+        border-bottom: 1px solid rgba(224, 224, 224, 0.65) !important;
     }
     /* form controls with minimal padding impact */
     .results-table input[type="text"] {
@@ -2080,6 +2875,41 @@ table.results-table {
             color: #fff !important;
             text-decoration: none;
         }
+
+    /* image-button shell: nested links must NOT use table-cell / green-on-green table link styles */
+    .results-table span.image-button > a,
+    .results-table td span.image-button > a,
+    table.results-table span.image-button > a,
+    .TblMudZebra span.image-button > a,
+    .grouping-table span.image-button > a,
+    table.grouping-table span.image-button > a {
+        display: inline !important;
+        color: #fff !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+        text-decoration: none !important;
+        font-weight: 600 !important;
+        border-radius: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+        .results-table span.image-button > a:hover,
+        .results-table td span.image-button > a:hover,
+        table.results-table span.image-button > a:hover,
+        .TblMudZebra span.image-button > a:hover,
+        .grouping-table span.image-button > a:hover,
+        table.grouping-table span.image-button > a:hover {
+            color: #fff !important;
+            background: transparent !important;
+            text-decoration: none !important;
+        }
+
     /* Selected row styling - must come last to override all other row styling */
     .results-table tr.SelectedRowStyle td,
     table.results-table tr.SelectedRowStyle td,
@@ -2114,8 +2944,9 @@ table.results-table {
         font-weight: bold !important;
         font-size: 1em !important;
         text-align: left !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        /* Match data-cell grid lines (was nearly invisible white-on-green) */
+        border-right: 1px solid rgba(224, 224, 224, 0.65) !important;
+        border-bottom: 1px solid rgba(224, 224, 224, 0.65) !important;
     }
         /* Opt-in wrapping (override the global nowrap on .results-table cells) */
         .results-table td.wrap,
@@ -2259,7 +3090,7 @@ input[type="image"],
         border: none !important;
     }
 
-/* Exclude Ajax ComboBox buttons from global styling */
+/* ComboBox buttons — keep in sync with primary exclusion (always-visible chevron) */
 .ajax__combobox_buttoncontainer button,
 .ajax__combobox_buttoncontainer input[type="button"],
 *[id*="ComboBox"] button,
@@ -2268,24 +3099,26 @@ input[type="image"],
 *[class*="combobox"] input[type="button"],
 .ajax__combobox_button,
 .ajax__combobox_dropdownbutton {
-    /*background: transparent !important;*/
-    border: #595939 !important;
-    padding: initial !important;
-    margin: initial !important;
-    min-width: initial !important;
-    height: 1.2em !important;
-    vertical-align: text-bottom;
-    font-size: initial !important;
-    font-family: initial !important;
-    color: #4e664d !important;
-    display: initial !important;
-    box-sizing: initial !important;
-    border-radius: 4px !important;
-    text-decoration: initial !important;
-    cursor: initial !important;
-    transition: initial !important;
+    background-color: #e8efe4 !important;
+    background-image: none !important;
+    border: 1px solid #9aab92 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+    max-height: 22px !important;
+    vertical-align: middle;
+    font-size: 0 !important;
+    color: transparent !important;
+    display: inline-block !important;
+    box-sizing: border-box !important;
+    border-radius: 0 4px 4px 0 !important;
+    cursor: pointer !important;
     opacity: 1 !important;
     visibility: visible !important;
+    line-height: 0 !important;
+    position: relative !important;
 }
 /* ============================================ */
 /* SENDCOFFEECHECKUP SPECIFIC LAYOUT          */
@@ -2586,7 +3419,319 @@ table.InputFrm {
     /* Define grid areas */
     grid-template-areas:
         "main detail"
-        "footer footer";
+        "footer footer"
+        "status status";
+}
+
+.responsive-layout-container.compact {
+    gap: 2px;
+}
+
+/* ============================================ */
+/* INSTRUCTION DIALOG (floating prompt + bar)   */
+/* ============================================ */
+
+.order-detail-stack {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Keep order detail content inside the page-tone shell */
+.page-tone-panel.page-tone-orders,
+.page-tone-panel.page-tone-neworder {
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+}
+
+.page-tone-panel.page-tone-orders .responsive-layout-container,
+.page-tone-panel.page-tone-neworder .responsive-layout-container {
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, max-content) minmax(0, max-content);
+    justify-content: start;
+    align-items: start;
+    gap: 16px;
+}
+
+.page-tone-panel.page-tone-orders .layout-main-panel,
+.page-tone-panel.page-tone-neworder .layout-main-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: max-content;
+    max-width: min(100%, 32rem);
+    min-width: 0;
+}
+
+.page-tone-panel.page-tone-orders .layout-detail-panel,
+.page-tone-panel.page-tone-neworder .layout-detail-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start;
+    width: fit-content;
+    min-width: 0;
+    min-height: 14rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+/* Mobile: full-width shell — must come AFTER desktop hug-content rules */
+@media (max-width: 768px) {
+    .page-tone-panel.page-tone-orders,
+    .page-tone-panel.page-tone-neworder {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 10px 12px 14px !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-panel.page-tone-orders .responsive-layout-container,
+    .page-tone-panel.page-tone-neworder .responsive-layout-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-main-panel,
+    .page-tone-panel.page-tone-neworder .layout-main-panel,
+    .page-tone-panel.page-tone-orders .layout-detail-panel,
+    .page-tone-panel.page-tone-neworder .layout-detail-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        align-self: stretch !important;
+        align-items: stretch !important;
+    }
+
+    .page-tone-panel.page-tone-orders .order-detail-stack,
+    .page-tone-panel.page-tone-neworder .order-detail-stack,
+    .page-tone-panel.page-tone-orders .layout-main-panel > div,
+    .page-tone-panel.page-tone-neworder .layout-main-panel > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-panel.page-tone-orders .detail-form-table,
+    .page-tone-panel.page-tone-neworder .detail-form-table,
+    .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
+    .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 8px !important;
+        margin-bottom: 8px !important;
+        box-shadow: none !important;
+    }
+
+    .page-tone-panel.page-tone-orders .detail-form-table tr,
+    .page-tone-panel.page-tone-neworder .detail-form-table tr {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-bottom: 8px !important;
+        padding: 10px !important;
+    }
+}
+
+.page-tone-panel.page-tone-orders .layout-panel-top,
+.page-tone-panel.page-tone-neworder .layout-panel-top {
+    flex: 0 1 auto;
+    margin-bottom: 10px;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.page-tone-panel.page-tone-orders .layout-panel-bottom,
+.page-tone-panel.page-tone-neworder .layout-panel-bottom {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-top: auto; /* pin New Item to bottom of the card */
+    padding-top: 10px;
+    padding-bottom: 12px;
+    border-top: 1px solid rgba(78, 102, 77, 0.15);
+    text-align: left;
+    align-self: stretch;
+}
+
+.page-tone-panel.page-tone-orders .layout-panel-bottom .filter-panel-btn,
+.page-tone-panel.page-tone-neworder .layout-panel-bottom .filter-panel-btn {
+    margin: 0;
+}
+
+/* Toolbar spans the header form width so Last Order can sit on the right */
+.page-tone-panel.page-tone-orders .order-detail-toolbar,
+.page-tone-panel.page-tone-neworder .order-detail-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.page-tone-panel.page-tone-orders .order-detail-toolbar .order-detail-last-btn,
+.page-tone-panel.page-tone-neworder .order-detail-toolbar .order-detail-last-btn {
+    margin-left: auto !important;
+}
+
+/* New-item table: Item | Qty | Prep — same ComboBox glue as order-lines grid */
+.page-tone-panel.page-tone-orders .new-order-item-table,
+.page-tone-panel.page-tone-neworder .new-order-item-table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+}
+
+.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th,
+.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td,
+.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th,
+.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td {
+    vertical-align: middle !important;
+    white-space: nowrap;
+    padding: 6px 8px !important;
+}
+
+.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(1),
+.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(1),
+.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(1),
+.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(1) {
+    width: 44%;
+}
+
+.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(2),
+.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(2),
+.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(2),
+.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(2) {
+    width: 16%;
+}
+
+.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(3),
+.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(3),
+.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(3),
+.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(3) {
+    width: 40%;
+}
+
+/* Qty must match ComboBox height (same as order-lines grid) */
+.page-tone-panel.page-tone-orders .new-order-item-table input[type="text"],
+.page-tone-panel.page-tone-neworder .new-order-item-table input[type="text"] {
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    line-height: 20px !important;
+    padding: 0 6px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    width: 100% !important;
+    max-width: 6em !important;
+}
+
+.instruction-dialog-host {
+    display: block;
+    width: 100%;
+}
+
+.instruction-dialog-shell {
+    width: 100%;
+    margin: 0 0 14px 0;
+    position: relative;
+    z-index: 20;
+    box-sizing: border-box;
+}
+
+.instruction-dialog {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(176, 148, 72, 0.5);
+    background: linear-gradient(180deg, #fffef8 0%, #fff9e8 100%);
+    box-shadow:
+        0 12px 32px rgba(48, 56, 40, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.instruction-dialog--attention {
+    border-color: #d4a94a;
+}
+
+.instruction-dialog-message {
+    padding: 14px 18px 12px;
+    color: #5c4a1a;
+    line-height: 1.5;
+    font-size: 0.95em;
+}
+
+.action-bar {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.instruction-dialog-actions {
+    padding: 12px 14px;
+    background: var(--secondary-green);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+    .instruction-dialog-actions input[type="submit"],
+    .instruction-dialog-actions button,
+    .instruction-dialog-actions .btn {
+        background-color: var(--primary-green) !important;
+        color: #fff !important;
+        border: 1px solid var(--primary-green) !important;
+        padding: 8px 14px !important;
+        border-radius: 4px !important;
+        font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
+        font-size: 0.88em !important;
+        min-width: 110px !important;
+        min-height: 36px !important;
+        height: auto !important;
+        white-space: normal !important;
+        line-height: 1.25 !important;
+        margin: 0 !important;
+        flex: 1 1 auto;
+        max-width: 210px;
+        text-align: center;
+    }
+
+.btn-muted {
+    background-color: #8a8a7a !important;
+    border-color: #7a7a6a !important;
+    color: #fff !important;
+}
+
+    .btn-muted:hover {
+        background-color: #6f6f62 !important;
+        border-color: #6f6f62 !important;
+    }
+
+.layout-status-panel {
+    grid-area: status;
+    width: 100%;
+    margin-top: 2px;
+    padding-top: 12px;
+}
+
+.layout-status-panel .status-message {
+    margin-top: 0;
 }
 
 .layout-main-panel {
@@ -2613,32 +3758,72 @@ table.InputFrm {
     grid-area: footer; /* Always stays in footer row */
     background: var(--secondary-green);
     border-radius: 15px;
-    padding: 12px 15px;
+    padding: 8px 12px;
     margin-top: 15px;
+    max-width: 100%;
+    box-sizing: border-box;
     /* Center the buttons */
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
-    /* Keep existing button styling */
+    /* Desktop: compact action buttons */
     .layout-footer-panel input[type="submit"],
     .layout-footer-panel button,
-    .layout-footer-panel .btn {
+    .layout-footer-panel .btn,
+    .layout-footer-panel .filter-panel-btn {
         background-color: var(--primary-green) !important;
         color: #fff !important;
         border: 1px solid var(--primary-green) !important;
-        padding: 6px 6px !important;
+        padding: 2px 8px !important;
         border-radius: 4px !important;
         font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-        font-size: 0.9em !important;
+        font-size: 0.82em !important;
         min-width: 40px !important;
-        height: 32px !important;
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        line-height: 1.2 !important;
         white-space: nowrap !important;
-        margin: 0 2px;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle;
     }
+
+/* Order Detail action bar — one row height so New Order image-button matches peers */
+.layout-footer-panel .button-row.order-detail-actions {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: transparent !important;
+    text-align: left !important;
+}
+
+.layout-footer-panel .button-row.order-detail-actions span.image-button {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.layout-panel-bottom span.image-button {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    padding: 0 8px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle;
+}
 
 /* Keep existing panel positioning */
 .layout-panel-top {
@@ -2652,6 +3837,398 @@ table.InputFrm {
     border-top: 1px solid rgba(255,255,255,0.3);
 }
 
+.new-order-item-form {
+    margin-top: 10px;
+}
+
+.new-order-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .new-order-item-table {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+    }
+
+    .new-order-item-table > thead {
+        display: none !important;
+    }
+
+    .new-order-item-table > tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .new-order-item-table > tbody > tr {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.55rem !important;
+        width: 100% !important;
+        margin: 0 0 12px 0 !important;
+        padding: 10px !important;
+        border: 1px solid rgba(78, 102, 77, 0.2) !important;
+        border-radius: 8px !important;
+        background: #fff !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    /* Same label + control row as order-lines grid (vertical middle) */
+    .new-order-item-table > tbody > tr > td {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+    }
+
+    .new-order-item-table > tbody > tr > td::before {
+        content: attr(data-label);
+        flex: 0 0 3.25rem;
+        display: flex !important;
+        align-items: center !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #4e664d;
+        margin: 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    .new-order-item-table > tbody > tr > td[data-label="Qty"] input[type="text"] {
+        width: 5em !important;
+        max-width: 6em !important;
+        flex: 0 0 auto !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        line-height: 34px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .new-order-item-table .ajax__combobox {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .new-order-item-table .ajax__combobox_inputcontainer {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: fixed !important;
+    }
+
+    .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 100% !important;
+        max-width: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 16px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Order-lines grid on mobile: usable stacked form (label + control on one line).
+       GridView often renders header as a normal <tr> of <th>, not <thead> — hide those. */
+    .page-tone-orders .results-table.in-panel-grid,
+    .page-tone-neworder .results-table.in-panel-grid,
+    .page-tone-orders table.results-table.in-panel-grid,
+    .page-tone-neworder table.results-table.in-panel-grid {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: auto !important;
+        /* Card chrome is on each edit row; table overflow:hidden clips ComboBox arrows */
+        overflow: visible !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > thead,
+    .page-tone-neworder .results-table.in-panel-grid > thead,
+    .page-tone-orders .results-table.in-panel-grid > thead > tr,
+    .page-tone-neworder .results-table.in-panel-grid > thead > tr,
+    .page-tone-orders .results-table.in-panel-grid tr:has(> th),
+    .page-tone-neworder .results-table.in-panel-grid tr:has(> th),
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr:has(> th),
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr:has(> th),
+    .page-tone-orders .results-table.in-panel-grid th,
+    .page-tone-neworder .results-table.in-panel-grid th {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        box-shadow: none !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody,
+    .page-tone-neworder .results-table.in-panel-grid > tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.55rem;
+        width: 100% !important;
+        margin: 0 0 12px 0;
+        padding: 10px;
+        border: 1px solid rgba(78, 102, 77, 0.2);
+        border-radius: 8px;
+        background: #fff !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+    }
+
+    /* Each field: Label + control on the SAME row */
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        white-space: nowrap !important;
+        padding: 0 !important;
+        border: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td::before {
+        flex: 0 0 3.25rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #4e664d;
+        text-align: left;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before {
+        content: none;
+        flex: 0 0 0;
+        width: 0;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(2)::before {
+        content: "Item";
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(3)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(3)::before {
+        content: "QTY";
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(4)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(4)::before {
+        content: "Prep";
+    }
+
+    /* Trailing cmd/hidden cell — keep icons if any, no fake label */
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before {
+        content: none;
+        flex: 0 0 0;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-cmd,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd {
+        text-align: left !important;
+        max-width: none !important;
+        justify-content: flex-start;
+    }
+
+    /* ComboBox: fill width beside label; keep arrow glued (no wrap / no gap) */
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_inputcontainer,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_inputcontainer {
+        display: table !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: fixed !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 100% !important;
+        max-width: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 16px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer input[type="button"],
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer input[type="button"] {
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .new-order-item-actions {
+        margin-top: 12px;
+        margin-bottom: 8px;
+        gap: 10px;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-tight,
+    .page-tone-neworder .results-table.in-panel-grid .col-tight {
+        width: 100% !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-tight input[type="text"],
+    .page-tone-neworder .results-table.in-panel-grid .col-tight input[type="text"] {
+        width: 5em !important;
+        max-width: 6em !important;
+        flex: 0 0 auto !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        line-height: 34px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+    }
+
+    /* Contact ComboBox: never let the arrow wrap under the name */
+    .detail-form-table .ajax__combobox {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .detail-form-table .ajax__combobox_inputcontainer {
+        display: table !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: fixed !important;
+        height: auto !important;
+        white-space: nowrap !important;
+    }
+
+    .detail-form-table .ajax__combobox_textboxcontainer,
+    .detail-form-table .ajax__combobox_buttoncontainer {
+        display: table-cell !important;
+        vertical-align: middle !important;
+        padding: 0 !important;
+    }
+
+    .detail-form-table .ajax__combobox_textboxcontainer {
+        width: auto !important;
+    }
+
+    .detail-form-table .ajax__combobox_buttoncontainer {
+        width: 28px !important;
+        max-width: 28px !important;
+        white-space: nowrap !important;
+    }
+
+    .detail-form-table .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 100% !important;
+        max-width: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        font-size: 16px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        border-radius: 4px 0 0 4px !important;
+    }
+
+    .detail-form-table .ajax__combobox_buttoncontainer button,
+    .detail-form-table .ajax__combobox_buttoncontainer input[type="button"] {
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #e8efe4 !important;
+        background-image: none !important;
+        border: 1px solid #9aab92 !important;
+        border-radius: 0 4px 4px 0 !important;
+        position: relative !important;
+        font-size: 0 !important;
+        color: transparent !important;
+    }
+}
+
 /* Mobile responsive - switch to single column */
 @media (max-width: 768px) {
     .responsive-layout-container {
@@ -2659,9 +4236,112 @@ table.InputFrm {
         grid-template-areas:
             "main"
             "detail"
-            "footer";
+            "footer"
+            "status";
         gap: 15px;
+        width: 100%;
+        max-width: 100%;
     }
+
+    .page-tone-panel.page-tone-orders .responsive-layout-container,
+    .page-tone-panel.page-tone-neworder .responsive-layout-container {
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+
+    .page-tone-panel.page-tone-orders,
+    .page-tone-panel.page-tone-neworder {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-main-panel,
+    .page-tone-panel.page-tone-neworder .layout-main-panel,
+    .page-tone-panel.page-tone-orders .layout-detail-panel,
+    .page-tone-panel.page-tone-neworder .layout-detail-panel,
+    .page-tone-panel.page-tone-orders .layout-panel-top,
+    .page-tone-panel.page-tone-neworder .layout-panel-top,
+    .page-tone-panel.page-tone-orders .layout-panel-bottom,
+    .page-tone-panel.page-tone-neworder .layout-panel-bottom,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid,
+    .page-tone-panel.page-tone-orders .new-order-item-table,
+    .page-tone-panel.page-tone-neworder .new-order-item-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-main-panel,
+    .page-tone-panel.page-tone-neworder .layout-main-panel {
+        max-width: 100% !important;
+        width: 100% !important;
+        align-self: stretch !important;
+        align-items: stretch !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-detail-panel,
+    .page-tone-panel.page-tone-neworder .layout-detail-panel {
+        align-items: stretch !important;
+        align-self: stretch !important;
+    }
+
+    .page-tone-panel.page-tone-orders .detail-form-table,
+    .page-tone-panel.page-tone-neworder .detail-form-table,
+    .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
+    .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* White field cards must span the full green shell (no dead space on the right) */
+    .page-tone-panel.page-tone-orders .detail-form-table tr,
+    .page-tone-panel.page-tone-neworder .detail-form-table tr,
+    .page-tone-panel.page-tone-orders .TblSimple.detail-form-table tr,
+    .page-tone-panel.page-tone-neworder .TblSimple.detail-form-table tr {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-main-panel > div,
+    .page-tone-panel.page-tone-neworder .layout-main-panel > div,
+    .page-tone-panel.page-tone-orders .order-detail-toolbar,
+    .page-tone-panel.page-tone-neworder .order-detail-toolbar {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .order-detail-stack {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .instruction-dialog-shell {
+        margin-bottom: 12px;
+    }
+
+    .instruction-dialog-message {
+        padding: 12px 14px 10px;
+    }
+
+    .instruction-dialog-actions {
+        gap: 10px;
+        padding: 12px;
+    }
+
+        .instruction-dialog-actions input[type="submit"],
+        .instruction-dialog-actions button,
+        .instruction-dialog-actions .btn {
+            flex: 1 1 calc(50% - 10px);
+            max-width: none;
+            min-width: 0 !important;
+            font-size: 0.82em !important;
+            padding: 10px 8px !important;
+            min-height: 40px !important;
+        }
 
     .layout-main-panel,
     .layout-detail-panel {
@@ -2671,6 +4351,9 @@ table.InputFrm {
 
     .layout-footer-panel {
         margin-top: 10px;
+        gap: 10px;
+        padding: 14px 12px;
+        justify-content: stretch;
     }
 
     .layout-detail-panel {
@@ -2680,39 +4363,69 @@ table.InputFrm {
     .layout-panel-bottom {
         margin-top: 15px;
     }
-    /* Mobile button improvements for layout-footer-panel */
-    .layout-footer-panel {
-        gap: 12px; /* Increase gap between buttons when wrapping */
-        padding: 15px 12px; /* Add more padding on mobile */
+
+    /* Mobile: large tap-friendly action buttons */
+    .layout-footer-panel input[type="submit"],
+    .layout-footer-panel button,
+    .layout-footer-panel .btn,
+    .layout-footer-panel .filter-panel-btn {
+        padding: 10px 14px !important;
+        font-size: 1em !important;
+        min-width: 44px !important;
+        height: auto !important;
+        min-height: 44px !important;
+        max-height: none !important;
+        margin: 0 !important;
+        flex: 1 1 auto;
     }
 
-        /* Make buttons smaller on mobile */
-        .layout-footer-panel input[type="submit"],
-        .layout-footer-panel button,
-        .layout-footer-panel .btn {
-            padding: 4px 8px !important; /* Smaller padding */
-            font-size: 0.8em !important; /* Smaller font */
-            min-width: 50px !important; /* Smaller min-width */
-            height: 28px !important; /* Smaller height */
-            margin: 4px 2px !important; /* Add vertical margin for wrapping */
-        }
+    .layout-footer-panel .button-row.order-detail-actions {
+        width: 100%;
+        gap: 10px;
+    }
+
+    .layout-footer-panel .button-row.order-detail-actions span.image-button {
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: none !important;
+        padding: 0 14px !important;
+    }
 }
 
 /* Extra small mobile - even smaller buttons */
 @media (max-width: 480px) {
-    .layout-footer-panel {
+    .instruction-dialog-actions {
+        flex-direction: column;
         gap: 8px;
-        padding: 12px 8px;
+        padding: 10px;
+    }
+
+        .instruction-dialog-actions input[type="submit"],
+        .instruction-dialog-actions button,
+        .instruction-dialog-actions .btn {
+            flex: 1 1 100%;
+            width: 100%;
+            max-width: none;
+            font-size: 0.8em !important;
+            min-height: 42px !important;
+        }
+
+    .layout-footer-panel {
+        gap: 10px;
+        padding: 14px 10px;
     }
 
         .layout-footer-panel input[type="submit"],
         .layout-footer-panel button,
-        .layout-footer-panel .btn {
-            padding: 3px 6px !important;
-            font-size: 0.75em !important;
-            min-width: 45px !important;
-            height: 26px !important;
-            margin: 3px 1px !important;
+        .layout-footer-panel .btn,
+        .layout-footer-panel .filter-panel-btn {
+            padding: 12px 14px !important;
+            font-size: 1em !important;
+            min-width: 44px !important;
+            height: auto !important;
+            min-height: 48px !important;
+            max-height: none !important;
+            flex: 1 1 100%;
         }
 }
 /* ============================================ */
@@ -2986,6 +4699,8 @@ table.InputFrm {
         .TblFlex th,
         .TblFlex td {
             padding: 3px 4px;
+            margin-left:2px;
+            max-width: 200px;
         }
 
         .TblFlex th {
@@ -3093,23 +4808,23 @@ table.results-table:has(.col-priority-5) {
 
 @media (min-width: 1025px) /*and (max-width: 1400px)*/ {
     /* Better column width distribution for tables with many columns */
-    .results-table:has(.col-priority-3),
-    table.results-table:has(.col-priority-3) {
+    .results-table:has(.col-priority-3):not(.recurring-summary-grid),
+    table.results-table:has(.col-priority-3):not(.recurring-summary-grid) {
         table-layout: fixed !important;
     }
 
-        .results-table:has(.col-priority-3) .col-priority-1,
-        table.results-table:has(.col-priority-3) .col-priority-1 {
+        .results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-1,
+        table.results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-1 {
             width: fit-content !important;
         }
 
-        .results-table:has(.col-priority-3) .col-priority-2,
-        table.results-table:has(.col-priority-3) .col-priority-2 {
+        .results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-2,
+        table.results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-2 {
             width: fit-content !important;
         }
 
-        .results-table:has(.col-priority-3) .col-priority-3,
-        table.results-table:has(.col-priority-3) .col-priority-3 {
+        .results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-3,
+        table.results-table:has(.col-priority-3):not(.recurring-summary-grid) .col-priority-3 {
             width: fit-content !important;
         }
 }
@@ -3195,6 +4910,14 @@ table.results-table:has(.col-priority-5) {
         table-layout: fixed !important; /* MUST be fixed for consistent column widths */
         width: 100% !important;
         min-width: 350px !important;
+    }
+
+    /* In-panel edit grids still hug content (Order lines, Lookups area days) */
+    .results-table.in-panel-grid,
+    table.results-table.in-panel-grid {
+        table-layout: auto !important;
+        width: max-content !important;
+        min-width: 0 !important;
     }
 
     /* Company Name - gets most space but controlled */
@@ -3494,7 +5217,7 @@ input.passwordEntry {
     input[type="password"],
     input[type="email"] {
         font-size: 14px !important; /* Prevent zoom on iOS */
-        padding: 6px 8px !important;
+        padding: 2px 4px !important;
     }
 
     .filter-toolbar {
@@ -3638,6 +5361,9 @@ table.InputFrm {
     .detail-form-table,
     table.InputFrm {
         display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         overflow-x: hidden !important;
         border-radius: 15px !important;
         background: var(--light-green) !important;
@@ -3651,6 +5377,9 @@ table.InputFrm {
         .detail-form-table tr,
         table.InputFrm tr {
             display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
             margin-bottom: 15px !important;
             background: #fff !important;
             border-radius: 8px !important;
@@ -3797,6 +5526,58 @@ table.InputFrm {
             flex-wrap: wrap !important;
             gap: 12px !important;
             padding: 8px 0 !important;
+        }
+
+        /* Stati: one flag per row; checkbox + label stay on the SAME line */
+        .detail-form-table td.status-flags,
+        table.InputFrm td.status-flags {
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
+        }
+
+        .detail-form-table td.status-flags .status-flag,
+        table.InputFrm td.status-flags .status-flag {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin: 0 !important;
+            width: auto !important;
+            max-width: 100% !important;
+            white-space: nowrap !important;
+        }
+
+        .detail-form-table td.status-flags .status-flag input[type="checkbox"],
+        .detail-form-table td.status-flags .status-flag label,
+        .detail-form-table td.status-flags .status-flag > span,
+        table.InputFrm td.status-flags .status-flag input[type="checkbox"],
+        table.InputFrm td.status-flags .status-flag label,
+        table.InputFrm td.status-flags .status-flag > span {
+            display: inline !important;
+            width: auto !important;
+            max-width: none !important;
+            margin: 0 !important;
+            transform: none !important;
+            white-space: nowrap !important;
+            vertical-align: middle !important;
+            float: none !important;
+        }
+
+        .detail-form-table td.status-flags .status-flag > span,
+        table.InputFrm td.status-flags .status-flag > span {
+            display: inline-flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 8px !important;
         }
 
         /* Better handling for dropdowns with labels */
@@ -3979,34 +5760,74 @@ td.wordwrap {
 /* Restrict the pager cell and its nested table to content width */
 .results-table tr.aspNetPager > td[colspan] {
     text-align: left !important;
-    padding: 0 !important;
-    /* Remove any width constraints */
+    padding: 6px 4px !important;
     width: auto !important;
-    /* Prevent stretching */
+    max-width: none !important;
     white-space: nowrap !important;
+    overflow: visible !important;
+    border: none !important;
+    background: transparent !important;
+    vertical-align: middle !important;
 }
 
-    .results-table tr.aspNetPager > td[colspan] > table {
-        display: inline-block !important;
-        width: auto !important;
-        margin: 0 !important;
-        border: none !important;
-        background: none !important;
-    }
+.results-table tr.aspNetPager > td[colspan] > table {
+    display: inline-table !important;
+    width: auto !important;
+    margin: 0 !important;
+    border: none !important;
+    border-collapse: separate !important;
+    border-spacing: 4px 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+}
 
-        .results-table tr.aspNetPager > td[colspan] > table td,
-        .results-table tr.aspNetPager > td[colspan] > table th {
-            padding: 0 2px !important;
-            white-space: nowrap !important;
-        }
+.results-table tr.aspNetPager > td[colspan] > table td,
+.results-table tr.aspNetPager > td[colspan] > table th {
+    padding: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+}
+
+.results-table tr.aspNetPager > td[colspan] > table td a,
+.results-table tr.aspNetPager > td[colspan] > table td span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    padding: 2px 6px !important;
+    box-sizing: border-box !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+}
+
+/* Dual-list / in-panel grids: pager must not inherit 1% cell widths */
+.results-table.in-panel-grid tr.aspNetPager > td,
+.results-table.in-panel-grid tr.aspNetPager > td[colspan] > table td {
+    width: auto !important;
+    max-width: none !important;
+}
+
 /* Add spacing between pager image buttons */
 .results-table tr.aspNetPager input[type="image"] {
     margin-right: 8px !important;
 }
 
-    .results-table tr.aspNetPager input[type="image"]:last-child {
-        margin-right: 0 !important;
-    }
+.results-table tr.aspNetPager input[type="image"]:last-child {
+    margin-right: 0 !important;
+}
 
 /* Status message styles */
 .status-message {
@@ -4155,3 +5976,1540 @@ td.wordwrap {
     .calendar-popup .ajax__calendar_years {
         background-color: #fff;
     }
+
+/* Holiday / Closure detail form panel (matches System Tools holiday tone) */
+.closure-detail-panel {
+    max-width: 42rem;
+    margin-top: 8px;
+    padding: 16px 20px 20px;
+    border-radius: 10px;
+    border: 1px solid #e2d0d0;
+    border-left: 5px solid #8b3a3a;
+    background: linear-gradient(135deg, #f5e4e4 0%, #fff 72%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.closure-detail-panel .tool-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.closure-detail-panel .tool-card-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+/* Page tone panel — full-page shell matching home dashboard card accents */
+.page-tone-panel {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    margin-top: 0;
+    padding: 16px 20px 20px;
+    border-radius: 10px;
+    border: 1px solid #ccd6e6;
+    border-left: 5px solid #3d5a80;
+    background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.page-tone-panel .page-tone-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(61, 90, 128, 0.15);
+}
+
+.page-tone-panel .tool-card-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+.page-tone-panel .page-tone-title {
+    margin: 0;
+    padding: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #3d5a80;
+    font-variant: normal;
+}
+
+.page-tone-panel .page-tone-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.page-tone-panel .page-tone-toolbar {
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-tone-toolbar select {
+    width: auto !important;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 0 auto; /* hug content — do not stretch across the toolbar */
+}
+
+/* Compact GIF / icon toolbar actions (Add/Edit caps, etc.) — native size, no green chrome */
+.page-tone-toolbar input.toolbar-icon-btn[type="image"],
+.page-tone-toolbar .toolbar-icon-btn {
+    width: auto !important;
+    height: auto !important;
+    max-height: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    vertical-align: middle;
+    box-shadow: none !important;
+}
+
+.page-tone-panel .page-tone-progress {
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-tone-panel .page-tone-send-progress {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin: 8px 0 12px;
+    padding: 12px 14px;
+    font-weight: 600;
+}
+
+.page-tone-checkup .checkup-send-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.page-tone-checkup .checkup-send-cc {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.page-tone-reminders {
+    border-color: #ccd6e6;
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+}
+
+.page-tone-reminders .page-tone-header {
+    border-bottom-color: rgba(61, 90, 128, 0.15);
+}
+
+.page-tone-checkup {
+    border-color: #c5ddd8;
+    border-left-color: #2d7a6f;
+    background: linear-gradient(135deg, #dff2ee 0%, #fff 70%);
+}
+
+.page-tone-checkup .page-tone-header {
+    border-bottom-color: rgba(45, 122, 111, 0.15);
+}
+
+.page-tone-checkup .page-tone-title {
+    color: #2d7a6f;
+}
+
+.page-tone-contacts {
+    border-color: #c5d9cc;
+    border-left-color: #3f6b4f;
+    background: linear-gradient(135deg, #e2f0e7 0%, #fff 70%);
+}
+
+.page-tone-contacts .page-tone-header {
+    border-bottom-color: rgba(63, 107, 79, 0.15);
+}
+
+.page-tone-contacts .page-tone-title {
+    color: #3f6b4f;
+}
+
+.page-tone-repairs {
+    border-color: #e2d4b0;
+    border-left-color: #9a6b1f;
+    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
+}
+
+.page-tone-repairs .page-tone-header {
+    border-bottom-color: rgba(154, 107, 31, 0.15);
+}
+
+.page-tone-repairs .page-tone-title {
+    color: #9a6b1f;
+}
+
+.page-tone-orders {
+    border-color: #e8d4bc;
+    border-left-color: #c47a2c;
+    background: linear-gradient(135deg, #f8ebda 0%, #fff 70%);
+}
+
+.page-tone-orders .page-tone-header {
+    border-bottom-color: rgba(196, 122, 44, 0.15);
+}
+
+.page-tone-orders .page-tone-title {
+    color: #c47a2c;
+}
+
+.page-tone-neworder {
+    border-color: #d4e0c8;
+    border-left-color: #4e664d;
+    background: linear-gradient(135deg, #e5f0d4 0%, #fff 70%);
+}
+
+.page-tone-neworder .page-tone-header {
+    border-bottom-color: rgba(78, 102, 77, 0.15);
+}
+
+.page-tone-neworder .page-tone-title {
+    color: #4e664d;
+}
+
+.page-tone-delivery {
+    border-color: #e4d0c8;
+    border-left-color: #7a3e2e;
+    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+}
+
+.page-tone-delivery .page-tone-header {
+    border-bottom-color: rgba(122, 62, 46, 0.15);
+}
+
+.page-tone-delivery .page-tone-title {
+    color: #7a3e2e;
+}
+
+.page-tone-summary {
+    border-color: #e0d8c8;
+    border-left-color: #5a4a2f;
+    background: linear-gradient(135deg, #efe8da 0%, #fff 70%);
+}
+
+.page-tone-summary .page-tone-header {
+    border-bottom-color: rgba(90, 74, 47, 0.15);
+}
+
+.page-tone-summary .page-tone-title {
+    color: #5a4a2f;
+}
+
+.page-tone-lookups {
+    border-color: #d4e0c8;
+    border-left-color: #4a6b3a;
+    background: linear-gradient(135deg, #e6f0df 0%, #fff 70%);
+}
+
+.page-tone-lookups .page-tone-header {
+    border-bottom-color: rgba(74, 107, 58, 0.15);
+}
+
+.page-tone-lookups .page-tone-title {
+    color: #4a6b3a;
+}
+
+.page-tone-groups {
+    border-color: #c5dde6;
+    border-left-color: #1f6f8a;
+    background: linear-gradient(135deg, #dceef4 0%, #fff 70%);
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.page-tone-groups .page-tone-header {
+    border-bottom-color: rgba(31, 111, 138, 0.15);
+}
+
+.page-tone-groups .page-tone-title {
+    color: #1f6f8a;
+}
+
+.page-tone-holiday {
+    border-color: #e2d0d0;
+    border-left-color: #8b3a3a;
+    background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+}
+
+.page-tone-holiday .page-tone-header {
+    border-bottom-color: rgba(139, 58, 58, 0.15);
+}
+
+.page-tone-holiday .page-tone-title {
+    color: #8b3a3a;
+}
+
+.page-tone-holiday .page-tone-footer {
+    border-top-color: rgba(139, 58, 58, 0.2);
+}
+
+.page-tone-xml {
+    border-color: #d0e3ec;
+    border-left-color: #2f6f8f;
+    background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
+}
+
+.page-tone-xml .page-tone-header {
+    border-bottom-color: rgba(47, 111, 143, 0.15);
+}
+
+.page-tone-xml .page-tone-title {
+    color: #2f6f8f;
+}
+
+.page-tone-xml .page-tone-footer {
+    border-top-color: rgba(47, 111, 143, 0.2);
+}
+
+.page-tone-move {
+    border-color: #edd9c2;
+    border-left-color: #c47a2c;
+    background: linear-gradient(135deg, #f8ebda 0%, #fff 70%);
+}
+
+.page-tone-move .page-tone-header {
+    border-bottom-color: rgba(196, 122, 44, 0.15);
+}
+
+.page-tone-move .page-tone-title {
+    color: #c47a2c;
+}
+
+.page-tone-move .page-tone-footer {
+    border-top-color: rgba(196, 122, 44, 0.2);
+}
+
+.page-tone-sysdata {
+    border-color: #e2d9c8;
+    border-left-color: #5a4a2f;
+    background: linear-gradient(135deg, #efe8da 0%, #fff 70%);
+}
+
+.page-tone-sysdata .page-tone-header {
+    border-bottom-color: rgba(90, 74, 47, 0.15);
+}
+
+.page-tone-sysdata .page-tone-title {
+    color: #5a4a2f;
+}
+
+.page-tone-sysdata .page-tone-footer {
+    border-top-color: rgba(90, 74, 47, 0.2);
+}
+
+.page-tone-logs {
+    border-color: #d0d8e6;
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
+}
+
+.page-tone-logs .page-tone-header {
+    border-bottom-color: rgba(61, 90, 128, 0.15);
+}
+
+.page-tone-logs .page-tone-title {
+    color: #3d5a80;
+}
+
+.page-tone-logs .page-tone-footer {
+    border-top-color: rgba(61, 90, 128, 0.2);
+}
+
+.page-tone-email {
+    border-color: #c8e6e1;
+    border-left-color: #2d7a6f;
+    background: linear-gradient(135deg, #dff2ee 0%, #fff 70%);
+}
+
+.page-tone-email .page-tone-header {
+    border-bottom-color: rgba(45, 122, 111, 0.15);
+}
+
+.page-tone-email .page-tone-title {
+    color: #2d7a6f;
+}
+
+.page-tone-email .page-tone-footer {
+    border-top-color: rgba(45, 122, 111, 0.2);
+}
+
+.page-tone-messages {
+    border-color: #c5dde6;
+    border-left-color: #1f6f8a;
+    background: linear-gradient(135deg, #dceef4 0%, #fff 70%);
+}
+
+.page-tone-messages .page-tone-header {
+    border-bottom-color: rgba(31, 111, 138, 0.15);
+}
+
+.page-tone-messages .page-tone-title {
+    color: #1f6f8a;
+}
+
+.page-tone-messages .page-tone-footer {
+    border-top-color: rgba(31, 111, 138, 0.2);
+}
+
+.page-tone-tools {
+    border-color: #d0d8e6;
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e8eef6 0%, #fff 70%);
+}
+
+.page-tone-tools .page-tone-header {
+    border-bottom-color: rgba(61, 90, 128, 0.15);
+}
+
+.page-tone-tools .page-tone-title {
+    color: #3d5a80;
+}
+
+.page-tone-tools .page-tone-footer {
+    border-top-color: rgba(61, 90, 128, 0.2);
+}
+
+.page-tone-tools .page-tone-results {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(61, 90, 128, 0.15);
+}
+
+/* Account / Administration (User menu) — same family as page-tone-tools */
+.page-tone-users {
+    border-color: #d0d8e6;
+    border-left-color: #3d5a80;
+    background: linear-gradient(135deg, #e8eef6 0%, #fff 70%);
+}
+
+.page-tone-users .page-tone-header {
+    border-bottom-color: rgba(61, 90, 128, 0.15);
+}
+
+.page-tone-users .page-tone-title {
+    color: #3d5a80;
+}
+
+.page-tone-users .page-tone-footer {
+    border-top-color: rgba(61, 90, 128, 0.2);
+}
+
+.page-tone-users .accountInfo {
+    width: 100%;
+    max-width: 28rem;
+}
+
+.page-tone-users fieldset {
+    border: 1px solid rgba(61, 90, 128, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px 8px;
+    margin: 0 0 16px;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.page-tone-users fieldset legend {
+    color: #3d5a80;
+    font-size: 1em;
+    padding: 0 6px;
+}
+
+.page-tone-users .accountInfo p,
+.page-tone-users .account-form-row {
+    margin: 0 0 12px;
+}
+
+.page-tone-users .accountInfo label,
+.page-tone-users .account-form-row label {
+    display: block;
+    margin-bottom: 4px;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.page-tone-users .accountInfo label.inline,
+.page-tone-users label.inline {
+    display: inline;
+    font-weight: normal;
+    margin-left: 6px;
+}
+
+.page-tone-users input.textEntry,
+.page-tone-users input.passwordEntry,
+.page-tone-users .account-form-row input[type="text"],
+.page-tone-users .account-form-row input[type="password"] {
+    width: 100%;
+    max-width: 22rem;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid #c5cdd8;
+    border-radius: 4px;
+}
+
+.page-tone-users .submitButton,
+.page-tone-users .button-row {
+    margin-top: 8px;
+}
+
+.page-tone-users .failureNotification,
+.page-tone-users .status-message.status-error {
+    color: #9a2f2f;
+}
+
+.page-tone-users .user-info-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+.page-tone-users .user-info-main,
+.page-tone-users .user-info-roles {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.page-tone-users .user-info-layout .detail-form-table th,
+.page-tone-users .user-info-layout .detail-form-table td {
+    padding: 6px 10px 6px 0;
+    vertical-align: middle;
+}
+
+.page-tone-users .user-info-layout .detail-form-table th {
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    white-space: nowrap;
+    width: 1%;
+}
+
+/* Keep XML file browser styles when using page-tone-xml */
+.page-tone-xml .file-browser {
+    border: 1px solid #c5dbe6;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 10px 0 0;
+    background: rgba(255, 255, 255, 0.72);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.page-tone-xml .xmltosql-filepath {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+    box-sizing: border-box !important;
+}
+
+/* Dual-list transfer layout (Item Groups and similar admin tools) */
+.dual-list-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    align-items: stretch; /* equal-height columns */
+    width: max-content;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.dual-list-panel {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    /* Single card chrome — grid itself stays flat */
+    background: #fff;
+    border-radius: 15px;
+    padding: 12px 14px;
+    border: 1px solid #c5dde6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+}
+
+.dual-list-panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dual-list-panel .results-table,
+.dual-list-panel table.results-table,
+.dual-list-panel .results-table.in-panel-grid {
+    width: max-content !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(78, 102, 77, 0.35) !important;
+    border-collapse: collapse !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    background: #fff !important;
+    margin: 0 !important;
+}
+
+/* Keep header/body cell borders visible inside dual-list panels */
+.dual-list-panel .results-table th,
+.dual-list-panel .results-table td,
+.dual-list-panel table.results-table th,
+.dual-list-panel table.results-table td {
+    border-right: 1px solid rgba(224, 224, 224, 0.65) !important;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.65) !important;
+}
+
+.dual-list-panel .results-table th:last-child,
+.dual-list-panel .results-table td:last-child,
+.dual-list-panel table.results-table th:last-child,
+.dual-list-panel table.results-table td:last-child {
+    border-right: none !important;
+}
+
+.dual-list-panel .results-table tr:last-child td,
+.dual-list-panel table.results-table tr:last-child td {
+    border-bottom: none !important;
+}
+
+.dual-list-panel-title {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f6f8a;
+    letter-spacing: 0.02em;
+}
+
+.dual-list-actions {
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    justify-content: center; /* buttons vertically centered in equal-height panel */
+    padding: 12px 14px;
+    margin: 0;
+    background: #fff;
+    border: 1px solid #c5dde6;
+    border-radius: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    min-width: 7.75rem;
+}
+
+/* Real submit buttons — use global green chrome; icons via layered background-image */
+.dual-list-actions .dual-list-btn,
+.dual-list-actions input.dual-list-btn[type="submit"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 7.5rem !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 36px !important;
+    padding: 4px 12px 4px 30px !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    background-color: var(--primary-green) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-green) !important;
+    border-radius: 4px !important;
+    background-repeat: no-repeat !important;
+    background-position: 8px center !important;
+    background-size: 16px 16px !important;
+    font-weight: 600 !important;
+    font-size: 0.9em !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.dual-list-actions .dual-list-btn-add,
+.dual-list-actions input.dual-list-btn-add[type="submit"] {
+    background-image: url("../images/imgButtons/Previous.gif") !important;
+}
+
+.dual-list-actions .dual-list-btn-remove,
+.dual-list-actions input.dual-list-btn-remove[type="submit"] {
+    background-image: url("../images/imgButtons/Next.gif") !important;
+}
+
+.dual-list-actions .dual-list-btn:hover,
+.dual-list-actions input.dual-list-btn[type="submit"]:hover {
+    background-color: #607060 !important;
+    border-color: #607060 !important;
+    color: #fff !important;
+}
+
+/* Page tone footer strip (status area at bottom of panel) */
+.page-tone-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(78, 102, 77, 0.18);
+}
+
+.page-tone-groups .page-tone-footer {
+    border-top-color: rgba(31, 111, 138, 0.2);
+}
+
+.page-tone-footer .status-message {
+    margin-top: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #f3faf4 0%, #e8f3e6 100%);
+    border: 1px solid rgba(78, 102, 77, 0.25);
+    color: var(--primary-green);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.page-tone-footer .status-message:empty {
+    display: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+/* Hide footer chrome when there is no status text */
+.page-tone-footer:not(:has(.status-message:not(:empty))) {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .page-tone-groups {
+        width: 100%;
+    }
+
+    .dual-list-layout {
+        flex-wrap: wrap;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .dual-list-panel {
+        width: 100%;
+        max-width: 100%;
+        min-height: 0;
+    }
+
+    .dual-list-panel .results-table.in-panel-grid {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .dual-list-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        align-self: stretch;
+        order: 0;
+        min-height: auto;
+        justify-content: flex-start;
+    }
+
+    .dual-list-actions .dual-list-btn,
+    .dual-list-actions input.dual-list-btn[type="submit"] {
+        width: 100% !important;
+        min-height: 44px !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 10px 14px 10px 36px !important;
+        font-size: 1em !important;
+        justify-content: flex-start !important;
+    }
+
+    .dual-list-actions .dual-list-btn-add,
+    .dual-list-actions input.dual-list-btn-add[type="submit"] {
+        background-image: url("../images/imgButtons/Up.gif") !important;
+    }
+
+    .dual-list-actions .dual-list-btn-remove,
+    .dual-list-actions input.dual-list-btn-remove[type="submit"] {
+        background-image: url("../images/imgButtons/Down.gif") !important;
+    }
+}
+
+/* Lookups → Areas: compact list + delivery days (no forced 600px / horizontal scroll) */
+.lookups-areas-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: stretch;
+}
+
+.lookups-areas-list {
+    flex: 0 1 22rem;
+    max-width: min(100%, 28rem);
+    min-width: min(100%, 16rem);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e0e0c8;
+    border-radius: 12px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.lookups-areas-days {
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: 100%;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e0e0c8;
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+}
+
+.lookups-areas-days-title {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: #4a6b3a;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.lookups-areas-list-scroll,
+.lookups-areas-days-scroll {
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 520px;
+    max-width: 100%;
+}
+
+.lookups-areas-table.results-table,
+.lookups-area-days-table.results-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+    margin: 0;
+}
+
+/* Delivery-days grid: hug content (override results-table min-width:600px) */
+.lookups-area-days-table.results-table {
+    width: max-content !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+}
+
+.lookups-areas-table.results-table th,
+.lookups-areas-table.results-table td,
+.lookups-area-days-table.results-table th,
+.lookups-area-days-table.results-table td {
+    white-space: nowrap !important;
+}
+
+.lookups-areas-table .col-cmd,
+.lookups-area-days-table .col-cmd {
+    width: 1% !important;
+    max-width: 3.5rem !important;
+    text-align: center !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    white-space: nowrap !important;
+}
+
+.lookups-areas-table .col-area-name {
+    width: 99% !important;
+    white-space: normal !important;
+}
+
+.lookups-area-days-table .col-prep-day {
+    width: auto !important;
+    white-space: nowrap !important;
+}
+
+.lookups-area-days-table .col-tight {
+    width: 1% !important;
+    white-space: nowrap !important;
+}
+
+.lookups-areas-table.results-table input[type="image"],
+.lookups-area-days-table.results-table input[type="image"],
+.lookups-areas-table.results-table img,
+.lookups-area-days-table.results-table img {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+.lookups-areas-table.results-table select,
+.lookups-area-days-table.results-table select,
+.lookups-areas-table.results-table input[type="text"],
+.lookups-area-days-table.results-table input[type="text"] {
+    max-width: none !important;
+    width: auto !important;
+}
+
+.lookups-area-days-empty {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    width: max-content;
+    max-width: 100%;
+}
+
+.lookups-area-days-empty select,
+.lookups-area-days-empty input[type="text"] {
+    width: auto !important;
+    max-width: none !important;
+}
+
+/* EmptyDataTemplate is rendered inside a results-table cell — don't force 600px */
+.lookups-area-days-table.results-table td {
+    overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+    .lookups-areas-list,
+    .lookups-areas-days {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
+
+.page-tone-recurring {
+    border-color: #c5d9e4;
+    border-left-color: #2f6f8f;
+    background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
+}
+
+.page-tone-recurring .page-tone-header {
+    border-bottom-color: rgba(47, 111, 143, 0.15);
+}
+
+.page-tone-recurring .page-tone-title {
+    color: #2f6f8f;
+}
+
+/* Grouped list layout (reusable) — outer GridView hosts cards with nested detail tables.
+   Use: CssClass="results-table grouping-table" on the outer grid; each row contains a .grouping-card. */
+.grouping-table,
+table.grouping-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.grouping-table,
+.grouping-table > tbody > tr > td {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.grouping-card {
+    margin: 0 0 14px;
+    padding: 10px 12px 12px;
+    border: 1px solid #d5e3eb;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.grouping-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(47, 111, 143, 0.12);
+}
+
+.grouping-card-header-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.grouping-card-header-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: nowrap;
+}
+
+/* Recurring Orders card actions — icon + label are siblings inside .image-button */
+.grouping-card-header .image-button,
+.grouping-card-header-main .image-button,
+.grouping-card-header-meta .image-button {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+}
+
+.grouping-card-header .image-button > a,
+.grouping-card-header-main .image-button > a,
+.grouping-card-header-meta .image-button > a,
+.grouping-table .image-button > a,
+table.grouping-table .image-button > a {
+    display: inline !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.grouping-card-header .image-button > img,
+.grouping-card-header-main .image-button > img,
+.grouping-card-header-meta .image-button > img,
+.grouping-table .image-button > img {
+    display: block !important;
+    flex: 0 0 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+}
+
+.grouping-card-title,
+.grouping-card-title-link,
+.grouping-card-title-label {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.2;
+    color: #2f6f8f;
+}
+
+.grouping-card-count {
+    font-size: 0.85rem;
+    color: #666;
+    white-space: nowrap;
+}
+
+/* Compact status chip (enabled/disabled, etc.) — reusable */
+.status-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: lowercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+.status-badge.is-enabled {
+    color: #2f5d3a;
+    background: #e7f4ea;
+    border-color: #b7d9c0;
+}
+
+.status-badge.is-disabled {
+    color: #7a3e2e;
+    background: #f7e9e4;
+    border-color: #e0c0b4;
+}
+
+.status-badge.is-done {
+    color: #9a4a1f;
+    background: #fdf0e6;
+    border-color: #e8c4a0;
+}
+
+/* Nested detail grid inside a grouping card — chrome only */
+.nested-results-table th,
+.nested-results-table thead th,
+table.nested-results-table th,
+table.nested-results-table thead th {
+    border-bottom: none !important;
+}
+
+/*
+ * Recurring Orders list nested grid — fixed layout + explicit % shares (sum 100%).
+ * No col-fill / results-table-full / col-priority-* (those fight Contacts mobile widths).
+ */
+table.results-table.recurring-summary-grid,
+.results-table.recurring-summary-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+}
+
+table.results-table.recurring-summary-grid th,
+table.results-table.recurring-summary-grid td,
+.results-table.recurring-summary-grid th,
+.results-table.recurring-summary-grid td {
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-item,
+.results-table.recurring-summary-grid .col-ro-sum-item {
+    width: 30% !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-qty,
+.results-table.recurring-summary-grid .col-ro-sum-qty {
+    width: 5% !important;
+    text-align: center !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-pack,
+.results-table.recurring-summary-grid .col-ro-sum-pack {
+    width: 12% !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-value,
+.results-table.recurring-summary-grid .col-ro-sum-value {
+    width: 6% !important;
+    text-align: center !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-recur,
+.results-table.recurring-summary-grid .col-ro-sum-recur {
+    width: 14% !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-date,
+.results-table.recurring-summary-grid .col-ro-sum-date {
+    width: 12% !important;
+}
+
+table.results-table.recurring-summary-grid .col-ro-sum-until,
+.results-table.recurring-summary-grid .col-ro-sum-until {
+    width: 9% !important;
+}
+
+/* Keep Contacts-style last-column / priority width rules off this grid */
+table.results-table.recurring-summary-grid th:last-child,
+table.results-table.recurring-summary-grid td:last-child,
+.results-table.recurring-summary-grid th:last-child,
+.results-table.recurring-summary-grid td:last-child {
+    width: 9% !important;
+    max-width: none !important;
+    text-align: left !important;
+}
+
+.nested-results-table th.col-align-left,
+.nested-results-table td.col-align-left,
+.results-table th.col-align-left,
+.results-table td.col-align-left {
+    text-align: left !important;
+}
+
+.nested-results-table th.col-align-center,
+.nested-results-table td.col-align-center,
+.results-table th.col-align-center,
+.results-table td.col-align-center {
+    text-align: center !important;
+}
+
+/* Recurring Order Details editor — proportional columns (override equal fixed layout) */
+table.recurring-order-editor-grid.results-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    min-width: 980px;
+}
+
+table.recurring-order-editor-grid.results-table th,
+table.recurring-order-editor-grid.results-table td {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    vertical-align: middle !important;
+}
+
+table.recurring-order-editor-grid .recurring-order-command-cell .image-button {
+    padding: 2px 4px !important;
+    min-height: 24px !important;
+    min-width: 24px !important;
+}
+
+table.recurring-order-editor-grid .recurring-order-command-cell .image-button img {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+table.recurring-order-editor-grid .col-ro-item {
+    width: 26% !important;
+}
+
+table.recurring-order-editor-grid .col-ro-qty {
+    width: 56px !important;
+    max-width: 64px !important;
+    text-align: center !important;
+}
+
+table.recurring-order-editor-grid .col-ro-pack,
+table.recurring-order-editor-grid .col-ro-recurrence {
+    width: 14% !important;
+}
+
+table.recurring-order-editor-grid .col-ro-value {
+    width: 52px !important;
+    max-width: 60px !important;
+    text-align: center !important;
+}
+
+table.recurring-order-editor-grid .col-ro-date {
+    width: 100px !important;
+    max-width: 110px !important;
+}
+
+table.recurring-order-editor-grid select.col-ro-ddl,
+table.recurring-order-editor-grid .col-ro-item select,
+table.recurring-order-editor-grid .col-ro-pack select,
+table.recurring-order-editor-grid .col-ro-recurrence select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+table.recurring-order-editor-grid input.col-ro-narrow-input,
+table.recurring-order-editor-grid .col-ro-qty input[type="text"],
+table.recurring-order-editor-grid .col-ro-value input[type="text"] {
+    width: 100% !important;
+    max-width: 52px !important;
+    margin: 0 auto !important;
+    display: block !important;
+    text-align: center !important;
+}
+
+table.recurring-order-editor-grid input.col-ro-date-input,
+table.recurring-order-editor-grid .col-ro-date input[type="text"] {
+    width: 100% !important;
+    max-width: 96px !important;
+}
+
+.recurring-order-form-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.recurring-order-form-toolbar .recurring-order-pending-calc {
+    margin-right: auto;
+}
+
+.recurring-order-form-toolbar .recurring-order-add-line {
+    margin-left: auto;
+}
+
+.recurring-new-line-form {
+    margin-top: 10px;
+}
+
+.recurring-new-line-table {
+    width: 100%;
+    max-width: 100%;
+}
+
+.recurring-new-line-table select.col-ro-ddl {
+    width: 100%;
+    max-width: 220px;
+}
+
+.recurring-order-pending-calc .pending-calc-indicator {
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+.recurring-order-calculated-date {
+    color: #555;
+}
+
+/* XML to SQL tool panel (matches System Tools tool-tone-xml) */
+.xmltosql-panel {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 16px 20px 20px;
+    border-radius: 10px;
+    border: 1px solid #d0e3ec;
+    border-left: 5px solid #2f6f8f;
+    background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.xmltosql-panel .tool-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.xmltosql-panel .tool-card-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.xmltosql-panel .detail-form-table {
+    width: 100%;
+}
+
+.xmltosql-panel .detail-form-table input[type="text"].xmltosql-filepath,
+.xmltosql-panel .xmltosql-filepath {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+    box-sizing: border-box !important;
+}
+
+.xmltosql-panel .file-browser {
+    border: 1px solid #c5dbe6;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 10px 0 0;
+    background: rgba(255, 255, 255, 0.72);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.xmltosql-panel .file-item {
+    cursor: pointer;
+    padding: 4px 6px;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+.xmltosql-panel .file-item:hover {
+    background-color: #d9eef6;
+}
+
+.xmltosql-panel .xml-file {
+    color: #2f6f8f;
+    font-weight: 600;
+}
+
+
+.detail-form-table .button-row a.filter-panel-link,
+.detail-form-table .button-row a.filter-panel-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 4px;
+    border-radius: 6px;
+    border: 1px solid #b7c4ce;
+    background: #f8fafc;
+    color: #2f3b48;
+    text-decoration: none;
+    vertical-align: middle;
+    line-height: 1.3;
+}
+
+.detail-form-table .button-row a.filter-panel-link:hover,
+.detail-form-table .button-row a.filter-panel-btn:hover {
+    background: #eef6ff;
+    border-color: #8bb8e8;
+}
+
+@media print {
+    thead {
+        display: table-header-group;
+    }
+
+    .hideWhenPrinting {
+        visibility: hidden;
+    }
+
+    .page-tone-panel {
+        border: none;
+        background: none;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+    }
+}
+
+/* ============================================================ */
+/* Detail-form ComboBox: glue arrow to textbox (Contact, etc.)  */
+/* ============================================================ */
+
+.detail-form-table .ajax__combobox {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    max-width: 100%;
+}
+
+.detail-form-table .ajax__combobox_inputcontainer {
+    display: inline-table !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    vertical-align: middle !important;
+    height: auto !important;
+    table-layout: auto !important;
+}
+
+.detail-form-table .ajax__combobox_textboxcontainer,
+.detail-form-table .ajax__combobox_buttoncontainer {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 0 !important;
+}
+
+.detail-form-table .ajax__combobox_buttoncontainer {
+    width: 22px !important;
+    max-width: 22px !important;
+    white-space: nowrap !important;
+}
+
+.detail-form-table .ajax__combobox_textboxcontainer input[type="text"] {
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    line-height: 20px !important;
+    padding: 0 6px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    border-radius: 4px 0 0 4px !important;
+}
+
+.detail-form-table .ajax__combobox_buttoncontainer button,
+.detail-form-table .ajax__combobox_buttoncontainer input[type="button"],
+.detail-form-table .ajax__combobox_button,
+.detail-form-table .ajax__combobox_dropdownbutton {
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    border-radius: 0 4px 4px 0 !important;
+    background-color: #e8efe4 !important;
+    background-image: none !important;
+    position: relative !important;
+    font-size: 0 !important;
+    color: transparent !important;
+}
+
+/* ============================================================ */
+/* Order Detail mobile: head cards match items width            */
+/* (beats universal detail-form padding:15px green shell)       */
+/* ============================================================ */
+@media (max-width: 768px) {
+    .page-tone-panel.page-tone-orders .layout-main-panel,
+    .page-tone-panel.page-tone-neworder .layout-main-panel,
+    .page-tone-panel.page-tone-orders .layout-detail-panel,
+    .page-tone-panel.page-tone-neworder .layout-detail-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        align-self: stretch !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Drop the inset green shell so white field cards align with item cards */
+    .page-tone-panel.page-tone-orders .detail-form-table,
+    .page-tone-panel.page-tone-neworder .detail-form-table,
+    .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
+    .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 0 8px 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        border: none !important;
+    }
+
+    .page-tone-panel.page-tone-orders .detail-form-table tr,
+    .page-tone-panel.page-tone-neworder .detail-form-table tr,
+    .page-tone-panel.page-tone-orders .TblSimple.detail-form-table tr,
+    .page-tone-panel.page-tone-neworder .TblSimple.detail-form-table tr {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* Match detail panel chrome to the same edge as head cards */
+    .page-tone-panel.page-tone-orders .layout-detail-panel,
+    .page-tone-panel.page-tone-neworder .layout-detail-panel {
+        padding: 10px !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .page-tone-panel.page-tone-orders .layout-main-panel > div,
+    .page-tone-panel.page-tone-neworder .layout-main-panel > div,
+    .page-tone-panel.page-tone-orders .order-detail-toolbar,
+    .page-tone-panel.page-tone-neworder .order-detail-toolbar {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Grid label + value on one baseline */
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td {
+        align-items: center !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td::before {
+        display: flex !important;
+        align-items: center !important;
+        line-height: 1.25 !important;
+        min-height: 1.25em;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-tone-panel.page-tone-orders .detail-form-table,
+    .page-tone-panel.page-tone-neworder .detail-form-table,
+    .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
+    .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
+        padding: 0 !important;
+    }
+}

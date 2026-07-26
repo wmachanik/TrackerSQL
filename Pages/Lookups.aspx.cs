@@ -1,8 +1,7 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.Lookups
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — Lookups
+// WebForms page code-behind for Lookups.
+//------------------------------------------------------------------------------
 
 using AjaxControlToolkit;
 using System;
@@ -25,6 +24,8 @@ namespace TrackerSQL.Pages
         private const int CONST_BGCOLOURCOL = 4;
         protected ScriptManager scmLookup;
         protected UpdateProgress uprgLookup;
+        protected Panel pnlLookups;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlLookupStatus;
         protected Label lblStatus;
         protected TabContainer tabcLookup;
         protected TabPanel tabpnlItems;
@@ -88,6 +89,12 @@ namespace TrackerSQL.Pages
                 BindPriceLevelsGrid();
                 BindRepairStatusesGrid();
             }
+        }
+
+        protected void Page_PreRender(object sender, EventArgs e)
+        {
+            if (pnlLookupStatus != null)
+                pnlLookupStatus.Visible = !string.IsNullOrWhiteSpace(lblStatus?.Text);
         }
 
         private void BindPeopleGrid()
@@ -919,7 +926,7 @@ namespace TrackerSQL.Pages
 
                 var area = new Area
                 {
-                    ID = areaId,
+                    AreaID = areaId,
                     AreaName = tbxAreaName?.Text ?? ""
                 };
 
@@ -1325,13 +1332,16 @@ namespace TrackerSQL.Pages
 
                 int areaId = Convert.ToInt32(gvAreas.SelectedDataKey.Value);
                 var repo = new AreaPrepDaysRepository();
-
-                // RepositoryBase supports GetAll(sortBy). Filter after fetch to keep changes minimal.
-                var all = repo.GetAll("DeliveryOrder");
-                var filtered = all.Where(x => x.AreaID == areaId).ToList();
+                var filtered = repo.GetAll("DeliveryOrder, PrepDayOfWeekID")
+                    .Where(x => x.AreaID == areaId)
+                    .ToList();
 
                 gvAreaDays.DataSource = filtered;
                 gvAreaDays.DataBind();
+                if (filtered.Count == 0)
+                    lblStatus.Text = "No delivery days for this area yet — use Add Prep Day below.";
+                else if (lblStatus.Text != null && lblStatus.Text.StartsWith("No delivery days", StringComparison.Ordinal))
+                    lblStatus.Text = string.Empty;
             }
             catch (Exception ex)
             {
@@ -1343,9 +1353,21 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                DropDownList control1 = (DropDownList)this.gvAreaDays.Controls[0].Controls[0].Controls[0].FindControl("ddlPreperationDoW");
-                TextBox control2 = (TextBox)this.gvAreaDays.Controls[0].Controls[0].Controls[0].FindControl("tbxDeliveryDelay");
-                TextBox control3 = (TextBox)this.gvAreaDays.Controls[0].Controls[0].Controls[0].FindControl("tbxDeliveryOrder");
+                DropDownList control1 = FindControlRecursive(gvAreaDays, "ddlPreperationDoW") as DropDownList;
+                TextBox control2 = FindControlRecursive(gvAreaDays, "tbxDeliveryDelay") as TextBox;
+                TextBox control3 = FindControlRecursive(gvAreaDays, "tbxDeliveryOrder") as TextBox;
+
+                if (control1 == null || control2 == null || control3 == null)
+                {
+                    lblStatus.Text = "Could not find delivery-day fields to add.";
+                    return;
+                }
+
+                if (gvAreas.SelectedDataKey == null || gvAreas.SelectedDataKey.Value == null)
+                {
+                    lblStatus.Text = "Select an area first.";
+                    return;
+                }
 
                 int areaId = Convert.ToInt32(this.gvAreas.SelectedDataKey.Value);
 
@@ -1473,6 +1495,21 @@ namespace TrackerSQL.Pages
             {
                 this.lblStatus.Text = "Error updating area prep days: " + ex.Message;
             }
+        }
+
+        public string GetPrepDayName(object prepDayOfWeekId)
+        {
+            if (prepDayOfWeekId == null || prepDayOfWeekId == DBNull.Value)
+                return string.Empty;
+
+            if (!int.TryParse(prepDayOfWeekId.ToString(), out int dayId) || dayId < 1 || dayId > 7)
+                return string.Empty;
+
+            string[] names =
+            {
+                "", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+            };
+            return names[dayId];
         }
 
         public string GetDeliveryDay(string pPredDoW, string pDeliveryDelay)
@@ -1611,5 +1648,22 @@ namespace TrackerSQL.Pages
             BindPaymentTermsGrid();
         }
 
+        private static Control FindControlRecursive(Control root, string id)
+        {
+            if (root == null || string.IsNullOrEmpty(id))
+                return null;
+
+            if (string.Equals(root.ID, id, StringComparison.Ordinal))
+                return root;
+
+            foreach (Control child in root.Controls)
+            {
+                Control found = FindControlRecursive(child, id);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
     }
 }

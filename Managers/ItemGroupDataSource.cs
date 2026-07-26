@@ -5,6 +5,9 @@ using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
+    /// <summary>
+    /// Thin ODS façade for Item Groups admin — no business manager layer.
+    /// </summary>
     public class ItemGroupDataSource
     {
         private readonly ItemsRepository _itemsRepository = new ItemsRepository();
@@ -38,12 +41,6 @@ namespace TrackerSQL.Managers
         public bool DeleteItemGroup(int itemGroupId)
         {
             return _itemGroupsRepository.Delete(itemGroupId);
-        }
-
-        [DataObjectMethod(DataObjectMethodType.Select)]
-        public List<OrderItemLookup> GetAllItemDesc()
-        {
-            return _itemsRepository.GetOrderItemLookups(null);
         }
     }
 }

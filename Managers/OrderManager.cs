@@ -26,6 +26,7 @@ namespace TrackerSQL.Managers
         private readonly ItemsRepository _itemsRepository;
         private readonly ItemPackagingsRepository _itemPackagingsRepository;
         private readonly ContactsItemUsageRepository _contactsItemUsageRepository;
+        private readonly ItemServiceTypesRepository _itemServiceTypesRepository;
         private readonly PersonsRepository _personsRepository;
 
         public OrderManager()
@@ -37,6 +38,7 @@ namespace TrackerSQL.Managers
             _itemsRepository = new ItemsRepository();
             _itemPackagingsRepository = new ItemPackagingsRepository();
             _contactsItemUsageRepository = new ContactsItemUsageRepository();
+            _itemServiceTypesRepository = new ItemServiceTypesRepository();
             _personsRepository = new PersonsRepository();
         }
 
@@ -72,9 +74,83 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
+        /// Finds a different order for the same contact and required-by date.
+        /// </summary>
+        public int? FindDuplicateOrderForHeader(OrderHeaderData header, int excludeOrderId)
+        {
+            if (header == null || header.CustomerID <= 0 || header.RequiredByDate <= DateTime.MinValue || excludeOrderId <= 0)
+                return null;
+
+            return _ordersRepository.FindDuplicateOrderIdByRequiredByDate(
+                header.CustomerID,
+                header.RequiredByDate,
+                header.Notes ?? string.Empty,
+                excludeOrderId);
+        }
+
+        public class MergeOrderResult
+        {
+            public string Error { get; set; } = string.Empty;
+            public int LinesMoved { get; set; }
+            public bool Success => string.IsNullOrEmpty(Error);
+        }
+
+        /// <summary>
+        /// Moves all lines from mergeFromOrderId into keepOrderId, then removes the empty source order.
+        /// </summary>
+        public MergeOrderResult MergeOrderInto(int keepOrderId, int mergeFromOrderId)
+        {
+            var result = new MergeOrderResult();
+            if (keepOrderId <= 0 || mergeFromOrderId <= 0)
+            {
+                result.Error = "Invalid order selected for merge.";
+                return result;
+            }
+
+            if (keepOrderId == mergeFromOrderId)
+            {
+                result.Error = "Cannot merge an order with itself.";
+                return result;
+            }
+
+            var keepHeader = GetOrderHeader(keepOrderId);
+            var mergeHeader = GetOrderHeader(mergeFromOrderId);
+            if (keepHeader == null || mergeHeader == null)
+            {
+                result.Error = "One or both orders could not be found.";
+                return result;
+            }
+
+            if (keepHeader.Done || mergeHeader.Done)
+            {
+                result.Error = "Done orders cannot be merged.";
+                return result;
+            }
+
+            result.LinesMoved = _ordersRepository.GetOrderLineCount(mergeFromOrderId);
+            if (!_ordersRepository.MoveAllLinesToOrder(mergeFromOrderId, keepOrderId))
+            {
+                result.Error = "Failed to move order lines.";
+                return result;
+            }
+
+            if (!_ordersRepository.DeleteOrderById(mergeFromOrderId))
+            {
+                result.Error = "Lines were moved but the source order could not be removed.";
+                return result;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Creates a new header or returns a conflict when another order already exists for contact + date.
         /// </summary>
-        public EnsureOrderResult EnsureOrderHeader(OrderHeaderData header, int? currentOrderId = null, bool useExistingIfFound = false)
+        public EnsureOrderResult EnsureOrderHeader(
+            OrderHeaderData header,
+            int? currentOrderId = null,
+            bool useExistingIfFound = false,
+            bool forceNewOrder = false)
         {
             var result = new EnsureOrderResult();
             if (header == null || header.CustomerID <= 0)
@@ -92,7 +168,7 @@ namespace TrackerSQL.Managers
             if (header.ToBeDeliveredBy <= 0)
                 header.ToBeDeliveredBy = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
 
-            int? existingId = FindExistingOrderForHeader(header);
+            int? existingId = forceNewOrder ? null : FindExistingOrderForHeader(header);
             if (currentOrderId.HasValue && currentOrderId.Value > 0)
             {
                 if (existingId.HasValue && existingId.Value != currentOrderId.Value)
@@ -171,6 +247,8 @@ namespace TrackerSQL.Managers
             line.ItemTypeID = new TrackerTools().ChangeItemIfGroupToNextItemInGroup(
                 line.CustomerID, line.ItemTypeID, line.RequiredByDate);
 
+            ApplyDefaultPrepTypeIfNeeded(line);
+
             int lineId = _ordersRepository.AddLineToExistingOrder(orderId, line);
             if (lineId <= 0)
             {
@@ -232,6 +310,8 @@ namespace TrackerSQL.Managers
 
                 orderData.ItemTypeID = trackerTools.ChangeItemIfGroupToNextItemInGroup(
                     orderData.CustomerID, orderData.ItemTypeID, orderData.RequiredByDate);
+
+                ApplyDefaultPrepTypeIfNeeded(orderData);
 
                 if (orderId <= 0)
                 {
@@ -376,6 +456,142 @@ namespace TrackerSQL.Managers
         public void MoveOrderDeliveryDate(DateTime newDate, int orderId)
         {
             _ordersRepository.UpdateOrderDeliveryDate(newDate, orderId);
+        }
+
+        public class MoveLineToNewOrderResult
+        {
+            public string Error { get; set; } = string.Empty;
+            public int SourceOrderId { get; set; }
+            public int TargetOrderId { get; set; }
+            public int OrderLineId { get; set; }
+            public DateTime NewRequiredByDate { get; set; }
+            public DateTime NewPrepDate { get; set; }
+            public bool MovedWholeOrder { get; set; }
+            public bool Success => string.IsNullOrEmpty(Error) && TargetOrderId > 0;
+        }
+
+        /// <summary>
+        /// Reschedules one line to the next delivery day, or the whole order when it is the only line. Prep date is unchanged.
+        /// </summary>
+        public MoveLineToNewOrderResult MoveOrderLineToNextWorkingDay(int sourceOrderId, int orderLineId)
+        {
+            var result = new MoveLineToNewOrderResult
+            {
+                SourceOrderId = sourceOrderId,
+                OrderLineId = orderLineId
+            };
+
+            if (sourceOrderId <= 0 || orderLineId <= 0)
+            {
+                result.Error = "Invalid order or line.";
+                return result;
+            }
+
+            var sourceHeader = GetOrderHeader(sourceOrderId);
+            if (sourceHeader == null)
+            {
+                result.Error = "Source order not found.";
+                return result;
+            }
+
+            if (sourceHeader.Done)
+            {
+                result.Error = "Done orders cannot be changed.";
+                return result;
+            }
+
+            var lines = GetOrderLines(sourceOrderId);
+            var line = lines.Find(l => l.OrderLineID == orderLineId);
+            if (line == null)
+            {
+                result.Error = "Order line not found on this order.";
+                return result;
+            }
+
+            DateTime newRequiredByDate = GetNextDeliveryDay(sourceHeader.RequiredByDate);
+
+            result.NewRequiredByDate = newRequiredByDate;
+            result.NewPrepDate = sourceHeader.PrepDate;
+
+            if (lines.Count == 1)
+            {
+                var updatedHeader = new OrderHeaderData
+                {
+                    OrderID = sourceOrderId,
+                    CustomerID = sourceHeader.CustomerID,
+                    OrderDate = sourceHeader.OrderDate,
+                    PrepDate = sourceHeader.PrepDate,
+                    RequiredByDate = newRequiredByDate,
+                    ToBeDeliveredBy = sourceHeader.ToBeDeliveredBy,
+                    PurchaseOrder = sourceHeader.PurchaseOrder,
+                    Confirmed = sourceHeader.Confirmed,
+                    InvoiceDone = sourceHeader.InvoiceDone,
+                    Done = sourceHeader.Done,
+                    Notes = sourceHeader.Notes
+                };
+
+                int? duplicateId = FindDuplicateOrderForHeader(updatedHeader, sourceOrderId);
+                if (duplicateId.HasValue)
+                {
+                    result.Error = $"Order #{duplicateId.Value} already exists for that delivery date.";
+                    return result;
+                }
+
+                if (!UpdateOrderHeader(sourceOrderId, updatedHeader))
+                {
+                    result.Error = "Failed to reschedule delivery date.";
+                    return result;
+                }
+
+                result.TargetOrderId = sourceOrderId;
+                result.MovedWholeOrder = true;
+                return result;
+            }
+
+            var newHeader = new OrderHeaderData
+            {
+                CustomerID = sourceHeader.CustomerID,
+                OrderDate = sourceHeader.OrderDate,
+                PrepDate = sourceHeader.PrepDate,
+                RequiredByDate = newRequiredByDate,
+                ToBeDeliveredBy = sourceHeader.ToBeDeliveredBy,
+                PurchaseOrder = sourceHeader.PurchaseOrder,
+                Confirmed = sourceHeader.Confirmed,
+                InvoiceDone = false,
+                Done = false,
+                Notes = sourceHeader.Notes
+            };
+
+            var ensure = EnsureOrderHeader(newHeader, forceNewOrder: true);
+            if (!ensure.Success)
+            {
+                result.Error = string.IsNullOrEmpty(ensure.Error)
+                    ? "Failed to create order for moved line."
+                    : ensure.Error;
+                return result;
+            }
+
+            if (!_ordersRepository.MoveOrderLineToOrder(orderLineId, ensure.OrderId))
+            {
+                result.Error = "Failed to move order line.";
+                return result;
+            }
+
+            result.TargetOrderId = ensure.OrderId;
+            result.MovedWholeOrder = false;
+            return result;
+        }
+
+        /// <summary>
+        /// Next delivery day after a failed delivery: Mon-Thu +1 day, Fri to Mon. Prep date is not changed.
+        /// </summary>
+        public static DateTime GetNextDeliveryDay(DateTime requiredByDate)
+        {
+            DateTime date = requiredByDate.Date;
+            if (date.DayOfWeek < DayOfWeek.Friday)
+                return date.AddDays(1);
+
+            return date.AddDays((7 - (int)date.DayOfWeek + 1) % 7);
         }
 
         public bool CompleteOrderDelivery(OrderHeaderData headerData, List<TempOrderLineData> orderLines)
@@ -641,7 +857,7 @@ namespace TrackerSQL.Managers
 
                 TrackerTools trackerTools = new TrackerTools();
                 DateTime deliveryDate = DateTime.MinValue; // This will be set by reference
-                DateTime PrepDate = trackerTools.GetNextPreperationDateByCustomerID(customerId, ref deliveryDate);
+                DateTime PrepDate = trackerTools.GetNextPreparationDateByCustomerID(customerId, ref deliveryDate);
                 DateTime orderDate = TimeZoneUtils.Now().Date;
 
                 // Update session with customer-specific dates
@@ -682,6 +898,7 @@ namespace TrackerSQL.Managers
                     ItemID = finalItemTypeId,
                     ItemName = itemName,
                     Qty = itemUsage.QtyProvided ?? 0.0,
+                    PrepTypeID = itemUsage.ItemPrepTypeID ?? 0,
                     PackagingID = packagingId,
                     PackagingName = packagingName
                 };
@@ -972,8 +1189,40 @@ namespace TrackerSQL.Managers
             public int ItemID { get; set; }
             public string ItemName { get; set; }
             public double Qty { get; set; }
+            public int PrepTypeID { get; set; }
             public int PackagingID { get; set; }
             public string PackagingName { get; set; }
+        }
+
+        private void ApplyDefaultPrepTypeIfNeeded(OrderTblData line)
+        {
+            if (line == null || line.PrepTypeID > 0)
+                return;
+
+            line.PrepTypeID = ResolvePrepTypeId(line.CustomerID, line.ItemTypeID);
+        }
+
+        private int ResolvePrepTypeId(long contactId, int itemTypeId)
+        {
+            if (itemTypeId <= 0)
+                return 0;
+
+            if (contactId > 0)
+            {
+                var contact = _contactsRepository.GetById((int)contactId);
+                if (contact?.PrefItemPrepTypeID is int prefPrep && prefPrep > 0)
+                    return prefPrep;
+            }
+
+            int? serviceTypeId = _itemsRepository.GetItemServiceTypeId(itemTypeId);
+            if (serviceTypeId is int stId && stId > 0)
+            {
+                var serviceType = _itemServiceTypesRepository.GetById(stId);
+                if (serviceType?.ItemPrepTypeID > 0)
+                    return serviceType.ItemPrepTypeID;
+            }
+
+            return 0;
         }
         public class TempOrderLineData
         {

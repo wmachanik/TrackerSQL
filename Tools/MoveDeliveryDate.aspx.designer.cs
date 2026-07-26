@@ -42,6 +42,15 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.UpdatePanel upnlMoveDeliveryDate;
 
         /// <summary>
+        /// pnlMoveDeliveryDate control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlMoveDeliveryDate;
+
+        /// <summary>
         /// OldDeliveryDateDDL control.
         /// </summary>
         /// <remarks>

@@ -13,6 +13,7 @@ namespace TrackerSQL.Models
     {
         public int ItemTypeID { get; set; }
         public string ItemDesc { get; set; }
+        public bool ItemEnabled { get; set; } = true;
     }
 
     public class OrderPackagingLookup

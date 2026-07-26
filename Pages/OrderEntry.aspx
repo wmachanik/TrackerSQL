@@ -1,200 +1,163 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderEntry.aspx.cs"
-  MaintainScrollPositionOnPostback="true" Inherits="TrackerSQL.Pages.OrderEntry" %>
+<%@ Page Title="View & Edit Orders" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+    CodeBehind="OrderEntry.aspx.cs" MaintainScrollPositionOnPostback="true"
+    Inherits="TrackerSQL.Pages.OrderEntry" %>
+
 <asp:Content ID="cntOrderEntryHder" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntOrderEntryBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <h2>Order Detail</h2>
-   <div class="simpleLightBrownForm">
-     <table class="TblWhite">
-       <thead>
-         <tr>
-           <td>Done/Undone</td>
-           <td>Search for:</td>
-           <td>Value</td>
-          </tr>
-        </thead>
-        <tbody>
-         <tr>
-            <td><asp:CheckBox ID="chkbxOrderDone" Text="Order Done" runat="server" Checked="false" TextAlign="Right" AutoPostBack="true"  /></td>
-            <td>
-              <asp:DropDownList ID="ddlSearchFor" runat="server">
-                <asp:ListItem Selected="True" Value="none" Text="--Select item--" />
-                <asp:ListItem Value="Company" Text="Company Name" />
-                <asp:ListItem Value="PrepDate" Text="Preperation Date" />
-              </asp:DropDownList>
-            </td>
-            <td>
-              <asp:TextBox ID="tbxSearchFor" runat="server" Width="35em" ontextchanged="tbxSearchFor_TextChanged" />&nbsp;&nbsp;
-                <asp:Button ID="btnGo" Text="Go" runat="server" onclick="btnGo_Click" />&nbsp;&nbsp;&nbsp;&nbsp;
-                <asp:Button ID="btnReset" Text="Reset" runat="server" OnClick="btnReset_Click" />
-            </td>
-         </tr>
-        </tbody>
-      </table>
-   </div>
+    <asp:ScriptManager ID="smOrderEntry" runat="server" EnablePartialRendering="true" />
 
-  <asp:ObjectDataSource ID="odsDistinctOrders" runat="server" TypeName="TrackerSQL.Managers.OrderEntryDataSource" 
-    SelectMethod="GetDistinctOrders" OldValuesParameterFormatString="original_{0}" DataObjectTypeName="TrackerSQL.Models.OrderEntryListItem" UpdateMethod="UpdateOrderData" >
-    <SelectParameters>
-      <asp:ControlParameter ControlID="chkbxOrderDone" Name="pOrderDone" 
-        PropertyName="Checked" Type="Boolean" 
-        DefaultValue="false" />
-      <asp:ControlParameter ControlID="ddlSearchFor" Name="pSearchFor" PropertyName="SelectedValue" DefaultValue="" Type="String" />
-      <asp:ControlParameter ControlID="tbxSearchFor" Name="pSearchValue" PropertyName="Text" Type="String" />
-    </SelectParameters>
-  </asp:ObjectDataSource>
+    <asp:UpdateProgress ID="uprgOrderEntry" runat="server"
+        AssociatedUpdatePanelID="upnlOrderEntry" DisplayAfter="0" DynamicLayout="true">
+        <ProgressTemplate>
+            <div class="status-message status-info page-tone-progress">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Please wait...
+            </div>
+        </ProgressTemplate>
+    </asp:UpdateProgress>
 
-  
-  <p>&nbsp;</p>
-  <asp:GridView ID="gvListOfOrders" runat="server" CssClass="TblCoffee" 
-    AllowPaging="True" AllowSorting="True" DataSourceID="odsDistinctOrders" 
-    onselectedindexchanged="gvCurrent_SelectedIndexChanged"  Font-Size="Smaller"
-    AutoGenerateColumns="False" PageSize="15">
-    <AlternatingRowStyle BackColor="#EFFFEF" />
-    <Columns>
-        <asp:CommandField ButtonType="Image" ShowEditButton="True" EditImageUrl="~/images/imgButtons/EditItem.gif"
-            UpdateImageUrl="~/images/imgButtons/UpdateItem.gif" CancelImageUrl="~/images/imgButtons/CancelItem.gif" />
-        <asp:TemplateField HeaderText="OrderID" SortExpression="OrderID">
-            <ItemTemplate>
-                <asp:LinkButton ID="lnkOrderId" runat="server" CommandName="Select" Text='<%# Eval("OrderID") %>' CausesValidation="false" />
-            </ItemTemplate>
-        </asp:TemplateField>
-        <asp:TemplateField HeaderText="Company Name" SortExpression="CompanyName">
-            <EditItemTemplate>
-              <asp:DropDownList ID="ddlCompany" runat="server" DataSourceID="odsCompanys"  Font-Size="X-Small"
-                DataTextField="CompanyName" DataValueField="CustomerID" AppendDataBoundItems="True" SelectedValue='<%# Bind("CustomerID") %>'  >
-                  <asp:ListItem Value="0">none</asp:ListItem>
-                </asp:DropDownList>
-            </EditItemTemplate>
-            <ItemTemplate>
-                <asp:Label ID="lblCompany" runat="server" Text='<%# Bind("CompanyName") %>'></asp:Label>
-            </ItemTemplate>
-        </asp:TemplateField>
-        <asp:BoundField DataField="CustomerID" HeaderText="CustomerID" SortExpression="CustomerID" Visible="False" />
-        <asp:BoundField DataField="OrderDate" HeaderText="Order Date" SortExpression="OrderDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
-        <ItemStyle Width="7em" />
-        </asp:BoundField>
-        <asp:BoundField DataField="PrepDate" HeaderText="Roast Date" SortExpression="PrepDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
-        <ItemStyle Width="7em" />
-        </asp:BoundField>
-        <asp:TemplateField HeaderText="Person" SortExpression="Person">
-            <EditItemTemplate>
-              <asp:DropDownList ID="ddlPersons" runat="server" AppendDataBoundItems="True" 
-               DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID"
-               SelectedValue='<%# Bind("ToBeDeliveredBy") %>' Font-Size="X-Small" >
-              <asp:ListItem Text="none" Value="0" />
-              </asp:DropDownList>
-            </EditItemTemplate>
-            <ItemTemplate>
-                <asp:Label ID="lblPerson" runat="server" Text='<%# Bind("Person") %>' />
-            </ItemTemplate>
-        </asp:TemplateField>
-        <asp:BoundField DataField="ToBeDeliveredBy" HeaderText="Delivery By" SortExpression="ToBeDeliveredBy" Visible="False" />
-        <asp:BoundField DataField="RequiredByDate" HeaderText="Required By" SortExpression="RequiredByDate" DataFormatString="{0:d}" ApplyFormatInEditMode="true"  ControlStyle-Width="6em" >
-        <ItemStyle Width="7em" />
-        </asp:BoundField>
-        <asp:TemplateField HeaderText="ItemType ID" SortExpression="ItemTypeID">
-            <EditItemTemplate>
-                <asp:DropDownList ID="ddlImte" runat="server" AppendDataBoundItems="True" Font-Size="X-Small"
-                  DataSourceID="odsItems" DataTextField="ItemDesc" DataValueField="ItemTypeID" SelectedValue='<%# Bind("ItemTypeID") %>' >
-                  <asp:ListItem Text="none" Value="0" />
-            </asp:DropDownList>
-            </EditItemTemplate>
-            <ItemTemplate>
-               <asp:Label ID="ItemDescLabel" runat="server" Text='<%# GetItemDesc((int)Eval("ItemTypeID")) %>' />
-            </ItemTemplate>
-        </asp:TemplateField>
-        <asp:BoundField DataField="QuantityOrdered" HeaderText="Qty" SortExpression="QuantityOrdered" />
-        <asp:CheckBoxField DataField="Confirmed" HeaderText="Cnfrmd" SortExpression="Confirmed" />
-        <asp:CheckBoxField DataField="Done" HeaderText="Done" SortExpression="Done" />
-        <asp:BoundField DataField="Notes" HeaderText="Notes" SortExpression="Notes" />
-    </Columns>
-    <PagerSettings Mode="NumericFirstLast" Position="Bottom" />
-    <SelectedRowStyle BackColor="#66FF66" />
-  </asp:GridView>
-<%--  <asp:SqlDataSource ID="sdsOrdersDetail" runat="server" 
-    ConnectionString="<%$ ConnectionStrings:Tracker08ConnectionString %>" 
-    ProviderName="<%$ ConnectionStrings:Tracker08ConnectionString.ProviderName %>" 
-   
-    SelectCommand="SELECT DISTINCT CustomersTbl.CompanyName, OrdersTbl.CustomerID, OrdersTbl.OrderDate, OrdersTbl.PrepDate, OrdersTbl.RequiredByDate, PersonsTbl.Person, OrdersTbl.Confirmed, OrdersTbl.Done FROM ((OrdersTbl LEFT OUTER JOIN PersonsTbl ON OrdersTbl.ToBeDeliveredBy = PersonsTbl.PersonID) LEFT OUTER JOIN CustomersTbl ON OrdersTbl.CustomerID = CustomersTbl.CustomerID) WHERE (OrdersTbl.Done = ?)">
-    <SelectParameters>
-      <asp:ControlParameter ControlID="chkbxOrderDone" Name="Done" 
-        PropertyName="Checked" Type="Boolean" 
-        DefaultValue="false" />
-    </SelectParameters>
-  </asp:SqlDataSource>
---%>
-  <asp:GridView ID="gvOrderDetails" runat="server" CssClass="TblZebra" AutoGenerateEditButton="true" 
-    OnRowUpdated="gvOrderDetails_OnRowUpdated" OnRowEditing="gvOrderDetails_OnRowEditing">
-  </asp:GridView>
-  <br />
+    <asp:UpdatePanel ID="upnlOrderEntry" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+        <Triggers>
+            <asp:AsyncPostBackTrigger ControlID="chkbxOrderDone" EventName="CheckedChanged" />
+            <asp:AsyncPostBackTrigger ControlID="btnGo" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="tbxSearchFor" EventName="TextChanged" />
+            <asp:PostBackTrigger ControlID="btnBack" />
+        </Triggers>
+        <ContentTemplate>
+            <asp:Panel ID="pnlOrderEntry" runat="server" CssClass="simpleForm page-tone-panel page-tone-orders">
+                <div class="page-tone-header tool-card-header">
+                    <img class="tool-card-icon" src="../images/imgButtons/icons8-view-orders-16.png" alt="" />
+                    <div>
+                        <h1 class="page-tone-title">View &amp; Edit Orders</h1>
+                        <p class="page-tone-subtitle">Manage existing orders and deliveries</p>
+                    </div>
+                </div>
 
+                <div class="page-tone-toolbar filter-toolbar">
+                    <div class="filter-section search-controls">
+                        <asp:CheckBox ID="chkbxOrderDone" Text="Show done orders" runat="server"
+                            Checked="false" TextAlign="Right" AutoPostBack="true"
+                            OnCheckedChanged="chkbxOrderDone_CheckedChanged"
+                            ToolTip="When checked, list completed orders instead of open ones" />
+                        <div class="filter-control">
+                            <asp:Label AssociatedControlID="ddlSearchFor" runat="server" Text="Search for:" CssClass="small" />
+                            <asp:DropDownList ID="ddlSearchFor" runat="server">
+                                <asp:ListItem Selected="True" Value="none" Text="--Select item--" />
+                                <asp:ListItem Value="Company" Text="Company Name" />
+                                <asp:ListItem Value="PrepDate" Text="Prep Date" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-control">
+                            <asp:TextBox ID="tbxSearchFor" runat="server" Width="20em"
+                                AutoPostBack="true" OnTextChanged="tbxSearchFor_TextChanged"
+                                ToolTip="Company name or prep date (yyyy-MM-dd)" />
+                        </div>
+                        <asp:Button ID="btnGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnGo_Click" ToolTip="Apply search filter" />
+                        <asp:Button ID="btnReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnReset_Click" ToolTip="Clear search filters" />
+                    </div>
+                    <div class="filter-section admin-controls">
+                        <span class="image-button" title="New order">
+                            <img src="../images/imgButtons/GreenPlus.gif" alt="" />
+                            <asp:HyperLink ID="btnNewOrder" runat="server" Text="New Order"
+                                NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true"
+                                ToolTip="Create a new order" />
+                        </span>
+                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
+                            OnClick="btnBack_Click" CausesValidation="false" ToolTip="Return to home" />
+                    </div>
+                </div>
 
-  <asp:ObjectDataSource ID="odsCompanys" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
-    SelectMethod="GetCompanyNames" OldValuesParameterFormatString="original_{0}">
-  </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsPersons" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
-      SortParameterName="sortBy" SelectMethod="GetPersons"
-      OldValuesParameterFormatString="original_{0}">
-      <SelectParameters>
-        <asp:Parameter DefaultValue="Abbreviation" Name="sortBy" Type="String" />
-      </SelectParameters>
-   </asp:ObjectDataSource>
-  <asp:ObjectDataSource ID="odsItems" runat="server" TypeName="TrackerSQL.Managers.OrderLookupDataSource"
-      SortParameterName="sortBy" SelectMethod="GetItems"
-      OldValuesParameterFormatString="original_{0}">
-      <SelectParameters>
-        <asp:Parameter DefaultValue="" Name="sortBy" Type="String" />
-      </SelectParameters>
-  </asp:ObjectDataSource>
+                <div class="results-container" style="margin-top: 8px;">
+                    <asp:GridView ID="gvListOfOrders" runat="server" CssClass="results-table"
+                        AllowPaging="True" AllowSorting="True" DataSourceID="odsDistinctOrders"
+                        DataKeyNames="OrderID"
+                        AutoGenerateColumns="False" PageSize="15"
+                        EmptyDataText="">
+                        <Columns>
+                            <asp:TemplateField HeaderText="Open">
+                                <ItemTemplate>
+                                    <span class="image-button" title="Open order detail">
+                                        <img src="../images/imgButtons/icons8-view-orders-16.png" alt="" />
+                                        <asp:HyperLink ID="hlOpenOrder" runat="server" Text="Open"
+                                            NavigateUrl='<%# Eval("OrderID", "~/Pages/OrderDetail.aspx?OrderID={0}") %>'
+                                            ToolTip="Open order to view or edit all lines" />
+                                    </span>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Company Name" SortExpression="CompanyName">
+                                <ItemTemplate>
+                                    <asp:HyperLink ID="hlCompany" runat="server"
+                                        Text='<%# Eval("CompanyName") %>'
+                                        NavigateUrl='<%# Eval("OrderID", "~/Pages/OrderDetail.aspx?OrderID={0}") %>'
+                                        ToolTip="Open order detail" />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:BoundField DataField="OrderDate" HeaderText="Order Date"
+                                SortExpression="OrderDate" DataFormatString="{0:d}" ReadOnly="True">
+                                <ItemStyle Width="7em" />
+                            </asp:BoundField>
+                            <asp:BoundField DataField="PrepDate" HeaderText="Prep Date"
+                                SortExpression="PrepDate" DataFormatString="{0:d}" ReadOnly="True">
+                                <ItemStyle Width="7em" />
+                            </asp:BoundField>
+                            <asp:BoundField DataField="Person" HeaderText="Person"
+                                SortExpression="Person" ReadOnly="True" />
+                            <asp:BoundField DataField="RequiredByDate" HeaderText="Required By"
+                                SortExpression="RequiredByDate" DataFormatString="{0:d}" ReadOnly="True">
+                                <ItemStyle Width="7em" />
+                            </asp:BoundField>
+                            <asp:TemplateField HeaderText="Item" SortExpression="ItemTypeID">
+                                <ItemTemplate>
+                                    <asp:Label ID="ItemDescLabel" runat="server"
+                                        Text='<%# GetItemDesc((int)Eval("ItemTypeID")) %>'
+                                        ToolTip="First line only — open order to see all items" />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Qty" SortExpression="QuantityOrdered">
+                                <ItemTemplate>
+                                    <asp:Label ID="lblQuantityOrdered" runat="server"
+                                        Text='<%# FormatQuantity((double)Eval("QuantityOrdered")) %>'
+                                        ToolTip="First line only — open order to see all quantities" />
+                                </ItemTemplate>
+                                <ItemStyle Width="4em" HorizontalAlign="Right" />
+                            </asp:TemplateField>
+                            <asp:CheckBoxField DataField="Confirmed" HeaderText="Cnfrmd"
+                                SortExpression="Confirmed" ReadOnly="True" />
+                            <asp:CheckBoxField DataField="Done" HeaderText="Done"
+                                SortExpression="Done" ReadOnly="True" />
+                            <asp:BoundField DataField="Notes" HeaderText="Notes"
+                                SortExpression="Notes" ReadOnly="True" />
+                        </Columns>
+                        <EmptyDataTemplate>
+                            <div class="status-message status-info" style="padding: 16px;">
+                                No orders found. Adjust the filter or create a new order.
+                            </div>
+                        </EmptyDataTemplate>
+                        <PagerSettings Mode="NumericFirstLast" Position="Bottom" />
+                    </asp:GridView>
+                </div>
 
+                <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;" visible="false">
+                    <asp:Literal ID="ltrlStatus" runat="server" />
+                </div>
+            </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 
-<%--
-  <table class="TblLHCol-brown">
-    <th>
-      <tr class="TblLHColHdr">
-        <td>Item</td>
-        <td>Value</td>
-      </tr>
-    </th>
-    <tbody>
-    <tr>
-      <td class="TblLHCol-first">
-        Customer
-      </td>
-      <td>
-
-      </td>
-    </tr>
-    <tr>
-      <td class="TblLHCol-first">
-        Order Date:
-      </td>
-      <td></td>
-    </tr>
-    <tr>
-      <td class="TblLHCol-first">
-        Preperation Date</td>
-      <td>&nbsp;</td>
-    </tr>
-    <tr>
-      <td class="TblLHCol-first">
-        Delivery By</td>
-      <td>&nbsp;</td>
-    </tr>
-    <tr>
-      <td class="TblLHCol-first">
-        Delivery Date</td>
-      <td>&nbsp;</td>
-    </tr>
-    <tr>
-      <td class="TblLHCol-first">
-        Notes</td>
-      <td>&nbsp;</td>
-    </tr>
-    </tbody>
-  </table>
-  <br />
---%>  
-
+    <asp:ObjectDataSource ID="odsDistinctOrders" runat="server"
+        TypeName="TrackerSQL.Managers.OrderEntryDataSource"
+        SelectMethod="GetDistinctOrders">
+        <SelectParameters>
+            <asp:ControlParameter ControlID="chkbxOrderDone" Name="pOrderDone"
+                PropertyName="Checked" Type="Boolean" DefaultValue="false" />
+            <asp:ControlParameter ControlID="ddlSearchFor" Name="pSearchFor"
+                PropertyName="SelectedValue" DefaultValue="" Type="String" />
+            <asp:ControlParameter ControlID="tbxSearchFor" Name="pSearchValue"
+                PropertyName="Text" Type="String" />
+        </SelectParameters>
+    </asp:ObjectDataSource>
 </asp:Content>

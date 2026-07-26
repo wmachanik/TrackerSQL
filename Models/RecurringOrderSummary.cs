@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using TrackerSQL.Classes;
 
 namespace TrackerSQL.Models
 {
@@ -28,7 +29,7 @@ namespace TrackerSQL.Models
 
         public string DetailsNavigateUrl
         {
-            get { return "~/Pages/RecurringOrderDetails.aspx?ID=" + RecurringOrderID; }
+            get { return SystemConstants.PageUrls.RecurringOrderDetailsUrl(RecurringOrderID); }
         }
 
         public string RecurringPatternDisplay
@@ -165,7 +166,7 @@ namespace TrackerSQL.Models
 
         public string DetailsNavigateUrl
         {
-            get { return "~/Pages/RecurringOrderDetails.aspx?ID=" + RecurringOrderID; }
+            get { return SystemConstants.PageUrls.RecurringOrderDetailsUrl(RecurringOrderID); }
         }
 
         public string EnabledDisplay

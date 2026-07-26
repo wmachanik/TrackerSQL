@@ -55,11 +55,16 @@ namespace TrackerSQL.Repositories
             var list = new List<ItemsRequiredSummary>();
             var parameters = new List<DBParameter>();
             
+            // Missing PackagingID → treat as 1kg bag so bag sizes total separately.
             string sql = @"
-                SELECT OrdersTbl.PrepDate, ItemsTbl.ItemDesc, ROUND(SUM(OrderLinesTbl.QtyOrdered), 2) AS Qty
-                FROM ((OrdersTbl 
-                    INNER JOIN OrderLinesTbl ON OrdersTbl.OrderID = OrderLinesTbl.OrderID)
-                    INNER JOIN ItemsTbl ON OrderLinesTbl.ItemID = ItemsTbl.ItemID)
+                SELECT OrdersTbl.PrepDate,
+                       ItemsTbl.ItemDesc,
+                       COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag') AS ItemPackagingDesc,
+                       ROUND(SUM(OrderLinesTbl.QtyOrdered), 2) AS Qty
+                FROM OrdersTbl
+                    INNER JOIN OrderLinesTbl ON OrdersTbl.OrderID = OrderLinesTbl.OrderID
+                    INNER JOIN ItemsTbl ON OrderLinesTbl.ItemID = ItemsTbl.ItemID
+                    LEFT OUTER JOIN ItemPackagingsTbl ON OrderLinesTbl.PackagingID = ItemPackagingsTbl.ItemPackagingID
                 WHERE OrdersTbl.Done = 0";
 
             // Add date filters if provided
@@ -85,7 +90,10 @@ namespace TrackerSQL.Repositories
                 });
             }
 
-            sql += " GROUP BY OrdersTbl.PrepDate, ItemsTbl.ItemDesc ORDER BY OrdersTbl.PrepDate ASC, ItemsTbl.ItemDesc ASC";
+            sql += @" GROUP BY OrdersTbl.PrepDate, ItemsTbl.ItemDesc,
+                             COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag')
+                      ORDER BY OrdersTbl.PrepDate ASC, ItemsTbl.ItemDesc ASC,
+                             COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag') ASC";
 
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql, parameters.Count > 0 ? parameters : null))
@@ -96,6 +104,7 @@ namespace TrackerSQL.Repositories
                     {
                         PrepDate = rdr["PrepDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["PrepDate"]),
                         ItemDesc = rdr["ItemDesc"] == DBNull.Value ? string.Empty : rdr["ItemDesc"].ToString(),
+                        ItemPackagingDesc = rdr["ItemPackagingDesc"] == DBNull.Value ? "1kg bag" : rdr["ItemPackagingDesc"].ToString(),
                         Qty = rdr["Qty"] == DBNull.Value ? 0.0 : Convert.ToDouble(rdr["Qty"])
                     });
                 }
@@ -117,12 +126,16 @@ namespace TrackerSQL.Repositories
             var parameters = new List<DBParameter>();
 
             string sql = @"
-                SELECT OrdersTbl.RequiredByDate, ISNULL(PeopleTbl.Abbreviation, 'Unassigned') AS Abbreviation,
-                       ItemsTbl.ItemDesc, ROUND(SUM(OrderLinesTbl.QtyOrdered), 2) AS Qty
-                FROM ((OrdersTbl 
-                    INNER JOIN OrderLinesTbl ON OrdersTbl.OrderID = OrderLinesTbl.OrderID)
-                    INNER JOIN ItemsTbl ON OrderLinesTbl.ItemID = ItemsTbl.ItemID)
+                SELECT OrdersTbl.RequiredByDate,
+                       ISNULL(PeopleTbl.Abbreviation, 'Unassigned') AS Abbreviation,
+                       ItemsTbl.ItemDesc,
+                       COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag') AS ItemPackagingDesc,
+                       ROUND(SUM(OrderLinesTbl.QtyOrdered), 2) AS Qty
+                FROM OrdersTbl
+                    INNER JOIN OrderLinesTbl ON OrdersTbl.OrderID = OrderLinesTbl.OrderID
+                    INNER JOIN ItemsTbl ON OrderLinesTbl.ItemID = ItemsTbl.ItemID
                     LEFT OUTER JOIN PeopleTbl ON OrdersTbl.ToBeDeliveredByID = PeopleTbl.PersonID
+                    LEFT OUTER JOIN ItemPackagingsTbl ON OrderLinesTbl.PackagingID = ItemPackagingsTbl.ItemPackagingID
                 WHERE OrdersTbl.Done = 0 AND OrdersTbl.RequiredByDate IS NOT NULL";
 
             // Add date filters if provided
@@ -148,7 +161,14 @@ namespace TrackerSQL.Repositories
                 });
             }
 
-            sql += " GROUP BY OrdersTbl.RequiredByDate, ISNULL(PeopleTbl.Abbreviation, 'Unassigned'), ItemsTbl.ItemDesc ORDER BY OrdersTbl.RequiredByDate ASC, Abbreviation ASC, ItemsTbl.ItemDesc ASC";
+            sql += @" GROUP BY OrdersTbl.RequiredByDate,
+                             ISNULL(PeopleTbl.Abbreviation, 'Unassigned'),
+                             ItemsTbl.ItemDesc,
+                             COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag')
+                      ORDER BY OrdersTbl.RequiredByDate ASC,
+                             ISNULL(PeopleTbl.Abbreviation, 'Unassigned') ASC,
+                             ItemsTbl.ItemDesc ASC,
+                             COALESCE(NULLIF(LTRIM(RTRIM(ItemPackagingsTbl.ItemPrepDescription)), ''), N'1kg bag') ASC";
 
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql, parameters.Count > 0 ? parameters : null))
@@ -160,6 +180,7 @@ namespace TrackerSQL.Repositories
                         RequiredByDate = rdr["RequiredByDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["RequiredByDate"]),
                         Abbreviation = rdr["Abbreviation"] == DBNull.Value ? "Unassigned" : rdr["Abbreviation"].ToString(),
                         ItemDesc = rdr["ItemDesc"] == DBNull.Value ? string.Empty : rdr["ItemDesc"].ToString(),
+                        ItemPackagingDesc = rdr["ItemPackagingDesc"] == DBNull.Value ? "1kg bag" : rdr["ItemPackagingDesc"].ToString(),
                         Qty = rdr["Qty"] == DBNull.Value ? 0.0 : Convert.ToDouble(rdr["Qty"])
                     });
                 }
@@ -236,6 +257,63 @@ namespace TrackerSQL.Repositories
             return ExecuteScalar<int>(sql, OrderIdParam(orderId));
         }
 
+        public int? GetOrderIdByLineId(int orderLineId)
+        {
+            if (orderLineId <= 0)
+                return null;
+
+            const string sql = "SELECT OrderID FROM OrderLinesTbl WHERE OrderLineID = @OrderLineID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@OrderLineID", DataValue = orderLineId, DataDbType = DbType.Int32 }
+            };
+
+            int orderId = ExecuteScalar<int>(sql, parameters);
+            return orderId > 0 ? orderId : (int?)null;
+        }
+
+        /// <summary>
+        /// Finds an open (not Done) order for the contact on the delivery day, else on the prep day.
+        /// </summary>
+        public int? FindOpenOrderIdForContactDay(long contactId, DateTime requiredByDate, DateTime prepDate)
+        {
+            if (contactId <= 0)
+                return null;
+
+            const string byRequiredSql = @"
+                SELECT TOP 1 OrderID FROM OrdersTbl
+                WHERE ContactID = @ContactID
+                  AND RequiredByDate = @Day
+                  AND (Done = 0 OR Done IS NULL)
+                ORDER BY OrderID DESC";
+
+            var byRequiredParams = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 },
+                new DBParameter { ParamName = "@Day", DataValue = requiredByDate.Date, DataDbType = DbType.Date }
+            };
+
+            int orderId = ExecuteScalar<int>(byRequiredSql, byRequiredParams);
+            if (orderId > 0)
+                return orderId;
+
+            const string byPrepSql = @"
+                SELECT TOP 1 OrderID FROM OrdersTbl
+                WHERE ContactID = @ContactID
+                  AND PrepDate = @Day
+                  AND (Done = 0 OR Done IS NULL)
+                ORDER BY OrderID DESC";
+
+            var byPrepParams = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 },
+                new DBParameter { ParamName = "@Day", DataValue = prepDate.Date, DataDbType = DbType.Date }
+            };
+
+            orderId = ExecuteScalar<int>(byPrepSql, byPrepParams);
+            return orderId > 0 ? orderId : (int?)null;
+        }
+
         public List<OrderDetailData> LoadOrderDetailDataByOrderId(int orderId)
         {
             var list = new List<OrderDetailData>();
@@ -291,6 +369,83 @@ namespace TrackerSQL.Repositories
 
             int orderId = ExecuteScalar<int>(sql, parameters);
             return orderId > 0 ? orderId : (int?)null;
+        }
+
+        /// <summary>
+        /// Finds another order for the same contact and required-by date, excluding the given order.
+        /// </summary>
+        public int? FindDuplicateOrderIdByRequiredByDate(long contactId, DateTime requiredByDate, string notes, int excludeOrderId)
+        {
+            if (excludeOrderId <= 0)
+                return null;
+
+            string sql;
+            var parameters = new List<DBParameter>();
+
+            if (contactId == SystemConstants.CustomerConstants.SundryCustomerID)
+            {
+                sql = @"
+                    SELECT TOP 1 OrderID FROM OrdersTbl
+                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate AND Notes = @Notes
+                      AND OrderID <> @ExcludeOrderID
+                    ORDER BY OrderID DESC";
+                parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = SystemConstants.CustomerConstants.SundryCustomerID, DataDbType = DbType.Int64 });
+                parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
+                parameters.Add(new DBParameter { ParamName = "@Notes", DataValue = notes ?? string.Empty, DataDbType = DbType.String });
+            }
+            else
+            {
+                sql = @"
+                    SELECT TOP 1 OrderID FROM OrdersTbl
+                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate
+                      AND OrderID <> @ExcludeOrderID
+                    ORDER BY OrderID DESC";
+                parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 });
+                parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
+            }
+
+            parameters.Add(new DBParameter { ParamName = "@ExcludeOrderID", DataValue = excludeOrderId, DataDbType = DbType.Int32 });
+
+            int orderId = ExecuteScalar<int>(sql, parameters);
+            return orderId > 0 ? orderId : (int?)null;
+        }
+
+        public bool MoveAllLinesToOrder(int sourceOrderId, int targetOrderId)
+        {
+            if (sourceOrderId <= 0 || targetOrderId <= 0 || sourceOrderId == targetOrderId)
+                return false;
+
+            const string sql = @"
+                UPDATE OrderLinesTbl
+                SET OrderID = @TargetOrderID
+                WHERE OrderID = @SourceOrderID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@TargetOrderID", DataValue = targetOrderId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SourceOrderID", DataValue = sourceOrderId, DataDbType = DbType.Int32 }
+            };
+
+            return ExecNonQuery(sql, parameters) >= 0;
+        }
+
+        public bool MoveOrderLineToOrder(int orderLineId, int targetOrderId)
+        {
+            if (orderLineId <= 0 || targetOrderId <= 0)
+                return false;
+
+            const string sql = @"
+                UPDATE OrderLinesTbl
+                SET OrderID = @TargetOrderID
+                WHERE OrderLineID = @OrderLineID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@TargetOrderID", DataValue = targetOrderId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@OrderLineID", DataValue = orderLineId, DataDbType = DbType.Int32 }
+            };
+
+            return ExecNonQuery(sql, parameters) > 0;
         }
 
         public int? FindOrderIdByPrepDate(long contactId, DateTime prepDate)
@@ -499,8 +654,8 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@OrderID", DataValue = orderId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@QtyOrdered", DataValue = Math.Round(quantityOrdered, SystemConstants.DatabaseConstants.NumDecimalPoints), DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@PrepTypeID", DataValue = prepTypeId, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@PackagingID", DataValue = packagingId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@PrepTypeID", DataValue = prepTypeId > 0 ? (object)prepTypeId : DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PackagingID", DataValue = packagingId > 0 ? (object)packagingId : DBNull.Value, DataDbType = DbType.Int32 }
             };
 
             return ExecuteScalar<int>(sql, parameters);
@@ -780,7 +935,7 @@ namespace TrackerSQL.Repositories
             {
                 new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@QtyOrdered", DataValue = Math.Round(quantityOrdered, SystemConstants.DatabaseConstants.NumDecimalPoints), DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@PackagingID", DataValue = packagingId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PackagingID", DataValue = packagingId > 0 ? (object)packagingId : DBNull.Value, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@OrderLineID", DataValue = orderLineId, DataDbType = DbType.Int32 }
             };
 
@@ -866,7 +1021,7 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@ContactID", DataValue = header.CustomerID, DataDbType = DbType.Int64 },
                 new DBParameter { ParamName = "@OrderDate", DataValue = header.OrderDate, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@PrepDate", DataValue = header.PrepDate, DataDbType = DbType.Date },
-                new DBParameter { ParamName = "@ToBeDeliveredByID", DataValue = header.ToBeDeliveredBy, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ToBeDeliveredByID", DataValue = DbParamHelpers.FkOrDbNull(header.ToBeDeliveredBy), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@RequiredByDate", DataValue = header.RequiredByDate, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@Confirmed", DataValue = header.Confirmed, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@Done", DataValue = header.Done, DataDbType = DbType.Boolean },
@@ -887,7 +1042,7 @@ namespace TrackerSQL.Repositories
             string sql = @"
                 SELECT
                     o.OrderID,
-                    ISNULL(c.ContactName, '') AS CompanyName,
+                    ISNULL(c.CompanyName, '') AS CompanyName,
                     o.ContactID AS CustomerID,
                     o.OrderDate,
                     o.PrepDate,
@@ -914,7 +1069,7 @@ namespace TrackerSQL.Repositories
             {
                 if (searchFor == "Company")
                 {
-                    sql += " AND c.ContactName LIKE @SearchValue";
+                    sql += " AND c.CompanyName LIKE @SearchValue";
                     parameters.Add(new DBParameter
                     {
                         ParamName = "@SearchValue",
@@ -954,7 +1109,8 @@ namespace TrackerSQL.Repositories
                         Done = rdr["Done"] != DBNull.Value && Convert.ToBoolean(rdr["Done"]),
                         Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
                         ItemTypeID = rdr["ItemTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemTypeID"]),
-                        QuantityOrdered = rdr["QuantityOrdered"] == DBNull.Value ? 0.0 : Convert.ToDouble(rdr["QuantityOrdered"])
+                        QuantityOrdered = rdr["QuantityOrdered"] == DBNull.Value ? 0.0 :
+                            Math.Round(Convert.ToDouble(rdr["QuantityOrdered"]), SystemConstants.DatabaseConstants.NumDecimalPoints)
                     });
                 }
             }
@@ -967,6 +1123,8 @@ namespace TrackerSQL.Repositories
             if (item == null || originalOrderId <= 0)
                 return false;
 
+            // Preserve InvoiceDone / PurchaseOrder — not editable on OrderEntry grid
+            var existing = GetOrderHeaderByOrderId(originalOrderId);
             var header = new OrderHeaderData
             {
                 CustomerID = item.CustomerID,
@@ -976,7 +1134,9 @@ namespace TrackerSQL.Repositories
                 ToBeDeliveredBy = item.ToBeDeliveredBy,
                 Confirmed = item.Confirmed,
                 Done = item.Done,
-                Notes = item.Notes ?? string.Empty
+                Notes = item.Notes ?? string.Empty,
+                InvoiceDone = existing?.InvoiceDone ?? false,
+                PurchaseOrder = existing?.PurchaseOrder ?? string.Empty
             };
 
             if (!UpdateOrderHeaderByOrderId(originalOrderId, header))

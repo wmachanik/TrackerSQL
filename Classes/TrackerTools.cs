@@ -1,8 +1,7 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.classes.TrackerTools
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — TrackerTools
+// Shared infrastructure / utility: TrackerTools.
+//------------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
@@ -134,12 +133,12 @@ namespace TrackerSQL.Classes
 
         public DateTime RemoveTimePortion(DateTime pDate) => pDate.Date;
 
-        public DateTime GetClosestNextPreperationDate(DateTime pThisDate)
+        public DateTime GetClosestNextPreparationDate(DateTime pThisDate)
         {
             return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToPrepDate(pThisDate) - 7)));
         }
 
-        public DateTime GetClosestNextPreperationDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
+        public DateTime GetClosestNextPreparationDate(DateTime pThisDate, DayOfWeek pRoastDayOfWeek)
         {
             return this.RemoveTimePortion(pThisDate.AddDays((double)(this.GetDaysToPrepDate(pThisDate, pRoastDayOfWeek) - 7)));
         }
@@ -148,12 +147,12 @@ namespace TrackerSQL.Classes
 
         public bool PrepDateIsBtw(DateTime pPrepDate, long pOrderId)
         {
-            DateTime closestNextPreperationDate1 = this.GetClosestNextPreperationDate(TimeZoneUtils.Now().AddDays(-7.0), DayOfWeek.Monday);
-            DateTime closestNextPreperationDate2 = this.GetClosestNextPreperationDate(TimeZoneUtils.Now().Date, DayOfWeek.Monday);
-            return closestNextPreperationDate1 <= pPrepDate && pPrepDate < closestNextPreperationDate2;
+            DateTime closestNextPreparationDate1 = this.GetClosestNextPreparationDate(TimeZoneUtils.Now().AddDays(-7.0), DayOfWeek.Monday);
+            DateTime closestNextPreparationDate2 = this.GetClosestNextPreparationDate(TimeZoneUtils.Now().Date, DayOfWeek.Monday);
+            return closestNextPreparationDate1 <= pPrepDate && pPrepDate < closestNextPreparationDate2;
         }
 
-        public bool IsNextPreperationDateByAreaTodays()
+        public bool IsNextPreparationDateByAreaTodays()
         {
             var sysData = new SysDataRepository().GetById(1);
             if (sysData?.DateLastPrepDateCalcd == null)
@@ -170,7 +169,7 @@ namespace TrackerSQL.Classes
             return dateTime.Date == sysData.DateLastPrepDateCalcd.Value.Date;
         }
 
-        private string UpdateOrInsertAreaNextPreperationDate(
+        private string UpdateOrInsertAreaNextPreparationDate(
           int pAreaID,
           TrackerTools.PrepAndDeliveryData pThisPrepAndDeliveryData,
           TrackerTools.PrepAndDeliveryData pNextPrepAndDeliveryData)
@@ -180,7 +179,7 @@ namespace TrackerSQL.Classes
                 using (var db = new TrackerSQLDb())
                 {
                     // First check if record exists
-                    string checkSql = "SELECT AreaID FROM NextPreperationDateByAreasTbl WHERE AreaID = @AreaID";
+                    string checkSql = "SELECT AreaID FROM NextPreparationDateByAreasTbl WHERE AreaID = @AreaID";
                     var checkParams = new List<DBParameter>
                     {
                         new DBParameter 
@@ -197,11 +196,11 @@ namespace TrackerSQL.Classes
                     {
                         // UPDATE existing record
                         string updateSql = @"
-                            UPDATE NextPreperationDateByAreasTbl 
-                            SET PreperationDate = @PrepDate,
+                            UPDATE NextPreparationDateByAreasTbl 
+                            SET PreparationDate = @PrepDate,
                                 DeliveryDate = @DeliveryDate,
                                 DeliveryOrder = @DeliveryOrder,
-                                NextPreperationDate = @NextPreperationDate,
+                                NextPreparationDate = @NextPreparationDate,
                                 NextDeliveryDate = @NextDeliveryDate
                             WHERE AreaID = @AreaID";
                         
@@ -210,7 +209,7 @@ namespace TrackerSQL.Classes
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@PrepDate" },
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@DeliveryDate" },
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.SortOrder, DataDbType = System.Data.DbType.Int32, ParamName = "@DeliveryOrder" },
-                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreperationDate" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreparationDate" },
                             new DBParameter { DataValue = pNextPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextDeliveryDate" },
                             new DBParameter { DataValue = pAreaID, DataDbType = System.Data.DbType.Int32, ParamName = "@AreaID" }
                         };
@@ -222,10 +221,10 @@ namespace TrackerSQL.Classes
                     {
                         // INSERT new record
                         string insertSql = @"
-                            INSERT INTO NextPreperationDateByAreasTbl 
-                            (AreaID, PreperationDate, DeliveryDate, DeliveryOrder, NextPreperationDate, NextDeliveryDate)
+                            INSERT INTO NextPreparationDateByAreasTbl 
+                            (AreaID, PreparationDate, DeliveryDate, DeliveryOrder, NextPreparationDate, NextDeliveryDate)
                             VALUES 
-                            (@AreaID, @PrepDate, @DeliveryDate, @DeliveryOrder, @NextPreperationDate, @NextDeliveryDate)";
+                            (@AreaID, @PrepDate, @DeliveryDate, @DeliveryOrder, @NextPreparationDate, @NextDeliveryDate)";
                         
                         var insertParams = new List<DBParameter>
                         {
@@ -233,7 +232,7 @@ namespace TrackerSQL.Classes
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@PrepDate" },
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@DeliveryDate" },
                             new DBParameter { DataValue = pThisPrepAndDeliveryData.SortOrder, DataDbType = System.Data.DbType.Int32, ParamName = "@DeliveryOrder" },
-                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreperationDate" },
+                            new DBParameter { DataValue = pNextPrepAndDeliveryData.PrepDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextPreparationDate" },
                             new DBParameter { DataValue = pNextPrepAndDeliveryData.DeliveryDate, DataDbType = System.Data.DbType.Date, ParamName = "@NextDeliveryDate" }
                         };
                         
@@ -245,7 +244,7 @@ namespace TrackerSQL.Classes
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Database, 
-                    $"UpdateOrInsertAreaNextPreperationDate error for AreaID {pAreaID}: {ex.Message}");
+                    $"UpdateOrInsertAreaNextPreparationDate error for AreaID {pAreaID}: {ex.Message}");
                 return ex.Message;
             }
         }
@@ -283,13 +282,13 @@ namespace TrackerSQL.Classes
             }
             return preAndDeliveryDate;
         }
-        public int SetNextPreperationDateByArea()
+        public int SetNextPreparationDateByArea()
         {
             List<AreaPrepDays> all = new AreaPrepDaysRepository().GetAll("AreaID, PrepDayOfWeekID");
             if (all.Count == 0)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    "SetNextPreperationDateByArea: no rows in AreaPrepDaysTbl — cannot calculate dates.");
+                    "SetNextPreparationDateByArea: no rows in AreaPrepDaysTbl — cannot calculate dates.");
                 return 0;
             }
 
@@ -316,7 +315,7 @@ namespace TrackerSQL.Classes
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    "SetNextPreperationDateByArea: holiday check skipped: " + ex.Message);
+                    "SetNextPreparationDateByArea: holiday check skipped: " + ex.Message);
             }
 
             int areasUpdated = 0;
@@ -339,15 +338,15 @@ namespace TrackerSQL.Classes
                 if (!HasValidPrepDates(thisPair) || !HasValidPrepDates(nextPair))
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                        $"SetNextPreperationDateByArea: skipping AreaID {AreaId} — could not calculate prep/delivery dates.");
+                        $"SetNextPreparationDateByArea: skipping AreaID {AreaId} — could not calculate prep/delivery dates.");
                     continue;
                 }
 
-                string updateResult = this.UpdateOrInsertAreaNextPreperationDate(AreaId, thisPair, nextPair);
+                string updateResult = this.UpdateOrInsertAreaNextPreparationDate(AreaId, thisPair, nextPair);
                 if (!string.IsNullOrEmpty(updateResult))
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                        $"SetNextPreperationDateByArea: AreaID {AreaId} update failed: {updateResult}");
+                        $"SetNextPreparationDateByArea: AreaID {AreaId} update failed: {updateResult}");
                     continue;
                 }
 
@@ -370,7 +369,7 @@ namespace TrackerSQL.Classes
             }
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                $"SetNextPreperationDateByArea: updated {areasUpdated} of {AreaStartIndex.Count} areas from {all.Count} prep-day rows.");
+                $"SetNextPreparationDateByArea: updated {areasUpdated} of {AreaStartIndex.Count} areas from {all.Count} prep-day rows.");
 
             return areasUpdated;
         }
@@ -409,7 +408,7 @@ namespace TrackerSQL.Classes
         }
 
         /*
-public void SetNextPreperationDateByArea()
+public void SetNextPreparationDateByArea()
 {
    List<AreaPrepDays> all = new AreaPrepDaysRepository().GetAll("AreaID, PrepDayOfWeekID");
    DateTime minValue = DateTime.MinValue;
@@ -426,7 +425,7 @@ label_6:
        TrackerTools.PrepAndDeliveryData preAndDeliveryDate1 = this.GetPreAndDeliveryDate(num, AreaId, all, pForThisDate1);
        DateTime pForThisDate2 = preAndDeliveryDate1.PrepDate == preAndDeliveryDate1.DeliveryDate ? preAndDeliveryDate1.PrepDate.AddDays(1.0).Date : preAndDeliveryDate1.DeliveryDate.Date;
        TrackerTools.PrepAndDeliveryData preAndDeliveryDate2 = this.GetPreAndDeliveryDate(num, AreaId, all, pForThisDate2);
-       this.UpdateOrInsertAreaNextPreperationDate(AreaId, preAndDeliveryDate1, preAndDeliveryDate2);
+       this.UpdateOrInsertAreaNextPreparationDate(AreaId, preAndDeliveryDate1, preAndDeliveryDate2);
        ++num;
        while (true)
        {
@@ -448,32 +447,32 @@ label_6:
    trackerDb.Close();
 }
 */
-        public DateTime GetNextPreperationDateByCustomerID(long pCustID, ref DateTime pDelivery)
+        public DateTime GetNextPreparationDateByCustomerID(long pCustID, ref DateTime pDelivery)
         {
-            if (!this.IsNextPreperationDateByAreaTodays())
-                this.SetNextPreperationDateByArea();
+            if (!this.IsNextPreparationDateByAreaTodays())
+                this.SetNextPreparationDateByArea();
 
             var prepDataForCustomer = LoadPrepDataForContact(pCustID);
             if (!HasValidPrepDates(prepDataForCustomer))
             {
-                this.SetNextPreperationDateByArea();
+                this.SetNextPreparationDateByArea();
                 prepDataForCustomer = LoadPrepDataForContact(pCustID);
             }
 
             pDelivery = prepDataForCustomer.DeliveryDate ?? DateTime.MinValue;
-            return prepDataForCustomer.PreperationDate ?? DateTime.MinValue;
+            return prepDataForCustomer.PreparationDate ?? DateTime.MinValue;
         }
 
-        private static NextPreperationDateByArea LoadPrepDataForContact(long contactId)
+        private static NextPreparationDateByArea LoadPrepDataForContact(long contactId)
         {
             return new NextPrepDateByAreaRepository().GetPrepDataForContact((int)contactId);
         }
 
-        private static bool HasValidPrepDates(NextPreperationDateByArea prepData)
+        private static bool HasValidPrepDates(NextPreparationDateByArea prepData)
         {
             return prepData != null
-                && prepData.PreperationDate.HasValue
-                && prepData.PreperationDate.Value > DateTime.MinValue
+                && prepData.PreparationDate.HasValue
+                && prepData.PreparationDate.Value > DateTime.MinValue
                 && prepData.DeliveryDate.HasValue
                 && prepData.DeliveryDate.Value > DateTime.MinValue;
         }
@@ -685,10 +684,10 @@ label_6:
             }
         }
         ///// <summary>
-        ///// Modern SQL Server version of SetNextPreperationDateByArea
+        ///// Modern SQL Server version of SetNextPreparationDateByArea
         ///// Returns count of areas processed
         ///// </summary>
-        //public int SetNextPreperationDateByAreaModern()
+        //public int SetNextPreparationDateByAreaModern()
         //{
         //    try
         //    {
@@ -698,7 +697,7 @@ label_6:
         //        if (all == null || all.Count == 0)
         //        {
         //            AppLogger.WriteLog(SystemConstants.LogTypes.System, 
-        //                "TrackerTools.SetNextPreperationDateByAreaModern: No area prep days found");
+        //                "TrackerTools.SetNextPreparationDateByAreaModern: No area prep days found");
         //            return 0;
         //        }
 
@@ -745,7 +744,7 @@ label_6:
         //            }
 
         //            // Persist for this Area
-        //            this.UpdateOrInsertAreaNextPreperationDate(AreaId, thisPair, nextPair);
+        //            this.UpdateOrInsertAreaNextPreparationDate(AreaId, thisPair, nextPair);
         //            areasProcessed++;
         //        }
 
@@ -753,14 +752,14 @@ label_6:
         //        UpdateSysDataLastPrepDateCalculated();
 
         //        AppLogger.WriteLog(SystemConstants.LogTypes.System, 
-        //            $"TrackerTools.SetNextPreperationDateByAreaModern: Processed {areasProcessed} areas");
+        //            $"TrackerTools.SetNextPreparationDateByAreaModern: Processed {areasProcessed} areas");
                 
         //        return areasProcessed;
         //    }
         //    catch (Exception ex)
         //    {
         //        AppLogger.WriteLog(SystemConstants.LogTypes.System, 
-        //            $"TrackerTools.SetNextPreperationDateByAreaModern error: {ex.Message}");
+        //            $"TrackerTools.SetNextPreparationDateByAreaModern error: {ex.Message}");
         //        throw;
         //    }
         //}

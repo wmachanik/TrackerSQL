@@ -4,50 +4,175 @@
 <asp:Content ID="cntRecurringOrdersHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntRecurringOrdersBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <h1 class="recurring-orders-page-title">Recurring Orders</h1>
-    <asp:ScriptManager ID="smRecurringOrders" runat="server" />
-    <asp:UpdateProgress ID="uprgRecurringOrders" runat="server" DisplayAfter="0">
+    <asp:ScriptManager ID="smRecurringOrders" runat="server" EnablePartialRendering="true" />
+
+    <asp:UpdateProgress ID="uprgRecurringOrders" runat="server"
+        AssociatedUpdatePanelID="upnlRecurringOrders" DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <img src="../images/animi/BlueArrowsUpdate.gif" alt="updating" width="16" height="16" />updating.....
+            <div class="status-message status-info" style="margin: 8px 0;">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Please wait...
+            </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <asp:UpdatePanel ID="upnlSelection" runat="server" UpdateMode="Conditional">
+
+    <asp:UpdatePanel ID="upnlRecurringOrders" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
         <ContentTemplate>
-            <div class="filter-toolbar recurring-orders-toolbar">
-                <div class="filter-section search-controls">
-                    <div class="filter-control">
-                        <asp:Label AssociatedControlID="ddlFilterBy" runat="server" Text="Filter by:" />
-                        <asp:DropDownList ID="ddlFilterBy" runat="server" ToolTip="select which item to search for">
-                            <asp:ListItem Value="0" Selected="True" Text="none" />
-                            <asp:ListItem Value="CompanyName" Text="Company Name" />
-                        </asp:DropDownList>
-                    </div>
-                    <div class="filter-control">
-                        <asp:TextBox ID="tbxFilterBy" runat="server" ToolTip="enter a company name"
-                            AutoPostBack="True"
-                            OnTextChanged="tbxFilterBy_TextChanged" />
-                    </div>
-                    <asp:Button ID="btnGo" Text="Go" runat="server" OnClick="btnGo_Click" ToolTip="search for this item" />
-                    <asp:Button ID="btnReset" Text="Reset" runat="server" OnClick="btnReset_Click" />
-                </div>
-                <div class="filter-section admin-controls">
-                    <asp:Button ID="btnCalcNextRequired" Text="Calc Next Required" runat="server"
-                        OnClick="btnCalcNextRequired_Click" CssClass="recurring-orders-calc-button" />
-                    <div class="filter-control" style="margin-right: 12px">
-                        <asp:DropDownList ID="ddlEnabledFilter" runat="server" AutoPostBack="True"
-                            OnSelectedIndexChanged="ddlEnabledFilter_SelectedIndexChanged">
-                            <asp:ListItem Selected="True" Value="1" Text="enabled only" />
-                            <asp:ListItem Value="0" Text="disabled only" />
-                            <asp:ListItem Value="-1" Text="both" />
-                        </asp:DropDownList>
-                    </div>
-                    <div class="filter-section action-buttons">
-                        <asp:HyperLink ID="hlAddRecurringOrder" ImageUrl="~/images/imgButtons/AddItem.gif" ToolTip="Add Recurring Order"
-                            CssClass="recurring-orders-add-link"
-                            NavigateUrl="~/Pages/RecurringOrderDetails.aspx" runat="server" />
+            <asp:Panel ID="pnlRecurringOrders" runat="server" CssClass="simpleForm page-tone-panel page-tone-recurring">
+                <div class="page-tone-header tool-card-header">
+                    <img class="tool-card-icon" src="../images/imgButtons/icons8-order-16.png" alt="" />
+                    <div>
+                        <h1 class="page-tone-title">Recurring Orders</h1>
+                        <p class="page-tone-subtitle">Set up and manage recurring orders</p>
                     </div>
                 </div>
-            </div>
+
+                <div class="page-tone-toolbar filter-toolbar">
+                    <div class="filter-section search-controls">
+                        <div class="filter-control">
+                            <asp:Label AssociatedControlID="ddlFilterBy" runat="server" Text="Filter by:" />
+                            <asp:DropDownList ID="ddlFilterBy" runat="server" ToolTip="select which item to search for">
+                                <asp:ListItem Value="0" Selected="True" Text="none" />
+                                <asp:ListItem Value="CompanyName" Text="Company Name" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-control">
+                            <asp:TextBox ID="tbxFilterBy" runat="server" ToolTip="enter a company name"
+                                AutoPostBack="True"
+                                OnTextChanged="tbxFilterBy_TextChanged" />
+                        </div>
+                        <asp:Button ID="btnGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnGo_Click" ToolTip="search for this item" />
+                        <asp:Button ID="btnReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnReset_Click" ToolTip="Clear filters" />
+                    </div>
+                    <div class="filter-section admin-controls">
+                        <asp:Button ID="btnCalcNextRequired" Text="Calc Next Required" runat="server"
+                            CssClass="filter-panel-btn"
+                            OnClick="btnCalcNextRequired_Click"
+                            ToolTip="Recalculate next required dates for enabled recurring lines" />
+                        <div class="filter-control">
+                            <asp:DropDownList ID="ddlEnabledFilter" runat="server" AutoPostBack="True"
+                                OnSelectedIndexChanged="ddlEnabledFilter_SelectedIndexChanged">
+                                <asp:ListItem Selected="True" Value="1" Text="enabled only" />
+                                <asp:ListItem Value="0" Text="disabled only" />
+                                <asp:ListItem Value="-1" Text="both" />
+                            </asp:DropDownList>
+                        </div>
+                        <div class="filter-section action-buttons">
+                            <asp:HyperLink ID="hlAddRecurringOrder" ImageUrl="~/images/imgButtons/AddItem.gif"
+                                ToolTip="Add Recurring Order"
+                                runat="server" />
+                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
+                                OnClick="btnBack_Click" CausesValidation="false"
+                                ToolTip="Return to home" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-container" style="margin-top: 8px;">
+                    <asp:GridView ID="gvRecurringOrders" runat="server" AutoGenerateColumns="False"
+                        CssClass="results-table grouping-table"
+                        AllowSorting="True" AllowPaging="True" PageSize="20" ShowHeader="False"
+                        OnPageIndexChanging="gvRecurringOrders_PageIndexChanging"
+                        OnRowCommand="gvRecurringOrders_RowCommand"
+                        OnSorting="gvRecurringOrders_Sorting"
+                        OnRowDataBound="gvRecurringOrders_RowDataBound">
+                        <EmptyDataTemplate>
+                            <div class="status-message status-info">
+                                No recurring orders found. Change the filter or add a recurring order.
+                            </div>
+                        </EmptyDataTemplate>
+                        <Columns>
+                            <asp:TemplateField HeaderText="Recurring Orders" SortExpression="CompanyName"
+                                HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1 wrap">
+                                <ItemTemplate>
+                                    <div class="grouping-card">
+                                        <div class="grouping-card-header">
+                                            <div class="grouping-card-header-main">
+                                                <span class="image-button" title="Edit this recurring order">
+                                                    <img src="../images/imgButtons/EditItem.gif" alt="" />
+                                                    <asp:HyperLink ID="hlEditRecurringOrder" runat="server"
+                                                        Text="Edit"
+                                                        ToolTip="Edit this recurring order" />
+                                                </span>
+                                                <asp:HyperLink ID="hlContactDetails" runat="server"
+                                                    CssClass="grouping-card-title-link"
+                                                    Visible="false" />
+                                                <asp:Label ID="lblCompanyName" runat="server"
+                                                    CssClass="grouping-card-title-label"
+                                                    Visible="false" />
+                                            </div>
+                                            <div class="grouping-card-header-meta">
+                                                <span class="image-button" title="Delete this complete recurring order">
+                                                    <img src="../images/imgButtons/DelItem.gif" alt="" />
+                                                    <asp:LinkButton ID="btnDeleteRecurringOrder" runat="server"
+                                                        Text="Delete"
+                                                        ToolTip="Delete this complete recurring order"
+                                                        CommandName="DeleteRecurringOrder"
+                                                        CommandArgument='<%# Eval("RecurringOrderID") %>'
+                                                        CausesValidation="false" />
+                                                </span>
+                                                <asp:Label ID="lblRecurringOrderStatus" runat="server"
+                                                    CssClass="status-badge" />
+                                                <asp:Label ID="lblRecurringOrderCount" runat="server"
+                                                    CssClass="grouping-card-count" />
+                                            </div>
+                                        </div>
+                                        <asp:GridView ID="gvRecurringOrdersForContact" runat="server"
+                                            AutoGenerateColumns="False"
+                                            CssClass="results-table nested-results-table recurring-summary-grid no-sticky-last"
+                                            GridLines="None" ShowHeader="True">
+                                            <Columns>
+                                                <asp:BoundField DataField="ItemDesc" HeaderText="Item"
+                                                    HeaderStyle-CssClass="col-ro-sum-item col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-item col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
+                                                <asp:BoundField DataField="QtyRequired" HeaderText="Qty" DataFormatString="{0:0.##}"
+                                                    HeaderStyle-CssClass="col-ro-sum-qty col-align-center"
+                                                    ItemStyle-CssClass="col-ro-sum-qty col-align-center"
+                                                    HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" />
+                                                <asp:BoundField DataField="ItemPackagingDesc" HeaderText="Packaging"
+                                                    HeaderStyle-CssClass="col-ro-sum-pack col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-pack col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
+                                                <asp:BoundField DataField="Value" HeaderText="Value"
+                                                    HeaderStyle-CssClass="col-ro-sum-value col-align-center"
+                                                    ItemStyle-CssClass="col-ro-sum-value col-align-center"
+                                                    HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" />
+                                                <asp:BoundField DataField="RecurringTypeDesc" HeaderText="Recurrence"
+                                                    HeaderStyle-CssClass="col-ro-sum-recur col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-recur col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
+                                                <asp:BoundField DataField="DateLastDone" HeaderText="Last Date" DataFormatString="{0:yyyy-MM-dd}"
+                                                    HeaderStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
+                                                <asp:BoundField DataField="NextDateRequired" HeaderText="Next Date" DataFormatString="{0:yyyy-MM-dd}"
+                                                    HeaderStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
+                                                <asp:TemplateField HeaderText="Until"
+                                                    HeaderStyle-CssClass="col-ro-sum-until col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-until col-align-left"
+                                                    HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left">
+                                                    <ItemTemplate>
+                                                        <%# FormatRequireUntilDate(Eval("RequireUntilDate")) %>
+                                                    </ItemTemplate>
+                                                </asp:TemplateField>
+                                            </Columns>
+                                        </asp:GridView>
+                                    </div>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                </div>
+
+                <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+                    <asp:Literal ID="ltrlStatus" runat="server" />
+                </div>
+            </asp:Panel>
         </ContentTemplate>
         <Triggers>
             <asp:AsyncPostBackTrigger ControlID="tbxFilterBy" EventName="TextChanged" />
@@ -55,98 +180,7 @@
             <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnCalcNextRequired" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="ddlEnabledFilter" EventName="SelectedIndexChanged" />
+            <asp:PostBackTrigger ControlID="btnBack" />
         </Triggers>
     </asp:UpdatePanel>
-    <br />
-    <asp:UpdatePanel ID="upnlRecurringOrdersSummary" runat="server">
-        <ContentTemplate>
-            <div class="results-container" style="padding-left: 1em; padding-right: 1em">
-                <asp:GridView ID="gvRecurringOrders" runat="server" AutoGenerateColumns="False" CssClass="results-table recurring-orders-groups-table"
-                    AllowSorting="True" AllowPaging="True" PageSize="20" ShowHeader="False"
-                    OnPageIndexChanging="gvRecurringOrders_PageIndexChanging"
-                    OnRowCommand="gvRecurringOrders_RowCommand"
-                    OnSorting="gvRecurringOrders_Sorting"
-                    OnRowDataBound="gvRecurringOrders_RowDataBound">
-                    <EmptyDataTemplate>
-                        <div class="simpleLightBrownForm">
-                            <h2>No recurring orders found</h2>
-                            Either change the filter or add a recurring order.
-                        </div>
-                    </EmptyDataTemplate>
-                    <Columns>
-                        <asp:TemplateField HeaderText="Recurring Orders" SortExpression="CompanyName"
-                            HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1 wrap">
-                            <ItemTemplate>
-                                <div class="recurring-order-group">
-                                    <div class="recurring-order-group-title">
-                                        <div class="recurring-order-group-title-main">
-                                            <asp:HyperLink ID="hlEditRecurringOrder" runat="server"
-                                                CssClass="recurring-order-edit-link"
-                                                ImageUrl="~/images/imgButtons/EditItem.gif"
-                                                ToolTip="Edit Recurring Order" />
-                                            <asp:HyperLink ID="hlContactDetails" runat="server"
-                                                CssClass="recurring-order-company-link"
-                                                Visible="false" />
-                                            <asp:Label ID="lblCompanyName" runat="server"
-                                                CssClass="recurring-order-company-label"
-                                                Visible="false" />
-                                        </div>
-                                        <div class="recurring-order-group-title-meta">
-                                            <asp:Label ID="lblRecurringOrderStatus" runat="server" CssClass="recurring-order-status-badge"
-                                                Text="" />
-                                            <asp:ImageButton ID="btnDeleteRecurringOrder" runat="server"
-                                                CssClass="recurring-order-delete-link"
-                                                ImageUrl="~/images/imgButtons/DelItem.gif"
-                                                AlternateText="Delete"
-                                                ToolTip="Delete this complete recurring order"
-                                                CommandName="DeleteRecurringOrder"
-                                                CommandArgument='<%# Eval("RecurringOrderID") %>'
-                                                CausesValidation="false"
-                                                OnClientClick="return confirm('Are you sure you want to delete this complete recurring order?');" />
-                                            <asp:Label ID="lblRecurringOrderCount" runat="server" CssClass="recurring-order-group-count"
-                                                Text="" />
-                                        </div>
-                                    </div>
-                                    <asp:GridView ID="gvRecurringOrdersForContact" runat="server" AutoGenerateColumns="False"
-                                        CssClass="results-table recurring-orders-detail-table no-sticky-last" GridLines="None"
-                                        ShowHeader="True">
-                                        <Columns>
-                                            <asp:BoundField DataField="ItemDesc" HeaderText="Item"
-                                                HeaderStyle-CssClass="wrap col-priority-1" ItemStyle-CssClass="wrap col-priority-1" />
-                                            <asp:BoundField DataField="QtyRequired" HeaderText="Qty" DataFormatString="{0:0.##}"
-                                                HeaderStyle-CssClass="col-tight col-priority-1" ItemStyle-CssClass="col-tight col-priority-1" />
-                                            <asp:BoundField DataField="ItemPackagingDesc" HeaderText="Packaging"
-                                                HeaderStyle-CssClass="wrap col-priority-3" ItemStyle-CssClass="wrap col-priority-3" />
-                                            <asp:BoundField DataField="Value" HeaderText="Value"
-                                                HeaderStyle-CssClass="col-tight col-priority-2" ItemStyle-CssClass="col-tight col-priority-2" />
-                                            <asp:BoundField DataField="RecurringTypeDesc" HeaderText="Recurrance"
-                                                HeaderStyle-CssClass="col-tight col-priority-2" ItemStyle-CssClass="col-tight col-priority-2" />
-                                            <asp:BoundField DataField="DateLastDone" HeaderText="Last Date" DataFormatString="{0:yyyy-MM-dd}"
-                                                HeaderStyle-CssClass="col-tight col-priority-4" ItemStyle-CssClass="col-tight col-priority-4" />
-                                            <asp:BoundField DataField="NextDateRequired" HeaderText="Next Date" DataFormatString="{0:yyyy-MM-dd}"
-                                                HeaderStyle-CssClass="col-tight col-priority-1" ItemStyle-CssClass="col-tight col-priority-1 text-right" />
-                                        </Columns>
-                                    </asp:GridView>
-                                </div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
-                </asp:GridView>
-            </div>
-        </ContentTemplate>
-        <Triggers>
-            <asp:AsyncPostBackTrigger ControlID="btnGo" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="btnCalcNextRequired" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="ddlEnabledFilter" EventName="SelectedIndexChanged" />
-        </Triggers>
-    </asp:UpdatePanel>
-
-    <br />
-    <asp:UpdatePanel runat="server" UpdateMode="Always">
-        <ContentTemplate>
-            <asp:Label ID="lblFilter" Text="" runat="server" />
-        </ContentTemplate>
-    </asp:UpdatePanel>
-
 </asp:Content>

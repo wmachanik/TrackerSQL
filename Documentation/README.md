@@ -5,6 +5,7 @@
 **Before making ANY changes, you MUST read:**
 
 1. **[HARD_PROJECT_RULES.md](HARD_PROJECT_RULES.md)** (MANDATORY)
+1b. **[WEBFORMS_UI_STANDARDS.md](WEBFORMS_UI_STANDARDS.md)** — status at bottom; UpdatePanel default; retrofit when editing
 2. **[CONTRIBUTING.md](../CONTRIBUTING.md)** - City → Area Refactoring section (2026-05-11)
 
 **These are NON-NEGOTIABLE rules:**

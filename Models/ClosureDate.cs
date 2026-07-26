@@ -7,7 +7,7 @@ namespace TrackerSQL.Models
         public int ClosureDateID { get; set; }
         public DateTime DateClosed { get; set; }
         public DateTime? DateReopen { get; set; }
-        public DateTime? NextPreperationDate { get; set; }
+        public DateTime? NextPreparationDate { get; set; }
         public string Comments { get; set; }
     }
 }

@@ -239,5 +239,20 @@ namespace TrackerSQL.Classes
             // Fallback default if setting missing or invalid
             public const int DefaultImminentWindowDays = 4;
         }
+
+        /// <summary>App-relative page paths and query keys for NavigateUrl construction.</summary>
+        public static class PageUrls
+        {
+            public const string RecurringOrders = "~/Pages/RecurringOrders.aspx";
+            public const string RecurringOrderDetails = "~/Pages/RecurringOrderDetails.aspx";
+            public const string RecurringOrderIdQueryKey = "RecurringOrderID";
+            /// <summary>Legacy query key still accepted by RecurringOrderDetails.</summary>
+            public const string LegacyRecurringOrderIdQueryKey = "ID";
+
+            public static string RecurringOrderDetailsUrl(int recurringOrderId)
+            {
+                return RecurringOrderDetails + "?" + RecurringOrderIdQueryKey + "=" + recurringOrderId;
+            }
+        }
     }
 }

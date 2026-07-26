@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Web;
 
 namespace TrackerSQL.Classes
 {
@@ -28,6 +29,12 @@ namespace TrackerSQL.Classes
         public bool IsTestMode = ConfigHelper.GetBool("EmailTestMode", false);
 
         public string TestRecipientAddress = ConfigHelper.GetString("EmailTestRecipient", "warren@machanik.com");
+
+        /// <summary>
+        /// When false, SysCCEmailAddress (e.g. orders@) is not added as CC/BCC.
+        /// Default true to preserve existing behaviour.
+        /// </summary>
+        public bool IncludeConfiguredCc { get; set; } = true;
 
         // batch message stuff
         private readonly List<MimeMessage> batchMessages = new List<MimeMessage>();
@@ -207,7 +214,7 @@ namespace TrackerSQL.Classes
                     message.To.Add(MailboxAddress.Parse(actualTo));
 
                 // Ensure configured CC addresses are present on single-message sends as well
-                if (emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
+                if (IncludeConfiguredCc && emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
                 {
                     var ccList = emailConfig.CcAddress.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.Trim())
@@ -400,7 +407,7 @@ namespace TrackerSQL.Classes
                 msg.To.Add(MailboxAddress.Parse(actualTo));
 
                 // Add configured CC addresses (support multiple addresses separated by ; or ,)
-                if (emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
+                if (IncludeConfiguredCc && emailConfig != null && !string.IsNullOrWhiteSpace(emailConfig.CcAddress))
                 {
                     var ccList = emailConfig.CcAddress.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.Trim())
@@ -456,7 +463,8 @@ namespace TrackerSQL.Classes
 
                 msg.Body = builder.ToMessageBody();
                 batchMessages.Add(msg);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📦 Added message to batch: {subject} → {to} (CC: {(emailConfig?.CcAddress ?? "(none)")})");
+                string ccLog = IncludeConfiguredCc ? (emailConfig?.CcAddress ?? "(none)") : "(skipped)";
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📦 Added message to batch: {subject} → {to} (CC: {ccLog})");
 
                 return true;
             }
@@ -548,11 +556,11 @@ namespace TrackerSQL.Classes
         public string GetFormattedResultMessage(bool isSuccess)
         {
             if (string.IsNullOrWhiteSpace(myResults.sResult))
-                return "❓ No result available.";
+                return DiagnosticsIconHelper.Warning + " No result available.";
 
             return isSuccess
-                ? "✅ Email sent successfully."
-                : $"❌ Failed:<br />{myResults.sResult.Replace("\n", "<br />")}";
+                ? DiagnosticsIconHelper.Success + " Email sent successfully."
+                : DiagnosticsIconHelper.Error + " Failed:<br />" + HttpUtility.HtmlEncode(myResults.sResult).Replace("\n", "<br />");
         }
         /// <summary>
         /// Runs diagnostics against the SMTP server using current email configuration.
@@ -565,7 +573,7 @@ namespace TrackerSQL.Classes
 
             if (emailConfig == null || !emailConfig.IsInitialized)
             {
-                diagnostics.AppendLine("❌ EmailSettings is not initialized.");
+                diagnostics.AppendLine("[FAIL] EmailSettings is not initialized.");
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, diagnostics.ToString());
                 return diagnostics.ToString();
             }
@@ -575,41 +583,96 @@ namespace TrackerSQL.Classes
                 using (var client = new SmtpClient())
                 {
                     client.Timeout = emailConfig.Timeout;
+                    client.CheckCertificateRevocation = false;
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                    SecureSocketOptions option;
-                    switch (emailConfig.SocketOption)
-                    {
-                        case "None": option = SecureSocketOptions.None; break;
-                        case "SslOnConnect": option = SecureSocketOptions.SslOnConnect; break;
-                        case "StartTls": option = SecureSocketOptions.StartTls; break;
-                        case "StartTlsWhenAvailable": option = SecureSocketOptions.StartTlsWhenAvailable; break;
-                        default: option = SecureSocketOptions.Auto; break;
-                    }
+                    SecureSocketOptions option = GetSecureSocketOptions(emailConfig.SocketOption);
 
                     client.Connect(emailConfig.SmtpHost, emailConfig.SmtpPort, option);
-                    diagnostics.AppendLine("✅ Connected to SMTP server.");
+                    diagnostics.AppendLine("[OK] Connected to SMTP server.");
                     diagnostics.AppendLine("Server Capabilities:");
                     diagnostics.AppendLine(client.Capabilities.ToString());
 
-                    diagnostics.AppendLine("\nSupported Authentication Mechanisms:");
+                    diagnostics.AppendLine("");
+                    diagnostics.AppendLine("Supported Authentication Mechanisms:");
                     diagnostics.AppendLine(string.Join(", ", client.AuthenticationMechanisms));
 
                     client.Disconnect(true);
                 }
 
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, "📊 Diagnostics complete:\n" + diagnostics.ToString());
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, "Diagnostics complete:\n" + diagnostics.ToString());
             }
             catch (Exception ex)
             {
-                diagnostics.AppendLine("❌ Error during diagnostics:");
+                diagnostics.AppendLine("[FAIL] Error during diagnostics:");
                 diagnostics.AppendLine(ex.Message);
                 if (ex.InnerException != null)
                     diagnostics.AppendLine("Inner: " + ex.InnerException.Message);
 
-                AppLogger.WriteLog(SystemConstants.LogTypes.Email, "⚠️ Diagnostics failed:\n" + diagnostics.ToString());
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, "Diagnostics failed:\n" + diagnostics.ToString());
             }
 
             return diagnostics.ToString();
+        }
+
+        /// <summary>
+        /// Connects and authenticates without sending a message — used by SMTP combo tests.
+        /// </summary>
+        public bool TryConnectAndAuthenticate(out string errorMessage)
+        {
+            errorMessage = null;
+
+            if (emailConfig == null || !emailConfig.IsInitialized)
+            {
+                errorMessage = "EmailSettings not initialized.";
+                return false;
+            }
+
+            try
+            {
+                using (var client = new SmtpClient())
+                {
+                    client.Timeout = emailConfig.Timeout;
+                    client.CheckCertificateRevocation = false;
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
+                    SecureSocketOptions option = GetSecureSocketOptions(emailConfig.SocketOption);
+                    client.Connect(emailConfig.SmtpHost, emailConfig.SmtpPort, option);
+
+                    if (!string.IsNullOrWhiteSpace(emailConfig.SmtpUser))
+                    {
+                        if (client.AuthenticationMechanisms.Count == 0)
+                        {
+                            errorMessage = "Server did not offer AUTH on this connection (Office 365 port 587 usually needs StartTls, not None).";
+                            return false;
+                        }
+
+                        client.Authenticate(emailConfig.SmtpUser, emailConfig.SmtpPass);
+                    }
+
+                    client.Disconnect(true);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.InnerException?.Message ?? ex.Message;
+                LastErrorSummary = errorMessage;
+                return false;
+            }
+        }
+
+        private static SecureSocketOptions GetSecureSocketOptions(string socketOption)
+        {
+            switch (socketOption)
+            {
+                case "None": return SecureSocketOptions.None;
+                case "SslOnConnect": return SecureSocketOptions.SslOnConnect;
+                case "StartTls": return SecureSocketOptions.StartTls;
+                case "StartTlsWhenAvailable": return SecureSocketOptions.StartTlsWhenAvailable;
+                default: return SecureSocketOptions.Auto;
+            }
         }
         /// <summary>
         /// Appends a formatted string with one or more parameters to the HTML body, followed by a line break.

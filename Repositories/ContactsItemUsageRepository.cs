@@ -68,14 +68,61 @@ namespace TrackerSQL.Repositories
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = entity.ContactID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@DeliveryDate", DataValue = entity.DeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
-                new DBParameter { ParamName = "@ItemProvidedID", DataValue = entity.ItemProvidedID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemProvidedID", DataValue = FkOrDbNull(entity.ItemProvidedID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@QtyProvided", DataValue = entity.QtyProvided ?? (object)DBNull.Value, DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@ItemPrepTypeID", DataValue = entity.ItemPrepTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@ItemPackagingID", DataValue = entity.ItemPackagingID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPrepTypeID", DataValue = FkOrDbNull(entity.ItemPrepTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPackagingID", DataValue = FkOrDbNull(entity.ItemPackagingID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@Notes", DataValue = entity.Notes ?? (object)DBNull.Value, DataDbType = DbType.String }
             };
 
             return ExecuteScalar<int>(sql, parameters);
+        }
+
+        public override int Update(ContactsItemUsage entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entity.ContactItemUsageLineNo <= 0) return 0;
+
+            const string sql = @"
+                UPDATE ContactsItemUsageTbl SET
+                    DeliveryDate = @DeliveryDate,
+                    ItemProvidedID = @ItemProvidedID,
+                    QtyProvided = @QtyProvided,
+                    ItemPrepTypeID = @ItemPrepTypeID,
+                    ItemPackagingID = @ItemPackagingID,
+                    Notes = @Notes
+                WHERE ContactItemUsageLineNo = @ContactItemUsageLineNo
+                  AND ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@DeliveryDate", DataValue = entity.DeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@ItemProvidedID", DataValue = FkOrDbNull(entity.ItemProvidedID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@QtyProvided", DataValue = entity.QtyProvided ?? (object)DBNull.Value, DataDbType = DbType.Double },
+                new DBParameter { ParamName = "@ItemPrepTypeID", DataValue = FkOrDbNull(entity.ItemPrepTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPackagingID", DataValue = FkOrDbNull(entity.ItemPackagingID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@Notes", DataValue = entity.Notes ?? (object)DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactItemUsageLineNo", DataValue = entity.ContactItemUsageLineNo, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ContactID", DataValue = entity.ContactID, DataDbType = DbType.Int32 }
+            };
+
+            return ExecNonQuery(sql, parameters);
+        }
+
+        public bool DeleteUsageLine(int contactItemUsageLineNo, int contactId)
+        {
+            const string sql = @"
+                DELETE FROM ContactsItemUsageTbl
+                WHERE ContactItemUsageLineNo = @ContactItemUsageLineNo
+                  AND ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactItemUsageLineNo", DataValue = contactItemUsageLineNo, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            return ExecNonQuery(sql, parameters) > 0;
         }
 
         public List<ContactsItemUsage> GetLastItemsUsed(int contactId, int itemServiceTypeId)

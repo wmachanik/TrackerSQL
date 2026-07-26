@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Classes;
@@ -10,7 +10,7 @@ namespace TrackerSQL.Repositories
     {
         private const string SelectColumns = @"
             UsedItemGroupID, ContactID,
-            GroupReferenceItemID AS GroupItemServiceTypeID,
+            GroupItemServiceTypeID,
             LastItemID, LastItemSortPos, LastItemDateChanged, Notes";
 
         protected override string TableName => "UsedItemGroupsTbl";
@@ -22,14 +22,14 @@ namespace TrackerSQL.Repositories
         {
             const string sql = @"
                 SELECT UsedItemGroupID, LastItemID, LastItemSortPos, LastItemDateChanged, Notes,
-                       GroupReferenceItemID AS GroupItemServiceTypeID, ContactID
+                       GroupItemServiceTypeID, ContactID
                 FROM UsedItemGroupsTbl
-                WHERE ContactID = @ContactID AND GroupReferenceItemID = @GroupReferenceItemID";
+                WHERE ContactID = @ContactID AND GroupItemServiceTypeID = @GroupItemServiceTypeID";
 
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 },
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
             };
 
             using (var rdr = ExecReader(sql, parameters))
@@ -54,7 +54,7 @@ namespace TrackerSQL.Repositories
         public UsedItemGroup GetLastUsedItemId(long contactId, int itemId, DateTime deliveryDate)
         {
             const string sql = @"
-                SELECT UsedItemGroupID, GroupReferenceItemID AS GroupItemServiceTypeID,
+                SELECT UsedItemGroupID, GroupItemServiceTypeID,
                        LastItemSortPos, Notes, ContactID, LastItemID, LastItemDateChanged
                 FROM UsedItemGroupsTbl
                 WHERE ContactID = @ContactID AND LastItemID = @LastItemID AND LastItemDateChanged = @LastItemDateChanged";
@@ -163,9 +163,9 @@ namespace TrackerSQL.Repositories
 
             const string sql = @"
                 INSERT INTO UsedItemGroupsTbl
-                (ContactID, GroupReferenceItemID, LastItemID, LastItemSortPos, LastItemDateChanged, Notes)
+                (ContactID, GroupItemServiceTypeID, LastItemID, LastItemSortPos, LastItemDateChanged, Notes)
                 VALUES
-                (@ContactID, @GroupReferenceItemID, @LastItemID, @LastItemSortPos, @LastItemDateChanged, @Notes);
+                (@ContactID, @GroupItemServiceTypeID, @LastItemID, @LastItemSortPos, @LastItemDateChanged, @Notes);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             return ExecuteScalar<int>(sql, BuildParameters(entity));
@@ -178,7 +178,7 @@ namespace TrackerSQL.Repositories
             const string sql = @"
                 UPDATE UsedItemGroupsTbl SET
                     ContactID = @ContactID,
-                    GroupReferenceItemID = @GroupReferenceItemID,
+                    GroupItemServiceTypeID = @GroupItemServiceTypeID,
                     LastItemID = @LastItemID,
                     LastItemSortPos = @LastItemSortPos,
                     LastItemDateChanged = @LastItemDateChanged,
@@ -193,7 +193,7 @@ namespace TrackerSQL.Repositories
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = entity.ContactID, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = entity.GroupItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = entity.GroupItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@LastItemID", DataValue = entity.LastItemID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@LastItemSortPos", DataValue = entity.LastItemSortPos ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@LastItemDateChanged", DataValue = entity.LastItemDateChanged ?? (object)DBNull.Value, DataDbType = DbType.Date },

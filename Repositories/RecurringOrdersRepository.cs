@@ -12,7 +12,7 @@ namespace TrackerSQL.Repositories
         public List<RecurringTypeLookup> GetRecurringTypes()
         {
             var list = new List<RecurringTypeLookup>();
-            const string sql = "SELECT RecurringTypeID, RecurringTypeDesc FROM RecurranceTypesTbl ORDER BY RecurringTypeDesc";
+            const string sql = "SELECT RecurringTypeID, RecurringTypeDesc FROM RecurringTypesTbl ORDER BY RecurringTypeDesc";
 
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql))
@@ -60,18 +60,25 @@ namespace TrackerSQL.Repositories
                 new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
             };
 
+            RecurringOrder recurringOrder = null;
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql, parameters))
             {
                 if (rdr != null && rdr.Read())
-                {
-                    var recurringOrder = Map(rdr);
-                    recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
-                    return recurringOrder;
-                }
+                    recurringOrder = Map(rdr);
             }
 
-            return null;
+            // Load items after the header reader is closed — nested readers on some setups
+            // return no rows while the first reader is still open.
+            if (recurringOrder != null)
+            {
+                recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "RecurringOrdersRepository.GetById: RecurringOrderID=" + recurringOrder.RecurringOrderID
+                        + " items=" + (recurringOrder.Items == null ? 0 : recurringOrder.Items.Count));
+            }
+
+            return recurringOrder;
         }
 
         public int Insert(RecurringOrder recurringOrder)
@@ -109,8 +116,19 @@ namespace TrackerSQL.Repositories
 
         public void Delete(int recurringOrderId)
         {
+            if (recurringOrderId <= 0)
+                return;
+
+            var itemIds = GetItemsForRecurring(recurringOrderId)
+                .Where(item => item != null && item.RecurringOrderItemID > 0)
+                .Select(item => item.RecurringOrderItemID)
+                .ToList();
+
             using (var db = new TrackerSQLDb())
             {
+                // Same FK cleanup as ReplaceItems — TempCoffeecheckupItemsTbl may reference lines.
+                ClearTempCoffeeCheckupRecurringItemReferences(db, itemIds);
+
                 var parameters = new List<DBParameter>
                 {
                     new DBParameter { DataValue = recurringOrderId, DataDbType = DbType.Int32, ParamName = "@RecurringOrderID" }
@@ -130,12 +148,11 @@ namespace TrackerSQL.Repositories
             using (var rdr = db.ExecuteReader(sql))
             {
                 while (rdr != null && rdr.Read())
-                {
-                    var recurringOrder = Map(rdr);
-                    recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
-                    list.Add(recurringOrder);
-                }
+                    list.Add(Map(rdr));
             }
+
+            foreach (var recurringOrder in list)
+                recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
 
             return list;
         }
@@ -152,7 +169,7 @@ namespace TrackerSQL.Repositories
                     RecurringOrdersTbl.DeliveryByID,
                     COALESCE(NULLIF(PeopleTbl.Abbreviation, ''), PeopleTbl.Person) AS DeliveryByDisplay,
                     RecurringOrderItemsTbl.RecurringTypeID,
-                    RecurranceTypesTbl.RecurringTypeDesc,
+                    RecurringTypesTbl.RecurringTypeDesc,
                     RecurringOrderItemsTbl.Value,
                     RecurringOrderItemsTbl.DateLastDone,
                     RecurringOrderItemsTbl.NextDateRequired,
@@ -167,7 +184,7 @@ namespace TrackerSQL.Repositories
                 FROM RecurringOrderItemsTbl
                 INNER JOIN RecurringOrdersTbl ON RecurringOrderItemsTbl.RecurringOrderID = RecurringOrdersTbl.RecurringOrderID
                 LEFT OUTER JOIN ContactsTbl ON RecurringOrdersTbl.ContactID = ContactsTbl.ContactID
-                LEFT OUTER JOIN RecurranceTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurranceTypesTbl.RecurringTypeID
+                LEFT OUTER JOIN RecurringTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurringTypesTbl.RecurringTypeID
                 LEFT OUTER JOIN ItemsTbl ON RecurringOrderItemsTbl.ItemRequiredID = ItemsTbl.ItemID
                 LEFT OUTER JOIN ItemPackagingsTbl ON RecurringOrderItemsTbl.ItemPackagingID = ItemPackagingsTbl.ItemPackagingID
                 LEFT OUTER JOIN PeopleTbl ON RecurringOrdersTbl.DeliveryByID = PeopleTbl.PersonID";
@@ -226,7 +243,7 @@ namespace TrackerSQL.Repositories
                     RecurringOrdersTbl.DeliveryByID,
                     COALESCE(NULLIF(PeopleTbl.Abbreviation, ''), PeopleTbl.Person) AS DeliveryByDisplay,
                     RecurringOrderItemsTbl.RecurringTypeID,
-                    RecurranceTypesTbl.RecurringTypeDesc,
+                    RecurringTypesTbl.RecurringTypeDesc,
                     RecurringOrderItemsTbl.Value,
                     RecurringOrderItemsTbl.DateLastDone,
                     RecurringOrderItemsTbl.NextDateRequired,
@@ -241,7 +258,7 @@ namespace TrackerSQL.Repositories
                 FROM RecurringOrderItemsTbl
                 INNER JOIN RecurringOrdersTbl ON RecurringOrderItemsTbl.RecurringOrderID = RecurringOrdersTbl.RecurringOrderID
                 LEFT OUTER JOIN ContactsTbl ON RecurringOrdersTbl.ContactID = ContactsTbl.ContactID
-                LEFT OUTER JOIN RecurranceTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurranceTypesTbl.RecurringTypeID
+                LEFT OUTER JOIN RecurringTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurringTypesTbl.RecurringTypeID
                 LEFT OUTER JOIN ItemsTbl ON RecurringOrderItemsTbl.ItemRequiredID = ItemsTbl.ItemID
                 LEFT OUTER JOIN ItemPackagingsTbl ON RecurringOrderItemsTbl.ItemPackagingID = ItemPackagingsTbl.ItemPackagingID
                 LEFT OUTER JOIN PeopleTbl ON RecurringOrdersTbl.DeliveryByID = PeopleTbl.PersonID
@@ -343,12 +360,25 @@ namespace TrackerSQL.Repositories
                     dateLastDone = orderDate.Date;
                 }
 
+                DateTime? until = NormalizeOptionalDate(summary.RequireUntilDate);
+
+                // Compute next without until-clamp so we can detect end-of-series
                 DateTime? nextDateRequired = CalculateNextDateRequired(
                     summary.ContactID,
                     summary.RecurringTypeID,
                     summary.Value,
                     dateLastDone,
-                    summary.RequireUntilDate);
+                    null);
+
+                bool disableAfterUntil = until.HasValue
+                    && nextDateRequired.HasValue
+                    && nextDateRequired.Value.Date > until.Value.Date;
+
+                if (disableAfterUntil)
+                {
+                    // Keep NextDateRequired at the until date; disable the header so it stops firing
+                    nextDateRequired = until;
+                }
 
                 const string sqlDone = @"
                     UPDATE RecurringOrderItemsTbl
@@ -376,10 +406,22 @@ namespace TrackerSQL.Repositories
                     db.ExecuteNonQuery(orderDone ? sqlDone : sqlNextOnly, parameters);
                 }
 
-                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    $"RecurringOrderItemID={recurringOrderItemId} Done={orderDone} Last={dateLastDone:yyyy-MM-dd} Next={nextDateRequired:yyyy-MM-dd}");
+                if (disableAfterUntil)
+                {
+                    DisableRecurringOrder(summary.RecurringOrderID);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                        $"RecurringOrderID={summary.RecurringOrderID} disabled — next cycle past until {until:yyyy-MM-dd} ({summary.CompanyName})");
+                }
 
-                return string.Empty;
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    $"RecurringOrderItemID={recurringOrderItemId} Done={orderDone} Last={dateLastDone:yyyy-MM-dd} Next={nextDateRequired:yyyy-MM-dd} Disabled={disableAfterUntil}");
+
+                string disabledNote = disableAfterUntil ? "; header disabled (past until)" : string.Empty;
+                return string.Format(
+                    "Updated Last={0}; Next={1}{2}",
+                    dateLastDone.HasValue ? dateLastDone.Value.ToString("yyyy-MM-dd") : "(none)",
+                    nextDateRequired.HasValue ? nextDateRequired.Value.ToString("yyyy-MM-dd") : "(none)",
+                    disabledNote);
             }
             catch (Exception ex)
             {
@@ -387,6 +429,158 @@ namespace TrackerSQL.Repositories
                     $"RecurringOrdersRepository: Error RecurringOrderItemID={recurringOrderItemId}: {ex.Message}");
                 return $"Error: {ex.Message}";
             }
+        }
+
+        /// <summary>
+        /// All enabled recurring order lines, with optional max matching delivery from ContactsItemUsageTbl.
+        /// Matching mirrors Order Done: exact item, coffee↔coffee, or group membership / coffee-in-group.
+        /// </summary>
+        public List<RecurringLastDateFromUsage> GetEnabledItemsWithUsageForLastDateSync()
+        {
+            int coffee = SystemConstants.ServiceTypeConstants.Coffee;
+            int groupItem = SystemConstants.ServiceTypeConstants.GroupItem;
+
+            string sql = @"
+                SELECT
+                    ROI.RecurringOrderItemID,
+                    ROI.RecurringOrderID,
+                    RO.ContactID,
+                    C.CompanyName,
+                    I.ItemDesc,
+                    ROI.DateLastDone AS PreviousDateLastDone,
+                    MAX(CIU.DeliveryDate) AS LastUsageDate
+                FROM RecurringOrderItemsTbl AS ROI
+                INNER JOIN RecurringOrdersTbl AS RO
+                    ON RO.RecurringOrderID = ROI.RecurringOrderID
+                INNER JOIN ContactsTbl AS C
+                    ON C.ContactID = RO.ContactID
+                LEFT JOIN ItemsTbl AS I
+                    ON I.ItemID = ROI.ItemRequiredID
+                LEFT JOIN ContactsItemUsageTbl AS CIU
+                    ON CIU.ContactID = RO.ContactID
+                   AND CIU.DeliveryDate IS NOT NULL
+                   AND ROI.ItemRequiredID IS NOT NULL
+                   AND ROI.ItemRequiredID > 0
+                   AND (
+                        CIU.ItemProvidedID = ROI.ItemRequiredID
+                        OR (
+                            I.ItemServiceTypeID = " + coffee + @"
+                            AND EXISTS (
+                                SELECT 1
+                                FROM ItemsTbl AS Provided
+                                WHERE Provided.ItemID = CIU.ItemProvidedID
+                                  AND Provided.ItemServiceTypeID = " + coffee + @")
+                        )
+                        OR (
+                            I.ItemServiceTypeID = " + groupItem + @"
+                            AND (
+                                EXISTS (
+                                    SELECT 1
+                                    FROM ItemGroupsTbl AS G
+                                    WHERE G.GroupItemServiceTypeID = ROI.ItemRequiredID
+                                      AND G.ItemID = CIU.ItemProvidedID)
+                                OR (
+                                    EXISTS (
+                                        SELECT 1
+                                        FROM ItemsTbl AS Provided
+                                        WHERE Provided.ItemID = CIU.ItemProvidedID
+                                          AND Provided.ItemServiceTypeID = " + coffee + @")
+                                    AND EXISTS (
+                                        SELECT 1
+                                        FROM ItemGroupsTbl AS G
+                                        INNER JOIN ItemsTbl AS GI ON GI.ItemID = G.ItemID
+                                        WHERE G.GroupItemServiceTypeID = ROI.ItemRequiredID
+                                          AND GI.ItemServiceTypeID = " + coffee + @")
+                                )
+                            )
+                        )
+                   )
+                WHERE ISNULL(RO.Enabled, 0) = 1
+                GROUP BY
+                    ROI.RecurringOrderItemID,
+                    ROI.RecurringOrderID,
+                    RO.ContactID,
+                    C.CompanyName,
+                    I.ItemDesc,
+                    ROI.DateLastDone
+                ORDER BY C.CompanyName, I.ItemDesc";
+
+            var list = new List<RecurringLastDateFromUsage>();
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql))
+            {
+                while (rdr != null && rdr.Read())
+                {
+                    DateTime? lastUsage = NormalizeOptionalDate(GetValue<DateTime?>(rdr, "LastUsageDate"));
+                    list.Add(new RecurringLastDateFromUsage
+                    {
+                        RecurringOrderItemID = GetValue<int>(rdr, "RecurringOrderItemID"),
+                        RecurringOrderID = GetValue<int>(rdr, "RecurringOrderID"),
+                        ContactID = GetValue<int>(rdr, "ContactID"),
+                        CompanyName = GetValue<string>(rdr, "CompanyName") ?? string.Empty,
+                        ItemDesc = GetValue<string>(rdr, "ItemDesc") ?? string.Empty,
+                        PreviousDateLastDone = NormalizeOptionalDate(GetValue<DateTime?>(rdr, "PreviousDateLastDone")),
+                        LastUsageDate = lastUsage
+                    });
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// System Tools: for every enabled recurring line, set DateLastDone from matching item usage
+        /// when available (never regress), then recalculate NextDateRequired via SetRecurringOrderItemDates.
+        /// Lines with no usable usage still refresh Next from the existing DateLastDone.
+        /// </summary>
+        public List<RecurringLastDateFromUsage> SetLastRecurringOrderDate()
+        {
+            var candidates = GetEnabledItemsWithUsageForLastDateSync();
+            foreach (var candidate in candidates)
+            {
+                DateTime? usage = candidate.LastUsageDate.HasValue
+                    ? candidate.LastUsageDate.Value.Date
+                    : (DateTime?)null;
+                DateTime? previous = candidate.PreviousDateLastDone.HasValue
+                    ? candidate.PreviousDateLastDone.Value.Date
+                    : (DateTime?)null;
+
+                if (usage.HasValue && (!previous.HasValue || usage.Value >= previous.Value))
+                {
+                    candidate.AppliedLastDate = usage;
+                    candidate.UpdateResult = SetRecurringOrderItemDates(
+                        usage.Value,
+                        candidate.RecurringOrderItemID,
+                        orderDone: true);
+                    if (previous.HasValue && usage.Value == previous.Value)
+                    {
+                        candidate.UpdateResult += " (usage matched existing last; Next refreshed)";
+                    }
+                }
+                else if (previous.HasValue)
+                {
+                    candidate.AppliedLastDate = previous;
+                    candidate.UpdateResult = SetRecurringOrderItemDates(
+                        previous.Value,
+                        candidate.RecurringOrderItemID,
+                        orderDone: true);
+                    if (!usage.HasValue)
+                    {
+                        candidate.UpdateResult += " (no matching usage; Next refreshed)";
+                    }
+                    else
+                    {
+                        candidate.UpdateResult += " (usage older than DateLastDone; Next refreshed)";
+                    }
+                }
+                else
+                {
+                    candidate.AppliedLastDate = null;
+                    candidate.UpdateResult = "Skipped — no DateLastDone and no matching usage";
+                }
+            }
+
+            return candidates;
         }
 
         public DateCalculator.PrepDeliveryPair CalculatePrepDeliveryDates(RecurringOrderSummary summary)
@@ -670,11 +864,11 @@ namespace TrackerSQL.Repositories
                     RecurringOrderItemsTbl.NextDateRequired,
                     RecurringOrderItemsTbl.RequireUntilDate,
                     RecurringOrderItemsTbl.ItemPackagingID,
-                    RecurranceTypesTbl.RecurringTypeDesc,
+                    RecurringTypesTbl.RecurringTypeDesc,
                     ItemsTbl.ItemDesc,
                     ItemPackagingsTbl.ItemPrepDescription AS ItemPackagingDesc
                 FROM RecurringOrderItemsTbl
-                LEFT OUTER JOIN RecurranceTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurranceTypesTbl.RecurringTypeID
+                LEFT OUTER JOIN RecurringTypesTbl ON RecurringOrderItemsTbl.RecurringTypeID = RecurringTypesTbl.RecurringTypeID
                 LEFT OUTER JOIN ItemsTbl ON RecurringOrderItemsTbl.ItemRequiredID = ItemsTbl.ItemID
                 LEFT OUTER JOIN ItemPackagingsTbl ON RecurringOrderItemsTbl.ItemPackagingID = ItemPackagingsTbl.ItemPackagingID
                 WHERE RecurringOrderItemsTbl.RecurringOrderID = @RecurringOrderID
@@ -912,9 +1106,9 @@ namespace TrackerSQL.Repositories
                 RecurringTypeID = GetValue<int?>(reader, "RecurringTypeID"),
                 RecurringTypeDesc = GetValue<string>(reader, "RecurringTypeDesc"),
                 Value = GetValue<int?>(reader, "Value"),
-                DateLastDone = GetValue<DateTime?>(reader, "DateLastDone"),
-                NextDateRequired = GetValue<DateTime?>(reader, "NextDateRequired"),
-                RequireUntilDate = GetValue<DateTime?>(reader, "RequireUntilDate"),
+                DateLastDone = NormalizeOptionalDate(GetValue<DateTime?>(reader, "DateLastDone")),
+                NextDateRequired = NormalizeOptionalDate(GetValue<DateTime?>(reader, "NextDateRequired")),
+                RequireUntilDate = NormalizeOptionalDate(GetValue<DateTime?>(reader, "RequireUntilDate")),
                 ItemRequiredID = GetValue<int?>(reader, "ItemRequiredID"),
                 ItemDesc = GetValue<string>(reader, "ItemDesc"),
                 QtyRequired = GetValue<double?>(reader, "QtyRequired"),
@@ -973,9 +1167,45 @@ namespace TrackerSQL.Repositories
 
         private static DateTime? NormalizeOptionalDate(DateTime? value)
         {
-            return value.HasValue && value.Value > SystemConstants.DatabaseConstants.SystemMinDate
-                ? value.Value.Date
-                : (DateTime?)null;
+            if (!value.HasValue)
+                return null;
+
+            DateTime date = value.Value.Date;
+            // SystemMinDate (1980-01-01) and far-future sentinels mean "forever" / no until date
+            if (date <= SystemConstants.DatabaseConstants.SystemMinDate || date.Year >= 2099)
+                return null;
+
+            return date;
+        }
+
+        /// <summary>
+        /// True when this occurrence is the last one before RequireUntilDate
+        /// (next cycle after completing on NextDateRequired would fall past until).
+        /// </summary>
+        public bool IsFinalOccurrenceBeforeUntil(RecurringOrderSummary summary)
+        {
+            if (summary == null)
+                return false;
+
+            DateTime? until = NormalizeOptionalDate(summary.RequireUntilDate);
+            if (!until.HasValue || !summary.NextDateRequired.HasValue)
+                return false;
+
+            DateTime next = summary.NextDateRequired.Value.Date;
+            if (next > until.Value.Date)
+                return false;
+            if (next == until.Value.Date)
+                return true;
+
+            // Peek following date with no until clamp (pass null) so we can detect expiry
+            DateTime? following = CalculateNextDateRequired(
+                summary.ContactID,
+                summary.RecurringTypeID,
+                summary.Value,
+                next,
+                null);
+
+            return following.HasValue && following.Value.Date > until.Value.Date;
         }
 
         private static T GetValue<T>(IDataRecord record, string name)

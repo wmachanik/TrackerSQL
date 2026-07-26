@@ -13,6 +13,18 @@ namespace TrackerSQL
         protected HyperLink lnkViewLogs;
         protected LinkButton btnDismissAppError;
 
+        protected void Page_Init(object sender, EventArgs e)
+        {
+            // Avoid <%= %> in <head> — ScriptManager cannot modify a head that contains code blocks.
+            if (litUnsavedChangesScript != null)
+            {
+                litUnsavedChangesScript.Text =
+                    "<script type=\"text/javascript\" src=\"" +
+                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js")) +
+                    "\"></script>";
+            }
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             BindApplicationErrorBanner();

@@ -13,16 +13,55 @@ namespace TrackerSQL.Pages
         private const string CONST_SORTEXPRESSION_VIEWSTATE = "ContactsAwaySortExpression";
         private const string CONST_DATERANGE_VIEWSTATE = "ContactsAwayDateRange";
 
+        protected ScriptManager smContactsAway;
+        protected UpdateProgress uprgContactsAway;
+        protected UpdatePanel upnlContactsAway;
+        protected Panel pnlContactsAway;
+        protected DropDownList ddlFilterBy;
+        protected TextBox tbxFilterBy;
+        protected Button btnGo;
+        protected Button btnReset;
+        protected DropDownList ddlDateFilter;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl divCustomDateRange;
+        protected TextBox tbxFromDate;
+        protected TextBox tbxToDate;
+        protected Button btnApplyDateFilter;
+        protected HyperLink hlAddAway;
+        protected Button btnBack;
+        protected GridView gvContactsAway;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+        protected Literal ltrlStatus;
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
                 ViewState[CONST_SORTEXPRESSION_VIEWSTATE] = "CompanyName";
-                // Set default filter to Next 3 Months
                 ddlDateFilter.SelectedValue = "Next3Months";
                 Session[CONST_WHERECLAUSE_SESSIONVAR] = BuildWhereFilter();
                 BindContactsAwayGrid();
             }
+        }
+
+        private void SetStatus(string message, bool? isError = null)
+        {
+            ltrlStatus.Text = message ?? string.Empty;
+
+            if (pnlStatus == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
         private void BindContactsAwayGrid()
@@ -37,9 +76,10 @@ namespace TrackerSQL.Pages
 
                 if (!result.Success)
                 {
-                    lblFilter.Text = "<span style='color:red;'>Error loading data: " + HttpUtility.HtmlEncode(result.ErrorMessage) + "</span>";
+                    SetStatus("Error loading data: " + HttpUtility.HtmlEncode(result.ErrorMessage), true);
                     gvContactsAway.DataSource = null;
                     gvContactsAway.DataBind();
+                    upnlContactsAway.Update();
                     return;
                 }
 
@@ -47,18 +87,18 @@ namespace TrackerSQL.Pages
                 gvContactsAway.DataSource = awayPeriods;
                 gvContactsAway.DataBind();
 
-                // Display count and date range
                 string dateRangeText = ViewState[CONST_DATERANGE_VIEWSTATE] as string ?? "";
-                lblFilter.Text = $"<strong>Showing {awayPeriods.Count} away period(s)</strong>";
+                string status = $"Showing {awayPeriods.Count} away period(s)";
                 if (!string.IsNullOrEmpty(dateRangeText))
-                {
-                    lblFilter.Text += $"<br/><span style='color:#666;'>Filter: {dateRangeText}</span>";
-                }
+                    status += " — " + dateRangeText;
+                SetStatus(HttpUtility.HtmlEncode(status), null);
+                upnlContactsAway.Update();
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactsAway BindContactsAwayGrid error: " + ex.Message);
-                lblFilter.Text = "<span style='color:red;'>Error loading data: " + ex.Message + "</span>";
+                SetStatus("Error loading data: " + HttpUtility.HtmlEncode(ex.Message), true);
+                upnlContactsAway.Update();
             }
         }
 
@@ -79,7 +119,7 @@ namespace TrackerSQL.Pages
             if (e.CommandName == "EditPeriod")
             {
                 int awayPeriodId = Convert.ToInt32(e.CommandArgument);
-                Response.Redirect($"ContactsAwayDetail.aspx?AwayPeriodID={awayPeriodId}");
+                Response.Redirect($"~/Pages/ContactsAwayDetail.aspx?AwayPeriodID={awayPeriodId}");
             }
             else if (e.CommandName == "DeletePeriod")
             {
@@ -90,13 +130,15 @@ namespace TrackerSQL.Pages
                     repo.Delete(awayPeriodId);
 
                     AppLogger.WriteLog(SystemConstants.LogTypes.Customers, $"Deleted away period ID={awayPeriodId}");
-                    lblFilter.Text = "<span style='color:green;'>Away period deleted successfully.</span>";
                     BindContactsAwayGrid();
+                    SetStatus("Away period deleted successfully.", false);
+                    upnlContactsAway.Update();
                 }
                 catch (Exception ex)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactsAway Delete error: " + ex.Message);
-                    lblFilter.Text = "<span style='color:red;'>Error deleting: " + ex.Message + "</span>";
+                    SetStatus("Error deleting: " + HttpUtility.HtmlEncode(ex.Message), true);
+                    upnlContactsAway.Update();
                 }
             }
         }
@@ -115,7 +157,7 @@ namespace TrackerSQL.Pages
         {
             ddlFilterBy.SelectedIndex = 0;
             tbxFilterBy.Text = "";
-            ddlDateFilter.SelectedValue = "Next3Months"; // Reset to default
+            ddlDateFilter.SelectedValue = "Next3Months";
             tbxFromDate.Text = "";
             tbxToDate.Text = "";
             divCustomDateRange.Visible = false;
@@ -139,6 +181,11 @@ namespace TrackerSQL.Pages
         protected void btnApplyDateFilter_Click(object sender, EventArgs e)
         {
             ApplyFilters();
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Pages/Contacts.aspx");
         }
 
         private void ApplyFilters()
@@ -170,7 +217,6 @@ namespace TrackerSQL.Pages
             DateTime today = TimeZoneUtils.Now().Date;
             string dateRangeDescription = "";
 
-            // Filter by company name
             if (ddlFilterBy.SelectedValue == "CompanyName" && !string.IsNullOrWhiteSpace(tbxFilterBy.Text))
             {
                 string filter = tbxFilterBy.Text.Replace("'", "''");
@@ -180,13 +226,11 @@ namespace TrackerSQL.Pages
                     where += $"c.CompanyName LIKE '{filter}%'";
             }
 
-            // Date filter - using SQL Server date format
             string dateFilter = ddlDateFilter.SelectedValue;
 
             switch (dateFilter)
             {
                 case "Current":
-                    // Currently away - today falls between start and end (requires both dates)
                     if (where.Length > 0) where += " AND ";
                     where += $"(a.AwayStartDate IS NOT NULL AND a.AwayEndDate IS NOT NULL AND a.AwayStartDate <= '{today:yyyy-MM-dd}' AND a.AwayEndDate >= '{today:yyyy-MM-dd}')";
                     dateRangeDescription = $"Currently Away (as of {today:yyyy-MM-dd})";
@@ -216,15 +260,13 @@ namespace TrackerSQL.Pages
                     break;
 
                 case "All":
-                    // No date filter
                     dateRangeDescription = "All Periods (no date filter)";
                     break;
 
                 case "Custom":
                     if (!string.IsNullOrEmpty(tbxFromDate.Text) && !string.IsNullOrEmpty(tbxToDate.Text))
                     {
-                        DateTime from, to;
-                        if (DateTime.TryParse(tbxFromDate.Text, out from) && DateTime.TryParse(tbxToDate.Text, out to))
+                        if (DateTime.TryParse(tbxFromDate.Text, out DateTime from) && DateTime.TryParse(tbxToDate.Text, out DateTime to))
                         {
                             if (where.Length > 0) where += " AND ";
                             where += DateOverlapFilter(from.ToString("yyyy-MM-dd"), to.ToString("yyyy-MM-dd"));
@@ -234,12 +276,8 @@ namespace TrackerSQL.Pages
                     break;
             }
 
-            // Store the date range description for display
             ViewState[CONST_DATERANGE_VIEWSTATE] = dateRangeDescription;
-
             return where;
         }
     }
 }
-
-

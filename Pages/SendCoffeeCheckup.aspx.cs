@@ -1,8 +1,7 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Pages.SendCoffeeCheckup
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — SendCoffeeCheckup
+// WebForms page code-behind for SendCoffeeCheckup.
+//------------------------------------------------------------------------------
 
 using AjaxControlToolkit;
 using System;
@@ -16,22 +15,19 @@ using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
-using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
     public partial class SendCoffeeCheckup : System.Web.UI.Page
     {
+        private const string DefaultReturnUrl = "~/Default.aspx";
+
         private static Dictionary<int, string> _cachedAreaNames = new Dictionary<int, string>();
         private static Dictionary<int, string> _cachedItemDescriptions = new Dictionary<int, string>();
-        private int reminderWindowDays = SystemConstants.CheckupConstants.DefaultReminderWindowDays; // CoffeeCheckupManager.GetReminderWindowDays(); // fallback
+        private int reminderWindowDays = SystemConstants.CheckupConstants.DefaultReminderWindowDays;
 
-
-        // Business logic manager - PROPERLY INITIALIZED
         private readonly CoffeeCheckupManager _coffeeCheckupManager;
-        private readonly TempCoffeeCheckupRepository _tempCoffeeCheckupRepository = new TempCoffeeCheckupRepository();
-        private readonly SentRemindersLogRepository _sentRemindersLogRepository = new SentRemindersLogRepository();
-        
+
         public SendCoffeeCheckup()
         {
             _coffeeCheckupManager = new CoffeeCheckupManager();
@@ -39,14 +35,14 @@ namespace TrackerSQL.Pages
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            RegisterPostBackControls();
+            ApplyEmailTestModeIndicator();
+
             if (!IsPostBack)
             {
-
-                // NEW: Clear any stale temp data from a previous session to avoid showing old results
                 try
                 {
-                    _tempCoffeeCheckupRepository.DeleteAllContactRecords();
-                    _tempCoffeeCheckupRepository.DeleteAllContactItems();
+                    _coffeeCheckupManager.ClearTempCheckupData();
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
                         "SendCoffeeCheckup: Cleared previous TempCoffeeCheckup data on initial page load.");
                 }
@@ -56,18 +52,11 @@ namespace TrackerSQL.Pages
                         $"SendCoffeeCheckup: Failed to clear previous temp data on load: {ex.Message}");
                 }
 
-                // Make sure panels are visible
                 upnlCustomerCheckup.Visible = true;
-                upnlContactItems.Visible = true;
-                
-                // Load email templates immediately
-                LoadEmailTextsOnly();
-                
-                // Set initial status
-                //autoLoadingStatus.Visible = true;
-                btnPrepData.Visible = true; // Keep visible for manual fallback
 
-                // Setup reminder window including dropdown
+                LoadEmailTextsOnly();
+                btnPrepData.Visible = true;
+
                 reminderWindowDays = CoffeeCheckupManager.GetReminderWindowDays();
                 int min = ConfigHelper.GetInt("CoffeeCheckupReminderWindowMin", 5);
                 int max = ConfigHelper.GetInt("CoffeeCheckupReminderWindowMax", 30);
@@ -76,15 +65,96 @@ namespace TrackerSQL.Pages
                 ddlReminderWindow.Items.Clear();
                 for (int i = min; i <= max; i++)
                     ddlReminderWindow.Items.Add(new ListItem(i.ToString(), i.ToString()));
-                
-                // Load last used value from Session if available
+
                 string lastUsed = Session["CoffeeCheckupReminderWindowDays"] as string;
                 if (!string.IsNullOrEmpty(lastUsed) && ddlReminderWindow.Items.FindByValue(lastUsed) != null)
                     ddlReminderWindow.SelectedValue = lastUsed;
                 else
                     ddlReminderWindow.SelectedValue = def.ToString();
-                
+
+                SetStatus("Preparing contact list...", isError: null);
             }
+        }
+
+        private void RegisterPostBackControls()
+        {
+            var scriptManager = ScriptManager.GetCurrent(Page);
+            if (scriptManager == null)
+                return;
+
+            scriptManager.RegisterAsyncPostBackControl(btnPrepData);
+            scriptManager.RegisterAsyncPostBackControl(btnRefreshCustomerCheckupList);
+            scriptManager.RegisterAsyncPostBackControl(btnUpdate);
+            scriptManager.RegisterAsyncPostBackControl(btnReload);
+            scriptManager.RegisterAsyncPostBackControl(btnClearTodaysData);
+            scriptManager.RegisterAsyncPostBackControl(ddlReminderWindow);
+            scriptManager.RegisterAsyncPostBackControl(btnSend);
+            scriptManager.RegisterPostBackControl(btnBack);
+            scriptManager.RegisterAsyncPostBackControl(imgBtnEmailTestMode);
+        }
+
+        /// <summary>
+        /// Shows alert icon beside Send when Web.config EmailTestMode is true.
+        /// </summary>
+        private void ApplyEmailTestModeIndicator()
+        {
+            bool testMode = ConfigHelper.GetBool("EmailTestMode", false);
+            string testRecipient = ConfigHelper.GetString("EmailTestRecipient", "warren@machanik.com");
+
+            imgBtnEmailTestMode.Visible = testMode;
+            if (!testMode)
+                return;
+
+            string tip = $"Email TEST MODE is ON (Web.config EmailTestMode=true). " +
+                         $"All checkup emails are redirected to: {testRecipient}";
+            imgBtnEmailTestMode.ToolTip = tip;
+            btnSend.ToolTip = "TEST MODE: emails go to " + testRecipient + " — then open reminder results";
+        }
+
+        private static string AppendEmailTestModeNote(string status)
+        {
+            if (!ConfigHelper.GetBool("EmailTestMode", false))
+                return status;
+
+            string testRecipient = ConfigHelper.GetString("EmailTestRecipient", "warren@machanik.com");
+            return status + $" Email TEST MODE is ON — messages go to {testRecipient}.";
+        }
+
+        protected void imgBtnEmailTestMode_Click(object sender, ImageClickEventArgs e)
+        {
+            string testRecipient = ConfigHelper.GetString("EmailTestRecipient", "warren@machanik.com");
+            new showMessageBox(this.Page, "Email Test Mode",
+                "EmailTestMode is ON in Web.config.\n\n" +
+                "Checkup emails will NOT go to contacts.\n" +
+                "They are redirected to:\n" + testRecipient + "\n\n" +
+                "Set EmailTestMode to false for production sends.");
+        }
+
+        private void SetStatus(string message, bool? isError)
+        {
+            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(message))
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "SendCoffeeCheckup STATUS: " + message);
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect(DefaultReturnUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         /// <summary>
@@ -105,45 +175,37 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog("error", $"SendCoffeeCheckup: Error loading email templates: {ex.Message}");
-                ltrlStatus.Text = $"<div class='alert alert-warning'>Warning: {ex.Message}</div>";
+                SetStatus("Warning: " + ex.Message, isError: true);
             }
         }
+
         protected void btnPrepData_Click(object sender, EventArgs e)
         {
-            uprgCustomerCheckup.DisplayAfter = 100;
-            uprgSendEmail.DisplayAfter = int.MaxValue;
-
             try
             {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
+                SetStatus("Preparing contact data...", isError: null);
                 upnlSendEmail.Update();
 
-                
                 if (ddlReminderWindow.SelectedItem != null)
                     int.TryParse(ddlReminderWindow.SelectedValue, out reminderWindowDays);
 
-                // 1) Build the temp/contact list only
                 _coffeeCheckupManager.PrepareCustomerReminderData(reminderWindowDays);
 
-                // 2) Single post-pass adjust over the prepared list (only if holiday in window)
                 int adjustedCount = _coffeeCheckupManager.PostAdjustPreparedReminderData(reminderWindowDays);
-                ViewState["AdjustedCount"] = adjustedCount; // keep for later, optional
-                // Determine if a holiday exists in the selected window
+                ViewState["AdjustedCount"] = adjustedCount;
                 bool holidayInWindow = adjustedCount != -1;
 
-                // Refresh UI
+                gvCustomerCheckup.SelectedIndex = -1;
                 BindCheckupGrids();
 
-                int customerCount = GetCustomerCount();
+                int contactCount = GetCustomerCount();
                 stopwatch.Stop();
 
                 btnPrepData.Text = "Refresh Data";
                 btnPrepData.Visible = true;
 
-                ltrlStatus.Text = $"<div style='background-color: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin: 5px 0; text-align: left;'>" +
-                                  $"<strong>Success!</strong> Customer data prepared. You can now send reminders or test emails.</div>";
-                // If we adjusted any rows, surface a notice via Site.Master (if available), else fallback
+                string status = $"Success — {contactCount} contact(s) prepared in {stopwatch.ElapsedMilliseconds / 1000.0:F1}s. You can send reminders.";
                 if (holidayInWindow)
                 {
                     string msg = adjustedCount > 0
@@ -151,8 +213,14 @@ namespace TrackerSQL.Pages
                         : "Upcoming holiday detected. Dates were verified against closures; no changes were required.";
 
                     new showMessageBox(this.Page, "Holiday Notice", msg);
-                    ltrlStatus.Text += $"<div style='background-color:#e8f4fd;color:#084c7f;padding:8px;border-radius:4px;margin:5px 0;text-align:left;'>{HttpUtility.HtmlEncode(msg)}</div>";
+                    status += " " + msg;
                 }
+
+                var prepNotices = _coffeeCheckupManager.LastPrepNotices;
+                if (prepNotices != null && prepNotices.Count > 0)
+                    status += " " + string.Join(" ", prepNotices);
+
+                SetStatus(AppendEmailTestModeNote(status), isError: false);
                 upnlCustomerCheckup.Update();
                 upnlSendEmail.Update();
             }
@@ -161,105 +229,17 @@ namespace TrackerSQL.Pages
                 AppLogger.WriteLog("error", $"SendCoffeeCheckup: Error in btnPrepData_Click: {ex.Message}");
                 btnPrepData.Visible = true;
                 btnPrepData.Text = "Retry Data Prep";
-                ltrlStatus.Text = $"<div style='background-color: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin: 5px 0; text-align: left;'>" +
-                                  $"<strong>Error:</strong> {ex.Message}<br/><small>Check the logs for more details.</small></div>";
+                SetStatus("Error: " + ex.Message + " Check the logs for more details.", isError: true);
                 upnlCustomerCheckup.Update();
                 upnlSendEmail.Update();
-            }
-            finally
-            {
-                uprgCustomerCheckup.DisplayAfter = 500;
-                uprgSendEmail.DisplayAfter = 0;
             }
         }
-        /* old before 15 Sept PrepData
-        protected void btnPrepData_Click(object sender, EventArgs e)
-        {
-            // Control progress indicators
-            uprgCustomerCheckup.DisplayAfter = 100; // Show customer prep progress quickly
-            uprgSendEmail.DisplayAfter = int.MaxValue; // Don't show email progress
-            
-            //AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "SendCoffeeCheckup: Prep Data Click triggered");
-            
-            try
-            {
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                
-                // IMMEDIATELY hide the auto-loading panel
-                //autoLoadingStatus.Visible = false;
-
-                // Update status immediately
-                //ltrlAutoLoadStatus.Text = "";
-                
-                // Force immediate update
-                upnlSendEmail.Update();
-                
-                //AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "SendCoffeeCheckup: Starting CoffeeCheckupManager.PrepareCustomerReminderData()");
-                
-                // Use the enhanced CoffeeCheckupManager
-                int reminderWindowDays = CoffeeCheckupManager.GetReminderWindowDays(); // fallback
-                if (ddlReminderWindow.SelectedItem != null)
-                    int.TryParse(ddlReminderWindow.SelectedValue, out reminderWindowDays);
-
-                _coffeeCheckupManager.PrepareCustomerReminderData(reminderWindowDays);
-                
-                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "SendCoffeeCheckup: Customer Reminder Data prepared, refreshing grids");
-                
-                // Refresh the grid data
-                odsContactsToSendCheckup.DataBind();
-                gvCustomerCheckup.DataBind();
-                
-                // Get customer count and show success
-                int customerCount = GetCustomerCount();
-                
-                stopwatch.Stop();
-                
-                // Update button and show success
-                btnPrepData.Text = "Refresh Data";
-                btnPrepData.Visible = true;
-                
-                //ltrlCustomerStatus.Text = $"? Ready! Found <strong>{customerCount}</strong> customers eligible for coffee reminders. " +
-                //                         $"<small>(Loaded in {stopwatch.ElapsedMilliseconds / 1000.0:F1}s)</small>";
-                
-                ltrlStatus.Text = $"<div style='background-color: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin: 5px 0; text-align: left;'>" +
-                                 $"<strong>Success!</strong> Customer data prepared automatically. You can now send reminders or test emails.</div>";
-                
-                //AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Auto-prep completed successfully in {stopwatch.ElapsedMilliseconds}ms - {customerCount} customers");
-                
-                // Force update of all panels
-                upnlCustomerCheckup.Update();
-                upnlSendEmail.Update();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog("error", $"SendCoffeeCheckup: Error in btnPrepData_Click: {ex.Message}");
-                
-                // Hide auto-loading panel on error too
-                //autoLoadingStatus.Visible = false;
-                
-                btnPrepData.Visible = true;
-                btnPrepData.Text = "Retry Data Prep";
-                
-                ltrlStatus.Text = $"<div style='background-color: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin: 5px 0; text-align: left;'>" +
-                                 $"<strong>Error:</strong> {ex.Message}<br/><small>Check the logs for more details.</small></div>";
-                
-                // Force update of all panels
-                upnlCustomerCheckup.Update();
-                upnlSendEmail.Update();
-            }
-            finally
-            {
-                // Reset progress indicators
-                uprgCustomerCheckup.DisplayAfter = 500;
-                uprgSendEmail.DisplayAfter = 0;
-            }
-        }
-        */
         private void BindCheckupGrids()
         {
-            gvCustomerCheckup.DataSource = _tempCoffeeCheckupRepository.GetAllContacts("CompanyName");
+            gvCustomerCheckup.DataSource = _coffeeCheckupManager.GetPreparedContacts("CompanyName");
             gvCustomerCheckup.DataBind();
             BindContactItemsGrid();
+            upnlCustomerCheckup.Update();
         }
 
         private void BindContactItemsGrid()
@@ -268,33 +248,89 @@ namespace TrackerSQL.Pages
             {
                 gvItemsToConfirm.DataSource = null;
                 gvItemsToConfirm.DataBind();
+                ltrlSelectedContact.Text = string.Empty;
                 return;
             }
 
             long contactId = Convert.ToInt64(gvCustomerCheckup.SelectedDataKey.Value);
-            gvItemsToConfirm.DataSource = _tempCoffeeCheckupRepository.GetContactItems(contactId);
+            string company = string.Empty;
+            if (gvCustomerCheckup.SelectedRow != null)
+            {
+                // 0=actions, 1=hidden id, 2=company hyperlink
+                var link = gvCustomerCheckup.SelectedRow.Cells[2].Controls.OfType<HyperLink>().FirstOrDefault();
+                company = link != null ? link.Text : gvCustomerCheckup.SelectedRow.Cells[2].Text;
+            }
+
+            if (string.IsNullOrWhiteSpace(company))
+                company = _coffeeCheckupManager.GetPreparedContactDisplayName(contactId);
+
+            var items = _coffeeCheckupManager.GetPreparedContactItems(contactId);
+            gvItemsToConfirm.DataSource = items;
             gvItemsToConfirm.DataBind();
+
+            ltrlSelectedContact.Text = string.IsNullOrWhiteSpace(company)
+                ? $"<div class='small' style='margin-bottom:6px;font-size:x-small;'>{items.Count} item(s)</div>"
+                : $"<div class='small' style='margin-bottom:6px;font-size:x-small;'><strong>{HttpUtility.HtmlEncode(company)}</strong> — {items.Count} item(s)</div>";
         }
 
         protected void gvCustomerCheckup_SelectedIndexChanged(object sender, EventArgs e)
         {
             BindContactItemsGrid();
-            upnlContactItems.Update();
+            upnlCustomerCheckup.Update();
         }
 
-        /// <summary>
-        /// Get count of prepared customers
-        /// </summary>
+        protected void gvCustomerCheckup_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvCustomerCheckup.PageIndex = e.NewPageIndex;
+            gvCustomerCheckup.SelectedIndex = -1;
+            BindCheckupGrids();
+        }
+
+        protected void gvCustomerCheckup_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "ExcludeThisTime", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (!long.TryParse(Convert.ToString(e.CommandArgument), out long contactId) || contactId <= 0)
+            {
+                SetStatus("Could not exclude that contact from this run.", isError: true);
+                upnlSendEmail.Update();
+                return;
+            }
+
+            string companyName = _coffeeCheckupManager.GetPreparedContactDisplayName(contactId);
+            ExcludeContactThisTime(contactId, companyName);
+        }
+
+        private void ExcludeContactThisTime(long contactId, string companyName = null)
+        {
+            if (_coffeeCheckupManager.ExcludePreparedContactThisTime(contactId))
+            {
+                gvCustomerCheckup.SelectedIndex = -1;
+                BindCheckupGrids();
+                int remaining = GetCustomerCount();
+                string who = string.IsNullOrWhiteSpace(companyName) ? "Contact" : companyName.Trim();
+                SetStatus(
+                    $"Excluded {who} from this run. {remaining} contact(s) remain. Warning: Prep Data or Refresh List will add them back if still due.",
+                    isError: null);
+                upnlSendEmail.Update();
+            }
+            else
+            {
+                SetStatus("Could not exclude that contact from this run.", isError: true);
+                upnlSendEmail.Update();
+            }
+        }
+
         private int GetCustomerCount()
         {
             try
             {
-                var customers = _tempCoffeeCheckupRepository.GetAllContacts("CustomerID");
-                return customers?.Count ?? 0;
+                return _coffeeCheckupManager.GetPreparedContactCount();
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog("error", $"SendCoffeeCheckup: Error getting customer count: {ex.Message}");
+                AppLogger.WriteLog("error", $"SendCoffeeCheckup: Error getting contact count: {ex.Message}");
                 return 0;
             }
         }
@@ -318,21 +354,26 @@ namespace TrackerSQL.Pages
             return _cachedItemDescriptions[itemId];
         }
 
+        protected string FormatItemQty(object qtyValue)
+        {
+            if (qtyValue == null || qtyValue == DBNull.Value)
+                return SystemConstants.FormatConstants.FormatQuantity(0);
+
+            double qty = Convert.ToDouble(qtyValue);
+            return SystemConstants.FormatConstants.FormatQuantity(qty);
+        }
+
         protected void btnSend_Click(object sender, EventArgs e)
         {
-            this.uprgSendEmail.DisplayAfter = 0;
-            
             try
             {
-                UpdateStatus("?? Starting coffee checkup process...");
+                SetStatus("Starting coffee checkup process...", isError: null);
                 
-                // Prepare email data from UI
                 var emailData = new SendCheckEmailTexts {
                     Header = this.tbxEmailIntro.Text,
                     Body = this.tbxEmailBody.Text,
                     Footer = this.tbxEmailFooter.Text
                 };
-                // If a holiday is within window, append a friendly note from Messages.resx (before signature)
                 if (_coffeeCheckupManager.IsHolidayComingInWindow(reminderWindowDays))
                 {
                     string holidayNote = MessageProvider.Get(MessageKeys.CoffeeCheckup.HolidayClosureEmailNote);
@@ -343,40 +384,42 @@ namespace TrackerSQL.Pages
                        $"<p style='margin:8px 0'>{HttpUtility.HtmlEncode(holidayNote)}</p>";
                 }
 
+                SetStatus("Processing contacts...", isError: null);
+                upnlSendEmail.Update();
 
-                UpdateStatus("?? Processing customers...");
-                
-                // Use the manager to process reminders
-                var batchResult = _coffeeCheckupManager.ProcessCoffeeCheckupReminders(emailData);
-                
-                UpdateStatus($"? Complete! Sent: {batchResult.TotalSent}, Failed: {batchResult.TotalFailed}");
+                var batchResult = _coffeeCheckupManager.ProcessCoffeeCheckupReminders(
+                    emailData,
+                    includeOrdersEmailCc: chkCcOrdersEmail.Checked);
 
-                // Enhanced status message
+                string status = $"Complete — sent: {batchResult.TotalSent}, failed: {batchResult.TotalFailed}.";
+                if (!chkCcOrdersEmail.Checked)
+                    status += " (orders email CC off)";
+                if (!string.IsNullOrWhiteSpace(batchResult.ErrorMessage))
+                    status += " " + batchResult.ErrorMessage;
+                SetStatus(status, isError: batchResult.TotalFailed > 0);
+                upnlSendEmail.Update();
+
                 string statusMessage = $"Coffee checkup process completed!\n\n" +
-                                     $"?? Emails sent successfully: {batchResult.TotalSent}\n" +
-                                     $"? Failed to send: {batchResult.TotalFailed}\n" +
-                                     $"?? Total customers processed: {batchResult.TotalSent + batchResult.TotalFailed}";
+                                     $"Emails sent successfully: {batchResult.TotalSent}\n" +
+                                     $"Failed / skipped: {batchResult.TotalFailed}\n" +
+                                     $"Total contacts processed: {batchResult.TotalSent + batchResult.TotalFailed}";
+
+                if (!chkCcOrdersEmail.Checked)
+                    statusMessage += "\n\nOrders email was NOT CC'd on this send.";
 
                 if (batchResult.TotalFailed > 0)
                 {
-                    statusMessage += "\n\n?? Check the results page for details about failed emails.";
+                    statusMessage += "\n\nDetails:\n" + (batchResult.ErrorMessage ?? "See the results page for failed emails.");
                 }
 
-                var statusMsg = new showMessageBox(this.Page, 
-                    "Coffee Checkup Status", 
-                    statusMessage);
-
-                // Navigation to results page
-                RedirectToResultsPage();
+                RedirectToResultsPage(statusMessage);
             }
             catch (Exception ex)
             {
-                UpdateStatus($"? Error: {ex.Message}");
+                SetStatus("Error: " + ex.Message, isError: true);
+                upnlSendEmail.Update();
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Error in btnSend_Click: {ex.Message}");
-                
-                var errorMsg = new showMessageBox(this.Page, 
-                    "Email Sending Error", 
-                    ex.Message);
+                new showMessageBox(this.Page, "Email Sending Error", ex.Message);
             }
         }
 
@@ -384,27 +427,24 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                UpdateStatus("?? Starting test mode...");
+                SetStatus("Starting test mode...", isError: null);
 
-                // Get test contact
-                var allContacts = _tempCoffeeCheckupRepository.GetAllContactAndItems();
+                var allContacts = _coffeeCheckupManager.GetPreparedContactsWithItems();
                 if (!allContacts.Any())
                 {
-                    this.ltrlStatus.Text = "No test contacts available. Run 'Prep Data' first.";
+                    SetStatus("No test contacts available. Run Prep Data first.", isError: true);
                     return;
                 }
 
                 var testContact = allContacts.First();
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"TEST: Using customer {testContact.CompanyName} (ID: {testContact.CustomerID})");
 
-                // Validate eligibility
                 if (!_coffeeCheckupManager.ValidateCustomerEligibility(testContact))
                 {
-                    this.ltrlStatus.Text = $"? Test customer {testContact.CompanyName} is not eligible for reminders";
+                    SetStatus($"Test customer {testContact.CompanyName} is not eligible for reminders.", isError: true);
                     return;
                 }
 
-                // Prepare email data
                 var emailData = new SendCheckEmailTexts
                 {
                     Header = this.tbxEmailIntro.Text,
@@ -412,15 +452,14 @@ namespace TrackerSQL.Pages
                     Footer = this.tbxEmailFooter.Text
                 };
 
-                // Process single customer test
                 var testResult = _coffeeCheckupManager.ProcessCoffeeCheckupReminders(emailData);
 
-                this.ltrlStatus.Text = $"? Test completed: Sent: {testResult.TotalSent}, Failed: {testResult.TotalFailed}";
+                SetStatus($"Test completed — sent: {testResult.TotalSent}, failed: {testResult.TotalFailed}.", isError: testResult.TotalFailed > 0);
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"TEST: Completed - Sent: {testResult.TotalSent}, Failed: {testResult.TotalFailed}");
             }
             catch (Exception ex)
             {
-                this.ltrlStatus.Text = $"? Test failed: {ex.Message}";
+                SetStatus("Test failed: " + ex.Message, isError: true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"TEST ERROR: {ex.Message}");
             }
         }
@@ -429,14 +468,14 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                UpdateStatus("??? Clearing today's reminder data...");
+                SetStatus("Clearing today's reminder data...", isError: null);
 
-                // Clear today's sent reminder log entries
-                int deletedCount = _sentRemindersLogRepository.DeleteTodaysEntries();
+                int deletedCount = _coffeeCheckupManager.ClearTodaysSentReminderEntries();
 
-                UpdateStatus($"? Cleared {deletedCount} reminder entries from today");
+                SetStatus($"Cleared {deletedCount} reminder entries from today.", isError: false);
+                upnlSendEmail.Update();
 
-                var successMsg = new showMessageBox(this.Page,
+                new showMessageBox(this.Page,
                     "Data Cleared",
                     $"Successfully removed {deletedCount} reminder log entries from today ({TimeZoneUtils.Now().Date:yyyy-MM-dd}).\n\nYou can now test again with clean data.");
 
@@ -444,53 +483,77 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                UpdateStatus($"? Error clearing data: {ex.Message}");
+                SetStatus("Error clearing data: " + ex.Message, isError: true);
+                upnlSendEmail.Update();
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Error clearing today's data: {ex.Message}");
 
-                var errorMsg = new showMessageBox(this.Page,
+                new showMessageBox(this.Page,
                     "Clear Data Error",
                     $"Error clearing today's data: {ex.Message}");
             }
         }
 
-        private void RedirectToResultsPage()
+        private void RedirectToResultsPage(string completionMessage = null)
         {
             try
             {
                 DateTime sentDate = TimeZoneUtils.Now().Date;
-                int totalReminders = _sentRemindersLogRepository.GetEntriesCountForDate(sentDate);
-                var dayResults = _sentRemindersLogRepository.GetAllByDate(sentDate, "ContactID");
-                int uniqueCustomers = dayResults.Select(r => r.ContactID).Distinct().Count();
-                int successful = dayResults.Count(r => r.ReminderSent == true);
-                int failed = dayResults.Count(r => r.ReminderSent != true);
+                var stats = _coffeeCheckupManager.GetSentReminderDayStats(sentDate);
 
                 string redirectUrl = $"{this.ResolveUrl("~/Pages/SentRemindersSheet.aspx")}" +
-                                   $"?LastSentDate={sentDate:yyyy-MM-dd}" +
-                                   $"&TotalReminders={totalReminders}" +
-                                   $"&UniqueCustomers={uniqueCustomers}" +
-                                   $"&Successful={successful}" +
-                                   $"&Failed={failed}";
+                                   $"?LastSentDate={stats.SentDate:yyyy-MM-dd}" +
+                                   $"&TotalReminders={stats.TotalReminders}" +
+                                   $"&UniqueCustomers={stats.UniqueCustomers}" +
+                                   $"&Successful={stats.Successful}" +
+                                   $"&Failed={stats.Failed}";
 
-                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Redirecting with stats - {uniqueCustomers} customers, {successful}/{totalReminders} successful");
-                Response.Redirect(redirectUrl, false);
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                    $"SendCoffeeCheckup: Redirecting with stats - {stats.UniqueCustomers} customers, {stats.Successful}/{stats.TotalReminders} successful");
+
+                var scriptManager = ScriptManager.GetCurrent(Page);
+                if (scriptManager != null && scriptManager.IsInAsyncPostBack)
+                {
+                    // One script block: optional alert (properly encoded), then navigate.
+                    // Register on the UpdatePanel so the async response includes the script.
+                    var script = new StringBuilder();
+                    if (!string.IsNullOrWhiteSpace(completionMessage))
+                    {
+                        script.Append("try{showAppMessage(");
+                        script.Append(HttpUtility.JavaScriptStringEncode(completionMessage, true));
+                        script.Append(");}catch(e){}");
+                    }
+                    script.Append("window.location.href=");
+                    script.Append(HttpUtility.JavaScriptStringEncode(redirectUrl, true));
+                    script.Append(";");
+
+                    ScriptManager.RegisterStartupScript(
+                        upnlSendEmail,
+                        upnlSendEmail.GetType(),
+                        "redirectSentReminders",
+                        script.ToString(),
+                        true);
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(completionMessage))
+                        new showMessageBox(this.Page, "Coffee Checkup Status", completionMessage);
+
+                    Response.Redirect(redirectUrl, false);
+                    Context.ApplicationInstance.CompleteRequest();
+                }
             }
             catch (Exception redirectEx)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Redirect failed: {redirectEx.Message}");
-                UpdateStatus("? Process completed successfully!");
+                SetStatus("Process completed, but redirect to results failed.", isError: true);
+                upnlSendEmail.Update();
             }
-        }
-
-        private void UpdateStatus(string message)
-        {
-            this.ltrlStatus.Text = message;
-            AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup STATUS: {message}");
         }
 
         private void LoadEmailTexts()
         {
-            var texts = new SendCheckEmailTextsRepository().GetTexts();
-            if (texts.SCEMTID <= 0)
+            var texts = _coffeeCheckupManager.GetEmailTexts();
+            if (texts == null || texts.SCEMTID <= 0)
                 return;
             this.ltrlEmailTextID.Text = texts.SCEMTID.ToString();
             this.tbxEmailIntro.Text = HttpUtility.HtmlDecode(texts.Header);
@@ -501,17 +564,31 @@ namespace TrackerSQL.Pages
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(this.ltrlEmailTextID.Text))
+            {
+                SetStatus("No email text ID loaded — cannot update.", isError: true);
+                upnlSendEmail.Update();
                 return;
+            }
             var pEmailTextsData = new SendCheckEmailTexts
             {
                 Header = HttpUtility.HtmlEncode(this.tbxEmailIntro.Text),
                 Body = HttpUtility.HtmlEncode(this.tbxEmailBody.Text),
                 Footer = HttpUtility.HtmlEncode(this.tbxEmailFooter.Text)
             };
-            this.ltrlStatus.Text = new SendCheckEmailTextsRepository().UpdateTexts(pEmailTextsData, Convert.ToInt32(this.ltrlEmailTextID.Text));
+            string result = _coffeeCheckupManager.UpdateEmailTexts(pEmailTextsData, Convert.ToInt32(this.ltrlEmailTextID.Text));
+            bool failed = string.IsNullOrWhiteSpace(result)
+                || result.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0
+                || result.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0;
+            SetStatus(string.IsNullOrWhiteSpace(result) ? "Email text updated." : result, isError: failed ? true : false);
+            upnlSendEmail.Update();
         }
 
-        protected void btnReload_Click(object sender, EventArgs e) => this.LoadEmailTexts();
+        protected void btnReload_Click(object sender, EventArgs e)
+        {
+            LoadEmailTexts();
+            SetStatus("Email text reloaded.", isError: false);
+            upnlSendEmail.Update();
+        }
 
         // Helper methods for compatibility
         public string GetItemSKU(int pItemID) => _coffeeCheckupManager.GetCachedItemSKU(pItemID);
@@ -520,61 +597,8 @@ namespace TrackerSQL.Pages
 
         protected void ddlReminderWindow_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Save the new value to Session (or Profile, or DB)
             Session["CoffeeCheckupReminderWindowDays"] = ddlReminderWindow.SelectedValue;
-
-            // Trigger data prep with the new value
             btnPrepData_Click(sender, e);
         }
-        //protected void btnShowMatrix_Click(object sender, EventArgs e)
-        //{
-        //    try
-        //    {
-        //        // Make sure matrix is current (TTL respected by EnsureBuilt)
-        //        AreaDeliveryMatrix.EnsureBuilt();
-
-        //        var rows = AreaDeliveryMatrix.GetSnapshot();
-        //        if (rows == null || rows.Count == 0)
-        //        {
-        //            ltrlMatrixDump.Text = "<div style='padding:6px;background:#fff3cd;color:#856404;border:1px solid #ffeeba;border-radius:4px;'>No matrix rows found.</div>";
-        //        }
-        //        else
-        //        {
-        //            var sb = new System.Text.StringBuilder();
-        //            sb.Append("<table style='border-collapse:collapse;font-size:12px;'>");
-        //            sb.Append("<tr style='background:#e9ecef;'>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>AreaID</th>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Prep</th>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Delivery</th>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Next Prep</th>");
-        //            sb.Append("<th style='border:1px solid #ccc;padding:4px;'>Next Delivery</th>");
-        //            sb.Append("</tr>");
-
-        //            foreach (var r in rows)
-        //            {
-        //                sb.Append("<tr>");
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;text-align:center;'>{0}</td>", r.AreaID);
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.PrepDate);
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.DeliveryDate);
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.NextPreperationDate);
-        //                sb.AppendFormat("<td style='border:1px solid #ccc;padding:3px;'>{0:yyyy-MM-dd}</td>", r.NextDeliveryDate);
-        //                sb.Append("</tr>");
-        //            }
-
-        //            sb.Append("</table>");
-        //            ltrlMatrixDump.Text = sb.ToString();
-        //        }
-
-        //        pnlMatrixDump.Visible = true;
-        //        UpdateStatus("Delivery matrix snapshot generated.");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"SendCoffeeCheckup: Error dumping matrix: {ex.Message}");
-        //        ltrlMatrixDump.Text = "<div style='padding:6px;background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:4px;'>Matrix dump failed: "
-        //            + HttpUtility.HtmlEncode(ex.Message) + "</div>";
-        //        pnlMatrixDump.Visible = true;
-        //    }
-        //}
     }
 }

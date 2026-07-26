@@ -255,7 +255,7 @@ namespace TrackerSQL.Classes
             {
                 // Get customer's area delivery schedule using existing infrastructure
                 DateTime dummyDate = DateTime.MinValue;
-                DateTime customerPrepDate = _trackerTools.GetNextPreperationDateByCustomerID(customerId, ref dummyDate);
+                DateTime customerPrepDate = _trackerTools.GetNextPreparationDateByCustomerID(customerId, ref dummyDate);
 
                 if (customerPrepDate == DateTime.MinValue || customerPrepDate < TimeZoneUtils.Now().Date.AddDays(-30))
                 {
@@ -313,7 +313,7 @@ namespace TrackerSQL.Classes
                     try
                     {
                         // Use existing TrackerTools method
-                        DateTime testPrepDate = _trackerTools.GetClosestNextPreperationDate(searchDate);
+                        DateTime testPrepDate = _trackerTools.GetClosestNextPreparationDate(searchDate);
 
                         if (testPrepDate > searchDate && testPrepDate != DateTime.MinValue)
                         {

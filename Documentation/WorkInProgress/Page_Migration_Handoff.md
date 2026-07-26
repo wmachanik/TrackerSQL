@@ -24,11 +24,17 @@ Pages/*.aspx.cs            ⏳ NEXT — many still on legacy controls + fat code
 Tools/*.aspx.cs            ⏳ Same rules as Pages where legacy usage remains
 ```
 
-Schema reference: `Data/Metadata/Sql/CreateTables_LATEST_FIXED.sql`
+Schema reference: **TrackerMigration** project (live SQL Server). Copies under TrackerSQL `Data/Metadata/Sql/` are legacy — do not use as source of truth (Rule #0d).
 
 ---
 
 ## Next step (in order)
+
+**Active now:** Phase 2 complete; retired track deferred. **Next:** deepen CoffeeCheckupManager layering/naming review, or next page still missing page-tone.
+
+Done: **`SendCoffeeCheckup`** (`page-tone-checkup` + manager façades, 2026-07-16), `SentRemindersSheet` (full shell 2026-07-15), **`Contacts` + `ContactDetails`** (2026-07-15), **`Repairs` + `RepairDetail`** (`page-tone-repairs`, 2026-07-16), **`ContactsAway` + `ContactsAwayDetail`**.  
+
+**UI standard (required):** [`WEBFORMS_UI_STANDARDS.md`](../WEBFORMS_UI_STANDARDS.md) — page-tone shell = `SentRemindersSheet` / `Contacts` / `Repairs` / `SendCoffeeCheckup`; interaction = `HolidayClosureDetail` / `ContactDetails` / `RepairDetail`.
 
 ### 1. Gap analysis — pages only
 
@@ -59,17 +65,23 @@ ExecuteSQLGetDataReader
 
 Known **high-priority fat pages** (expect manager extraction, not just namespace swap):
 
-- `Pages/OrderDetail.aspx.cs`
+- ~~`Pages/OrderDetail.aspx.cs`~~ ✅ done 2026-07-13 (Save/Save&Return, line edit, mobile New Item)
+- ~~`Tools/HolidayClosures.aspx` / `HolidayClosureDetail.aspx`~~ ✅ done 2026-07-14
+- ~~`Tools/SystemTools.aspx`~~ ✅ hub cleaned 2026-07-14 (Set Client Type deferred)
+- ~~`Tools/MessagesEditor.aspx`~~ ✅ verified 2026-07-14
+- ~~`Tools/XMLtoSQL.aspx`~~ ✅ cleaned 2026-07-14
 - `Pages/SendCoffeeCheckup.aspx.cs`
 - `Pages/LogTable.aspx.cs`
 - `Pages/GroupItemDetail.aspx.cs`
 - `Pages/ViewMyOrder.aspx.cs`
 
-Retired legacy pages/tools (do not migrate unless explicitly reactivated):
+Retired legacy pages/tools (do not migrate unless explicitly reactivated; many excluded from `.csproj` 2026-07-14 — see gap analysis §2.3–2.4):
 
+- `Tools/TestPeople.aspx` (never on menu; Persons CRUD smoke only)
 - `Pages/CustomerDetails.aspx.cs` (active customer flow uses `ContactDetails.aspx`)
-- `Pages/NewOrderDetail.aspx.cs` (replaced by `OrderDetail.aspx?NewOrder=true`)
+- `Pages/NewOrder.aspx` / `NewOrderDetail.aspx.cs` (replaced by `OrderDetail.aspx?NewOrder=true`)
 - `Tools/MergeCustomersFromQB.aspx.cs` (QuickBooks no longer used)
+- Plus orphan list: `ClientList`, `OrdersEdit`, `OrderSheet`, `LogTable`, `SupportTables`, `ContactsTest`, `test/*`, etc.
 
 ### 2. Migrate pages
 

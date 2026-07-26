@@ -1,51 +1,100 @@
 ﻿using System;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
-using TrackerSQL.Managers;
 
 namespace TrackerSQL.Pages
 {
     public partial class ContactsAwayDetail : Page
     {
-        protected global::System.Web.UI.WebControls.TextBox tbxAwayStartDate;
-        protected global::System.Web.UI.WebControls.TextBox tbxAwayEndDate;
-        protected global::System.Web.UI.WebControls.Literal ltrlStatus;
-        protected global::AjaxControlToolkit.ComboBox cboCustomer;
-        protected global::System.Web.UI.WebControls.DropDownList ddlReason;
-        protected global::System.Web.UI.WebControls.Button btnInsert;
-        protected global::System.Web.UI.WebControls.Button btnDelete;
+        private const string DefaultReturnUrl = "~/Pages/ContactsAway.aspx";
+        private const string ViewStateAwayPeriodId = "ContactsAwayPeriodId";
+
+        protected ScriptManager scrmContactsAwayDetail;
+        protected UpdateProgress udtpContactsAwayDetail;
+        protected UpdatePanel upnlContactsAwayDetail;
+        protected Panel pnlAwayDetail;
+        protected AjaxControlToolkit.ComboBox cboCustomer;
+        protected TextBox tbxAwayStartDate;
+        protected TextBox tbxAwayEndDate;
+        protected DropDownList ddlReason;
+        protected Button btnUpdate;
+        protected Button btnUpdateAndReturn;
+        protected Button btnDelete;
+        protected Button btnCancel;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+        protected Literal ltrlStatus;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                // Bind dropdowns using SQL Server repositories
                 BindCustomerDropdown();
                 BindReasonDropdown();
 
-                int awayPeriodId;
-                int customerId;
-                if (int.TryParse(Request.QueryString["AwayPeriodID"], out awayPeriodId))
+                int awayPeriodId = GetAwayPeriodId();
+                if (awayPeriodId > 0)
                 {
-                    btnInsert.Text = "Update";
                     btnDelete.Visible = true;
                     LoadAwayPeriod(awayPeriodId);
                 }
                 else
                 {
-                    btnInsert.Text = "Insert";
                     btnDelete.Visible = false;
-                    tbxAwayStartDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
-                    tbxAwayEndDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
-                    if (int.TryParse(Request.QueryString["CustomerID"], out customerId))
+                    tbxAwayStartDate.Text = TimeZoneUtils.Now().ToString("yyyy-MM-dd");
+                    tbxAwayEndDate.Text = TimeZoneUtils.Now().ToString("yyyy-MM-dd");
+                    if (int.TryParse(Request.QueryString["CustomerID"], out int customerId) && customerId > 0)
                     {
-                        cboCustomer.SelectedValue = customerId.ToString();
+                        var item = cboCustomer.Items.FindByValue(customerId.ToString());
+                        if (item != null)
+                            cboCustomer.SelectedValue = customerId.ToString();
                     }
                 }
             }
+        }
+
+        private int GetAwayPeriodId()
+        {
+            if (ViewState[ViewStateAwayPeriodId] is int fromView && fromView > 0)
+                return fromView;
+
+            if (int.TryParse(Request.QueryString["AwayPeriodID"], out int fromQuery) && fromQuery > 0)
+            {
+                ViewState[ViewStateAwayPeriodId] = fromQuery;
+                return fromQuery;
+            }
+
+            return 0;
+        }
+
+        private void SetAwayPeriodId(int id)
+        {
+            ViewState[ViewStateAwayPeriodId] = id;
+        }
+
+        private void SetStatus(string message, bool? isError = null)
+        {
+            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
+
+            if (pnlStatus == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
         private void BindCustomerDropdown()
@@ -59,7 +108,7 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = $"<span style='color:red'>Error loading customers: {ex.Message}</span>";
+                SetStatus("Error loading customers: " + ex.Message, true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Error loading customers dropdown: {ex.Message}");
             }
         }
@@ -75,7 +124,7 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = $"<span style='color:red'>Error loading reasons: {ex.Message}</span>";
+                SetStatus("Error loading reasons: " + ex.Message, true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Error loading reasons dropdown: {ex.Message}");
             }
         }
@@ -88,57 +137,61 @@ namespace TrackerSQL.Pages
                 var period = repo.GetById(awayPeriodId);
                 if (period != null)
                 {
-                    cboCustomer.SelectedValue = period.ContactID.ToString();
+                    var item = cboCustomer.Items.FindByValue(period.ContactID.ToString());
+                    if (item != null)
+                        cboCustomer.SelectedValue = period.ContactID.ToString();
+
                     tbxAwayStartDate.Text = period.AwayStartDate.ToString("yyyy-MM-dd");
                     tbxAwayEndDate.Text = period.AwayEndDate.ToString("yyyy-MM-dd");
                     if (period.ReasonID.HasValue)
                     {
-                        ddlReason.SelectedValue = period.ReasonID.Value.ToString();
+                        var reasonItem = ddlReason.Items.FindByValue(period.ReasonID.Value.ToString());
+                        if (reasonItem != null)
+                            ddlReason.SelectedValue = period.ReasonID.Value.ToString();
                     }
                 }
                 else
                 {
-                    ltrlStatus.Text = "<span style='color:red'>Could not load away period.</span>";
+                    SetStatus("Could not load away period.", true);
                 }
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = $"<span style='color:red'>Error loading away period: {ex.Message}</span>";
+                SetStatus("Error loading away period: " + ex.Message, true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Error loading away period {awayPeriodId}: {ex.Message}");
             }
         }
 
-        protected void btnInsert_Click(object sender, EventArgs e)
+        private bool TrySave(out string message)
         {
-            ltrlStatus.Text = "";
-            int customerId, reasonId, awayPeriodId;
-            DateTime startDate, endDate;
-            bool isEdit = int.TryParse(Request.QueryString["AwayPeriodID"], out awayPeriodId);
+            message = null;
+            int awayPeriodId = GetAwayPeriodId();
+            bool isEdit = awayPeriodId > 0;
 
-            if (!int.TryParse(cboCustomer.SelectedValue, out customerId) || customerId == 0)
+            if (!int.TryParse(cboCustomer.SelectedValue, out int customerId) || customerId == 0)
             {
-                ltrlStatus.Text = "<span style='color:red'>Please select a customer.</span>";
-                return;
+                message = "Please select a customer.";
+                return false;
             }
-            if (!DateTime.TryParse(tbxAwayStartDate.Text, out startDate))
+            if (!DateTime.TryParse(tbxAwayStartDate.Text, out DateTime startDate))
             {
-                ltrlStatus.Text = "<span style='color:red'>Please enter a valid start date.</span>";
-                return;
+                message = "Please enter a valid start date.";
+                return false;
             }
-            if (!DateTime.TryParse(tbxAwayEndDate.Text, out endDate))
+            if (!DateTime.TryParse(tbxAwayEndDate.Text, out DateTime endDate))
             {
-                ltrlStatus.Text = "<span style='color:red'>Please enter a valid end date.</span>";
-                return;
+                message = "Please enter a valid end date.";
+                return false;
             }
             if (endDate < startDate)
             {
-                ltrlStatus.Text = "<span style='color:red'>End date cannot be before start date.</span>";
-                return;
+                message = "End date cannot be before start date.";
+                return false;
             }
-            if (!int.TryParse(ddlReason.SelectedValue, out reasonId) || reasonId == 0)
+            if (!int.TryParse(ddlReason.SelectedValue, out int reasonId) || reasonId == 0)
             {
-                ltrlStatus.Text = "<span style='color:red'>Please select a reason.</span>";
-                return;
+                message = "Please select a reason.";
+                return false;
             }
 
             try
@@ -159,13 +212,20 @@ namespace TrackerSQL.Pages
                 }
                 else
                 {
-                    repo.Insert(awayPeriod);
+                    int newId = repo.Insert(awayPeriod);
+                    if (newId <= 0)
+                    {
+                        message = "Insert failed — away period was not created.";
+                        return false;
+                    }
+
+                    SetAwayPeriodId(newId);
+                    btnDelete.Visible = true;
                 }
 
                 string logMsg = $"{(isEdit ? "Updated" : "Added")} away period for ContactID={customerId}: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}, ReasonID={reasonId}";
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers, logMsg);
 
-                // Send confirmation email using helper
                 try
                 {
                     new CustomerManager().SendAwayPeriodConfirmationEmail(customerId, startDate, endDate);
@@ -175,43 +235,73 @@ namespace TrackerSQL.Pages
                     AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Email send failed (non-critical): {emailEx.Message}");
                 }
 
-                Response.Redirect("ContactsAway.aspx");
+                message = isEdit ? "Away period updated." : "Away period saved.";
+                return true;
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = $"<span style='color:red'>Exception: {ex.Message}</span>";
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Exception saving away period for ContactID={customerId}: {ex.Message}");
+                message = "Exception: " + ex.Message;
+                return false;
             }
+        }
+
+        private void ReturnToList()
+        {
+            Response.Redirect(DefaultReturnUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
+        }
+
+        protected void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (TrySave(out string message))
+            {
+                SetStatus(message ?? "Away period saved.", false);
+                upnlContactsAwayDetail.Update();
+            }
+            else
+            {
+                SetStatus(message ?? "Save failed.", true);
+                upnlContactsAwayDetail.Update();
+            }
+        }
+
+        protected void btnUpdateAndReturn_Click(object sender, EventArgs e)
+        {
+            if (!TrySave(out string message))
+            {
+                SetStatus(message ?? "Save failed.", true);
+                upnlContactsAwayDetail.Update();
+                return;
+            }
+
+            ReturnToList();
         }
 
         protected void btnDelete_Click(object sender, EventArgs e)
         {
-            int awayPeriodId;
-            if (int.TryParse(Request.QueryString["AwayPeriodID"], out awayPeriodId))
+            int awayPeriodId = GetAwayPeriodId();
+            if (awayPeriodId > 0)
             {
                 try
                 {
                     var repo = new ContactsAwayPeriodRepository();
                     repo.Delete(awayPeriodId);
-
                     AppLogger.WriteLog(SystemConstants.LogTypes.Customers, $"Deleted away period ID={awayPeriodId}");
-                    Response.Redirect("ContactsAway.aspx");
+                    ReturnToList();
                 }
                 catch (Exception ex)
                 {
-                    ltrlStatus.Text = $"<span style='color:red'>Error deleting: {ex.Message}</span>";
+                    SetStatus("Error deleting: " + ex.Message, true);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System, $"Error deleting away period {awayPeriodId}: {ex.Message}");
+                    upnlContactsAwayDetail.Update();
                 }
             }
         }
 
         protected void btnCancel_Click(object sender, EventArgs e)
         {
-            Response.Redirect("ContactsAway.aspx");
+            ReturnToList();
         }
     }
 }
-
-
-
-

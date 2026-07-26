@@ -11,11 +11,12 @@ namespace TrackerSQL.Repositories
         public RepositoryListResult<ActiveDeliveryDate> GetActiveDeliveryDates()
         {
             const string sql = @"
-                SELECT DISTINCT o.RequiredByDate
+                SELECT DISTINCT CAST(o.RequiredByDate AS DATE) AS RequiredByDate
                 FROM OrdersTbl o
+                INNER JOIN OrderLinesTbl ol ON o.OrderID = ol.OrderID
                 WHERE o.Done = 0
                   AND o.RequiredByDate IS NOT NULL
-                ORDER BY o.RequiredByDate";
+                ORDER BY RequiredByDate";
 
             return ExecuteActiveDeliveryDateQuery(sql, null, "DeliverySheetRepository.GetActiveDeliveryDates");
         }
@@ -27,13 +28,14 @@ namespace TrackerSQL.Repositories
                 new DBParameter
                 {
                     DataValue = requiredByDate.Date,
-                    DataDbType = DbType.DateTime,
+                    DataDbType = DbType.Date,
                     ParamName = "@RequiredByDate"
                 }
             };
 
+            // Include Done orders so a day's sheet shows what was delivered vs still open
             string sql = BaseDeliverySheetSql() + @"
-                WHERE CAST(o.RequiredByDate AS DATE) = CAST(@RequiredByDate AS DATE)";
+                WHERE CAST(o.RequiredByDate AS DATE) = @RequiredByDate";
 
             if (deliveryById.HasValue)
             {
@@ -50,6 +52,7 @@ namespace TrackerSQL.Repositories
 
             sql += @"
                 ORDER BY
+                    o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
                     apd.DeliveryOrder,
@@ -73,8 +76,8 @@ namespace TrackerSQL.Repositories
 
             string sql = BaseDeliverySheetSql() + @"
                 WHERE c.CompanyName LIKE @CompanyName
-                AND o.Done = 0
                 ORDER BY
+                    o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
                     apd.DeliveryOrder,

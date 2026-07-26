@@ -448,6 +448,22 @@ var parameters = new List<DBParameter>
 };
 ```
 
+### Optional foreign keys (`FkOrDbNull`)
+
+Access often stored **`0`** for “no lookup”. SQL Server FKs reject `0`. For every **optional** FK on INSERT/UPDATE, use `DbParamHelpers.FkOrDbNull(...)` (also on `RepositoryBase<T>`). See Rule #0e in `Documentation/HARD_PROJECT_RULES.md`:
+
+```csharp
+using static TrackerSQL.Classes.DbParamHelpers;
+
+new DBParameter
+{
+    ParamName = "@EquipTypeID",
+    DataValue = FkOrDbNull(contact.EquipTypeID),
+    DataDbType = DbType.Int32
+};
+```
+
+Do not pass raw `0` or `nullable ?? DBNull.Value` alone for optional FKs — `??` does not treat `0` as empty.
 Use repository base helpers:
 
 ```csharp
@@ -531,6 +547,15 @@ After migration, a page code-behind should only:
 - bind controls to manager-prepared or model data
 - display messages and control visibility
 
+### UI shell (required — new work + retrofit when editing)
+
+See **`Documentation/WEBFORMS_UI_STANDARDS.md`** (reference: `Tools/HolidayClosureDetail.aspx`).
+
+- **Status / result messages** belong at the **bottom** of the main form (after buttons), using `status-message` styles — not above the fields.
+- Prefer **ScriptManager + UpdatePanel + UpdateProgress** for interactive pages: async for Stay-on-page **Save**; full postback for **Save & Return**, **Back**, and redirecting **Delete**.
+- **Back** must be an `<asp:Button>` (not a HyperLink). Detail forms should offer **Save** and **Save & Return** where saving applies; default return is the owning list page.
+- Pages that do not yet follow this are retrofitted when next worked on.
+
 ### Known legacy anti-patterns (fix during migration, not after)
 
 Many `.aspx.cs` files pre-date the repository/manager split. **Swapping `new CustomersTbl()` for `new ContactsRepository()` in the page is not sufficient.** During page migration you must also:
@@ -547,7 +572,7 @@ Many `.aspx.cs` files pre-date the repository/manager split. **Swapping `new Cus
 |------|----------------|
 | `Pages/CustomerDetails.aspx.cs` | Legacy page (bookmark-only); active customer flow uses `ContactDetails.aspx` |
 | `Pages/NewOrderDetail.aspx.cs` | Legacy/orphan page; replaced by `OrderDetail.aspx?NewOrder=true` |
-| `Pages/OrderDetail.aspx.cs` | Order/line logic in code-behind |
+| `Pages/OrderDetail.aspx.cs` | ✅ Migrated 2026-07-13 — OrderManager/repos; Save / Save & Return; line edit |
 | `Pages/SendCoffeeCheckup.aspx.cs` | Checkup UI + legacy DTOs; manager bridges in place |
 | `Pages/LogTable.aspx.cs` | Direct DB / control usage |
 | `Pages/GroupItemDetail.aspx.cs` | Item/group logic in page |

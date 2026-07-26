@@ -6,9 +6,9 @@ namespace TrackerSQL.Models
         public int ReminderID { get; set; }
         public int ContactID { get; set; }
         public DateTime? DateSentReminder { get; set; }
-        public DateTime? NextPreperationDate { get; set; }
+        public DateTime? NextPreparationDate { get; set; }
         public bool? ReminderSent { get; set; }
         public bool? HadAutoFulfilItem { get; set; }
-        public bool? HadRecurrItems { get; set; }
+        public bool? HadRecurringItems { get; set; }
     }
 }

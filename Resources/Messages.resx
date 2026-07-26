@@ -135,6 +135,9 @@
   <data name="CoffeeCheckup.BodyFinalWarning" xml:space="preserve">
     <value>&lt;div style='color: red; font-weight: bold;'&gt;⚠️ FINAL REMINDER: This is the last automated reminder we'll send. If you no longer need coffee reminders, please let us know.&lt;/div&gt;&lt;br/&gt;</value>
   </data>
+  <data name="CoffeeCheckup.BodyLastRecurringOrder" xml:space="preserve">
+    <value>&lt;div style='color: #a65c00; font-weight: bold;'&gt;Please note: this is the last delivery under your recurring order (ends {0}). After this, the recurring order will stop unless you arrange a new one with us.&lt;/div&gt;&lt;br/&gt;</value>
+  </data>
   <data name="CoffeeCheckup.BodyOrderType" xml:space="preserve">
     <value>&lt;p&gt;Your {0} is ready for processing:&lt;/p&gt;</value>
   </data>
@@ -254,6 +257,9 @@
   </data>
   <data name="CoffeeCheckup.TableNextDispatchDate" xml:space="preserve">
     <value>Next estimate dispatch date</value>
+  </data>
+  <data name="CoffeeCheckup.TableNextPreparationDate" xml:space="preserve">
+    <value>Next estimate prep date</value>
   </data>
   <data name="CoffeeCheckup.TableNextPreperationDate" xml:space="preserve">
     <value>Next estimate prep date</value>

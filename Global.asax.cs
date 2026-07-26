@@ -59,17 +59,15 @@ namespace TrackerSQL
             }
             catch (Exception ex)
             {
-                // Fallback: if error handling fails, just clear and continue
                 try
                 {
-                    // Try to log the error handling failure
-                    System.Diagnostics.EventLog.WriteEntry("TrackerSQL",
+                    System.Diagnostics.EventLog.WriteEntry(
+                        "TrackerSQL",
                         $"Error handling failed: {ex.Message}",
                         System.Diagnostics.EventLogEntryType.Error);
                 }
                 catch
                 {
-                    // Ultimate fallback - do nothing
                 }
 
                 Server.ClearError();
@@ -82,11 +80,9 @@ namespace TrackerSQL
         {
             try
             {
-                // Try multiple logging approaches
                 Exception root = error.InnerException ?? error;
                 string logEntry = $"[{TimeZoneUtils.Now()}]\n{root.GetType()}: {root.Message}\n{root.StackTrace}\n----------------------\n";
 
-                // Method 1: Try App_Data folder
                 try
                 {
                     string appDataPath = Server.MapPath("~/App_Data/");
@@ -101,41 +97,36 @@ namespace TrackerSQL
                     {
                         writer.WriteLine(logEntry);
                     }
-                    return; // Success
+                    return;
                 }
                 catch
                 {
-                    // Fall through to next method
                 }
 
-                // Method 2: Try Temp folder
                 try
                 {
                     string tempPath = Path.GetTempPath();
                     string logPath = Path.Combine(tempPath, "TrackerSQL_ErrorLog.txt");
                     File.AppendAllText(logPath, logEntry);
-                    return; // Success
+                    return;
                 }
                 catch
                 {
-                    // Fall through to next method
                 }
 
-                // Method 3: Try Event Log
                 try
                 {
-                    System.Diagnostics.EventLog.WriteEntry("TrackerSQL",
+                    System.Diagnostics.EventLog.WriteEntry(
+                        "TrackerSQL",
                         $"{root.GetType()}: {root.Message}",
                         System.Diagnostics.EventLogEntryType.Error);
                 }
                 catch
                 {
-                    // Ultimate fallback - do nothing
                 }
             }
             catch
             {
-                // Silently fail - don't let logging errors break the app
             }
         }
 

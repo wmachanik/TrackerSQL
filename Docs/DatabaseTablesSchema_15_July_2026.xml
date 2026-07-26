@@ -1,0 +1,568 @@
+﻿<OtterDb>
+  <Table TableName="AreaPrepDaysTbl">
+    <Column ColumnName="AreaPrepDaysID" DataType="int" Nullable="NO" />
+    <Column ColumnName="AreaID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PrepDayOfWeekID" DataType="tinyint" Nullable="YES" />
+    <Column ColumnName="DeliveryDelayDays" DataType="smallint" Nullable="YES" />
+    <Column ColumnName="DeliveryOrder" DataType="smallint" Nullable="YES" />
+  </Table>
+  <Table TableName="AreasTbl">
+    <Column ColumnName="AreaID" DataType="int" Nullable="NO" />
+    <Column ColumnName="AreaName" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="PrepDayOfWeekID" DataType="int" Nullable="YES" />
+    <Column ColumnName="DeliveryDelay" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="AwayReasonTbl">
+    <Column ColumnName="AwayReasonID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ReasonDesc" DataType="nvarchar" Nullable="YES" MaxLength="100" />
+  </Table>
+  <Table TableName="ClosureDatesTbl">
+    <Column ColumnName="ClosureDateID" DataType="int" Nullable="NO" />
+    <Column ColumnName="DateClosed" DataType="date" Nullable="YES" />
+    <Column ColumnName="DateReopen" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextPreparationDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="Comments" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="ContactsAccInfoTbl">
+    <Column ColumnName="ContactsAccInfoID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="RequiresPurchOrder" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ContactVATNo" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="BillAddr1" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="BillAddr2" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="BillAddr3" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="BillAddr4" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="BillAddr5" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ShipAddr1" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ShipAddr2" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ShipAddr3" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ShipAddr4" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ShipAddr5" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AccEmail" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AltAccEmail" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="PaymentTermID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Limit" DataType="real" Nullable="YES" />
+    <Column ColumnName="FullCoName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AccFirstName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AccLastName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AltAccFirstName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AltAccLastName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="PriceLevelID" DataType="int" Nullable="YES" />
+    <Column ColumnName="InvoiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="RegNo" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="BankAccNo" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="BankBranch" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="ContactsAwayPeriodTbl">
+    <Column ColumnName="AwayPeriodID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="AwayStartDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="AwayEndDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ReasonID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="ContactsItemsPredictedTbl">
+    <Column ColumnName="ContactsItemsPredictedId" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="LastCupCount" DataType="int" Nullable="YES" />
+    <Column ColumnName="NextCoffeeBy" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextCleanOn" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextFilterEst" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextDescaleEst" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextServiceEst" DataType="date" Nullable="YES" />
+    <Column ColumnName="DailyConsumption" DataType="real" Nullable="YES" />
+    <Column ColumnName="FilterAveCount" DataType="real" Nullable="YES" />
+    <Column ColumnName="DescaleAveCount" DataType="real" Nullable="YES" />
+    <Column ColumnName="ServiceAveCount" DataType="real" Nullable="YES" />
+    <Column ColumnName="CleanAveCount" DataType="real" Nullable="YES" />
+  </Table>
+  <Table TableName="ContactsItemSvcSummaryTbl">
+    <Column ColumnName="ContactsItemSvcSummaryId" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="UsageDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="CupCount" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="150" />
+  </Table>
+  <Table TableName="ContactsItemUsageTbl">
+    <Column ColumnName="ContactItemUsageLineNo" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="DeliveryDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ItemProvidedID" DataType="int" Nullable="YES" />
+    <Column ColumnName="QtyProvided" DataType="real" Nullable="YES" />
+    <Column ColumnName="ItemPrepTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="150" />
+  </Table>
+  <Table TableName="ContactsTbl">
+    <Column ColumnName="ContactID" DataType="int" Nullable="NO" />
+    <Column ColumnName="CompanyName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactTitle" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactFirstName" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="ContactLastName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactAltFirstName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactAltLastName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Department" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="BillingAddress" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="AreaID" DataType="int" Nullable="YES" />
+    <Column ColumnName="StateOrProvince" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="PostalCode" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="Country/Region" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="PhoneNumber" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="Extension" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="FaxNumber" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="CellNumber" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="EmailAddress" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AltEmailAddress" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="ContractNo" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EquipTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPrefID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PriPrefQty" DataType="real" Nullable="YES" />
+    <Column ColumnName="PrefItemPrepTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PrefItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="SecondaryItemPrefID" DataType="int" Nullable="YES" />
+    <Column ColumnName="SecPrefQty" DataType="real" Nullable="YES" />
+    <Column ColumnName="TypicallySecToo" DataType="bit" Nullable="YES" />
+    <Column ColumnName="PreferredAgentID" DataType="int" Nullable="YES" />
+    <Column ColumnName="SalesAgentID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EquipentSN" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="UsesFilter" DataType="bit" Nullable="YES" />
+    <Column ColumnName="AutoFulfill" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="PredictionDisabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="AlwaysSendChkUp" DataType="bit" Nullable="YES" />
+    <Column ColumnName="NormallyResponds" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ReminderCount" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="SendDeliveryConfirmation" DataType="bit" Nullable="YES" />
+    <Column ColumnName="LastDateSentReminder" DataType="date" Nullable="YES" />
+  </Table>
+  <Table TableName="ContactTrackedServiceItemsTbl">
+    <Column ColumnName="ContactTrackedServiceItemsID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="ContactTypesTbl">
+    <Column ColumnName="ContactTypeID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactTypeDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="EquipConditionsTbl">
+    <Column ColumnName="EquipConditionID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ConditionDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="SortOrder" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="EquipTypesTbl">
+    <Column ColumnName="EquipTypeID" DataType="int" Nullable="NO" />
+    <Column ColumnName="EquipTypeName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="EquipTypeDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+  </Table>
+  <Table TableName="HolidayClosuresTbl">
+    <Column ColumnName="HolidayClosureID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ClosureDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="DaysClosed" DataType="int" Nullable="YES" />
+    <Column ColumnName="AppliesToPrep" DataType="bit" Nullable="YES" />
+    <Column ColumnName="AppliesToDelivery" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ShiftStrategy" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="Description" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="InvoiceTypesTbl">
+    <Column ColumnName="InvoiceTypeID" DataType="int" Nullable="NO" />
+    <Column ColumnName="InvoiceTypeDesc" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="ItemGroupsTbl">
+    <Column ColumnName="ItemGroupID" DataType="int" Nullable="NO" />
+    <Column ColumnName="GroupItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemSortPos" DataType="int" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="ItemPackagingsTbl">
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ItemPrepDescription" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AdditionalNotes" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Symbol" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Colour" DataType="int" Nullable="YES" />
+    <Column ColumnName="BGColour" DataType="nvarchar" Nullable="YES" MaxLength="9" />
+  </Table>
+  <Table TableName="ItemPrepTypesTbl">
+    <Column ColumnName="ItemPrepID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ItemPrepTypeDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="IdentifyingChar" DataType="nvarchar" Nullable="YES" MaxLength="1" />
+  </Table>
+  <Table TableName="ItemServiceTypesTbl">
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ItemServiceTypeName" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="Description" DataType="nvarchar" Nullable="YES" MaxLength="100" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPrepTypeID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="ItemsTbl">
+    <Column ColumnName="ItemID" DataType="int" Nullable="NO" />
+    <Column ColumnName="SKU" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="ItemDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ItemEnabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ItemsCharacteritics" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ItemDetail" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ReplacementItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemShortName" DataType="nvarchar" Nullable="YES" MaxLength="10" />
+    <Column ColumnName="SortOrder" DataType="int" Nullable="YES" />
+    <Column ColumnName="UnitsPerQty" DataType="real" Nullable="YES" />
+    <Column ColumnName="ItemUnitID" DataType="int" Nullable="YES" />
+    <Column ColumnName="BasePrice" DataType="real" Nullable="YES" />
+  </Table>
+  <Table TableName="ItemUnitsTbl">
+    <Column ColumnName="ItemUnitID" DataType="int" Nullable="NO" />
+    <Column ColumnName="UnitOfMeasure" DataType="nvarchar" Nullable="YES" MaxLength="5" />
+    <Column ColumnName="UnitDescription" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+  </Table>
+  <Table TableName="Migration_OrphanedOrders">
+    <Column ColumnName="OrphanId" DataType="int" Nullable="NO" />
+    <Column ColumnName="DetectedAt" DataType="datetime2" Nullable="NO" />
+    <Column ColumnName="SourceOrderId" DataType="bigint" Nullable="YES" />
+    <Column ColumnName="MissingFkName" DataType="nvarchar" Nullable="NO" MaxLength="200" />
+    <Column ColumnName="MissingFkValue" DataType="nvarchar" Nullable="YES" MaxLength="4000" />
+    <Column ColumnName="Details" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="NextPreparationDateByAreasTbl">
+    <Column ColumnName="NextPrepDayID" DataType="int" Nullable="NO" />
+    <Column ColumnName="AreaID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PreparationDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="DeliveryDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="DeliveryOrder" DataType="smallint" Nullable="YES" />
+    <Column ColumnName="NextPreparationDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextDeliveryDate" DataType="date" Nullable="YES" />
+  </Table>
+  <Table TableName="OrderLinesTbl">
+    <Column ColumnName="OrderLineID" DataType="int" Nullable="NO" />
+    <Column ColumnName="OrderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="QtyOrdered" DataType="real" Nullable="YES" />
+    <Column ColumnName="PrepTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PackagingID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="OrderList">
+    <Column ColumnName="ID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Cleints" DataType="int" Nullable="YES" />
+    <Column ColumnName="Cln Tb" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Decal" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Filter" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Sidama" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Switch" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Terranova" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Alpino" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Yirga" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Marango" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Limu" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Harrar" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Mandheling" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Timana" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Marcala" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Antigua" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Decaf" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="La Piram" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Asorgan" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Los Idol" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="No order" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Day" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="done" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="Time" DataType="date" Nullable="YES" />
+  </Table>
+  <Table TableName="OrdersTbl">
+    <Column ColumnName="OrderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="OrderDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="PrepDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="RequiredByDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ToBeDeliveredByID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Confirmed" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Done" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Packed" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="PurchaseOrder" DataType="nvarchar" Nullable="YES" MaxLength="30" />
+    <Column ColumnName="InvoiceDone" DataType="bit" Nullable="YES" />
+  </Table>
+  <Table TableName="OrphanedOrderIdsTbl">
+    <Column ColumnName="OldOrderId" DataType="bigint" Nullable="YES" />
+    <Column ColumnName="LinkedOrderId" DataType="bigint" Nullable="YES" />
+  </Table>
+  <Table TableName="OrphanedRecurringOrderIdsTbl">
+    <Column ColumnName="OldRecurringId" DataType="bigint" Nullable="YES" />
+    <Column ColumnName="LinkedRecurringId" DataType="bigint" Nullable="YES" />
+  </Table>
+  <Table TableName="PaymentTermsTbl">
+    <Column ColumnName="PaymentTermID" DataType="int" Nullable="NO" />
+    <Column ColumnName="PaymentTermDesc" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="PaymentDays" DataType="int" Nullable="YES" />
+    <Column ColumnName="DayOfMonth" DataType="int" Nullable="YES" />
+    <Column ColumnName="UseDays" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="PeopleTbl">
+    <Column ColumnName="PersonID" DataType="int" Nullable="NO" />
+    <Column ColumnName="Person" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Abbreviation" DataType="nvarchar" Nullable="YES" MaxLength="5" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="NormalDeliveryDoW" DataType="int" Nullable="YES" />
+    <Column ColumnName="SecurityUsername" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="PredictedOrdersTbl">
+    <Column ColumnName="PredictedOrderID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Pinned" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PrepDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ItemId" DataType="int" Nullable="YES" />
+    <Column ColumnName="PrepTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="PackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Quantity" DataType="real" Nullable="YES" />
+    <Column ColumnName="DeliveryDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="DeliveryPersonID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="PriceLevelsTbl">
+    <Column ColumnName="PriceLevelID" DataType="int" Nullable="NO" />
+    <Column ColumnName="PriceLevelDesc" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="PricingFactor" DataType="real" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="RecurringOrderItemsTbl">
+    <Column ColumnName="RecurringOrderItemID" DataType="int" Nullable="NO" />
+    <Column ColumnName="RecurringOrderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="RecurringTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Value" DataType="tinyint" Nullable="YES" />
+    <Column ColumnName="ItemRequiredID" DataType="int" Nullable="YES" />
+    <Column ColumnName="QtyRequired" DataType="float" Nullable="YES" />
+    <Column ColumnName="DateLastDone" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextDateRequired" DataType="date" Nullable="YES" />
+    <Column ColumnName="RequireUntilDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="RecurringOrdersTbl">
+    <Column ColumnName="RecurringOrderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="DeliveryByID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="RecurringTypesTbl">
+    <Column ColumnName="RecurringTypeID" DataType="int" Nullable="NO" />
+    <Column ColumnName="RecurringTypeDesc" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="RepairFaultsTbl">
+    <Column ColumnName="RepairFaultID" DataType="int" Nullable="NO" />
+    <Column ColumnName="RepairFaultDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="SortOrder" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="RepairStatusesTbl">
+    <Column ColumnName="RepairStatusID" DataType="int" Nullable="NO" />
+    <Column ColumnName="RepairStatusDesc" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="EmailContact" DataType="bit" Nullable="YES" />
+    <Column ColumnName="SortOrder" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="StatusNote" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="RepairsTbl">
+    <Column ColumnName="RepairID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ContactName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactEmail" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="JobCardNumber" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="DateLogged" DataType="date" Nullable="YES" />
+    <Column ColumnName="LastStatusChange" DataType="date" Nullable="YES" />
+    <Column ColumnName="EquipTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EquipSerialNumber" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="SwopOutMachineID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EquipConditionID" DataType="int" Nullable="YES" />
+    <Column ColumnName="TakenFrother" DataType="bit" Nullable="YES" />
+    <Column ColumnName="TakenBeanLid" DataType="bit" Nullable="YES" />
+    <Column ColumnName="TakenWaterLid" DataType="bit" Nullable="YES" />
+    <Column ColumnName="BrokenFrother" DataType="bit" Nullable="YES" />
+    <Column ColumnName="BrokenBeanLid" DataType="bit" Nullable="YES" />
+    <Column ColumnName="BrokenWaterLid" DataType="bit" Nullable="YES" />
+    <Column ColumnName="RepairFaultID" DataType="int" Nullable="YES" />
+    <Column ColumnName="RepairFaultDesc" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="RepairStatusID" DataType="int" Nullable="YES" />
+    <Column ColumnName="RelatedOrderLineID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="SectionTypesTbl">
+    <Column ColumnName="SectionID" DataType="int" Nullable="NO" />
+    <Column ColumnName="SectionType" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="SendCheckupEmailTextsTbl">
+    <Column ColumnName="SCEMTID" DataType="int" Nullable="NO" />
+    <Column ColumnName="HeaderText" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="BodyText" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="FooterText" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+    <Column ColumnName="DateLastChange" DataType="date" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="SentRemindersLogTbl">
+    <Column ColumnName="ReminderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="DateSentReminder" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextPreparationDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ReminderSent" DataType="bit" Nullable="YES" />
+    <Column ColumnName="HadAutoFulfilItem" DataType="bit" Nullable="YES" />
+    <Column ColumnName="HadRecurringItems" DataType="bit" Nullable="YES" />
+  </Table>
+  <Table TableName="SysDataTbl">
+    <Column ColumnName="ID" DataType="int" Nullable="NO" />
+    <Column ColumnName="LastRecurringDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="DoRecurringOrders" DataType="bit" Nullable="YES" />
+    <Column ColumnName="DateLastPrepDateCalcd" DataType="date" Nullable="YES" />
+    <Column ColumnName="MinReminderDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="GroupReferenceItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="InternalContactIDs" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="TempCoffeecheckupCustomerTbl">
+    <Column ColumnName="TCCID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="CompanyName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactFirstName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactAltFirstName" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AreaID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EmailAddress" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="AltEmailAddress" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="ContactTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="EquipTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="TypicallySecToo" DataType="bit" Nullable="YES" />
+    <Column ColumnName="PreferredAgentID" DataType="int" Nullable="YES" />
+    <Column ColumnName="SalesAgentID" DataType="int" Nullable="YES" />
+    <Column ColumnName="UsesFilter" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Enabled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="AlwaysSendChkUp" DataType="bit" Nullable="YES" />
+    <Column ColumnName="ReminderCount" DataType="int" Nullable="YES" />
+    <Column ColumnName="NextPreparationDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextDeliveryDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextCoffee" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextClean" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextFilter" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextDescal" DataType="date" Nullable="YES" />
+    <Column ColumnName="NextService" DataType="date" Nullable="YES" />
+    <Column ColumnName="RequiresPurchOrder" DataType="bit" Nullable="YES" />
+  </Table>
+  <Table TableName="TempCoffeecheckupItemsTbl">
+    <Column ColumnName="TCIID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemQty" DataType="real" Nullable="YES" />
+    <Column ColumnName="ItemPrepID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="AutoFulfill" DataType="bit" Nullable="YES" />
+    <Column ColumnName="NextDateRequired" DataType="date" Nullable="YES" />
+    <Column ColumnName="RecurringOrderItemID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="TempOrdersHeaderTbl">
+    <Column ColumnName="TOHeaderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="OrderDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="RoastDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="RequiredByDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ToBeDeliveredByID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Confirmed" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Done" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="TempOrdersLinesTbl">
+    <Column ColumnName="TOLineID" DataType="int" Nullable="NO" />
+    <Column ColumnName="TOHeaderID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="OriginalOrderID" DataType="int" Nullable="YES" />
+  </Table>
+  <Table TableName="TempOrdersTbl">
+    <Column ColumnName="TempOrderID" DataType="int" Nullable="NO" />
+    <Column ColumnName="OrderID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="OrderDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="RoastDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="ItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPrepTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="ItemPackagingID" DataType="int" Nullable="YES" />
+    <Column ColumnName="QtyOrdered" DataType="real" Nullable="YES" />
+    <Column ColumnName="RequiredByDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="Delivered" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="tmpOrdersReplyTbl">
+    <Column ColumnName="ID" DataType="int" Nullable="YES" />
+    <Column ColumnName="CustomerId" DataType="int" Nullable="YES" />
+    <Column ColumnName="First Name" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="email" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+    <Column ColumnName="ThisWeekPlease" DataType="bit" Nullable="YES" />
+    <Column ColumnName="NextCoffeeBy" DataType="date" Nullable="YES" />
+    <Column ColumnName="Item1" DataType="int" Nullable="YES" />
+    <Column ColumnName="Item1Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Item2" DataType="int" Nullable="YES" />
+    <Column ColumnName="Item2Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Item3" DataType="int" Nullable="YES" />
+    <Column ColumnName="Item3Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Item4" DataType="int" Nullable="YES" />
+    <Column ColumnName="Item4Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Item5" DataType="int" Nullable="YES" />
+    <Column ColumnName="Item5Qty" DataType="real" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="TotalCountTrackerTbl">
+    <Column ColumnName="TotalCounterTrackerID" DataType="int" Nullable="NO" />
+    <Column ColumnName="CountDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="TotalCount" DataType="int" Nullable="YES" />
+    <Column ColumnName="Comments" DataType="nvarchar" Nullable="YES" MaxLength="255" />
+  </Table>
+  <Table TableName="TrackedServiceItemsTbl">
+    <Column ColumnName="TrackerServiceItemID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="TypicalAvePerItem" DataType="real" Nullable="YES" />
+    <Column ColumnName="UsageDateFieldName" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="UsageAveFieldName" DataType="nvarchar" Nullable="YES" MaxLength="20" />
+    <Column ColumnName="ThisItemSetsDailyAverage" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="TransactionTypesTbl">
+    <Column ColumnName="TransactionID" DataType="int" Nullable="NO" />
+    <Column ColumnName="TransactionType" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="UsedItemGroupsTbl">
+    <Column ColumnName="UsedItemGroupID" DataType="int" Nullable="NO" />
+    <Column ColumnName="ContactID" DataType="int" Nullable="YES" />
+    <Column ColumnName="GroupItemServiceTypeID" DataType="int" Nullable="YES" />
+    <Column ColumnName="LastItemID" DataType="int" Nullable="YES" />
+    <Column ColumnName="LastItemSortPos" DataType="int" Nullable="YES" />
+    <Column ColumnName="LastItemDateChanged" DataType="date" Nullable="YES" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="VisitLogTbl">
+    <Column ColumnName="ID" DataType="int" Nullable="YES" />
+    <Column ColumnName="Client" DataType="int" Nullable="YES" />
+    <Column ColumnName="VisitDate" DataType="date" Nullable="YES" />
+    <Column ColumnName="CupsMade" DataType="int" Nullable="YES" />
+    <Column ColumnName="Cleaned" DataType="bit" Nullable="YES" />
+    <Column ColumnName="Descaled" DataType="bit" Nullable="YES" />
+    <Column ColumnName="CoffeeQty" DataType="real" Nullable="YES" />
+    <Column ColumnName="CoffeeTypeProvided" DataType="int" Nullable="YES" />
+    <Column ColumnName="InvRef" DataType="nvarchar" Nullable="YES" MaxLength="50" />
+    <Column ColumnName="Notes" DataType="nvarchar" Nullable="YES" MaxLength="-1" />
+  </Table>
+  <Table TableName="WeekDaysTbl">
+    <Column ColumnName="WeekDaysID" DataType="tinyint" Nullable="YES" />
+    <Column ColumnName="WeekDayName" DataType="nvarchar" Nullable="YES" MaxLength="15" />
+  </Table>
+</OtterDb>

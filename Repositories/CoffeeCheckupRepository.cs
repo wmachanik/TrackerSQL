@@ -23,10 +23,10 @@ namespace TrackerSQL.Repositories
                     c.EquipTypeID, c.TypicallySecToo, c.PreferredAgentID, c.SalesAgentID,
                     c.UsesFilter, c.AlwaysSendChkUp, c.AutoFulfill, c.ReminderCount,
                     cu.NextCoffeeBy, cu.NextCleanOn, cu.NextDescaleEst, cu.NextFilterEst, cu.NextServiceEst,
-                    nrd.PreperationDate AS PrepDate, nrd.DeliveryDate
+                    nrd.PreparationDate AS PrepDate, nrd.DeliveryDate
                 FROM ContactsTbl c
                 INNER JOIN ContactsItemsPredictedTbl cu ON c.ContactID = cu.ContactID
-                LEFT JOIN NextPreperationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
+                LEFT JOIN NextPreparationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
                 WHERE c.Enabled = 1
                   AND c.ReminderCount < @MaxReminders
                   AND cu.NextCoffeeBy <= DATEADD(day, 7, CAST(GETDATE() AS date))
@@ -165,11 +165,11 @@ namespace TrackerSQL.Repositories
                        c.TypicallySecToo, c.PreferredAgentID, c.SalesAgentID, c.UsesFilter, c.AutoFulfill,
                        c.AlwaysSendChkUp, c.Enabled, c.ReminderCount, ai.RequiresPurchOrder,
                        cu.NextCoffeeBy, cu.NextCleanOn, cu.NextFilterEst, cu.NextDescaleEst, cu.NextServiceEst,
-                       nrd.PreperationDate, nrd.DeliveryDate, nrd.NextPreperationDate, nrd.NextDeliveryDate
+                       nrd.PreparationDate, nrd.DeliveryDate, nrd.NextPreparationDate, nrd.NextDeliveryDate
                 FROM ContactsTbl c
                 INNER JOIN ContactsItemsPredictedTbl cu ON c.ContactID = cu.ContactID
                 LEFT JOIN ContactsAccInfoTbl ai ON c.ContactID = ai.ContactID
-                LEFT JOIN NextPreperationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
+                LEFT JOIN NextPreparationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
                 WHERE (c.LastDateSentReminder IS NULL OR c.LastDateSentReminder <> @BaselineDate)
                   AND c.Enabled = 1
                   AND c.PredictionDisabled = 0
@@ -222,9 +222,9 @@ namespace TrackerSQL.Repositories
                         NextFilterEst = GetDate(rdr, "NextFilterEst"),
                         NextDescaleEst = GetDate(rdr, "NextDescaleEst"),
                         NextServiceEst = GetDate(rdr, "NextServiceEst"),
-                        PrepDate = GetDate(rdr, "PreperationDate"),
+                        PrepDate = GetDate(rdr, "PreparationDate"),
                         DeliveryDate = GetDate(rdr, "DeliveryDate"),
-                        NextPreperationDate = GetDate(rdr, "NextPreperationDate"),
+                        NextPreparationDate = GetDate(rdr, "NextPreparationDate"),
                         NextDeliveryDate = GetDate(rdr, "NextDeliveryDate")
                     });
                 }
@@ -240,12 +240,12 @@ namespace TrackerSQL.Repositories
                        c.EmailAddress, c.AltEmailAddress, c.ContactTypeID, c.TypicallySecToo,
                        c.PreferredAgentID, c.SalesAgentID, c.UsesFilter, c.AutoFulfill, c.Enabled,
                        c.AlwaysSendChkUp, c.ReminderCount, c.LastDateSentReminder, ai.RequiresPurchOrder,
-                       nrd.AreaID, nrd.DeliveryDate, nrd.PreperationDate,
+                       nrd.AreaID, nrd.DeliveryDate, nrd.PreparationDate,
                        cu.NextCoffeeBy, cu.NextCleanOn, cu.NextFilterEst, cu.NextDescaleEst, cu.NextServiceEst
                 FROM ContactsTbl c
                 LEFT JOIN ContactsAccInfoTbl ai ON c.ContactID = ai.ContactID
                 LEFT JOIN ContactsItemsPredictedTbl cu ON c.ContactID = cu.ContactID
-                LEFT JOIN NextPreperationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
+                LEFT JOIN NextPreparationDateByAreasTbl nrd ON c.AreaID = nrd.AreaID
                 WHERE c.ContactID = @ContactID";
 
             var parameters = new List<DBParameter>
@@ -284,7 +284,7 @@ namespace TrackerSQL.Repositories
                     RequiresPurchOrder = GetBool(rdr, "RequiresPurchOrder"),
                     AreaID = GetInt(rdr, "AreaID"),
                     NextDeliveryDate = GetDate(rdr, "DeliveryDate"),
-                    NextPreperationDate = GetDate(rdr, "PreperationDate"),
+                    NextPreparationDate = GetDate(rdr, "PreparationDate"),
                     NextCoffee = GetDate(rdr, "NextCoffeeBy"),
                     NextClean = GetDate(rdr, "NextCleanOn"),
                     NextFilter = GetDate(rdr, "NextFilterEst"),
@@ -325,7 +325,7 @@ namespace TrackerSQL.Repositories
                         NextDescal = GetDateOrMax(rdr, "NextDescaleEst"),
                         NextFilter = GetDateOrMax(rdr, "NextFilterEst"),
                         NextService = GetDateOrMax(rdr, "NextServiceEst"),
-                        NextPreperationDate = GetDateOrTomorrow(rdr, "PrepDate"),
+                        NextPreparationDate = GetDateOrTomorrow(rdr, "PrepDate"),
                         NextDeliveryDate = GetDateOrDayAfterTomorrow(rdr, "DeliveryDate")
                     });
                 }

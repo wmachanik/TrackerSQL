@@ -4,17 +4,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TrackerSQL
+namespace TrackerSQL.Account
 {
     public partial class RecoverPassword
     {
-        protected global::System.Web.UI.WebControls.Content HeadContent;
-        protected global::System.Web.UI.WebControls.Content MainContent;
-        protected global::System.Web.UI.WebControls.PasswordRecovery TrackerPasswordRecovery;
-        protected global::System.Web.UI.WebControls.Label UserNameLabel;
-        protected global::System.Web.UI.WebControls.TextBox UserName;
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator UserNameRequired;
-        protected global::System.Web.UI.WebControls.Literal FailureText;
-        protected global::System.Web.UI.WebControls.Button SubmitButton;
     }
 }

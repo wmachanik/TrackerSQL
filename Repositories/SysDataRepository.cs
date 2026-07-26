@@ -15,7 +15,7 @@ namespace TrackerSQL.Repositories
         protected override string KeyColumn => "ID";
 
         protected override string CoreColumns =>
-            "ID, DoRecurringOrders, LastRecurringDate, DateLastPrepDateCalcd, MinReminderDate, GroupItemServiceTypeID, InternalContactIDs";
+            "ID, DoRecurringOrders, LastRecurringDate, DateLastPrepDateCalcd, MinReminderDate, GroupReferenceItemID, InternalContactIDs";
 
         /// <summary>
         /// Gets the singleton system data record.
@@ -46,10 +46,13 @@ namespace TrackerSQL.Repositories
             return data?.MinReminderDate ?? DateTime.MinValue;
         }
 
-        public int? GetGroupItemServiceTypeId()
+        public int? GetGroupReferenceItemId()
         {
-            return GetSystemData()?.GroupItemServiceTypeID;
+            return GetSystemData()?.GroupReferenceItemID;
         }
+
+        /// <summary>Legacy name — use <see cref="GetGroupReferenceItemId"/>.</summary>
+        public int? GetGroupItemServiceTypeId() => GetGroupReferenceItemId();
 
         public List<int> GetInternalContactIds()
         {

@@ -1,8 +1,7 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.classes.showMessageBox
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — showMessageBox
+// Shared infrastructure / utility: showMessageBox.
+//------------------------------------------------------------------------------
 
 using System.Web.UI;
 
@@ -15,7 +14,8 @@ namespace TrackerSQL.Classes
         {
             if (pPage == null)
                 return;
-            string script = $"showAppMessage('{pMessage}');";
+            // Encode so newlines/quotes in the message do not break the script (and block later redirects).
+            string script = "showAppMessage(" + System.Web.HttpUtility.JavaScriptStringEncode(pMessage ?? string.Empty, true) + ");";
             ScriptManager.RegisterStartupScript(pPage, pPage.GetType(), pTitle, script, true);
         }
     }

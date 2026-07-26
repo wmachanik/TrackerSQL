@@ -10,14 +10,16 @@ namespace TrackerSQL.Pages
     {
         protected global::System.Web.UI.ScriptManager smContactSummary;
         protected global::System.Web.UI.UpdateProgress uprgContactSummary;
-        protected global::System.Web.UI.UpdatePanel upnlSelection;
+        protected global::System.Web.UI.UpdatePanel upnlContactSummary;
+        protected global::System.Web.UI.WebControls.Panel pnlContacts;
         protected global::System.Web.UI.WebControls.DropDownList ddlFilterBy;
         protected global::System.Web.UI.WebControls.TextBox tbxFilterBy;
         protected global::System.Web.UI.WebControls.Button btnGon;
         protected global::System.Web.UI.WebControls.Button btnReset;
         protected global::System.Web.UI.WebControls.DropDownList ddlContactEnabled;
-        protected global::System.Web.UI.UpdatePanel upnlContactSummary;
+        protected global::System.Web.UI.WebControls.Button btnBack;
         protected global::System.Web.UI.WebControls.GridView gvContacts;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected global::System.Web.UI.WebControls.Label lblFilter;
     }
 }

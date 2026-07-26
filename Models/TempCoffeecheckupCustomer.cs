@@ -20,7 +20,7 @@ namespace TrackerSQL.Models
         public bool? Enabled { get; set; }
         public bool? AlwaysSendChkUp { get; set; }
         public int? ReminderCount { get; set; }
-        public DateTime? NextPreperationDate { get; set; }
+        public DateTime? NextPreparationDate { get; set; }
         public DateTime? NextDeliveryDate { get; set; }
         public DateTime? NextCoffee { get; set; }
         public DateTime? NextClean { get; set; }

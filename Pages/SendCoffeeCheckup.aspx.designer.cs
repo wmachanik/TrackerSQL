@@ -51,6 +51,21 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlSendEmail;
 
         /// <summary>
+        /// pnlCheckup control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlCheckup;
+
+        /// <summary>
+        /// pnlStatus control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+
+        /// <summary>
+        /// btnBack control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnBack;
+
+        /// <summary>
         /// tbxEmailSubject control.
         /// </summary>
         /// <remarks>
@@ -222,6 +237,24 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnSend;
 
         /// <summary>
+        /// chkCcOrdersEmail control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkCcOrdersEmail;
+
+        /// <summary>
+        /// imgBtnEmailTestMode control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ImageButton imgBtnEmailTestMode;
+
+        /// <summary>
         /// btnClearTodaysData control.
         /// </summary>
         /// <remarks>
@@ -258,13 +291,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.GridView gvCustomerCheckup;
 
         /// <summary>
-        /// upnlContactItems control.
+        /// ltrlSelectedContact control.
         /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.UpdatePanel upnlContactItems;
+        protected global::System.Web.UI.WebControls.Literal ltrlSelectedContact;
 
         /// <summary>
         /// gvItemsToConfirm control.

@@ -214,7 +214,7 @@ namespace TrackerSQL.Repositories
             {
                 ParamName = "@" + p.Name,
                 DataValue = p.GetValue(entity) ?? DBNull.Value,
-                DataDbType = DbType.Object // improve later if needed
+                DataDbType = MapDbType(p.PropertyType)
             }).ToList();
 
             return ExecuteScalar<int>(sql, parameters);
@@ -244,11 +244,34 @@ namespace TrackerSQL.Repositories
             {
                 ParamName = "@" + p.Name,
                 DataValue = p.GetValue(entity) ?? DBNull.Value,
-                DataDbType = DbType.Object
+                DataDbType = MapDbType(p.PropertyType)
             }).ToList();
 
             int result = ExecNonQuery(sql, parameters);
             return result;
+        }
+
+        /// <summary>
+        /// Maps CLR property types to DbType. DbType.Object becomes sql_variant and breaks int/bit inserts.
+        /// </summary>
+        protected static DbType MapDbType(Type propertyType)
+        {
+            Type t = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+
+            if (t == typeof(string)) return DbType.String;
+            if (t == typeof(int)) return DbType.Int32;
+            if (t == typeof(long)) return DbType.Int64;
+            if (t == typeof(short)) return DbType.Int16;
+            if (t == typeof(byte)) return DbType.Byte;
+            if (t == typeof(bool)) return DbType.Boolean;
+            if (t == typeof(decimal)) return DbType.Decimal;
+            if (t == typeof(double)) return DbType.Double;
+            if (t == typeof(float)) return DbType.Single;
+            if (t == typeof(DateTime)) return DbType.DateTime;
+            if (t == typeof(Guid)) return DbType.Guid;
+            if (t == typeof(byte[])) return DbType.Binary;
+
+            return DbType.String;
         }
         /// <summary>
         /// Deletes an entity record by ID
@@ -280,5 +303,16 @@ namespace TrackerSQL.Repositories
             return result > 0;
         }
 
+        /// <summary>
+        /// Optional FK columns: Access often stored 0 for "none". SQL Server FKs reject 0 — send NULL.
+        /// Use for every nullable/optional foreign-key parameter on INSERT/UPDATE.
+        /// Canonical implementation: <see cref="DbParamHelpers.FkOrDbNull(int?)"/>.
+        /// </summary>
+        protected static object FkOrDbNull(int? value) => DbParamHelpers.FkOrDbNull(value);
+
+        /// <summary>
+        /// Optional FK when the model uses non-nullable int (0 means none).
+        /// </summary>
+        protected static object FkOrDbNull(int value) => DbParamHelpers.FkOrDbNull(value);
     }
 }

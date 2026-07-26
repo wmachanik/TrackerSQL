@@ -1,41 +1,26 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Tools.SystemTools
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
-
-using AjaxControlToolkit;
-using AjaxControlToolkit.HtmlEditor.ToolbarButtons;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Text.RegularExpressions;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL.Tools
 {
-    public partial class SystemTools : System.Web.UI.Page
+    public partial class SystemTools : Page
     {
-        // private const int CONST_MINMONTHS = 3;
-        //private StreamWriter _ColsStream;
-
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                pnlSetClientType.Visible = false;
+                pnlToolResults.Visible = false;
                 gvResults.Visible = false;
-                ltrlStatus.Visible = false;
                 ResultsTitleLabel.Visible = false;
                 pnlResultsSection.Visible = false;
+                SetStatus(string.Empty, null);
             }
-            // Ensure Messages Editor button only shows for allowed roles every request
+
             SetMessagesEditorButtonVisibility();
         }
 
@@ -43,8 +28,8 @@ namespace TrackerSQL.Tools
         {
             try
             {
-                // Defensive: control may not exist if markup not deployed yet
-                if (btnMessagesEditor == null) return;
+                if (btnMessagesEditor == null)
+                    return;
 
                 var user = Context?.User;
                 bool canSee =
@@ -62,212 +47,189 @@ namespace TrackerSQL.Tools
             }
         }
 
-        /// <summary>
-        /// DEPRECATED: Set Client Type handler - Uses entirely legacy code
-        /// Button should be hidden or removed from UI
-        /// TODO: Rewrite using modern repositories or delete feature entirely
-        /// </summary>
-        [Obsolete("This handler uses legacy Controls classes. Needs rewrite with modern repositories.")]
-        protected void btnSetClientType_Click(object sender, EventArgs e)
+        private void SetStatus(string message, bool? isError)
         {
-            // DEPRECATED - DO NOT USE
-            // This uses 100% legacy code:
-            // - ContactType (Controls folder legacy class)
-            // - ClientUsageLinesTbl (legacy)
-            // - ItemUsageTbl (legacy)
-            // 
-            // To rewrite: Would need modern repositories for:
-            // - ContactsRepository
-            // - ContactsItemSvcSummaryRepository  
-            // - ContactsItemUsageRepository
-            //
-            // For now, show message that this feature is disabled
-            new showMessageBox(this.Page, "Info",
-                "This feature is currently disabled during modernization. Please contact support.");
-            AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                "SystemTools: btnSetClientType_Click called - feature disabled");
+            ltrlStatus.Text = message ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
+        private void ShowResultsSection(bool showPrepGrid, bool showResultsGrid)
+        {
+            pnlResultsSection.Visible = true;
+            pnlResetPrepDate.Visible = showPrepGrid;
+            pnlToolResults.Visible = showResultsGrid || !string.IsNullOrWhiteSpace(ResultsTitleLabel.Text);
+            gvResults.Visible = showResultsGrid;
+            ResultsTitleLabel.Visible = !string.IsNullOrWhiteSpace(ResultsTitleLabel.Text);
         }
 
         protected void btnResetPrepDates_Click(object sender, EventArgs e)
         {
             try
             {
-                pnlResultsSection.Visible = true;
-                this.pnlResetPrepDate.Visible = true;
+                ResultsTitleLabel.Text = "Area prep / delivery schedule";
+                ShowResultsSection(showPrepGrid: true, showResultsGrid: false);
 
-                // Direct SQL Server approach - no legacy code
-                int areasUpdated = ResetPrepDatesDirectSQL();
+                int areasUpdated = new TrackerTools().SetNextPreparationDateByArea();
 
                 if (areasUpdated < 0)
                 {
-                    this.ltrlStatus.Text = "ERROR: Failed to reset prep dates. Check App_Data/ErrorLog.txt.";
-                    this.ltrlStatus.Visible = true;
+                    SetStatus("Failed to reset prep dates. Check App_Data/ErrorLog.txt.", isError: true);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System,
                         "SystemTools: Reset prep dates failed");
                 }
                 else if (areasUpdated == 0)
                 {
-                    this.ltrlStatus.Text = "Warning: No areas were updated. Check AreaPrepDaysTbl and App_Data/ErrorLog.txt.";
+                    SetStatus("No areas were updated. Check AreaPrepDaysTbl and App_Data/ErrorLog.txt.", isError: true);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System,
                         "SystemTools: Reset prep dates - no areas updated");
                 }
                 else
                 {
-                    this.ltrlStatus.Text = $"Prep/Delivery dates reset for {areasUpdated} area(s).";
+                    SetStatus("Prep/Delivery dates reset for " + areasUpdated + " area(s).", isError: false);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                        $"SystemTools: Reset prep dates for {areasUpdated} areas");
+                        "SystemTools: Reset prep dates for " + areasUpdated + " areas");
                 }
-                this.ltrlStatus.Visible = true;
-                ResultsTitleLabel.Text = "Area prep / delivery schedule";
-                ResultsTitleLabel.Visible = true;
 
                 BindAreaPrepDatesGrid();
+                upnlSystemToolsButtons.Update();
             }
             catch (Exception ex)
             {
-                this.ltrlStatus.Text = $"ERROR: {ex.Message}";
-                this.ltrlStatus.Visible = true;
+                SetStatus(ex.Message, isError: true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    $"SystemTools: Reset prep dates error: {ex.Message}");
+                    "SystemTools: Reset prep dates error: " + ex.Message);
+                upnlSystemToolsButtons.Update();
             }
         }
 
-        /// <summary>
-        /// Simplified direct SQL approach to reset prep dates
-        /// </summary>
-        private int ResetPrepDatesDirectSQL()
-        {
-            try
-            {
-                var tools = new TrackerTools();
-                return tools.SetNextPreperationDateByArea();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Database,
-                    $"ResetPrepDatesDirectSQL error: {ex.Message}");
-                return -1;
-            }
-        }
-
-        /// <summary>
-        /// Bind the area prep dates grid using modern SQL instead of legacy SqlDataSource
-        /// </summary>
         private void BindAreaPrepDatesGrid()
         {
             try
             {
-                using (var db = new TrackerSQLDb())
+                var rows = new NextPrepDateByAreaRepository().GetAreaPrepDateGrid()
+                    ?? new List<AreaPrepDateRow>();
+
+                gvAreaPrepDates.Visible = true;
+                gvAreaPrepDates.DataSource = rows;
+                gvAreaPrepDates.DataBind();
+
+                if (rows.Count == 0)
                 {
-                    string sql = @"
-                        SELECT 
-                            a.AreaName AS Area,
-                            n.PreperationDate,
-                            n.DeliveryDate,
-                            n.NextPreperationDate,
-                            n.NextDeliveryDate
-                        FROM NextPreperationDateByAreasTbl n
-                        LEFT OUTER JOIN AreasTbl a ON n.AreaID = a.AreaID
-                        ORDER BY a.AreaName";
-
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Database,
-                        $"BindAreaPrepDatesGrid: Executing SQL query");
-
-                    var dt = db.ReturnDataTable(sql);
-
-                    if (dt != null)
-                    {
-                        AppLogger.WriteLog(SystemConstants.LogTypes.Database,
-                            $"BindAreaPrepDatesGrid: Retrieved {dt.Rows.Count} rows");
-
-                        this.gvAreaPrepDates.Visible = true;
-                        this.gvAreaPrepDates.DataSource = dt;
-                        this.gvAreaPrepDates.DataBind();
-
-                        if (dt.Rows.Count == 0)
-                        {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                                "BindAreaPrepDatesGrid: No rows returned from query");
-                            this.ltrlStatus.Text += " (No rows in NextPreperationDateByAreasTbl)";
-                        }
-                        else
-                        {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                                $"BindAreaPrepDatesGrid: Grid bound successfully with {dt.Rows.Count} rows");
-                        }
-                    }
-                    else
-                    {
-                        AppLogger.WriteLog(SystemConstants.LogTypes.Database,
-                            "BindAreaPrepDatesGrid: DataTable is null");
-                        this.ltrlStatus.Text += " (Database query returned null)";
-                    }
+                    string current = ltrlStatus.Text ?? string.Empty;
+                    SetStatus(
+                        (string.IsNullOrWhiteSpace(current) ? string.Empty : current + " ")
+                        + "(No rows in NextPreparationDateByAreasTbl)",
+                        isError: true);
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Database,
-                    $"BindAreaPrepDatesGrid error: {ex.Message}\n{ex.StackTrace}");
-                this.ltrlStatus.Text = $"ERROR loading grid: {ex.Message}";
+                    "BindAreaPrepDatesGrid error: " + ex.Message);
+                SetStatus("Error loading grid: " + ex.Message, isError: true);
             }
         }
 
         protected void btnSetLastOrderDate_Click(object sender, EventArgs e)
         {
-            AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools: btnSetLastOrderDate_Click started.");
+            AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools: btnSetLastOrderDate_Click / SetLastRecurringOrderDate started.");
 
-            System.Threading.Thread.Sleep(2000);
-
-            var recurringOrdersRepository = new RecurringOrdersRepository();
-            var summaries = recurringOrdersRepository.GetSummaries("RecurringOrderItemID", string.Empty, 1);
-
-            AppLogger.WriteLog(SystemConstants.LogTypes.System, $"SystemTools: Found {summaries.Count} enabled recurring order items.");
-
-            var results = new List<RecurringOrderUpdateResult>();
-            int updatedCount = 0;
-
-            foreach (var summary in summaries)
+            try
             {
-                if (!summary.DateLastDone.HasValue || summary.RecurringOrderItemID <= 0)
+                var recurringOrdersRepository = new RecurringOrdersRepository();
+                // All enabled lines: DateLastDone from ContactsItemUsageTbl when matching usage exists
+                var usageUpdates = recurringOrdersRepository.SetLastRecurringOrderDate();
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: Processed " + usageUpdates.Count + " enabled recurring item(s).");
+
+                var results = new List<RecurringOrderUpdateResult>();
+                int updatedCount = 0;
+                int fromUsageCount = 0;
+                int skippedCount = 0;
+
+                foreach (var update in usageUpdates)
                 {
-                    continue;
+                    string updateResult = update.UpdateResult ?? string.Empty;
+                    bool fromUsage = update.LastUsageDate.HasValue
+                        && update.AppliedLastDate.HasValue
+                        && update.AppliedLastDate.Value.Date == update.LastUsageDate.Value.Date
+                        && (!update.PreviousDateLastDone.HasValue
+                            || update.LastUsageDate.Value.Date >= update.PreviousDateLastDone.Value.Date);
+
+                    if (fromUsage)
+                    {
+                        fromUsageCount++;
+                    }
+
+                    if (updateResult.StartsWith("Skipped", StringComparison.OrdinalIgnoreCase))
+                    {
+                        skippedCount++;
+                    }
+                    else if (string.IsNullOrEmpty(updateResult)
+                        || !updateResult.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
+                    {
+                        updatedCount++;
+                    }
+
+                    results.Add(new RecurringOrderUpdateResult
+                    {
+                        RecurringOrderID = update.RecurringOrderID,
+                        ContactName = update.CompanyName,
+                        Item = update.ItemDesc,
+                        LastOrderDate = update.AppliedLastDate.HasValue
+                            ? update.AppliedLastDate.Value.ToString("yyyy-MM-dd")
+                            : "(none)",
+                        PreviousLastDate = update.PreviousDateLastDone.HasValue
+                            ? update.PreviousDateLastDone.Value.ToString("yyyy-MM-dd")
+                            : "(none)",
+                        UpdateResult = string.IsNullOrWhiteSpace(updateResult) ? "Updated" : updateResult
+                    });
                 }
 
-                DateTime lastOrderDate = summary.DateLastDone.Value;
-                string updateResult = recurringOrdersRepository.SetRecurringOrderItemDates(
-                    lastOrderDate,
-                    summary.RecurringOrderItemID,
-                    true);
+                ResultsTitleLabel.Text = usageUpdates.Count == 0
+                    ? "Set Last Recurring Order Date: no enabled recurring order lines found."
+                    : "Set Last Recurring Order Date Results: " + usageUpdates.Count
+                        + " enabled line(s); " + updatedCount + " updated ("
+                        + fromUsageCount + " from usage"
+                        + (skippedCount > 0 ? ", " + skippedCount + " skipped" : string.Empty)
+                        + ").";
+                gvResults.DataSource = results;
+                gvResults.DataBind();
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: true);
+                SetStatus(
+                    usageUpdates.Count > 0
+                        ? "Processed " + usageUpdates.Count + " enabled line(s); updated " + updatedCount
+                            + " (" + fromUsageCount + " from ContactsItemUsageTbl)."
+                        : "No enabled recurring order lines found.",
+                    isError: updatedCount > 0 ? false : (bool?)null);
 
-                results.Add(new RecurringOrderUpdateResult
-                {
-                    OrderID = summary.RecurringOrderID,
-                    ContactName = summary.CompanyName,
-                    Item = summary.ItemDesc,
-                    LastOrderDate = lastOrderDate.ToString("yyyy-MM-dd"),
-                    UpdateResult = updateResult
-                });
-
-                if (string.IsNullOrEmpty(updateResult) || !updateResult.StartsWith("Error", StringComparison.OrdinalIgnoreCase))
-                {
-                    updatedCount++;
-                }
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: SetLastRecurringOrderDate processed " + usageUpdates.Count
+                        + ", updated " + updatedCount + ", fromUsage " + fromUsageCount + ".");
+                upnlSystemToolsButtons.Update();
             }
-
-            ResultsTitleLabel.Text = $"Set Last Order Date Results: {updatedCount} updated.";
-            gvResults.DataSource = results;
-            gvResults.DataBind();
-
-            pnlResultsSection.Visible = true;
-            pnlSetClientType.Visible = true;
-
-            AppLogger.WriteLog(SystemConstants.LogTypes.System, $"SystemTools: SetLastOrderDate updated {updatedCount} recurring orders.");
-
-            // Show message box to user
-            string msg = updatedCount > 0
-                ? $"A Total of {updatedCount} recurring orders were updated."
-                : "No recurring orders were updated.";
-            showMessageBox showMessageBox1 = new showMessageBox(this.Page, "Info", msg);
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: SetLastRecurringOrderDate error: " + ex.Message);
+                ResultsTitleLabel.Text = "Set Last Recurring Order Date: Error";
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ex.Message, isError: true);
+                upnlSystemToolsButtons.Update();
+            }
         }
 
         protected void btnDisableInactiveClients_Click(object sender, EventArgs e)
@@ -276,77 +238,61 @@ namespace TrackerSQL.Tools
             {
                 DateTime cutoff = TimeZoneUtils.Now().AddYears(-3).Date;
                 var repo = new ContactsRepository();
-
-                // Step 1: Get inactive contacts
                 var inactiveContacts = repo.GetInactiveContacts(cutoff);
 
-                // If none, show message and exit
                 if (inactiveContacts.Count == 0)
                 {
-                    pnlResultsSection.Visible = true;
-                    pnlSetClientType.Visible = true;
                     ResultsTitleLabel.Text = "Disable Inactive Clients: No eligible contacts found.";
-                    ltrlStatus.Text = "No active contacts are older than 3 years without orders.";
-                    ltrlStatus.Visible = true;
                     gvResults.DataSource = null;
                     gvResults.DataBind();
-                    new showMessageBox(this.Page, "Info", "No eligible contacts found.");
+                    ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                    SetStatus("No active contacts are older than 3 years without orders.", isError: null);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System,
                         "SystemTools: Disable Inactive Clients - no eligible contacts found.");
+                    upnlSystemToolsButtons.Update();
                     return;
                 }
 
-                // Step 2: Disable them in bulk
                 int disabledCount = repo.DisableInactiveContacts(cutoff);
-
-                // If error during update, display message
                 if (disabledCount < 0)
                 {
-                    pnlResultsSection.Visible = true;
-                    pnlSetClientType.Visible = true;
-                    gvResults.Visible = false;
-                    ResultsTitleLabel.Visible = true;
-                    ltrlStatus.Visible = true;
-
                     ResultsTitleLabel.Text = "Disable Inactive Clients: Update failed";
-                    ltrlStatus.Text = "An error occurred while disabling inactive clients.";
-                    new showMessageBox(this.Page, "Error",
-                        "An error occurred disabling inactive contacts. Check logs for details.");
+                    ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                    SetStatus("An error occurred while disabling inactive clients.", isError: true);
                     AppLogger.WriteLog(SystemConstants.LogTypes.System,
                         "SystemTools: Disable Inactive Clients - UPDATE operation failed.");
+                    upnlSystemToolsButtons.Update();
                     return;
                 }
 
-                // Success: show results
-                pnlResultsSection.Visible = true;
-                pnlSetClientType.Visible = true;
-                gvResults.Visible = true;
-                ltrlStatus.Visible = true;
-                ResultsTitleLabel.Visible = true;
-
-                ResultsTitleLabel.Text = $"Disabled {disabledCount} contacts (no orders since before {cutoff:yyyy-MM-dd}).";
-                ltrlStatus.Text = "Disable Inactive Contacts completed.";
+                ResultsTitleLabel.Text = "Disabled " + disabledCount
+                    + " contacts (no orders since before " + cutoff.ToString("yyyy-MM-dd") + ").";
                 gvResults.DataSource = inactiveContacts;
                 gvResults.DataBind();
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: true);
+                SetStatus("Disable Inactive Contacts completed.", isError: false);
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    $"SystemTools: Disabled {disabledCount} inactive contacts.");
-                new showMessageBox(this.Page, "Info", $"Disabled {disabledCount} inactive contacts.");
+                    "SystemTools: Disabled " + disabledCount + " inactive contacts.");
+                upnlSystemToolsButtons.Update();
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "SystemTools: Disable inactive contacts error: " + ex.Message);
-                new showMessageBox(this.Page, "Error",
-                    "An error occurred disabling inactive contacts: " + ex.Message);
+                ResultsTitleLabel.Text = "Disable Inactive Clients: Error";
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ex.Message, isError: true);
+                upnlSystemToolsButtons.Update();
             }
         }
 
         public class RecurringOrderUpdateResult
         {
-            public int OrderID { get; set; }
+            public int RecurringOrderID { get; set; }
             public string ContactName { get; set; }
             public string Item { get; set; }
+            public string PreviousLastDate { get; set; }
             public string LastOrderDate { get; set; }
             public string UpdateResult { get; set; }
         }

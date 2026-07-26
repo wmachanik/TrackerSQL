@@ -228,33 +228,66 @@ namespace TrackerSQL.Repositories
 
         public List<OrderItemLookup> GetAllGroupTypeItems()
         {
-            int? groupServiceTypeId = new SysDataRepository().GetGroupItemServiceTypeId();
-            if (!groupServiceTypeId.HasValue || groupServiceTypeId.Value <= 0)
-                return new List<OrderItemLookup>();
-
             var list = new List<OrderItemLookup>();
-            const string sql = @"
+            int? groupServiceTypeId = new SysDataRepository().GetGroupItemServiceTypeId();
+
+            // Prefer SysData group service type; also include explicit "Group Item" rows
+            const string sqlByServiceType = @"
                 SELECT ItemID,
                        CASE WHEN ItemEnabled = 1 THEN ItemDesc ELSE '_' + ItemDesc END AS ItemDesc
                 FROM ItemsTbl
-                WHERE ItemServiceTypeID = @ServiceTypeID
+                WHERE (@ServiceTypeID > 0 AND ItemServiceTypeID = @ServiceTypeID)
+                   OR ItemsCharacteritics LIKE N'Group Item%'
                 ORDER BY ItemEnabled DESC, SortOrder, ItemDesc";
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@ServiceTypeID", DataValue = groupServiceTypeId.Value, DataDbType = DbType.Int32 }
+                new DBParameter
+                {
+                    ParamName = "@ServiceTypeID",
+                    DataValue = groupServiceTypeId.GetValueOrDefault(0),
+                    DataDbType = DbType.Int32
+                }
             };
 
             using (var db = new TrackerSQLDb())
-            using (var rdr = db.ExecuteReader(sql, parameters))
+            using (var rdr = db.ExecuteReader(sqlByServiceType, parameters))
             {
                 while (rdr != null && rdr.Read())
                 {
+                    int id = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]);
+                    if (id <= 0 || list.Exists(x => x.ItemTypeID == id))
+                        continue;
+
                     list.Add(new OrderItemLookup
                     {
-                        ItemTypeID = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]),
+                        ItemTypeID = id,
                         ItemDesc = rdr["ItemDesc"]?.ToString() ?? string.Empty
                     });
+                }
+            }
+
+            // Fallback: groups already used as GroupItemServiceTypeID in membership rows
+            if (list.Count == 0)
+            {
+                const string sqlFromMembership = @"
+                    SELECT i.ItemID,
+                           CASE WHEN i.ItemEnabled = 1 THEN i.ItemDesc ELSE '_' + ISNULL(i.ItemDesc, '') END AS ItemDesc
+                    FROM ItemsTbl i
+                    WHERE i.ItemID IN (SELECT DISTINCT GroupItemServiceTypeID FROM ItemGroupsTbl WHERE GroupItemServiceTypeID IS NOT NULL)
+                    ORDER BY i.ItemEnabled DESC, i.SortOrder, i.ItemDesc";
+
+                using (var db = new TrackerSQLDb())
+                using (var rdr = db.ExecuteReader(sqlFromMembership))
+                {
+                    while (rdr != null && rdr.Read())
+                    {
+                        list.Add(new OrderItemLookup
+                        {
+                            ItemTypeID = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]),
+                            ItemDesc = rdr["ItemDesc"]?.ToString() ?? string.Empty
+                        });
+                    }
                 }
             }
 
@@ -275,13 +308,13 @@ namespace TrackerSQL.Repositories
                 WHERE i.ItemServiceTypeID = @CoffeeServiceType
                   AND NOT EXISTS (
                       SELECT 1 FROM ItemGroupsTbl g
-                      WHERE g.ItemID = i.ItemID AND g.GroupReferenceItemID = @GroupReferenceItemID)
+                      WHERE g.ItemID = i.ItemID AND g.GroupItemServiceTypeID = @GroupItemServiceTypeID)
                 ORDER BY i.ItemEnabled DESC, i.SortOrder, i.ItemDesc";
 
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@CoffeeServiceType", DataValue = SystemConstants.ServiceTypeConstants.Coffee, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
             };
 
             using (var db = new TrackerSQLDb())
@@ -292,7 +325,8 @@ namespace TrackerSQL.Repositories
                     list.Add(new OrderItemLookup
                     {
                         ItemTypeID = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]),
-                        ItemDesc = rdr["ItemDesc"]?.ToString() ?? string.Empty
+                        ItemDesc = rdr["ItemDesc"]?.ToString() ?? string.Empty,
+                        ItemEnabled = rdr["ItemEnabled"] == DBNull.Value || Convert.ToBoolean(rdr["ItemEnabled"])
                     });
                 }
             }

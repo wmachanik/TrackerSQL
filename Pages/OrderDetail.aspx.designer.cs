@@ -8,17 +8,27 @@ namespace TrackerSQL.Pages
 {
     public partial class OrderDetail
     {
+        protected global::System.Web.UI.WebControls.Panel pnlOrderShell;
+        protected global::System.Web.UI.WebControls.Image imgPageToneIcon;
+        protected global::System.Web.UI.UpdatePanel upnlPageTitle;
         protected global::System.Web.UI.WebControls.Literal litPageTitle;
+        protected global::System.Web.UI.WebControls.Literal litPageSubtitle;
         protected global::System.Web.UI.ScriptManager scrmOrderDetail;
         protected global::System.Web.UI.UpdateProgress udtpOrderDetail;
+        protected global::System.Web.UI.UpdatePanel upnlSaveReturnRedirect;
+        protected global::System.Web.UI.WebControls.HiddenField hdnSaveReturnRedirectUrl;
+        protected global::System.Web.UI.WebControls.Panel pnlOrderConflictShell;
+        protected global::System.Web.UI.UpdatePanel upnlOrderConflict;
         protected global::System.Web.UI.WebControls.Panel pnlOrderConflict;
         protected global::System.Web.UI.WebControls.Literal litConflictMessage;
-        protected global::System.Web.UI.WebControls.Button btnOpenExistingOrder;
         protected global::System.Web.UI.WebControls.Button btnUseExistingOrder;
+        protected global::System.Web.UI.WebControls.Button btnCreateNewOrderAnyway;
+        protected global::System.Web.UI.WebControls.Button btnOpenExistingOrder;
         protected global::System.Web.UI.WebControls.Button btnDismissConflict;
         protected global::System.Web.UI.UpdatePanel pnlOrderHeader;
         protected global::System.Web.UI.WebControls.HyperLink hlContactHdr;
         protected global::AjaxControlToolkit.ComboBox cboContacts;
+        protected global::System.Web.UI.WebControls.HiddenField hdnSelectedContactId;
         protected global::System.Web.UI.WebControls.TextBox tbxOrderDate;
         protected global::AjaxControlToolkit.CalendarExtender tbxOrderDate_CalendarExtender;
         protected global::System.Web.UI.WebControls.TextBox tbxPrepDate;
@@ -31,6 +41,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.CheckBox cbxInvoiceDone;
         protected global::System.Web.UI.WebControls.CheckBox cbxDone;
         protected global::System.Web.UI.WebControls.TextBox tbxNotes;
+        protected global::System.Web.UI.WebControls.HiddenField hdnHeaderDirty;
+        protected global::System.Web.UI.WebControls.Button btnSaveHeader;
+        protected global::System.Web.UI.WebControls.Button btnSaveAndReturn;
         protected global::System.Web.UI.HtmlControls.HtmlButton btnUndoHeader;
         protected global::System.Web.UI.WebControls.Button btnLastOrder;
         protected global::System.Web.UI.UpdatePanel upnlOrderLines;
@@ -43,13 +56,17 @@ namespace TrackerSQL.Pages
         protected global::AjaxControlToolkit.ComboBox cboNewPackaging;
         protected global::System.Web.UI.WebControls.Button btnAdd;
         protected global::System.Web.UI.WebControls.Button btnCancel;
-        protected global::System.Web.UI.WebControls.Literal ltrlStatus;
         protected global::System.Web.UI.UpdatePanel updtButtonPanel;
         protected global::System.Web.UI.WebControls.Button btnNewOrder;
         protected global::System.Web.UI.WebControls.Button btnConfirmOrder;
+        protected global::System.Web.UI.WebControls.Button btnMerge;
         protected global::System.Web.UI.WebControls.Button btnDlSheet;
         protected global::System.Web.UI.WebControls.Button btnOrderCancelled;
         protected global::System.Web.UI.WebControls.Button btnUnDoDone;
         protected global::System.Web.UI.WebControls.Button btnOrderDelivered;
+        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.UpdatePanel upnlStatus;
+        protected global::System.Web.UI.WebControls.Panel pnlStatusMessage;
+        protected global::System.Web.UI.WebControls.Literal ltrlStatus;
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Models;
 using TrackerSQL.Classes;
+using static TrackerSQL.Classes.DbParamHelpers;
 
 namespace TrackerSQL.Repositories
 {
@@ -75,7 +76,7 @@ namespace TrackerSQL.Repositories
                 AreaID = GetValue<int?>(r, "Area") ?? GetValue<int?>(r, "AreaID") ?? GetValue<int?>(r, "AreaID"),
                 StateOrProvince = GetValue<string>(r, "StateOrProvince"),
                 PostalCode = GetValue<string>(r, "PostalCode"),
-                CountryOrRegion = GetValue<string>(r, "CountryOrRegion"),
+                CountryOrRegion = GetValue<string>(r, "CountryOrRegion") ?? GetValue<string>(r, "Country/Region"),
                 PhoneNumber = GetValue<string>(r, "PhoneNumber"),
                 Extension = GetValue<string>(r, "Extension"),
                 FaxNumber = GetValue<string>(r, "FaxNumber"),
@@ -153,7 +154,7 @@ namespace TrackerSQL.Repositories
                 FROM ContactsTbl AS C
                 LEFT JOIN (
                     SELECT O.ContactID, 
-                           MAX(IIF(O.RequiredByDate IS NOT NULL, O.RequiredByDate, O.OrderDate)) AS LastOrderDate 
+                           MAX(COALESCE(O.RequiredByDate, O.OrderDate)) AS LastOrderDate 
                     FROM OrdersTbl AS O 
                     GROUP BY O.ContactID
                 ) AS X ON X.ContactID = C.ContactID
@@ -200,13 +201,14 @@ namespace TrackerSQL.Repositories
         public int DisableInactiveContacts(DateTime cutoffDate)
         {
             string sql = @"
-                UPDATE ContactsTbl AS C 
-                SET C.Enabled = 0
-                WHERE C.Enabled = 1 
+                UPDATE ContactsTbl
+                SET Enabled = 0
+                WHERE Enabled = 1
                   AND NOT EXISTS (
-                      SELECT 1 FROM OrdersTbl AS O
-                      WHERE O.ContactID = C.ContactID
-                        AND IIF(O.RequiredByDate IS NOT NULL, O.RequiredByDate, O.OrderDate) >= @CutoffDate
+                      SELECT 1
+                      FROM OrdersTbl AS O
+                      WHERE O.ContactID = ContactsTbl.ContactID
+                        AND COALESCE(O.RequiredByDate, O.OrderDate) >= @CutoffDate
                   )";
             
             var parameters = new List<DBParameter>
@@ -226,6 +228,154 @@ namespace TrackerSQL.Repositories
         }
 
         public Contact GetById(long id) => GetById((int)id);
+
+        /// <summary>
+        /// Updates editable contact fields on ContactsTbl. Preserves ReminderCount / LastDateSentReminder.
+        /// </summary>
+        public bool Update(Contact contact)
+        {
+            if (contact == null || contact.ContactID <= 0)
+                return false;
+
+            const string sql = @"
+                UPDATE ContactsTbl SET
+                    CompanyName = @CompanyName,
+                    ContactTitle = @ContactTitle,
+                    ContactFirstName = @ContactFirstName,
+                    ContactLastName = @ContactLastName,
+                    ContactAltFirstName = @ContactAltFirstName,
+                    ContactAltLastName = @ContactAltLastName,
+                    Department = @Department,
+                    BillingAddress = @BillingAddress,
+                    AreaID = @AreaID,
+                    StateOrProvince = @StateOrProvince,
+                    PostalCode = @PostalCode,
+                    [Country/Region] = @CountryOrRegion,
+                    PhoneNumber = @PhoneNumber,
+                    Extension = @Extension,
+                    FaxNumber = @FaxNumber,
+                    CellNumber = @CellNumber,
+                    EmailAddress = @EmailAddress,
+                    AltEmailAddress = @AltEmailAddress,
+                    ContractNo = @ContractNo,
+                    ContactTypeID = @ContactTypeID,
+                    EquipTypeID = @EquipTypeID,
+                    ItemPrefID = @ItemPrefID,
+                    PriPrefQty = @PriPrefQty,
+                    PrefItemPrepTypeID = @PrefItemPrepTypeID,
+                    PrefItemPackagingID = @PrefItemPackagingID,
+                    SecondaryItemPrefID = @SecondaryItemPrefID,
+                    SecPrefQty = @SecPrefQty,
+                    TypicallySecToo = @TypicallySecToo,
+                    PreferredAgentID = @PreferredAgentID,
+                    SalesAgentID = @SalesAgentID,
+                    EquipentSN = @EquipentSN,
+                    UsesFilter = @UsesFilter,
+                    AutoFulfill = @AutoFulfill,
+                    Enabled = @Enabled,
+                    PredictionDisabled = @PredictionDisabled,
+                    AlwaysSendChkUp = @AlwaysSendChkUp,
+                    NormallyResponds = @NormallyResponds,
+                    Notes = @Notes,
+                    SendDeliveryConfirmation = @SendDeliveryConfirmation
+                WHERE ContactID = @ContactID";
+
+            return ExecNonQuery(sql, BuildContactParameters(contact, includeId: true)) > 0;
+        }
+
+        /// <summary>
+        /// Inserts a new contact. Returns new ContactID, or 0 on failure.
+        /// </summary>
+        public int Insert(Contact contact)
+        {
+            if (contact == null)
+                return 0;
+
+            const string sql = @"
+                INSERT INTO ContactsTbl (
+                    CompanyName, ContactTitle, ContactFirstName, ContactLastName,
+                    ContactAltFirstName, ContactAltLastName, Department, BillingAddress,
+                    AreaID, StateOrProvince, PostalCode, [Country/Region],
+                    PhoneNumber, Extension, FaxNumber, CellNumber,
+                    EmailAddress, AltEmailAddress, ContractNo, ContactTypeID,
+                    EquipTypeID, ItemPrefID, PriPrefQty, PrefItemPrepTypeID, PrefItemPackagingID,
+                    SecondaryItemPrefID, SecPrefQty, TypicallySecToo,
+                    PreferredAgentID, SalesAgentID, EquipentSN,
+                    UsesFilter, AutoFulfill, Enabled, PredictionDisabled,
+                    AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes, SendDeliveryConfirmation
+                ) VALUES (
+                    @CompanyName, @ContactTitle, @ContactFirstName, @ContactLastName,
+                    @ContactAltFirstName, @ContactAltLastName, @Department, @BillingAddress,
+                    @AreaID, @StateOrProvince, @PostalCode, @CountryOrRegion,
+                    @PhoneNumber, @Extension, @FaxNumber, @CellNumber,
+                    @EmailAddress, @AltEmailAddress, @ContractNo, @ContactTypeID,
+                    @EquipTypeID, @ItemPrefID, @PriPrefQty, @PrefItemPrepTypeID, @PrefItemPackagingID,
+                    @SecondaryItemPrefID, @SecPrefQty, @TypicallySecToo,
+                    @PreferredAgentID, @SalesAgentID, @EquipentSN,
+                    @UsesFilter, @AutoFulfill, @Enabled, @PredictionDisabled,
+                    @AlwaysSendChkUp, @NormallyResponds, @ReminderCount, @Notes, @SendDeliveryConfirmation
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            return ExecuteScalar<int>(sql, BuildContactParameters(contact, includeId: false));
+        }
+
+        private static List<DBParameter> BuildContactParameters(Contact contact, bool includeId)
+        {
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@CompanyName", DataValue = (object)contact.CompanyName ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactTitle", DataValue = (object)contact.ContactTitle ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactFirstName", DataValue = (object)contact.ContactFirstName ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactLastName", DataValue = (object)contact.ContactLastName ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactAltFirstName", DataValue = (object)contact.ContactAltFirstName ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactAltLastName", DataValue = (object)contact.ContactAltLastName ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Department", DataValue = (object)contact.Department ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@BillingAddress", DataValue = (object)contact.BillingAddress ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@AreaID", DataValue = FkOrDbNull(contact.AreaID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@StateOrProvince", DataValue = (object)contact.StateOrProvince ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PostalCode", DataValue = (object)contact.PostalCode ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@CountryOrRegion", DataValue = (object)contact.CountryOrRegion ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PhoneNumber", DataValue = (object)contact.PhoneNumber ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Extension", DataValue = (object)contact.Extension ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@FaxNumber", DataValue = (object)contact.FaxNumber ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@CellNumber", DataValue = (object)contact.CellNumber ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@EmailAddress", DataValue = (object)contact.EmailAddress ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@AltEmailAddress", DataValue = (object)contact.AltEmailAddress ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContractNo", DataValue = (object)contact.ContractNo ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactTypeID", DataValue = FkOrDbNull(contact.ContactTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@EquipTypeID", DataValue = FkOrDbNull(contact.EquipTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPrefID", DataValue = FkOrDbNull(contact.ItemPrefID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PriPrefQty", DataValue = (object)contact.PriPrefQty ?? DBNull.Value, DataDbType = DbType.Double },
+                new DBParameter { ParamName = "@PrefItemPrepTypeID", DataValue = FkOrDbNull(contact.PrefItemPrepTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PrefItemPackagingID", DataValue = FkOrDbNull(contact.PrefItemPackagingID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SecondaryItemPrefID", DataValue = FkOrDbNull(contact.SecondaryItemPrefID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SecPrefQty", DataValue = (object)contact.SecPrefQty ?? DBNull.Value, DataDbType = DbType.Double },
+                new DBParameter { ParamName = "@TypicallySecToo", DataValue = (object)contact.TypicallySecToo ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@PreferredAgentID", DataValue = FkOrDbNull(contact.PreferredAgentID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SalesAgentID", DataValue = FkOrDbNull(contact.SalesAgentID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@EquipentSN", DataValue = (object)contact.EquipentSN ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@UsesFilter", DataValue = (object)contact.UsesFilter ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@AutoFulfill", DataValue = (object)contact.AutoFulfill ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Enabled", DataValue = (object)contact.Enabled ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@PredictionDisabled", DataValue = (object)contact.PredictionDisabled ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@AlwaysSendChkUp", DataValue = (object)contact.AlwaysSendChkUp ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@NormallyResponds", DataValue = (object)contact.NormallyResponds ?? DBNull.Value, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = (object)contact.Notes ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@SendDeliveryConfirmation", DataValue = (object)contact.SendDeliveryConfirmation ?? DBNull.Value, DataDbType = DbType.Boolean }
+            };
+
+            if (includeId)
+            {
+                parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = contact.ContactID, DataDbType = DbType.Int32 });
+            }
+            else
+            {
+                parameters.Add(new DBParameter { ParamName = "@ReminderCount", DataValue = contact.ReminderCount ?? 0, DataDbType = DbType.Int32 });
+            }
+
+            return parameters;
+        }
 
         public int GetReminderCount(int contactId)
         {
@@ -387,7 +537,18 @@ namespace TrackerSQL.Repositories
 
         public Contact GetByContactName(string contactName)
         {
-            const string sql = "SELECT * FROM ContactsTbl WHERE CompanyName = @CompanyName";
+            return GetByContactNamePreferEnabled(contactName);
+        }
+
+        /// <summary>
+        /// When duplicate company names exist, prefer the enabled contact.
+        /// </summary>
+        public Contact GetByContactNamePreferEnabled(string contactName)
+        {
+            const string sql = @"
+                SELECT TOP 1 * FROM ContactsTbl
+                WHERE CompanyName = @CompanyName
+                ORDER BY CASE WHEN Enabled = 1 THEN 0 ELSE 1 END, ContactID";
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@CompanyName", DataValue = contactName, DataDbType = DbType.String }

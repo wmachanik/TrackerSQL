@@ -1,3 +1,5 @@
+using System;
+
 namespace TrackerSQL.Classes
 {
     /// <summary>
@@ -190,6 +192,7 @@ namespace TrackerSQL.Classes
             public const string BodyReminderOnly = "CoffeeCheckup.BodyReminderOnly";
             public const string BodyOrderType = "CoffeeCheckup.BodyOrderType";
             public const string BodyFinalWarning = "CoffeeCheckup.BodyFinalWarning";
+            public const string BodyLastRecurringOrder = "CoffeeCheckup.BodyLastRecurringOrder";
             public const string FooterOrderAdded = "CoffeeCheckup.FooterOrderAdded";
             public const string FooterOrderLink = "CoffeeCheckup.FooterOrderLink";
             public const string FooterDisableLink = "CoffeeCheckup.FooterDisableLink";
@@ -214,7 +217,9 @@ namespace TrackerSQL.Classes
             public const string HtmlTableCellAlt = "CoffeeCheckup.HtmlTableCellAlt";
             public const string HtmlTableRowColspan = "CoffeeCheckup.HtmlTableRowColspan";
             public const string TableCompanyContact = "CoffeeCheckup.TableCompanyContact";
-            public const string TableNextPreperationDate = "CoffeeCheckup.TableNextPreperationDate";
+            public const string TableNextPreparationDate = "CoffeeCheckup.TableNextPreparationDate";
+            [Obsolete("Use TableNextPreparationDate")]
+            public const string TableNextPreperationDate = TableNextPreparationDate;
             public const string TableNextDispatchDate = "CoffeeCheckup.TableNextDispatchDate";
             public const string TableType = "CoffeeCheckup.TableType";
             public const string TableListOfItems = "CoffeeCheckup.TableListOfItems";

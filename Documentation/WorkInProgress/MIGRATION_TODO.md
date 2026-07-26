@@ -1,8 +1,35 @@
-﻿# Page Migration TODO List - Ordered by Complexity
+# Page Migration TODO List - Ordered by Complexity
 
 **Created:** 2025-03-26  
-**Last Updated:** 2026-05-14  
+**Last Updated:** 2026-07-15  
 **Purpose:** Migrate pages from legacy Controls/OleDb/ObjectDataSource to Repository pattern
+
+---
+
+## WebForms UI retrofit (ongoing)
+
+**Standard:** [`Documentation/WEBFORMS_UI_STANDARDS.md`](../WEBFORMS_UI_STANDARDS.md)  
+**Refs:** `HolidayClosureDetail.aspx` (UpdatePanel/buttons) · `SentRemindersSheet.aspx` (**page-tone panel** — canonical from 2026-07-15)
+
+When touching any interactive page, bring it into compliance if needed:
+
+- [x] `Pages/SendCoffeeCheckup.aspx` — 2026-07-14/16 (`page-tone-checkup`; page → `CoffeeCheckupManager` façades only; no direct repos/ODS)
+- [x] `Pages/SentRemindersSheet.aspx` — 2026-07-14/15 (UpdatePanel + **page-tone-reminders** shell; single icon; title/filter inside accent bar)
+- [x] `Pages/Contacts.aspx` — 2026-07-15 (page-tone-contacts list shell; status bottom; Back → home)
+- [x] `Pages/ContactDetails.aspx` — 2026-07-15 (page-tone-contacts; Save / Save & Return / Back; status in panel)
+- [x] `Pages/Repairs.aspx` — 2026-07-16 (page-tone-repairs list shell; single UpdatePanel; status bottom; Back → home)
+- [x] `Pages/RepairDetail.aspx` — 2026-07-16 (page-tone-repairs; Save / Save & Return / Back; TrackerUnsaved; status bottom)
+- [x] `Pages/ContactsAway.aspx` — 2026-07-16 (page-tone-contacts list shell; status bottom; Back → Contacts)
+- [x] `Pages/ContactsAwayDetail.aspx` — 2026-07-16 (page-tone-contacts; Save / Save & Return / Delete / Back)
+- [x] `Pages/OrderEntry.aspx` — 2026-07-22 (page-tone-orders; View/Edit Orders list; ODS → repos; home card link fixed)
+- [x] `Pages/Lookups.aspx` — 2026-07-22 (page-tone-lookups; header/toolbar/status shell)
+- [ ] Status / result message at **bottom** of form (not above fields)
+- [ ] `ScriptManager` + `UpdatePanel` + `UpdateProgress`
+- [ ] Async **Save**; full postback for **Save & Return** / **Back** / redirecting **Delete**
+- [ ] **Back** is a Button; prefer Save + Save & Return on detail forms
+- [ ] **`page-tone-panel` + `page-tone-*`** — one icon; no duplicate h1 outside panel; tone matches home card
+
+**Next UI retrofit:** pick next interactive page still missing page-tone (or deepen CoffeeCheckupManager naming/layering review). OrderEntry View/Edit list done 2026-07-22.
 
 ---
 
@@ -599,6 +626,7 @@ These pages should be smoke-tested to ensure they work after the TrackerDotNet �
 | `Pages/RecurringOrders.aspx` | HIGH | 🧪 WIP | Grid loads from SQL repo but recurring item migration data is incomplete |
 | `Pages/RecurringOrderDetails.aspx` | HIGH | 🧪 WIP | Partial SQL migration; not finished |
 | `Pages/NewOrder.aspx` | MEDIUM | ⬜ Pending | Order creation |
+| `Pages/OrderDetail.aspx` | HIGH | ✅ Done | Manual Save / Save & Return; line edit save; mobile New Item; 2026-07-13 |
 | `Pages/NewOrderDetail.aspx` | LOW | 💤 Legacy/Retired | Replaced by `OrderDetail.aspx?NewOrder=true`; keep only for legacy bookmarks if needed |
 | `Account/Login.aspx` | HIGH | ⬜ Pending | Must work for any testing |
 
@@ -619,6 +647,14 @@ These pages should be smoke-tested to ensure they work after the TrackerDotNet �
 
 | Page | Completion Date | Notes |
 |------|-----------------|-------|
+| `Pages/OrderEntry.aspx` | 2026-07-22 | UI retrofit: page-tone-orders View/Edit list; home card fixed. See COMPLETED_TASKS.md |
+| `Pages/PreperationSummary.aspx` | 2026-07-21 | UI retrofit: page-tone-summary, stacked date filters. See COMPLETED_TASKS.md |
+| `Pages/RecurringOrders.aspx` + `RecurringOrderDetails.aspx` | 2026-07-20 | UI retrofit: page-tone-recurring, image-button, grouping-table. See COMPLETED_TASKS.md + WEBFORMS_UI_STANDARDS §3a |
+| `Tools/XMLtoSQL.aspx` | 2026-07-14 | TrackerSQLDb + UI standards + SQLCommands_Test_SQLServer.xml. See COMPLETED_TASKS.md |
+| `Tools/MessagesEditor.aspx` | 2026-07-14 | Manager already; status bottom + UpdateProgress. See COMPLETED_TASKS.md |
+| `Tools/SystemTools.aspx` | 2026-07-14 | Hub: repo bind prep grid; removed ODS + Set Client Type card. See COMPLETED_TASKS.md |
+| `Tools/HolidayClosures.aspx` + `HolidayClosureDetail.aspx` | 2026-07-14 | Repo + manager; UI standards; unique start date + range overlap. See COMPLETED_TASKS.md |
+| `Pages/OrderDetail.aspx` | 2026-07-13 | OrderID model + repos; Save/Save&Return; line edit; mobile New Item. See COMPLETED_TASKS.md |
 | `Pages/SupportTables.aspx` | 2025-03-28 | 10 lookup tables, image buttons, full CRUD |
 | `Pages/Contacts.aspx` | 2025-03-27 | ContactSummariesRepository, manual binding |
 | `Tools/TestPeople.aspx` | 2025-03-27 | PersonsRepository, manual binding |
@@ -773,10 +809,12 @@ These pages have NO database calls - they're already migrated by definition.
 
 | Page | SqlDS Count | Action |
 |------|-------------|--------|
-| `Pages/PreperationSummary.aspx` | 0 | Uses TrackerDb directly (1 ref) - convert to repo |
+| _(none outstanding)_ | | |
 
-**Status:** ❌ Not Started  
-**Est. Time:** 1 hour
+~~`Pages/PreperationSummary.aspx`~~ — completed 2026-07-21 (repo + UI retrofit). See COMPLETED_TASKS.md.
+
+**Status:** ✅ Complete  
+**Est. Time:** —
 
 ---
 
@@ -885,13 +923,13 @@ These pages have NO database calls - they're already migrated by definition.
 
 | Page | SqlDS | ObjDS | OleDb | Controls | Notes |
 |------|-------|-------|-------|----------|-------|
-| `Pages/NewOrderDetail.aspx` | 8 | 2 | 0 | 0 | Complex order entry |
-| `Pages/OrderDetail.aspx` | 8 | 7 | 0 | 0 | Order viewing/editing |
-| `Pages/OrderDone.aspx` | 8 | 0 | 3 | 0 | **CRITICAL: Has OleDb!** |
-| `Pages/ViewMyOrder.aspx` | 0 | 0 | 0 | 0 | Code-behind uses `ItemTypeTbl`, `PackagingTbl` |
+| `Pages/NewOrderDetail.aspx` | — | — | — | — | 💤 Legacy/Retired → `OrderDetail.aspx?NewOrder=true` |
+| `Pages/OrderDetail.aspx` | 0 | 0 | 0 | 0 | ✅ **Done 2026-07-13** — manager/repos; manual Save; line edit; mobile New Item |
+| `Pages/OrderDone.aspx` | 8 | 0 | 3 | 0 | Still listed historically; verify OleDb cleared vs OrderDoneManager path |
+| `Pages/ViewMyOrder.aspx` | 0 | 0 | 0 | 0 | Migrated via repos (Phase 1G); smoke-test if needed |
 
-**Status:** ❌ Not Started  
-**Est. Time:** 8-10 hours each
+**Status:** ✅ `OrderDetail` complete; `NewOrderDetail` retired; confirm `OrderDone` / `ViewMyOrder` smoke tests  
+**Est. Time (remaining):** smoke-test only unless OleDb found on OrderDone
 
 ---
 
@@ -1059,6 +1097,10 @@ msbuild TrackerSQL.sln /t:Build
 | 1.0 | 2025-03-26 | Initial TODO created |
 | 2.0 | 2025-03-27 | **Complete rewrite** - PAGE-BASED migration (not table-based) |
 | 3.0 | 2026-05-13 | Revised migration plan; detailed UX step order; prep date terminology updates |
+| 4.0 | 2026-07-13 | Marked `OrderDetail.aspx` complete (Save UX, line edit, mobile New Item) |
+| 4.1 | 2026-07-13 | Marked `HolidayClosures` / `HolidayClosureDetail` complete (repo + manager) |
+| 4.3 | 2026-07-14 | XMLtoSQL done (CRUD smoke + XmlReader fix); **Phase 2 complete** |
+| 4.4 | 2026-07-14 | Reachability scan: TestPeople + orphans → retired track; excluded from `.csproj` |
 
 ---
 
@@ -1080,7 +1122,7 @@ msbuild TrackerSQL.sln /t:Build
 - `Tools/MoveDeliveryDate.aspx` (odsAreaDeliveryDates)
 - `Tools/SystemData.aspx` (odsSystemData)
 - `Tools/SystemTools.aspx` (odsCustomerTypes)
-- `Tools/TestPeople.aspx` (odsPeople)
+- ~~`Tools/TestPeople.aspx` (odsPeople)~~ — **retired 2026-07-14** (not on menu; excluded from `.csproj`)
 
 **Notes:**
 - Some of the above ODS controls point directly to legacy `Controls/*Tbl.cs` classes; those pages are high-priority to refactor.

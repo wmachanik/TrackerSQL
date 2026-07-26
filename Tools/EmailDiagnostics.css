@@ -216,3 +216,10 @@ legend {
     font-weight: bold;
     color: #0077cc;
 }
+
+.combo-progress-label {
+    display: block;
+    margin: 10px 0;
+    font-weight: bold;
+    color: #0077cc;
+}

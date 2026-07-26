@@ -4,15 +4,14 @@
 </asp:Content>
 
 <asp:Content ID="cntSystemDataBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <h1>System Data</h1>
-    
     <asp:ScriptManager ID="smSystemData" runat="server" EnablePartialRendering="true" />
-    
-    <asp:UpdateProgress ID="updtPrgSystemData" runat="server" AssociatedUpdatePanelID="upnlSystemData">
+
+    <asp:UpdateProgress ID="updtPrgSystemData" runat="server" AssociatedUpdatePanelID="upnlSystemData"
+        DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <div style="text-align: left; padding: 10px;">
+            <div class="status-message status-info page-tone-progress">
                 <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
-                &nbsp;please wait...
+                &nbsp;Please wait...
             </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
@@ -28,9 +27,18 @@
         TypeName="TrackerSQL.Repositories.ItemServiceTypesRepository"
         SelectMethod="GetAll">
     </asp:ObjectDataSource>
-    
+
     <asp:UpdatePanel ID="upnlSystemData" runat="server" ChildrenAsTriggers="true" UpdateMode="Always">
         <ContentTemplate>
+            <asp:Panel ID="pnlSystemData" runat="server" CssClass="simpleForm page-tone-panel page-tone-sysdata">
+                <div class="page-tone-header tool-card-header">
+                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                    <div>
+                        <h1 class="page-tone-title">System Data</h1>
+                        <p class="page-tone-subtitle">Manage system settings</p>
+                    </div>
+                </div>
+
             <div class="responsive-layout-container">
                 <asp:DetailsView ID="dvSystemData" runat="server"
                     AutoGenerateRows="False"
@@ -102,16 +110,16 @@
                             </EditItemTemplate>
                         </asp:TemplateField>
 
-                        <asp:TemplateField HeaderText="Group Service Type (used for group items)" SortExpression="GroupItemServiceTypeID">
+                        <asp:TemplateField HeaderText="Group Service Type (used for group items)" SortExpression="GroupReferenceItemID">
                             <ItemTemplate>
-                                <%# GetItemServiceTypeName((int?)Eval("GroupItemServiceTypeID")) %>
+                                <%# GetItemServiceTypeName((int?)Eval("GroupReferenceItemID")) %>
                             </ItemTemplate>
                             <EditItemTemplate>
-                                <asp:DropDownList ID="ddlGroupItemServiceTypeID" runat="server"
+                                <asp:DropDownList ID="ddlGroupReferenceItemID" runat="server"
                                     DataSourceID="odsItemServiceTypes"
-                                    DataTextField="ServiceTypeName"
+                                    DataTextField="ItemServiceTypeName"
                                     DataValueField="ItemServiceTypeID"
-                                    SelectedValue='<%# Bind("GroupItemServiceTypeID") %>'
+                                    SelectedValue='<%# Bind("GroupReferenceItemID") %>'
                                     AppendDataBoundItems="true">
                                     <asp:ListItem Value="" Text="(none)" />
                                 </asp:DropDownList>
@@ -133,7 +141,10 @@
                 </asp:DetailsView>
             </div>
 
-            <asp:Label ID="lblMessage" runat="server" ForeColor="Green" Visible="false"></asp:Label>
+            <div class="page-tone-footer">
+                <asp:Label ID="lblMessage" runat="server" CssClass="status-message" Visible="false"></asp:Label>
+            </div>
+            </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
 </asp:Content>

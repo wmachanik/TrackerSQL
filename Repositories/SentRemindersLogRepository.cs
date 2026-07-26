@@ -8,8 +8,9 @@ namespace TrackerSQL.Repositories
 {
     public class SentRemindersLogRepository : RepositoryBase<SentRemindersLog>
     {
+        // Canonical DB column: HadRecurringItems (never HadReoccurItems / HadRecurrItems / Reoccur*).
         private const string SelectColumns =
-            "ReminderID, ContactID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadRecurrItems";
+            "ReminderID, ContactID, DateSentReminder, NextPreparationDate, ReminderSent, HadAutoFulfilItem, HadRecurringItems";
 
         protected override string TableName => "SentRemindersLogTbl";
         protected override string KeyColumn => "ReminderID";
@@ -63,8 +64,8 @@ namespace TrackerSQL.Repositories
             const string sql = @"
                 UPDATE SentRemindersLogTbl SET
                     ContactID = @ContactID, DateSentReminder = @DateSentReminder,
-                    NextPreperationDate = @NextPreperationDate, ReminderSent = @ReminderSent,
-                    HadAutoFulfilItem = @HadAutoFulfilItem, HadRecurrItems = @HadRecurrItems
+                    NextPreparationDate = @NextPreparationDate, ReminderSent = @ReminderSent,
+                    HadAutoFulfilItem = @HadAutoFulfilItem, HadRecurringItems = @HadRecurringItems
                 WHERE ReminderID = @ReminderID";
 
             return ExecNonQuery(sql, BuildParameters(entry, includeId: true)) > 0;
@@ -147,9 +148,9 @@ namespace TrackerSQL.Repositories
 
             const string sql = @"
                 INSERT INTO SentRemindersLogTbl
-                (ContactID, DateSentReminder, NextPreperationDate, ReminderSent, HadAutoFulfilItem, HadRecurrItems)
+                (ContactID, DateSentReminder, NextPreparationDate, ReminderSent, HadAutoFulfilItem, HadRecurringItems)
                 VALUES
-                (@ContactID, @DateSentReminder, @NextPreperationDate, @ReminderSent, @HadAutoFulfilItem, @HadRecurrItems);
+                (@ContactID, @DateSentReminder, @NextPreparationDate, @ReminderSent, @HadAutoFulfilItem, @HadRecurringItems);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             return ExecuteScalar<int>(sql, BuildParameters(entity, includeId: false));
@@ -175,10 +176,10 @@ namespace TrackerSQL.Repositories
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = entity.ContactID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@DateSentReminder", DataValue = entity.DateSentReminder ?? (object)DBNull.Value, DataDbType = DbType.Date },
-                new DBParameter { ParamName = "@NextPreperationDate", DataValue = entity.NextPreperationDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@NextPreparationDate", DataValue = entity.NextPreparationDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@ReminderSent", DataValue = entity.ReminderSent ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@HadAutoFulfilItem", DataValue = entity.HadAutoFulfilItem ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@HadRecurrItems", DataValue = entity.HadRecurrItems ?? (object)DBNull.Value, DataDbType = DbType.Boolean }
+                new DBParameter { ParamName = "@HadRecurringItems", DataValue = entity.HadRecurringItems ?? (object)DBNull.Value, DataDbType = DbType.Boolean }
             };
 
             if (includeId)

@@ -1,12 +1,12 @@
 using AjaxControlToolkit;
 using System;
+using System.Web;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
-using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
@@ -14,12 +14,16 @@ namespace TrackerSQL.Pages
     {
         public const string CONST_URL_REQUEST_REPAIRID = "RepairID";
         private const string CONST_SESSION_REPAIRSTATUSID = "RepairStatusID";
-        private static string prevPage = string.Empty;
+        private const string SESSION_RETURN_URL = "RepairDetailReturnUrl";
+        private const string DefaultReturnUrl = "~/Pages/Repairs.aspx";
+
         private readonly RepairManager _repairManager = new RepairManager();
 
         protected ScriptManager scrmRepairDetail;
         protected UpdateProgress udtpRepairDetail;
         protected UpdatePanel upnlRepairDetail;
+        protected HiddenField hdnRepairDirty;
+        protected Panel pnlRepairShell;
         protected Panel pnlNewRepair;
         protected ComboBox cboNewCompany;
         protected Button btnInsert;
@@ -44,12 +48,14 @@ namespace TrackerSQL.Pages
         protected DropDownList ddlRepairStatuses;
         protected TextBox tbxNotes;
         protected Label lblRepairID;
-        protected Label lblRelatedOrderID;
+        protected Label lblRelatedOrderLineID;
         protected Label lblDateLogged;
         protected Label lblLastChanged;
+        protected Button btnUpdate;
         protected Button btnUpdateAndReturn;
         protected Button btnDelete;
         protected Button btnCancel;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatusMessage;
         protected Literal ltrlStatus;
         protected ObjectDataSource odsCompanys;
         protected ObjectDataSource odsCompanyDemos;
@@ -62,15 +68,18 @@ namespace TrackerSQL.Pages
         {
             if (this.IsPostBack)
                 return;
-            RepairDetail.prevPage = !(this.Request.UrlReferrer == (Uri)null) ? this.Request.UrlReferrer.ToString() : string.Empty;
+
+            CaptureReturnUrlIfNeeded();
+
             if (this.Request.QueryString["RepairID"] != null)
             {
                 this.pnlNewRepair.Visible = false;
                 this.pnlRepairDetail.Visible = true;
                 this.lblRepairID.Text = this.Request.QueryString["RepairID"].ToString();
                 this.PutDataFromForm(Convert.ToInt32(this.lblRepairID.Text));
+                this.btnDelete.Enabled = Membership.GetUser() != null
+                    && Membership.GetUser().UserName.ToLower() == "warren";
                 this.upnlRepairDetail.Update();
-                this.btnDelete.Enabled = Membership.GetUser().UserName.ToLower() == "warren";
             }
             else
             {
@@ -78,6 +87,114 @@ namespace TrackerSQL.Pages
                 this.pnlRepairDetail.Visible = false;
                 this.upnlRepairDetail.Update();
             }
+        }
+
+        private void CaptureReturnUrlIfNeeded()
+        {
+            string qsReturn = Request.QueryString["ReturnUrl"];
+            if (!string.IsNullOrWhiteSpace(qsReturn) && TryNormalizeLocalReturnUrl(qsReturn, out string fromQuery))
+            {
+                Session[SESSION_RETURN_URL] = fromQuery;
+                return;
+            }
+
+            if (Request.UrlReferrer != null)
+            {
+                string referrer = Request.UrlReferrer.ToString();
+                if (referrer.IndexOf("RepairDetail.aspx", StringComparison.OrdinalIgnoreCase) < 0
+                    && IsSafeReturnUrl(referrer))
+                {
+                    Session[SESSION_RETURN_URL] = referrer;
+                    return;
+                }
+            }
+
+            if (Session[SESSION_RETURN_URL] == null)
+                Session[SESSION_RETURN_URL] = ResolveUrl(DefaultReturnUrl);
+        }
+
+        private string GetReturnUrl()
+        {
+            string url = Session[SESSION_RETURN_URL] as string;
+            if (string.IsNullOrWhiteSpace(url) || !IsSafeReturnUrl(url))
+                url = ResolveUrl(DefaultReturnUrl);
+            return url;
+        }
+
+        private void ReturnToCaller()
+        {
+            Response.Redirect(GetReturnUrl(), false);
+            Context.ApplicationInstance.CompleteRequest();
+        }
+
+        private bool TryNormalizeLocalReturnUrl(string candidate, out string normalized)
+        {
+            normalized = null;
+            if (string.IsNullOrWhiteSpace(candidate))
+                return false;
+
+            candidate = candidate.Trim();
+            if (candidate.StartsWith("~/") || (candidate.StartsWith("/") && !candidate.StartsWith("//")))
+            {
+                normalized = ResolveUrl(candidate.StartsWith("~/") ? candidate : "~" + candidate);
+                return IsSafeReturnUrl(normalized);
+            }
+
+            if (IsSafeReturnUrl(candidate))
+            {
+                normalized = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsSafeReturnUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
+                return url.IndexOf("://", StringComparison.Ordinal) < 0;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
+                return false;
+
+            return Request.Url != null
+                && string.Equals(absolute.Host, Request.Url.Host, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void SetStatus(string message, bool? isError = null)
+        {
+            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
+            if (pnlStatusMessage == null)
+                return;
+
+            if (string.IsNullOrEmpty(message))
+            {
+                pnlStatusMessage.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatusMessage.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatusMessage.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatusMessage.Attributes["class"] = "status-message status-info";
+        }
+
+        private void ClearDirtyState()
+        {
+            if (hdnRepairDirty != null)
+                hdnRepairDirty.Value = "0";
+
+            ScriptManager.RegisterStartupScript(
+                this,
+                GetType(),
+                "repairDetailClearDirty",
+                "if (window.TrackerUnsaved) { TrackerUnsaved.clearDirty(); } else if (window.repairDetailClearDirty) { repairDetailClearDirty(); }",
+                true);
         }
 
         private void PutDataFromForm(int pRepairID)
@@ -112,8 +229,9 @@ namespace TrackerSQL.Pages
             this.tbxNotes.Text = repairById.Notes;
             this.lblDateLogged.Text = $"{repairById.DateLogged:d}";
             this.lblLastChanged.Text = $"{repairById.LastStatusChange:d}";
-            this.lblRelatedOrderID.Text = repairById.RelatedOrderID.ToString();
-            this.Session["RepairStatusID"] = (object)repairById.RepairStatusID;
+            this.lblRelatedOrderLineID.Text = repairById.RelatedOrderLineID.ToString();
+            this.Session[CONST_SESSION_REPAIRSTATUSID] = (object)repairById.RepairStatusID;
+            ClearDirtyState();
         }
 
         private RepairFormData GetDataFromForm()
@@ -141,81 +259,113 @@ namespace TrackerSQL.Pages
                 Notes = this.tbxNotes.Text,
                 DateLogged = Convert.ToDateTime(this.lblDateLogged.Text).Date,
                 LastStatusChange = Convert.ToDateTime(this.lblLastChanged.Text).Date,
-                RelatedOrderID = Convert.ToInt32(this.lblRelatedOrderID.Text)
+                RelatedOrderLineID = Convert.ToInt32(this.lblRelatedOrderLineID.Text)
             };
         }
 
         protected void btnInsert_Click(object sender, EventArgs e)
         {
             if (this.cboNewCompany.SelectedIndex <= 0)
+            {
+                SetStatus("Select a customer before inserting.", true);
+                upnlRepairDetail.Update();
                 return;
+            }
 
             int contactId = Convert.ToInt32(this.cboNewCompany.SelectedValue);
             int repairId = _repairManager.CreateRepairForContact(contactId);
             if (repairId <= 0)
+            {
+                SetStatus("Could not create repair.", true);
+                upnlRepairDetail.Update();
                 return;
+            }
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"New repair created for ContactID {contactId}, RepairID {repairId}");
             this.pnlNewRepair.Visible = false;
             this.pnlRepairDetail.Visible = true;
             this.PutDataFromForm(repairId);
+            SetStatus("Repair created. Complete the details and save.", false);
             this.upnlRepairDetail.Update();
         }
 
-        private void UpdateRecord()
+        private bool TryUpdateRecord(out string message)
         {
+            message = null;
             RepairFormData dataFromForm = this.GetDataFromForm();
-            int previousStatusId = this.Session["RepairStatusID"] != null ? (int)this.Session["RepairStatusID"] : 0;
+            int previousStatusId = this.Session[CONST_SESSION_REPAIRSTATUSID] != null
+                ? (int)this.Session[CONST_SESSION_REPAIRSTATUSID]
+                : 0;
 
             string result = _repairManager.HandleStatusChange(dataFromForm);
 
-            if (string.IsNullOrWhiteSpace(result))
-            {
-                if (dataFromForm.RepairStatusID != previousStatusId)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"RepairID {dataFromForm.RepairID} status changed from {previousStatusId} to {dataFromForm.RepairStatusID}");
-                }
-                else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"RepairID {dataFromForm.RepairID} updated (no status change)");
-                }
-            }
-            else
+            // Repo update failure returns ErrorUpdating before email; email failure returns a summary after save.
+            string updateError = MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+            if (!string.IsNullOrWhiteSpace(result)
+                && !string.IsNullOrWhiteSpace(updateError)
+                && string.Equals(result.Trim(), updateError.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"RepairID {dataFromForm.RepairID} update failed: {result}");
+                message = result;
+                return false;
             }
 
-            upnlRepairDetail.Update();
+            if (dataFromForm.RepairStatusID != previousStatusId)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {dataFromForm.RepairID} status changed from {previousStatusId} to {dataFromForm.RepairStatusID}");
+            }
+            else
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {dataFromForm.RepairID} updated (no status change)");
+            }
+
+            this.Session[CONST_SESSION_REPAIRSTATUSID] = dataFromForm.RepairStatusID;
+            message = string.IsNullOrWhiteSpace(result) ? "Record updated." : result;
+            return true;
         }
 
-        private void ReturnToPrevPage() => this.ReturnToPrevPage(false);
-
-        private void ReturnToPrevPage(bool pGoToRepairs)
+        protected void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (pGoToRepairs || string.IsNullOrWhiteSpace(RepairDetail.prevPage))
-                this.Response.Redirect("~/Pages/Repairs.aspx");
-            else
-                this.Response.Redirect(RepairDetail.prevPage);
+            if (!TryUpdateRecord(out string message))
+            {
+                SetStatus(message ?? "Update failed.", true);
+                upnlRepairDetail.Update();
+                return;
+            }
+
+            ClearDirtyState();
+            SetStatus(message, false);
+            upnlRepairDetail.Update();
         }
 
         protected void btnUpdateAndReturn_Click(object sender, EventArgs e)
         {
-            this.UpdateRecord();
-            string status = this.ltrlStatus.Text;
-
-            if (!string.IsNullOrWhiteSpace(status) && !status.Contains("Record Updated"))
+            if (!TryUpdateRecord(out string message))
             {
-                showMessageBox msgBox = new showMessageBox(this.Page, "Repair Status Update", status);
+                SetStatus(message ?? "Update failed.", true);
+                upnlRepairDetail.Update();
+                return;
             }
-            this.ReturnToPrevPage();
+
+            ClearDirtyState();
+            if (!string.IsNullOrWhiteSpace(message) &&
+                message.IndexOf("Record updated", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                new showMessageBox(this.Page, "Repair Status Update", message);
+            }
+
+            ReturnToCaller();
         }
 
         protected void btnDelete_Click(object sender, EventArgs e)
         {
             _repairManager.DeleteRepair(Convert.ToInt32(this.lblRepairID.Text));
-            this.ReturnToPrevPage(true);
+            Session[SESSION_RETURN_URL] = ResolveUrl(DefaultReturnUrl);
+            ReturnToCaller();
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e) => this.ReturnToPrevPage();
+        protected void btnCancel_Click(object sender, EventArgs e) => ReturnToCaller();
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Classes;
@@ -12,27 +12,27 @@ namespace TrackerSQL.Repositories
     public class ItemGroupsRepository : RepositoryBase<ItemGroup>
     {
         private const string SelectColumns =
-            "ItemGroupID, GroupReferenceItemID AS GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled, Notes";
+            "ItemGroupID, GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled, Notes";
 
         protected override string TableName => "ItemGroupsTbl";
         protected override string KeyColumn => "ItemGroupID";
 
         protected override string CoreColumns =>
-            "ItemGroupID, GroupReferenceItemID AS GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled";
+            "ItemGroupID, GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled";
 
         protected override string LookupColumns =>
-            "ItemGroupID, GroupReferenceItemID AS GroupItemServiceTypeID";
+            "ItemGroupID, GroupItemServiceTypeID";
 
         public List<ItemGroup> GetAllByGroupReferenceItemId(int groupReferenceItemId, string sortBy = null)
         {
             if (groupReferenceItemId == SystemConstants.DatabaseConstants.InvalidID) return new List<ItemGroup>();
 
-            string sql = $"SELECT {SelectColumns} FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID";
+            string sql = $"SELECT {SelectColumns} FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID";
             sql += " ORDER BY " + (string.IsNullOrEmpty(sortBy) ? "ItemSortPos" : sortBy);
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
             };
 
             return QueryList(sql, parameters);
@@ -41,13 +41,13 @@ namespace TrackerSQL.Repositories
         public ItemGroup GetFirstGroupItem(int groupReferenceItemId)
         {
             return GetSingleInGroup(groupReferenceItemId,
-                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID ORDER BY ItemSortPos");
+                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID ORDER BY ItemSortPos");
         }
 
         public ItemGroup GetNextGroupItem(int groupReferenceItemId, int lastItemSortPos)
         {
             var item = GetSingleInGroup(groupReferenceItemId,
-                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID AND ItemSortPos > @ItemSortPos ORDER BY ItemSortPos",
+                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID AND ItemSortPos > @ItemSortPos ORDER BY ItemSortPos",
                 lastItemSortPos);
             return item ?? GetFirstGroupItem(groupReferenceItemId);
         }
@@ -55,7 +55,7 @@ namespace TrackerSQL.Repositories
         public ItemGroup GetPrevGroupItem(int groupReferenceItemId, int itemSortPos)
         {
             var item = GetSingleInGroup(groupReferenceItemId,
-                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID AND ItemSortPos < @ItemSortPos ORDER BY ItemSortPos DESC",
+                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID AND ItemSortPos < @ItemSortPos ORDER BY ItemSortPos DESC",
                 itemSortPos);
             return item ?? GetLastGroupItem(groupReferenceItemId);
         }
@@ -63,7 +63,7 @@ namespace TrackerSQL.Repositories
         public ItemGroup GetLastGroupItem(int groupReferenceItemId)
         {
             return GetSingleInGroup(groupReferenceItemId,
-                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID ORDER BY ItemSortPos DESC");
+                "SELECT TOP 1 " + SelectColumns + " FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID ORDER BY ItemSortPos DESC");
         }
 
         public int GetLastGroupItemSortPos(int groupReferenceItemId)
@@ -74,10 +74,10 @@ namespace TrackerSQL.Repositories
 
         public int GetItemIdAtSortPos(int groupReferenceItemId, int sortPos)
         {
-            const string sql = "SELECT ItemID FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID AND ItemSortPos = @ItemSortPos";
+            const string sql = "SELECT ItemID FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID AND ItemSortPos = @ItemSortPos";
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemSortPos", DataValue = sortPos, DataDbType = DbType.Int32 }
             };
 
@@ -88,12 +88,12 @@ namespace TrackerSQL.Repositories
         {
             const string sql = @"
                 UPDATE ItemGroupsTbl SET ItemSortPos = @ItemSortPos
-                WHERE GroupReferenceItemID = @GroupReferenceItemID AND ItemID = @ItemID";
+                WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID AND ItemID = @ItemID";
 
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ItemSortPos", DataValue = sortPos, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 }
             };
 
@@ -102,10 +102,10 @@ namespace TrackerSQL.Repositories
 
         public bool DeleteItemFromGroup(int groupReferenceItemId, int itemId)
         {
-            const string sql = "DELETE FROM ItemGroupsTbl WHERE GroupReferenceItemID = @GroupReferenceItemID AND ItemID = @ItemID";
+            const string sql = "DELETE FROM ItemGroupsTbl WHERE GroupItemServiceTypeID = @GroupItemServiceTypeID AND ItemID = @ItemID";
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 }
             };
 
@@ -129,18 +129,50 @@ namespace TrackerSQL.Repositories
         public List<ItemGroupGridRow> GetGridRowsByGroupReferenceItemId(int groupReferenceItemId, string sortBy = null)
         {
             var list = new List<ItemGroupGridRow>();
-            foreach (var group in GetAllByGroupReferenceItemId(groupReferenceItemId, sortBy))
+            if (groupReferenceItemId == SystemConstants.DatabaseConstants.InvalidID)
+                return list;
+
+            string orderBy = string.IsNullOrWhiteSpace(sortBy) ? "g.ItemSortPos" : sortBy;
+            // Allow simple column names from ODS SortExpression without forcing table alias
+            if (orderBy.IndexOf('.') < 0 && orderBy.IndexOf(',') < 0)
             {
-                list.Add(new ItemGroupGridRow
+                if (string.Equals(orderBy, "ItemTypeSortPos", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(orderBy, "ItemSortPos", StringComparison.OrdinalIgnoreCase))
+                    orderBy = "g.ItemSortPos";
+                else if (string.Equals(orderBy, "Enabled", StringComparison.OrdinalIgnoreCase))
+                    orderBy = "g.Enabled";
+                else if (string.Equals(orderBy, "ItemDesc", StringComparison.OrdinalIgnoreCase))
+                    orderBy = "i.ItemDesc";
+            }
+
+            string sql = @"
+                SELECT g.ItemGroupID, g.GroupItemServiceTypeID, g.ItemID, g.ItemSortPos, g.Enabled, g.Notes,
+                       CASE WHEN i.ItemEnabled = 1 THEN i.ItemDesc ELSE '_' + ISNULL(i.ItemDesc, '') END AS ItemDesc
+                FROM ItemGroupsTbl g
+                LEFT JOIN ItemsTbl i ON i.ItemID = g.ItemID
+                WHERE g.GroupItemServiceTypeID = @GroupItemServiceTypeID
+                ORDER BY " + orderBy;
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
+            };
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
                 {
-                    ItemGroupID = group.ItemGroupID,
-                    GroupItemTypeID = group.GroupItemServiceTypeID,
-                    ItemTypeID = group.ItemID ?? 0,
-                    ItemTypeSortPos = group.ItemSortPos ?? 0,
-                    Enabled = group.Enabled ?? true,
-                    Notes = group.Notes ?? string.Empty,
-                    ItemDesc = group.ItemID.HasValue ? new ItemsRepository().GetItemDescById(group.ItemID.Value) : string.Empty
-                });
+                    list.Add(new ItemGroupGridRow
+                    {
+                        ItemGroupID = rdr["ItemGroupID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemGroupID"]),
+                        GroupItemTypeID = rdr["GroupItemServiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["GroupItemServiceTypeID"]),
+                        ItemTypeID = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]),
+                        ItemTypeSortPos = rdr["ItemSortPos"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemSortPos"]),
+                        Enabled = rdr["Enabled"] == DBNull.Value || Convert.ToBoolean(rdr["Enabled"]),
+                        Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
+                        ItemDesc = rdr["ItemDesc"] == DBNull.Value ? string.Empty : rdr["ItemDesc"].ToString()
+                    });
+                }
             }
 
             return list;
@@ -148,16 +180,90 @@ namespace TrackerSQL.Repositories
 
         public bool InsertItemToGroup(int groupReferenceItemId, int itemId, string notes = null)
         {
-            var entity = new ItemGroup
+            return InsertItemsToGroup(groupReferenceItemId, new[] { itemId }, notes) > 0;
+        }
+
+        public override int Insert(ItemGroup entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            const string sql = @"
+                INSERT INTO ItemGroupsTbl
+                    (GroupItemServiceTypeID, ItemID, ItemSortPos, Enabled, Notes)
+                VALUES
+                    (@GroupItemServiceTypeID, @ItemID, @ItemSortPos, @Enabled, @Notes);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
             {
-                GroupItemServiceTypeID = groupReferenceItemId,
-                ItemID = itemId,
-                ItemSortPos = GetLastGroupItemSortPos(groupReferenceItemId) + 1,
-                Enabled = true,
-                Notes = notes ?? "added on ItemGroup form"
+                new DBParameter
+                {
+                    ParamName = "@GroupItemServiceTypeID",
+                    DataValue = entity.GroupItemServiceTypeID,
+                    DataDbType = DbType.Int32
+                },
+                new DBParameter
+                {
+                    ParamName = "@ItemID",
+                    DataValue = FkOrDbNull(entity.ItemID),
+                    DataDbType = DbType.Int32
+                },
+                new DBParameter
+                {
+                    ParamName = "@ItemSortPos",
+                    DataValue = entity.ItemSortPos ?? (object)DBNull.Value,
+                    DataDbType = DbType.Int32
+                },
+                new DBParameter
+                {
+                    ParamName = "@Enabled",
+                    DataValue = entity.Enabled ?? true,
+                    DataDbType = DbType.Boolean
+                },
+                new DBParameter
+                {
+                    ParamName = "@Notes",
+                    DataValue = string.IsNullOrWhiteSpace(entity.Notes) ? (object)DBNull.Value : entity.Notes,
+                    DataDbType = DbType.String
+                }
             };
 
-            return Insert(entity) > 0;
+            return ExecuteScalar<int>(sql, parameters);
+        }
+
+        /// <summary>
+        /// Adds multiple items with a single last-sort read, then incrementing ItemSortPos.
+        /// </summary>
+        public int InsertItemsToGroup(int groupReferenceItemId, IEnumerable<int> itemIds, string notes = null)
+        {
+            if (groupReferenceItemId <= 0 || itemIds == null)
+                return 0;
+
+            int sortPos = GetLastGroupItemSortPos(groupReferenceItemId);
+            string noteText = notes ?? "added on ItemGroup form";
+            int added = 0;
+
+            foreach (int itemId in itemIds)
+            {
+                if (itemId <= 0)
+                    continue;
+
+                sortPos++;
+                var entity = new ItemGroup
+                {
+                    GroupItemServiceTypeID = groupReferenceItemId,
+                    ItemID = itemId,
+                    ItemSortPos = sortPos,
+                    Enabled = true,
+                    Notes = noteText
+                };
+
+                if (Insert(entity) > 0)
+                    added++;
+            }
+
+            return added;
         }
 
         public bool MoveItemSortUp(int groupReferenceItemId, int itemId, int currentSortPos)
@@ -189,7 +295,7 @@ namespace TrackerSQL.Repositories
         {
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@GroupReferenceItemID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@GroupItemServiceTypeID", DataValue = groupReferenceItemId, DataDbType = DbType.Int32 }
             };
 
             if (itemSortPos.HasValue)

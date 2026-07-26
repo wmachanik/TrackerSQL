@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
@@ -12,10 +13,12 @@ namespace TrackerSQL.Pages
     public partial class RecurringOrders : Page
     {
         private const string CONST_SORTEXPRESSION_VIEWSTATE = "RecurringOrdersSortExpression";
+        private const string DefaultReturnUrl = "~/Default.aspx";
 
         protected ScriptManager smRecurringOrders;
         protected UpdateProgress uprgRecurringOrders;
-        protected UpdatePanel upnlSelection;
+        protected UpdatePanel upnlRecurringOrders;
+        protected Panel pnlRecurringOrders;
         protected DropDownList ddlFilterBy;
         protected TextBox tbxFilterBy;
         protected Button btnGo;
@@ -23,12 +26,18 @@ namespace TrackerSQL.Pages
         protected Button btnCalcNextRequired;
         protected DropDownList ddlEnabledFilter;
         protected HyperLink hlAddRecurringOrder;
-        protected UpdatePanel upnlRecurringOrdersSummary;
+        protected Button btnBack;
         protected GridView gvRecurringOrders;
-        protected Label lblFilter;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+        protected Literal ltrlStatus;
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            RegisterPostBackControls();
+
+            if (hlAddRecurringOrder != null)
+                hlAddRecurringOrder.NavigateUrl = SystemConstants.PageUrls.RecurringOrderDetails;
+
             if (!IsPostBack)
             {
                 ViewState[CONST_SORTEXPRESSION_VIEWSTATE] = "CompanyName";
@@ -43,7 +52,39 @@ namespace TrackerSQL.Pages
             }
         }
 
-        private void BindRecurringOrdersGrid()
+        private void RegisterPostBackControls()
+        {
+            var scriptManager = ScriptManager.GetCurrent(Page);
+            if (scriptManager == null)
+                return;
+
+            scriptManager.RegisterAsyncPostBackControl(btnGo);
+            scriptManager.RegisterAsyncPostBackControl(btnReset);
+            scriptManager.RegisterAsyncPostBackControl(btnCalcNextRequired);
+            scriptManager.RegisterAsyncPostBackControl(ddlEnabledFilter);
+            scriptManager.RegisterAsyncPostBackControl(tbxFilterBy);
+            scriptManager.RegisterPostBackControl(btnBack);
+        }
+
+        private void SetStatus(string message, bool? isError)
+        {
+            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
+        private void BindRecurringOrdersGrid(string statusPrefix = null)
         {
             try
             {
@@ -60,39 +101,39 @@ namespace TrackerSQL.Pages
                 gvRecurringOrders.DataSource = groupedRecurringOrders;
                 gvRecurringOrders.DataBind();
 
-                lblFilter.Text = $"<strong>Showing {groupedRecurringOrders.Count} recurring order header(s)</strong>";
+                string enabledDescription = enabledFilter == 1
+                    ? "enabled only"
+                    : enabledFilter == 0
+                        ? "disabled only"
+                        : "enabled and disabled";
 
+                string status = $"Showing {groupedRecurringOrders.Count} recurring order header(s) ({enabledDescription}).";
                 if (!string.IsNullOrWhiteSpace(companyNameFilter))
+                    status += $" Company filter: {companyNameFilter}.";
+
+                if (!string.IsNullOrWhiteSpace(statusPrefix))
                 {
-                    lblFilter.Text += $"<br/><span style='color:#666;'>Company filter: {Server.HtmlEncode(companyNameFilter)}</span>";
+                    SetStatus(statusPrefix.Trim() + " " + status, isError: false);
+                    return;
                 }
 
-                string enabledDescription = enabledFilter == 1
-                    ? "Enabled only"
-                    : enabledFilter == 0
-                        ? "Disabled only"
-                        : "Enabled and disabled";
-                lblFilter.Text += $"<br/><span style='color:#666;'>Status: {enabledDescription}</span>";
+                SetStatus(status, isError: null);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "RecurringOrders BindRecurringOrdersGrid error: " + ex.Message);
-                lblFilter.Text = "<span style='color:red;'>Error loading data: " + Server.HtmlEncode(ex.Message) + "</span>";
+                SetStatus("Error loading data: " + ex.Message, isError: true);
             }
         }
 
         protected void gvRecurringOrders_RowDataBound(object sender, GridViewRowEventArgs e)
         {
             if (e.Row.RowType != DataControlRowType.DataRow)
-            {
                 return;
-            }
 
             var recurringOrderGroupSummary = e.Row.DataItem as RecurringOrderGroupSummary;
             if (recurringOrderGroupSummary == null)
-            {
                 return;
-            }
 
             var recurringOrdersGrid = e.Row.FindControl("gvRecurringOrdersForContact") as GridView;
             if (recurringOrdersGrid != null)
@@ -103,9 +144,7 @@ namespace TrackerSQL.Pages
 
             var editRecurringOrderLink = e.Row.FindControl("hlEditRecurringOrder") as HyperLink;
             if (editRecurringOrderLink != null)
-            {
                 editRecurringOrderLink.NavigateUrl = recurringOrderGroupSummary.DetailsNavigateUrl;
-            }
 
             var contactDetailsLink = e.Row.FindControl("hlContactDetails") as HyperLink;
             var companyNameLabel = e.Row.FindControl("lblCompanyName") as Label;
@@ -115,13 +154,12 @@ namespace TrackerSQL.Pages
                 {
                     contactDetailsLink.Text = recurringOrderGroupSummary.CompanyNameDisplay;
                     contactDetailsLink.NavigateUrl = recurringOrderGroupSummary.ContactDetailsNavigateUrl;
+                    contactDetailsLink.ToolTip = "Open contact details";
                     contactDetailsLink.Visible = true;
                 }
 
                 if (companyNameLabel != null)
-                {
                     companyNameLabel.Visible = false;
-                }
             }
             else if (companyNameLabel != null)
             {
@@ -133,12 +171,28 @@ namespace TrackerSQL.Pages
             if (recurringOrderStatusLabel != null)
             {
                 recurringOrderStatusLabel.Text = recurringOrderGroupSummary.EnabledDisplay;
+                recurringOrderStatusLabel.CssClass = recurringOrderGroupSummary.Enabled == false
+                    ? "status-badge is-disabled"
+                    : "status-badge is-enabled";
             }
 
             var recurringOrderCountLabel = e.Row.FindControl("lblRecurringOrderCount") as Label;
             if (recurringOrderCountLabel != null)
-            {
                 recurringOrderCountLabel.Text = recurringOrderGroupSummary.RecurringLineCount + " line(s)";
+
+            var btnDeleteRecurringOrder = e.Row.FindControl("btnDeleteRecurringOrder") as LinkButton;
+            if (btnDeleteRecurringOrder != null)
+            {
+                string companyName = recurringOrderGroupSummary.CompanyNameDisplay;
+                int lineCount = recurringOrderGroupSummary.RecurringLineCount;
+                string confirmMessage = "Delete the complete recurring order for '" + companyName + "' ("
+                    + lineCount + " line(s))? This cannot be undone.";
+                btnDeleteRecurringOrder.OnClientClick =
+                    "return confirm('" + HttpUtility.JavaScriptStringEncode(confirmMessage) + "');";
+
+                var scriptManager = ScriptManager.GetCurrent(Page);
+                if (scriptManager != null)
+                    scriptManager.RegisterAsyncPostBackControl(btnDeleteRecurringOrder);
             }
         }
 
@@ -151,13 +205,12 @@ namespace TrackerSQL.Pages
         protected void gvRecurringOrders_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             if (!string.Equals(e.CommandName, "DeleteRecurringOrder", StringComparison.OrdinalIgnoreCase))
-            {
                 return;
-            }
 
             int recurringOrderId;
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out recurringOrderId) || recurringOrderId <= 0)
             {
+                SetStatus("Could not delete: missing recurring order id.", isError: true);
                 return;
             }
 
@@ -165,13 +218,14 @@ namespace TrackerSQL.Pages
             {
                 var recurringOrdersRepository = new RecurringOrdersRepository();
                 recurringOrdersRepository.Delete(recurringOrderId);
-                BindRecurringOrdersGrid();
-                lblFilter.Text = "<span style='color:#55624a;font-weight:bold;'>Recurring order deleted.</span><br/>" + lblFilter.Text;
+                string statusMessage = "Recurring order deleted.";
+                BindRecurringOrdersGrid(statusMessage);
+                new showMessageBox(Page, "Recurring Orders", statusMessage);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "RecurringOrders gvRecurringOrders_RowCommand delete error: " + ex.Message);
-                lblFilter.Text = "<span style='color:red;'>Error deleting recurring order: " + Server.HtmlEncode(ex.Message) + "</span>";
+                SetStatus("Error deleting recurring order: " + ex.Message, isError: true);
             }
         }
 
@@ -185,17 +239,13 @@ namespace TrackerSQL.Pages
                     + updatedCount
                     + " enabled recurring line(s).";
 
-                BindRecurringOrdersGrid();
-                lblFilter.Text = "<span style='color:#55624a;font-weight:bold;'>"
-                    + statusMessage
-                    + "</span><br/>"
-                    + lblFilter.Text;
+                BindRecurringOrdersGrid(statusMessage);
                 new showMessageBox(Page, "Recurring Orders", statusMessage);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "RecurringOrders btnCalcNextRequired_Click error: " + ex.Message);
-                lblFilter.Text = "<span style='color:red;'>Error recalculating next required dates: " + Server.HtmlEncode(ex.Message) + "</span>";
+                SetStatus("Error recalculating next required dates: " + ex.Message, isError: true);
             }
         }
 
@@ -208,9 +258,7 @@ namespace TrackerSQL.Pages
         protected void tbxFilterBy_TextChanged(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(tbxFilterBy.Text) && ddlFilterBy.SelectedValue == "0")
-            {
                 ddlFilterBy.SelectedValue = "CompanyName";
-            }
 
             ApplyFilters();
         }
@@ -232,6 +280,38 @@ namespace TrackerSQL.Pages
         protected void ddlEnabledFilter_SelectedIndexChanged(object sender, EventArgs e)
         {
             ApplyFilters();
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect(DefaultReturnUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
+        }
+
+        /// <summary>
+        /// Blank / SystemMinDate / far-future sentinel means "forever" — show infinity.
+        /// </summary>
+        protected string FormatRequireUntilDate(object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return "∞";
+
+            DateTime untilDate;
+            if (value is DateTime)
+                untilDate = ((DateTime)value).Date;
+            else if (!DateTime.TryParse(Convert.ToString(value), out untilDate))
+                return "∞";
+            else
+                untilDate = untilDate.Date;
+
+            if (untilDate <= SystemConstants.DatabaseConstants.SystemMinDate)
+                return "∞";
+
+            // Legacy / sentinel "open-ended" dates
+            if (untilDate.Year >= 2099)
+                return "∞";
+
+            return untilDate.ToString("yyyy-MM-dd");
         }
 
         private void ApplyFilters()
@@ -347,6 +427,5 @@ namespace TrackerSQL.Pages
                         .ToList();
             }
         }
-
     }
 }

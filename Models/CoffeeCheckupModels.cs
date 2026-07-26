@@ -27,7 +27,7 @@ namespace TrackerSQL.Models
         public string Notes { get; set; } = string.Empty;
         public bool RequiresPurchOrder { get; set; }
         public DateTime LastDateSentReminder { get; set; }
-        public DateTime NextPreperationDate { get; set; }
+        public DateTime NextPreparationDate { get; set; }
         public DateTime NextDeliveryDate { get; set; }
         public DateTime NextCoffee { get; set; }
         public DateTime NextClean { get; set; }
@@ -39,6 +39,22 @@ namespace TrackerSQL.Models
     public class ContactToRemindWithItems : ContactToRemindDetails
     {
         public List<ItemContactRequires> ItemsContactRequires { get; set; } = new List<ItemContactRequires>();
+
+        /// <summary>
+        /// True when at least one recurring line on this checkup is the final cycle before RequireUntilDate.
+        /// </summary>
+        public bool IsLastRecurringOrder { get; set; }
+
+        /// <summary>
+        /// Until date for the last recurring cycle (for email wording). Null when not applicable.
+        /// </summary>
+        public DateTime? LastRecurringUntilDate { get; set; }
+
+        /// <summary>
+        /// When true, an order already exists for the recurring delivery day; still send the checkup email
+        /// but do not create another order (used for last-cycle keep-on-list).
+        /// </summary>
+        public bool SkipOrderCreationDueToConflict { get; set; }
     }
 
     public class ItemContactRequires
@@ -50,8 +66,8 @@ namespace TrackerSQL.Models
         public int ItemPrepID { get; set; }
         public int ItemPackagID { get; set; }
         public bool AutoFulfill { get; set; }
-        public bool ReoccurOrder { get; set; }
-        public int ReoccurID { get; set; }
+        public bool RecurringOrder { get; set; }
+        public int RecurringOrderItemID { get; set; }
     }
 
     public class CustomerCheckupData
@@ -78,7 +94,7 @@ namespace TrackerSQL.Models
         public DateTime NextDescal { get; set; }
         public DateTime NextFilter { get; set; }
         public DateTime NextService { get; set; }
-        public DateTime NextPreperationDate { get; set; }
+        public DateTime NextPreparationDate { get; set; }
         public DateTime NextDeliveryDate { get; set; }
     }
 
@@ -125,7 +141,7 @@ namespace TrackerSQL.Models
         public DateTime NextServiceEst { get; set; }
         public DateTime PrepDate { get; set; }
         public DateTime DeliveryDate { get; set; }
-        public DateTime NextPreperationDate { get; set; }
+        public DateTime NextPreparationDate { get; set; }
         public DateTime NextDeliveryDate { get; set; }
     }
 
@@ -137,5 +153,17 @@ namespace TrackerSQL.Models
         public string Footer { get; set; } = string.Empty;
         public DateTime DateLastChange { get; set; }
         public string Notes { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Aggregate stats for SentRemindersSheet redirect after a checkup send.
+    /// </summary>
+    public class SentReminderDayStats
+    {
+        public DateTime SentDate { get; set; }
+        public int TotalReminders { get; set; }
+        public int UniqueCustomers { get; set; }
+        public int Successful { get; set; }
+        public int Failed { get; set; }
     }
 }

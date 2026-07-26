@@ -1,43 +1,71 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ManageUsers.aspx.cs" Inherits="TrackerSQL.Administration.ManageUsers" %>
+<%@ Page Title="Manage Users" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+    CodeBehind="ManageUsers.aspx.cs" Inherits="TrackerSQL.Administration.ManageUsers" %>
+
 <asp:Content ID="cntManageUsersHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntManageUsersBdy" ContentPlaceHolderID="MainContent" runat="server">
-  <h1>Manage Users</h1>
-  <asp:GridView ID="gvUserAccounts" runat="server" AutoGenerateColumns="False" CellSpacing="1"
-    CellPadding="4" ForeColor="#333333">
-    <AlternatingRowStyle BackColor="White" ForeColor="#284775" />
-    <Columns>
-      <asp:HyperLinkField DataNavigateUrlFields="UserName" 
-        DataNavigateUrlFormatString="UserInformation.aspx?user={0}" Text="Manage" 
-        HeaderImageUrl="~/images/imgButtons/World.gif" />
-      <asp:BoundField DataField="UserName" HeaderText="UserName"/>
-      <asp:BoundField DataField="Email" HeaderText="Email" />
-      <asp:CheckBoxField DataField="IsApproved" HeaderText="Approved?" 
-        ItemStyle-HorizontalAlign="Center" >
-<ItemStyle HorizontalAlign="Center"></ItemStyle>
-      </asp:CheckBoxField>
-      <asp:CheckBoxField DataField="IsLockedOut" HeaderText="Locked Out?" 
-        ItemStyle-HorizontalAlign="Center" >
-<ItemStyle HorizontalAlign="Center"></ItemStyle>
-      </asp:CheckBoxField>
-      <asp:CheckBoxField DataField="IsOnline" HeaderText="Online?" 
-        ItemStyle-HorizontalAlign="Center" >
-<ItemStyle HorizontalAlign="Center"></ItemStyle>
-      </asp:CheckBoxField>
-      <asp:BoundField DataField="Comment" HeaderText="Comment" 
-        ItemStyle-HorizontalAlign="Left" >
-<ItemStyle HorizontalAlign="Left"></ItemStyle>
-      </asp:BoundField>
-    </Columns>
-    <EditRowStyle BackColor="#999999" />
-    <FooterStyle BackColor="#7B5D9D" Font-Bold="True" ForeColor="White" />
-    <HeaderStyle BackColor="#7B5D9D" Font-Bold="True" ForeColor="White" />
-    <PagerStyle BackColor="#284775" ForeColor="White" HorizontalAlign="Center" />
-    <RowStyle BackColor="#F7F6F3" ForeColor="#333333" />
-    <SelectedRowStyle BackColor="#E2DED6" Font-Bold="True" ForeColor="#333333" />
-    <SortedAscendingCellStyle BackColor="#E9E7E2" />
-    <SortedAscendingHeaderStyle BackColor="#506C8C" />
-    <SortedDescendingCellStyle BackColor="#FFFDF8" />
-    <SortedDescendingHeaderStyle BackColor="#6F8DAE" />
-  </asp:GridView>
+    <asp:Panel ID="pnlManageUsers" runat="server" CssClass="simpleForm page-tone-panel page-tone-users">
+        <div class="page-tone-header tool-card-header">
+            <img class="tool-card-icon" src="../images/imgButtons/User group.png" alt="" />
+            <div>
+                <h1 class="page-tone-title">Manage Users</h1>
+                <p class="page-tone-subtitle">Approve, unlock, and review accounts</p>
+            </div>
+        </div>
+
+        <div class="results-container" style="margin-top: 8px;">
+            <asp:GridView ID="gvUserAccounts" runat="server" AutoGenerateColumns="False"
+                CssClass="results-table results-table-fit" GridLines="None"
+                DataKeyNames="UserName"
+                EmptyDataText="No user accounts found."
+                OnRowCommand="gvUserAccounts_RowCommand"
+                OnRowDataBound="gvUserAccounts_RowDataBound">
+                <Columns>
+                    <asp:HyperLinkField DataNavigateUrlFields="UserName"
+                        DataNavigateUrlFormatString="UserInformation.aspx?user={0}" Text="Manage"
+                        HeaderText="Manage"
+                        HeaderStyle-CssClass="col-priority-1 col-align-center"
+                        ItemStyle-CssClass="col-priority-1 col-align-center" />
+                    <asp:BoundField DataField="UserName" HeaderText="User name"
+                        HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1" />
+                    <asp:BoundField DataField="Email" HeaderText="Email"
+                        HeaderStyle-CssClass="col-priority-2" ItemStyle-CssClass="col-priority-2" />
+                    <asp:CheckBoxField DataField="IsApproved" HeaderText="Approved?"
+                        HeaderStyle-CssClass="col-priority-2 col-align-center"
+                        ItemStyle-CssClass="col-priority-2 col-align-center"
+                        ItemStyle-HorizontalAlign="Center" />
+                    <asp:CheckBoxField DataField="IsLockedOut" HeaderText="Locked Out?"
+                        HeaderStyle-CssClass="col-priority-2 col-align-center"
+                        ItemStyle-CssClass="col-priority-2 col-align-center"
+                        ItemStyle-HorizontalAlign="Center" />
+                    <asp:TemplateField HeaderText=""
+                        HeaderStyle-CssClass="col-cmd col-priority-1"
+                        ItemStyle-CssClass="col-cmd col-priority-1">
+                        <ItemTemplate>
+                            <span class="image-button" title="Unlock this account" runat="server" id="spnUnlockUser">
+                                <img src="../images/imgButtons/Unlock.gif" alt="" />
+                                <asp:LinkButton ID="btnUnlockUser" runat="server"
+                                    Text="Unlock"
+                                    ToolTip="Unlock this account"
+                                    CommandName="UnlockUser"
+                                    CommandArgument='<%# Eval("UserName") %>'
+                                    CausesValidation="false" />
+                            </span>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:CheckBoxField DataField="IsOnline" HeaderText="Online?"
+                        HeaderStyle-CssClass="col-priority-3 col-align-center"
+                        ItemStyle-CssClass="col-priority-3 col-align-center"
+                        ItemStyle-HorizontalAlign="Center" />
+                    <asp:BoundField DataField="Comment" HeaderText="Comment"
+                        HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3"
+                        ItemStyle-HorizontalAlign="Left" />
+                </Columns>
+            </asp:GridView>
+        </div>
+
+        <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+            <asp:Label ID="lblStatusMessage" runat="server" />
+        </div>
+    </asp:Panel>
 </asp:Content>

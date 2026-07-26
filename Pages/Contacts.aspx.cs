@@ -1,15 +1,13 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.DataSets.TrackerDataSet
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — Contacts
+// WebForms page code-behind for Contacts.
+//------------------------------------------------------------------------------
 
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Repositories;
-using static TrackerSQL.Classes.MessageKeys;
 
 namespace TrackerSQL.Pages
 {
@@ -40,8 +38,26 @@ namespace TrackerSQL.Pages
             else
             {
                 if (Session[CONST_WHERECLAUSE_SESSIONVAR] != null)
-                    lblFilter.Text = Session[CONST_WHERECLAUSE_SESSIONVAR].ToString();
+                    SetFilterStatus(Session[CONST_WHERECLAUSE_SESSIONVAR].ToString(), null);
             }
+        }
+
+        private void SetFilterStatus(string message, bool? isError)
+        {
+            lblFilter.Text = message ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
         /// <summary>
@@ -60,14 +76,15 @@ namespace TrackerSQL.Pages
                 gvContacts.DataSource = contacts;
                 gvContacts.DataBind();
 
-                lblFilter.Text = string.IsNullOrEmpty(whereFilter) 
-                    ? $"Showing {contacts.Count} contacts" 
-                    : $"Filter: {whereFilter} ({contacts.Count} results)";
+                if (string.IsNullOrEmpty(whereFilter))
+                    SetFilterStatus($"Showing {contacts.Count} contacts", null);
+                else
+                    SetFilterStatus($"Filter: {whereFilter} ({contacts.Count} results)", null);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "Contacts BindContactsGrid error: " + ex.Message);
-                lblFilter.Text = "Error loading contacts: " + ex.Message;
+                SetFilterStatus("Error loading contacts: " + ex.Message, true);
             }
         }
 
@@ -96,12 +113,11 @@ namespace TrackerSQL.Pages
                 if (int.TryParse(filterValue, out int contactId))
                 {
                     Session[CONST_WHERECLAUSE_SESSIONVAR] = $"ContactID = {contactId}";
-                    lblFilter.Text = $"Filtered by ContactID={contactId}.";
                 }
                 else
                 {
                     Session[CONST_WHERECLAUSE_SESSIONVAR] = "1=0";
-                    lblFilter.Text = "Please enter a valid numeric Contact ID.";
+                    SetFilterStatus("Please enter a valid numeric Contact ID.", true);
                     new showMessageBox(Page, "Input Error", "Please enter a valid numeric Contact ID.");
                     BindContactsGrid();
                     upnlContactSummary.Update();
@@ -113,7 +129,6 @@ namespace TrackerSQL.Pages
                 if (!filterValue.StartsWith("%"))
                     filterValue = "%" + filterValue + "%";
                 Session[CONST_WHERECLAUSE_SESSIONVAR] = $"{filterField} LIKE '{filterValue}'";
-                lblFilter.Text = $"Filtered by {filterField} LIKE '{filterValue}'";
             }
             gvContacts.PageIndex = 0;
             BindContactsGrid();
@@ -126,7 +141,7 @@ namespace TrackerSQL.Pages
             tbxFilterBy.Text = string.Empty;
             gvContacts.PageIndex = 0;
             BindContactsGrid();
-            upnlSelection.Update();
+            upnlContactSummary.Update();
         }
 
         protected void tbxFilterBy_TextChanged(object sender, EventArgs e)
@@ -134,13 +149,18 @@ namespace TrackerSQL.Pages
             if (string.IsNullOrWhiteSpace(tbxFilterBy.Text) || ddlFilterBy.SelectedIndex != 0)
                 return;
             ddlFilterBy.SelectedIndex = 1; // default to CompanyName
-            upnlSelection.Update();
+            upnlContactSummary.Update();
         }
 
         protected void ddlContactEnabled_SelectedIndexChanged(object sender, EventArgs e)
         {
             gvContacts.PageIndex = 0;
             BindContactsGrid();
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Default.aspx");
         }
     }
 }

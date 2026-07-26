@@ -1,219 +1,256 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true"
-    CodeBehind="SendCoffeeCheckup.aspx.cs" Inherits="TrackerSQL.Pages.SendCoffeeCheckup" %>
+﻿<%@ Page Title="Send Coffee Checkup" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+    MaintainScrollPositionOnPostback="true" CodeBehind="SendCoffeeCheckup.aspx.cs"
+    Inherits="TrackerSQL.Pages.SendCoffeeCheckup" %>
 
-<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
-    <script type="text/javascript">
-        // Auto-start data preparation when page is ready
-        function pageLoadComplete() {
-            // Give the page a moment to fully render, then auto-prep data
-            setTimeout(function () {
-                var prepButton = document.getElementById('<%= btnPrepData.ClientID %>');
-                if (prepButton && prepButton.style.display !== 'none') {
-                    // Trigger auto-prep
-                    __doPostBack('<%= btnPrepData.UniqueID %>', '');
-                }
-            }, 500); // Wait 1 second for page to fully load
-        }
-
-        // Call when page loads
-        window.onload = pageLoadComplete;
-    </script>
+<asp:Content ID="cntSendCoffeeCheckupHdr" ContentPlaceHolderID="HeadContent" runat="server">
+    <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
 </asp:Content>
 
 <asp:Content ID="cntSendCoffeeCheckupBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <h1>Send Coffee Reminder to Customers</h1>
-    <asp:ScriptManager ID="smCustomerCheckup" runat="server" />
-    <!-- Enhanced auto-loading progress -->
-    <asp:UpdateProgress ID="uprgSendEmail" runat="server" AssociatedUpdatePanelID="upnlSendEmail" ViewStateMode="Enabled">
+    <asp:ScriptManager ID="smCustomerCheckup" runat="server" EnablePartialRendering="true"
+        AsyncPostBackTimeout="900" />
+
+    <asp:UpdateProgress ID="uprgSendEmail" runat="server" AssociatedUpdatePanelID="upnlSendEmail"
+        DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <div style="text-align: left; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
-                <img src="../images/animi/QuaffeeProgress.gif" alt="sending..." width="16" height="16" />&nbsp;              
-                <strong>Please wait...</strong> This may take several minutes.          
+            <div class="status-message status-info page-tone-progress page-tone-send-progress">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Sending checkup emails… this may take several minutes. Please wait.
             </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <asp:UpdateProgress ID="uprgCustomerCheckup" runat="server" AssociatedUpdatePanelID="upnlCustomerCheckup">
+
+    <asp:UpdateProgress ID="uprgCustomerCheckup" runat="server" AssociatedUpdatePanelID="upnlCustomerCheckup"
+        DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <div style="text-align: left; padding: 10px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px;">
-                <img src="../images/animi/BlueArrowsUpdate.gif" alt="updating..." width="16" height="16" />&nbsp;               
-                <strong>Preparing customer data...</strong> Please wait...           
+            <div class="status-message status-info page-tone-progress">
+                <img src="../images/animi/BlueArrowsUpdate.gif" alt="preparing..." />
+                &nbsp;Preparing contact data...
             </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <div class="filter-toolbar" style="padding: 10px">
-        <asp:UpdatePanel ID="upnlSendEmail" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional" style="width:100%">
+
+    <asp:Panel ID="pnlCheckup" runat="server" CssClass="simpleForm page-tone-panel page-tone-checkup">
+        <div class="page-tone-header tool-card-header">
+            <img class="tool-card-icon" src="../images/imgButtons/icons8-send-email-16.png" alt="" />
+            <div>
+                <h1 class="page-tone-title">Send Coffee Checkup</h1>
+                <p class="page-tone-subtitle">Send automated contact checkups</p>
+            </div>
+        </div>
+
+        <asp:UpdatePanel ID="upnlSendEmail" runat="server" ChildrenAsTriggers="false" UpdateMode="Conditional">
             <ContentTemplate>
-                <div class="filter-block">
-                    <div>
-                        <asp:Label AssociatedControlID="tbxEmailSubject" Text="Subject:" runat="server" />
-                        <asp:TextBox ID="tbxEmailSubject" Text="Coffee Checkup" runat="server" Width="30em" Style="padding-right: 2px" />
-                        <span class="small floatRight">
-                            <asp:Literal ID="ltrlEmailTextID" runat="server" Text="" /></span>
-                        <br />
-                        <br />
-                        <ajaxToolkit:TabContainer ID="tabEmailBody" runat="server" Height="200px" Width="100%">
-                            <ajaxToolkit:TabPanel ID="tpnlEmailIntro" TabIndex="0" HeaderText="Checkup Intro" runat="server">
-                                <ContentTemplate>
-                                    <asp:TextBox ID="tbxEmailIntro" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
-                                        Text="Welcome to Quaffee's coffee checkup or reminder" CausesValidation="false" />
-                                    <ajaxToolkit:HtmlEditorExtender ID="HtmlEditorExtenderEmailIntro" TargetControlID="tbxEmailIntro" runat="server"
-                                        DisplaySourceTab="true" EnableSanitization="false" />
-                                    <br />
-                                    <span class="small">Enter the text that will appear as the Introduction to the emails.</span><br />
-                                </ContentTemplate>
-                            </ajaxToolkit:TabPanel>
-                            <ajaxToolkit:TabPanel ID="tpnlEmailBody" TabIndex="1" HeaderText="Checkup Body" runat="server">
-                                <ContentTemplate>
-                                    <asp:TextBox ID="tbxEmailBody" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
-                                        Text="" />
-                                    <ajaxToolkit:HtmlEditorExtender ID="HtmlEditorExtenderEmailBody" TargetControlID="tbxEmailBody" runat="server"
-                                        DisplaySourceTab="true" EnableSanitization="false" />
-                                    <br />
-                                    <span class="small">This text appears after the Intro, before the Summary of use. Use [#PREPDATE#], to place next PREPDATE,  [#DELIVERYDATE#] for customer deliver date</span>
-                                </ContentTemplate>
-                            </ajaxToolkit:TabPanel>
-                            <ajaxToolkit:TabPanel ID="tpnlEmailFooter" TabIndex="2" HeaderText="Checkup Footer" runat="server">
-                                <ContentTemplate>
-                                    <asp:TextBox ID="tbxEmailFooter" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10" Text="" />
-                                    <ajaxToolkit:HtmlEditorExtender ID="HtmlEmailFooter" TargetControlID="tbxEmailFooter" runat="server"
-                                        DisplaySourceTab="true" EnableSanitization="false" ClientIDMode="Predictable" />
-                                    <br />
-                                    <span class="small">Enter the footer, which appears under the summary data.</span>
-                                </ContentTemplate>
-                            </ajaxToolkit:TabPanel>
-                        </ajaxToolkit:TabContainer>
-                        <asp:Literal ID="ltrlStatus" Text="" runat="server" />
-                    </div>
-                    <div class="button-toolbar-rounded">
+                <div class="page-tone-toolbar filter-block" style="padding-top: 12px;">
+                    <asp:Label AssociatedControlID="tbxEmailSubject" Text="Subject:" runat="server" />
+                    <asp:TextBox ID="tbxEmailSubject" Text="Coffee Checkup" runat="server" Width="30em" Style="padding-right: 2px" />
+                    <span class="small floatRight">
+                        <asp:Literal ID="ltrlEmailTextID" runat="server" Text="" />
+                    </span>
+                    <br />
+                    <br />
+                    <ajaxToolkit:TabContainer ID="tabEmailBody" runat="server" Height="200px" Width="100%">
+                        <ajaxToolkit:TabPanel ID="tpnlEmailIntro" TabIndex="0" HeaderText="Checkup Intro" runat="server">
+                            <ContentTemplate>
+                                <asp:TextBox ID="tbxEmailIntro" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
+                                    Text="Welcome to Quaffee's coffee checkup or reminder" CausesValidation="false" />
+                                <ajaxToolkit:HtmlEditorExtender ID="HtmlEditorExtenderEmailIntro" TargetControlID="tbxEmailIntro" runat="server"
+                                    DisplaySourceTab="true" EnableSanitization="false" />
+                                <br />
+                                <span class="small">Enter the text that will appear as the Introduction to the emails.</span><br />
+                            </ContentTemplate>
+                        </ajaxToolkit:TabPanel>
+                        <ajaxToolkit:TabPanel ID="tpnlEmailBody" TabIndex="1" HeaderText="Checkup Body" runat="server">
+                            <ContentTemplate>
+                                <asp:TextBox ID="tbxEmailBody" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
+                                    Text="" />
+                                <ajaxToolkit:HtmlEditorExtender ID="HtmlEditorExtenderEmailBody" TargetControlID="tbxEmailBody" runat="server"
+                                    DisplaySourceTab="true" EnableSanitization="false" />
+                                <br />
+                                <span class="small">This text appears after the Intro, before the Summary of use. Use [#PREPDATE#], to place next PREPDATE,  [#DELIVERYDATE#] for contact deliver date</span>
+                            </ContentTemplate>
+                        </ajaxToolkit:TabPanel>
+                        <ajaxToolkit:TabPanel ID="tpnlEmailFooter" TabIndex="2" HeaderText="Checkup Footer" runat="server">
+                            <ContentTemplate>
+                                <asp:TextBox ID="tbxEmailFooter" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10" Text="" />
+                                <ajaxToolkit:HtmlEditorExtender ID="HtmlEmailFooter" TargetControlID="tbxEmailFooter" runat="server"
+                                    DisplaySourceTab="true" EnableSanitization="false" ClientIDMode="Predictable" />
+                                <br />
+                                <span class="small">Enter the footer, which appears under the summary data.</span>
+                            </ContentTemplate>
+                        </ajaxToolkit:TabPanel>
+                    </ajaxToolkit:TabContainer>
+
+                    <div class="button-row checkup-send-actions" style="margin-top: 12px;">
                         <asp:Label ID="lblRemincderWindow" runat="server" Text="Reminder Window (days):" AssociatedControlID="ddlReminderWindow" CssClass="small" />
-                        <asp:DropDownList ID="ddlReminderWindow" Style="min-width: 16px" runat="server" CssClass="small" AutoPostBack="true" OnSelectedIndexChanged="ddlReminderWindow_SelectedIndexChanged" />
-                        &nbsp;&nbsp;&nbsp;&nbsp;
-                        <!-- Make prep data button visible for auto-prep to work -->
-                        <asp:Button ID="btnPrepData" Text="Prep Data" runat="server"
+                        <asp:DropDownList ID="ddlReminderWindow" Style="min-width: 16px" runat="server" CssClass="small"
+                            AutoPostBack="true" OnSelectedIndexChanged="ddlReminderWindow_SelectedIndexChanged" />
+                        &nbsp;
+                        <asp:Button ID="btnPrepData" Text="Prep Data" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnPrepData_Click" Visible="true"
-                            ToolTip="Prepare customer data for reminders" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        <asp:Button ID="btnUpdate" Text="Update Email Text" runat="server"
-                            OnClick="btnUpdate_Click" />&nbsp;&nbsp;&nbsp;
-                        <asp:Button ID="btnReload" Text="Email Text Reload" runat="server"
-                            OnClick="btnReload_Click" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        <asp:Button ID="btnSend" Text="Send Checkup" runat="server" OnClick="btnSend_Click" />&nbsp;&nbsp;&nbsp;&nbsp;
-<%--                        <asp:Button ID="btnTestSingleCustomer" Text="Test Single Email" runat="server" OnClick="btnTestSingleCustomer_Click"
-                            ToolTip="Send a test email to verify email formatting and content" />&nbsp;&nbsp;&nbsp;&nbsp;--%>
-                        <asp:Button ID="btnClearTodaysData" Text="Clear Sents" runat="server" OnClick="btnClearTodaysData_Click"
-                            ToolTip="Clear the sent today's table" />&nbsp;&nbsp;&nbsp;&nbsp;
-                        <asp:Button ID="btnRefreshCustomerCheckupList" Text="Refresh List" runat="server" OnClick="btnPrepData_Click"
-                            ToolTip="Refresh the customer list" />
+                            ToolTip="Prepare contact data for reminders" />
+                        <asp:Button ID="btnUpdate" Text="Update Email Text" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnUpdate_Click" ToolTip="Save email template text" />
+                        <asp:Button ID="btnReload" Text="Email Text Reload" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnReload_Click" ToolTip="Reload email template from database" />
+                        <asp:Button ID="btnSend" Text="Send Checkup" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnSend_Click" ToolTip="Send checkup emails, then open reminder results" />
+                        <asp:ImageButton ID="imgBtnEmailTestMode" runat="server" Visible="false"
+                            ImageUrl="~/images/imgButtons/Alert.gif"
+                            CssClass="filter-panel-btn"
+                            Style="vertical-align: middle; padding: 2px;"
+                            CausesValidation="false"
+                            OnClick="imgBtnEmailTestMode_Click"
+                            ToolTip="Email TEST MODE is ON — messages go to the test recipient from Web.config (EmailTestMode / EmailTestRecipient)." />
+                        <asp:Button ID="btnClearTodaysData" Text="Clear Sents" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnClearTodaysData_Click"
+                            ToolTip="Clear today's sent-reminder log entries" />
+                        <asp:Button ID="btnRefreshCustomerCheckupList" Text="Refresh List" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnPrepData_Click"
+                            ToolTip="Refresh the contact list (re-runs Prep — excluded contacts may return)" />
+                        <asp:Button ID="btnBack" Text="Back" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnBack_Click" CausesValidation="false"
+                            ToolTip="Return to home without sending" />
+                        <span class="checkup-send-cc">
+                            <asp:CheckBox ID="chkCcOrdersEmail" runat="server" Checked="true" CssClass="small"
+                                Text="Send CC"
+                                ToolTip="Send CC to system email" />
+                        </span>
+                    </div>
+
+                    <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+                        <asp:Literal ID="ltrlStatus" runat="server" />
                     </div>
                 </div>
             </ContentTemplate>
             <Triggers>
-                <asp:AsyncPostBackTrigger ControlID="btnSend" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnPrepData" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnRefreshCustomerCheckupList" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnUpdate" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnReload" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnClearTodaysData" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="ddlReminderWindow" EventName="SelectedIndexChanged" />
+                <asp:AsyncPostBackTrigger ControlID="btnSend" EventName="Click" />
+                <asp:PostBackTrigger ControlID="btnBack" />
+                <asp:AsyncPostBackTrigger ControlID="imgBtnEmailTestMode" EventName="Click" />
             </Triggers>
         </asp:UpdatePanel>
-    </div>
-    <h2>Customers to receive the checkup/reminder</h2>
-    <!-- Customer status area -->
-    <div class="results-container small">
-        <table border="0">
-            <tr style="text-align: center; font-size: large">
-                <td><b>Customers To Get Reminder</b></td>
-                <td><b>Details</b></td>
-            </tr>
-            <tr>
-                <td>
-                    <asp:UpdatePanel ID="upnlCustomerCheckup" runat="server" Visible="true" ChildrenAsTriggers="true" UpdateMode="Conditional">
-                        <ContentTemplate>
-                            <asp:GridView ID="gvCustomerCheckup" runat="server" CssClass="results-table" Font-Size="X-Small"
-                                AllowPaging="True" PageSize="25" AutoGenerateColumns="False" DataKeyNames="CustomerID"
-                                AllowSorting="True" OnSelectedIndexChanged="gvCustomerCheckup_SelectedIndexChanged">
-                                <EmptyDataTemplate>
-                                    <div style="padding: 20px; text-align: left;">
-                                        <img src="../images/animi/QuaffeeProgress.gif" alt="loading..." width="16" height="16" /><br />
-                                        <strong>Loading customer data...</strong><br />
-                                        <span class="small">Please wait while we prepare the customer list.</span>
-                                    </div>
-                                </EmptyDataTemplate>
-                                <Columns>
-                                    <asp:CommandField ButtonType="Image" SelectImageUrl="~/images/imgButtons/SelectItem.gif" ShowSelectButton="true" />
-                                    <asp:BoundField DataField="CustomerID" HeaderText="CustomerID" SortExpression="CustomerID" Visible="False" />
-                                    <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}"
-                                        DataTextField="CompanyName" HeaderText="Company Name" SortExpression="CompanyName" />
-                                    <asp:BoundField DataField="ContactFirstName" HeaderText="First Name" SortExpression="ContactFirstName" />
-                                    <asp:BoundField DataField="EmailAddress" HeaderText="Email" SortExpression="EmailAddress" />
-                                    <asp:BoundField DataField="ContactAltFirstName" HeaderText="Alt First Name" SortExpression="ContactAltFirstName" />
-                                    <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email" SortExpression="AltEmailAddress" />
-                                    <asp:TemplateField HeaderText="Area" SortExpression="AreaID">
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="AreaNameTextBox" runat="server" Text='<%# Bind("AreaID") %>'></asp:TextBox>
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetAreaName((int)Eval("AreaID")) %>' />
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:BoundField DataField="NextCoffee" HeaderText="NxtCoffee" SortExpression="NextCoffee" DataFormatString="{0:d}" />
-                                    <asp:BoundField DataField="NextClean" HeaderText="NxtCln" SortExpression="NextClean" DataFormatString="{0:d}" />
-                                    <asp:BoundField DataField="NextDescal" HeaderText="NxtDecal" SortExpression="NextDescal" DataFormatString="{0:d}" />
-                                    <asp:BoundField DataField="NextDeliveryDate" HeaderText="NxtDlvry" SortExpression="NextDeliveryDate" DataFormatString="{0:d}" />
-                                    <asp:CheckBoxField DataField="enabled" HeaderText="Enbld" SortExpression="enabled" />
-                                    <asp:BoundField DataField="ReminderCount" HeaderText="RCnt" SortExpression="ReminderCount" />
-                                </Columns>
-                            </asp:GridView>
-                        </ContentTemplate>
-                        <Triggers>
-                            <asp:AsyncPostBackTrigger ControlID="btnPrepData" EventName="Click" />
-                            <asp:AsyncPostBackTrigger ControlID="btnRefreshCustomerCheckupList" EventName="Click" />
-                        </Triggers>
-                    </asp:UpdatePanel>
-                </td>
-                <td style="vertical-align: text-top; vertical-align: top; padding-left: 8px">
-                    <asp:UpdatePanel ID="upnlContactItems" Visible="true" runat="server">
-                        <ContentTemplate>
-                            <asp:GridView ID="gvItemsToConfirm" runat="server" CssClass="TblZebra small"
-                                AutoGenerateColumns="false">
-                                <Columns>
-                                    <asp:BoundField DataField="TCIID" HeaderText="TCIID" SortExpression="TCIID" Visible="false" />
-                                    <asp:TemplateField HeaderText="Item">
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="ItemDescTextBox" runat="server" Text='<%# Bind("ItemID") %>'></asp:TextBox>
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="ItemDescLabel" runat="server" Text='<%# GetItemDesc((int)Eval("ItemID")) %>' />
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:BoundField DataField="CustomerID" HeaderText="CustomerID" Visible="false" SortExpression="CustomerID" />
-                                    <asp:BoundField DataField="ItemQty" HeaderText="Qty" SortExpression="ItemQty" />
-                                    <asp:BoundField DataField="ItemPrepID" HeaderText="PrepID" SortExpression="ItemPrepID" Visible="false" />
-                                    <asp:BoundField DataField="ItemPackagID" HeaderText="PackagID" Visible="false" SortExpression="ItemPackagID" />
-                                    <asp:CheckBoxField DataField="AutoFulfill" HeaderText="AFF" SortExpression="AutoFulfill" />
-                                    <asp:CheckBoxField DataField="ReoccurOrder" HeaderText="RO" SortExpression="ReoccurOrder" />
-                                </Columns>
-                                <EmptyDataTemplate>
-                                    <div style="padding: 20px; text-align: center;">
-                                        <strong>Select a customer to see items...</strong><br />
-                                        <span class="small">Click on a customer row to view their typical order items.</span>
-                                    </div>
-                                </EmptyDataTemplate>
-                            </asp:GridView>
-                        </ContentTemplate>
-                        <Triggers>
-                        </Triggers>
-                    </asp:UpdatePanel>
-                </td>
-            </tr>
-        </table>
 
-<%--<asp:Button ID="btnShowMatrix" runat="server"
-    Text="Show Delivery Matrix"
-    OnClick="btnShowMatrix_Click"
-    CssClass="btn btn-secondary"
-    Style="margin-top:8px;margin-right:8px;" />
+        <div style="margin-top: 16px;">
+            <h2 class="page-tone-subtitle" style="font-size: 1.1em; margin: 0 0 8px;">Contacts to receive the checkup/reminder</h2>
+            <asp:UpdatePanel ID="upnlCustomerCheckup" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                <ContentTemplate>
+                    <div class="results-container small">
+                        <table border="0" style="width: 100%;">
+                            <tr style="text-align: left; font-size: large">
+                                <td style="width: 65%;"><b>Contacts To Get Reminder</b></td>
+                                <td><b>Details</b></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align: top;">
+                                    <asp:GridView ID="gvCustomerCheckup" runat="server" CssClass="results-table" Font-Size="X-Small"
+                                        AllowPaging="True" PageSize="25" AutoGenerateColumns="False" DataKeyNames="CustomerID"
+                                        AllowSorting="False"
+                                        OnSelectedIndexChanged="gvCustomerCheckup_SelectedIndexChanged"
+                                        OnPageIndexChanging="gvCustomerCheckup_PageIndexChanging"
+                                        OnRowCommand="gvCustomerCheckup_RowCommand">
+                                        <EmptyDataTemplate>
+                                            <div class="status-message status-info" style="padding: 20px; text-align: left;">
+                                                <strong>No contacts prepared yet.</strong><br />
+                                                <span class="small">Click Prep Data to build the reminder list.</span>
+                                            </div>
+                                        </EmptyDataTemplate>
+                                        <Columns>
+                                            <asp:TemplateField HeaderText="">
+                                                <ItemStyle Wrap="false" Width="48px" />
+                                                <ItemTemplate>
+                                                    <asp:ImageButton ID="btnSelectContact" runat="server" CommandName="Select"
+                                                        ImageUrl="~/images/imgButtons/SelectItem.gif"
+                                                        ToolTip="Show item details for this contact"
+                                                        CausesValidation="false" />
+                                                    <asp:ImageButton ID="btnExcludeContact" runat="server" CommandName="ExcludeThisTime"
+                                                        CommandArgument='<%# Eval("CustomerID") %>'
+                                                        ImageUrl="~/images/imgButtons/No.gif"
+                                                        ToolTip="Exclude this contact from this checkup run only. Warning: Prep Data or Refresh List will add them back if still due."
+                                                        CausesValidation="false"
+                                                        OnClientClick="return confirm('Exclude this contact from this checkup run only?\n\nWarning: Prep Data or Refresh List will add them back if they are still due.');" />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="CustomerID" HeaderText="ContactID" Visible="False" />
+                                            <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}"
+                                                DataTextField="CompanyName" HeaderText="Company Name" />
+                                            <asp:BoundField DataField="ContactFirstName" HeaderText="First Name" />
+                                            <asp:BoundField DataField="EmailAddress" HeaderText="Email" />
+                                            <asp:BoundField DataField="ContactAltFirstName" HeaderText="Alt First Name" />
+                                            <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email" />
+                                            <asp:TemplateField HeaderText="Area">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetAreaName((int)Eval("AreaID")) %>' />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="NextCoffee" HeaderText="NxtCoffee" DataFormatString="{0:d}" />
+                                            <asp:BoundField DataField="NextClean" HeaderText="NxtCln" DataFormatString="{0:d}" />
+                                            <asp:BoundField DataField="NextDescal" HeaderText="NxtDecal" DataFormatString="{0:d}" />
+                                            <asp:BoundField DataField="NextDeliveryDate" HeaderText="NxtDlvry" DataFormatString="{0:d}" />
+                                            <asp:CheckBoxField DataField="enabled" HeaderText="Enbld" />
+                                            <asp:BoundField DataField="ReminderCount" HeaderText="RCnt" />
+                                        </Columns>
+                                        <SelectedRowStyle CssClass="results-row-selected" BackColor="#FFF3CD" />
+                                    </asp:GridView>
+                                </td>
+                                <td style="vertical-align: top; padding-left: 8px;">
+                                    <div class="small" style="margin-bottom: 8px; font-size: x-small;">
+                                        Click the select icon to view items. Click the <strong>No</strong> icon to exclude a contact from this run only
+                                        (Prep/Refresh will bring them back if still due).
+                                    </div>
+                                    <asp:Literal ID="ltrlSelectedContact" runat="server" />
+                                    <asp:GridView ID="gvItemsToConfirm" runat="server" CssClass="TblZebra small"
+                                        Font-Size="X-Small" AutoGenerateColumns="false"
+                                        EmptyDataText="Select a contact to see items...">
+                                        <Columns>
+                                            <asp:BoundField DataField="TCIID" HeaderText="TCIID" Visible="false" />
+                                            <asp:TemplateField HeaderText="Item">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="ItemDescLabel" runat="server" Text='<%# GetItemDesc((int)Eval("ItemID")) %>' />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="CustomerID" HeaderText="ContactID" Visible="false" />
+                                            <asp:TemplateField HeaderText="Qty" ItemStyle-HorizontalAlign="Right">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="QtyLabel" runat="server"
+                                                        Text='<%# FormatItemQty(Eval("ItemQty")) %>' />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="ItemPrepID" HeaderText="PrepID" Visible="false" />
+                                            <asp:BoundField DataField="ItemPackagID" HeaderText="PackagID" Visible="false" />
+                                            <asp:CheckBoxField DataField="AutoFulfill" HeaderText="AFF" />
+                                            <asp:CheckBoxField DataField="RecurringOrder" HeaderText="RO" />
+                                        </Columns>
+                                    </asp:GridView>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </ContentTemplate>
+                <Triggers>
+                    <asp:AsyncPostBackTrigger ControlID="btnPrepData" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnRefreshCustomerCheckupList" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="ddlReminderWindow" EventName="SelectedIndexChanged" />
+                </Triggers>
+            </asp:UpdatePanel>
+        </div>
+    </asp:Panel>
 
-<asp:Panel ID="pnlMatrixDump" runat="server" Visible="false" Style="margin-top:10px;">
-    <asp:Literal ID="ltrlMatrixDump" runat="server" Mode="PassThrough" />
-</asp:Panel>--%>
-        <br />
-    </div>
+    <%-- Init script in MainContent (not Head) so <%= ClientID %> does not block ScriptManager --%>
+    <script type="text/javascript">
+        function pageLoad(sender, args) {
+            if (args && args.get_isPartialLoad && args.get_isPartialLoad())
+                return;
+            window.setTimeout(function () {
+                var prepButton = document.getElementById('<%= btnPrepData.ClientID %>');
+                if (prepButton)
+                    __doPostBack('<%= btnPrepData.UniqueID %>', '');
+            }, 500);
+        }
+    </script>
 </asp:Content>
-

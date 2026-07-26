@@ -134,9 +134,9 @@ GO
     CREATE TABLE [ClosureDatesTbl]
     (
         [ClosureDateID] INT IDENTITY(1,1) NOT NULL,
-        [DateClosed] DATETIME NULL,
-        [DateReopen] DATETIME NULL,
-        [NextPreperationDate] DATETIME NULL,
+        [DateClosed] DATE NULL,
+        [DateReopen] DATE NULL,
+        [NextPreperationDate] DATE NULL,
         [Comments] NVARCHAR(255) NULL
         , CONSTRAINT [PK_ClosureDatesTbl] PRIMARY KEY CLUSTERED ([ClosureDateID])
     );
@@ -200,8 +200,8 @@ GO
     (
         [AwayPeriodID] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [AwayStartDate] DATETIME NULL,
-        [AwayEndDate] DATETIME NULL,
+        [AwayStartDate] DATE NULL,
+        [AwayEndDate] DATE NULL,
         [ReasonID] INT NULL
         , CONSTRAINT [PK_ContactsAwayPeriodTbl] PRIMARY KEY CLUSTERED ([AwayPeriodID])
     );
@@ -221,11 +221,11 @@ GO
         [ContactsItemsPredictedId] INT IDENTITY(1,1) NOT NULL /* coerced to INT for IDENTITY */,
         [ContactID] INT NULL,
         [LastCupCount] INT NULL,
-        [NextCoffeeBy] DATETIME NULL,
-        [NextCleanOn] DATETIME NULL,
-        [NextFilterEst] DATETIME NULL,
-        [NextDescaleEst] DATETIME NULL,
-        [NextServiceEst] DATETIME NULL,
+        [NextCoffeeBy] DATE NULL,
+        [NextCleanOn] DATE NULL,
+        [NextFilterEst] DATE NULL,
+        [NextDescaleEst] DATE NULL,
+        [NextServiceEst] DATE NULL,
         [DailyConsumption] REAL NULL,
         [FilterAveCount] REAL NULL,
         [DescaleAveCount] REAL NULL,
@@ -248,7 +248,7 @@ GO
     (
         [ContactsItemSvcSummaryId] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [UsageDate] DATETIME NULL,
+        [UsageDate] DATE NULL,
         [CupCount] INT NULL,
         [ItemServiceTypeID] INT NULL,
         [Qty] REAL NULL,
@@ -270,7 +270,7 @@ GO
     (
         [ContactItemUsageLineNo] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [DeliveryDate] DATETIME NULL,
+        [DeliveryDate] DATE NULL,
         [ItemProvidedID] INT NULL,
         [QtyProvided] REAL NULL,
         [ItemPrepTypeID] INT NULL,
@@ -332,7 +332,7 @@ GO
         [ReminderCount] INT NULL,
         [Notes] NVARCHAR(MAX) NULL,
         [SendDeliveryConfirmation] BIT NULL,
-        [LastDateSentReminder] DATETIME NULL
+        [LastDateSentReminder] DATE NULL
         , CONSTRAINT [PK_ContactsTbl] PRIMARY KEY CLUSTERED ([ContactID])
     );
 GO
@@ -423,7 +423,7 @@ GO
     CREATE TABLE [HolidayClosuresTbl]
     (
         [HolidayClosureID] INT IDENTITY(1,1) NOT NULL,
-        [ClosureDate] DATETIME NULL,
+        [ClosureDate] DATE NULL,
         [DaysClosed] INT NULL,
         [AppliesToPrep] BIT NULL,
         [AppliesToDelivery] BIT NULL,
@@ -591,11 +591,11 @@ GO
     (
         [NextPrepDayID] INT IDENTITY(1,1) NOT NULL,
         [AreaID] INT NULL,
-        [PreperationDate] DATETIME NULL,
-        [DeliveryDate] DATETIME NULL,
+        [PreperationDate] DATE NULL,
+        [DeliveryDate] DATE NULL,
         [DeliveryOrder] SMALLINT NULL,
-        [NextPreperationDate] DATETIME NULL,
-        [NextDeliveryDate] DATETIME NULL
+        [NextPreperationDate] DATE NULL,
+        [NextDeliveryDate] DATE NULL
         , CONSTRAINT [PK_NextPrepDateByAreasTbl] PRIMARY KEY CLUSTERED ([NextPrepDayID])
     );
 GO
@@ -656,7 +656,7 @@ GO
         [No order] NVARCHAR(255) NULL,
         [Day] NVARCHAR(255) NULL,
         [done] NVARCHAR(255) NULL,
-        [Time] DATETIME NULL
+        [Time] DATE NULL
     );
 GO
 
@@ -673,9 +673,9 @@ GO
     (
         [OrderID] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [OrderDate] DATETIME NULL,
-        [PrepDate] DATETIME NULL,
-        [RequiredByDate] DATETIME NULL,
+        [OrderDate] DATE NULL,
+        [PrepDate] DATE NULL,
+        [RequiredByDate] DATE NULL,
         [ToBeDeliveredByID] INT NULL,
         [Confirmed] BIT NULL,
         [Done] BIT NULL,
@@ -743,12 +743,12 @@ GO
         [PredictedOrderID] INT NULL,
         [Pinned] BIT NULL,
         [ContactID] INT NULL,
-        [PrepDate] DATETIME NULL,
+        [PrepDate] DATE NULL,
         [ItemId] INT NULL,
         [PrepTypeID] INT NULL,
         [PackagingID] INT NULL,
         [Quantity] REAL NULL,
-        [DeliveryDate] DATETIME NULL,
+        [DeliveryDate] DATE NULL,
         [DeliveryPersonID] INT NULL,
         [Notes] NVARCHAR(MAX) NULL
     );
@@ -808,9 +808,9 @@ GO
         [Value] TINYINT NULL,
         [ItemRequiredID] INT NULL,
         [QtyRequired] FLOAT NULL,
-        [DateLastDone] DATETIME NULL,
-        [NextDateRequired] DATETIME NULL,
-        [RequireUntilDate] DATETIME NULL,
+        [DateLastDone] DATE NULL,
+        [NextDateRequired] DATE NULL,
+        [RequireUntilDate] DATE NULL,
         [ItemPackagingID] INT NULL
         , CONSTRAINT [PK_RecurringOrderItemsTbl] PRIMARY KEY CLUSTERED ([RecurringOrderItemID])
     );
@@ -892,8 +892,8 @@ GO
         [ContactName] NVARCHAR(50) NULL,
         [ContactEmail] NVARCHAR(50) NULL,
         [JobCardNumber] NVARCHAR(20) NULL,
-        [DateLogged] DATETIME NULL,
-        [LastStatusChange] DATETIME NULL,
+        [DateLogged] DATE NULL,
+        [LastStatusChange] DATE NULL,
         [EquipTypeID] INT NULL,
         [EquipSerialNumber] NVARCHAR(50) NULL,
         [SwopOutMachineID] INT NULL,
@@ -946,7 +946,7 @@ GO
         [HeaderText] NVARCHAR(MAX) NULL,
         [BodyText] NVARCHAR(MAX) NULL,
         [FooterText] NVARCHAR(MAX) NULL,
-        [DateLastChange] DATETIME NULL,
+        [DateLastChange] DATE NULL,
         [Notes] NVARCHAR(MAX) NULL
         , CONSTRAINT [PK_SendCheckupEmailTextsTbl] PRIMARY KEY CLUSTERED ([SCEMTID])
     );
@@ -965,11 +965,11 @@ GO
     (
         [ReminderID] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [DateSentReminder] DATETIME NULL,
-        [NextPreperationDate] DATETIME NULL,
+        [DateSentReminder] DATE NULL,
+        [NextPreperationDate] DATE NULL,
         [ReminderSent] BIT NULL,
         [HadAutoFulfilItem] BIT NULL,
-        [HadRecurrItems] BIT NULL
+        [HadRecurringItems] BIT NULL
         , CONSTRAINT [PK_SentRemindersLogTbl] PRIMARY KEY CLUSTERED ([ReminderID])
     );
 GO
@@ -986,10 +986,10 @@ GO
     CREATE TABLE [SysDataTbl]
     (
         [ID] INT IDENTITY(1,1) NOT NULL,
-        [LastReoccurringDate] DATETIME NULL,
+        [LastReoccurringDate] DATE NULL,
         [DoReoccuringOrders] BIT NULL,
-        [DateLastPrepDateCalcd] DATETIME NULL,
-        [MinReminderDate] DATETIME NULL,
+        [DateLastPrepDateCalcd] DATE NULL,
+        [MinReminderDate] DATE NULL,
         [GroupReferenceItemID] INT NULL,
         [InternalContactIDs] NVARCHAR(255) NULL
         , CONSTRAINT [PK_SysDataTbl] PRIMARY KEY CLUSTERED ([ID])
@@ -1024,13 +1024,13 @@ GO
         [Enabled] BIT NULL,
         [AlwaysSendChkUp] BIT NULL,
         [ReminderCount] INT NULL,
-        [NextPreperationDate] DATETIME NULL,
-        [NextDeliveryDate] DATETIME NULL,
-        [NextCoffee] DATETIME NULL,
-        [NextClean] DATETIME NULL,
-        [NextFilter] DATETIME NULL,
-        [NextDescal] DATETIME NULL,
-        [NextService] DATETIME NULL,
+        [NextPreperationDate] DATE NULL,
+        [NextDeliveryDate] DATE NULL,
+        [NextCoffee] DATE NULL,
+        [NextClean] DATE NULL,
+        [NextFilter] DATE NULL,
+        [NextDescal] DATE NULL,
+        [NextService] DATE NULL,
         [RequiresPurchOrder] BIT NULL
         , CONSTRAINT [PK_TempCoffeecheckupCustomerTbl] PRIMARY KEY CLUSTERED ([TCCID])
     );
@@ -1054,7 +1054,7 @@ GO
         [ItemPrepID] INT NULL,
         [ItemPackagingID] INT NULL,
         [AutoFulfill] BIT NULL,
-        [NextDateRequired] DATETIME NULL,
+        [NextDateRequired] DATE NULL,
         [RecurringOrderItemID] INT NULL
         , CONSTRAINT [PK_TempCoffeecheckupItemsTbl] PRIMARY KEY CLUSTERED ([TCIID])
     );
@@ -1073,9 +1073,9 @@ GO
     (
         [TOHeaderID] INT IDENTITY(1,1) NOT NULL,
         [ContactID] INT NULL,
-        [OrderDate] DATETIME NULL,
-        [RoastDate] DATETIME NULL,
-        [RequiredByDate] DATETIME NULL,
+        [OrderDate] DATE NULL,
+        [RoastDate] DATE NULL,
+        [RequiredByDate] DATE NULL,
         [ToBeDeliveredByID] INT NULL,
         [Confirmed] BIT NULL,
         [Done] BIT NULL,
@@ -1120,14 +1120,14 @@ GO
         [TempOrderID] INT IDENTITY(1,1) NOT NULL,
         [OrderID] INT NULL,
         [ContactID] INT NULL,
-        [OrderDate] DATETIME NULL,
-        [RoastDate] DATETIME NULL,
+        [OrderDate] DATE NULL,
+        [RoastDate] DATE NULL,
         [ItemID] INT NULL,
         [ItemServiceTypeID] INT NULL,
         [ItemPrepTypeID] INT NULL,
         [ItemPackagingID] INT NULL,
         [QtyOrdered] REAL NULL,
-        [RequiredByDate] DATETIME NULL,
+        [RequiredByDate] DATE NULL,
         [Delivered] BIT NULL,
         [Notes] NVARCHAR(255) NULL
         , CONSTRAINT [PK_TempOrdersTbl] PRIMARY KEY CLUSTERED ([TempOrderID])
@@ -1150,7 +1150,7 @@ GO
         [First Name] NVARCHAR(50) NULL,
         [email] NVARCHAR(255) NULL,
         [ThisWeekPlease] BIT NULL,
-        [NextCoffeeBy] DATETIME NULL,
+        [NextCoffeeBy] DATE NULL,
         [Item1] INT NULL,
         [Item1Qty] REAL NULL,
         [Item2] INT NULL,
@@ -1177,7 +1177,7 @@ GO
     CREATE TABLE [TotalCountTrackerTbl]
     (
         [TotalCounterTrackerID] INT IDENTITY(1,1) NOT NULL,
-        [CountDate] DATETIME NULL,
+        [CountDate] DATE NULL,
         [TotalCount] INT NULL,
         [Comments] NVARCHAR(255) NULL
         , CONSTRAINT [PK_TotalCountTrackerTbl] PRIMARY KEY CLUSTERED ([TotalCounterTrackerID])
@@ -1239,7 +1239,7 @@ GO
         [GroupReferenceItemID] INT NULL,
         [LastItemID] INT NULL,
         [LastItemSortPos] INT NULL,
-        [LastItemDateChanged] DATETIME NULL,
+        [LastItemDateChanged] DATE NULL,
         [Notes] NVARCHAR(MAX) NULL
         , CONSTRAINT [PK_UsedItemGroupsTbl] PRIMARY KEY CLUSTERED ([UsedItemGroupID])
     );
@@ -1258,7 +1258,7 @@ GO
     (
         [ID] INT NULL,
         [Client] INT NULL,
-        [VisitDate] DATETIME NULL,
+        [VisitDate] DATE NULL,
         [CupsMade] INT NULL,
         [Cleaned] BIT NULL,
         [Descaled] BIT NULL,

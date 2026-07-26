@@ -23,7 +23,7 @@ namespace TrackerSQL.Models
         public int? RepairFaultID { get; set; }
         public string RepairFaultDesc { get; set; }
         public int? RepairStatusID { get; set; }
-        public int? RelatedOrderID { get; set; }
+        public int? RelatedOrderLineID { get; set; }
         public string Notes { get; set; }
     }
 }

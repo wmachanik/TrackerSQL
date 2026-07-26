@@ -67,17 +67,35 @@ namespace TrackerSQL.Tools
             get { return (string)ViewState[VIEWSTATE_FILTER] ?? string.Empty; }
             set { ViewState[VIEWSTATE_FILTER] = value; }
         }
+        private void SetStatus(string message, bool? isError)
+        {
+            ltrlStatus.Text = message ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
         private void LoadAllData()
         {
             try
             {
                 // Use unified manager effective values
                 AllData = _manager.LoadEffective();
-                ltrlStatus.Text = "Loaded " + AllData.Count + " messages.";
+                SetStatus("Loaded " + AllData.Count + " messages.", isError: null);
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = "Error loading messages: " + ex.Message;
+                SetStatus("Error loading messages: " + ex.Message, isError: true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "MessagesEditor LoadAllData error: " + ex.Message);
                 AllData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -101,7 +119,7 @@ namespace TrackerSQL.Tools
 
         private void BindGrid()
         {
-            // DO NOT reset EditIndex here – preserve whatever RowEditing set.
+            // DO NOT reset EditIndex here  preserve whatever RowEditing set.
             gvMessages.DataSource = GetFiltered()
                 .Select(kv => new { Key = kv.Key, Value = kv.Value })
                 .ToList();
@@ -109,9 +127,11 @@ namespace TrackerSQL.Tools
             gvMessages.DataBind();
 
             int count = GetFiltered().Count();
-            ltrlStatus.Text = string.IsNullOrWhiteSpace(CurrentFilter)
-                ? "Showing " + count + " messages."
-                : "Filter '" + CurrentFilter + "' matched " + count + " messages.";
+            SetStatus(
+                string.IsNullOrWhiteSpace(CurrentFilter)
+                    ? "Showing " + count + " messages."
+                    : "Filter '" + CurrentFilter + "' matched " + count + " messages.",
+                isError: null);
 
             upnlMessagesEditor.Update();
         }
@@ -438,13 +458,12 @@ namespace TrackerSQL.Tools
                 LoadAllData();
                 gvMessages.EditIndex = -1;
                 BindGrid();
-                ltrlStatus.Text = "Updated '" + key + "'.";
-                new showMessageBox(this, "Status", ltrlStatus.Text);
+                SetStatus("Updated '" + key + "'.", isError: false);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "MessagesEditor: Updated key '" + key + "'");
             }
             catch (Exception ex)
             {
-                ltrlStatus.Text = "Update failed: " + ex.Message;
+                SetStatus("Update failed: " + ex.Message, isError: true);
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "MessagesEditor update error for key '" + key + "': " + ex.Message);
             }
         }

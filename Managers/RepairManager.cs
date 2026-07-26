@@ -36,13 +36,13 @@ namespace TrackerSQL.Managers
                     break;
 
                 case 2:
-                    if (repair.RelatedOrderID == 0)
+                    if (repair.RelatedOrderLineID == 0)
                     {
                         LogNewRepair(repair, true);
                     }
                     else
                     {
-                        _ordersRepository.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
+                        UpdateRelatedOrderDeliveryInc7(repair.RelatedOrderLineID);
                     }
                     break;
 
@@ -51,22 +51,19 @@ namespace TrackerSQL.Managers
                     break;
 
                 case 6:
-                    if (repair.RelatedOrderID > 0)
+                    if (repair.RelatedOrderLineID > 0)
                     {
                         var nextDeliveryDate = _nextPrepDateRepository
                             .GetNextDeliveryDateForContact((int)repair.CustomerID);
                         if (nextDeliveryDate.HasValue)
                         {
-                            _ordersRepository.UpdateOrderDeliveryDate(nextDeliveryDate.Value, repair.RelatedOrderID);
+                            UpdateRelatedOrderDeliveryDate(repair.RelatedOrderLineID, nextDeliveryDate.Value);
                         }
                     }
                     break;
 
                 case 7:
-                    if (repair.RelatedOrderID > 0)
-                    {
-                        _ordersRepository.UpdateSetDoneById(true, repair.RelatedOrderID);
-                    }
+                    CompleteRelatedOrderIfSoleLine(repair.RelatedOrderLineID);
                     break;
             }
 
@@ -76,7 +73,7 @@ namespace TrackerSQL.Managers
             }
 
             string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
-            if (repair.RelatedOrderID > 0)
+            if (repair.RelatedOrderLineID > 0)
             {
                 UpdateOrderNotesWithRepairStatus(repair, statusNote);
             }
@@ -86,11 +83,42 @@ namespace TrackerSQL.Managers
 
         public List<RepairFormData> GetRepairsByDateFilter(string dateFilter, string repairStatus, string sortBy = "DateLogged DESC")
         {
-            DateTime? fromDate = null;
-            DateTime? toDate = null;
-            var today = TimeZoneUtils.Now().Date;
+            ResolveDateRange(dateFilter, null, null, out DateTime? fromDate, out DateTime? toDate);
+            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
+                sortBy, repairStatus, fromDate, toDate, null, null));
+        }
 
-            switch (dateFilter?.ToUpper())
+        [DataObjectMethod(DataObjectMethodType.Select, true)]
+        public List<RepairFormData> GetRepairsByStatusAndDateRange(
+            string SortBy,
+            string repairStatus,
+            string dateFilter,
+            string customFromDate,
+            string customToDate,
+            string filterBy,
+            string filterText)
+        {
+            ResolveDateRange(dateFilter, customFromDate, customToDate, out DateTime? fromDate, out DateTime? toDate);
+            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
+                SortBy, repairStatus, fromDate, toDate, filterBy, filterText));
+        }
+
+        /// <summary>
+        /// Maps the UI date-filter dropdown (and optional custom From/To) to an inclusive DateLogged range.
+        /// </summary>
+        private static void ResolveDateRange(
+            string dateFilter,
+            string customFromDate,
+            string customToDate,
+            out DateTime? fromDate,
+            out DateTime? toDate)
+        {
+            fromDate = null;
+            toDate = null;
+            var today = TimeZoneUtils.Now().Date;
+            string filter = (dateFilter ?? "All").Trim();
+
+            switch (filter.ToUpperInvariant())
             {
                 case "THISWEEK":
                     var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
@@ -114,18 +142,21 @@ namespace TrackerSQL.Managers
                     fromDate = lastMonthStart;
                     toDate = lastMonthStart.AddMonths(1).AddDays(-1);
                     break;
+
+                case "CUSTOM":
+                    if (!string.IsNullOrWhiteSpace(customFromDate) &&
+                        DateTime.TryParse(customFromDate, out DateTime parsedFrom))
+                        fromDate = parsedFrom.Date;
+
+                    if (!string.IsNullOrWhiteSpace(customToDate) &&
+                        DateTime.TryParse(customToDate, out DateTime parsedTo))
+                        toDate = parsedTo.Date;
+                    break;
+
+                case "ALL":
+                default:
+                    break;
             }
-
-            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
-                sortBy, repairStatus, fromDate, toDate, null, null));
-        }
-
-        [DataObjectMethod(DataObjectMethodType.Select, true)]
-        public List<RepairFormData> GetRepairsByStatusAndDateRange(
-            string SortBy, string repairStatus, object fromDate, object toDate, string filterBy, string filterText)
-        {
-            return ToRepairFormDataList(_repairsRepository.GetRepairsByStatusAndDateRange(
-                SortBy, repairStatus, fromDate, toDate, filterBy, filterText));
         }
 
         public RepairFormData GetRepairFormDataById(int repairId)
@@ -218,13 +249,14 @@ namespace TrackerSQL.Managers
         private bool LogNewRepair(RepairFormData repair, bool calculateDelivery)
         {
             DateTime delivery = TimeZoneUtils.Now().Date.AddDays(7.0);
+            int repairItemId = SystemConstants.ItemConstants.RepairCheckItemID;
 
-            if (repair.RelatedOrderID == 0)
+            if (repair.RelatedOrderLineID == 0)
             {
                 var orderData = new OrderTblData
                 {
                     CustomerID = repair.CustomerID,
-                    ItemTypeID = 36,
+                    ItemTypeID = repairItemId,
                     QuantityOrdered = 1.0,
                     Notes = string.Empty
                 };
@@ -232,7 +264,7 @@ namespace TrackerSQL.Managers
                 if (calculateDelivery)
                 {
                     var tools = new TrackerTools();
-                    orderData.PrepDate = tools.GetNextPreperationDateByCustomerID(repair.CustomerID, ref delivery);
+                    orderData.PrepDate = tools.GetNextPreparationDateByCustomerID(repair.CustomerID, ref delivery);
                     var prefs = tools.RetrieveCustomerPrefs(repair.CustomerID);
 
                     orderData.OrderDate = TimeZoneUtils.Now().Date;
@@ -252,16 +284,36 @@ namespace TrackerSQL.Managers
                     orderData.RequiredByDate = delivery;
                 }
 
-                _ordersRepository.InsertNewOrderLine(orderData);
-                repair.RelatedOrderID = _ordersRepository.GetLastOrderAdded(
+                int? existingOrderId = _ordersRepository.FindOpenOrderIdForContactDay(
                     orderData.CustomerID,
-                    orderData.OrderDate,
-                    36);
+                    orderData.RequiredByDate,
+                    orderData.PrepDate);
+
+                int lineId;
+                if (existingOrderId.HasValue && existingOrderId.Value > 0)
+                {
+                    lineId = _ordersRepository.AddLineToExistingOrder(existingOrderId.Value, orderData);
+                }
+                else
+                {
+                    int orderId = _ordersRepository.InsertOrderHeader(orderData);
+                    if (orderId <= 0)
+                        return false;
+
+                    lineId = _ordersRepository.InsertOrderLine(
+                        orderId,
+                        orderData.ItemTypeID,
+                        orderData.QuantityOrdered,
+                        orderData.PrepTypeID,
+                        orderData.PackagingID);
+                }
+
+                repair.RelatedOrderLineID = lineId > 0 ? lineId : 0;
             }
             else if (calculateDelivery)
             {
                 DateTime newDelivery = TimeZoneUtils.Now().Date.AddDays(7.0);
-                _ordersRepository.UpdateOrderDeliveryDate(newDelivery, repair.RelatedOrderID);
+                UpdateRelatedOrderDeliveryDate(repair.RelatedOrderLineID, newDelivery);
             }
 
             return true;
@@ -269,13 +321,13 @@ namespace TrackerSQL.Managers
 
         private void HandleWorkshopStatus(RepairFormData repair)
         {
-            if (repair.RelatedOrderID == 0)
+            if (repair.RelatedOrderLineID == 0)
             {
                 LogNewRepair(repair, false);
             }
             else
             {
-                _ordersRepository.UpdateIncDeliveryDateBy7(repair.RelatedOrderID);
+                UpdateRelatedOrderDeliveryInc7(repair.RelatedOrderLineID);
             }
 
             if (!string.IsNullOrEmpty(repair.MachineSerialNumber))
@@ -294,11 +346,15 @@ namespace TrackerSQL.Managers
             foreach (var repair in tempOrders)
             {
                 var repairTbl = ToRepairFormData(repair);
+                int? orderId = _ordersRepository.GetOrderIdByLineId(repairTbl.RelatedOrderLineID);
 
                 if (repairTbl.RepairStatusID <= 3)
                 {
-                    _tempOrdersLinesRepository.DeleteByOriginalOrderId(repairTbl.RelatedOrderID);
-                    _ordersRepository.UpdateIncDeliveryDateBy7(repairTbl.RelatedOrderID);
+                    if (orderId.HasValue)
+                    {
+                        _tempOrdersLinesRepository.DeleteByOriginalOrderId(orderId.Value);
+                        _ordersRepository.UpdateIncDeliveryDateBy7(orderId.Value);
+                    }
                 }
                 else
                 {
@@ -308,20 +364,58 @@ namespace TrackerSQL.Managers
             }
         }
 
+        private void CompleteRelatedOrderIfSoleLine(int relatedOrderLineId)
+        {
+            if (relatedOrderLineId <= 0)
+                return;
+
+            int? orderId = _ordersRepository.GetOrderIdByLineId(relatedOrderLineId);
+            if (!orderId.HasValue)
+                return;
+
+            // Only mark the order Done when this repair line is the sole line.
+            if (_ordersRepository.GetOrderLineCount(orderId.Value) <= 1)
+            {
+                _ordersRepository.UpdateSetDoneById(true, orderId.Value);
+            }
+        }
+
+        private void UpdateRelatedOrderDeliveryInc7(int relatedOrderLineId)
+        {
+            int? orderId = _ordersRepository.GetOrderIdByLineId(relatedOrderLineId);
+            if (orderId.HasValue)
+                _ordersRepository.UpdateIncDeliveryDateBy7(orderId.Value);
+        }
+
+        private void UpdateRelatedOrderDeliveryDate(int relatedOrderLineId, DateTime newDate)
+        {
+            int? orderId = _ordersRepository.GetOrderIdByLineId(relatedOrderLineId);
+            if (orderId.HasValue)
+                _ordersRepository.UpdateOrderDeliveryDate(newDate, orderId.Value);
+        }
+
         private void UpdateOrderNotesWithRepairStatus(RepairFormData repair, string status)
         {
             if (repair.JobCardNumber.Equals(string.Empty))
             {
                 repair.JobCardNumber = "n/a";
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"Repair with order related id: {repair.RelatedOrderID}, has not Job Card number set!");
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, has not Job Card number set!");
             }
 
-            var order = _ordersRepository.GetOrderTblDataById(repair.RelatedOrderID);
+            int? orderId = _ordersRepository.GetOrderIdByLineId(repair.RelatedOrderLineID);
+            if (!orderId.HasValue)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, order not found!");
+                return;
+            }
+
+            var order = _ordersRepository.GetOrderTblDataById(orderId.Value);
             if (order == null)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"Repair with order related id: {repair.RelatedOrderID}, not found in OrdersTbl!");
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, not found in OrdersTbl!");
                 return;
             }
 
@@ -343,16 +437,16 @@ namespace TrackerSQL.Managers
                 order.Notes += $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
             }
 
-            bool success = _ordersRepository.UpdateOrderNotes(repair.RelatedOrderID, order.Notes);
+            bool success = _ordersRepository.UpdateOrderNotes(orderId.Value, order.Notes);
             if (success)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"Repair with order related id: {repair.RelatedOrderID}, status changed to {status}.");
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, status changed to {status}.");
             }
             else
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"Repair with order related id: {repair.RelatedOrderID}, status update failed.");
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, status update failed.");
             }
         }
 
@@ -380,7 +474,7 @@ namespace TrackerSQL.Managers
                 RepairFaultID = repair.RepairFaultID,
                 RepairFaultDesc = repair.RepairFaultDesc,
                 RepairStatusID = repair.RepairStatusID,
-                RelatedOrderID = repair.RelatedOrderID,
+                RelatedOrderLineID = repair.RelatedOrderLineID,
                 Notes = repair.Notes
             };
         }
@@ -409,7 +503,7 @@ namespace TrackerSQL.Managers
                 RepairFaultID = repair.RepairFaultID ?? 0,
                 RepairFaultDesc = repair.RepairFaultDesc ?? string.Empty,
                 RepairStatusID = repair.RepairStatusID ?? 0,
-                RelatedOrderID = repair.RelatedOrderID ?? 0,
+                RelatedOrderLineID = repair.RelatedOrderLineID ?? 0,
                 Notes = repair.Notes ?? string.Empty
             };
         }

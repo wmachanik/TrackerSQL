@@ -12,7 +12,7 @@ namespace TrackerSQL.Repositories
             TCCID, ContactID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID,
             EmailAddress, AltEmailAddress, ContactTypeID, EquipTypeID, TypicallySecToo,
             PreferredAgentID, SalesAgentID, UsesFilter, Enabled, AlwaysSendChkUp, ReminderCount,
-            NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter, NextDescal,
+            NextPreparationDate, NextDeliveryDate, NextCoffee, NextClean, NextFilter, NextDescal,
             NextService, RequiresPurchOrder";
 
         protected override string TableName => "TempCoffeecheckupCustomerTbl";
@@ -63,7 +63,7 @@ namespace TrackerSQL.Repositories
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 }
             };
 
             var list = new List<ItemContactRequires>();
@@ -81,8 +81,8 @@ namespace TrackerSQL.Repositories
                         ItemPrepID = GetInt(rdr, "ItemPrepID"),
                         ItemPackagID = GetInt(rdr, "ItemPackagingID"),
                         AutoFulfill = GetBool(rdr, "AutoFulfill"),
-                        ReoccurID = recurringItemId,
-                        ReoccurOrder = recurringItemId > 0
+                        RecurringOrderItemID = recurringItemId,
+                        RecurringOrder = recurringItemId > 0
                     });
                 }
             }
@@ -98,12 +98,12 @@ namespace TrackerSQL.Repositories
                 INSERT INTO TempCoffeecheckupCustomerTbl
                 (ContactID, CompanyName, ContactFirstName, ContactAltFirstName, AreaID, EmailAddress, AltEmailAddress,
                  ContactTypeID, EquipTypeID, TypicallySecToo, PreferredAgentID, SalesAgentID, UsesFilter, Enabled,
-                 AlwaysSendChkUp, ReminderCount, NextPreperationDate, NextDeliveryDate, NextCoffee, NextClean,
+                 AlwaysSendChkUp, ReminderCount, NextPreparationDate, NextDeliveryDate, NextCoffee, NextClean,
                  NextFilter, NextDescal, NextService, RequiresPurchOrder)
                 VALUES
                 (@ContactID, @CompanyName, @ContactFirstName, @ContactAltFirstName, @AreaID, @EmailAddress, @AltEmailAddress,
                  @ContactTypeID, @EquipTypeID, @TypicallySecToo, @PreferredAgentID, @SalesAgentID, @UsesFilter, @Enabled,
-                 @AlwaysSendChkUp, @ReminderCount, @NextPreperationDate, @NextDeliveryDate, @NextCoffee, @NextClean,
+                 @AlwaysSendChkUp, @ReminderCount, @NextPreparationDate, @NextDeliveryDate, @NextCoffee, @NextClean,
                  @NextFilter, @NextDescal, @NextService, @RequiresPurchOrder)";
 
             return ExecNonQuery(sql, BuildContactParameters(contact)) > 0;
@@ -128,13 +128,34 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@ContactID", DataValue = item.CustomerID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemID", DataValue = item.ItemID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemQty", DataValue = item.ItemQty, DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@ItemPrepID", DataValue = item.ItemPrepID, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@ItemPackagingID", DataValue = item.ItemPackagID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPrepID", DataValue = FkOrDbNull(item.ItemPrepID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemPackagingID", DataValue = FkOrDbNull(item.ItemPackagID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@AutoFulfill", DataValue = item.AutoFulfill, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@RecurringOrderItemID", DataValue = item.ReoccurID > 0 ? (object)item.ReoccurID : DBNull.Value, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@RecurringOrderItemID", DataValue = FkOrDbNull(item.RecurringOrderItemID), DataDbType = DbType.Int32 }
             };
 
             return ExecNonQuery(sql, parameters) > 0;
+        }
+
+        public bool DeleteContactItems(long contactId)
+        {
+            const string sql = "DELETE FROM TempCoffeecheckupItemsTbl WHERE ContactID = @ContactID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 }
+            };
+            return ExecNonQuery(sql, parameters) >= 0;
+        }
+
+        public bool DeleteContact(long contactId)
+        {
+            DeleteContactItems(contactId);
+            const string sql = "DELETE FROM TempCoffeecheckupCustomerTbl WHERE ContactID = @ContactID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 }
+            };
+            return ExecNonQuery(sql, parameters) >= 0;
         }
 
         public bool DeleteAllContactRecords()
@@ -151,12 +172,12 @@ namespace TrackerSQL.Repositories
         {
             const string sql = @"
                 UPDATE TempCoffeecheckupCustomerTbl
-                SET NextPreperationDate = @NextPreperationDate, NextDeliveryDate = @NextDeliveryDate
+                SET NextPreparationDate = @NextPreparationDate, NextDeliveryDate = @NextDeliveryDate
                 WHERE ContactID = @ContactID";
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@NextPreperationDate", DataValue = nextPrep.Date, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@NextPreparationDate", DataValue = nextPrep.Date, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@NextDeliveryDate", DataValue = nextDelivery.Date, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
             };
@@ -199,7 +220,7 @@ namespace TrackerSQL.Repositories
                 enabled = GetBool(rdr, "Enabled"),
                 AlwaysSendChkUp = GetBool(rdr, "AlwaysSendChkUp"),
                 ReminderCount = GetInt(rdr, "ReminderCount"),
-                NextPreperationDate = GetDate(rdr, "NextPreperationDate"),
+                NextPreparationDate = GetDate(rdr, "NextPreparationDate"),
                 NextDeliveryDate = GetDate(rdr, "NextDeliveryDate"),
                 NextCoffee = GetDate(rdr, "NextCoffee"),
                 NextClean = GetDate(rdr, "NextClean"),
@@ -236,7 +257,7 @@ namespace TrackerSQL.Repositories
                 Notes = contact.Notes,
                 RequiresPurchOrder = contact.RequiresPurchOrder,
                 LastDateSentReminder = contact.LastDateSentReminder,
-                NextPreperationDate = contact.NextPreperationDate,
+                NextPreparationDate = contact.NextPreparationDate,
                 NextDeliveryDate = contact.NextDeliveryDate,
                 NextCoffee = contact.NextCoffee,
                 NextClean = contact.NextClean,
@@ -248,25 +269,26 @@ namespace TrackerSQL.Repositories
 
         private static List<DBParameter> BuildContactParameters(ContactToRemindDetails contact)
         {
+            // Optional FKs: Access often stored 0 for "none". SQL Server FKs reject 0 — send NULL.
             return new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = contact.CustomerID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@CompanyName", DataValue = contact.CompanyName ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ContactFirstName", DataValue = contact.ContactFirstName ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ContactAltFirstName", DataValue = contact.ContactAltFirstName ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@AreaID", DataValue = contact.AreaID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@AreaID", DataValue = FkOrDbNull(contact.AreaID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@EmailAddress", DataValue = contact.EmailAddress ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@AltEmailAddress", DataValue = contact.AltEmailAddress ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ContactTypeID", DataValue = contact.CustomerTypeID, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@EquipTypeID", DataValue = contact.EquipTypeID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ContactTypeID", DataValue = FkOrDbNull(contact.CustomerTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@EquipTypeID", DataValue = FkOrDbNull(contact.EquipTypeID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@TypicallySecToo", DataValue = contact.TypicallySecToo, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@PreferredAgentID", DataValue = contact.PreferredAgentID, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@SalesAgentID", DataValue = contact.SalesAgentID, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PreferredAgentID", DataValue = FkOrDbNull(contact.PreferredAgentID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SalesAgentID", DataValue = FkOrDbNull(contact.SalesAgentID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@UsesFilter", DataValue = contact.UsesFilter, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@Enabled", DataValue = contact.enabled, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@AlwaysSendChkUp", DataValue = contact.AlwaysSendChkUp, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@ReminderCount", DataValue = contact.ReminderCount, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@NextPreperationDate", DataValue = contact.NextPreperationDate, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@NextPreparationDate", DataValue = contact.NextPreparationDate, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@NextDeliveryDate", DataValue = contact.NextDeliveryDate, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@NextCoffee", DataValue = contact.NextCoffee, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@NextClean", DataValue = contact.NextClean, DataDbType = DbType.Date },

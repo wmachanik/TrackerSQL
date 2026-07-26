@@ -1,175 +1,177 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="OrderDone.aspx.cs"
-    Inherits="TrackerSQL.Pages.OrderDone" %>
+<%@ Page Title="Order Done" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+    CodeBehind="OrderDone.aspx.cs" Inherits="TrackerSQL.Pages.OrderDone" %>
 
 <asp:Content ID="cntOrderDoneHdr" ContentPlaceHolderID="HeadContent" runat="server">
+    <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
 </asp:Content>
+
 <asp:Content ID="cntOrderDoneBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <asp:ScriptManager ID="smOrderDone" runat="server" />
-    <asp:UpdateProgress ID="updtprgOrderDone" runat="server" AssociatedUpdatePanelID="updtpnlOrderDone">
+    <asp:ScriptManager ID="smOrderDone" runat="server" EnablePartialRendering="true" />
+
+    <asp:UpdateProgress ID="updtprgOrderDone" runat="server" AssociatedUpdatePanelID="updtpnlOrderDone"
+        DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <img src="../images/animi/QuaffeeProgress.gif" alt="progress" />
+            <div class="status-message status-info page-tone-progress">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Please wait...
+            </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <asp:UpdatePanel ID="updtpnlOrderDone" runat="server" ChildrenAsTriggers="true">
+
+    <asp:UpdatePanel ID="updtpnlOrderDone" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+        <Triggers>
+            <asp:AsyncPostBackTrigger ControlID="btnDone" EventName="Click" />
+            <asp:PostBackTrigger ControlID="btnCancel" />
+            <asp:PostBackTrigger ControlID="btnReturnToDeliveres" />
+        </Triggers>
         <ContentTemplate>
-            <asp:Panel ID="pnlOrderDetails" runat="server">
-                <h2>Order Delivered</h2>
-                <div class="responsive-layout-container">
-                    <div class="results-table">
-                        <asp:FormView ID="fvOrderDone" runat="server" DataSourceID="odsOrderDoneHeader"
-                            BackColor="#DEBA84" BorderColor="#DEBA84" BorderStyle="None" BorderWidth="1px"
-                            CellPadding="4" CellSpacing="2" GridLines="Both" CssClass="TblFlex">
-                            <RowStyle BackColor="#FFF7E7" ForeColor="#292909" />
-                            <HeaderStyle BackColor="#A55129" Font-Bold="True" ForeColor="White" />
-                            <ItemTemplate>
-                                <table>
-                                    <tr>
-                                        <td class="TblLHCol-first">CompanyName</td>
-                                        <td>
-                                            <asp:Label ID="CompanyNameLabel" runat="server" Text='<%# Eval("CompanyName") %>' />
-                                            &nbsp;(<asp:Label ID="CustomerIDLabel" runat="server" Text='<%# Eval("CustomerID") %>' />)
-                </td>
-                                        <td class="TblLHCol-first">DeliveryDate:</td>
-                                        <td>
-                                            <asp:TextBox ID="ByDateTextBox" runat="server" Text='<%# Eval("RequiredByDate", "{0:d}") %>' />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </ItemTemplate>
-                            <EditItemTemplate>
-                                <table>
-                                    <tbody>
-                                        <tr>
-                                            <td class="TblLHCol-first">CompanyName</td>
-                                            <td>
-                                                <asp:Label ID="CompanyNameLabel" runat="server" Text='<%# Eval("CompanyName") %>' />&nbsp;
-                                              (<asp:Label ID="CustomerIDLabel" runat="server" Text='<%# Eval("CustomerID") %>' />)
-                                            </td>
-                                            <td class="TblLHCol-first">DeliveryDate:</td>
-                                            <td>
-                                                <asp:TextBox ID="ByDateTextBox" runat="server" Text='<%# Bind("RequiredByDate", "{0:d}") %>' /></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </EditItemTemplate>
-                            <PagerStyle ForeColor="#8C4510" HorizontalAlign="Center" />
-                            <RowStyle BackColor="#FFF7E7" ForeColor="#8C4510" />
-                        </asp:FormView>
-                        <div style="padding-top: 12px" class="layout-detail-panel">
-                            <asp:GridView ID="gvOrderDoeLines" runat="server" AllowSorting="True" AutoGenerateColumns="False"
-                                DataKeyNames="TOLineID" CssClass="TblWhite" DataSourceID="odsOrderDoneLines">
-                                <Columns>
-                                    <asp:BoundField DataField="TOLineID" HeaderText="ID" Visible="false" InsertVisible="False"
-                                        ReadOnly="True" SortExpression="TOLineID" />
-                                    <asp:TemplateField HeaderText="Item" SortExpression="ItemID">
-                                        <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes" DataTextField="ItemDesc"
-                                                DataValueField="ItemTypeID" AppendDataBoundItems="True" SelectedValue='<%# Bind("ItemID") %>'>
-                                                <asp:ListItem Value="0">n/a</asp:ListItem>
-                                            </asp:DropDownList>
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes" DataTextField="ItemDesc" Enabled="false"
-                                                DataValueField="ItemTypeID" AppendDataBoundItems="True" SelectedValue='<%# Eval("ItemID") == null ? "0" : Eval("ItemID").ToString() %>'>
-                                                <asp:ListItem Value="0">n/a</asp:ListItem>
-                                            </asp:DropDownList>
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:BoundField DataField="Qty" HeaderText="Quantity" SortExpression="Qty" ItemStyle-HorizontalAlign="Center">
-                                        <ItemStyle HorizontalAlign="Right" VerticalAlign="Middle" Width="4em" />
-                                    </asp:BoundField>
-                                    <asp:TemplateField HeaderText="Packaging" SortExpression="PackagingID">
-                                        <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="odsPackagingTypes"
-                                                DataTextField="Description" DataValueField="PackagingID" SelectedValue='<%# Bind("PackagingID")  %>'>
-                                                <asp:ListItem Value="0">n/a</asp:ListItem>
-                                            </asp:DropDownList>
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true" DataSourceID="odsPackagingTypes" Enabled="false"
-                                                DataTextField="Description" DataValueField="PackagingID" SelectedValue='<%#  Eval("PackagingID") == null ? "0" : Eval("PackagingID").ToString()  %>'>
-                                                <asp:ListItem Value="0">n/a</asp:ListItem>
-                                            </asp:DropDownList>
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:CommandField ButtonType="Button" ShowDeleteButton="True" ShowEditButton="True" HeaderText="Action" />
-                                </Columns>
-                            </asp:GridView>
-                        </div>
-                        <br />
+            <asp:Panel ID="pnlOrderShell" runat="server" CssClass="simpleForm page-tone-panel page-tone-orders">
+                <div class="page-tone-header tool-card-header">
+                    <img class="tool-card-icon" src="../images/imgButtons/icons8-order-completed-16.png" alt="Order Done" />
+                    <div>
+                        <h1 class="page-tone-title">Order Done</h1>
+                        <p class="page-tone-subtitle">Confirm delivery and update contact usage</p>
                     </div>
                 </div>
-                <div class="responsive-layout-container">
-                    <div class="layout-panel-top">
-                        <table class="TblFlex">
-                            <tbody>
+
+                <asp:Panel ID="pnlOrderDetails" runat="server">
+                    <asp:FormView ID="fvOrderDone" runat="server" DataSourceID="odsOrderDoneHeader"
+                        CssClass="detail-form-table" Width="100%">
+                        <ItemTemplate>
+                            <table class="TblCoffee detail-form-table" style="width: 100%; margin-top: 8px;">
                                 <tr>
-                                    <td>Stock:</td>
+                                    <td>Company</td>
                                     <td>
-                                        <asp:TextBox ID="tbxStock" runat="server" Width="5em" /></td>
-                                    <td rowspan="2" valign="middle">
-                                        <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="TblWhite">
-                                            <asp:ListItem Text="none" Value="none" />
-                                            <asp:ListItem Text="send 'its in the post box' message" Value="postbox" />
-                                            <asp:ListItem Text="send 'order dispatch' message" Value="dispatched" />
-                                            <asp:ListItem Text="send 'order collected' message" Value="collected" />
-                                            <asp:ListItem Text="send 'order delivered' message" Value="done" Selected="true" />
-                                        </asp:RadioButtonList>
-                                </tr>
-                                <tr>
-                                    <td>Cup Count:</td>
+                                        <asp:Label ID="CompanyNameLabel" runat="server" Text='<%# Eval("CompanyName") %>' />
+                                        <asp:Label ID="CustomerIDLabel" runat="server" Text='<%# Eval("CustomerID") %>' Visible="false" />
+                                    </td>
+                                    <td>Delivery date</td>
                                     <td>
-                                        <asp:TextBox ID="tbxCount" runat="server" Width="5em" /></td>
+                                        <asp:TextBox ID="ByDateTextBox" runat="server"
+                                            Text='<%# Eval("RequiredByDate", "{0:yyyy-MM-dd}") %>' Width="10em" />
+                                    </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                        <br />
-                        <div class="status-message">
-                            <asp:Literal ID="ltrlStatus" Text="" runat="server" />
-                        </div>
+                            </table>
+                        </ItemTemplate>
+                    </asp:FormView>
+
+                    <div class="results-container" style="margin-top: 12px;">
+                        <asp:GridView ID="gvOrderDoeLines" runat="server" AllowSorting="True" AutoGenerateColumns="False"
+                            DataKeyNames="TOLineID" CssClass="results-table" DataSourceID="odsOrderDoneLines"
+                            EmptyDataText="No lines on this delivery.">
+                            <Columns>
+                                <asp:BoundField DataField="TOLineID" HeaderText="ID" Visible="false" InsertVisible="False"
+                                    ReadOnly="True" SortExpression="TOLineID" />
+                                <asp:TemplateField HeaderText="Item" SortExpression="ItemID">
+                                    <EditItemTemplate>
+                                        <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes"
+                                            DataTextField="ItemDesc" DataValueField="ItemTypeID"
+                                            AppendDataBoundItems="True" SelectedValue='<%# Bind("ItemID") %>'>
+                                            <asp:ListItem Value="0">n/a</asp:ListItem>
+                                        </asp:DropDownList>
+                                    </EditItemTemplate>
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlItemDesc" runat="server" DataSourceID="odsItemTypes"
+                                            DataTextField="ItemDesc" DataValueField="ItemTypeID" Enabled="false"
+                                            AppendDataBoundItems="True"
+                                            SelectedValue='<%# Eval("ItemID") == null ? "0" : Eval("ItemID").ToString() %>'>
+                                            <asp:ListItem Value="0">n/a</asp:ListItem>
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:BoundField DataField="Qty" HeaderText="Qty" SortExpression="Qty">
+                                    <ItemStyle HorizontalAlign="Right" Width="4em" />
+                                </asp:BoundField>
+                                <asp:TemplateField HeaderText="Packaging" SortExpression="PackagingID">
+                                    <EditItemTemplate>
+                                        <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true"
+                                            DataSourceID="odsPackagingTypes" DataTextField="Description"
+                                            DataValueField="PackagingID" SelectedValue='<%# Bind("PackagingID") %>'>
+                                            <asp:ListItem Value="0">n/a</asp:ListItem>
+                                        </asp:DropDownList>
+                                    </EditItemTemplate>
+                                    <ItemTemplate>
+                                        <asp:DropDownList ID="ddlPackaging" runat="server" AppendDataBoundItems="true"
+                                            DataSourceID="odsPackagingTypes" DataTextField="Description"
+                                            DataValueField="PackagingID" Enabled="false"
+                                            SelectedValue='<%# Eval("PackagingID") == null ? "0" : Eval("PackagingID").ToString() %>'>
+                                            <asp:ListItem Value="0">n/a</asp:ListItem>
+                                        </asp:DropDownList>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                                <asp:CommandField ButtonType="Button" ShowDeleteButton="True" ShowEditButton="True"
+                                    HeaderText="Action" ControlStyle-CssClass="filter-panel-btn" />
+                            </Columns>
+                        </asp:GridView>
                     </div>
-                    <div class="layout-footer-panel button-toolbar-rounded ">
-                        <asp:Button ID="btnDone" Text="Done" runat="server" AccessKey="D" OnClick="btnDone_Click" /><br
-                            style="padding-top: 2px" />
-                        <asp:Button ID="btnCancel" Text="Cancel" runat="server" OnClick="btnCancel_Click" />
+
+                    <table class="TblCoffee detail-form-table" style="width: 100%; margin-top: 16px;">
+                        <tr>
+                            <td style="width: 8em;">Stock (kg)</td>
+                            <td style="width: 8em;">
+                                <asp:TextBox ID="tbxStock" runat="server" Width="5em" CssClass="small" />
+                            </td>
+                            <td rowspan="3" style="vertical-align: top; padding-left: 16px;">
+                                <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="small">
+                                    <asp:ListItem Text="No confirmation email" Value="none" />
+                                    <asp:ListItem Text="Send 'in the post box' message" Value="postbox" />
+                                    <asp:ListItem Text="Send 'order dispatch' message" Value="dispatched" />
+                                    <asp:ListItem Text="Send 'order collected' message" Value="collected" />
+                                    <asp:ListItem Text="Send 'order delivered' message" Value="done" Selected="True" />
+                                </asp:RadioButtonList>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Cup count</td>
+                            <td>
+                                <asp:TextBox ID="tbxCount" runat="server" Width="5em" CssClass="small" />
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="button-row" style="margin-top: 16px;">
+                        <asp:Button ID="btnDone" Text="Done" runat="server" AccessKey="D" CssClass="filter-panel-btn"
+                            OnClick="btnDone_Click" ToolTip="Mark order delivered and update usage (Alt+D)" />
+                        <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnCancel_Click" CausesValidation="false"
+                            ToolTip="Cancel and return to delivery sheet" />
                     </div>
-                </div>
-            </asp:Panel>
-            <asp:Panel ID="pnlCustomerDetailsUpdated" runat="server" Visible="false">
-                <div class="responsive-layout-container">
-                    <div>
-                        <h2>Customer Updated:</h2>
-                        <br />
-                        <asp:Label ID="tbxCustomerName" Text="" runat="server" /></td>
-                    </div>
-                    <br />
-                    <div>
-                        <asp:DataGrid ID="dgCustomerUsage" runat="server" CssClass="TblFlex small">
+                </asp:Panel>
+
+                <asp:Panel ID="pnlCustomerDetailsUpdated" runat="server" Visible="false">
+                    <h2 class="page-tone-subtitle" style="font-size: 1.1em; margin: 12px 0 8px;">Contact updated</h2>
+                    <asp:Label ID="tbxCustomerName" Text="" runat="server" CssClass="small" style="font-weight: 600;" />
+                    <div class="results-container" style="margin-top: 12px; overflow-x: auto;">
+                        <asp:DataGrid ID="dgCustomerUsage" runat="server" CssClass="results-table small" Width="100%">
                             <Columns>
                                 <asp:BoundColumn DataField="CustomerID" Visible="false" />
                                 <asp:BoundColumn DataField="LastCupCount" HeaderText="Last Count" ItemStyle-HorizontalAlign="Right" />
-                                <asp:BoundColumn DataField="NextCoffeeBy" HeaderText="NextCoffeeBy" DataFormatString="{0:d}" />
-                                <asp:BoundColumn DataField="DailyConsumption" HeaderText="DailyConsumption" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
-                                <asp:BoundColumn DataField="NextCleanOn" HeaderText="NextCleanEst" DataFormatString="{0:d}" />
-                                <asp:BoundColumn DataField="CleanAveCount" HeaderText="CleanAveCount" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
-                                <asp:BoundColumn DataField="NextFilterEst" HeaderText="NextFilterEst" DataFormatString="{0:d}" />
-                                <asp:BoundColumn DataField="FilterAveCount" HeaderText="FilterAveCount" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
-                                <asp:BoundColumn DataField="NextDescaleEst" HeaderText="NextDescaleEst" DataFormatString="{0:d}" />
-                                <asp:BoundColumn DataField="DescaleAveCount" HeaderText="DescaleAveCount" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
-                                <asp:BoundColumn DataField="NextServiceEst" HeaderText="NextServiceEst" DataFormatString="{0:d}" />
-                                <asp:BoundColumn DataField="ServiceAveCount" HeaderText="ServiceAveCount" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
+                                <asp:BoundColumn DataField="NextCoffeeBy" HeaderText="Next coffee" DataFormatString="{0:d}" />
+                                <asp:BoundColumn DataField="DailyConsumption" HeaderText="Daily use" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
+                                <asp:BoundColumn DataField="NextCleanOn" HeaderText="Next clean" DataFormatString="{0:d}" />
+                                <asp:BoundColumn DataField="CleanAveCount" HeaderText="Clean avg" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
+                                <asp:BoundColumn DataField="NextFilterEst" HeaderText="Next filter" DataFormatString="{0:d}" />
+                                <asp:BoundColumn DataField="FilterAveCount" HeaderText="Filter avg" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
+                                <asp:BoundColumn DataField="NextDescaleEst" HeaderText="Next descale" DataFormatString="{0:d}" />
+                                <asp:BoundColumn DataField="DescaleAveCount" HeaderText="Descale avg" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
+                                <asp:BoundColumn DataField="NextServiceEst" HeaderText="Next service" DataFormatString="{0:d}" />
+                                <asp:BoundColumn DataField="ServiceAveCount" HeaderText="Service avg" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:0.##}" />
                             </Columns>
                         </asp:DataGrid>
                     </div>
-                    <br />
-                    <div class="button-container-auto">
+                    <div class="button-row" style="margin-top: 16px;">
                         <asp:Button ID="btnReturnToDeliveres" Text="Return to Delivery Sheet" AccessKey="D"
-                            runat="server" OnClick="btnReturnToDeliveres_Click" />
+                            runat="server" CssClass="filter-panel-btn" OnClick="btnReturnToDeliveres_Click" />
                     </div>
+                </asp:Panel>
+
+                <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+                    <asp:Literal ID="ltrlStatus" runat="server" />
                 </div>
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+
     <asp:ObjectDataSource ID="odsOrderDoneHeader" runat="server"
         TypeName="TrackerSQL.Managers.OrderDoneDataSource"
         SelectMethod="GetHeader">
@@ -177,12 +179,12 @@
             <asp:SessionParameter Name="toHeaderId" SessionField="TempOrderHeaderId" Type="Int32" DefaultValue="0" />
         </SelectParameters>
     </asp:ObjectDataSource>
+
     <asp:ObjectDataSource ID="odsOrderDoneLines" runat="server"
         TypeName="TrackerSQL.Managers.OrderDoneDataSource"
         SelectMethod="GetLines"
         UpdateMethod="UpdateLine"
-        DeleteMethod="DeleteLine"
-        DataObjectTypeName="TrackerSQL.Models.OrderDoneLineView">
+        DeleteMethod="DeleteLine">
         <SelectParameters>
             <asp:SessionParameter Name="toHeaderId" SessionField="TempOrderHeaderId" Type="Int32" DefaultValue="0" />
         </SelectParameters>

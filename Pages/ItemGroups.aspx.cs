@@ -1,123 +1,292 @@
 using System;
+using System.Collections.Generic;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
     public partial class ItemGroups : Page
     {
-        private const string CONST_SESSION_LASTIDSELECTED = "LastGroupIDSelected";
+        private const string SessionLastGroupId = "LastGroupIDSelected";
         private readonly ItemGroupsRepository _itemGroupsRepository = new ItemGroupsRepository();
+        private readonly ItemsRepository _itemsRepository = new ItemsRepository();
 
         protected System.Web.UI.ScriptManager scrmngItemGroups;
-        protected UpdatePanel updtPnlItems;
+        protected UpdateProgress uprgItemGroups;
+        protected UpdatePanel upnlItemGroups;
+        protected Panel pnlItemGroups;
         protected DropDownList ddlGroupItems;
         protected ImageButton imgbtnAddGroup;
         protected ImageButton imgbtnEditGroup;
-        protected UpdateProgress uprgItemGroups;
-        protected UpdatePanel updtPnlItemsInList;
+        protected ImageButton imgbtnBack;
+        protected Panel pnlDualList;
         protected GridView gvItemsInList;
-        protected Button btnAddItem;
-        protected Button btnRemove;
+        protected Button btnAddToGroup;
+        protected Button btnRemoveFromGroup;
         protected GridView gvItemsNotInGroup;
-        protected ObjectDataSource odsItemGroups;
+        protected HtmlGenericControl pnlStatus;
+        protected Literal ltrlStatus;
         protected ObjectDataSource odsItemsNotInGroup;
         protected ObjectDataSource odsItemInGroup;
-        protected ObjectDataSource odsItemTypes;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (this.IsPostBack || this.Session["LastGroupIDSelected"] == null)
-                return;
-            this.ddlGroupItems.DataBind();
-            string str = (string)this.Session["LastGroupIDSelected"];
-            if (this.ddlGroupItems.Items.FindByValue(str) == null)
-                return;
-            this.ddlGroupItems.SelectedValue = str;
-        }
+            // Rebind when empty (first load, or ViewState lost the list)
+            if (!IsPostBack || ddlGroupItems.Items.Count <= 1)
+                BindGroupDropDown();
 
-        protected void btnAddGroup_Click(object sender, EventArgs e)
-        {
-            this.Response.Redirect("GroupItemDetail.aspx");
-            this.ddlGroupItems.DataBind();
-        }
-
-        protected void btnAddItem_Click(object sender, EventArgs e)
-        {
-            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
-            foreach (GridViewRow row in this.gvItemsNotInGroup.Rows)
+            if (!IsPostBack)
             {
-                CheckBox control1 = (CheckBox)row.FindControl("cbxAddItem");
-                if (control1 != null && control1.Checked)
+                RestoreLastGroupSelection();
+                UpdateDualListVisibility();
+                if (!TryGetSelectedGroupId(out _))
                 {
-                    DropDownList control2 = (DropDownList)row.FindControl("ddlItemTypeDesc");
-                    _itemGroupsRepository.InsertItemToGroup(groupId, Convert.ToInt32(control2.SelectedValue));
+                    if (ddlGroupItems.Items.Count > 1)
+                        SetStatus("Select a group.", "status-info");
                 }
             }
-            this.gvItemsInList.DataBind();
-            this.gvItemsNotInGroup.DataBind();
-            this.updtPnlItemsInList.Update();
         }
 
-        protected void btnRemove_Click(object sender, EventArgs e)
+        private void BindGroupDropDown()
         {
-            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
-            foreach (GridViewRow row in this.gvItemsInList.Rows)
+            string keepSelected = ddlGroupItems.SelectedValue;
+            ddlGroupItems.Items.Clear();
+            ddlGroupItems.Items.Add(new ListItem("--Please select or add group--", "-1"));
+
+            List<OrderItemLookup> groups;
+            try
             {
-                CheckBox control1 = (CheckBox)row.FindControl("cbxRemoveItem");
-                if (control1 != null && control1.Checked)
-                {
-                    DropDownList control2 = (DropDownList)row.FindControl("ddlItemDesc");
-                    _itemGroupsRepository.DeleteItemFromGroup(groupId, Convert.ToInt32(control2.SelectedValue));
-                }
+                groups = _itemsRepository.GetAllGroupTypeItems() ?? new List<OrderItemLookup>();
             }
-            this.gvItemsInList.DataBind();
-            this.gvItemsNotInGroup.DataBind();
+            catch (Exception ex)
+            {
+                SetStatus("Could not load groups: " + ex.Message, "status-error");
+                return;
+            }
+
+            foreach (OrderItemLookup group in groups)
+            {
+                if (group == null || group.ItemTypeID <= 0)
+                    continue;
+                ddlGroupItems.Items.Add(new ListItem(
+                    string.IsNullOrWhiteSpace(group.ItemDesc) ? ("Group #" + group.ItemTypeID) : group.ItemDesc,
+                    group.ItemTypeID.ToString()));
+            }
+
+            if (!string.IsNullOrEmpty(keepSelected) && ddlGroupItems.Items.FindByValue(keepSelected) != null)
+                ddlGroupItems.SelectedValue = keepSelected;
+            else
+                ddlGroupItems.SelectedValue = "-1";
+
+            if (groups.Count == 0)
+                SetStatus("No groups found. Use Add to create one.", "status-warn");
+        }
+
+        private void RestoreLastGroupSelection()
+        {
+            if (Session[SessionLastGroupId] == null)
+                return;
+
+            string lastId = Session[SessionLastGroupId] as string;
+            if (string.IsNullOrEmpty(lastId) || ddlGroupItems.Items.FindByValue(lastId) == null)
+                return;
+
+            ddlGroupItems.SelectedValue = lastId;
+            UpdateDualListVisibility();
+            if (pnlDualList != null && pnlDualList.Visible)
+            {
+                gvItemsInList.DataBind();
+                gvItemsNotInGroup.DataBind();
+            }
+            SetStatus("Loaded group members.", "status-info");
+        }
+
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
+        {
+            Response.Redirect("~/Default.aspx");
+        }
+
+        protected void btnAddGroup_Click(object sender, ImageClickEventArgs e)
+        {
+            Response.Redirect("~/Pages/GroupItemDetail.aspx");
+        }
+
+        protected void btnEditGroup_Click(object sender, ImageClickEventArgs e)
+        {
+            if (!TryGetSelectedGroupId(out int groupId))
+            {
+                UpdateDualListVisibility();
+                SetStatus("Select a group.", "status-warn");
+                return;
+            }
+
+            Response.Redirect("~/Pages/GroupItemDetail.aspx?ItemTypeID=" + groupId);
+        }
+
+        protected void btnAddToGroup_Click(object sender, EventArgs e)
+        {
+            if (!TryGetSelectedGroupId(out int groupId))
+            {
+                UpdateDualListVisibility();
+                SetStatus("Select a group.", "status-warn");
+                return;
+            }
+
+            var itemIds = new List<int>();
+            foreach (GridViewRow row in gvItemsNotInGroup.Rows)
+            {
+                var cbx = row.FindControl("cbxAddItem") as CheckBox;
+                if (cbx == null || !cbx.Checked)
+                    continue;
+
+                int itemId = Convert.ToInt32(gvItemsNotInGroup.DataKeys[row.RowIndex].Value);
+                if (itemId > 0)
+                    itemIds.Add(itemId);
+            }
+
+            if (itemIds.Count == 0)
+            {
+                SetStatus("Check one or more items on the right, then click Add.", "status-warn");
+                return;
+            }
+
+            int added;
+            try
+            {
+                added = _itemGroupsRepository.InsertItemsToGroup(groupId, itemIds);
+            }
+            catch (Exception ex)
+            {
+                SetStatus("Could not add items: " + ex.Message, "status-error");
+                return;
+            }
+
+            RefreshGrids();
+            SetStatus(added == 1
+                ? "Added 1 item to the group."
+                : $"Added {added} items to the group.", "status-success");
+        }
+
+        protected void btnRemoveFromGroup_Click(object sender, EventArgs e)
+        {
+            if (!TryGetSelectedGroupId(out int groupId))
+            {
+                UpdateDualListVisibility();
+                SetStatus("Select a group.", "status-warn");
+                return;
+            }
+
+            int removed = 0;
+            foreach (GridViewRow row in gvItemsInList.Rows)
+            {
+                var cbx = row.FindControl("cbxRemoveItem") as CheckBox;
+                if (cbx == null || !cbx.Checked)
+                    continue;
+
+                int itemId = Convert.ToInt32(gvItemsInList.DataKeys[row.RowIndex].Value);
+                if (itemId > 0 && _itemGroupsRepository.DeleteItemFromGroup(groupId, itemId))
+                    removed++;
+            }
+
+            if (removed == 0)
+            {
+                SetStatus("Check one or more items on the left, then click Remove.", "status-warn");
+                return;
+            }
+
+            RefreshGrids();
+            SetStatus(removed == 1
+                ? "Removed 1 item from the group."
+                : $"Removed {removed} items from the group.", "status-success");
         }
 
         protected void ddlGroupItems_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.ddlGroupItems.SelectedValue.Equals("-1"))
+            if (!TryGetSelectedGroupId(out _))
+            {
+                Session.Remove(SessionLastGroupId);
+                UpdateDualListVisibility();
+                SetStatus("Select a group.", "status-info");
+                upnlItemGroups.Update();
                 return;
-            DropDownList dropDownList = (DropDownList)sender;
-            if (dropDownList != null)
-                this.Session["LastGroupIDSelected"] = (object)dropDownList.SelectedValue;
-            this.gvItemsInList.DataBind();
-            this.gvItemsNotInGroup.DataBind();
-            this.updtPnlItemsInList.Update();
-        }
+            }
 
-        protected string GiveInStatus()
-        {
-            return !(this.ddlGroupItems.SelectedValue == "-1") ? "Please add an item to the group" : "Please select a group";
+            Session[SessionLastGroupId] = ddlGroupItems.SelectedValue;
+            UpdateDualListVisibility();
+            RefreshGrids();
+            SetStatus("Loaded group members.", "status-info");
         }
 
         protected void gvItemsInList_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             if (!e.CommandName.Equals("MoveDown") && !e.CommandName.Equals("MoveUp"))
                 return;
-            GridViewRow row = this.gvItemsInList.Rows[Convert.ToInt32(e.CommandArgument)];
-            DropDownList control1 = (DropDownList)row.FindControl("ddlItemDesc");
-            Label control2 = (Label)row.FindControl("lblItemSortPos");
-            int groupId = Convert.ToInt32(this.ddlGroupItems.SelectedValue);
-            int itemId = Convert.ToInt32(control1.SelectedValue);
-            int sortPos = Convert.ToInt32(control2.Text);
 
-            if (e.CommandName.Equals("MoveUp"))
-                _itemGroupsRepository.MoveItemSortUp(groupId, itemId, sortPos);
-            else
-                _itemGroupsRepository.MoveItemSortDown(groupId, itemId, sortPos);
+            if (!TryGetSelectedGroupId(out int groupId))
+                return;
 
-            this.gvItemsInList.DataBind();
+            int rowIndex = Convert.ToInt32(e.CommandArgument);
+            if (rowIndex < 0 || rowIndex >= gvItemsInList.Rows.Count)
+                return;
+
+            int itemId = Convert.ToInt32(gvItemsInList.DataKeys[rowIndex].Value);
+            var row = gvItemsInList.Rows[rowIndex];
+            var lblPos = row.FindControl("lblItemSortPos") as Label;
+            if (lblPos == null || !int.TryParse(lblPos.Text, out int sortPos))
+            {
+                SetStatus("Could not read sort position for that item.", "status-error");
+                return;
+            }
+
+            bool moved = e.CommandName.Equals("MoveUp")
+                ? _itemGroupsRepository.MoveItemSortUp(groupId, itemId, sortPos)
+                : _itemGroupsRepository.MoveItemSortDown(groupId, itemId, sortPos);
+
+            RefreshGrids();
+            SetStatus(moved ? "Updated item order." : "Item is already at the end of the list.",
+                moved ? "status-success" : "status-info");
         }
 
-        protected void btnEditGroup_Click(object sender, EventArgs e)
+        private bool TryGetSelectedGroupId(out int groupId)
         {
-            if (this.ddlGroupItems.SelectedValue.Equals("-1"))
+            groupId = 0;
+            if (ddlGroupItems == null || string.IsNullOrEmpty(ddlGroupItems.SelectedValue)
+                || ddlGroupItems.SelectedValue == "-1")
+                return false;
+
+            return int.TryParse(ddlGroupItems.SelectedValue, out groupId) && groupId > 0;
+        }
+
+        private void UpdateDualListVisibility()
+        {
+            bool show = TryGetSelectedGroupId(out _);
+            if (pnlDualList != null)
+                pnlDualList.Visible = show;
+        }
+
+        private void RefreshGrids()
+        {
+            UpdateDualListVisibility();
+            if (pnlDualList != null && pnlDualList.Visible)
+            {
+                gvItemsInList.DataBind();
+                gvItemsNotInGroup.DataBind();
+            }
+            upnlItemGroups.Update();
+        }
+
+        private void SetStatus(string message, string cssModifier)
+        {
+            if (ltrlStatus == null || pnlStatus == null)
                 return;
-            this.Response.Redirect("GroupItemDetail.aspx?ItemTypeID=" + this.ddlGroupItems.SelectedValue);
-            this.ddlGroupItems.DataBind();
+
+            ltrlStatus.Text = message ?? string.Empty;
+            pnlStatus.Attributes["class"] = string.IsNullOrEmpty(cssModifier)
+                ? "status-message"
+                : "status-message " + cssModifier;
         }
     }
 }

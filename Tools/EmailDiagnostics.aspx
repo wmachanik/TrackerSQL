@@ -1,4 +1,4 @@
-<%@ Page Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
+ï»¿<%@ Page Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajax" %>
 
@@ -14,16 +14,24 @@
 </asp:Content>
 <asp:Content ID="cntSendCoffeeCheckupBdy" ContentPlaceHolderID="MainContent" runat="server">
     <%--<form id="form1" runat="server">--%>
-    <asp:ScriptManager ID="scrmngEmailTest" runat="server" EnablePageMethods="true" />
-    <asp:Label ID="lblGlobalStatus" runat="server" ForeColor="Blue" />
+    <asp:ScriptManager ID="scrmngEmailTest" runat="server" AsyncPostBackTimeout="120000" />
 
-    <div class="container">
-        <h2 class="test-h2">Email Configuration Tester</h2>
-        
+    <asp:Panel ID="pnlEmailDiagnostics" runat="server" CssClass="simpleForm page-tone-panel page-tone-email">
+        <div class="page-tone-header tool-card-header">
+            <img class="tool-card-icon" src="../images/imgButtons/World.gif" alt="" />
+            <div>
+                <h1 class="page-tone-title">Email Diagnostics</h1>
+                <p class="page-tone-subtitle">Test SMTP and email settings</p>
+            </div>
+        </div>
+
+        <asp:Label ID="lblGlobalStatus" runat="server" ForeColor="Blue" />
+
+        <div class="container">
         <ajax:TabContainer ID="TabContainer1" runat="server" ActiveTabIndex="0" CssClass="ajax-tabs">
 
-            <!-- ?? Email Test Tab -->
-            <ajax:TabPanel ID="TabEmail" runat="server" HeaderText="?? Test Email">
+            <!-- ðŸ“¨ Email Test Tab -->
+            <ajax:TabPanel ID="TabEmail" runat="server" HeaderText="ðŸ“¨ Test Email">
                 <ContentTemplate>
                     <asp:UpdateProgress ID="uprgEmailTest" runat="server" AssociatedUpdatePanelID="upGlobal">
                         <ProgressTemplate>
@@ -58,7 +66,7 @@
                                         <div class="input-with-toggle">
                                             <asp:TextBox ID="txtPass" runat="server" TextMode="Password"
                                                 title="Enter your password"
-                                                placeholder="••••••••" />
+                                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" />
 
                                             <div class="checkbox-label">
                                                 <asp:CheckBox ID="chkShowPwd" runat="server"
@@ -127,8 +135,8 @@
                 </ContentTemplate>
             </ajax:TabPanel>
 
-            <!-- ?? Diagnostics Tab -->
-            <ajax:TabPanel ID="TabDiag" runat="server" HeaderText="?? Diagnostics">
+            <!-- ðŸ§ª Diagnostics Tab -->
+            <ajax:TabPanel ID="TabDiag" runat="server" HeaderText="ðŸ§ª Diagnostics">
                 <ContentTemplate>
                     <asp:UpdateProgress ID="uprgEmailDiag" runat="server" AssociatedUpdatePanelID="upDiag">
                         <ProgressTemplate>
@@ -139,6 +147,8 @@
                         <Triggers>
                             <asp:AsyncPostBackTrigger ControlID="btnDiagnostics" EventName="Click" />
                             <asp:AsyncPostBackTrigger ControlID="btnViewLog" EventName="Click" />
+                            <asp:AsyncPostBackTrigger ControlID="btnTestCombos" EventName="Click" />
+                            <asp:AsyncPostBackTrigger ControlID="tmrComboProgress" EventName="Tick" />
                         </Triggers>
                         <ContentTemplate>
                             <div class="test-css">
@@ -164,78 +174,62 @@
 
                                 <fieldset>
                                     <legend>Test All SMTP Combos</legend>
-                                    <asp:Button ID="btnTestCombos" runat="server" Text="Test All Combos" OnClientClick="startComboTest(); return false;" />
-                                    <asp:Label ID="lblProgress" runat="server" />
-                                    <asp:PlaceHolder ID="phComboResults" runat="server" />
-                                    <asp:Label ID="lblNoResults" runat="server" ForeColor="Gray" />
-                                </fieldset>
-
-                                <fieldset>
-                                    <asp:HiddenField ID="hfProgressKey" runat="server" />
-                                    <div id="progressStatus">Progress: 0%</div>
-                                    <div id="comboResults"></div>
+                                    <asp:Button ID="btnTestCombos" runat="server" Text="Test All Combos" OnClick="btnTestCombos_Click" />
+                                    <asp:Label ID="lblProgress" runat="server" CssClass="combo-progress-label" />
+                                    <asp:Literal ID="litComboResults" runat="server" Mode="PassThrough" />
+                                    <asp:Timer ID="tmrComboProgress" runat="server" Interval="1000" Enabled="false" OnTick="tmrComboProgress_Tick" />
                                 </fieldset>
                             </div>
                         </ContentTemplate>
                     </asp:UpdatePanel>
                 </ContentTemplate>
             </ajax:TabPanel>
+            <!-- Single Email test -->
+            <ajax:TabPanel ID="TabCcTest" runat="server" HeaderText="ðŸ“Ž CC Test">
+                <ContentTemplate>
+                    <asp:UpdatePanel ID="upCcTest" runat="server" UpdateMode="Conditional">
+                        <ContentTemplate>
+                            <div class="test-css">
+                                <fieldset>
+                                    <legend>CC Delivery Test</legend>
 
+                                    <label for="<%= txtFrom.ClientID %>">From Address:</label>
+                                    <asp:TextBox ID="TextBox1" runat="server" title="Enter the sender's email address" placeholder="sender@domain.com" />
+
+                                    <label for="<%= txtTo.ClientID %>">To Address:</label>
+                                    <asp:TextBox ID="TextBox2" runat="server" title="Enter the recipient's email address" placeholder="recipient@domain.com" />
+
+                                    <label for="<%= txtCc.ClientID %>">CC Address(es):</label>
+                                    <asp:TextBox ID="txtCc" runat="server" title="Enter CC addresses separated by comma or semicolon" placeholder="admin@domain.com" />
+
+                                    <label for="<%= txtSubject.ClientID %>">Subject:</label>
+                                    <asp:TextBox ID="TextBox3" runat="server" title="Enter the email subject" placeholder="CC Test" />
+
+                                    <label for="<%= txtBody.ClientID %>">Body:</label>
+                                    <asp:TextBox ID="TextBox4" runat="server" TextMode="MultiLine" Rows="4" title="Enter the body of the email" placeholder="This is a CC test..." />
+
+                                    <div class="form-actions" style="margin-top: 10px;">
+                                        <asp:Button ID="btnSendCcTest" runat="server" Text="Send CC Test" OnClick="btnSendCcTest_Click" />
+                                        <asp:Button ID="btnSendBothTest" runat="server" Text="Send Both Tests" OnClick="btnSendBothTest_Click" />
+                                    </div>
+
+                                    <div style="margin-top: 8px;">
+                                        <asp:Label ID="lblCcResult" runat="server" ForeColor="Red" />
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </ContentTemplate>
+                    </asp:UpdatePanel>
+                </ContentTemplate>
+            </ajax:TabPanel>
         </ajax:TabContainer>
-    </div>
+        </div>
+    </asp:Panel>
 
-    <div>
-    </div>
-    <div id="spinner" style="display: none;">? Testing...</div>
     <script type="text/javascript">
-        function showSpinner() {
-            document.getElementById("spinner").style.display = "block";
-        }
-    </script>
-    <script type="text/javascript">
-        function startComboTest() {
-            var key = generateKey();
-            document.getElementById('<%= hfProgressKey.ClientID %>').value = key;
-
-            // Disable the button
-            var btn = document.getElementById('<%= btnTestCombos.ClientID %>');
-            btn.disabled = true;
-            btn.style.opacity = "0.6"; // Optional visual cue
-            btn.style.cursor = "not-allowed";
-
-            var smtpHost = document.getElementById('<%= txtHost.ClientID %>').value;
-            var smtpUser = document.getElementById('<%= txtUser.ClientID %>').value;
-            var smtpPass = document.getElementById('<%= txtPass.ClientID %>').value;
-            var fromAddress = document.getElementById('<%= txtFrom.ClientID %>').value;
-            var toAddress = document.getElementById('<%= txtTo.ClientID %>').value;
-
-            PageMethods.StartComboTest(key, smtpHost, smtpUser, smtpPass, fromAddress, toAddress);
-            pollProgress(key, btn); //  pass the button reference
-        }
         function applyCombo(port, option) {
             document.getElementById('<%= txtPort.ClientID %>').value = port;
             document.getElementById('<%= ddlSocketOption.ClientID %>').value = option;
-            document.getElementById("progressStatus").innerText = "? Applied: Port " + port + ", Option " + option;
-        }
-
-        function pollProgress(key, btnRef) {
-            PageMethods.GetComboProgress(key, function (result) {
-                document.getElementById("progressStatus").innerText = "Progress: " + result.percent + "%";
-                document.getElementById("comboResults").innerHTML = result.html;
-                console.log("Polling progress for key:", key);
-
-                if (!result.completed) {
-                    setTimeout(function () { pollProgress(key, btnRef); }, 1000);
-                } else {
-                    btnRef.disabled = false;
-                    btnRef.style.opacity = "1";
-                    btnRef.style.cursor = "pointer";
-                }
-            });
-        }
-
-        function generateKey() {
-            return 'combo_' + new Date().getTime();
         }
     </script>
     <%--</form>--%>

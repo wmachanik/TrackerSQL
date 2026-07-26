@@ -9,7 +9,7 @@ namespace TrackerSQL.Classes
         public int AreaID { get; set; }
         public DateTime PrepDate { get; set; }
         public DateTime DeliveryDate { get; set; }
-        public DateTime NextPreperationDate { get; set; }
+        public DateTime NextPreparationDate { get; set; }
         public DateTime NextDeliveryDate { get; set; }
     }
 
@@ -60,12 +60,12 @@ namespace TrackerSQL.Classes
             try
             {
                 var tools = new TrackerTools();
-                tools.SetNextPreperationDateByArea();
+                tools.SetNextPreparationDateByArea();
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                    "AreaDeliveryMatrix: SetNextPreperationDateByArea failed: " + ex.Message);
+                    "AreaDeliveryMatrix: SetNextPreparationDateByArea failed: " + ex.Message);
             }
 
             var repo = new NextPrepDateByAreaRepository();
@@ -77,9 +77,9 @@ namespace TrackerSQL.Classes
                 dict[r.AreaID] = new AreaDeliveryMatrixRow
                 {
                     AreaID = r.AreaID,
-                    PrepDate = r.PreperationDate ?? DateTime.MinValue,
+                    PrepDate = r.PreparationDate ?? DateTime.MinValue,
                     DeliveryDate = r.DeliveryDate ?? DateTime.MinValue,
-                    NextPreperationDate = r.NextPreperationDate ?? DateTime.MinValue,
+                    NextPreparationDate = r.NextPreparationDate ?? DateTime.MinValue,
                     NextDeliveryDate = r.NextDeliveryDate ?? DateTime.MinValue
                 };
             }
@@ -117,7 +117,7 @@ namespace TrackerSQL.Classes
                 }
             }
 
-            DateTime prep = chosen == row.DeliveryDate ? row.PrepDate : row.NextPreperationDate;
+            DateTime prep = chosen == row.DeliveryDate ? row.PrepDate : row.NextPreparationDate;
             return (prep.Date, chosen.Date);
         }
 

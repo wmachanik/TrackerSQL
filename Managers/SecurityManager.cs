@@ -29,23 +29,48 @@ namespace TrackerSQL.Managers
 
         /// <summary>
         /// Core admin test:
-        /// 1. Exact match on configured admin username.
-        /// 2. In any admin role alias (Administrators / Administrator).
+        /// 1. Exact match on configured admin username (forms identity and/or Membership).
+        /// 2. In any admin role alias (Administrators / Administrator) via principal or Roles API.
         /// </summary>
         public static bool IsAdmin()
         {
-            var user = Membership.GetUser();
-            if (user == null) return false;
+            if (!IsAuthenticated) return false;
 
             try
             {
-                if (!string.IsNullOrEmpty(SystemConstants.UserConstants.AdminUserName) &&
-                    user.UserName.Equals(SystemConstants.UserConstants.AdminUserName,
-                        StringComparison.OrdinalIgnoreCase))
+                string identityName = HttpContext.Current?.User?.Identity?.Name;
+                string membershipName = null;
+                try
+                {
+                    membershipName = Membership.GetUser()?.UserName;
+                }
+                catch
+                {
+                    // Membership provider can fail while forms auth still works.
+                }
+
+                string adminUserName = SystemConstants.UserConstants.AdminUserName;
+                if (!string.IsNullOrEmpty(adminUserName))
+                {
+                    if (!string.IsNullOrEmpty(identityName) &&
+                        identityName.Equals(adminUserName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                    if (!string.IsNullOrEmpty(membershipName) &&
+                        membershipName.Equals(adminUserName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+
+                var principal = HttpContext.Current?.User;
+                if (principal != null && AdminRoleAliases.Any(r => principal.IsInRole(r)))
                     return true;
 
+                string roleUserName = !string.IsNullOrEmpty(membershipName) ? membershipName : identityName;
+                if (string.IsNullOrEmpty(roleUserName))
+                    return false;
+
                 // Role provider can throw if not initialized in some edge cases; guard it.
-                return AdminRoleAliases.Any(r => Roles.IsUserInRole(user.UserName, r));
+                return AdminRoleAliases.Any(r => Roles.IsUserInRole(roleUserName, r));
             }
             catch
             {

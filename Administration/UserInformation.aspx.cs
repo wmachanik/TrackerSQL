@@ -1,10 +1,10 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.Administration.UserInformation
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — UserInformation
+// Administration page code-behind for UserInformation.
+//------------------------------------------------------------------------------
 
 using System;
+using System.Web;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -61,6 +61,10 @@ namespace TrackerSQL.Administration
             OnlineLabel.Text = user.IsOnline ? "online" : "offline";
             LastLoginDateLabel.Text = $"{user.LastLoginDate:d}";
             EmailLabel.Text = user.Email;
+
+            btnDeleteUser.OnClientClick =
+                "return confirm('" + HttpUtility.JavaScriptStringEncode(
+                    "Delete user '" + user.UserName + "'? This cannot be undone.") + "');";
 
             try
             {
@@ -143,8 +147,39 @@ namespace TrackerSQL.Administration
 
         protected void btnDeleteUser_Click(object sender, EventArgs e)
         {
-            Membership.DeleteUser(this.Request.QueryString["user"], true);
-            this.lblStatusMessage.Text = "The user account deleted.";
+            string username = Request.QueryString["user"];
+            if (string.IsNullOrWhiteSpace(username))
+                username = lblUserName.Text;
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Response.Redirect("~/Administration/ManageUsers.aspx");
+                return;
+            }
+
+            try
+            {
+                bool deleted = Membership.DeleteUser(username, deleteAllRelatedData: true);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
+                    deleted
+                        ? "UserInformation: deleted user '" + username + "'."
+                        : "UserInformation: Membership.DeleteUser returned false for '" + username + "'.");
+
+                if (deleted)
+                {
+                    Response.Redirect("~/Administration/ManageUsers.aspx", endResponse: false);
+                    Context.ApplicationInstance.CompleteRequest();
+                    return;
+                }
+
+                lblStatusMessage.Text = "Could not delete user '" + Server.HtmlEncode(username) + "'.";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
+                    "UserInformation: delete user '" + username + "' failed: " + ex.Message);
+                lblStatusMessage.Text = "Could not delete user. " + Server.HtmlEncode(ex.Message);
+            }
         }
     }
 }

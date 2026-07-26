@@ -1,9 +1,101 @@
 ﻿# HARD PROJECT RULES - MANDATORY COMPLIANCE
 
 **Date:** 2025-03-26  
-**Last Updated:** 2026-05-11  
+**Last Updated:** 2026-07-22  
 **Status:** ACTIVE - THESE ARE NON-NEGOTIABLE RULES  
 **Applies To:** ALL development on this project
+
+---
+
+## Rule #0b: WEBFORMS UI SHELL (Status + UpdatePanel + Page Tone)
+
+**Full standard:** [`WEBFORMS_UI_STANDARDS.md`](WEBFORMS_UI_STANDARDS.md)  
+**References:** `Tools/HolidayClosureDetail.aspx` (UpdatePanel / buttons) · `Pages/SentRemindersSheet.aspx` (page-tone shell) · `Pages/ContactDetails.aspx` + `Scripts/unsavedChanges.js` (dirty guard)
+
+### REQUIRED
+
+1. **Status messages at the bottom** of the main form (after action buttons), using `status-message` / `status-success` / `status-error` / `status-info`.
+2. **UpdatePanel + UpdateProgress** as the default for interactive pages (async Save; full postback for Save & Return / Back / redirecting Delete).
+3. **Back** is an `<asp:Button>`, not a HyperLink.
+4. Prefer **Save** and **Save & Return** on detail forms; default return URL is the owning list page.
+5. **Page tone panel:** wrap title + toolbar + content in `page-tone-panel` + a `page-tone-*` modifier matching the home dashboard card (`Default.aspx` `home-tone-*`). **One** icon in the header — no duplicate `<h1>` above the panel. CSS: `Styles/Site.css`.
+6. **Site.css cache-bust:** whenever `Styles/Site.css` changes, bump `Rev: YYYYMMDD-n` at the top of that file **and** the matching `?v=YYYYMMDD-n` on the `Site.Master` stylesheet link (same-day edits increment `n`). Prevents browsers keeping old CSS.
+7. **Return navigation for multi-entry details** (e.g. `ContactDetails`): **Save & Return** / **Back** go to the **referring page** (captured from `UrlReferrer` or optional `?ReturnUrl=`), not always the Contacts list. Fallback when no referrer: owning list (`~/Pages/Contacts.aspx`). Same-site URLs only.
+8. **Unsaved-changes:** use shared `Scripts/unsavedChanges.js` (`TrackerUnsaved.init(...)`); do not duplicate `beforeunload` / dirty-tracking blobs in page headers.
+
+### RETROFIT
+
+Apply when creating or editing a page. Bring non-compliant pages into line as they are touched.
+
+---
+
+## Rule #0c: RECURR — NEVER LEGACY "REOCCUR"
+
+**Canonical naming:** use **Recurring** / **HadRecurringItems** / **NextPreparationDate**.
+
+### PROHIBITED in new or touched application code (repos, models, managers, pages)
+
+❌ Do **not** introduce or keep these Access-era / interim forms:
+
+| Forbidden (legacy / interim) | Use instead |
+|------------------------------|-------------|
+| `HadReoccurItems` | `HadRecurringItems` |
+| `HadRecurrItems` | `HadRecurringItems` |
+| `Reoccur` / `Reoccuring` / `Reoccurance` in **new** identifiers | `Recurring` / `Recurrence` (match existing DB table names when they still say `RecurranceTypesTbl`) |
+| `NextPreperationDate` | `NextPreparationDate` |
+| `Preperation` | `Preparation` |
+
+Legacy `Controls/*Tbl.cs` may still contain old names until retired — **do not copy those spellings** into repositories, models, managers, or pages.
+
+See also: [`Docs/MIGRATION_NAMING_ALIGNMENT.md`](../Docs/MIGRATION_NAMING_ALIGNMENT.md)
+
+---
+
+## Rule #0d: DATABASE MIGRATIONS LIVE IN TrackerMigration
+
+SQL schema creation, data migrate scripts, alter/rename scripts, and verification SQL are **not** owned by TrackerSQL.
+
+### REQUIRED
+
+1. Treat **TrackerMigration** as the only source of truth for CreateTables / Migrate_* / Alter_* / Verify_*.
+2. Paths under TrackerSQL such as `Data/Metadata/Sql/`, `Migrations/`, root `CleanMigrationTables.sql`, etc. are **legacy leftovers** — do not run them, do not “fix” them as active migration sources, and do not add new migration scripts here.
+3. Application code (repos/models) must match the **live SQL Server** schema as defined by TrackerMigration — if a rename is needed, change it in TrackerMigration (and the DB), then update TrackerSQL app code.
+
+### PROHIBITED
+
+❌ Adding new `Migrate_*`, `Alter_*`, or `CreateTables_*` scripts under TrackerSQL  
+❌ Using TrackerSQL’s `Data/Metadata/Sql/*.sql` as the current schema reference when it conflicts with TrackerMigration / the live DB
+
+---
+
+## Rule #0e: OPTIONAL FKs — USE `FkOrDbNull` (Access `0` → SQL `NULL`)
+
+Access often stored **`0`** on foreign-key columns to mean “none”. SQL Server foreign keys **reject `0`** unless a matching parent row exists.
+
+### REQUIRED
+
+1. On every repository **INSERT/UPDATE** of an optional/nullable FK (`EquipTypeID`, `AreaID`, `ItemPackagingID`, agent IDs, etc.), pass values through **`DbParamHelpers.FkOrDbNull(...)`** (also exposed as `RepositoryBase<T>.FkOrDbNull` for repos that inherit the base).
+2. Prefer the shared helpers — do **not** copy private `FkOrDbNull` methods into each repository.
+3. Overloads: `FkOrDbNull(int?)` and `FkOrDbNull(int)` — both treat `null` / `≤ 0` as `DBNull.Value`.
+
+```csharp
+using static TrackerSQL.Classes.DbParamHelpers;
+// or from a RepositoryBase-derived repo: FkOrDbNull(...)
+
+new DBParameter {
+    ParamName = "@EquipTypeID",
+    DataValue = FkOrDbNull(contact.EquipTypeID),
+    DataDbType = DbType.Int32
+};
+```
+### NOT for
+
+- Required FKs that must always reference a real parent (e.g. `ContactID` on a child row that cannot exist without a contact)
+- Non-FK fields (`null`/`0` meaning something else — use normal null coalescing)
+
+### Symptom
+
+`INSERT/UPDATE ... conflicted with the FOREIGN KEY constraint "FK_..."` when the app value is `0` or an Access-era empty lookup.
 
 ---
 
@@ -395,16 +487,24 @@ There are **ZERO exceptions** to the Access database rule. SQL Server must be us
 5. ✅ Use POCO models
 6. ✅ Use `RepositoryBase<T>` for all repositories
 7. ✅ Use `SystemConstants` and configuration settings
+8. ✅ Put status messages at the bottom; use UpdatePanel + UpdateProgress on interactive pages
+
+### DO NOT (UI)
+
+1. ❌ Place result status above the form fields
+2. ❌ Use HyperLink styled as Back instead of a Button
+3. ❌ Add new interactive pages without UpdatePanel/UpdateProgress when async feedback is expected
 
 ---
 
 ## Where These Rules Are Documented
 
 1. **This File:** `Documentation/HARD_PROJECT_RULES.md` (you are here)
-2. **Repository Standards:** `Documentation/REPOSITORY_STANDARDS.md` (naming conventions & standard methods)
-3. **Architecture:** `Documentation/ARCHITECTURE_RULES.md`
-4. **Project Overview:** `Documentation/PROJECT_OVERVIEW.md`
-5. **Implementation Guide:** `Documentation/WorkInProgress/REPOSITORY_ENFORCEMENT_PHASE1_COMPLETE.md`
+2. **WebForms UI:** `Documentation/WEBFORMS_UI_STANDARDS.md` (status bottom, UpdatePanel, **page-tone panel**)
+3. **Repository Standards:** `Documentation/REPOSITORY_STANDARDS.md` (naming conventions & standard methods)
+4. **Architecture:** `Documentation/ARCHITECTURE_RULES.md`
+5. **Project Overview:** `Documentation/PROJECT_OVERVIEW.md`
+6. **Implementation Guide:** `Documentation/WorkInProgress/REPOSITORY_ENFORCEMENT_PHASE1_COMPLETE.md`
 
 ---
 
@@ -426,6 +526,7 @@ A: Use the `MigrationRunner` project. The main TrackerSQL application should NEV
 
 **THESE RULES ARE NON-NEGOTIABLE. NO EXCEPTIONS (except `sdsUserNames`).**
 
-**Last Updated:** 2025-03-26  
+**Last Updated:** 2026-07-14  
+
 **Rule Version:** 1.0  
 **Status:** ACTIVE

@@ -1,13 +1,13 @@
 # WebForms Page Migration Gap Analysis
 
-**Date:** 2026-06-15 (phases updated from `Site.Master` + `SystemTools.aspx` navigation)  
+**Date:** 2026-06-15 (nav phases); **reachability scan 2026-07-14**  
 **Primary source of truth:** [`README.md`](../../README.md) (§1.1, §11, §15, §18)  
 **Handoff:** [`Page_Migration_Handoff.md`](Page_Migration_Handoff.md)  
 **Control inventory:** [`Controls_Migration_Gap_Analysis.md`](Controls_Migration_Gap_Analysis.md)  
 **Scope:** All `.aspx` / `.aspx.cs` under `Pages/`, `Tools/`, `Administration/`, `Account/`, repo root, and `test/`  
-**Status:** Analysis only — no code changes in this pass.
+**Status:** Active inventory — Phase 2 complete; Phase 3/4 = **when we have time / may not be needed**.
 
-> **Phasing rule:** Migrate pages the app actually navigates to. **Phase 1** = `Site.Master` menu (+ workflow children reached from those pages). **Phase 2** = pages opened from `Tools/SystemTools.aspx` not already in Phase 1. **Phase 3** = `test/` direct-URL pages. **Phase 4** = legacy/orphan pages — migrate only if a live link is discovered.
+> **Phasing rule:** Migrate pages the app actually navigates to. **Phase 1** = `Site.Master` menu (+ workflow children reached from those pages). **Phase 2** = pages opened from `Tools/SystemTools.aspx` not already in Phase 1. **Phase 3 / 4 (retired track)** = direct-URL-only, test, or superseded pages — do **not** schedule migration unless a live link or bookmark need is confirmed.
 
 ---
 
@@ -40,8 +40,7 @@ Each page is assigned a **primary** migration action. Secondary actions appear i
 | `.aspx` pages total (in scope folders) | 72 |
 | **Phase 1** pages (menu + workflow children) | **32** |
 | **Phase 2** pages (SystemTools-only additions) | **4** (+ `SystemTools.aspx` hub) |
-| **Phase 3** pages (`test/` + dev test pages) | **5** |
-| **Phase 4** deferred legacy/orphan pages | **~20** |
+| **Retired track** (Phase 3+4 — when we have time / may not need) | **~25** (excluded from `.csproj` where listed) |
 | Pages referencing `TrackerSQL.Controls` in code-behind | 22 |
 | Pages using `TrackerDb` / `ExecuteSQLGetDataReader` in code-behind | 5 |
 | `.aspx` markup still using legacy Controls `ObjectDataSource` | 14 |
@@ -71,16 +70,16 @@ Auth pages (`Account/*`, `Administration/*` in User menu) use Membership only �
 | `Pages/Contacts.aspx` | Contacts | Already migrated | Done |
 | `Pages/ContactDetails.aspx` | Contacts → New Contact | Already migrated | ODS → code-behind bind optional |
 | `Pages/ContactsAway.aspx` | Contacts → Contacts Away | Already migrated | Done |
-| `Pages/SendCoffeeCheckup.aspx` | Contacts → Send Checkup | **Manager extraction** | `CoffeeCheckupManager` exists; ODS/temp table remain |
+| `Pages/SendCoffeeCheckup.aspx` | Contacts → Send Checkup | **Mostly done** | Page → manager façades + `page-tone-checkup` (2026-07-16); deepen manager internals optional |
 | `Pages/SentRemindersSheet.aspx` | Contacts → View reminders sent | **Thin bind swap** | |
 | `Pages/OrderDetail.aspx` | Orders → New Order | **Manager extraction** | P0 — largest page |
 | `Pages/OrderEntry.aspx` | Orders → View/Edit Orders | **Thin bind swap** | Redirects to `OrderDetail` |
-| `Pages/RecurringOrders.aspx` | Orders → Recurring Orders | Already migrated | Done |
+| `Pages/RecurringOrders.aspx` | Orders → Recurring Orders | Already migrated + **UI retrofit 2026-07-20** (`page-tone-recurring`, `grouping-table`) | Done |
 | `Pages/Repairs.aspx` | Repairs → Repairs | **Thin bind swap** | |
 | `Pages/RepairDetail.aspx` | Repairs → New Repair | **Manager extraction** | |
 | `Pages/ItemsRequired.aspx` | Preperation → Required Sheet | Already migrated | Minor cleanup |
 | `Pages/DeliverySheet.aspx` | Preperation → Delivery Sheet | **Manager extraction** | `DeliverySheetManager` mostly done |
-| `Pages/PreperationSummary.aspx` | Preperation → Preperation Summary | Already migrated | Done |
+| `Pages/PreperationSummary.aspx` | Preperation → Weekly Summary | Already migrated + **UI retrofit 2026-07-21** (`page-tone-summary`) | Done |
 | `Pages/ItemGroups.aspx` | System → Item Groups | **Thin bind swap** | |
 | `Pages/Lookups.aspx` | System → Lookup Tables | Already migrated | Reference pattern |
 | `Tools/LogViewer.aspx` | System → Log Viewer | Minimal / none | Reads log files only |
@@ -99,7 +98,7 @@ These pages are **in Phase 1** because live navigation from menu pages reaches t
 | Page | Reached from | Migration class | Notes |
 |------|--------------|-----------------|-------|
 | `Pages/ContactsAwayDetail.aspx` | `ContactsAway.aspx` | Already migrated | Done |
-| `Pages/RecurringOrderDetails.aspx` | `RecurringOrders.aspx` | **Manager extraction** | Grid link in markup |
+| `Pages/RecurringOrderDetails.aspx` | `RecurringOrders.aspx` | UI retrofit 2026-07-20; optional manager extraction later | Done (UI) |
 | `Pages/RepairStatusChange.aspx` | `Repairs.aspx` | **Manager extraction** | Status-change links |
 | `Pages/GroupItemDetail.aspx` | `ItemGroups.aspx` | **New repo method** | Add/edit group items |
 | `Pages/OrderDone.aspx` | `OrderDetail.aspx` (order complete) | **Manager extraction** | `OrderDoneManager` partial |
@@ -132,7 +131,8 @@ Pages **already in Phase 1** (also linked from menu or SystemTools submenu): `Mo
 
 | Page | SystemTools button | Migration class | Notes |
 |------|-------------------|-----------------|-------|
-| `Tools/XMLtoSQL.aspx` | XML file to SQL | Minimal / defer | Migration utility; `TrackerDb` — low day-to-day use |
+| `Tools/XMLtoSQL.aspx` | XML file to SQL | **Done 2026-07-14** | `TrackerSQLDb` + UI standards + CRUD smoke XML |
+
 | `Tools/HolidayClosures.aspx` | Holiday / Closure Dates | **New repo method** | → `HolidayClosuresRepository` |
 | `Tools/HolidayClosureDetail.aspx` | *(child of HolidayClosures)* | **New repo method** | Insert/update/delete |
 | `Tools/MessagesEditor.aspx` | Messages Editor | Already migrated | Done |
@@ -148,49 +148,52 @@ Pages **already in Phase 1** (also linked from menu or SystemTools submenu): `Mo
 
 ### Phase 2 suggested batch order
 
-1. `SystemTools.aspx` hub (inline operations + `CustomerTypeTbl` ODS)
-2. `HolidayClosures` → `HolidayClosureDetail`
-3. `MessagesEditor` — verify only
-4. `XMLtoSQL` — last; migration tool only
+1. `SystemTools.aspx` hub — **done 2026-07-14** (Set Client Type deferred)
+2. `HolidayClosures` → `HolidayClosureDetail` — **done 2026-07-14**
+3. `MessagesEditor` — **done 2026-07-14** (verify + UI standards)
+4. `XMLtoSQL` — **done 2026-07-14**
 
 ---
 
-## 2.3 Phase 3 — `test/` and dev pages (direct URL)
+## 2.3–2.4 Retired track — when we have time / may not be needed
 
-Low priority — accessed by direct URL, not production menu.
+**Reachability scan (2026-07-14):** filename references across `.aspx` / `.cs` / `.master` / config (excluding `bin`, docs noise). Seeds: `Site.Master`, `Default.aspx`, `Tools/SystemTools.aspx`.
 
-| Page | Migration class | Notes |
-|------|-----------------|-------|
-| `test/ShowTableStruct.aspx` | Out of scope (test) | Schema introspection; `TrackerDb` |
-| `Pages/ContactsTest.aspx` | Out of scope (test) | ContactSummaries diagnostic |
-| `Pages/TestPage.aspx` | Out of scope (test) | Empty + SqlDataSource |
-| `Tools/TestPeople.aspx` | Already migrated | Persons CRUD test |
-| `test/About.aspx`, `test/AutoClassMaker.aspx` | Defer | Missing code-behind |
+### Keep (not retired)
 
----
+| Page | Why kept |
+|------|----------|
+| Menu + SystemTools list | Linked from nav / hub |
+| Drill-downs: `ContactDetails`, `ContactsAwayDetail`, `GroupItemDetail`, `RecurringOrderDetails`, `HolidayClosureDetail`, `RepairStatusChange`, `OrderDone` | Opened from live pages |
+| `Pages/ViewMyOrder.aspx`, `DisableClient.aspx` | Email / URL rewrite entry points |
+| `HttpErrorPage.aspx` | `Global.asax` |
 
-## 2.4 Phase 4 — Deferred legacy (not in menu or SystemTools)
+### `Tools/TestPeople.aspx`
 
-**Do not migrate unless a live link is found.** These are orphan, superseded, or broken pages.
+**Not linked** from `Site.Master`, `Default.aspx`, or `SystemTools.aspx` — direct URL only. Already on `PersonsRepository`; **no migration work scheduled**. Excluded from `TrackerSQL.csproj` 2026-07-14; file kept on disk.
 
-| Page | Why deferred | Action if needed |
-|------|--------------|------------------|
-| `Pages/NewOrderDetail.aspx` | Not in menu; `OrderDetail?NewOrder=true` replaced flow | Retire (legacy) |
-| `Pages/NewOrder.aspx` | Not in menu; typed DataSet legacy | Retire |
-| `Pages/CustomerDetails.aspx` | No active links; legacy bookmark page | Retire instead of migrate |
-| `Pages/OrderSheet.aspx` | No code-behind; not in menu | Retire or rebuild if needed |
-| `Pages/OrdersEdit.aspx` | No code-behind; not in menu | Retire |
-| `Pages/ClientList.aspx` | Broken inherit; not in menu | Fix or retire |
-| `Pages/ThisWeeksOrder.aspx` | Not in menu | Retire |
-| `Pages/SummaryOFCoffeeRequired.aspx` | No code-behind; not in menu | Retire |
-| `Pages/RepairDetailOld.aspx` | Superseded by `RepairDetail` | Delete |
-| `Pages/LogTable.aspx` | Not in menu (`LogViewer` is different) | Migrate only if linked |
-| `Pages/SupportTables.aspx` | Not in menu (duplicate of Lookups) | Retire |
-| `Pages/DeleteOrderLine.aspx` | Only linked from `NewOrderDetail` | Phase 4 unless `OrderDetail` adds link |
-| `Tools/MergeCustomersFromQB.aspx` | Not in menu or SystemTools; QuickBooks no longer used | Retire/remove tool |
-| `Pages/Print.aspx`, `QuaffeeCoffeeTastingSheet.aspx` | Static / empty shells | Defer |
-| `Pages/OrderBuiten2Vineyard.aspx`, `OrderVineyard2Buiten.aspx` | Form variants; inherit `LeaveApp` | Defer |
-| `HttpErrorPage.aspx` | Error display | None |
+### Superseded / orphan (do not migrate)
+
+| Page | Why retired | Project status |
+|------|-------------|----------------|
+| `Pages/NewOrderDetail.aspx` | Replaced by `OrderDetail.aspx?NewOrder=true` | Never in `.csproj` |
+| `Pages/NewOrder.aspx` | Same | Never in `.csproj` |
+| `Pages/DeleteOrderLine.aspx` | Only linked from `NewOrderDetail` | Excluded 2026-07-14 |
+| `Pages/CustomerDetails.aspx` | Superseded by `ContactDetails` | Never in `.csproj` |
+| `Pages/RepairDetailOld.aspx` | Superseded by `RepairDetail` | Never in `.csproj` |
+| `Pages/ClientList.aspx` | Not in menu; broken inherit | Excluded |
+| `Pages/ContactsTest.aspx`, `TestPage.aspx` | Dev/test only | Excluded |
+| `Pages/OrderSheet.aspx`, `OrdersEdit.aspx`, `ThisWeeksOrder.aspx` | Not in menu | Excluded |
+| `Pages/LogTable.aspx`, `SupportTables.aspx` | Superseded by `LogViewer` / `Lookups` | Excluded |
+| `Pages/SummaryOFCoffeeRequired.aspx`, `QuaffeeCoffeeTastingSheet.aspx` | Orphan shells | Excluded |
+| `Pages/OrderBuiten2Vineyard.aspx`, `OrderVineyard2Buiten.aspx` | Form variants; not linked | Excluded |
+| `Pages/Print.aspx`, `LoadSendCoffeeCheckup.aspx` | Orphan | Never in `.csproj` |
+| `Tools/MergeCustomersFromQB.aspx` | QB unused; not in hub | Never in `.csproj` |
+| `Tools/About.aspx`, `GenMachineKeys.aspx`, `AutoClassMaker.aspx` | Dev utilities | Excluded |
+| `Tools/TestPeople.aspx` | Dev CRUD test | Excluded |
+| `test/*`, `smpttester/*` | Test harness | Excluded |
+
+**Do not migrate unless a live bookmark/business need is confirmed.** Re-add to `.csproj` only if reactivating.
 
 ---
 
@@ -219,9 +222,9 @@ Low priority — accessed by direct URL, not production menu.
 | **`OrderDetail.aspx`** | ~2136 | **Mixed:** `OrderTbl`, `ItemTypeTbl`, `PackagingTbl`, `UsedItemGroupTbl`; `TrackerTools` (prefs/dates, session errors) | `OrderItemTbl`, `CustomersTbl`, `OrderDetailDAL`, `ItemTypeTbl` | `OrderManager`, `OrderDetailManager` | **Manager extraction** | Largest page; managers exist but ODS + Tbl calls remain; finish extraction then thin page |
 | **`NewOrderDetail.aspx`** | ~742 | **Heavy:** `CustomersTbl`, `ItemUsageTbl`, `OrderTbl`, `PersonsTbl`, `PackagingTbl`, `UsedItemGroupTbl`; `TrackerDb`+`ExecuteSQLGetDataReader`; `TrackerTools` (prefs/dates) | `OrderDetailDAL` | None | **Manager extraction** | Temp-order flow; needs `OrderManager`/`OrderDetailManager` parity with `OrderDetail` |
 | **`OrderDone.aspx`** | ~243 | `TempOrdersHeaderTbl`; inline SQL on temp header; `SqlDataSource` for header/lines | SqlDataSource (not ODS): temp order + item/packaging lookups | `OrderDoneManager`, `ContactsUsageRepository` | **Manager extraction** | Completion logic partially migrated; binding layer still legacy Tbl + SqlDataSource |
-| **`SendCoffeeCheckup.aspx`** | ~559 | `TempCoffeeCheckup`, `SentRemindersLogTbl` | `TempCoffeeCheckup` (×2) | `CoffeeCheckupManager`, `CoffeeCheckupEmailManager` | **Manager extraction** | Manager for prep/send exists; temp table cleanup + ODS still legacy |
+| **`SendCoffeeCheckup.aspx`** | ~400 | — (via manager) | — | `CoffeeCheckupManager`, `CoffeeCheckupEmailManager` | **Mostly done** | UI + thin page (2026-07-16); staging still used inside manager/repos |
 | **`DeliverySheet.aspx`** | ~728 | `CustomersAccInfoTbl` (invoice type delegate to manager) | Commented `ActiveDeliveryData` | `DeliverySheetRepository`, `DeliverySheetManager` | **Manager extraction** | Sheet build migrated; replace `CustomersAccInfoTbl` callback with `ContactsAccInfoRepository` |
-| **`RecurringOrderDetails.aspx`** | ~536 | `ReoccuringOrderTbl`, `ReoccuringOrderDAL`; `TrackerTools.ParseUserDate` | None | `RecurringOrdersRepository`, `ContactsRepository`, `ItemsRepository`, `ItemPackagingsRepository` | **Manager extraction** | CRUD mostly on repos; date/next-order calc still legacy DAL |
+| **`RecurringOrderDetails.aspx`** | ~536 | — | — | `RecurringOrdersRepository`, … | **UI done 2026-07-20**; optional manager extraction | See COMPLETED_TASKS; WEBFORMS_UI_STANDARDS §3a |
 | **`RepairDetail.aspx`** | ~256 | `RepairsTbl`, `CustomersTbl` | `CompanyNames`, `EquipTypeTbl`, `RepairFaultsTbl`, `RepairStatusesTbl`, `MachineConditionsTbl` | `RepairManager` | **Manager extraction** | Manual load/save + legacy ODS lookups |
 | **`RepairStatusChange.aspx`** | ~123 | `RepairsTbl`, `EquipTypeTbl`, `CompanyNames` | `EquipTypeTbl`, `RepairStatusesTbl` | `RepairManager` | **Manager extraction** | Status update flow |
 
@@ -229,7 +232,7 @@ Low priority — accessed by direct URL, not production menu.
 
 | Page | Lines | Legacy usage | ObjectDataSource (`.aspx`) | Repos / managers | Class | Notes |
 |------|------:|--------------|----------------------------|------------------|-------|-------|
-| `OrderEntry.aspx` | ~70 | `ItemTypeTbl.GetItemTypeDescById` (static) | `OrderData`, `CompanyNames`, `PersonsTbl`, `ItemTypeTbl` | None | **Thin bind swap** | Decompiled stub; grid redirect only; swap ODS → repos |
+| `OrderEntry.aspx` | ~180 | — | `OrderEntryDataSource`, `OrderLookupDataSource` | `OrdersRepository`, `ItemsRepository` | **UI done 2026-07-22** | View/Edit Orders list; page-tone-orders; home card → OrderEntry |
 | `Repairs.aspx` | ~368 | `EquipTypeTbl`, `RepairFaultsTbl`, `RepairStatusesTbl` (display helpers) | `RepairsTbl`, `RepairStatusesTbl` | `RepairManager` (filter/update) | **Thin bind swap** | ODS grid + lookup desc helpers → repos |
 | `SentRemindersSheet.aspx` | ~358 | `SentRemindersLogTbl` | `SentRemindersLogTbl` (×2) | None | **Thin bind swap** | Failed-email UI logic → `CoffeeCheckupManager` or thin page helper |
 | `LogTable.aspx` | ~186 | Display helpers: `LogTbl`, `CompanyNames`, `EquipTypeTbl`, `SectionTypesTbl`, `TransactionTypesTbl`, `PersonsTbl`, `CustomersTbl` | `LogTbl` | None | **Thin bind swap** | Grid ODS + template lookup methods → repos |
@@ -283,9 +286,9 @@ These `.aspx` files reference code-behind classes that **do not exist** in the r
 | `MoveDeliveryDate.aspx` | **1** | ~76 | None in code | `NextPreperationDateByAreaTbl` | `TrackerSQLDb` inline UPDATE in `btnMove_Click` | **New repo method** + thin swap | ODS → `NextPrepDateByAreaRepository`; UPDATE → repo |
 | **`SystemTools.aspx`** | **1 + 2** | ~354 | `ReoccuringOrderDAL`; `TrackerTools.SetNextPreperationDateByArea` | `CustomerTypeTbl` | `ContactsRepository`; `TrackerSQLDb` for prep grid | **Manager extraction** | Menu + dashboard hub |
 | `MessagesEditor.aspx` | **2** | ~457 | None | None | `MessagesResourceManager` | **Already migrated** | |
-| **`HolidayClosures.aspx`** | **2** | ~298 | `HolidayClosureProvider` (Controls) | None | None | **New repo method** | Provider wraps DB → `HolidayClosuresRepository` |
-| **`HolidayClosureDetail.aspx`** | **2** | ~106 | `HolidayClosureProvider` | None | None | **New repo method** | Insert/update/delete via provider → repo |
-| `XMLtoSQL.aspx` | **2** | ~477 | `TrackerDb`, `TrackerTools` | None | None | **Defer** | Migration utility; low day-to-day use |
+| **`HolidayClosures.aspx`** | **2** | ~298 | — | `HolidayClosuresRepository` | `HolidayClosureManager` | **Done 2026-07-14** | List/filter/inline add/copy year; unique date + overlap |
+| **`HolidayClosureDetail.aspx`** | **2** | ~120 | — | `HolidayClosuresRepository` | `HolidayClosureManager` | **Done 2026-07-14** | UpdatePanel UI; Save / Save & Return; status bottom |
+| `XMLtoSQL.aspx` | **2** | ~450 | — | `TrackerSQLDb` | — | **Done 2026-07-14** | SQL Server smoke XML; Access-era command files may still fail |
 | `MergeCustomersFromQB.aspx` | **4** | ~934 | **Heavy:** 6 Tbl types + `AreaTblDAL`; `TrackerTools` | None | None | **Manager extraction** | Not in menu or SystemTools |
 | `TestPeople.aspx` | **3** | ~94 | None | None | `PersonsRepository` | **Phase 3 test** | CRUD test grid |
 
@@ -370,7 +373,7 @@ Quick reference — pages with **`using TrackerSQL.Controls`** or direct **`Trac
 | `SystemTools` | `ReoccuringOrderDAL` + ODS | `TrackerSQLDb` prep grid |
 | `MoveDeliveryDate` | ODS (`NextPreperationDateByAreaTbl`) | Inline UPDATE |
 | `DisableClient` | — | Inline UPDATE via `TrackerSQLDb` |
-| `XMLtoSQL` | — | Full `TrackerDb` usage |
+| `XMLtoSQL` | — | Done — `TrackerSQLDb` (no TrackerDb in page) |
 | `ShowTableStruct` | — | Full `TrackerDb` usage |
 
 ---
@@ -491,8 +494,8 @@ Track progress here and in Cursor todos. Mark `[x]` when page is thin (no Contro
 - [x] `DisableClient.aspx` — `ContactsRepository.ApplyEmailDisableChoice` + `DisableClientManager.DisableFromEmailLink`
 
 #### 1C — Orders workflow
-- [x] `Pages/OrderEntry.aspx` — grid + lookup ODS via `OrderEntryDataSource` / `OrderLookupDataSource`; `OrderEntryListItem` model (no Controls)
-- [x] `Pages/OrderDetail.aspx` — `OrderID` model; repos for lookups, group items, packaging; `ContactEmailDetails` via `ContactsRepository`
+- [x] `Pages/OrderEntry.aspx` — grid + lookup ODS via `OrderEntryDataSource` / `OrderLookupDataSource`; **UI retrofit 2026-07-22** (`page-tone-orders`; home View/Edit → OrderEntry)
+- [x] `Pages/OrderDetail.aspx` — `OrderID` model; repos for lookups, group items, packaging; `ContactEmailDetails` via `ContactsRepository`; **UX complete 2026-07-13** (manual Save / Save & Return, line edit save, mobile New Item stack). Log: `COMPLETED_TASKS.md`
 - [x] `Pages/OrderDone.aspx` — `OrderDoneDataSource` + `OrderDoneManager`; session-scoped temp order via `TempOrderSession`
 
 #### 1D — Prep / delivery
@@ -523,30 +526,22 @@ Track progress here and in Cursor todos. Mark `[x]` when page is thin (no Contro
 
 ### Phase 2 — SystemTools-only pages
 
-- [ ] `Tools/SystemTools.aspx` — complete if not finished in 1G (Reset Prep Dates, Set Last Order Date, Set Client Type)
-- [ ] `Tools/HolidayClosures.aspx` → `HolidayClosureDetail.aspx` — new repo methods
-- [ ] `Tools/MessagesEditor.aspx` — verify (already migrated)
-- [ ] `Tools/XMLtoSQL.aspx` — defer or minimal cleanup (migration utility)
+- [x] `Tools/SystemTools.aspx` — hub cleaned 2026-07-14 (no page SQL/ODS; Set Client Type deferred/removed from UI)
+- [x] `Tools/HolidayClosures.aspx` → `HolidayClosureDetail.aspx` — done 2026-07-14
+- [x] `Tools/MessagesEditor.aspx` — verified 2026-07-14 (`MessagesResourceManager`; status at bottom; UpdateProgress)
+- [x] `Tools/XMLtoSQL.aspx` — cleaned 2026-07-14 (`TrackerSQLDb` + UI standards + `SQLCommands_Test_SQLServer.xml`)
 
-**Phase 2 exit criteria:** Every `SystemTools.aspx` dashboard button opens a migrated page (or documented deferral).
-
----
-
-### Phase 3 — Test / direct URL
-
-- [ ] `test/ShowTableStruct.aspx` — defer (or leave as-is)
-- [ ] `Pages/ContactsTest.aspx` — defer
-- [ ] `Pages/TestPage.aspx` — defer
-- [ ] `Tools/TestPeople.aspx` — verify only
+**Phase 2 exit criteria:** Every `SystemTools.aspx` dashboard button opens a migrated page (or documented deferral). ✅ Met 2026-07-14 (Set Client Type deferred/removed from hub).
 
 ---
 
-### Phase 4 — Legacy / orphan (only if needed)
+### Retired track (when we have time / may not be needed) — 2026-07-14
 
-- [ ] Audit for bookmarked URLs to: `NewOrderDetail`, `NewOrder`, `OrderSheet`, `OrdersEdit`, `ClientList`, `LogTable`, `SupportTables`
-- [ ] Retire `RepairDetailOld.aspx`
-- [ ] Fix or delete `ClientList.aspx` (broken code-behind)
-- [ ] `Pages/DeleteOrderLine.aspx` — only if `OrderDetail` gains delete-line link
+- [x] Reachability scan: menu / home / SystemTools + drill-downs vs direct-URL orphans
+- [x] Mark retired set; exclude from `TrackerSQL.csproj` (files remain on disk)
+- [x] `Tools/TestPeople.aspx` — **not** next work (unlinked); excluded from project
+- [ ] Optional later: delete retired files from disk after confirming no bookmarks
+- [ ] Optional later: reactivate any page only if a real link/need appears
 
 ---
 

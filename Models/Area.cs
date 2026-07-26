@@ -3,10 +3,12 @@ namespace TrackerSQL.Models
     public class Area
     {
         public int AreaID { get; set; }
-        public int ID { get; set; } // Alias for AreaID (for GridView DataKeyNames)
+
+        /// <summary>Read-only alias for any leftover ID bindings. Not mapped to SQL.</summary>
+        public int ID => AreaID;
+
         public string AreaName { get; set; }
         public int? PrepDayOfWeekID { get; set; }
         public int? DeliveryDelay { get; set; }
     }
 }
-

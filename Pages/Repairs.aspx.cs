@@ -1,4 +1,3 @@
-using AjaxControlToolkit;
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -10,18 +9,10 @@ namespace TrackerSQL.Pages
 {
     public partial class Repairs : Page
     {
-        private const string CONST_WHERECLAUSE_SESSIONVAR = "CustomerRepairWhereFilter";
-        private const int CONST_GVCOL_CONTACTNAME = 4;
-        private const int CONST_GVCOL_JOBCARD = 5;
-        private const int CONST_GVCOL_EQUIPMENT = 6;
-        private const int CONST_GVCOL_MACHINESN = 7;
-        private const int CONST_GVCOL_FAULT = 8;
-        private const int CONST_GVCOL_FAULTDESC = 9;
-        private const int CONST_GVCOL_ROID = 10;
-        
         protected ScriptManager smRepairsSummary;
         protected UpdateProgress uprgRepairsSummary;
-        protected UpdatePanel upnlSelection;
+        protected UpdatePanel upnlRepairs;
+        protected Panel pnlRepairs;
         protected DropDownList ddlFilterBy;
         protected TextBox tbxFilterBy;
         protected Button btnGo;
@@ -33,11 +24,19 @@ namespace TrackerSQL.Pages
         protected Button btnApplyDateFilter;
         protected DropDownList ddlRepairStatus;
         protected HyperLink hlAddRepair;
-        protected UpdatePanel upnlRepairsSummary;
+        protected Button btnBack;
         protected GridView gvRepairs;
         protected ObjectDataSource odsRepairs;
         protected ObjectDataSource odsRepairsStatuses;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Label lblFilter;
+
+        protected override void OnInit(EventArgs e)
+        {
+            base.OnInit(e);
+            if (btnBack != null)
+                btnBack.Click += btnBack_Click;
+        }
 
         protected void Page_PreInit(object sender, EventArgs e)
         {
@@ -51,7 +50,7 @@ namespace TrackerSQL.Pages
             {
                 RestoreFilterSettings();
             }
-            
+
             if (this.IsPostBack || !(bool)this.Session["RunningOnMoble"])
                 return;
             this.tbxFilterBy.Width = new Unit(8.0, UnitType.Em);
@@ -94,12 +93,12 @@ namespace TrackerSQL.Pages
             if (ddlDateFilter.SelectedValue == "Custom")
             {
                 divCustomDateRange.Visible = true;
-                
+
                 if (Session["RepairFilterFromDate"] != null && Session["RepairFilterFromDate"] is DateTime fromDate)
                 {
                     tbxFromDate.Text = fromDate.ToString("yyyy-MM-dd");
                 }
-                
+
                 if (Session["RepairFilterToDate"] != null && Session["RepairFilterToDate"] is DateTime toDate)
                 {
                     tbxToDate.Text = toDate.ToString("yyyy-MM-dd");
@@ -124,7 +123,7 @@ namespace TrackerSQL.Pages
             Session["RepairStatusSelection"] = "OPEN";
             Session["RepairFilterBySelection"] = "DateLogged";
             Session["RepairFilterByText"] = "";
-            
+
             ddlDateFilter.SelectedValue = "All";
             ddlRepairStatus.SelectedValue = "OPEN";
             ddlFilterBy.SelectedIndex = 0;
@@ -151,13 +150,20 @@ namespace TrackerSQL.Pages
             return pRepairStatusID > 0 ? new RepairStatusesRepository().GetRepairStatusDesc(pRepairStatusID) : string.Empty;
         }
 
+        private void SetFilterStatus(string message, string cssClass = "status-message status-info")
+        {
+            lblFilter.Text = message ?? string.Empty;
+            if (pnlStatus != null)
+                pnlStatus.Attributes["class"] = string.IsNullOrEmpty(message) ? "status-message" : cssClass;
+        }
+
         protected void btnGo_Click(object sender, EventArgs e)
         {
             Session["RepairFilterBySelection"] = ddlFilterBy.SelectedValue;
             Session["RepairFilterByText"] = tbxFilterBy.Text;
-            lblFilter.Text = "";
+            SetFilterStatus("");
             this.odsRepairs.DataBind();
-            this.upnlRepairsSummary.Update();
+            this.upnlRepairs.Update();
         }
 
         protected void btnReset_Click(object sender, EventArgs e)
@@ -170,30 +176,30 @@ namespace TrackerSQL.Pages
             this.divCustomDateRange.Visible = false;
             this.tbxFromDate.Text = "";
             this.tbxToDate.Text = "";
-            
+
             Session["RepairFilterFromDate"] = null;
             Session["RepairFilterToDate"] = null;
             Session["RepairDateFilterSelection"] = "All";
             Session["RepairStatusSelection"] = "OPEN";
             Session["RepairFilterBySelection"] = "DateLogged";
             Session["RepairFilterByText"] = "";
-            
+
+            SetFilterStatus("");
             this.odsRepairs.DataBind();
-            this.upnlSelection.Update();
-            this.upnlRepairsSummary.Update();
+            this.upnlRepairs.Update();
         }
 
         protected void tbxFilterBy_TextChanged(object sender, EventArgs e)
         {
             Session["RepairFilterByText"] = tbxFilterBy.Text;
-            
+
             if (string.IsNullOrWhiteSpace(this.tbxFilterBy.Text) || this.ddlFilterBy.SelectedIndex != 0)
                 return;
             this.ddlFilterBy.SelectedIndex = 1;
-            
+
             Session["RepairFilterBySelection"] = ddlFilterBy.SelectedValue;
-            
-            this.upnlSelection.Update();
+
+            this.upnlRepairs.Update();
         }
 
         protected void ddlRepairStatus_SelectedIndexChanged(object sender, EventArgs e)
@@ -208,13 +214,10 @@ namespace TrackerSQL.Pages
                 Session["RepairDateFilterSelection"] = "ThisMonth";
                 ApplyDateFilter("ThisMonth");
 
-                lblFilter.Text = "Note: Date filter set to 'This Month' to limit results when viewing Done repairs.";
-                lblFilter.ForeColor = System.Drawing.Color.Blue;
-
-                this.upnlSelection.Update();
+                SetFilterStatus("Note: Date filter set to 'This Month' to limit results when viewing Done repairs.");
             }
             this.odsRepairs.DataBind();
-            this.upnlRepairsSummary.Update();
+            this.upnlRepairs.Update();
         }
 
         protected void ddlDateFilter_SelectedIndexChanged(object sender, EventArgs e)
@@ -227,11 +230,15 @@ namespace TrackerSQL.Pages
 
             if (selectedFilter != "Custom")
             {
+                // Preset ranges are resolved in RepairManager from ddlDateFilter;
+                // keep textboxes empty so ControlParameters do not override.
                 tbxFromDate.Text = "";
                 tbxToDate.Text = "";
 
                 ApplyDateFilter(selectedFilter);
-                lblFilter.Text = "";
+                SetFilterStatus(selectedFilter == "All"
+                    ? ""
+                    : $"Date filter: {ddlDateFilter.SelectedItem.Text}.");
             }
             else
             {
@@ -244,14 +251,11 @@ namespace TrackerSQL.Pages
                 Session["RepairFilterFromDate"] = oneMonthAgo;
                 Session["RepairFilterToDate"] = today;
 
-                lblFilter.Text = "Custom date range set to last month. Adjust dates and click Apply if needed.";
-                lblFilter.ForeColor = System.Drawing.Color.Green;
+                SetFilterStatus("Custom date range set to last month. Adjust dates and click Apply if needed.", "status-message status-success");
             }
 
-            this.upnlSelection.Update();
-
             this.odsRepairs.DataBind();
-            this.upnlRepairsSummary.Update();
+            this.upnlRepairs.Update();
         }
 
         protected void btnApplyDateFilter_Click(object sender, EventArgs e)
@@ -279,15 +283,19 @@ namespace TrackerSQL.Pages
             Session["RepairFilterToDate"] = toDate;
             Session["RepairDateFilterSelection"] = "Custom";
 
-            lblFilter.Text = $"Applied custom range: {fromDate?.ToString("yyyy-MM-dd")} to {toDate?.ToString("yyyy-MM-dd")}";
-            lblFilter.ForeColor = System.Drawing.Color.Blue;
+            SetFilterStatus($"Applied custom range: {fromDate?.ToString("yyyy-MM-dd")} to {toDate?.ToString("yyyy-MM-dd")}");
 
             this.odsRepairs.DataBind();
-            this.upnlRepairsSummary.Update();
+            this.upnlRepairs.Update();
         }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Default.aspx");
+        }
+
         private void ApplyDateFilter(string dateFilter)
         {
-            var repairManager = new RepairManager();
             DateTime? fromDate = null;
             DateTime? toDate = null;
 

@@ -1,19 +1,30 @@
-<%@ Page Title="Lookup Tables" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
+<%@ Page Title="Lookups" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="Lookups.aspx.cs" Inherits="TrackerSQL.Pages.Lookups" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntLookupHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntLookupBdy" ContentPlaceHolderID="MainContent" runat="server">
-    <asp:ScriptManager ID="scmLookup" runat="server">
-    </asp:ScriptManager>
-    <asp:UpdateProgress ID="uprgLookup" runat="server">
+    <asp:ScriptManager ID="scmLookup" runat="server" EnablePartialRendering="true" />
+
+    <asp:UpdateProgress ID="uprgLookup" runat="server" DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            Please Wait&nbsp;<img src="../images/animi/QuaffeeProgress.gif" alt="Please Wait..." />&nbsp;...
+            <div class="status-message status-info page-tone-progress">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Please wait...
+            </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
-    <h2>Tables...</h2>
-    <asp:Label ID="lblStatus" runat="server" ForeColor="Red" />
-    <ajaxToolkit:TabContainer ID="tabcLookup" runat="server" ActiveTabIndex="5" CssClass="MyTabStyle" ScrollBars="None" UseVerticalStripPlacement="false">
+
+    <asp:Panel ID="pnlLookups" runat="server" CssClass="simpleForm page-tone-panel page-tone-lookups">
+        <div class="page-tone-header tool-card-header">
+            <img class="tool-card-icon" src="../images/imgButtons/icons8-lookups-30.png" alt="" />
+            <div>
+                <h1 class="page-tone-title">Lookups</h1>
+                <p class="page-tone-subtitle">Configure system lookup tables</p>
+            </div>
+        </div>
+
+        <ajaxToolkit:TabContainer ID="tabcLookup" runat="server" ActiveTabIndex="0" CssClass="MyTabStyle" ScrollBars="None" UseVerticalStripPlacement="false">
         <ajaxToolkit:TabPanel runat="server" HeaderText="Items" ID="tabpnlItems">
             <HeaderTemplate>
                 Items
@@ -24,11 +35,13 @@
                         <div class="filter-toolbar">
                             <div class="filter-section search-controls">
                                 <div class="filter-control">
-                                    <label for="<%=tbxItemSearch.ClientID%>">Search:</label>
+                                    <asp:Label AssociatedControlID="tbxItemSearch" runat="server" Text="Search:" />
                                     <asp:TextBox ID="tbxItemSearch" runat="server" OnTextChanged="tbxItemSearch_TextChanged" />
                                 </div>
-                                <asp:Button ID="btnGon" Text="Go" runat="server" ToolTip="search for this item" OnClick="btnGo_Click" />
-                                <asp:Button ID="btnReset" Text="Reset" runat="server" OnClick="btnReset_Click" />
+                                <asp:Button ID="btnGon" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="search for this item" OnClick="btnGo_Click" />
+                                <asp:Button ID="btnReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnReset_Click" />
                             </div>
                         </div>
                         <div class="results-container scrollable-table-container">
@@ -524,47 +537,52 @@
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlAreas" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <ContentTemplate>
-                        <div class="responsive-layout-container" style="display: flex; gap: 20px; width: 90%; height: 600px; box-sizing: border-box;">
-                            <div class="layout-main-panel" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;">
-                                <div class="results-container scrollable-table-container" style="flex: 1; overflow: auto;max-height: 580px;">
+                        <div class="lookups-areas-layout">
+                            <div class="lookups-areas-list">
+                                <div class="lookups-areas-list-scroll">
                                     <asp:GridView ID="gvAreas" runat="server" AllowPaging="True" PageSize="20" AllowSorting="True"
-                                        AutoGenerateColumns="False" BackColor="White" BorderColor="#DEDFDE" BorderStyle="None" CssClass="results-table no-sticky-last"
-                                        Style="width: 90%;"
-                                        BorderWidth="1px" CellPadding="4" ForeColor="Black" DataKeyNames="ID"
-                                        ShowFooter="True" OnRowCommand="gvAreas_OnRowCommand" OnSelectedIndexChanged="gvAreas_OnSelectedIndexChanged"
+                                        AutoGenerateColumns="False" CssClass="results-table lookups-areas-table no-sticky-last"
+                                        DataKeyNames="AreaID" ShowFooter="True"
+                                        OnRowCommand="gvAreas_OnRowCommand" OnSelectedIndexChanged="gvAreas_OnSelectedIndexChanged"
                                         OnPageIndexChanging="gvAreas_PageIndexChanging"
                                         OnSorting="gvAreas_Sorting"
                                         OnRowEditing="gvAreas_RowEditing"
                                         OnRowCancelingEdit="gvAreas_RowCancelingEdit"
                                         OnRowUpdating="gvAreas_RowUpdating">
-                                        <AlternatingRowStyle BackColor="White" />
                                         <Columns>
-                                            <asp:CommandField ShowSelectButton="True" SelectImageUrl="~/images/imgButtons/SelectItem.gif" ButtonType="Image" />
-                                            <asp:TemplateField HeaderText="Area Name" SortExpression="AreaName" ItemStyle-CssClass="wrap"  >
+                                            <asp:CommandField ShowSelectButton="True"
+                                                SelectImageUrl="~/images/imgButtons/SelectItem.gif" ButtonType="Image"
+                                                HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd"
+                                                FooterStyle-CssClass="col-cmd" />
+                                            <asp:TemplateField HeaderText="Area Name" SortExpression="AreaName"
+                                                HeaderStyle-CssClass="col-area-name" ItemStyle-CssClass="col-area-name wrap"
+                                                FooterStyle-CssClass="col-area-name">
                                                 <EditItemTemplate>
-                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text='<%# Bind("AreaName") %>'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text='<%# Bind("AreaName") %>' Width="100%" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblAreaName" runat="server" Text='<%# Bind("AreaName") %>'></asp:Label>
+                                                    <asp:Label ID="lblAreaName" runat="server" Text='<%# Bind("AreaName") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text=""></asp:TextBox>
+                                                    <asp:TextBox ID="tbxAreaName" runat="server" Text="" Width="100%" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="ID" Visible="false">
                                                 <EditItemTemplate>
-                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("ID") %>' />
+                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("AreaID") %>' />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("ID") %>' />
+                                                    <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("AreaID") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate></FooterTemplate>
                                             </asp:TemplateField>
-                                            <asp:TemplateField ShowHeader="False">
+                                            <asp:TemplateField ShowHeader="False"
+                                                HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd"
+                                                FooterStyle-CssClass="col-cmd">
                                                 <EditItemTemplate>
                                                     <asp:ImageButton ID="btnAreaUpdate" runat="server" CausesValidation="True" CommandName="Update"
                                                         AlternateText="Update" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
-                                                    &nbsp;<asp:ImageButton ID="btnAreaCancel" runat="server" CausesValidation="False"
+                                                    <asp:ImageButton ID="btnAreaCancel" runat="server" CausesValidation="False"
                                                         CommandName="Cancel" AlternateText="Cancel" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
@@ -577,50 +595,52 @@
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                         </Columns>
-                                        <FooterStyle BackColor="#CCCC99" BorderStyle="Dashed" BorderColor="Cornsilk" />
-                                        <HeaderStyle BackColor="#6B696B" Font-Bold="True" ForeColor="Brown" />
-                                        <PagerStyle BackColor="#F7F7DE" ForeColor="Black" HorizontalAlign="Right" />
-                                        <RowStyle BackColor="#F7F7DE" />
-                                        <SelectedRowStyle BackColor="#63cb66" Font-Bold="True" ForeColor="#4e664d" />
-                                        <SortedAscendingCellStyle BackColor="#FBFBF2" />
-                                        <SortedAscendingHeaderStyle BackColor="#848384" />
-                                        <SortedDescendingCellStyle BackColor="#EAEAD3" />
-                                        <SortedDescendingHeaderStyle BackColor="#575357" />
+                                        <SelectedRowStyle CssClass="SelectedRowStyle" />
+                                        <PagerSettings Mode="NumericFirstLast" Position="Bottom" />
                                     </asp:GridView>
                                 </div>
                             </div>
-                            <div class="layout-detail-panel" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;">
-                                <h4 style="margin-top: 0; margin-bottom: 10px;">Delivery Days for Selected Area</h4>
-                                <div class="layout-panel-top scrollable-table-container" style="flex: 1; overflow: auto; max-height: 560px;">
+                            <div class="lookups-areas-days">
+                                <h4 class="lookups-areas-days-title">Delivery Days for Selected Area</h4>
+                                <div class="lookups-areas-days-scroll">
                                     <asp:GridView ID="gvAreaDays" runat="server" AutoGenerateColumns="False"
-                                        CssClass="results-table" Visible="false" ShowFooter="true" DataKeyNames="AreaPrepDaysID"
+                                        CssClass="results-table in-panel-grid lookups-area-days-table no-sticky-last"
+                                        Visible="false" ShowFooter="true" DataKeyNames="AreaPrepDaysID"
                                         OnRowEditing="gvAreaDays_RowEditing"
                                         OnRowCancelingEdit="gvAreaDays_RowCancelingEdit"
                                         OnRowUpdating="gvAreaDays_OnRowUpdating"
                                         OnRowDeleting="gvAreaDays_RowDeleting"
                                         OnRowCommand="gvAreaDays_RowCommand">
                                         <EmptyDataTemplate>
-                                            <asp:DropDownList ID="ddlPreperationDoW" runat="server">
-                                                <asp:ListItem Value="1">Sunday</asp:ListItem>
-                                                <asp:ListItem Value="2">Monday</asp:ListItem>
-                                                <asp:ListItem Selected="True" Value="3">Tuesday</asp:ListItem>
-                                                <asp:ListItem Value="4">Wednesday</asp:ListItem>
-                                                <asp:ListItem Value="5">Thursday</asp:ListItem>
-                                                <asp:ListItem Value="6">Friday</asp:ListItem>
-                                                <asp:ListItem Value="7">Saturday</asp:ListItem>
-                                            </asp:DropDownList>&nbsp;&nbsp;
-                                            <asp:TextBox ID="tbxDeliveryDelay" runat="server" Text="1" />&nbsp;&nbsp;
-                                            <asp:TextBox ID="tbxDeliveryOrder" runat="server" Text="20" />&nbsp;&nbsp;&nbsp;
-                                            <asp:Button ID="btnAddAreaDay" runat="server" Text="Add Prep Day" OnClick="btnAddAreaDay_Click" />
+                                            <div class="lookups-area-days-empty">
+                                                <asp:DropDownList ID="ddlPreperationDoW" runat="server">
+                                                    <asp:ListItem Value="1">Sunday</asp:ListItem>
+                                                    <asp:ListItem Value="2">Monday</asp:ListItem>
+                                                    <asp:ListItem Selected="True" Value="3">Tuesday</asp:ListItem>
+                                                    <asp:ListItem Value="4">Wednesday</asp:ListItem>
+                                                    <asp:ListItem Value="5">Thursday</asp:ListItem>
+                                                    <asp:ListItem Value="6">Friday</asp:ListItem>
+                                                    <asp:ListItem Value="7">Saturday</asp:ListItem>
+                                                </asp:DropDownList>
+                                                <asp:TextBox ID="tbxDeliveryDelay" runat="server" Text="1" Width="3em"
+                                                    ToolTip="Delivery delay (days)" />
+                                                <asp:TextBox ID="tbxDeliveryOrder" runat="server" Text="20" Width="3em"
+                                                    ToolTip="Delivery order" />
+                                                <asp:Button ID="btnAddAreaDay" runat="server" Text="Add Prep Day"
+                                                    CssClass="filter-panel-btn" OnClick="btnAddAreaDay_Click" />
+                                            </div>
                                         </EmptyDataTemplate>
                                         <Columns>
-                                            <asp:TemplateField HeaderText="Prep Day">
+                                            <asp:TemplateField HeaderText="Prep Day"
+                                                HeaderStyle-CssClass="col-prep-day" ItemStyle-CssClass="col-prep-day"
+                                                FooterStyle-CssClass="col-prep-day">
                                                 <EditItemTemplate>
-                                                    <asp:DropDownList ID="ddlPreperationDoW" runat="server" SelectedValue='<%# Bind("PrepDayOfWeekID") %>'>
+                                                    <asp:DropDownList ID="ddlPreperationDoW" runat="server"
+                                                        SelectedValue='<%# Eval("PrepDayOfWeekID") == null ? "0" : Eval("PrepDayOfWeekID").ToString() %>'>
                                                         <asp:ListItem Value="0" Text="--select a day--" />
                                                         <asp:ListItem Value="1">Sunday</asp:ListItem>
                                                         <asp:ListItem Value="2">Monday</asp:ListItem>
-                                                        <asp:ListItem Selected="True" Value="3">Tuesday</asp:ListItem>
+                                                        <asp:ListItem Value="3">Tuesday</asp:ListItem>
                                                         <asp:ListItem Value="4">Wednesday</asp:ListItem>
                                                         <asp:ListItem Value="5">Thursday</asp:ListItem>
                                                         <asp:ListItem Value="6">Friday</asp:ListItem>
@@ -628,6 +648,10 @@
                                                     </asp:DropDownList>
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
+                                                    <asp:Label ID="lblPrepDay" runat="server"
+                                                        Text='<%# GetPrepDayName(Eval("PrepDayOfWeekID")) %>' />
+                                                </ItemTemplate>
+                                                <FooterTemplate>
                                                     <asp:DropDownList ID="ddlPreperationDoW" runat="server">
                                                         <asp:ListItem Value="0" Text="--select a day--" />
                                                         <asp:ListItem Value="1">Sunday</asp:ListItem>
@@ -638,57 +662,50 @@
                                                         <asp:ListItem Value="6">Friday</asp:ListItem>
                                                         <asp:ListItem Value="7">Saturday</asp:ListItem>
                                                     </asp:DropDownList>
-                                                </ItemTemplate>
-                                                <FooterTemplate>
-                                                    <asp:DropDownList ID="ddlPreperationDoW" runat="server" SelectedValue='<%# Bind("PrepDayOfWeekID") %>'>
-                                                        <asp:ListItem Value="0" Text="--select a day--" />
-                                                        <asp:ListItem Value="1">Sunday</asp:ListItem>
-                                                        <asp:ListItem Value="2">Monday</asp:ListItem>
-                                                        <asp:ListItem Selected="True" Value="3">Tuesday</asp:ListItem>
-                                                        <asp:ListItem Value="4">Wednesday</asp:ListItem>
-                                                        <asp:ListItem Value="5">Thursday</asp:ListItem>
-                                                        <asp:ListItem Value="6">Friday</asp:ListItem>
-                                                        <asp:ListItem Value="7">Saturday</asp:ListItem>
-                                                    </asp:DropDownList>
                                                 </FooterTemplate>
                                             </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Dlvry Delay" SortExpression="DeliveryDelayDays">
+                                            <asp:TemplateField HeaderText="Dlvry Delay" SortExpression="DeliveryDelayDays"
+                                                HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight"
+                                                FooterStyle-CssClass="col-tight">
                                                 <EditItemTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text='<%# Bind("DeliveryDelayDays") %>'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text='<%# Bind("DeliveryDelayDays") %>' />
                                                     <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    &nbsp;+&nbsp;<asp:Label ID="lblDeliveryDay" runat="server" Width="2em" Text='<%# Bind("DeliveryDelayDays") %>' />
+                                                    +&nbsp;<asp:Label ID="lblDeliveryDay" runat="server" Text='<%# Bind("DeliveryDelayDays") %>' />
                                                     =&nbsp;<asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetDeliveryDay(Eval("PrepDayOfWeekID").ToString(),Eval("DeliveryDelayDays").ToString()) %>' />
                                                     <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text='1'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxDeliveryDelay" runat="server" Width="2em" Text="1" />
                                                     <asp:HiddenField ID="AreaPrepDaysIDHidden" runat="server" Value='<%# Bind("AreaPrepDaysID") %>' />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Dlvry Order" SortExpression="DeliveryOrder">
+                                            <asp:TemplateField HeaderText="Dlvry Order" SortExpression="DeliveryOrder"
+                                                HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight"
+                                                FooterStyle-CssClass="col-tight">
                                                 <EditItemTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text='<%# Bind("DeliveryOrder") %>'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text='<%# Bind("DeliveryOrder") %>' />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblDeliveryOrder" runat="server" Text='<%# Bind("DeliveryOrder") %>'></asp:Label>
+                                                    <asp:Label ID="lblDeliveryOrder" runat="server" Text='<%# Bind("DeliveryOrder") %>' />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text='30'></asp:TextBox>
+                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text="30" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
-                                            <asp:TemplateField ShowHeader="False">
+                                            <asp:TemplateField ShowHeader="False"
+                                                HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd"
+                                                FooterStyle-CssClass="col-cmd">
                                                 <EditItemTemplate>
                                                     <asp:ImageButton ID="btnAreaDaysUpdate" runat="server" CausesValidation="False" CommandName="Update"
                                                         AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
-                                                    &nbsp;
                                                     <asp:ImageButton ID="btnAreaDaysCancel" runat="server" CausesValidation="False" CommandName="Cancel"
                                                         AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
                                                     <asp:ImageButton ID="btnAreaDaysEdit" runat="server" CausesValidation="False" CommandName="Edit"
-                                                        Text="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />&nbsp;
+                                                        Text="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
                                                     <asp:ImageButton ID="btnAreaDaysDelete" runat="server" CausesValidation="False" CommandName="Delete" Text="Delete"
                                                         ImageUrl="~/images/imgButtons/Trashcan.gif" />
                                                 </ItemTemplate>
@@ -698,12 +715,10 @@
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                         </Columns>
-                                        <FooterStyle BackColor="#90e010" BorderStyle="Dashed" BorderColor="Cornsilk" />
                                     </asp:GridView>
                                 </div>
                             </div>
                         </div>
-
                     </ContentTemplate>
                 </asp:UpdatePanel>
             </ContentTemplate>
@@ -1182,6 +1197,12 @@
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
     </ajaxToolkit:TabContainer>
+
+        <div class="status-message status-error" style="margin-top: 12px;" id="pnlLookupStatus" runat="server" visible="false">
+            <asp:Label ID="lblStatus" runat="server" />
+        </div>
+    </asp:Panel>
+
     <%-- REMOVED: sdsItems SqlDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Use ItemsRepository in code-behind --%>
     <%-- REMOVED: odsAllItems ObjectDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Legacy ItemTypeTbl, use ItemsRepository --%>
     

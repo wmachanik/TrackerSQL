@@ -124,12 +124,11 @@
     <Content Include="App_Data\SQLCommands-RepStatusUpdate-01.xml" />
     <Content Include="App_Data\SQLCommands001.xml" />
     <Content Include="App_Data\SQLCommands_AwayPeriod.xml" />
-    <Content Include="CleanMigrationTables.sql" />
+    <Content Include="App_Data\SQLCommands_Test_SQLServer.xml" />
     <Content Include="Default.aspx" />
     <Content Include="DevTools\DatabaseTools\diagnose-contacts-orders.sql" />
     <Content Include="DisableClient.aspx" />
     <Content Include="Documentation\repomix-output.xml" />
-    <Content Include="fix-step-n-data-migration.sql" />
     <Content Include="Global.asax" />
     <Content Include="HttpErrorPage.aspx" />
     <Content Include="images\animi\arrv_white.gif" />
@@ -200,18 +199,11 @@
     <Content Include="images\imgButtons\World.gif" />
     <Content Include="images\logo\QuaffeeLogoSmall.jpg" />
     <Content Include="images\logo\QuaffeeLogoWeb.jpg" />
-    <Content Include="Migrations\RemigrateDateColumns.sql" />
-    <Content Include="Migrations\Scripts\DropAllTables.sql" />
-    <Content Include="Migrations\VerifyMigrationReport.sql" />
-    <Content Include="Migrations\VerifyMigrationReport_FIXED.sql" />
-    <Content Include="Pages\ClientList.aspx" />
     <Content Include="Pages\ItemsRequired.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
     <Content Include="Pages\Contacts.aspx" />
-    <Content Include="Pages\ContactsTest.aspx" />
     <Content Include="Pages\ContactsAway.aspx" />
     <Content Include="Pages\ContactsAwayDetail.aspx" />
-    <Content Include="Pages\DeleteOrderLine.aspx" />
     <Content Include="Pages\DeliverySheet.aspx" />
     <Content Include="Pages\GroupItemDetail.aspx" />
     <Content Include="Pages\ViewMyOrder.aspx" />
@@ -219,17 +211,11 @@
     <Content Include="Tools\HolidayClosures.aspx" />
     <Content Include="Pages\ItemGroups.aspx" />
     <Content Include="Pages\LeaveApp.aspx" />
-    <Content Include="Pages\LogTable.aspx" />
     <Content Include="Pages\Lookups.aspx" />
-    <Content Include="Pages\OrderBuiten2Vineyard.aspx" />
     <Content Include="Pages\OrderDetail.aspx" />
     <Content Include="Pages\OrderDone.aspx" />
     <Content Include="Pages\OrderEntry.aspx" />
-    <Content Include="Pages\OrdersEdit.aspx" />
-    <Content Include="Pages\OrderSheet.aspx" />
-    <Content Include="Pages\OrderVineyard2Buiten.aspx" />
     <Content Include="Pages\PreperationSummary.aspx" />
-    <Content Include="Pages\QuaffeeCoffeeTastingSheet.aspx" />
     <Content Include="Pages\\RecurringOrderDetails.aspx" />
     <Content Include="Pages\\RecurringOrders.aspx" />
     <Content Include="Pages\RepairDetail.aspx" />
@@ -237,92 +223,14 @@
     <Content Include="Pages\RepairStatusChange.aspx" />
     <Content Include="Pages\SendCoffeeCheckup.aspx" />
     <Content Include="Pages\SentRemindersSheet.aspx" />
-    <Content Include="Pages\SummaryOFCoffeeRequired.aspx" />
-    <Content Include="Pages\SupportTables.aspx" />
-    <Content Include="Pages\TestPage.aspx" />
-    <Content Include="Pages\ThisWeeksOrder.aspx" />
     <Content Include="Classes\Web.config" />
     <Content Include="Tools\Generate-MigrationPlan.ps1" />
     <Content Include="Docs\MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md" />
-    <Content Include="csv Migrations\MigrationRunner\Metadata\PlanEdits\PlanNormalize.csv" />
-    <Content Include="csv Migrations\MigrationRunner\Metadata\PlanEdits\PlanColumns.csv" />
     <Content Include="Documentation\FIXES_READY_FOR_TESTING.md" />
-    <Content Include="Migrations\Scripts\README-DropAllTables.md" />
-    <Content Include="Migrations\Scripts\TestDropAllTables.bat" />
-    <Content Include="Migrations\Scripts\FixMigrationAfterDrop.bat" />
-    <Content Include="Migrations\Scripts\MigrationRunner-MenuOptions.md" />
-    <Content Include="Documentation\FIXED-DROP-COLUMN-ISSUE.md" />
-    <Content Include="Migrations\MIGRATION_RENAME_GUIDE.md" />
-    <Content Include="Migrations\POST_MIGRATION_CODE_UPDATES.md" />
-    <Content Include="Migrations\README_MIGRATION.md" />
-    <Content Include="Migrations\STEP_N_FIX_SUMMARY.md" />
-    <Content Include="Migrations\DUPLICATE_PK_FIX_SUMMARY.md" />
-    <Content Include="Migrations\TROUBLESHOOTING.md" />
-    <Content Include="Migrations\ACTION_PLAN.md" />
-    <Content Include="Migrations\SCHEMA_DROP_VERIFICATION.md" />
-    <Content Include="Migrations\FINAL_FIX_IDENTITY_INSERT_BUG.md" />
-    <Content Include="Migrations\VerifyMigrationFix.ps1" />
-    <Content Include="Migrations\ConvertMigrationReportToImportFormat.ps1" />
-    <Content Include="Migrations\FixPlanConstraintsPrimaryKeys.ps1" />
-    <Content Include="Migrations\FIX_PRIMARY_KEY_CONSTRAINTS.md" />
-    <Content Include="Migrations\FixCsvImporterPrimaryKeyDetection.ps1" />
-    <Content Include="Migrations\PatchCsvImporterForPrimaryKeys.ps1" />
-    <Content Include="Migrations\MANUAL_FIX_CSV_IMPORTER.md" />
-    <Content Include="Migrations\ApplyRemainingCsvFixes.ps1" />
-    <Content Include="Migrations\AddColumnTypesToConstraints.ps1" />
-    <Content Include="Migrations\PostCsvImport_AddDateColumnTypes.ps1" />
     <Content Include=".git\COMMIT_EDITMSG_TEMP" />
     <Content Include=".git\COMMIT_MSG2" />
-    <Content Include="Migrations\FIX_NULL_DATES_IN_ACCESSSRC.md" />
-    <Content Include="Migrations\Import-AccessClientUsageDates.ps1" />
-    <Content Include="Migrations\DATES_NULL_SUMMARY.md" />
-    <Content Include="Migrations\CheckAccessDates.ps1" />
-    <Content Include="Migrations\MIGRATION_COMPLETE.md" />
-    <Content Include="Migrations\QUICK_REFERENCE.md" />
-    <Content Include="Migrations\MIGRATION_PROCESS_DATES.md" />
-    <Content Include="Migrations\COMPLETE_FIX_SUMMARY.md" />
-    <Content Include="Migrations\ANSWER_YES_MIGRATION_FIXED.md" />
-    <Content Include="Migrations\VISUAL_SUMMARY.md" />
-    <Content Include="Migrations\GENERATOR_FIX_COMPLETE.md" />
-    <Content Include="Migrations\ANSWER_YES_GENERATOR_FIXED.md" />
-    <Content Include="Migrations\ORDER_MATTERS_MIGRATION_PROCESS.md" />
-    <Content Include="Migrations\FULLY_AUTOMATED_NOW.md" />
-    <Content Include="Migrations\AUTOMATED_SOLUTION_COMPLETE.md" />
-    <Content Include="Migrations\VERIFICATION_BUILT_IN.md" />
-    <Content Include="Migrations\VERIFICATION_VISUAL_SUMMARY.md" />
-    <Content Include="Migrations\DATETIME_CONVERSION_ERROR_FIXED.md" />
-    <Content Include="Migrations\HOW_TO_APPLY_THE_FIX.md" />
-    <Content Include="Migrations\RunFix.ps1" />
-    <Content Include="Migrations\README_FIX.md" />
-    <Content Include="Migrations\READY_TO_GENERATE.md" />
-    <Content Include="Migrations\PS1_VS_CSHARP_IMPLEMENTATION.md" />
-    <Content Include="Migrations\WHY_RUNFIX_EXISTS.md" />
-    <Content Include="Migrations\CleanupObsoleteFiles.ps1" />
-    <Content Include="Migrations\RUNFIX_EXPLAINED.md" />
-    <Content Include="Migrations\MULTIPLE_ISSUES_FOUND.md" />
-    <Content Include="Migrations\DATE_HEURISTIC_TOO_AGGRESSIVE.md" />
-    <Content Include="Migrations\ALMOST_DONE_93_PERCENT.md" />
-    <Content Include="Migrations\FINAL_ISSUE_CLIENTUSAGELINES_DATE.md" />
-    <Content Include="Migrations\TWO_FIXES_NEED_REGENERATE.md" />
-    <Content Include="Migrations\AMBIGUOUS_COLUMN_NAMES_FIX.md" />
-    <Content Include="Migrations\REGEX_FIX_BROKEN_PROPER_FIX.md" />
-    <Content Include="Migrations\GITHUB_SUBMISSION_COMPLETE.md" />
-    <Content Include="Migrations\Data\Metadata\TableMigrationReport-20-16-Oct-a.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-09-Mar-26.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-09-Mar-26.xlsx" />
-    <Content Include="Migrations\Data\TableMigrationReport-10-Mar-26.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-10-Mar-26.xlsx" />
-    <Content Include="Migrations\Data\TableMigrationReport-20-16-Oct-a.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-20-oct-a.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-20-oct.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-20-oct.xlsx" />
-    <Content Include="Migrations\Data\TableMigrationReport-28-oct.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-28-oct.xlsx" />
-    <Content Include="Migrations\Data\TableMigrationReport-Nov-06.csv" />
-    <Content Include="Migrations\Data\TableMigrationReport-Nov-06.xlsx" />
     <Content Include="Documentation\PROJECT_OVERVIEW.md" />
     <Content Include="Documentation\AI_CONTEXT.md" />
-    <Content Include="Documentation\MIGRATION_GUIDE.md" />
     <Content Include="Documentation\TABLE_SCHEMA_REFERENCE.md" />
     <Content Include="Documentation\CODE_STRUCTURE.md" />
     <Content Include="Documentation\README.md" />
@@ -383,13 +291,9 @@
     <Content Include="DevTools\Scripts\OrganizeDevTools.ps1" />
     <Content Include="DevTools\Scripts\UnblockBinaries.ps1" />
     <Content Include="DevTools\Documentation\Next_Migration_ClientList.md" />
-    <Content Include="Migrations\RunMigrationAuto.ps1" />
-    <Content Include="Migrations\MIGRATION_FIXES_COMPLETE.md" />
-    <Content Include="Migrations\VERIFICATION_GUIDE.md" />
     <Content Include="CONTRIBUTING.md" />
     <Content Include="README.md" />
     <Content Include="Documentation\WorkInProgress\ROASTDATE_PREPDATE_MIGRATION.md" />
-    <Content Include="Data\Metadata\TableMigrationReport-14-May-26.csv" />
     <Content Include="DevTools\Documentation\TrackerDb_to_TrackerSQLDb_Migration_Plan.md" />
     <Content Include="DevTools\Scripts\Find-TrackerDbUsages.ps1" />
     <Content Include="DevTools\Documentation\Migration_Template.md" />
@@ -427,21 +331,12 @@
     <None Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
-    <Content Include="smpttester\index.aspx" />
+    <Content Include="Scripts\unsavedChanges.js" />
     <Content Include="Styles\MobileSite.css" />
     <Content Include="Styles\Site.css" />
-    <Content Include="test\About.aspx" />
-    <Content Include="test\AutoClassMaker.aspx" />
     <Content Include="Tools\EmailDiagnostics.aspx" />
     <Content Include="Tools\EmailDiagnostics.css" />
-    <Content Include="test\PrintingTblHeadersTest.htm" />
-    <Content Include="test\ShowTableStruct.aspx" />
-    <Content Include="test\SQLCommands.xml" />
     <Content Include="App_Data\SQLCommands2.xml" />
-    <Content Include="test\SQLCommandsFlushSEText.xml" />
-    <Content Include="Tools\About.aspx" />
-    <Content Include="Tools\AutoClassMaker.aspx" />
-    <Content Include="Tools\GenMachineKeys.aspx" />
     <Content Include="Tools\LogViewer.aspx" />
     <Content Include="Tools\MessagesEditor.aspx" />
     <Content Include="Tools\MoveDeliveryDate.aspx" />
@@ -453,10 +348,8 @@
     <Content Include="Tools\SQLCommandsGroupItems14Aug2017.xml" />
     <Content Include="Tools\SystemData.aspx" />
     <Content Include="Tools\SystemTools.aspx" />
-    <Content Include="Tools\TestPeople.aspx" />
     <Content Include="Tools\XMLtoSQL.aspx" />
     <Content Include="Web.config" />
-    <Content Include="smpttester\web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
   </ItemGroup>
@@ -530,7 +423,9 @@
     <Compile Include="Classes\ChangeRequestSubmission.cs" />
     <Compile Include="Classes\AreaDeliveryMatrix.cs" />
     <Compile Include="Classes\ConfigHelper.cs" />
+    <Compile Include="Classes\PackagingWeightParser.cs" />
     <Compile Include="Classes\DateCalculator.cs" />
+    <Compile Include="Classes\DiagnosticsIconHelper.cs" />
     <Compile Include="Classes\OrderViewTokenHelper.cs" />
     <Compile Include="Managers\DeliverySheetManager.cs" />
     <Compile Include="Models\ActiveDeliveryDate.cs" />
@@ -583,14 +478,15 @@
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\PaymentTerm.cs" />
     <Compile Include="Models\Person.cs" />
-    <Compile Include="Models\PreperationSummaryItem.cs" />
+    <Compile Include="Models\PreparationSummaryItem.cs" />
     <Compile Include="Models\PrepRule.cs" />
     <Compile Include="Models\PriceLevel.cs" />
     <Compile Include="Models\PublicOrderLineView.cs" />
-    <Compile Include="Models\RecurranceType.cs" />
+    <Compile Include="Models\RecurringType.cs" />
     <Compile Include="Models\RecurringOrder.cs" />
     <Compile Include="Models\RecurringOrderItem.cs" />
     <Compile Include="Models\RecurringOrderSummary.cs" />
+    <Compile Include="Models\RecurringLastDateFromUsage.cs" />
     <Compile Include="Models\Repair.cs" />
     <Compile Include="Models\RepairFault.cs" />
     <Compile Include="Models\RepairFormData.cs" />
@@ -639,9 +535,9 @@
     <Compile Include="Repositories\OrdersRepository.cs" />
     <Compile Include="Repositories\PaymentTermsRepository.cs" />
     <Compile Include="Repositories\PersonsRepository.cs" />
-    <Compile Include="Repositories\PreperationSummaryRepository.cs" />
+    <Compile Include="Repositories\PreparationSummaryRepository.cs" />
     <Compile Include="Repositories\PriceLevelsRepository.cs" />
-    <Compile Include="Repositories\RecurranceTypeRepository.cs" />
+    <Compile Include="Repositories\RecurringTypeRepository.cs" />
     <Compile Include="Repositories\RecurringOrdersRepository.cs" />
     <Compile Include="Repositories\RepairFaultsRepository.cs" />
     <Compile Include="Repositories\RepairStatusesRepository.cs" />
@@ -682,6 +578,7 @@
     <Compile Include="Classes\AppLogger.cs" />
     <Compile Include="Classes\CheckBrowser.cs" />
     <Compile Include="Classes\DBParameter.cs" />
+    <Compile Include="Classes\DbParamHelpers.cs" />
     <Compile Include="Classes\EmailMailKitCls.cs" />
     <Compile Include="Classes\EmailUtils.cs" />
     <Compile Include="Classes\GridViewGroup.cs" />
@@ -734,9 +631,6 @@
     <Compile Include="MobileSite.Master.designer.cs">
       <DependentUpon>MobileSite.Master</DependentUpon>
     </Compile>
-    <Compile Include="Pages\ClientList.aspx.designer.cs">
-      <DependentUpon>ClientList.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Pages\ItemsRequired.aspx.cs">
       <DependentUpon>ItemsRequired.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -758,10 +652,6 @@
     <Compile Include="Pages\Contacts.aspx.designer.cs">
       <DependentUpon>Contacts.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\ContactsTest.aspx.cs">
-      <DependentUpon>ContactsTest.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
     <Compile Include="Pages\ContactsAway.aspx.cs">
       <DependentUpon>ContactsAway.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -772,13 +662,6 @@
     <Compile Include="Pages\ContactsAwayDetail.aspx.cs">
       <DependentUpon>ContactsAwayDetail.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\DeleteOrderLine.aspx.cs">
-      <DependentUpon>DeleteOrderLine.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\DeleteOrderLine.aspx.designer.cs">
-      <DependentUpon>DeleteOrderLine.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pages\DeliverySheet.aspx.cs">
       <DependentUpon>DeliverySheet.aspx</DependentUpon>
@@ -833,9 +716,6 @@
     <Compile Include="Pages\Lookups.aspx.designer.cs">
       <DependentUpon>Lookups.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\OrderBuiten2Vineyard.aspx.designer.cs">
-      <DependentUpon>OrderBuiten2Vineyard.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Pages\OrderDetail.aspx.cs">
       <DependentUpon>OrderDetail.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -857,28 +737,12 @@
     <Compile Include="Pages\OrderEntry.aspx.designer.cs">
       <DependentUpon>OrderEntry.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\OrdersEdit.aspx.designer.cs">
-      <DependentUpon>OrdersEdit.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\OrderSheet.aspx.designer.cs">
-      <DependentUpon>OrderSheet.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\OrderVineyard2Buiten.aspx.designer.cs">
-      <DependentUpon>OrderVineyard2Buiten.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Pages\PreperationSummary.aspx.cs">
       <DependentUpon>PreperationSummary.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Pages\PreperationSummary.aspx.designer.cs">
       <DependentUpon>PreperationSummary.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\QuaffeeCoffeeTastingSheet.aspx.cs">
-      <DependentUpon>QuaffeeCoffeeTastingSheet.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\QuaffeeCoffeeTastingSheet.aspx.designer.cs">
-      <DependentUpon>QuaffeeCoffeeTastingSheet.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pages\\RecurringOrderDetails.aspx.cs">
       <DependentUpon>RecurringOrderDetails.aspx</DependentUpon>
@@ -929,29 +793,6 @@
     <Compile Include="Pages\SentRemindersSheet.aspx.designer.cs">
       <DependentUpon>SentRemindersSheet.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Pages\SummaryOFCoffeeRequired.aspx.designer.cs">
-      <DependentUpon>SummaryOFCoffeeRequired.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\SupportTables.aspx.cs">
-      <DependentUpon>SupportTables.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\SupportTables.aspx.designer.cs">
-      <DependentUpon>SupportTables.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\TestPage.aspx.cs">
-      <DependentUpon>TestPage.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Pages\TestPage.aspx.designer.cs">
-      <DependentUpon>TestPage.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\ThisWeeksOrder.aspx.designer.cs">
-      <DependentUpon>ThisWeeksOrder.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\ThisWeeksOrder.cs">
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
     <Compile Include="Print.Master.cs">
       <DependentUpon>Print.master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -977,15 +818,6 @@
     <Compile Include="Site.master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
     </Compile>
-    <Compile Include="smpttester\index.aspx.designer.cs">
-      <DependentUpon>index.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="test\About.aspx.designer.cs">
-      <DependentUpon>About.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="test\AutoClassMaker.aspx.designer.cs">
-      <DependentUpon>AutoClassMaker.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Tools\EmailDiagnostics.aspx.cs">
       <DependentUpon>EmailDiagnostics.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -993,16 +825,7 @@
     <Compile Include="Tools\EmailDiagnostics.aspx.designer.cs">
       <DependentUpon>EmailDiagnostics.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Tools\About.aspx.designer.cs">
-      <DependentUpon>About.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Tools\AutoClassMaker.aspx.designer.cs">
-      <DependentUpon>AutoClassMaker.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Classes\EmailSettings.cs" />
-    <Compile Include="Tools\GenMachineKeys.aspx.designer.cs">
-      <DependentUpon>GenMachineKeys.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Tools\HolidayClosures.aspx.designer.cs">
       <DependentUpon>HolidayClosures.aspx</DependentUpon>
     </Compile>
@@ -1039,13 +862,6 @@
     <Compile Include="Tools\SystemTools.aspx.designer.cs">
       <DependentUpon>SystemTools.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Tools\TestPeople.aspx.cs">
-      <DependentUpon>TestPeople.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Tools\TestPeople.aspx.designer.cs">
-      <DependentUpon>TestPeople.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Tools\XMLtoSQL.aspx.cs">
       <DependentUpon>XMLtoSQL.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -1074,7 +890,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Documentation\AI\" />
-    <Folder Include="Migrations\NewFolder1\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Messages.resx">
@@ -1126,4 +941,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <!-- RETIRED 2026-07-14: direct-URL / legacy pages excluded from build+publish. Files remain on disk. See Documentation/WorkInProgress/Page_Migration_Gap_Analysis.md Â§2.4. Also on disk but never in project: Pages/NewOrder*.aspx, Pages/CustomerDetails.aspx, Pages/RepairDetailOld.aspx, Pages/LoadSendCoffeeCheckup.aspx, Pages/Print.aspx, Tools/MergeCustomersFromQB.aspx -->
+  <ItemGroup />
+  <!-- LEGACY migration artifacts under Migrations/, Data/Metadata/, etc. are NOT in this project. Canonical SQL/migrations live in TrackerMigration. Files may remain on disk but must not be published or treated as source of truth. -->
 </Project>

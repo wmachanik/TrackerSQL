@@ -128,13 +128,11 @@ namespace TrackerSQL.Managers
                             invoiceTypePrefixes[invoiceType - 1],
                             item.ContactName);
                     }
-                }
+                    }
             }
 
-            if (item.Done)
-            {
-                item.ContactName = "<b>DONE</b>-> " + item.ContactName;
-            }
+            // Done status is rendered as a status-badge next to the name in the page UI
+            // (same pattern as RecurringOrders enabled/disabled) — do not prefix the name here.
 
             if (includeDeliveryPeople)
             {

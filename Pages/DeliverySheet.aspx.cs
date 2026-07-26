@@ -24,12 +24,13 @@ namespace TrackerSQL.Pages
         private const int CONST_ALOTOFDELIVERIES = 21;
 
         protected ScriptManager smDelivery;
+        protected Panel pnlDeliveryShell;
         protected Panel pnlDeliveryDate;
-        protected UpdateProgress uprgDeliveryFilterBy;
-        protected UpdatePanel upnlDeliveryFilterBy;
+        protected UpdateProgress uprgDelivery;
         protected DropDownList ddlActivePrepDates;
         protected Button btnGo;
         protected Button btnRefresh;
+        protected Button btnBack;
         protected Label lblDeliveryBy;
         protected DropDownList ddlDeliveryBy;
         protected TextBox tbxFindClient;
@@ -43,7 +44,8 @@ namespace TrackerSQL.Pages
         protected TableHeaderCell thcInStock;
         protected Table tblTotals;
         protected Label ltrlWhichDate;
-        protected Label lblStatus;
+        protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+        protected Literal ltrlStatus;
 
         /*
          * NOTE:
@@ -83,6 +85,14 @@ namespace TrackerSQL.Pages
             this.btnPrint.Visible = !pPrintForm;
             this.pnlDeliveryDate.Visible = !pPrintForm;
             this.ltrlWhichDate.Visible = !pPrintForm;
+
+            // Print uses Print.master and must stay plain (no page-tone chrome).
+            if (this.pnlDeliveryShell != null)
+            {
+                this.pnlDeliveryShell.CssClass = pPrintForm
+                    ? string.Empty
+                    : "simpleForm page-tone-panel page-tone-delivery";
+            }
 
             string pActiveDeliveryDate = this.Request.QueryString["DateValue"] == null
                 ? ""
@@ -178,21 +188,27 @@ namespace TrackerSQL.Pages
 
         private void ShowPageStatus(string message, bool isError)
         {
-            if (lblStatus == null)
+            if (pnlStatus == null || ltrlStatus == null)
                 return;
 
-            lblStatus.Visible = !string.IsNullOrWhiteSpace(message);
-            lblStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
-            lblStatus.ForeColor = isError ? Color.DarkRed : Color.DarkOrange;
+            bool hasMessage = !string.IsNullOrWhiteSpace(message);
+            pnlStatus.Visible = hasMessage;
+            ltrlStatus.Text = hasMessage ? HttpUtility.HtmlEncode(message) : string.Empty;
+            pnlStatus.Attributes["class"] = isError
+                ? "status-message status-error"
+                : "status-message status-info";
         }
 
         private void ClearPageStatus()
         {
-            if (lblStatus != null)
+            if (pnlStatus != null)
             {
-                lblStatus.Visible = false;
-                lblStatus.Text = string.Empty;
+                pnlStatus.Visible = false;
+                pnlStatus.Attributes["class"] = "status-message";
             }
+
+            if (ltrlStatus != null)
+                ltrlStatus.Text = string.Empty;
         }
 
         protected void BuildDeliverySheet()
@@ -248,7 +264,11 @@ namespace TrackerSQL.Pages
             }
 
             if (queryResult.Items.Count == 0)
+            {
                 ShowPageStatus($"No deliveries found for {requiredDate:yyyy-MM-dd}.", false);
+                AppLogger.WriteLog("deliverysheet",
+                    $"No delivery rows for {requiredDate:yyyy-MM-dd} (deliveryBy={(deliveryById?.ToString() ?? "all")}).");
+            }
             else
                 ClearPageStatus();
 
@@ -329,6 +349,12 @@ namespace TrackerSQL.Pages
                 DeliverySheetDisplayItem currentItem = deliveryItemsList[index];
                 string orderDetailUrl = BuildOrderDetailUrl(currentItem);
 
+                if (currentItem.Done)
+                {
+                    row.BackColor = Color.FromArgb(0xFD, 0xF0, 0xE6); // light orange — delivered (green = action)
+                    row.ToolTip = "Delivered";
+                }
+
                 // Details cell
                 TableCell cellDetails = new TableCell();
                 cellDetails.Text = currentItem.Details;
@@ -361,11 +387,11 @@ namespace TrackerSQL.Pages
                         contactName = contactName.Substring(num3 + 3);
                     }
 
-                    cellContact.Text = contactName;
+                    cellContact.Text = currentItem.Done ? "done · " + contactName : contactName;
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {
-                    cellContact.Text = currentItem.ContactName;
+                    cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done) + currentItem.ContactName;
                 }
                 else
                 {
@@ -376,16 +402,18 @@ namespace TrackerSQL.Pages
                         int length = contactName.IndexOf("]>");
 
                         cellContact.Text =
+                            FormatDeliveryStatusBadge(currentItem.Done) +
                             $"{contactName.Substring(0, length)} - " +
                             $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName.Substring(length + 3)}</a>";
                     }
                     else
                     {
                         cellContact.Text =
+                            FormatDeliveryStatusBadge(currentItem.Done) +
                             $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName}</a>";
                     }
 
-                    cellContact.CssClass = "wordwrap"; // Enable wrapping for long contact names
+                    cellContact.CssClass = "wordwrap";
                 }
 
                 row.Cells.Add(cellContact);
@@ -416,7 +444,7 @@ namespace TrackerSQL.Pages
                 {
                     cellItems.Text =
                         $"{cellItems.Text}{(string.IsNullOrEmpty(cellItems.Text) ? "" : " ")}" +
-                        "<span style='background-color:green; color: white'>$Invcd$</span>";
+                        "<span class='status-badge is-enabled'>invoiced</span>";
                 }
 
                 string str7 = BuildActionHtml(orderDetailUrl, currentItem);
@@ -484,6 +512,14 @@ namespace TrackerSQL.Pages
             html += "</span>";
 
             return html;
+        }
+
+        private static string FormatDeliveryStatusBadge(bool isDone)
+        {
+            // Orange/red chip — green (is-enabled) means "do this", not completed.
+            return isDone
+                ? "<span class='status-badge is-done'>done</span> "
+                : string.Empty;
         }
 
         /// <summary>
@@ -635,30 +671,30 @@ namespace TrackerSQL.Pages
         {
             string selectedDate = tbCalendarDate.Text.Trim();
 
-            if (DateTime.TryParse(selectedDate, out DateTime dt))
+            if (!DateTime.TryParse(selectedDate, out DateTime dt))
+                return;
+
+            string value = dt.Date.ToString("yyyy-MM-dd");
+            ddlActivePrepDates.ClearSelection();
+
+            ListItem item = ddlActivePrepDates.Items.FindByValue(value);
+            if (item == null)
             {
-                string value = dt.ToString("yyyy-MM-dd");
-                var item = ddlActivePrepDates.Items.FindByValue(value);
-
-                if (item == null)
-                {
-                    // Add new date to dropdown (insert after the first item)
-                    ddlActivePrepDates.Items.Insert(1, new ListItem(dt.ToString("dd-MMM-yyyy (ddd)"), value));
-                    ddlActivePrepDates.SelectedIndex = 1;
-                }
-                else
-                {
-                    ddlActivePrepDates.ClearSelection();
-                    item.Selected = true;
-                }
-
-                // Update session and UI
-                ddlActivePrepDates_SelectedIndexChanged(ddlActivePrepDates, EventArgs.Empty);
+                ddlActivePrepDates.Items.Insert(1, new ListItem(dt.ToString("dd-MMM-yyyy (ddd)"), value));
+                ddlActivePrepDates.Items[1].Selected = true;
             }
+            else
+            {
+                item.Selected = true;
+            }
+
+            ddlActivePrepDates_SelectedIndexChanged(ddlActivePrepDates, EventArgs.Empty);
         }
 
         protected void ddlActivePrepDates_DataBound(object sender, EventArgs e)
         {
+            NormalizeActivePrepDateListValues();
+
             if (!IsPostBack)
             {
                 SelectDeliveryDateFromSession();
@@ -676,6 +712,21 @@ namespace TrackerSQL.Pages
              */
         }
 
+        private void NormalizeActivePrepDateListValues()
+        {
+            if (ddlActivePrepDates == null)
+                return;
+
+            foreach (ListItem item in ddlActivePrepDates.Items)
+            {
+                if (string.IsNullOrWhiteSpace(item.Value))
+                    continue;
+
+                if (DateTime.TryParse(item.Value, out DateTime parsedDate))
+                    item.Value = parsedDate.Date.ToString("yyyy-MM-dd");
+            }
+        }
+
         protected void ddlDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
         {
             this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = (object)this.ddlDeliveryBy.SelectedValue;
@@ -689,6 +740,11 @@ namespace TrackerSQL.Pages
             this.Session[CONST_SESSION_SHEETDATE] = (object)string.Empty;
 
             this.Response.Redirect("DeliverySheet.aspx");
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            this.Response.Redirect("~/Default.aspx");
         }
 
         private bool TryGetSelectedDeliveryDate(out DateTime deliveryDate)
@@ -707,33 +763,24 @@ namespace TrackerSQL.Pages
 
         private void SelectDeliveryDateFromSession()
         {
-            string sessionValue = this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] as string;
-            if (string.IsNullOrWhiteSpace(sessionValue))
-                return;
+            ddlActivePrepDates.ClearSelection();
 
-            ListItem exactMatch = this.ddlActivePrepDates.Items.FindByValue(sessionValue);
-            if (exactMatch != null)
+            string sessionValue = Session[CONST_SESSION_DDLSHEETDATE_SELECTED] as string;
+            if (!string.IsNullOrWhiteSpace(sessionValue) && DateTime.TryParse(sessionValue, out DateTime targetDate))
+                sessionValue = targetDate.Date.ToString("yyyy-MM-dd");
+
+            ListItem match = !string.IsNullOrWhiteSpace(sessionValue)
+                ? ddlActivePrepDates.Items.FindByValue(sessionValue)
+                : null;
+
+            if (match != null)
             {
-                this.ddlActivePrepDates.ClearSelection();
-                exactMatch.Selected = true;
+                match.Selected = true;
                 return;
             }
 
-            if (!DateTime.TryParse(sessionValue, out DateTime targetDate))
-                return;
-
-            foreach (ListItem item in this.ddlActivePrepDates.Items)
-            {
-                if (string.IsNullOrWhiteSpace(item.Value))
-                    continue;
-
-                if (DateTime.TryParse(item.Value, out DateTime itemDate) && itemDate.Date == targetDate.Date)
-                {
-                    this.ddlActivePrepDates.ClearSelection();
-                    item.Selected = true;
-                    return;
-                }
-            }
+            if (ddlActivePrepDates.Items.Count > 1)
+                ddlActivePrepDates.Items[1].Selected = true;
         }
 
         protected void SetVarsAndBuildDeliverySheet()

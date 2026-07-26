@@ -1,18 +1,17 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL._Default
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — _Default
+// WebForms page code-behind for _Default.
+//------------------------------------------------------------------------------
 
 using System;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Repositories;
 
-//- only form later versions #nullable disable
 namespace TrackerSQL
 {
-
     public partial class Default : Page
     {
         protected void Page_PreInit(object sender, EventArgs e)
@@ -23,10 +22,13 @@ namespace TrackerSQL
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Show user-admin cards for Administrators (and Administrator alias / configured admin user)
+            if (pnlUserAdministration != null)
+                pnlUserAdministration.Visible = SecurityManager.IsAdmin();
+
             if (!IsPostBack)
             {
                 var now = TimeZoneUtils.Now();
-                // Example format: Monday, 03 Feb 2025 14:32 SAST
                 litCurrentDate.Text = $"Date: {now:dddd, dd MMM yyyy HH:mm} {TimeZoneUtils.GetZoneAbbreviation()}";
                 try
                 {
@@ -39,7 +41,6 @@ namespace TrackerSQL
                 }
                 catch (Exception ex)
                 {
-                    // Fallback display; log error
                     AppLogger.WriteLog(SystemConstants.LogTypes.Database, "Default.aspx: TotalCount query failed: " + ex.Message);
                     lblTotalCupCount.Text = "0";
                 }

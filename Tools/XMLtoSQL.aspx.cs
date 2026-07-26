@@ -1,39 +1,53 @@
-// Decompiled with JetBrains decompiler
-// Type: TrackerSQL.test.XMLtoSQL
-// Assembly: TrackerSQL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 2B5ACBFB-45EE-46B9-81D2-DBD1194F39CE
-// Assembly location: C:\SRC\Apps\qtracker\bin\TrackerSQL.dll
+//------------------------------------------------------------------------------
+// TrackerSQL v3.x — XMLtoSQL
+// System tools page: run <command> batches from App_Data XML against SQL Server.
+//------------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Xml;
 using TrackerSQL.Classes;
 
-namespace TrackerSQL.test
+namespace TrackerSQL.Tools
 {
     public partial class XMLtoSQL : Page
     {
-        private const string CONST_DEFAULT_PREFIX = "SQLCommands";
-        protected TextBox FileNameTextBox;
-        protected Button GoButton;
-        protected GridView gvSQLResults;
-        protected Panel pnlSQLResults;
+        private const string DefaultReturnUrl = "~/Tools/SystemTools.aspx";
+        private const string LogName = "xmltosql";
 
-        protected Literal ltrlFileList;
-        protected Panel pnlFileBrowser;
-        protected Button RefreshFilesButton;
-
-        private class SqlCommandResult
+        protected void Page_Load(object sender, EventArgs e)
         {
-            public string Type { get; set; }
-            public string Sql { get; set; }
-            public string Error { get; set; }
-            public string Result { get; set; }
+            if (IsPostBack)
+                return;
+
+            SetDefaultFileName();
+            SetStatus("Select an XML command file, then click Execute. Prefer SQLCommands_Test_SQLServer.xml for a safe smoke test.", isError: null);
         }
+
+        private void SetStatus(string message, bool? isError)
+        {
+            ltrlStatus.Text = message ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
         private void SetDefaultFileName()
         {
             string folderPath = Server.MapPath("~/App_Data/");
@@ -41,313 +55,242 @@ namespace TrackerSQL.test
             {
                 if (!Directory.Exists(folderPath))
                 {
-                    this.FileNameTextBox.Text = $"App_Data directory not found: {folderPath}";
+                    FileNameTextBox.Text = string.Empty;
+                    SetStatus("App_Data directory not found: " + folderPath, isError: true);
                     return;
                 }
 
-                FileInfo[] files = new DirectoryInfo(folderPath).GetFiles("SQLCommands*.xml");
-                int maxSuffix = -1;
-                string selectedFile = "";
-
-                foreach (FileInfo file in files)
-                {
-                    string fileName = Path.GetFileNameWithoutExtension(file.Name);
-                    if (fileName.StartsWith("SQLCommands"))
-                    {
-                        string numberPart = fileName.Substring("SQLCommands".Length);
-                        if (string.IsNullOrEmpty(numberPart))
-                        {
-                            if (maxSuffix < 0)
-                            {
-                                maxSuffix = 0;
-                                selectedFile = file.FullName;
-                            }
-                        }
-                        else if (int.TryParse(numberPart, out int suffix))
-                        {
-                            if (suffix > maxSuffix)
-                            {
-                                maxSuffix = suffix;
-                                selectedFile = file.FullName;
-                            }
-                        }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(selectedFile))
-                {
-                    this.FileNameTextBox.Text = selectedFile;
-                }
+                // Prefer the SQL Server smoke-test file when present.
+                string testFile = Path.Combine(folderPath, "SQLCommands_Test_SQLServer.xml");
+                if (File.Exists(testFile))
+                    FileNameTextBox.Text = testFile;
                 else
                 {
-                    this.FileNameTextBox.Text = Path.Combine(folderPath, "SQLCommands001.xml");
+                    FileInfo newest = new DirectoryInfo(folderPath)
+                        .GetFiles("SQLCommands*.xml")
+                        .OrderByDescending(f => f.LastWriteTimeUtc)
+                        .FirstOrDefault();
+
+                    FileNameTextBox.Text = newest != null
+                        ? newest.FullName
+                        : Path.Combine(folderPath, "SQLCommands_Test_SQLServer.xml");
                 }
 
-                // Load file browser
                 LoadFileBrowser();
             }
             catch (Exception ex)
             {
-                this.FileNameTextBox.Text = $"Error: {ex.Message}";
+                SetStatus("Error locating XML files: " + ex.Message, isError: true);
+                AppLogger.WriteLog(LogName, "SetDefaultFileName: " + ex.Message);
             }
         }
 
-        protected void Page_Load(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, EventArgs e)
         {
-            if (this.IsPostBack)
-                return;
-            this.SetDefaultFileName();
-        }
-
-        private void showMsgBox(string pTitle, string pMessage)
-        {
-            string script = $"showAppMessage('{pMessage.Replace("'", "\\'")}');";
-            System.Web.UI.ScriptManager.RegisterStartupScript(this.Page, this.Page.GetType(), pTitle, script, true);
-        }
-
-        private string StripInlineComments(string sql)
-        {
-            if (string.IsNullOrEmpty(sql)) return sql;
-            var lines = sql.Replace("\r", "").Split('\n');
-            for (int i = 0; i < lines.Length; i++)
-            {
-                int idx = lines[i].IndexOf("--", StringComparison.Ordinal);
-                if (idx >= 0)
-                    lines[i] = lines[i].Substring(0, idx);
-            }
-            return string.Join(" ", lines).Trim();
-        }
-        private string ExtractCreatedTableName(string sql)
-        {
-            try
-            {
-                // Expect form: CREATE TABLE <name> (
-                string s = sql.Trim();
-                int tblIdx = s.IndexOf("TABLE", StringComparison.OrdinalIgnoreCase);
-                if (tblIdx < 0) return null;
-                string after = s.Substring(tblIdx + 5).Trim();
-                int paren = after.IndexOf('(');
-                if (paren < 0) return null;
-                string name = after.Substring(0, paren).Trim();
-                if (name.StartsWith("[") && name.EndsWith("]"))
-                    name = name.Substring(1, name.Length - 2);
-                return name;
-            }
-            catch { return null; }
-        }
-        protected void GoButton_Click(object sender, EventArgs e)
-        {
-            List<XMLtoSQL.SQLCommand> sqlCommandList = new List<XMLtoSQL.SQLCommand>();
-
-            // Enhanced file validation
-            string filePath = this.FileNameTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(filePath))
-            {
-                showMsgBox("Error", "Please specify a file path.");
-                return;
-            }
-
-            if (!File.Exists(filePath))
-            {
-                string appDataPath = Server.MapPath("~/App_Data/");
-                string errorMsg = $"File not found: {filePath}\n\nApp_Data folder: {appDataPath}";
-
-                // List available XML files
-                try
-                {
-                    var xmlFiles = new DirectoryInfo(appDataPath).GetFiles("*.xml");
-                    if (xmlFiles.Length > 0)
-                    {
-                        errorMsg += "\n\nAvailable XML files:";
-                        foreach (var file in xmlFiles)
-                        {
-                            errorMsg += $"\n- {file.Name}";
-                        }
-                    }
-                    else
-                    {
-                        errorMsg += "\n\nNo XML files found in App_Data directory.";
-                    }
-                }
-                catch (Exception dirEx)
-                {
-                    errorMsg += $"\n\nError reading App_Data directory: {dirEx.Message}";
-                }
-
-                showMsgBox("File Not Found", errorMsg);
-                AppLogger.WriteLog("xmltosql", $"File not found: {filePath}");
-                return;
-            }
-
-            XmlReader xmlReader = null;
-            try
-            {
-                AppLogger.WriteLog("xmltosql", $"Starting XML processing: {filePath}");
-
-                xmlReader = XmlReader.Create(filePath);
-                int commandCount = 0;
-
-                while (xmlReader.Read())
-                {
-                    if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "command")
-                    {
-                        XMLtoSQL.SQLCommand sqlCommand = new XMLtoSQL.SQLCommand();
-                        sqlCommand.type = xmlReader.GetAttribute("type");
-
-                        if (string.IsNullOrEmpty(sqlCommand.type))
-                        {
-                            sqlCommand.type = "unknown";
-                            sqlCommand.errString = "Missing type attribute";
-                            sqlCommand.result = false;
-                        }
-
-                        xmlReader.Read();
-                        sqlCommand.sql = xmlReader.Value?.Replace("\n", "").Trim() ?? "";
-
-                        if (string.IsNullOrEmpty(sqlCommand.sql))
-                        {
-                            sqlCommand.errString = "Empty SQL command";
-                            sqlCommand.result = false;
-                        }
-
-                        sqlCommandList.Add(sqlCommand);
-                        commandCount++;
-
-                        AppLogger.WriteLog("xmltosql", $"Command {commandCount}: type='{sqlCommand.type}', sql='{sqlCommand.sql.Substring(0, Math.Min(50, sqlCommand.sql.Length))}...'");
-                    }
-                }
-                xmlReader.Close();
-                xmlReader = null;
-
-                AppLogger.WriteLog("xmltosql", $"Found {commandCount} commands to execute");
-
-                // Execute commands
-                for (int index = 0; index < sqlCommandList.Count; ++index)
-                {
-                    var cmd = sqlCommandList[index];
-                    AppLogger.WriteLog("xmltosql", $"Executing command {index + 1}: {cmd.type}");
-
-                    try
-                    {
-                        if (cmd.type == "select")
-                        {
-                            GridView child = new GridView();
-                            child.CssClass = "table table-striped";
-                            child.HeaderStyle.BackColor = System.Drawing.Color.LightBlue;
-
-                            DataSet dataSet = this.RunSelect(cmd.sql);
-                            cmd.result = dataSet != null && dataSet.Tables.Count > 0;
-
-                            if (cmd.result)
-                            {
-                                child.DataSource = dataSet;
-                                child.DataBind();
-
-                                // Add a label before each grid
-                                Label lblCommand = new Label();
-                                lblCommand.Text = $"<h4>SELECT Result {index + 1}:</h4><pre>{cmd.sql}</pre>";
-                                lblCommand.Text += $"<p><em>Rows returned: {dataSet.Tables[0].Rows.Count}</em></p>";
-                                this.pnlSQLResults.Controls.Add(lblCommand);
-                                this.pnlSQLResults.Controls.Add(child);
-                                this.pnlSQLResults.Controls.Add(new Literal { Text = "<br/><hr/><br/>" });
-
-                                AppLogger.WriteLog("xmltosql", $"SELECT command {index + 1} returned {dataSet.Tables[0].Rows.Count} rows");
-                            }
-                            else
-                            {
-                                cmd.errString = "No data returned or query failed";
-                                AppLogger.WriteLog("xmltosql", $"SELECT command {index + 1} failed or returned no data");
-                            }
-                        }
-                        else if (cmd.type == "disabled")
-                        {
-                            cmd.result = true;
-                            cmd.errString = "Skipped (disabled)";
-                            AppLogger.WriteLog("xmltosql", $"Command {index + 1} skipped (disabled)");
-                        }
-                        else if (cmd.type == "update" || cmd.type == "insert" || cmd.type == "delete" || cmd.type == "create" || cmd.type == "alter" || cmd.type == "drop")
-                        {
-                            // Strip inline '--' comments for Access DDL safety
-                            if (cmd.type == "create" || cmd.type == "alter")
-                                cmd.sql = StripInlineComments(cmd.sql);
-
-                            cmd.errString = this.RunCommand(cmd.sql);
-                            cmd.result = string.IsNullOrWhiteSpace(cmd.errString);
-
-                            // Post-verification for CREATE TABLE
-                            if (cmd.result && cmd.type == "create" && cmd.sql.Trim().ToLower().StartsWith("create table"))
-                            {
-                                string created = ExtractCreatedTableName(cmd.sql);
-                                if (!string.IsNullOrEmpty(created))
-                                {
-                                    if (!TableExists(created))
-                                    {
-                                        cmd.errString = "CREATE reported success but table not found: " + created;
-                                        cmd.result = false;
-                                    }
-                                }
-                            }
-
-                            if (cmd.result)
-                                AppLogger.WriteLog("xmltosql", $"{cmd.type.ToUpper()} command {index + 1} executed successfully");
-                            else
-                                AppLogger.WriteLog("xmltosql", $"{cmd.type.ToUpper()} command {index + 1} failed: {cmd.errString}");
-                        }
-                        else
-                        {
-                            cmd.errString = $"Unknown command type: {cmd.type}";
-                            cmd.result = false;
-                            AppLogger.WriteLog("xmltosql", $"Unknown command type {index + 1}: {cmd.type}");
-                        }
-                    }
-                    catch (Exception cmdEx)
-                    {
-                        cmd.errString = $"Exception: {cmdEx.Message}";
-                        cmd.result = false;
-                        AppLogger.WriteLog("xmltosql", $"Exception in command {index + 1}: {cmdEx.Message}");
-                    }
-
-                    // Check for TrackerDb errors
-                    TrackerTools trackerTools = new TrackerTools();
-                    string sessionErrorString = trackerTools.GetTrackerSessionErrorString();
-                    if (!string.IsNullOrEmpty(sessionErrorString))
-                    {
-                        showMsgBox("Database Error", sessionErrorString);
-                        AppLogger.WriteLog("xmltosql", $"TrackerDb error: {sessionErrorString}");
-                        trackerTools.SetTrackerSessionErrorString("");
-                    }
-                }
-
-                // Show command summary
-                this.gvSQLResults.DataSource = sqlCommandList;
-                this.gvSQLResults.DataBind();
-
-                int successCount = 0;
-                int failureCount = 0;
-                foreach (var cmd in sqlCommandList)
-                {
-                    if (cmd.result) successCount++; else failureCount++;
-                }
-
-                string summaryMsg = $"Execution completed!\n\nTotal commands: {sqlCommandList.Count}\nSuccessful: {successCount}\nFailed: {failureCount}";
-                showMsgBox("Execution Summary", summaryMsg);
-                AppLogger.WriteLog("xmltosql", summaryMsg.Replace("\n", " "));
-            }
-            catch (Exception ex)
-            {
-                string errorMsg = $"XML processing error: {ex.Message}";
-                showMsgBox("Error", errorMsg);
-                AppLogger.WriteLog("xmltosql", $"XML processing error: {ex.Message}");
-            }
-            finally
-            {
-                xmlReader?.Close();
-            }
+            Response.Redirect(DefaultReturnUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         protected void RefreshFilesButton_Click(object sender, EventArgs e)
         {
             LoadFileBrowser();
+            SetStatus("File list refreshed.", isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        protected void GoButton_Click(object sender, EventArgs e)
+        {
+            pnlSQLResults.Controls.Clear();
+            gvSQLResults.DataSource = null;
+            gvSQLResults.DataBind();
+
+            string filePath = FileNameTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(filePath))
+            {
+                SetStatus("Please specify a file path.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            if (!File.Exists(filePath))
+            {
+                SetStatus("File not found: " + filePath, isError: true);
+                LoadFileBrowser();
+                AppLogger.WriteLog(LogName, "File not found: " + filePath);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            List<SqlCommandResult> commands;
+            try
+            {
+                commands = LoadCommandsFromXml(filePath);
+            }
+            catch (Exception ex)
+            {
+                SetStatus("XML processing error: " + ex.Message, isError: true);
+                AppLogger.WriteLog(LogName, "XML processing error: " + ex.Message);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            if (commands.Count == 0)
+            {
+                SetStatus("No <command> elements found in the XML file.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            AppLogger.WriteLog(LogName, "Starting XML processing: " + filePath + " (" + commands.Count + " commands)");
+
+            for (int index = 0; index < commands.Count; index++)
+            {
+                SqlCommandResult cmd = commands[index];
+                try
+                {
+                    ExecuteCommand(cmd, index + 1);
+                }
+                catch (Exception cmdEx)
+                {
+                    cmd.Succeeded = false;
+                    cmd.Error = "Exception: " + cmdEx.Message;
+                    AppLogger.WriteLog(LogName, "Exception in command " + (index + 1) + ": " + cmdEx.Message);
+                }
+            }
+
+            gvSQLResults.DataSource = commands;
+            gvSQLResults.DataBind();
+
+            int skippedCount = commands.Count(c =>
+                string.Equals(c.Type, "disabled", StringComparison.OrdinalIgnoreCase));
+            int successCount = commands.Count(c =>
+                c.Succeeded && !string.Equals(c.Type, "disabled", StringComparison.OrdinalIgnoreCase));
+            int failureCount = commands.Count(c => !c.Succeeded);
+
+            SetStatus(
+                "Execution completed. Total: " + commands.Count
+                + " — ok: " + successCount
+                + " — failed: " + failureCount
+                + " — skipped: " + skippedCount
+                + ".",
+                isError: failureCount > 0 ? true : (bool?)false);
+
+            AppLogger.WriteLog(LogName,
+                "Execution completed. Total=" + commands.Count
+                + " OK=" + successCount
+                + " Fail=" + failureCount
+                + " Skip=" + skippedCount);
+
+            upnlXmlToSql.Update();
+        }
+
+        private void ExecuteCommand(SqlCommandResult cmd, int ordinal)
+        {
+            string type = (cmd.Type ?? string.Empty).Trim().ToLowerInvariant();
+            AppLogger.WriteLog(LogName, "Executing command " + ordinal + ": " + type);
+
+            if (type == "select")
+            {
+                DataTable table = RunSelect(cmd.Sql);
+                cmd.Succeeded = table != null;
+
+                if (!cmd.Succeeded)
+                {
+                    cmd.Error = "SELECT failed or returned no result set.";
+                    return;
+                }
+
+                var title = new Literal
+                {
+                    Text = "<h4>SELECT result " + ordinal + "</h4>"
+                        + "<pre style='white-space:pre-wrap;'>" + Server.HtmlEncode(cmd.Sql) + "</pre>"
+                        + "<p><em>Rows: " + table.Rows.Count + "</em></p>"
+                };
+                var grid = new GridView
+                {
+                    CssClass = "results-table",
+                    AutoGenerateColumns = true
+                };
+                grid.DataSource = table;
+                grid.DataBind();
+
+                pnlSQLResults.Controls.Add(title);
+                pnlSQLResults.Controls.Add(grid);
+                pnlSQLResults.Controls.Add(new Literal { Text = "<hr />" });
+                return;
+            }
+
+            if (type == "disabled")
+            {
+                cmd.Succeeded = true;
+                cmd.Error = "Skipped (disabled)";
+                return;
+            }
+
+            if (type == "update" || type == "insert" || type == "delete"
+                || type == "create" || type == "alter" || type == "drop"
+                || type == "exec" || type == "execute")
+            {
+                if (type == "create" || type == "alter")
+                    cmd.Sql = StripInlineComments(cmd.Sql);
+
+                string err = RunCommand(cmd.Sql);
+                cmd.Succeeded = string.IsNullOrWhiteSpace(err);
+                cmd.Error = err;
+
+                if (cmd.Succeeded && type == "create"
+                    && cmd.Sql.Trim().StartsWith("create table", StringComparison.OrdinalIgnoreCase))
+                {
+                    string created = ExtractCreatedTableName(cmd.Sql);
+                    if (!string.IsNullOrEmpty(created) && !TableExists(created))
+                    {
+                        cmd.Succeeded = false;
+                        cmd.Error = "CREATE reported success but table not found: " + created;
+                    }
+                }
+
+                return;
+            }
+
+            cmd.Succeeded = false;
+            cmd.Error = "Unknown command type: " + cmd.Type;
+        }
+
+        private static List<SqlCommandResult> LoadCommandsFromXml(string filePath)
+        {
+            var list = new List<SqlCommandResult>();
+
+            var settings = new XmlReaderSettings
+            {
+                IgnoreComments = true,
+                IgnoreWhitespace = true
+            };
+
+            using (XmlReader reader = XmlReader.Create(filePath, settings))
+            {
+                // Important: ReadElementContentAsString() leaves the reader on the *next* node.
+                // Do not call Read() again in that case, or every other <command> is skipped.
+                while (!reader.EOF)
+                {
+                    if (reader.NodeType == XmlNodeType.Element
+                        && string.Equals(reader.LocalName, "command", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var cmd = new SqlCommandResult
+                        {
+                            Type = reader.GetAttribute("type") ?? "unknown"
+                        };
+
+                        cmd.Sql = reader.ReadElementContentAsString().Trim();
+                        list.Add(cmd);
+                        continue;
+                    }
+
+                    if (!reader.Read())
+                        break;
+                }
+            }
+
+            return list;
         }
 
         private void LoadFileBrowser()
@@ -361,61 +304,102 @@ namespace TrackerSQL.test
                     return;
                 }
 
-                var allFiles = new DirectoryInfo(folderPath).GetFiles("*.xml");
+                FileInfo[] allFiles = new DirectoryInfo(folderPath).GetFiles("*.xml");
                 if (allFiles.Length == 0)
                 {
                     ltrlFileList.Text = "<em>No XML files found</em>";
                     return;
                 }
 
-                var html = new System.Text.StringBuilder();
+                var sqlCommandFiles = allFiles
+                    .Where(f => f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                var otherFiles = allFiles
+                    .Where(f => !f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                // Group files by type
-                var sqlCommandFiles = new List<FileInfo>();
-                var otherFiles = new List<FileInfo>();
-
-                foreach (var file in allFiles)
-                {
-                    if (file.Name.StartsWith("SQLCommands"))
-                        sqlCommandFiles.Add(file);
-                    else
-                        otherFiles.Add(file);
-                }
-
-                // SQL Command files first
-                if (sqlCommandFiles.Count > 0)
-                {
-                    html.AppendLine("<strong>Migration Files:</strong><br/>");
-                    Array.Sort(sqlCommandFiles.ToArray(), (f1, f2) => string.Compare(f1.Name, f2.Name));
-
-                    foreach (var file in sqlCommandFiles)
-                    {
-                        html.AppendLine($"<div class='file-item xml-file' onclick=\"selectFile('{file.FullName.Replace("\\", "\\\\")}')\">");
-                        html.AppendLine($"?? {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm}, {file.Length} bytes)</small>");
-                        html.AppendLine("</div>");
-                    }
-                    html.AppendLine("<br/>");
-                }
-
-                // Other XML files
-                if (otherFiles.Count > 0)
-                {
-                    html.AppendLine("<strong>Other XML Files:</strong><br/>");
-                    Array.Sort(otherFiles.ToArray(), (f1, f2) => string.Compare(f1.Name, f2.Name));
-
-                    foreach (var file in otherFiles)
-                    {
-                        html.AppendLine($"<div class='file-item' onclick=\"selectFile('{file.FullName.Replace("\\", "\\\\")}')\">");
-                        html.AppendLine($"?? {file.Name} <small>({file.LastWriteTime:yyyy-MM-dd HH:mm})</small>");
-                        html.AppendLine("</div>");
-                    }
-                }
-
+                var html = new StringBuilder();
+                AppendFileGroup(html, "Migration / command files", sqlCommandFiles, highlight: true);
+                AppendFileGroup(html, "Other XML files", otherFiles, highlight: false);
                 ltrlFileList.Text = html.ToString();
             }
             catch (Exception ex)
             {
-                ltrlFileList.Text = $"<em>Error loading files: {ex.Message}</em>";
+                ltrlFileList.Text = "<em>Error loading files: " + Server.HtmlEncode(ex.Message) + "</em>";
+            }
+        }
+
+        private static void AppendFileGroup(StringBuilder html, string title, List<FileInfo> files, bool highlight)
+        {
+            if (files == null || files.Count == 0)
+                return;
+
+            html.Append("<strong>").Append(title).Append(":</strong><br/>");
+            string css = highlight ? "file-item xml-file" : "file-item";
+
+            foreach (FileInfo file in files)
+            {
+                string jsPath = file.FullName.Replace("\\", "\\\\").Replace("'", "\\'");
+                html.Append("<div class='").Append(css).Append("' onclick=\"selectFile('")
+                    .Append(jsPath).Append("')\">");
+                html.Append(System.Web.HttpUtility.HtmlEncode(file.Name));
+                html.Append(" <small>(")
+                    .Append(file.LastWriteTime.ToString("yyyy-MM-dd HH:mm"))
+                    .Append(", ")
+                    .Append(file.Length)
+                    .Append(" bytes)</small></div>");
+            }
+
+            html.Append("<br/>");
+        }
+
+        private static string StripInlineComments(string sql)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return sql;
+
+            string[] lines = sql.Replace("\r", string.Empty).Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                int idx = lines[i].IndexOf("--", StringComparison.Ordinal);
+                if (idx >= 0)
+                    lines[i] = lines[i].Substring(0, idx);
+            }
+
+            return string.Join(" ", lines).Trim();
+        }
+
+        private static string ExtractCreatedTableName(string sql)
+        {
+            try
+            {
+                string s = sql.Trim();
+                int tblIdx = s.IndexOf("TABLE", StringComparison.OrdinalIgnoreCase);
+                if (tblIdx < 0)
+                    return null;
+
+                string after = s.Substring(tblIdx + 5).Trim();
+                if (after.StartsWith("IF", StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                // Skip optional dbo. / schema
+                int paren = after.IndexOf('(');
+                if (paren < 0)
+                    return null;
+
+                string name = after.Substring(0, paren).Trim();
+                if (name.StartsWith("[") && name.EndsWith("]"))
+                    name = name.Substring(1, name.Length - 2);
+                if (name.Contains("."))
+                    name = name.Substring(name.LastIndexOf('.') + 1).Trim('[', ']');
+
+                return name;
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -423,35 +407,33 @@ namespace TrackerSQL.test
         {
             using (var db = new TrackerSQLDb())
             {
-                var result = db.ExecuteScalar(
+                object result = db.ExecuteScalar(
                     "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @TableName",
                     new List<DBParameter>
                     {
                         new DBParameter { ParamName = "@TableName", DataValue = tableName, DataDbType = DbType.String }
                     });
-                return result != null;
+                return result != null && result != DBNull.Value;
             }
         }
 
-        private DataSet RunSelect(string pSQL)
+        private DataTable RunSelect(string sql)
         {
-            var ds = new DataSet();
             using (var db = new TrackerSQLDb())
-            using (var reader = db.ExecuteReader(pSQL))
             {
-                ds.Load(reader, LoadOption.OverwriteChanges, "Results");
+                return db.ReturnDataTable(sql);
             }
-            return ds;
         }
 
-        private string RunCommand(string pSQL)
+        private static string RunCommand(string sql)
         {
             try
             {
                 using (var db = new TrackerSQLDb())
                 {
-                    db.ExecuteNonQuery(pSQL);
+                    db.ExecuteNonQuery(sql);
                 }
+
                 return null;
             }
             catch (Exception ex)
@@ -460,43 +442,22 @@ namespace TrackerSQL.test
             }
         }
 
-        private class SQLCommand
+        private sealed class SqlCommandResult
         {
-            private string _type;
-            private string _sql;
-            private string _errString;
-            private bool _result;
+            public string Type { get; set; }
+            public string Sql { get; set; }
+            public string Error { get; set; }
+            public bool Succeeded { get; set; }
 
-            public SQLCommand()
+            public string SqlPreview
             {
-                this._type = "";
-                this._sql = "";
-                this._errString = "";
-                this._result = false;
-            }
-
-            public string type
-            {
-                get => this._type;
-                set => this._type = value;
-            }
-
-            public string sql
-            {
-                get => this._sql;
-                set => this._sql = value;
-            }
-
-            public string errString
-            {
-                get => this._errString;
-                set => this._errString = value;
-            }
-
-            public bool result
-            {
-                get => this._result;
-                set => this._result = value;
+                get
+                {
+                    string s = (Sql ?? string.Empty).Replace("\r", " ").Replace("\n", " ").Trim();
+                    while (s.Contains("  "))
+                        s = s.Replace("  ", " ");
+                    return s.Length <= 120 ? s : s.Substring(0, 117) + "...";
+                }
             }
         }
     }

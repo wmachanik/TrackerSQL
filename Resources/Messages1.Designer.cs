@@ -115,6 +115,15 @@ namespace TrackerSQL.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to last recurring order notice with until date {0}.
+        /// </summary>
+        public static string CoffeeCheckup_BodyLastRecurringOrder {
+            get {
+                return ResourceManager.GetString("CoffeeCheckup.BodyLastRecurringOrder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;p&gt;Your {0} is ready for processing:&lt;/p&gt;.
         /// </summary>
         public static string CoffeeCheckup_BodyOrderType {

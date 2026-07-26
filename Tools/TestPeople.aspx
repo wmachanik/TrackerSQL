@@ -1,3 +1,4 @@
+<%-- RETIRED 2026-07-14: direct-URL only (not linked from Site.Master / Default / SystemTools). Excluded from TrackerSQL.csproj. Persons CRUD smoke page — keep on disk only. --%>
 <%@ Page Title="Test People" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
   CodeBehind="TestPeople.aspx.cs" Inherits="TrackerSQL.Tools.TestPeople" MaintainScrollPositionOnPostback="true" %>
 

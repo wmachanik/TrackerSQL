@@ -26,6 +26,15 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
+        /// When false, checkup emails omit the configured SysCCEmailAddress (orders@) copy.
+        /// </summary>
+        public bool IncludeConfiguredCc
+        {
+            get { return emailClient.IncludeConfiguredCc; }
+            set { emailClient.IncludeConfiguredCc = value; }
+        }
+
+        /// <summary>
         /// Gets appropriate email subject based on order type
         /// </summary>
         public string GetEmailSubject(string orderType)
@@ -109,7 +118,7 @@ namespace TrackerSQL.Managers
             emailBuilder.AppendLine(BuildDisableLink(contact));
 
             string fullEmail = emailBuilder.ToString();
-            fullEmail = fullEmail.Replace("[#PREPDATE#]", contact.NextPreperationDate.ToString("dddd, dd MMM"));
+            fullEmail = fullEmail.Replace("[#PREPDATE#]", contact.NextPreparationDate.ToString("dddd, dd MMM"));
             fullEmail = fullEmail.Replace("[#DELIVERYDATE#]", contact.NextDeliveryDate.ToString("dddd, dd MMM"));
 
             string signature = GetEmailSignatureWithFallback();
@@ -201,8 +210,8 @@ namespace TrackerSQL.Managers
                 contact.CompanyName));
             html.AppendLine("<tbody>");
             html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
-                MessageProvider.Get(MessageKeys.CoffeeCheckup.TableNextPreperationDate),
-                contact.NextPreperationDate.ToString("dd MMM, ddd"),
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.TableNextPreparationDate),
+                contact.NextPreparationDate.ToString("dd MMM, ddd"),
                 ""));
             html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowAlt),
                 "Next estimate dispatch date",
@@ -246,7 +255,7 @@ namespace TrackerSQL.Managers
         private string GetOrderTypeForDisplay(ContactToRemindWithItems contact)
         {
             bool hasAutoFulfill = contact.ItemsContactRequires.Exists(x => x.AutoFulfill);
-            bool hasRecurring = contact.ItemsContactRequires.Exists(x => x.ReoccurOrder);
+            bool hasRecurring = contact.ItemsContactRequires.Exists(x => x.RecurringOrder);
 
             if (hasRecurring && hasAutoFulfill)
                 return MessageProvider.Get(MessageKeys.CoffeeCheckup.OrderTypeCombined);

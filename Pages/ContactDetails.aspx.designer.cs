@@ -456,6 +456,16 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnCancel;
 
         /// <summary>
+        /// hdnContactDirty — unsaved changes flag (client + server).
+        /// </summary>
+        protected global::System.Web.UI.WebControls.HiddenField hdnContactDirty;
+
+        /// <summary>
+        /// pnlStatus control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
+
+        /// <summary>
         /// ltrlStatus control.
         /// </summary>
         /// <remarks>
@@ -463,6 +473,20 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal ltrlStatus;
+
+        /// <summary>
+        /// valContactSave control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ValidationSummary valContactSave;
+
+        /// <summary>
+        /// pnlContactDetails control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlContactDetails;
 
         /// <summary>
         /// uppnlTabContainer control.
@@ -825,13 +849,13 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlItems;
 
         /// <summary>
-        /// gvItems control.
+        /// gvContactItems control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvItems;
+        protected global::System.Web.UI.WebControls.GridView gvContactItems;
 
         /// <summary>
         /// odsAreas control.
@@ -886,6 +910,15 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.ObjectDataSource odsItemPackagingTypes;
+
+        /// <summary>
+        /// odsItemPrepTypes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ObjectDataSource odsItemPrepTypes;
 
         /// <summary>
         /// odsInvoiceTypes control.

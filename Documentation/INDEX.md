@@ -17,6 +17,7 @@ This is the **master index** for all TrackerSQL documentation. Use this to find 
 |------|----------|---------|
 | **Understand the project** | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | Executive Summary |
 | **Follow architecture rules** | [ARCHITECTURE_RULES.md](ARCHITECTURE_RULES.md) | ??? **MANDATORY** - Repository Pattern |
+| **WebForms UI (status, UpdatePanel)** | [WEBFORMS_UI_STANDARDS.md](WEBFORMS_UI_STANDARDS.md) | Status at bottom; UpdatePanel default; retrofit |
 | **Get started with AI assistance** | [README.md](README.md) | Quick Start for AI Assistants |
 | **Write database code** | [AI_CONTEXT.md](AI_CONTEXT.md) | Code Patterns ? Database Access |
 | **Look up table names** | [TABLE_SCHEMA_REFERENCE.md](TABLE_SCHEMA_REFERENCE.md) | Quick Reference |

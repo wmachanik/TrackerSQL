@@ -6,20 +6,20 @@ using TrackerSQL.Models;
 
 namespace TrackerSQL.Repositories
 {
-    public class NextPrepDateByAreaRepository : RepositoryBase<NextPreperationDateByArea>
+    public class NextPrepDateByAreaRepository : RepositoryBase<NextPreparationDateByArea>
     {
-        protected override string TableName => "NextPreperationDateByAreasTbl";
+        protected override string TableName => "NextPreparationDateByAreasTbl";
         protected override string KeyColumn => "NextPrepDayID";
 
         protected override string CoreColumns =>
-            "NextPrepDayID, AreaID, PreperationDate, DeliveryDate, DeliveryOrder, NextPreperationDate, NextDeliveryDate";
+            "NextPrepDayID, AreaID, PreparationDate, DeliveryDate, DeliveryOrder, NextPreparationDate, NextDeliveryDate";
 
-        public NextPreperationDateByArea GetPrepDataForContact(int contactId)
+        public NextPreparationDateByArea GetPrepDataForContact(int contactId)
         {
             const string sql = @"
-                SELECT n.NextPrepDayID, n.AreaID, n.PreperationDate, n.DeliveryDate, n.DeliveryOrder,
-                       n.NextPreperationDate, n.NextDeliveryDate
-                FROM NextPreperationDateByAreasTbl n
+                SELECT n.NextPrepDayID, n.AreaID, n.PreparationDate, n.DeliveryDate, n.DeliveryOrder,
+                       n.NextPreparationDate, n.NextDeliveryDate
+                FROM NextPreparationDateByAreasTbl n
                 RIGHT OUTER JOIN ContactsTbl c ON n.AreaID = c.AreaID
                 WHERE c.ContactID = @ContactID";
 
@@ -32,17 +32,17 @@ namespace TrackerSQL.Repositories
             {
                 if (rdr != null && rdr.Read())
                 {
-                    return DbMapper.Map<NextPreperationDateByArea>(rdr);
+                    return DbMapper.Map<NextPreparationDateByArea>(rdr);
                 }
             }
 
-            return new NextPreperationDateByArea();
+            return new NextPreparationDateByArea();
         }
 
         public List<DateTime> GetAllDeliveryDates()
         {
             var list = new List<DateTime>();
-            const string sql = "SELECT DISTINCT DeliveryDate FROM NextPreperationDateByAreasTbl ORDER BY DeliveryDate";
+            const string sql = "SELECT DISTINCT DeliveryDate FROM NextPreparationDateByAreasTbl ORDER BY DeliveryDate";
 
             using (var rdr = ExecReader(sql))
             {
@@ -61,7 +61,7 @@ namespace TrackerSQL.Repositories
         public List<int> GetIdsByDeliveryDate(DateTime deliveryDate)
         {
             var list = new List<int>();
-            const string sql = "SELECT NextPrepDayID FROM NextPreperationDateByAreasTbl WHERE DeliveryDate = @DeliveryDate";
+            const string sql = "SELECT NextPrepDayID FROM NextPreparationDateByAreasTbl WHERE DeliveryDate = @DeliveryDate";
 
             var parameters = new List<DBParameter>
             {
@@ -84,7 +84,7 @@ namespace TrackerSQL.Repositories
             const string sql = @"
                 SELECT n.DeliveryDate
                 FROM ContactsTbl c
-                INNER JOIN NextPreperationDateByAreasTbl n ON c.AreaID = n.AreaID
+                INNER JOIN NextPreparationDateByAreasTbl n ON c.AreaID = n.AreaID
                 WHERE c.ContactID = @ContactID";
 
             var parameters = new List<DBParameter>
@@ -103,31 +103,31 @@ namespace TrackerSQL.Repositories
             return null;
         }
 
-        public int UpdatePrepDataForArea(NextPreperationDateByArea data)
+        public int UpdatePrepDataForArea(NextPreparationDateByArea data)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
             const string sql = @"
-                UPDATE NextPreperationDateByAreasTbl
-                SET PreperationDate = @PreperationDate,
+                UPDATE NextPreparationDateByAreasTbl
+                SET PreparationDate = @PreparationDate,
                     DeliveryDate = @DeliveryDate,
                     DeliveryOrder = @DeliveryOrder,
                     NextDeliveryDate = @NextDeliveryDate,
-                    NextPreperationDate = @NextPreperationDate
+                    NextPreparationDate = @NextPreparationDate
                 WHERE AreaID = @AreaID";
 
             return ExecNonQuery(sql, BuildAreaParameters(data));
         }
 
-        public int InsertPrepDataForArea(NextPreperationDateByArea data)
+        public int InsertPrepDataForArea(NextPreparationDateByArea data)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
             const string sql = @"
-                INSERT INTO NextPreperationDateByAreasTbl
-                (AreaID, PreperationDate, DeliveryDate, DeliveryOrder, NextDeliveryDate, NextPreperationDate)
+                INSERT INTO NextPreparationDateByAreasTbl
+                (AreaID, PreparationDate, DeliveryDate, DeliveryOrder, NextDeliveryDate, NextPreparationDate)
                 VALUES
-                (@AreaID, @PreperationDate, @DeliveryDate, @DeliveryOrder, @NextDeliveryDate, @NextPreperationDate);
+                (@AreaID, @PreparationDate, @DeliveryDate, @DeliveryOrder, @NextDeliveryDate, @NextPreparationDate);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             return ExecuteScalar<int>(sql, BuildAreaParameters(data));
@@ -136,7 +136,7 @@ namespace TrackerSQL.Repositories
         public int MoveDeliveryDate(DateTime oldDeliveryDate, DateTime newDeliveryDate)
         {
             const string sql = @"
-                UPDATE NextPreperationDateByAreasTbl
+                UPDATE NextPreparationDateByAreasTbl
                 SET DeliveryDate = @NewDeliveryDate
                 WHERE DeliveryDate = @OldDeliveryDate";
 
@@ -152,7 +152,7 @@ namespace TrackerSQL.Repositories
         public int UpdateDeliveryDateById(int nextPrepDayId, DateTime deliveryDate)
         {
             const string sql = @"
-                UPDATE NextPreperationDateByAreasTbl
+                UPDATE NextPreparationDateByAreasTbl
                 SET DeliveryDate = @DeliveryDate
                 WHERE NextPrepDayID = @NextPrepDayID";
 
@@ -169,8 +169,8 @@ namespace TrackerSQL.Repositories
         {
             var list = new List<AreaPrepDateRow>();
             const string sql = @"
-                SELECT a.AreaName AS Area, n.PreperationDate, n.DeliveryDate, n.NextPreperationDate, n.NextDeliveryDate
-                FROM NextPreperationDateByAreasTbl n
+                SELECT a.AreaName AS Area, n.PreparationDate, n.DeliveryDate, n.NextPreparationDate, n.NextDeliveryDate
+                FROM NextPreparationDateByAreasTbl n
                 LEFT OUTER JOIN AreasTbl a ON n.AreaID = a.AreaID
                 ORDER BY n.DeliveryDate, a.AreaName";
 
@@ -181,9 +181,9 @@ namespace TrackerSQL.Repositories
                     list.Add(new AreaPrepDateRow
                     {
                         Area = rdr["Area"] == DBNull.Value ? string.Empty : rdr["Area"].ToString(),
-                        PreperationDate = rdr["PreperationDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["PreperationDate"]),
+                        PreparationDate = rdr["PreparationDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["PreparationDate"]),
                         DeliveryDate = rdr["DeliveryDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["DeliveryDate"]),
-                        NextPreperationDate = rdr["NextPreperationDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["NextPreperationDate"]),
+                        NextPreparationDate = rdr["NextPreparationDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["NextPreparationDate"]),
                         NextDeliveryDate = rdr["NextDeliveryDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["NextDeliveryDate"])
                     });
                 }
@@ -192,16 +192,16 @@ namespace TrackerSQL.Repositories
             return list;
         }
 
-        private static List<DBParameter> BuildAreaParameters(NextPreperationDateByArea data)
+        private static List<DBParameter> BuildAreaParameters(NextPreparationDateByArea data)
         {
             return new List<DBParameter>
             {
                 new DBParameter { ParamName = "@AreaID", DataValue = data.AreaID, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@PreperationDate", DataValue = data.PreperationDate ?? (object)DBNull.Value, DataDbType = DbType.DateTime },
-                new DBParameter { ParamName = "@DeliveryDate", DataValue = data.DeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.DateTime },
+                new DBParameter { ParamName = "@PreparationDate", DataValue = data.PreparationDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@DeliveryDate", DataValue = data.DeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@DeliveryOrder", DataValue = data.DeliveryOrder ?? (object)DBNull.Value, DataDbType = DbType.Int16 },
-                new DBParameter { ParamName = "@NextDeliveryDate", DataValue = data.NextDeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.DateTime },
-                new DBParameter { ParamName = "@NextPreperationDate", DataValue = data.NextPreperationDate ?? (object)DBNull.Value, DataDbType = DbType.DateTime }
+                new DBParameter { ParamName = "@NextDeliveryDate", DataValue = data.NextDeliveryDate ?? (object)DBNull.Value, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@NextPreparationDate", DataValue = data.NextPreparationDate ?? (object)DBNull.Value, DataDbType = DbType.Date }
             };
         }
     }

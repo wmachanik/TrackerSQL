@@ -133,11 +133,19 @@ namespace TrackerSQL.Managers
                 sentStatus = SendOrderStatusEmail(customerId, statusKey);
             }
 
-            SyncReoccurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
+            var recurringNotes = SyncRecurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
             TempOrderSession.CleanupCompletedOrder(orderId, tempHeaderId);
 
-            result.Success = sentStatus == null;
-            result.Message = sentStatus ?? "Order done email sent successfully.";
+            // Order completion succeeded even if confirmation email failed
+            result.Success = true;
+            if (sentStatus == null)
+                result.Message = "Order completed successfully.";
+            else
+                result.Message = "Order completed, but confirmation email failed: " + sentStatus;
+
+            if (recurringNotes != null && recurringNotes.Count > 0)
+                result.Message += " " + string.Join(" ", recurringNotes);
+
             result.OriginalUsage = CustomerUsageDisplay.FromContactsUsage(originalUsage);
             result.UpdatedUsage = CustomerUsageDisplay.FromContactsUsage(_contactsUsageRepository.GetByContactId(customerId));
 
@@ -250,13 +258,16 @@ namespace TrackerSQL.Managers
             return IsCoffeeOrConsumableServiceType(_itemsRepository.GetServiceTypeForItem(itemId));
         }
 
-        private void SyncReoccurringOrderLastDone(int customerId, int tempHeaderId, DateTime deliveryDate)
+        private List<string> SyncRecurringOrderLastDone(int customerId, int tempHeaderId, DateTime deliveryDate)
         {
+            var notes = new List<string>();
             var reoccurOrders = _recurringOrdersRepository.GetEnabledSummariesByContactId(customerId);
             var deliveredItems = _tempOrdersLinesRepository.GetUsageLinesForContact(customerId, tempHeaderId);
 
             AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                $"SyncReoccurringOrderLastDone: Cust={customerId} RecurCnt={reoccurOrders.Count} DeliveredCnt={deliveredItems.Count}");
+                $"SyncRecurringOrderLastDone: Cust={customerId} RecurCnt={reoccurOrders.Count} DeliveredCnt={deliveredItems.Count}");
+
+            var updatedOrderIds = new HashSet<int>();
 
             foreach (var reoccurOrder in reoccurOrders)
             {
@@ -269,6 +280,7 @@ namespace TrackerSQL.Managers
 
                     if (OrderMatchesReoccuringOrder(item, reoccurOrder))
                     {
+                        bool wasEnabled = reoccurOrder.Enabled != false;
                         _recurringOrdersRepository.SetRecurringOrderItemDates(
                             deliveryDate,
                             reoccurOrder.RecurringOrderItemID,
@@ -276,10 +288,26 @@ namespace TrackerSQL.Managers
 
                         AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                             $"Recurring updated (Cust={customerId}, RecItemID={reoccurOrder.RecurringOrderItemID}) using delivered ItemID={item.ItemID}");
+
+                        if (wasEnabled && !updatedOrderIds.Contains(reoccurOrder.RecurringOrderID))
+                        {
+                            updatedOrderIds.Add(reoccurOrder.RecurringOrderID);
+                            // Re-read enabled flag after update (SetRecurringOrderItemDates may have disabled)
+                            var refreshed = _recurringOrdersRepository.GetById(reoccurOrder.RecurringOrderID);
+                            if (refreshed != null && refreshed.Enabled == false)
+                            {
+                                string name = string.IsNullOrWhiteSpace(reoccurOrder.CompanyName)
+                                    ? "contact"
+                                    : reoccurOrder.CompanyName.Trim();
+                                notes.Add($"Recurring order for {name} ended (past until date) and was disabled.");
+                            }
+                        }
                         break;
                     }
                 }
             }
+
+            return notes;
         }
 
         private bool IsGroupItem(int itemTypeId)
@@ -374,14 +402,13 @@ namespace TrackerSQL.Managers
 
         private void UpdatePredictions(int contactId, int lastCupCount)
         {
-            var usage = _contactsUsageRepository.GetByContactId(contactId);
-            if (usage == null || lastCupCount <= 0)
-            {
+            // LastCupCount is already written via UpdateLastCupCount in CompleteOrderInternal.
+            // Do NOT call RepositoryBase.Update here — it binds parameters as DbType.Object (sql_variant)
+            // and SQL Server rejects implicit conversion to int/date columns.
+            if (contactId <= 0 || lastCupCount <= 0)
                 return;
-            }
 
-            usage.LastCupCount = lastCupCount;
-            _contactsUsageRepository.Update(usage);
+            _contactsUsageRepository.UpdateLastCupCount(contactId, lastCupCount);
         }
     }
 }

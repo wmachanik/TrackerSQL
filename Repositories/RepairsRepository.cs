@@ -14,13 +14,13 @@ namespace TrackerSQL.Repositories
             RepairID, ContactID, ContactName, ContactEmail, JobCardNumber, DateLogged, LastStatusChange,
             EquipTypeID, EquipSerialNumber, SwopOutMachineID, EquipConditionID,
             TakenFrother, TakenBeanLid, TakenWaterLid, BrokenFrother, BrokenBeanLid, BrokenWaterLid,
-            RepairFaultID, RepairFaultDesc, RepairStatusID, RelatedOrderID, Notes";
+            RepairFaultID, RepairFaultDesc, RepairStatusID, RelatedOrderLineID, Notes";
 
         private const string SelectColumnsAliased = @"
             r.RepairID, r.ContactID, r.ContactName, r.ContactEmail, r.JobCardNumber, r.DateLogged, r.LastStatusChange,
             r.EquipTypeID, r.EquipSerialNumber, r.SwopOutMachineID, r.EquipConditionID,
             r.TakenFrother, r.TakenBeanLid, r.TakenWaterLid, r.BrokenFrother, r.BrokenBeanLid, r.BrokenWaterLid,
-            r.RepairFaultID, r.RepairFaultDesc, r.RepairStatusID, r.RelatedOrderID, r.Notes";
+            r.RepairFaultID, r.RepairFaultDesc, r.RepairStatusID, r.RelatedOrderLineID, r.Notes";
 
         protected override string TableName => "RepairsTbl";
         protected override string KeyColumn => "RepairID";
@@ -55,8 +55,17 @@ namespace TrackerSQL.Repositories
             DateTime? fromDateNullable = TrackerTools.ConvertToNullableDateTime(fromDate);
             DateTime? toDateNullable = TrackerTools.ConvertToNullableDateTime(toDate);
 
-            if (!fromDateNullable.HasValue && !toDateNullable.HasValue &&
-                (string.IsNullOrEmpty(filterText) || filterBy == "DateLogged"))
+            // Treat unset / sentinel dates as "no date filter"
+            if (fromDateNullable.HasValue && fromDateNullable.Value <= SystemConstants.DatabaseConstants.SystemMinDate)
+                fromDateNullable = null;
+            if (toDateNullable.HasValue && toDateNullable.Value <= SystemConstants.DatabaseConstants.SystemMinDate)
+                toDateNullable = null;
+
+            bool hasTextFilter = !string.IsNullOrWhiteSpace(filterText)
+                && !string.IsNullOrWhiteSpace(filterBy)
+                && !string.Equals(filterBy, "DateLogged", StringComparison.OrdinalIgnoreCase);
+
+            if (!fromDateNullable.HasValue && !toDateNullable.HasValue && !hasTextFilter)
             {
                 return GetAllRepairsOfStatus(repairStatus, sortBy);
             }
@@ -142,7 +151,7 @@ namespace TrackerSQL.Repositories
 
         public List<Repair> GetListOfRelatedTempOrders()
         {
-            const string sql = "SELECT " + SelectColumns + " FROM RepairsTbl WHERE RelatedOrderID > 0";
+            const string sql = "SELECT " + SelectColumns + " FROM RepairsTbl WHERE RelatedOrderLineID > 0";
             return QueryRepairs(sql, null, null);
         }
 
@@ -155,12 +164,12 @@ namespace TrackerSQL.Repositories
                 (ContactID, ContactName, ContactEmail, JobCardNumber, DateLogged, LastStatusChange,
                  EquipTypeID, EquipSerialNumber, SwopOutMachineID, EquipConditionID,
                  TakenFrother, TakenBeanLid, TakenWaterLid, BrokenFrother, BrokenBeanLid, BrokenWaterLid,
-                 RepairFaultID, RepairFaultDesc, RepairStatusID, RelatedOrderID, Notes)
+                 RepairFaultID, RepairFaultDesc, RepairStatusID, RelatedOrderLineID, Notes)
                 VALUES
                 (@ContactID, @ContactName, @ContactEmail, @JobCardNumber, @DateLogged, @LastStatusChange,
                  @EquipTypeID, @EquipSerialNumber, @SwopOutMachineID, @EquipConditionID,
                  @TakenFrother, @TakenBeanLid, @TakenWaterLid, @BrokenFrother, @BrokenBeanLid, @BrokenWaterLid,
-                 @RepairFaultID, @RepairFaultDesc, @RepairStatusID, @RelatedOrderID, @Notes)";
+                 @RepairFaultID, @RepairFaultDesc, @RepairStatusID, @RelatedOrderLineID, @Notes)";
 
             return ExecNonQuery(sql, BuildParameters(repair, includeId: false)) > 0;
         }
@@ -179,7 +188,7 @@ namespace TrackerSQL.Repositories
                     TakenFrother = @TakenFrother, TakenBeanLid = @TakenBeanLid, TakenWaterLid = @TakenWaterLid,
                     BrokenFrother = @BrokenFrother, BrokenBeanLid = @BrokenBeanLid, BrokenWaterLid = @BrokenWaterLid,
                     RepairFaultID = @RepairFaultID, RepairFaultDesc = @RepairFaultDesc,
-                    RepairStatusID = @RepairStatusID, RelatedOrderID = @RelatedOrderID, Notes = @Notes
+                    RepairStatusID = @RepairStatusID, RelatedOrderLineID = @RelatedOrderLineID, Notes = @Notes
                 WHERE RepairID = @RepairID";
 
             var parameters = BuildParameters(repair, includeId: true);
@@ -230,20 +239,20 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@JobCardNumber", DataValue = repair.JobCardNumber ?? (object)DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@DateLogged", DataValue = repair.DateLogged ?? (object)DBNull.Value, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@LastStatusChange", DataValue = repair.LastStatusChange ?? (object)DBNull.Value, DataDbType = DbType.Date },
-                new DBParameter { ParamName = "@EquipTypeID", DataValue = repair.EquipTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@EquipTypeID", DataValue = FkOrDbNull(repair.EquipTypeID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@EquipSerialNumber", DataValue = repair.EquipSerialNumber ?? (object)DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@SwopOutMachineID", DataValue = repair.SwopOutMachineID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@EquipConditionID", DataValue = repair.EquipConditionID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SwopOutMachineID", DataValue = FkOrDbNull(repair.SwopOutMachineID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@EquipConditionID", DataValue = FkOrDbNull(repair.EquipConditionID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@TakenFrother", DataValue = repair.TakenFrother ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@TakenBeanLid", DataValue = repair.TakenBeanLid ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@TakenWaterLid", DataValue = repair.TakenWaterLid ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@BrokenFrother", DataValue = repair.BrokenFrother ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@BrokenBeanLid", DataValue = repair.BrokenBeanLid ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@BrokenWaterLid", DataValue = repair.BrokenWaterLid ?? (object)DBNull.Value, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@RepairFaultID", DataValue = repair.RepairFaultID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@RepairFaultID", DataValue = FkOrDbNull(repair.RepairFaultID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@RepairFaultDesc", DataValue = repair.RepairFaultDesc ?? (object)DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@RepairStatusID", DataValue = repair.RepairStatusID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@RelatedOrderID", DataValue = repair.RelatedOrderID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@RepairStatusID", DataValue = FkOrDbNull(repair.RepairStatusID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@RelatedOrderLineID", DataValue = FkOrDbNull(repair.RelatedOrderLineID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@Notes", DataValue = repair.Notes ?? (object)DBNull.Value, DataDbType = DbType.String }
             };
 

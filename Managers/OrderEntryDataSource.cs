@@ -19,19 +19,17 @@ namespace TrackerSQL.Managers
         }
 
         [DataObjectMethod(DataObjectMethodType.Update)]
-        public bool UpdateOrderData(OrderEntryListItem newOrderData)
+        public int UpdateOrderData(OrderEntryListItem newOrderData)
         {
-            return UpdateOrderData(newOrderData, newOrderData.OrderID);
+            return UpdateOrderData(newOrderData, newOrderData != null ? newOrderData.OrderID : 0);
         }
 
-        public bool UpdateOrderData(OrderEntryListItem newOrderData, long orig_OrderID)
+        public int UpdateOrderData(OrderEntryListItem newOrderData, long orig_OrderID)
         {
             if (newOrderData == null || orig_OrderID <= 0)
-            {
-                return false;
-            }
+                return 0;
 
-            return _ordersRepository.UpdateOrderEntry(newOrderData, (int)orig_OrderID);
+            return _ordersRepository.UpdateOrderEntry(newOrderData, (int)orig_OrderID) ? 1 : 0;
         }
     }
 }

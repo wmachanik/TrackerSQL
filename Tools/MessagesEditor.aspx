@@ -6,12 +6,13 @@
 <asp:Content ID="HeadCnt" ContentPlaceHolderID="HeadContent" runat="server" />
 
 <asp:Content ID="BodyCnt" ContentPlaceHolderID="MainContent" runat="server">
-    <h1>Messages Editor</h1>
-
     <asp:ScriptManager ID="smgrMessagesEditor" runat="server" />
-    <asp:UpdateProgress ID="udpMessagesEditor" runat="server">
+    <asp:UpdateProgress ID="udpMessagesEditor" runat="server" AssociatedUpdatePanelID="upnlMessagesEditor" DisplayAfter="0">
         <ProgressTemplate>
-            &nbsp;&nbsp;<img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+            <div class="status-message status-info page-tone-progress">
+                <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                &nbsp;Please wait...
+            </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
 
@@ -23,10 +24,16 @@
     <asp:UpdatePanel ID="upnlMessagesEditor" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional">
         <ContentTemplate>
 
-            <asp:Panel ID="pnlEditor" runat="server" Visible="false">
+            <asp:Panel ID="pnlEditor" runat="server" Visible="false" CssClass="simpleForm page-tone-panel page-tone-messages">
+                <div class="page-tone-header tool-card-header">
+                    <img class="tool-card-icon" src="../images/imgButtons/EditItem.gif" alt="" />
+                    <div>
+                        <h1 class="page-tone-title">Messages Editor</h1>
+                        <p class="page-tone-subtitle">Edit resource messages</p>
+                    </div>
+                </div>
 
-                <!-- Search Panel -->
-                <div class="filter-toolbar">
+                <div class="page-tone-toolbar filter-toolbar">
                     <div class="filter-section search-controls">
                         <div class="filter-control">
                             <label for="<%=tbxSearch.ClientID%>">Search:</label>
@@ -36,15 +43,9 @@
                         <asp:Button ID="btnReset" runat="server" Text="Reset" ToolTip="Clear filter" OnClick="btnReset_Click" />
                     </div>
                 </div>
-                <div class="status-message">
-                    <asp:Label ID="ResultsTitleLabel" runat="server" CssClass="status-info" Text="Messages" />
-                    <br />
-                    <asp:Literal ID="ltrlStatus" runat="server" />
-                    <br />
-                </div>
 
-                <!-- Use standardized results container for controlled overflow -->
                 <asp:Panel ID="pnlResultsSection" runat="server" CssClass="results-container results-panel" Visible="true">
+                    <asp:Label ID="ResultsTitleLabel" runat="server" CssClass="title" Text="Messages" />
                     <br />
 
                     <asp:GridView ID="gvMessages" runat="server"
@@ -89,7 +90,6 @@
                                     <asp:ImageButton ID="btnUpdate" runat="server" CommandName="Update" CausesValidation="false"
                                         ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Save" ToolTip="Save" />
                                     &nbsp;
-                                   
                                     <asp:ImageButton ID="btnCancel" runat="server" CommandName="Cancel"
                                         ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" ToolTip="Cancel" />
                                 </EditItemTemplate>
@@ -102,6 +102,12 @@
                         <AlternatingRowStyle CssClass="TblRowAlt" />
                         <EditRowStyle BackColor="#FFF5D6" />
                     </asp:GridView>
+
+                    <div class="page-tone-footer">
+                        <div class="status-message" id="pnlStatus" runat="server">
+                            <asp:Literal ID="ltrlStatus" runat="server" />
+                        </div>
+                    </div>
                 </asp:Panel>
             </asp:Panel>
         </ContentTemplate>

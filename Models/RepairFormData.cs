@@ -28,6 +28,8 @@ namespace TrackerSQL.Models
         public string RepairFaultDesc { get; set; } = string.Empty;
         public int RepairStatusID { get; set; }
         public int RelatedOrderLineID { get; set; }
+        /// <summary>OrderID for RelatedOrderLineID (list/detail links). 0 when none.</summary>
+        public int RelatedOrderID { get; set; }
         public string Notes { get; set; } = string.Empty;
     }
 }

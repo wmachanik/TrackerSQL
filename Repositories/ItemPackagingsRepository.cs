@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Classes;
@@ -84,8 +84,8 @@ namespace TrackerSQL.Repositories
                 new DBParameter
                 {
                     ParamName = "@Colour",
-                    DataValue = entity.Colour,
-                    DataDbType = DbType.Int32
+                    DataValue = entity.Colour ?? (object)DBNull.Value,
+                    DataDbType = DbType.String
                 },
                 new DBParameter
                 {
@@ -135,8 +135,8 @@ namespace TrackerSQL.Repositories
                 new DBParameter
                 {
                     ParamName = "@Colour",
-                    DataValue = entity.Colour,
-                    DataDbType = DbType.Int32
+                    DataValue = entity.Colour ?? (object)DBNull.Value,
+                    DataDbType = DbType.String
                 },
                 new DBParameter
                 {
@@ -195,6 +195,28 @@ namespace TrackerSQL.Repositories
             if (trimmed.Equals("Symbol DESC", StringComparison.OrdinalIgnoreCase))
             {
                 return "Symbol DESC";
+            }
+
+            if (trimmed.Equals("BGColour", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("BGColour ASC", StringComparison.OrdinalIgnoreCase))
+            {
+                return "BGColour ASC";
+            }
+
+            if (trimmed.Equals("BGColour DESC", StringComparison.OrdinalIgnoreCase))
+            {
+                return "BGColour DESC";
+            }
+
+            if (trimmed.Equals("Colour", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("Colour ASC", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Colour ASC";
+            }
+
+            if (trimmed.Equals("Colour DESC", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Colour DESC";
             }
 
             return "ItemPrepDescription";

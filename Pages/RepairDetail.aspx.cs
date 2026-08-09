@@ -7,6 +7,7 @@ using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Pages
 {
@@ -48,7 +49,8 @@ namespace TrackerSQL.Pages
         protected DropDownList ddlRepairStatuses;
         protected TextBox tbxNotes;
         protected Label lblRepairID;
-        protected Label lblRelatedOrderLineID;
+        protected HiddenField hdnRelatedOrderLineID;
+        protected System.Web.UI.HtmlControls.HtmlAnchor lnkRelatedOrder;
         protected Label lblDateLogged;
         protected Label lblLastChanged;
         protected Button btnUpdate;
@@ -79,6 +81,8 @@ namespace TrackerSQL.Pages
                 this.PutDataFromForm(Convert.ToInt32(this.lblRepairID.Text));
                 this.btnDelete.Enabled = Membership.GetUser() != null
                     && Membership.GetUser().UserName.ToLower() == "warren";
+                if (this.Request.QueryString["new"] == "1")
+                    SetStatus("Repair created. Complete the details and save.", false);
                 this.upnlRepairDetail.Update();
             }
             else
@@ -229,9 +233,48 @@ namespace TrackerSQL.Pages
             this.tbxNotes.Text = repairById.Notes;
             this.lblDateLogged.Text = $"{repairById.DateLogged:d}";
             this.lblLastChanged.Text = $"{repairById.LastStatusChange:d}";
-            this.lblRelatedOrderLineID.Text = repairById.RelatedOrderLineID.ToString();
+            SetRelatedOrderLineLink(repairById.RelatedOrderLineID);
             this.Session[CONST_SESSION_REPAIRSTATUSID] = (object)repairById.RepairStatusID;
             ClearDirtyState();
+        }
+
+        /// <summary>
+        /// Shows the related order-line id as a real &lt;a&gt; that opens Order Detail.
+        /// (asp:HyperLink with an empty NavigateUrl renders as a &lt;span&gt; — looks like
+        /// text and is not clickable, which is what users were seeing.)
+        /// </summary>
+        private void SetRelatedOrderLineLink(int relatedOrderLineId)
+        {
+            hdnRelatedOrderLineID.Value = relatedOrderLineId.ToString();
+            lnkRelatedOrder.InnerText = relatedOrderLineId > 0 ? relatedOrderLineId.ToString() : "—";
+            lnkRelatedOrder.HRef = string.Empty;
+            lnkRelatedOrder.Title = string.Empty;
+            lnkRelatedOrder.Attributes["class"] = "repair-related-order-link is-disabled";
+
+            if (relatedOrderLineId <= 0)
+                return;
+
+            var ordersRepo = new OrdersRepository();
+            int? orderId = ordersRepo.GetOrderIdByLineId(relatedOrderLineId);
+
+            // Legacy repairs may still store an OrderID in RelatedOrderLineID
+            if ((!orderId.HasValue || orderId.Value <= 0)
+                && ordersRepo.OrderExists(relatedOrderLineId))
+            {
+                orderId = relatedOrderLineId;
+            }
+
+            if (!orderId.HasValue || orderId.Value <= 0)
+            {
+                lnkRelatedOrder.Title = "No matching order found for line " + relatedOrderLineId;
+                return;
+            }
+
+            lnkRelatedOrder.HRef = ResolveUrl(
+                "~/Pages/OrderDetail.aspx?" + OrderDetail.CONST_QRYSTR_ORDERID + "=" + orderId.Value);
+            lnkRelatedOrder.Title = "Open order " + orderId.Value;
+            lnkRelatedOrder.Attributes["class"] = "repair-related-order-link";
+            lnkRelatedOrder.InnerText = relatedOrderLineId + " → order " + orderId.Value;
         }
 
         private RepairFormData GetDataFromForm()
@@ -259,8 +302,14 @@ namespace TrackerSQL.Pages
                 Notes = this.tbxNotes.Text,
                 DateLogged = Convert.ToDateTime(this.lblDateLogged.Text).Date,
                 LastStatusChange = Convert.ToDateTime(this.lblLastChanged.Text).Date,
-                RelatedOrderLineID = Convert.ToInt32(this.lblRelatedOrderLineID.Text)
+                RelatedOrderLineID = ParseRelatedOrderLineId()
             };
+        }
+
+        private int ParseRelatedOrderLineId()
+        {
+            int lineId;
+            return int.TryParse(hdnRelatedOrderLineID.Value, out lineId) ? lineId : 0;
         }
 
         protected void btnInsert_Click(object sender, EventArgs e)
@@ -268,6 +317,11 @@ namespace TrackerSQL.Pages
             if (this.cboNewCompany.SelectedIndex <= 0)
             {
                 SetStatus("Select a customer before inserting.", true);
+                if (btnInsert != null)
+                {
+                    btnInsert.Enabled = true;
+                    btnInsert.Text = "Insert";
+                }
                 upnlRepairDetail.Update();
                 return;
             }
@@ -277,16 +331,20 @@ namespace TrackerSQL.Pages
             if (repairId <= 0)
             {
                 SetStatus("Could not create repair.", true);
+                if (btnInsert != null)
+                {
+                    btnInsert.Enabled = true;
+                    btnInsert.Text = "Insert";
+                }
                 upnlRepairDetail.Update();
                 return;
             }
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"New repair created for ContactID {contactId}, RepairID {repairId}");
-            this.pnlNewRepair.Visible = false;
-            this.pnlRepairDetail.Visible = true;
-            this.PutDataFromForm(repairId);
-            SetStatus("Repair created. Complete the details and save.", false);
-            this.upnlRepairDetail.Update();
+
+            // Full redirect (PostBackTrigger) so refresh does not re-post Insert and create a second repair.
+            Response.Redirect("RepairDetail.aspx?RepairID=" + repairId + "&new=1", false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         private bool TryUpdateRecord(out string message)
@@ -297,7 +355,26 @@ namespace TrackerSQL.Pages
                 ? (int)this.Session[CONST_SESSION_REPAIRSTATUSID]
                 : 0;
 
+            // ZZName must have a walk-in name before any save (repair row or related order).
+            string sundryError = _repairManager.ValidateSundryContactName(dataFromForm);
+            if (!string.IsNullOrEmpty(sundryError))
+            {
+                message = sundryError;
+                return false;
+            }
+
+            // A repair needs a related order (repair-check line, delivery in 7 days). Create it
+            // before saving so the new RelatedOrderLineID is stored with the repair. For ZZName
+            // this also writes "contact name: [RepairStatus: …]" into the order notes.
+            string orderNote = _repairManager.EnsureRelatedOrder(dataFromForm);
+            SetRelatedOrderLineLink(dataFromForm.RelatedOrderLineID);
+
             string result = _repairManager.HandleStatusChange(dataFromForm);
+
+            // Keep Name: / [RepairStatus: …] on the related order in sync when saving from Repair Detail
+            // (HandleStatusChange itself does not touch order notes — status-change page stays lean).
+            if (dataFromForm.RelatedOrderLineID > 0)
+                _repairManager.SyncRelatedOrderNotes(dataFromForm);
 
             // Repo update failure returns ErrorUpdating before email; email failure returns a summary after save.
             string updateError = MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
@@ -323,6 +400,8 @@ namespace TrackerSQL.Pages
 
             this.Session[CONST_SESSION_REPAIRSTATUSID] = dataFromForm.RepairStatusID;
             message = string.IsNullOrWhiteSpace(result) ? "Record updated." : result;
+            if (!string.IsNullOrWhiteSpace(orderNote))
+                message += " " + orderNote;
             return true;
         }
 

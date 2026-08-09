@@ -159,10 +159,20 @@ namespace TrackerSQL.Classes
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"❌ Failed to add CC from address: {ex.Message}");
             }
         }
+        /// <summary>
+        /// True when App_Data pre_send_*.eml dumps are allowed.
+        /// EnableEmailLogging is the primary switch; EmailDebugSaveMime remains as a legacy alias.
+        /// </summary>
+        private static bool IsPreparedEmailFileLoggingEnabled()
+        {
+            return ConfigHelper.GetBool("EnableEmailLogging", false)
+                || ConfigHelper.GetBool("EmailDebugSaveMime", false);
+        }
+
         private void SavePreparedMessageToFile(string prefix = "email")
         {
-            // Controlled by Web.config switch EmailDebugSaveMime (default: false)
-            if (!ConfigHelper.GetBool("EmailDebugSaveMime", false))
+            // App_Data/pre_send_*.eml only when email logging is enabled in Web.config
+            if (!IsPreparedEmailFileLoggingEnabled())
                 return;
 
             try
@@ -321,11 +331,8 @@ namespace TrackerSQL.Classes
 
                         AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DEBUG EmailMailKitCls: Message-Id: {message.MessageId}");
 
-                        // Only save raw MIME if EmailDebugSaveMime is true in Web.config
-                        if (ConfigHelper.GetBool("EmailDebugSaveMime", false))
-                        {
-                            SavePreparedMessageToFile("pre_send");
-                        }
+                        // App_Data/pre_send_*.eml — only when EnableEmailLogging (or legacy EmailDebugSaveMime) is true
+                        SavePreparedMessageToFile("pre_send");
                     }
                     catch (Exception ex)
                     {
@@ -564,7 +571,7 @@ namespace TrackerSQL.Classes
         }
         /// <summary>
         /// Runs diagnostics against the SMTP server using current email configuration.
-        /// Logs the results to App_Data/email.log.
+        /// Logs the results to App_Data/email.log when EnableEmailLogging is true in Web.config.
         /// </summary>
         /// <returns>A formatted summary of server diagnostics.</returns>
         public string GetServerDiagnostics()

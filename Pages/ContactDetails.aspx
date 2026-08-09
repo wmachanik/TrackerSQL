@@ -1,7 +1,7 @@
 <%@ Page Title="Contact Details" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true"
     CodeBehind="ContactDetails.aspx.cs" Inherits="TrackerSQL.Pages.ContactDetails" %>
 
-<asp:Content ID="cntContactDetailsHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntContactDetailsHdr" title="Contact Details" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
     <script type="text/javascript">
         function redirect(url) {
@@ -191,9 +191,11 @@
                             OnClientClick="return contactDetailsConfirmLeave();"
                             ToolTip="Create order from last order" />
                         <asp:Button ID="btnForceNext" Text="Force Next" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnForceNext_Click" CausesValidation="false" />
+                            OnClick="btnForceNext_Click" CausesValidation="false"
+                            ToolTip="Skip about a week of prediction (sets Next Coffee forward)" />
                         <asp:Button ID="btnForceCheckup" Text="Force Checkup" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnForceCheckup_Click" CausesValidation="false" />
+                            OnClick="btnForceCheckup_Click" CausesValidation="false"
+                            ToolTip="Force contact into next checkup cycle (Next Coffee in 5 days, reset reminders)" />
                         <asp:Button ID="btnRecalcAverage" Text="Recalc Ave" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnRecalcAverage_Click" CausesValidation="false" />
                         <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
@@ -215,7 +217,9 @@
 
     <asp:UpdatePanel ID="uppnlTabContainer" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
         <ContentTemplate>
-            <ajaxToolkit:TabContainer ID="tabcContact" runat="server" AutoPostBack="true" OnActiveTabChanged="tabcContact_OnActiveTabChanged">
+            <%-- No AutoPostBack: all tab content is bound on load, so switching is instant
+                 client-side (a server round trip here left the progress overlay stuck). --%>
+            <ajaxToolkit:TabContainer ID="tabcContact" runat="server" AutoPostBack="false">
                 <ajaxToolkit:TabPanel ID="tabpnlAccountInfo" runat="server" HeaderText="Accounts Info">
                     <ContentTemplate>
                         <asp:UpdatePanel ID="dvContactsAccInfoUpdatePanel" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional">
@@ -442,6 +446,123 @@
                                 </div>
                             </ContentTemplate>
                         </asp:UpdatePanel>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Orders" ID="tabpnlOrders">
+                    <HeaderTemplate>Orders</HeaderTemplate>
+                    <ContentTemplate>
+                        <asp:UpdatePanel ID="upnlContactOrders" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                            <ContentTemplate>
+                                <div style="padding:4px">
+                                    <asp:GridView ID="gvContactOrders" runat="server" CssClass="TblWhite small"
+                                        AutoGenerateColumns="False" EmptyDataText="no orders yet"
+                                        AllowPaging="True" PageSize="15"
+                                        DataKeyNames="OrderID">
+                                        <Columns>
+                                            <asp:TemplateField ShowHeader="False">
+                                                <ItemTemplate>
+                                                    <asp:HyperLink ID="hlEditOrder" runat="server"
+                                                        Visible='<%# (bool)Eval("IsEditable") %>'
+                                                        ImageUrl="~/images/imgButtons/EditItem.gif"
+                                                        ToolTip="Edit this order"
+                                                        NavigateUrl='<%# Eval("EditNavigateUrl") %>' />
+                                                    <asp:Image ID="imgOrderDone" runat="server"
+                                                        Visible='<%# (bool)Eval("Done") %>'
+                                                        ImageUrl="~/images/imgButtons/DoneButton.gif"
+                                                        AlternateText="Done"
+                                                        ToolTip="Order is done" />
+                                                </ItemTemplate>
+                                                <ItemStyle HorizontalAlign="Center" />
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="OrderID" HeaderText="Order #" />
+                                            <asp:BoundField DataField="OrderDate" HeaderText="Ordered" DataFormatString="{0:yyyy-MM-dd}" />
+                                            <asp:BoundField DataField="PrepDate" HeaderText="Prep" DataFormatString="{0:yyyy-MM-dd}" />
+                                            <asp:BoundField DataField="RequiredByDate" HeaderText="Required By" DataFormatString="{0:yyyy-MM-dd}" />
+                                            <asp:BoundField DataField="ItemsDisplay" HeaderText="Item(s)" />
+                                            <asp:TemplateField HeaderText="Confirmed">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblOrderConfirmed" runat="server"
+                                                        Text='<%# (bool)Eval("Confirmed") ? "Y" : "" %>' />
+                                                </ItemTemplate>
+                                                <ItemStyle HorizontalAlign="Center" />
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="Notes" HeaderText="Notes" />
+                                        </Columns>
+                                        <PagerStyle CssClass="pager-row" />
+                                        <PagerTemplate>
+                                            <asp:PlaceHolder ID="plhPager" runat="server" />
+                                        </PagerTemplate>
+                                    </asp:GridView>
+                                </div>
+                            </ContentTemplate>
+                        </asp:UpdatePanel>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
+                <%-- Only visible when the contact has recurring orders (enabled or disabled) --%>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Recurring Orders" ID="tabpnlRecurring" Visible="false">
+                    <HeaderTemplate>Recurring Orders</HeaderTemplate>
+                    <ContentTemplate>
+                        <div style="padding:4px">
+                            <asp:GridView ID="gvContactRecurring" runat="server" CssClass="TblWhite small"
+                                AutoGenerateColumns="False" EmptyDataText="no enabled recurring orders">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlEditRecurring" runat="server"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif"
+                                                ToolTip="Edit this recurring order"
+                                                NavigateUrl='<%# Eval("DetailsNavigateUrl") %>' />
+                                        </ItemTemplate>
+                                        <ItemStyle HorizontalAlign="Center" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="EnabledDisplay" HeaderText="Status" />
+                                    <asp:BoundField DataField="ItemsDisplay" HeaderText="Item" />
+                                    <asp:BoundField DataField="RecurringPatternDisplay" HeaderText="Recurrence" />
+                                    <asp:BoundField DataField="DateLastDone" HeaderText="Last Done" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:BoundField DataField="NextDateRequired" HeaderText="Next Date" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:BoundField DataField="RequireUntilDate" HeaderText="Until" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:BoundField DataField="DeliveryByDisplay" HeaderText="Delivery By" />
+                                </Columns>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
+                <%-- Visible when the contact has any repairs (open or done) --%>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Repairs" ID="tabpnlRepairs" Visible="false">
+                    <HeaderTemplate>Repairs</HeaderTemplate>
+                    <ContentTemplate>
+                        <div style="padding:4px">
+                            <asp:GridView ID="gvContactRepairs" runat="server" CssClass="TblWhite small"
+                                AutoGenerateColumns="False" EmptyDataText="no repairs"
+                                AllowPaging="True" PageSize="10">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlOpenRepair" runat="server"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif"
+                                                ToolTip='<%# IsRepairEditable(Eval("RepairStatusID")) ? "Edit this repair" : "View this repair" %>'
+                                                NavigateUrl='<%# Eval("RepairID", "~/Pages/RepairDetail.aspx?RepairID={0}") %>' />
+                                        </ItemTemplate>
+                                        <ItemStyle HorizontalAlign="Center" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="JobCardNumber" HeaderText="Job Card" />
+                                    <asp:BoundField DataField="DateLogged" HeaderText="Logged" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:TemplateField HeaderText="Status">
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblRepairStatus" runat="server"
+                                                Text='<%# GetRepairStatusDesc(Eval("RepairStatusID")) %>' />
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="LastStatusChange" HeaderText="Last Change" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:BoundField DataField="EquipSerialNumber" HeaderText="Machine S/N" />
+                                    <asp:BoundField DataField="RepairFaultDesc" HeaderText="Fault" />
+                                </Columns>
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
+                            </asp:GridView>
+                        </div>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
             </ajaxToolkit:TabContainer>

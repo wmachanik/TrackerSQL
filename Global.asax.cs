@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Web;
+using System.Web.Hosting;
 using System.Web.UI;
 using TrackerSQL.Classes;
 
@@ -8,8 +10,12 @@ namespace TrackerSQL
 {
     public class Global : HttpApplication
     {
+        private const string StartupLogFileName = "startup.log";
+
         private void Application_Start(object sender, EventArgs e)
         {
+            WriteStartupLog("Application_Start");
+
             // Force-disable unobtrusive validation
             System.Web.UI.ValidationSettings.UnobtrusiveValidationMode =
                 System.Web.UI.UnobtrusiveValidationMode.None;
@@ -17,6 +23,37 @@ namespace TrackerSQL
 
         private void Application_End(object sender, EventArgs e)
         {
+            WriteStartupLog("Application_End");
+        }
+
+        /// <summary>
+        /// Appends a timestamped line to App_Data/startup.log so AppDomain recycles are visible.
+        /// Safe with no HttpContext (Application_End).
+        /// </summary>
+        private static void WriteStartupLog(string eventName)
+        {
+            try
+            {
+                string appData = HostingEnvironment.MapPath("~/App_Data/");
+                if (string.IsNullOrEmpty(appData))
+                    return;
+                if (!Directory.Exists(appData))
+                    Directory.CreateDirectory(appData);
+
+                string line = string.Format(
+                    "[{0:yyyy-MM-dd HH:mm:ss.fff}] {1} | PID={2} | AppDomainId={3} | ShutdownReason={4}",
+                    DateTime.Now,
+                    eventName,
+                    Process.GetCurrentProcess().Id,
+                    AppDomain.CurrentDomain.Id,
+                    HostingEnvironment.ShutdownReason);
+
+                File.AppendAllText(Path.Combine(appData, StartupLogFileName), line + Environment.NewLine);
+            }
+            catch
+            {
+                // Never break app start/stop for logging.
+            }
         }
 
         private void Application_Error(object sender, EventArgs e)
@@ -136,6 +173,16 @@ namespace TrackerSQL
 
         private void Session_End(object sender, EventArgs e)
         {
+        }
+
+        private void Application_BeginRequest(object sender, EventArgs e)
+        {
+            RequestTiming.BeginRequest(HttpContext.Current);
+        }
+
+        private void Application_EndRequest(object sender, EventArgs e)
+        {
+            RequestTiming.EndRequest(HttpContext.Current);
         }
     }
 }

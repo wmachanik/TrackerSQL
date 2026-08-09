@@ -21,6 +21,8 @@ namespace TrackerSQL.Pages
         {
             base.OnInit(e);
             WireItemUsageGridEvents();
+            WireContactRepairsGridEvents();
+            WireContactOrdersGridEvents();
         }
 
         private void WireItemUsageGridEvents()
@@ -43,6 +45,30 @@ namespace TrackerSQL.Pages
             gvContactItems.PageIndexChanging += gvContactItems_PageIndexChanging;
             gvContactItems.RowDataBound += gvContactItems_RowDataBound;
             gvContactItems.RowCommand += gvContactItems_RowCommand;
+        }
+
+        private void WireContactRepairsGridEvents()
+        {
+            if (gvContactRepairs == null)
+                return;
+
+            gvContactRepairs.PageIndexChanging -= gvContactRepairs_PageIndexChanging;
+            gvContactRepairs.RowCreated -= gvContactRepairs_RowCreated;
+
+            gvContactRepairs.PageIndexChanging += gvContactRepairs_PageIndexChanging;
+            gvContactRepairs.RowCreated += gvContactRepairs_RowCreated;
+        }
+
+        private void WireContactOrdersGridEvents()
+        {
+            if (gvContactOrders == null)
+                return;
+
+            gvContactOrders.PageIndexChanging -= gvContactOrders_PageIndexChanging;
+            gvContactOrders.RowCreated -= gvContactOrders_RowCreated;
+
+            gvContactOrders.PageIndexChanging += gvContactOrders_PageIndexChanging;
+            gvContactOrders.RowCreated += gvContactOrders_RowCreated;
         }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -317,12 +343,119 @@ namespace TrackerSQL.Pages
 
                 // Bind usage lines grid (last items used)
                 BindUsageLines(id);
+
+                // Orders / Recurring / Repairs history tabs
+                BindHistoryTabs(id);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "Error loading contact: " + ex.Message);
                 SetStatus("Error loading contact.", true);
             }
+        }
+
+        /// <summary>
+        /// Recurring Orders and Repairs tabs — each only appears when it has data.
+        /// Orders tab is always shown (like Item Usage). Repairs lists every repair for the contact.
+        /// </summary>
+        private void BindHistoryTabs(int contactId)
+        {
+            try
+            {
+                BindContactOrdersGrid(contactId);
+
+                var recurring = new RecurringOrdersRepository().GetSummariesByContactId(contactId);
+                tabpnlRecurring.Visible = recurring.Count > 0;
+                if (tabpnlRecurring.Visible)
+                {
+                    gvContactRecurring.DataSource = recurring;
+                    gvContactRecurring.DataBind();
+                }
+
+                BindContactRepairsGrid(contactId);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ContactDetails.BindHistoryTabs error for ContactID=" + contactId + ": " + ex.Message);
+                tabpnlRecurring.Visible = false;
+                tabpnlRepairs.Visible = false;
+            }
+        }
+
+        private void BindContactOrdersGrid(int contactId)
+        {
+            if (gvContactOrders == null)
+                return;
+
+            var orders = new OrdersRepository().GetSummariesByContactId(contactId)
+                ?? new List<ContactOrderSummary>();
+
+            int pageCount = Math.Max(1, (int)Math.Ceiling(orders.Count / (double)gvContactOrders.PageSize));
+            if (gvContactOrders.PageIndex >= pageCount)
+                gvContactOrders.PageIndex = pageCount - 1;
+
+            gvContactOrders.DataSource = orders;
+            gvContactOrders.DataBind();
+
+            if (upnlContactOrders != null)
+                upnlContactOrders.Update();
+        }
+
+        protected void gvContactOrders_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvContactOrders.PageIndex = e.NewPageIndex;
+            if (TryGetContactId(out int contactId))
+                BindContactOrdersGrid(contactId);
+        }
+
+        protected void gvContactOrders_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvContactOrders, e.Row);
+        }
+
+        private void BindContactRepairsGrid(int contactId)
+        {
+            var repairs = new RepairsRepository().GetByContactId(contactId) ?? new List<Repair>();
+            tabpnlRepairs.Visible = repairs.Count > 0;
+            if (!tabpnlRepairs.Visible)
+                return;
+
+            // Keep pager in range after deletes / smaller result sets.
+            int pageCount = Math.Max(1, (int)Math.Ceiling(repairs.Count / (double)gvContactRepairs.PageSize));
+            if (gvContactRepairs.PageIndex >= pageCount)
+                gvContactRepairs.PageIndex = pageCount - 1;
+
+            gvContactRepairs.DataSource = repairs;
+            gvContactRepairs.DataBind();
+        }
+
+        protected void gvContactRepairs_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            int contactId = GetLoadedContactId();
+            gvContactRepairs.PageIndex = e.NewPageIndex;
+            if (contactId > 0)
+                BindContactRepairsGrid(contactId);
+            if (uppnlTabContainer != null)
+                uppnlTabContainer.Update();
+        }
+
+        protected void gvContactRepairs_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvContactRepairs, e.Row);
+        }
+
+        /// <summary>True while the repair is not done (used for Edit vs View tooltip).</summary>
+        protected bool IsRepairEditable(object repairStatusId)
+        {
+            int statusId = repairStatusId == null ? 0 : Convert.ToInt32(repairStatusId);
+            return statusId != RepairsRepository.DoneStatusId;
+        }
+
+        protected string GetRepairStatusDesc(object repairStatusId)
+        {
+            int statusId = repairStatusId == null ? 0 : Convert.ToInt32(repairStatusId);
+            return statusId > 0 ? new RepairStatusesRepository().GetRepairStatusDesc(statusId) : string.Empty;
         }
 
         private void BindUsageLines(int contactId)
@@ -444,6 +577,7 @@ namespace TrackerSQL.Pages
             btnCopy2AccInfo.Enabled = editMode;
             btnAddLasOrder.Enabled = editMode;
             btnForceNext.Enabled = editMode;
+            btnForceCheckup.Enabled = editMode;
             btnRecalcAverage.Enabled = editMode;
             btnInsert.Enabled = !editMode;
             accAddDetailsButton.Enabled = !editMode;
@@ -971,19 +1105,159 @@ namespace TrackerSQL.Pages
         }
         protected void btnAddLasOrder_Click(object sender, EventArgs e)
         {
-            Response.Redirect("~/Pages/OrderDetail.aspx?NewOrder=true&CoID=" + CompanyIDLabel.Text);
+            if (!TryGetContactId(out int contactId))
+            {
+                SetStatus("Open a saved contact before adding their last order.", true);
+                upnlContactDetails.Update();
+                new showMessageBox(Page, "Add Last", "Open a saved contact before adding their last order.");
+                return;
+            }
+
+            // Same contract as Contacts.aspx / CustomerDetails: new draft + copy last order lines.
+            string url = string.Format(
+                "~/Pages/OrderDetail.aspx?NewOrder=true&{0}={1}&{2}=Y",
+                SystemConstants.UrlParameterConstants.CustomerID,
+                contactId,
+                SystemConstants.UrlParameterConstants.LastOrder);
+            Response.Redirect(url, true);
         }
         protected void btnForceNext_Click(object sender, EventArgs e)
         {
-            // TODO: implement force next logic using SQL equivalent
-            SetStatus("Force Next (SQL) pending migration.", null);
-            upnlContactDetails.Update();
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction("Force Next", "No contact selected.", true);
+                    return;
+                }
+
+                // Match legacy CustomerDetails: push NextCoffeeBy ~2 weeks + prep alignment + 3 days.
+                DateTime nextDate = new TrackerTools()
+                    .GetClosestNextPreparationDate(TimeZoneUtils.Now().AddDays(14.0).Date)
+                    .AddDays(3.0);
+
+                var usageRepo = new ContactsUsageRepository();
+                if (usageRepo.GetByContactId(contactId) == null)
+                {
+                    NotifyForceAction(
+                        "Force Next",
+                        "No prediction record for this contact — cannot set Next Coffee date.",
+                        true);
+                    return;
+                }
+
+                if (!usageRepo.ForceNextCoffeeDate(contactId, nextDate))
+                {
+                    NotifyForceAction(
+                        "Force Next",
+                        "Failed to update Next Coffee date for contact " + contactId + ".",
+                        true);
+                    return;
+                }
+
+                new ContactsRepository().IncrementReminderCount(contactId);
+                RefreshPredictionAfterForce(contactId);
+
+                string name = string.IsNullOrWhiteSpace(CompanyNameTextBox.Text)
+                    ? ("Contact " + contactId)
+                    : CompanyNameTextBox.Text.Trim();
+                string msg = name + " forced to skip a week of prediction. Next coffee set to "
+                    + nextDate.ToString("d") + ".";
+
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Customers,
+                    "User '" + (User?.Identity?.Name ?? "?") + "' Force Next for contact "
+                        + contactId + " -> " + nextDate.ToString("d") + ".");
+
+                NotifyForceAction("Force Next", msg, false);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Customers,
+                    "Error in btnForceNext_Click: " + ex.Message);
+                NotifyForceAction("Force Next", "Error: " + ex.Message, true);
+            }
         }
+
         protected void btnForceCheckup_Click(object sender, EventArgs e)
         {
-            SetStatus("Force Checkup (SQL) pending migration.", null);
-            upnlContactDetails.Update();
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction("Force Checkup", "No contact selected.", true);
+                    return;
+                }
+
+                DateTime forceDate = TimeZoneUtils.Now().Date.AddDays(5);
+                var usageRepo = new ContactsUsageRepository();
+                if (usageRepo.GetByContactId(contactId) == null)
+                {
+                    NotifyForceAction(
+                        "Force Checkup",
+                        "No prediction record for this contact — cannot force checkup.",
+                        true);
+                    return;
+                }
+
+                if (!usageRepo.ForceNextCoffeeDate(contactId, forceDate))
+                {
+                    NotifyForceAction(
+                        "Force Checkup",
+                        "Failed to force checkup for contact " + contactId + ".",
+                        true);
+                    return;
+                }
+
+                new ContactsRepository().ResetReminderCount(contactId, forceEnable: false);
+                RefreshPredictionAfterForce(contactId);
+
+                string msg = "Contact " + contactId
+                    + " forced into next checkup cycle. Next coffee date set to "
+                    + forceDate.ToString("d") + ".";
+
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Customers,
+                    "User '" + (User?.Identity?.Name ?? "?") + "' Force Checkup for contact "
+                        + contactId + " -> " + forceDate.ToString("d") + ".");
+
+                NotifyForceAction("Force Checkup", msg, false);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Customers,
+                    "Error in btnForceCheckup_Click: " + ex.Message);
+                NotifyForceAction("Force Checkup", "Error forcing checkup: " + ex.Message, true);
+            }
         }
+
+        private void RefreshPredictionAfterForce(int contactId)
+        {
+            try
+            {
+                if (ReminderCountLabel != null)
+                    ReminderCountLabel.Text = new ContactsRepository().GetReminderCount(contactId).ToString();
+            }
+            catch { }
+
+            BindUsageLines(contactId);
+
+            if (upnlNextItems != null)
+                upnlNextItems.Update();
+            if (uppnlTabContainer != null)
+                uppnlTabContainer.Update();
+        }
+
+        private void NotifyForceAction(string title, string message, bool isError)
+        {
+            SetStatus(message, isError);
+            upnlContactDetails.Update();
+            // Alert so the user always sees the outcome (status bar alone was easy to miss).
+            new showMessageBox(Page, title, message);
+        }
+
         protected void btnRecalcAverage_Click(object sender, EventArgs e)
         {
             SetStatus("Recalc average (SQL) pending migration.", null);
@@ -1042,10 +1316,6 @@ namespace TrackerSQL.Pages
             ClearDirtyState();
             SetStatus(accWasSaved ? "Account details saved." : "No account data to save.", accWasSaved ? (bool?)false : null);
             RefreshAfterSave();
-        }
-        protected void tabcContact_OnActiveTabChanged(object sender, EventArgs e)
-        {
-            // could store active tab index if needed
         }
 
         protected void gvContactItems_RowEditing(object sender, GridViewEditEventArgs e)

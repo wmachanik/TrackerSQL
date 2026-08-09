@@ -1,4 +1,4 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="QuaffeeCoffeeTastingSheet.aspx.cs" Inherits="TrackerSQL.Pages.QuaffeeCoffeeTastingSheet" %>
+<%@ Page Title="Coffee Tasting Sheet" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="QuaffeeCoffeeTastingSheet.aspx.cs" Inherits="TrackerSQL.Pages.QuaffeeCoffeeTastingSheet" %>
 
 <asp:Content ID="cntHeaderTasting" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>

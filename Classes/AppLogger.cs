@@ -65,6 +65,10 @@ namespace TrackerSQL.Classes
                 if (string.IsNullOrWhiteSpace(logName))
                     logName = "general";
 
+                // App_Data/email.log only when EnableEmailLogging=true in Web.config
+                if (IsEmailLogName(logName) && !ConfigHelper.GetBool("EnableEmailLogging", false))
+                    return;
+
                 string logDir = HttpContext.Current?.Server?.MapPath("~/App_Data/")
                                 ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data");
 
@@ -87,6 +91,11 @@ namespace TrackerSQL.Classes
             {
                 // Optional fallback
             }
+        }
+
+        private static bool IsEmailLogName(string logName)
+        {
+            return string.Equals(logName, SystemConstants.LogTypes.Email, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

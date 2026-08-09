@@ -1,6 +1,6 @@
-<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Contacts.aspx.cs" Inherits="TrackerSQL.Pages.Contacts" %>
+<%@ Page Title="Contacts" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Contacts.aspx.cs" Inherits="TrackerSQL.Pages.Contacts" %>
 
-<asp:Content ID="cntContactsHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntContactsHdr" title="Contacts" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 
 <asp:Content ID="cntContactsBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -79,7 +79,12 @@
                         AllowSorting="True" AllowPaging="True" CellPadding="0" CellSpacing="0"
                         PageSize="25" EmptyDataText="No contacts found."
                         OnPageIndexChanging="gvContacts_PageIndexChanging"
-                        OnSorting="gvContacts_Sorting">
+                        OnSorting="gvContacts_Sorting"
+                        OnRowCreated="gvContacts_RowCreated">
+                        <PagerStyle CssClass="pager-row" />
+                        <PagerTemplate>
+                            <asp:PlaceHolder ID="plhPager" runat="server" />
+                        </PagerTemplate>
                         <Columns>
                             <asp:HyperLinkField DataNavigateUrlFields="CustomerID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}"
                                 DataTextField="CompanyName" HeaderText="Company Name" SortExpression="CompanyName"
@@ -121,8 +126,9 @@
         </ContentTemplate>
         <Triggers>
             <asp:AsyncPostBackTrigger ControlID="tbxFilterBy" EventName="TextChanged" />
-            <asp:AsyncPostBackTrigger ControlID="btnGon" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
+            <%-- Search/reset are FULL postbacks — async panel updates proved unreliable. --%>
+            <asp:PostBackTrigger ControlID="btnGon" />
+            <asp:PostBackTrigger ControlID="btnReset" />
             <asp:AsyncPostBackTrigger ControlID="ddlContactEnabled" EventName="SelectedIndexChanged" />
             <asp:PostBackTrigger ControlID="btnBack" />
         </Triggers>

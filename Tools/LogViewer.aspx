@@ -1,6 +1,6 @@
-<%@ Page Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LogViewer.aspx.cs" Inherits="TrackerSQL.Tools.LogViewer" %>
+<%@ Page Title="Log Viewer" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="LogViewer.aspx.cs" Inherits="TrackerSQL.Tools.LogViewer" %>
 
-<asp:Content ID="cntLogViewerHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntLogViewerHdr" title="Log Viewer" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">
         function toggleCustomDateControls() {
             var ddl = document.getElementById('<%= ddlDateRange.ClientID %>');

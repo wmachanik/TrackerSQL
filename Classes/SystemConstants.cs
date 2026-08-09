@@ -55,6 +55,32 @@ namespace TrackerSQL.Classes
             public const int InfoOnly = 9;
         }
 
+        // Invoice / account type constants (InvoiceTypesTbl)
+        public static class InvoiceTypeConstants
+        {
+            public const int Standard = 1;
+            public const int DeliveryNote = 2;
+            public const int DispatchNote = 3;
+
+            /// <summary>
+            /// When true, disabling a recurring order (on order done or manually) switches the
+            /// contact's account/invoice type back to Standard — but only once the contact has
+            /// no other enabled recurring orders left.
+            /// TODO: move to a system settings database once one exists.
+            /// </summary>
+            public static readonly bool SwitchContactToStandardOnRecurringDisable = true;
+        }
+
+        /// <summary>Recurring-order behaviour toggles (move to system settings DB later).</summary>
+        public static class RecurringOrderConstants
+        {
+            /// <summary>
+            /// When true, the contact is emailed (using MessageKeys.RecurringOrder texts) whenever
+            /// a recurring order is added, updated, or disabled.
+            /// </summary>
+            public static readonly bool NotifyContactOnChange = true;
+        }
+
         // Delivery and Personnel constants
         public static class DeliveryConstants
         {
@@ -230,6 +256,15 @@ namespace TrackerSQL.Classes
             public const int MaxReminders = 7;
             public const int DefaultReminderWindowDays = 9;
             public const int DefaultMinimumMonthlyRecurringDays = 20;
+        }
+
+        /// <summary>Contact Details history tabs (recurring orders / repairs).</summary>
+        public static class ContactHistoryConstants
+        {
+            // AppSettings key: how many months of repairs to show on the contact's Repairs tab
+            public const string RepairHistoryMonthsSettingKey = "ContactRepairHistoryMonths";
+            // Fallback default if setting missing or invalid
+            public const int DefaultRepairHistoryMonths = 48;
         }
 
         public static class HolidayClosureConstants

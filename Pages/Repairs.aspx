@@ -1,6 +1,6 @@
 <%@ Page Title="Repair List" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Repairs.aspx.cs" Inherits="TrackerSQL.Pages.Repairs" %>
 
-<asp:Content ID="cntRepairsHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntRepairsHdr" title="Repair List" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 
 <asp:Content ID="cntRepairsBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -111,7 +111,7 @@
                             <asp:TemplateField HeaderText="Status" HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1">
                                 <ItemTemplate>
                                     <asp:HyperLink ID="StatusUpdateHyperLink" runat="server" Text='<%# GetRepairStatusDesc((int)Eval("RepairStatusID")) %>'
-                                        NavigateUrl='<%# Eval("RepairID", "~/Pages/RepairStatusChange.aspx?RepairID={0}") %>' />
+                                        NavigateUrl='<%# Eval("RepairID", "~/Pages/RepairStatusChange.aspx?RepairID={0}&ReturnUrl=%2fPages%2fRepairs.aspx") %>' />
                                 </ItemTemplate>
                             </asp:TemplateField>
                             <asp:TemplateField HeaderText="Customer" ItemStyle-Font-Size="Small" HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1">
@@ -141,7 +141,21 @@
                             </asp:TemplateField>
                             <asp:BoundField DataField="RepairFaultDesc" HeaderText="FaultDesc" HeaderStyle-CssClass="col-priority-5" ItemStyle-CssClass="col-priority-5"
                                 SortExpression="RepairFaultDesc" />
-                            <asp:BoundField DataField="RelatedOrderLineID" SortExpression="RelatedOrderLineID" HeaderText="R/OLID" HeaderStyle-CssClass="col-priority-5" ItemStyle-CssClass="col-priority-5" />
+                            <asp:TemplateField HeaderText="R/OLID" SortExpression="RelatedOrderLineID"
+                                HeaderStyle-CssClass="col-priority-5" ItemStyle-CssClass="col-priority-5">
+                                <ItemTemplate>
+                                    <asp:HyperLink ID="hlRelatedOrder" runat="server"
+                                        Text='<%# Eval("RelatedOrderLineID") %>'
+                                        NavigateUrl='<%# GetRelatedOrderNavigateUrl(Eval("RelatedOrderID"), Eval("RelatedOrderLineID")) %>'
+                                        CssClass="repair-related-order-link"
+                                        Target="_blank"
+                                        ToolTip="Open the related order"
+                                        Visible='<%# Convert.ToInt32(Eval("RelatedOrderID") ?? 0) > 0 %>' />
+                                    <asp:Label ID="lblRelatedOrder" runat="server"
+                                        Text='<%# Eval("RelatedOrderLineID") %>'
+                                        Visible='<%# Convert.ToInt32(Eval("RelatedOrderID") ?? 0) <= 0 %>' />
+                                </ItemTemplate>
+                            </asp:TemplateField>
                         </Columns>
                     </asp:GridView>
 

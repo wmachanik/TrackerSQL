@@ -194,15 +194,20 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// Disables all enabled contacts with no orders since the cutoff date
+        /// Disables all enabled contacts with no orders since the cutoff date,
+        /// and prepends a dated note to each contact's Notes.
         /// </summary>
         /// <param name="cutoffDate">Cutoff date - contacts with no orders on/after this date will be disabled</param>
         /// <returns>Number of contacts disabled</returns>
         public int DisableInactiveContacts(DateTime cutoffDate)
         {
+            string notePrefix = $"{TimeZoneUtils.Now():yyyy-MM-dd}: Contact disabled — inactive "
+                + $"(no orders since {cutoffDate:yyyy-MM-dd})\n";
+
             string sql = @"
                 UPDATE ContactsTbl
-                SET Enabled = 0
+                SET Enabled = 0,
+                    Notes = @Notes + ISNULL(Notes, '')
                 WHERE Enabled = 1
                   AND NOT EXISTS (
                       SELECT 1
@@ -210,21 +215,41 @@ namespace TrackerSQL.Repositories
                       WHERE O.ContactID = ContactsTbl.ContactID
                         AND COALESCE(O.RequiredByDate, O.OrderDate) >= @CutoffDate
                   )";
-            
+
             var parameters = new List<DBParameter>
             {
-                new DBParameter 
-                { 
-                    DataValue = cutoffDate, 
-                    DataDbType = DbType.Date, 
-                    ParamName = "@CutoffDate" 
-                }
+                new DBParameter { ParamName = "@Notes", DataValue = notePrefix, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@CutoffDate", DataValue = cutoffDate, DataDbType = DbType.Date }
             };
-            
+
             using (var db = new TrackerSQLDb())
             {
                 return db.ExecuteNonQuery(sql, parameters);
             }
+        }
+
+        /// <summary>
+        /// Prepends a dated system note to ContactsTbl.Notes (newest first).
+        /// Used whenever the system changes account type, prediction, or enabled status.
+        /// </summary>
+        public bool AppendSystemNote(int contactId, string message)
+        {
+            if (contactId <= 0 || string.IsNullOrWhiteSpace(message))
+                return false;
+
+            string noteLine = $"{TimeZoneUtils.Now():yyyy-MM-dd}: {message.Trim()}\n";
+            const string sql = @"
+                UPDATE ContactsTbl
+                SET Notes = @Notes + ISNULL(Notes, '')
+                WHERE ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@Notes", DataValue = noteLine, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            return ExecNonQuery(sql, parameters) > 0;
         }
 
         public Contact GetById(long id) => GetById((int)id);
@@ -436,6 +461,7 @@ namespace TrackerSQL.Repositories
 
         /// <summary>
         /// Applies disable choice from the public email disable link (DisableClient.aspx).
+        /// Always records a dated note on the contact.
         /// </summary>
         public bool ApplyEmailDisableChoice(int contactId, bool disableAll)
         {
@@ -455,7 +481,15 @@ namespace TrackerSQL.Repositories
                 parameters.Insert(0, new DBParameter { ParamName = "@Enabled", DataValue = false, DataDbType = DbType.Boolean });
             }
 
-            return ExecNonQuery(sql, parameters) > 0;
+            bool ok = ExecNonQuery(sql, parameters) > 0;
+            if (ok)
+            {
+                AppendSystemNote(contactId, disableAll
+                    ? "Contact disabled via email link (all reminders / contact)"
+                    : "Prediction disabled via email link");
+            }
+
+            return ok;
         }
 
         public bool DisableContactReminders(int contactId, string notes)
@@ -473,6 +507,45 @@ namespace TrackerSQL.Repositories
             };
 
             return ExecNonQuery(sql, parameters) > 0;
+        }
+
+        /// <summary>
+        /// Sets only PredictionDisabled — used when recurring orders are added (disable prediction
+        /// so the two systems don't conflict) or disabled (prediction may resume).
+        /// When the flag actually changes, a dated note is prepended to ContactsTbl.Notes.
+        /// </summary>
+        /// <param name="reason">Optional context for the note, e.g. "recurring order added".</param>
+        public bool SetPredictionDisabled(int contactId, bool predictionDisabled, string reason = null)
+        {
+            if (contactId <= 0)
+                return false;
+
+            var current = GetById(contactId);
+            if (current == null)
+                return false;
+
+            bool wasDisabled = current.PredictionDisabled == true;
+
+            const string sql = @"
+                UPDATE ContactsTbl
+                SET PredictionDisabled = @PredictionDisabled
+                WHERE ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PredictionDisabled", DataValue = predictionDisabled, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            bool ok = ExecNonQuery(sql, parameters) > 0;
+            if (ok && wasDisabled != predictionDisabled)
+            {
+                string action = predictionDisabled ? "Prediction disabled" : "Prediction re-enabled";
+                string note = string.IsNullOrWhiteSpace(reason) ? action : action + " — " + reason.Trim();
+                AppendSystemNote(contactId, note);
+            }
+
+            return ok;
         }
 
         public bool DisableContactIfReminderTooHigh(int contactId, int reminderThreshold)

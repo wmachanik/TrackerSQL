@@ -1,8 +1,51 @@
 <%@ Page Title="Repair Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True"
     CodeBehind="RepairDetail.aspx.cs" Inherits="TrackerSQL.Pages.RepairDetail" MaintainScrollPositionOnPostback="true" %>
 
-<asp:Content ID="cntRepairDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntRepairDetailHdr" title="Repair Detail" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
+    <script type="text/javascript">
+        // Lock the clicked save/delete button, swap its text and show the progress strip.
+        // Full postbacks (Delete, Save & Return) never fire UpdateProgress, hence this.
+        function beginRepairDetailSave(button, savingText, confirmMessage) {
+            if (typeof repairDetailAllowNavigate === "function" && !repairDetailAllowNavigate()) {
+                return false;
+            }
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                return false;
+            }
+            if (!button || button.getAttribute("data-saving") === "true") {
+                return false;
+            }
+
+            button.setAttribute("data-saving", "true");
+            button.setAttribute("aria-disabled", "true");
+            button.style.pointerEvents = "none";
+            button.value = savingText || "Saving...";
+
+            var row = button.parentNode;
+            if (row) {
+                var siblings = row.querySelectorAll("input[type='submit'], input[type='button'], button");
+                for (var i = 0; i < siblings.length; i++) {
+                    if (siblings[i] !== button) {
+                        siblings[i].disabled = true;
+                        siblings[i].style.opacity = "0.5";
+                        siblings[i].style.pointerEvents = "none";
+                    }
+                }
+            }
+
+            var savingStatus = document.getElementById("repairDetailSaving");
+            if (savingStatus) {
+                var label = savingStatus.querySelector("span");
+                if (label) {
+                    label.innerHTML = "&nbsp;" + (savingText || "Saving") + ", please wait...";
+                }
+                savingStatus.style.display = "flex";
+            }
+
+            return true;
+        }
+    </script>
 </asp:Content>
 
 <asp:Content ID="cntRepairDetailBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -22,7 +65,8 @@
 
     <asp:UpdatePanel ID="upnlRepairDetail" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
         <Triggers>
-            <asp:AsyncPostBackTrigger ControlID="btnInsert" EventName="Click" />
+            <%-- Insert redirects; must be a full postback or UpdatePanel can fire create twice. --%>
+            <asp:PostBackTrigger ControlID="btnInsert" />
             <asp:AsyncPostBackTrigger ControlID="btnUpdate" EventName="Click" />
             <asp:PostBackTrigger ControlID="btnUpdateAndReturn" />
             <asp:PostBackTrigger ControlID="btnDelete" />
@@ -61,7 +105,8 @@
                             <td colspan="2" class="rowC" style="text-align: center; padding-top: 12px;">
                                 <div class="button-row">
                                     <asp:Button ID="btnInsert" Text="Insert" runat="server" CssClass="filter-panel-btn"
-                                        OnClick="btnInsert_Click" OnClientClick="return repairDetailAllowNavigate();" />
+                                        OnClick="btnInsert_Click"
+                                        OnClientClick="return beginRepairDetailSave(this, 'Creating...');" />
                                     <asp:Button ID="btnCancelInsert" Text="Back" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnCancel_Click" CausesValidation="false"
                                         OnClientClick="return repairDetailConfirmLeave();" />
@@ -189,7 +234,10 @@
                         </tr>
                         <tr style="font-size: x-small">
                             <td>ID:<asp:Label ID="lblRepairID" runat="server" />&nbsp;&nbsp;OLID:
-                                <asp:Label ID="lblRelatedOrderLineID" runat="server" /></td>
+                                <asp:HiddenField ID="hdnRelatedOrderLineID" runat="server" Value="0" />
+                                <a runat="server" id="lnkRelatedOrder" class="repair-related-order-link"
+                                    target="_blank" rel="noopener"></a>
+                            </td>
                             <td>Logged:<asp:Label ID="lblDateLogged" runat="server" />&nbsp;&nbsp;
                                 Chng:<asp:Label ID="lblLastChanged" runat="server" /></td>
                         </tr>
@@ -198,15 +246,15 @@
                                 <div class="button-row">
                                     <asp:Button ID="btnUpdate" Text="Save" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnUpdate_Click" AccessKey="S"
-                                        OnClientClick="return repairDetailAllowNavigate();"
+                                        OnClientClick="return beginRepairDetailSave(this, 'Saving...');"
                                         ToolTip="Save and stay on this page (Alt+Shift+S)" />
                                     <asp:Button ID="btnUpdateAndReturn" Text="Save &amp; Return" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnUpdateAndReturn_Click" AccessKey="U"
-                                        OnClientClick="return repairDetailAllowNavigate();"
+                                        OnClientClick="return beginRepairDetailSave(this, 'Saving...');"
                                         ToolTip="Save and return (Alt+Shift+U)" />
                                     <asp:Button ID="btnDelete" Text="Delete" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnDelete_Click"
-                                        OnClientClick="return repairDetailAllowNavigate() && confirm('Delete this repair?');"
+                                        OnClientClick="return beginRepairDetailSave(this, 'Deleting...', 'Delete this repair?');"
                                         ToolTip="Delete this repair" />
                                     <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnCancel_Click" CausesValidation="false"
@@ -217,6 +265,12 @@
                         </tr>
                     </table>
                 </asp:Panel>
+
+                <div id="repairDetailSaving" class="status-message status-info page-tone-progress"
+                    style="display: none; margin-top: 12px;" role="status" aria-live="polite">
+                    <img src="../images/animi/QuaffeeProgress.gif" alt="" />
+                    <span>&nbsp;Saving repair, please wait...</span>
+                </div>
 
                 <div class="status-message" id="pnlStatusMessage" runat="server" style="margin-top: 12px;">
                     <asp:Literal ID="ltrlStatus" runat="server" />

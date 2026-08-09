@@ -1,5 +1,5 @@
 <%-- RETIRED 2026-07-14: replaced by OrderDetail.aspx?NewOrder=true. Not in menu or csproj. --%>
-<%@ Page Language="C#"  MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" CodeBehind="NewOrder.aspx.cs" Inherits="TrackerSQL.Pages.NewOrder" %>
+<%@ Page Title="New Order" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" MaintainScrollPositionOnPostback="true" CodeBehind="NewOrder.aspx.cs" Inherits="TrackerSQL.Pages.NewOrder" %>
 
 <%--<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajc1" %>--%>
 <asp:Content ID="cntOrderEditHdr" ContentPlaceHolderID="HeadContent" runat="server">

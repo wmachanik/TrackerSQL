@@ -1,7 +1,7 @@
 <%@ Page Title="Delivery Sheet" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="DeliverySheet.aspx.cs" Inherits="TrackerSQL.Pages.DeliverySheet" %>
 
-<asp:Content ID="cntDeliveryHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntDeliveryHdr" title="Delivery Sheet" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntDeliveryBdy" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="smDelivery" runat="server" EnablePartialRendering="true" />
@@ -64,7 +64,8 @@
                                 ToolTip="get the results (AltShftG)" />
                             <span class="image-button" title="Pick a delivery date">
                                 <asp:ImageButton ID="btnCalendar" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
-                                    AlternateText="Calendar" ToolTip="Pick a delivery date" />
+                                    AlternateText="Calendar" ToolTip="Pick a delivery date"
+                                    CausesValidation="false" OnClientClick="return false;" />
                                 <asp:TextBox ID="tbCalendarDate" runat="server"
                                     Style="width: 0; height: 0; border: none; padding: 0; margin: 0; opacity: 0; position: absolute; left: 0; top: 100%;"
                                     AutoPostBack="true" OnTextChanged="tbCalendarDate_TextChanged" />
@@ -88,13 +89,10 @@
                             <asp:Button ID="btnFind" Text="Find" runat="server" CssClass="filter-panel-btn" OnClick="btnFind_Click" />
                             <asp:Button ID="btnPrint" runat="server" CssClass="filter-panel-btn hideWhenPrinting" Text="Print"
                                 OnClick="btnPrint_Click" AccessKey="P" ToolTip="print sheet (AltShftP)" />
-                            <span class="image-button" title="New order">
-                                <img src="../images/imgButtons/GreenPlus.gif" alt="" />
-                                <asp:HyperLink ID="hlAddDeliveryItem" runat="server"
-                                    Text="New Order"
-                                    ToolTip="New item(s) to deliver"
-                                    NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" />
-                            </span>
+                            <asp:HyperLink ID="hlAddDeliveryItem" runat="server"
+                                ImageUrl="~/images/imgButtons/AddItem.gif"
+                                ToolTip="New item(s) to deliver"
+                                NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" />
                             <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
                                 OnClick="btnBack_Click" CausesValidation="false" ToolTip="Return to home" />
                         </div>

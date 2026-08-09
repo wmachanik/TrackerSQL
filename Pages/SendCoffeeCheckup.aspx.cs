@@ -286,6 +286,12 @@ namespace TrackerSQL.Pages
             BindCheckupGrids();
         }
 
+        /// <summary>App-standard pager (Previous / squares / Next) — see Classes/GridPager.cs.</summary>
+        protected void gvCustomerCheckup_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvCustomerCheckup, e.Row);
+        }
+
         protected void gvCustomerCheckup_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             if (!string.Equals(e.CommandName, "ExcludeThisTime", StringComparison.OrdinalIgnoreCase))

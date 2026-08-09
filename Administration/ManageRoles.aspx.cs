@@ -5,12 +5,14 @@
 
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Web;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Administration
 {
@@ -82,7 +84,7 @@ namespace TrackerSQL.Administration
                     return;
                 }
 
-                Roles.CreateRole(roleName);
+                this.CreateRoleCompatible(roleName);
                 this.RoleTextBox.Text = string.Empty;
                 this.gvRolesManagement.EditIndex = -1;
                 this.BindRoles();
@@ -262,7 +264,7 @@ namespace TrackerSQL.Administration
         private void RenameRoleAndUsers(string oldRoleName, string newRoleName)
         {
             string[] usersInRole = Roles.GetUsersInRole(oldRoleName);
-            Roles.CreateRole(newRoleName);
+            this.CreateRoleCompatible(newRoleName);
             if (usersInRole != null && usersInRole.Length > 0)
             {
                 Roles.AddUsersToRole(usersInRole, newRoleName);
@@ -286,7 +288,7 @@ namespace TrackerSQL.Administration
 
             string[] usersInRole = Roles.GetUsersInRole(oldRoleName) ?? new string[0];
 
-            Roles.CreateRole(tempRoleName);
+            this.CreateRoleCompatible(tempRoleName);
             if (usersInRole.Length > 0)
             {
                 Roles.AddUsersToRole(usersInRole, tempRoleName);
@@ -294,7 +296,7 @@ namespace TrackerSQL.Administration
             }
             Roles.DeleteRole(oldRoleName, throwOnPopulatedRole: false);
 
-            Roles.CreateRole(newRoleName);
+            this.CreateRoleCompatible(newRoleName);
             if (usersInRole.Length > 0)
             {
                 Roles.AddUsersToRole(usersInRole, newRoleName);
@@ -304,6 +306,44 @@ namespace TrackerSQL.Administration
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Login,
                 "Role casing renamed from " + oldRoleName + " to " + newRoleName);
+        }
+
+        /// <summary>
+        /// Uses the standard role provider first. The migrated OtterDb schema currently lacks
+        /// the RoleId default expected by aspnet_Roles_CreateRole, so error 515 falls back to
+        /// an explicit transactional insert with a generated GUID.
+        /// </summary>
+        private void CreateRoleCompatible(string roleName)
+        {
+            try
+            {
+                Roles.CreateRole(roleName);
+            }
+            catch (Exception ex)
+            {
+                if (!ContainsSqlError(ex, 515))
+                    throw;
+
+                string applicationName = Roles.Provider?.ApplicationName ?? "/";
+                if (!new MembershipRepository().CreateRole(roleName, applicationName))
+                    throw;
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
+                    "ManageRoles: created role '" + roleName
+                    + "' using migrated-schema RoleId fallback.");
+            }
+        }
+
+        private static bool ContainsSqlError(Exception exception, int errorNumber)
+        {
+            for (Exception current = exception; current != null; current = current.InnerException)
+            {
+                var sqlException = current as SqlException;
+                if (sqlException != null && sqlException.Number == errorNumber)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

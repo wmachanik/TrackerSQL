@@ -175,6 +175,22 @@ namespace TrackerSQL.Classes
         }
 
         /// <summary>
+        /// Recurring-order contact notification emails (add / update / disable).
+        /// </summary>
+        public static class RecurringOrder
+        {
+            public const string AddedEmailSubject = "RecurringOrder.AddedEmailSubject";
+            public const string AddedEmailBody = "RecurringOrder.AddedEmailBody";
+            public const string UpdatedEmailSubject = "RecurringOrder.UpdatedEmailSubject";
+            public const string UpdatedEmailBody = "RecurringOrder.UpdatedEmailBody";
+            public const string DisabledEmailSubject = "RecurringOrder.DisabledEmailSubject";
+            public const string DisabledEmailBody = "RecurringOrder.DisabledEmailBody";
+            public const string NoEmailAddress = "RecurringOrder.NoEmailAddress";
+            public const string ItemsListEmpty = "RecurringOrder.ItemsListEmpty";
+            public const string ItemsListItem = "RecurringOrder.ItemsListItem";
+        }
+
+        /// <summary>
         /// Coffee checkup and reminder email messages
         /// </summary>
         public static class CoffeeCheckup

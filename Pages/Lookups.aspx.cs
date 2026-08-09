@@ -12,6 +12,7 @@ using System.Drawing;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
@@ -37,34 +38,68 @@ namespace TrackerSQL.Pages
         protected ObjectDataSource odsItemUnits;
         protected TabPanel tabpnlPeople;
         protected UpdatePanel upnlPeople;
+        protected TextBox tbxPeopleSearch;
+        protected Button btnPeopleGo;
+        protected Button btnPeopleReset;
         protected GridView gvPeople;
         protected TabPanel tabpnlEquipment;
         protected UpdatePanel upnlEquipment;
+        protected TextBox tbxEquipSearch;
+        protected Button btnEquipGo;
+        protected Button btnEquipReset;
         protected GridView gvEquipment;
         protected TabPanel tabpnlAreas;
         protected UpdatePanel upnlAreas;
+        protected TextBox tbxAreaSearch;
+        protected Button btnAreaGo;
+        protected Button btnAreaReset;
         protected GridView gvAreas;
         protected GridView gvAreaDays;
         protected TabPanel tabpnlPackaging;
-        protected UpdatePanel UpdatePanel1;
+        protected UpdatePanel upnlPackaging;
+        protected UpdatePanel upnlLookupStatus;
+        protected TextBox tbxPackagingSearch;
+        protected Button btnPackagingGo;
+        protected Button btnPackagingReset;
         protected GridView gvPackaging;
         protected TabPanel tabInvoiceTypes;
         protected UpdateProgress gvInvoiceTypesUpdateProgress;
         protected UpdatePanel gvInvoiceTypesUpdatePanel;
+        protected TextBox tbxInvoiceTypeSearch;
+        protected Button btnInvoiceTypeGo;
+        protected Button btnInvoiceTypeReset;
         protected GridView gvInvoiceTypes;
         protected TabPanel tabPaymentTerms;
         protected UpdateProgress PaymentTermsUpdateProgress;
         protected UpdatePanel gvPaymentTermsUpdatePanel;
+        protected TextBox tbxPaymentTermSearch;
+        protected Button btnPaymentTermGo;
+        protected Button btnPaymentTermReset;
         protected GridView gvPaymentTerms;
         protected TabPanel tabPriceLevels;
         protected UpdateProgress PriceLevelUpdateProgress;
         protected UpdatePanel gvPriceLevelsUpdatePanel;
+        protected TextBox tbxPriceLevelSearch;
+        protected Button btnPriceLevelGo;
+        protected Button btnPriceLevelReset;
         protected GridView gvPriceLevels;
+        protected TabPanel tabpnlRepairStatuses;
+        protected UpdatePanel upnlRepairStatuses;
+        protected TextBox tbxRepairStatusSearch;
+        protected Button btnRepairStatusGo;
+        protected Button btnRepairStatusReset;
+        protected GridView gvRepairStatuses;
         protected SqlDataSource sdsUserNames;
 
+        // Per-request caches for Items grid lookup dropdowns (filled once per bind)
+        private List<ItemUnit> _itemUnitsCache;
+        private List<ItemServiceType> _itemServiceTypesCache;
+        private List<OrderItemLookup> _replacementItemsCache;
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            RegisterLookupPostBackControls();
+
             if (!this.IsPostBack)
             {
                 this.tabcLookup.ActiveTabIndex = 0;
@@ -91,10 +126,85 @@ namespace TrackerSQL.Pages
             }
         }
 
+        private void RegisterLookupPostBackControls()
+        {
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+
+            // TabContainer + nested UpdatePanels: search Go/Reset need explicit registration.
+            foreach (Control btn in new Control[]
+            {
+                btnRepairStatusGo, btnRepairStatusReset,
+                btnPeopleGo, btnPeopleReset,
+                btnPackagingGo, btnPackagingReset,
+                btnInvoiceTypeGo, btnInvoiceTypeReset,
+                btnPaymentTermGo, btnPaymentTermReset,
+                btnPriceLevelGo, btnPriceLevelReset
+            })
+            {
+                if (btn != null)
+                    sm.RegisterAsyncPostBackControl(btn);
+            }
+        }
+
         protected void Page_PreRender(object sender, EventArgs e)
         {
-            if (pnlLookupStatus != null)
-                pnlLookupStatus.Visible = !string.IsNullOrWhiteSpace(lblStatus?.Text);
+            ApplyLookupStatusUi();
+
+            // Async tab edits set lblStatus outside their own UpdatePanel — include the
+            // shared status strip in the response whenever it has text.
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm != null && sm.IsInAsyncPostBack && !string.IsNullOrWhiteSpace(lblStatus?.Text))
+                upnlLookupStatus?.Update();
+        }
+
+        /// <summary>
+        /// Single page-level status under the tabs. Sets colour (error / success / info)
+        /// and refreshes the status UpdatePanel so async tab edits show the message.
+        /// </summary>
+        private void SetLookupStatus(string message, bool? isError = null)
+        {
+            _lookupStatusIsError = isError;
+            if (lblStatus != null)
+                lblStatus.Text = message ?? string.Empty;
+            ApplyLookupStatusUi();
+            upnlLookupStatus?.Update();
+        }
+
+        private bool? _lookupStatusIsError;
+
+        private void ApplyLookupStatusUi()
+        {
+            if (pnlLookupStatus == null)
+                return;
+
+            bool hasMessage = !string.IsNullOrWhiteSpace(lblStatus?.Text);
+            pnlLookupStatus.Visible = hasMessage;
+            if (!hasMessage)
+            {
+                pnlLookupStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            bool isError = _lookupStatusIsError
+                ?? InferLookupStatusIsError(lblStatus.Text);
+            if (isError)
+                pnlLookupStatus.Attributes["class"] = "status-message status-error";
+            else if (_lookupStatusIsError == false)
+                pnlLookupStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlLookupStatus.Attributes["class"] = "status-message status-info";
+        }
+
+        private static bool InferLookupStatusIsError(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+            return text.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.StartsWith("Could not", StringComparison.OrdinalIgnoreCase)
+                || text.StartsWith("Footer controls missing", StringComparison.OrdinalIgnoreCase);
         }
 
         private void BindPeopleGrid()
@@ -104,13 +214,48 @@ namespace TrackerSQL.Pages
                 var repo = new PersonsRepository();
                 string sortBy = ViewState["PeopleSortExpression"] as string ?? "Abbreviation";
                 var people = repo.GetAll(sortBy);
+
+                string searchFilter = tbxPeopleSearch != null
+                    ? tbxPeopleSearch.Text.Trim()
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    people = people.Where(p =>
+                        (p.PersonName != null
+                            && p.PersonName.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        || (p.Abbreviation != null
+                            && p.Abbreviation.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0))
+                        .ToList();
+                }
+
                 gvPeople.DataSource = people;
                 gvPeople.DataBind();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading people: " + ex.Message;
+                SetLookupStatus("Error loading people: " + ex.Message, true);
             }
+        }
+
+        protected void btnPeopleGo_Click(object sender, EventArgs e)
+        {
+            gvPeople.EditIndex = -1;
+            gvPeople.PageIndex = 0;
+            BindPeopleGrid();
+        }
+
+        protected void btnPeopleReset_Click(object sender, EventArgs e)
+        {
+            if (tbxPeopleSearch != null)
+                tbxPeopleSearch.Text = string.Empty;
+            gvPeople.EditIndex = -1;
+            gvPeople.PageIndex = 0;
+            BindPeopleGrid();
+        }
+
+        protected void tbxPeopleSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnPeopleGo_Click(sender, e);
         }
 
         private void BindEquipmentGrid()
@@ -120,6 +265,23 @@ namespace TrackerSQL.Pages
                 var repo = new EquipTypesRepository();
                 string sortBy = ViewState["EquipTypesSortExpression"] as string ?? "EquipTypeName";
                 var equip = repo.GetAll(sortBy);
+
+                // Filter is always re-read from the textbox so edit row indexes
+                // stay in sync with what is on screen (same approach as Items).
+                string searchFilter = tbxEquipSearch != null
+                    ? tbxEquipSearch.Text.Trim()
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    equip = equip.Where(t =>
+                        (t.EquipTypeName != null
+                            && t.EquipTypeName.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        || (t.EquipTypeDescription != null
+                            && t.EquipTypeDescription.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0))
+                        .ToList();
+                }
+
                 gvEquipment.DataSource = equip;
                 gvEquipment.DataBind();
             }
@@ -129,6 +291,27 @@ namespace TrackerSQL.Pages
             }
         }
 
+        protected void btnEquipGo_Click(object sender, EventArgs e)
+        {
+            gvEquipment.EditIndex = -1;
+            gvEquipment.PageIndex = 0;
+            BindEquipmentGrid();
+        }
+
+        protected void btnEquipReset_Click(object sender, EventArgs e)
+        {
+            if (tbxEquipSearch != null)
+                tbxEquipSearch.Text = string.Empty;
+            gvEquipment.EditIndex = -1;
+            gvEquipment.PageIndex = 0;
+            BindEquipmentGrid();
+        }
+
+        protected void tbxEquipSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnEquipGo_Click(sender, e);
+        }
+
         private void BindPackagingGrid()
         {
             try
@@ -136,13 +319,46 @@ namespace TrackerSQL.Pages
                 var repo = new ItemPackagingsRepository();
                 string sortBy = ViewState["PackagingSortExpression"] as string ?? "ItemPackagingDesc";
                 var packagings = repo.GetAll(sortBy);
+
+                string searchFilter = tbxPackagingSearch != null
+                    ? tbxPackagingSearch.Text.Trim()
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    packagings = packagings.Where(p =>
+                        p.ItemPackagingDesc != null
+                        && p.ItemPackagingDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
                 gvPackaging.DataSource = packagings;
                 gvPackaging.DataBind();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading packaging: " + ex.Message;
+                SetLookupStatus("Error loading packaging: " + ex.Message, true);
             }
+        }
+
+        protected void btnPackagingGo_Click(object sender, EventArgs e)
+        {
+            gvPackaging.EditIndex = -1;
+            gvPackaging.PageIndex = 0;
+            BindPackagingGrid();
+        }
+
+        protected void btnPackagingReset_Click(object sender, EventArgs e)
+        {
+            if (tbxPackagingSearch != null)
+                tbxPackagingSearch.Text = string.Empty;
+            gvPackaging.EditIndex = -1;
+            gvPackaging.PageIndex = 0;
+            BindPackagingGrid();
+        }
+
+        protected void tbxPackagingSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnPackagingGo_Click(sender, e);
         }
 
         private void BindInvoiceTypesGrid()
@@ -152,13 +368,49 @@ namespace TrackerSQL.Pages
                 var repo = new InvoiceTypesRepository();
                 string sortBy = ViewState["InvoiceTypesSortExpression"] as string ?? "InvoiceTypeDesc";
                 var invoiceTypes = repo.GetAll(sortBy);
+
+                // Textbox ViewState is authoritative after search (same as Items tab).
+                string searchFilter = tbxInvoiceTypeSearch != null
+                    ? tbxInvoiceTypeSearch.Text.Trim()
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    invoiceTypes = invoiceTypes.Where(t =>
+                        t.InvoiceTypeDesc != null
+                        && t.InvoiceTypeDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
                 gvInvoiceTypes.DataSource = invoiceTypes;
                 gvInvoiceTypes.DataBind();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading invoice types: " + ex.Message;
+                SetLookupStatus("Error loading invoice types: " + ex.Message, true);
             }
+        }
+
+        protected void btnInvoiceTypeGo_Click(object sender, EventArgs e)
+        {
+            gvInvoiceTypes.EditIndex = -1;
+            gvInvoiceTypes.PageIndex = 0;
+            BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
+        }
+
+        protected void btnInvoiceTypeReset_Click(object sender, EventArgs e)
+        {
+            if (tbxInvoiceTypeSearch != null)
+                tbxInvoiceTypeSearch.Text = string.Empty;
+            gvInvoiceTypes.EditIndex = -1;
+            gvInvoiceTypes.PageIndex = 0;
+            BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
+        }
+
+        protected void tbxInvoiceTypeSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnInvoiceTypeGo_Click(sender, e);
         }
 
         private void BindPaymentTermsGrid()
@@ -168,13 +420,46 @@ namespace TrackerSQL.Pages
                 var repo = new PaymentTermsRepository();
                 string sortBy = ViewState["PaymentTermsSortExpression"] as string ?? "PaymentTermDesc";
                 var terms = repo.GetAll(sortBy);
+
+                string searchFilter = tbxPaymentTermSearch != null
+                    ? tbxPaymentTermSearch.Text.Trim()
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    terms = terms.Where(t =>
+                        t.PaymentTermDesc != null
+                        && t.PaymentTermDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
                 gvPaymentTerms.DataSource = terms;
                 gvPaymentTerms.DataBind();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading payment terms: " + ex.Message;
+                SetLookupStatus("Error loading payment terms: " + ex.Message, true);
             }
+        }
+
+        protected void btnPaymentTermGo_Click(object sender, EventArgs e)
+        {
+            gvPaymentTerms.EditIndex = -1;
+            gvPaymentTerms.PageIndex = 0;
+            BindPaymentTermsGrid();
+        }
+
+        protected void btnPaymentTermReset_Click(object sender, EventArgs e)
+        {
+            if (tbxPaymentTermSearch != null)
+                tbxPaymentTermSearch.Text = string.Empty;
+            gvPaymentTerms.EditIndex = -1;
+            gvPaymentTerms.PageIndex = 0;
+            BindPaymentTermsGrid();
+        }
+
+        protected void tbxPaymentTermSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnPaymentTermGo_Click(sender, e);
         }
 
         private void BindPriceLevelsGrid()
@@ -184,13 +469,46 @@ namespace TrackerSQL.Pages
                 var repo = new PriceLevelsRepository();
                 string sortBy = ViewState["PriceLevelsSortExpression"] as string ?? "PriceLevelDesc";
                 var levels = repo.GetAll(sortBy);
+
+                string searchFilter = tbxPriceLevelSearch != null
+                    ? tbxPriceLevelSearch.Text.Trim()
+                    : string.Empty;
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    levels = levels.Where(l =>
+                        l.PriceLevelDesc != null
+                        && l.PriceLevelDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
                 gvPriceLevels.DataSource = levels;
                 gvPriceLevels.DataBind();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading price levels: " + ex.Message;
+                SetLookupStatus("Error loading price levels: " + ex.Message, true);
             }
+        }
+
+        protected void btnPriceLevelGo_Click(object sender, EventArgs e)
+        {
+            gvPriceLevels.EditIndex = -1;
+            gvPriceLevels.PageIndex = 0;
+            BindPriceLevelsGrid();
+        }
+
+        protected void btnPriceLevelReset_Click(object sender, EventArgs e)
+        {
+            if (tbxPriceLevelSearch != null)
+                tbxPriceLevelSearch.Text = string.Empty;
+            gvPriceLevels.EditIndex = -1;
+            gvPriceLevels.PageIndex = 0;
+            BindPriceLevelsGrid();
+        }
+
+        protected void tbxPriceLevelSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnPriceLevelGo_Click(sender, e);
         }
 
         protected void gvPeople_PageIndexChanging(object sender, GridViewPageEventArgs e)
@@ -274,6 +592,8 @@ namespace TrackerSQL.Pages
         {
             gvPackaging.EditIndex = e.NewEditIndex;
             BindPackagingGrid();
+            if (upnlPackaging != null)
+                upnlPackaging.Update();
         }
 
         protected void gvPackaging_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
@@ -295,13 +615,21 @@ namespace TrackerSQL.Pages
                 var tbxColour = (TextBox)row.FindControl("TextBoxColour");
                 var tbxSymbol = (TextBox)row.FindControl("TextBoxSymbol");
 
+                if (!TryNormalizeHexColour(tbxBGColour?.Text, out string bgColour)
+                    || !TryNormalizeHexColour(tbxColour?.Text, out string colour))
+                {
+                    e.Cancel = true;
+                    SetLookupStatus("Colours must be hex values like #FF0000 (or leave blank).", true);
+                    return;
+                }
+
                 var packaging = new ItemPackaging
                 {
                     ItemPackagingID = packagingId,
                     ItemPackagingDesc = tbxDesc?.Text ?? "",
                     AdditionalNotes = tbxNotes?.Text ?? "",
-                    BGColour = tbxBGColour?.Text ?? "",
-                    Colour = tbxColour != null && !string.IsNullOrEmpty(tbxColour.Text) ? (int?)Convert.ToInt32(tbxColour.Text) : null,
+                    BGColour = bgColour,
+                    Colour = string.IsNullOrEmpty(colour) ? null : colour,
                     Symbol = tbxSymbol?.Text ?? ""
                 };
 
@@ -310,35 +638,104 @@ namespace TrackerSQL.Pages
 
                 gvPackaging.EditIndex = -1;
                 BindPackagingGrid();
+                SetLookupStatus("Packaging updated.", false);
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error updating packaging: " + ex.Message;
+                e.Cancel = true;
+                SetLookupStatus("Error updating packaging: " + ex.Message, true);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "Lookups packaging update failed: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// HTML hex for packaging colours (#RRGGBB) — DeliverySheet applies BGColour
+        /// directly as background-color on item spans.
+        /// Blank input → empty string (valid). Invalid input → false.
+        /// </summary>
+        private static bool TryNormalizeHexColour(string text, out string normalized)
+        {
+            normalized = string.Empty;
+            if (string.IsNullOrWhiteSpace(text))
+                return true;
+
+            string value = text.Trim().TrimStart('#').Trim();
+            if (value.Length == 0)
+                return true;
+
+            // Legacy Access RGB int stored as digits (e.g. 16711680) → #RRGGBB
+            if (int.TryParse(value, out int rgbInt) && value.All(char.IsDigit))
+            {
+                normalized = "#" + (rgbInt & 0xFFFFFF).ToString("X6");
+                return true;
+            }
+
+            if (value.Length == 3)
+            {
+                // #RGB → #RRGGBB
+                value = string.Concat(value[0], value[0], value[1], value[1], value[2], value[2]);
+            }
+            else if (value.Length == 8)
+            {
+                // Strip leading alpha if present (AARRGGBB → RRGGBB)
+                value = value.Substring(2);
+            }
+
+            if (value.Length != 6)
+                return false;
+
+            foreach (char c in value)
+            {
+                bool hexDigit = (c >= '0' && c <= '9')
+                    || (c >= 'a' && c <= 'f')
+                    || (c >= 'A' && c <= 'F');
+                if (!hexDigit)
+                    return false;
+            }
+
+            normalized = "#" + value.ToUpperInvariant();
+            return true;
+        }
+
+        private static string NormalizeHexColour(string text)
+        {
+            return TryNormalizeHexColour(text, out string normalized) ? normalized : string.Empty;
+        }
+
+        private static bool IsBlankOrHex(string text)
+        {
+            return TryNormalizeHexColour(text, out _);
         }
 
         protected void gvInvoiceTypes_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
             gvInvoiceTypes.PageIndex = e.NewPageIndex;
+            gvInvoiceTypes.EditIndex = -1;
             BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
         }
 
         protected void gvInvoiceTypes_Sorting(object sender, GridViewSortEventArgs e)
         {
             ViewState["InvoiceTypesSortExpression"] = e.SortExpression;
+            gvInvoiceTypes.EditIndex = -1;
             BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
         }
 
         protected void gvInvoiceTypes_RowEditing(object sender, GridViewEditEventArgs e)
         {
             gvInvoiceTypes.EditIndex = e.NewEditIndex;
             BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
         }
 
         protected void gvInvoiceTypes_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
         {
             gvInvoiceTypes.EditIndex = -1;
             BindInvoiceTypesGrid();
+            gvInvoiceTypesUpdatePanel?.Update();
         }
 
         protected void gvInvoiceTypes_RowUpdating(object sender, GridViewUpdateEventArgs e)
@@ -365,10 +762,50 @@ namespace TrackerSQL.Pages
 
                 gvInvoiceTypes.EditIndex = -1;
                 BindInvoiceTypesGrid();
+                SetLookupStatus("Invoice type updated.", false);
+                gvInvoiceTypesUpdatePanel?.Update();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error updating invoice type: " + ex.Message;
+                SetLookupStatus("Error updating invoice type: " + ex.Message, true);
+                gvInvoiceTypesUpdatePanel?.Update();
+            }
+        }
+
+        protected void gvInvoiceTypes_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            try
+            {
+                int invoiceTypeID = Convert.ToInt32(gvInvoiceTypes.DataKeys[e.RowIndex].Value);
+                new InvoiceTypesRepository().Delete(invoiceTypeID);
+                gvInvoiceTypes.EditIndex = -1;
+                BindInvoiceTypesGrid();
+                SetLookupStatus("Invoice type deleted.", false);
+                gvInvoiceTypesUpdatePanel?.Update();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error deleting invoice type: " + ex.Message, true);
+                gvInvoiceTypesUpdatePanel?.Update();
+            }
+        }
+
+        protected void gvInvoiceTypes_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+
+            // TabContainer + nested UpdatePanel: full postback for row actions so
+            // edit after search refreshes reliably (same approach as Items / Repair Statuses).
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+
+            foreach (string id in new[] { "btnInvUpdate", "btnInvCancel", "btnInvEdit", "btnInvDelete", "btnInvAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
             }
         }
 
@@ -506,6 +943,19 @@ namespace TrackerSQL.Pages
                     var repo = new RepairStatusesRepository();
                     string sortBy = ViewState["RepairStatusesSortExpression"] as string ?? "SortOrder";
                     statuses = repo.GetAll(sortBy);
+
+                    string searchFilter = tbxRepairStatusSearch != null
+                        ? tbxRepairStatusSearch.Text.Trim()
+                        : string.Empty;
+                    if (!string.IsNullOrEmpty(searchFilter))
+                    {
+                        statuses = statuses.Where(s =>
+                            (s.RepairStatusDesc != null
+                                && s.RepairStatusDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                            || (s.StatusNote != null
+                                && s.StatusNote.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0))
+                            .ToList();
+                    }
                     
                     // Cache the data for edit operations
                     Session["RepairStatusesGridData"] = statuses;
@@ -516,8 +966,31 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error loading repair statuses: " + ex.Message;
+                SetLookupStatus("Error loading repair statuses: " + ex.Message, true);
             }
+        }
+
+        protected void btnRepairStatusGo_Click(object sender, EventArgs e)
+        {
+            gvRepairStatuses.EditIndex = -1;
+            gvRepairStatuses.PageIndex = 0;
+            BindRepairStatusesGrid(forceRefresh: true);
+            upnlRepairStatuses?.Update();
+        }
+
+        protected void btnRepairStatusReset_Click(object sender, EventArgs e)
+        {
+            if (tbxRepairStatusSearch != null)
+                tbxRepairStatusSearch.Text = string.Empty;
+            gvRepairStatuses.EditIndex = -1;
+            gvRepairStatuses.PageIndex = 0;
+            BindRepairStatusesGrid(forceRefresh: true);
+            upnlRepairStatuses?.Update();
+        }
+
+        protected void tbxRepairStatusSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnRepairStatusGo_Click(sender, e);
         }
 
         private int ExecNonQuery(string sql, List<TrackerSQL.Classes.DBParameter> parameters)
@@ -533,6 +1006,7 @@ namespace TrackerSQL.Pages
             gvRepairStatuses.PageIndex = e.NewPageIndex;
             gvRepairStatuses.EditIndex = -1; // Exit edit mode when changing pages
             BindRepairStatusesGrid(forceRefresh: true);
+            upnlRepairStatuses?.Update();
         }
 
         protected void gvRepairStatuses_Sorting(object sender, GridViewSortEventArgs e)
@@ -540,12 +1014,14 @@ namespace TrackerSQL.Pages
             ViewState["RepairStatusesSortExpression"] = e.SortExpression;
             gvRepairStatuses.EditIndex = -1; // Exit edit mode when sorting
             BindRepairStatusesGrid(forceRefresh: true);
+            upnlRepairStatuses?.Update();
         }
 
         protected void gvRepairStatuses_RowEditing(object sender, GridViewEditEventArgs e)
         {
             gvRepairStatuses.EditIndex = e.NewEditIndex;
             BindRepairStatusesGrid();
+            upnlRepairStatuses?.Update();
         }
 
         protected void gvRepairStatuses_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
@@ -553,6 +1029,7 @@ namespace TrackerSQL.Pages
             gvRepairStatuses.EditIndex = -1;
             // Force refresh when canceling to ensure clean state
             BindRepairStatusesGrid(forceRefresh: true);
+            upnlRepairStatuses?.Update();
         }
 
         protected void gvRepairStatuses_RowUpdating(object sender, GridViewUpdateEventArgs e)
@@ -564,28 +1041,18 @@ namespace TrackerSQL.Pages
 
                 var tbxStatusDesc = (TextBox)row.FindControl("tbxStatusDesc");
                 var tbxStatusNote = (TextBox)row.FindControl("tbxStatusNote");
-
-                bool emailClient = false;
-                // CheckBoxField doesn't generate a named control reliably; use Cells index.
-                // Columns: ID(0), Status(1), EmailClient(2), SortOrder(3), StatusNote(4), Buttons(5)
-                if (row.Cells.Count > 2 && row.Cells[2].Controls.Count > 0)
-                {
-                    var cbx = row.Cells[2].Controls.OfType<CheckBox>().FirstOrDefault();
-                    if (cbx != null) emailClient = cbx.Checked;
-                }
+                var cbxEmailContact = (CheckBox)row.FindControl("cbxEmailContact");
+                var tbxSortOrder = (TextBox)row.FindControl("tbxSortOrder");
 
                 int sortOrder = 0;
-                if (row.Cells.Count > 3)
-                {
-                    var sortText = row.Cells[3].Text;
-                    int.TryParse(sortText, out sortOrder);
-                }
+                if (tbxSortOrder != null)
+                    int.TryParse(tbxSortOrder.Text, out sortOrder);
 
                 var status = new RepairStatus
                 {
                     RepairStatusID = id,
                     RepairStatusDesc = tbxStatusDesc != null ? tbxStatusDesc.Text : string.Empty,
-                    EmailContact = emailClient,
+                    EmailContact = cbxEmailContact != null && cbxEmailContact.Checked,
                     SortOrder = sortOrder,
                     StatusNote = tbxStatusNote != null ? tbxStatusNote.Text : string.Empty
                 };
@@ -604,10 +1071,12 @@ namespace TrackerSQL.Pages
                 gvRepairStatuses.EditIndex = -1;
                 // Force refresh after update to get latest data from database
                 BindRepairStatusesGrid(forceRefresh: true);
+                SetLookupStatus("Repair status updated.", false);
+                upnlRepairStatuses?.Update();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Update failed: " + ex.Message;
+                SetLookupStatus("Update failed: " + ex.Message, true);
             }
         }
 
@@ -624,10 +1093,12 @@ namespace TrackerSQL.Pages
                 ExecNonQuery(sql, p);
                 // Force refresh after delete to update the list
                 BindRepairStatusesGrid(forceRefresh: true);
+                SetLookupStatus("Repair status deleted.", false);
+                upnlRepairStatuses?.Update();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Delete failed: " + ex.Message;
+                SetLookupStatus("Delete failed: " + ex.Message, true);
             }
         }
 
@@ -640,13 +1111,19 @@ namespace TrackerSQL.Pages
             {
                 var tbxStatusDesc = (TextBox)gvRepairStatuses.FooterRow.FindControl("tbxStatusDescFooter");
                 var tbxStatusNote = (TextBox)gvRepairStatuses.FooterRow.FindControl("tbxStatusNoteFooter");
+                var cbxEmailContact = (CheckBox)gvRepairStatuses.FooterRow.FindControl("cbxEmailContactFooter");
+                var tbxSortOrder = (TextBox)gvRepairStatuses.FooterRow.FindControl("tbxSortOrderFooter");
+
+                int sortOrder = 0;
+                if (tbxSortOrder != null)
+                    int.TryParse(tbxSortOrder.Text, out sortOrder);
 
                 var status = new RepairStatus
                 {
                     RepairStatusDesc = tbxStatusDesc != null ? tbxStatusDesc.Text : string.Empty,
                     StatusNote = tbxStatusNote != null ? tbxStatusNote.Text : string.Empty,
-                    EmailContact = false,
-                    SortOrder = 0
+                    EmailContact = cbxEmailContact != null && cbxEmailContact.Checked,
+                    SortOrder = sortOrder
                 };
 
                 var sql = "INSERT INTO RepairStatusesTbl (RepairStatusDesc, EmailContact, SortOrder, StatusNote) VALUES (@d, @e, @s, @n)";
@@ -660,10 +1137,31 @@ namespace TrackerSQL.Pages
                 ExecNonQuery(sql, p);
                 // Force refresh after insert to get new record from database
                 BindRepairStatusesGrid(forceRefresh: true);
+                SetLookupStatus("Repair status added.", false);
+                upnlRepairStatuses?.Update();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Insert failed: " + ex.Message;
+                SetLookupStatus("Insert failed: " + ex.Message, true);
+            }
+        }
+
+        protected void gvRepairStatuses_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+
+            // TabContainer + nested UpdatePanel: force full postback for row actions so
+            // edit/search/update reliably refresh (same approach as Packaging).
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+
+            foreach (string id in new[] { "btnUpdate", "btnCancel", "btnEdit", "btnDelete", "btnAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
             }
         }
 
@@ -693,12 +1191,12 @@ namespace TrackerSQL.Pages
                     ItemEnabled = control3.Checked,
                     ItemsCharacteritics = control4.Text,
                     ItemDetail = control5.Text,
-                    ItemServiceTypeID = Convert.ToInt32(control6.SelectedValue),
-                    ReplacementItemID = Convert.ToInt32(control7.SelectedValue),
+                    ItemServiceTypeID = OptionalFkId(control6?.SelectedValue),
+                    ReplacementItemID = OptionalFkId(control7?.SelectedValue),
                     ItemShortName = control8.Text,
                     SortOrder = Convert.ToInt32(control9.Text),
                     UnitsPerQty = Convert.ToDouble(control10.Text),
-                    ItemUnitID = Convert.ToInt32(control11.SelectedValue)
+                    ItemUnitID = OptionalFkId(control11?.SelectedValue)
                 };
                 
                 var repo = new ItemsRepository();
@@ -718,6 +1216,38 @@ namespace TrackerSQL.Pages
             gvItems.PageIndex = e.NewPageIndex;
             gvItems.EditIndex = -1; // Exit edit mode when changing pages
             BindItemsGrid(forceRefresh: true);
+            upnlItems?.Update();
+        }
+
+        /// <summary>App-standard pager (Previous / squares / Next) — see Classes/GridPager.cs.</summary>
+        protected void gvItems_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvItems, e.Row);
+        }
+
+        protected void gvPeople_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvPeople, e.Row);
+        }
+
+        protected void gvEquipment_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvEquipment, e.Row);
+        }
+
+        protected void gvAreas_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvAreas, e.Row);
+        }
+
+        protected void gvPackaging_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvPackaging, e.Row);
+        }
+
+        protected void gvRepairStatuses_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvRepairStatuses, e.Row);
         }
 
         // Items Grid - Sorting Event Handler
@@ -727,15 +1257,16 @@ namespace TrackerSQL.Pages
             ViewState["ItemsSortExpression"] = e.SortExpression;
             gvItems.EditIndex = -1; // Exit edit mode when sorting
             BindItemsGrid(forceRefresh: true);
+            upnlItems?.Update();
         }
 
         protected void gvItems_RowEditing(object sender, GridViewEditEventArgs e)
         {
-            // Refresh the cached dataset for the current filter before entering edit mode.
-            // This prevents the grid from rebinding to a partial list (symptom: rows below disappear).
-            BindItemsGrid(forceRefresh: true);
+            // Enter edit mode against the exact filtered list that rendered the
+            // clicked row. Rebinding from the repository first changes row indexes.
             gvItems.EditIndex = e.NewEditIndex;
             BindItemsGrid();
+            upnlItems?.Update();
         }
 
         protected void gvItems_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
@@ -743,6 +1274,7 @@ namespace TrackerSQL.Pages
             gvItems.EditIndex = -1;
             // Force refresh when canceling to ensure clean state
             BindItemsGrid(forceRefresh: true);
+            upnlItems?.Update();
         }
 
         protected void gvItems_RowUpdating(object sender, GridViewUpdateEventArgs e)
@@ -772,12 +1304,12 @@ namespace TrackerSQL.Pages
                     ItemEnabled = cbxItemEnabled != null && cbxItemEnabled.Checked,
                     ItemsCharacteritics = tbxItemCharacteristics?.Text ?? "",
                     ItemDetail = tbxItemDetail?.Text ?? "",
-                    ItemServiceTypeID = ddlServiceType != null ? Convert.ToInt32(ddlServiceType.SelectedValue) : 0,
-                    ReplacementItemID = ddlReplacement != null ? (int?)Convert.ToInt32(ddlReplacement.SelectedValue) : null,
+                    ItemServiceTypeID = OptionalFkId(ddlServiceType?.SelectedValue),
+                    ReplacementItemID = OptionalFkId(ddlReplacement?.SelectedValue),
                     ItemShortName = tbxItemShortName?.Text ?? "",
                     SortOrder = tbxSortOrder != null ? (int?)Convert.ToInt32(tbxSortOrder.Text) : null,
                     UnitsPerQty = tbxUnitsPerQty != null ? Convert.ToDouble(tbxUnitsPerQty.Text) : 1.0,
-                    ItemUnitID = ddlUnits != null ? (int?)Convert.ToInt32(ddlUnits.SelectedValue) : null
+                    ItemUnitID = OptionalFkId(ddlUnits?.SelectedValue)
                 };
 
                 var repo = new ItemsRepository();
@@ -786,6 +1318,7 @@ namespace TrackerSQL.Pages
                 gvItems.EditIndex = -1;
                 // Force refresh after update to get latest data from database
                 BindItemsGrid(forceRefresh: true);
+                upnlItems?.Update();
             }
             catch (Exception ex)
             {
@@ -798,38 +1331,29 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                List<Item> items;
-                
-                // If we're in edit mode and not forcing refresh, reuse cached data to maintain row position
-                if (!forceRefresh && gvItems.EditIndex >= 0 && Session["ItemsGridData"] != null)
+                var repo = new ItemsRepository();
+                string sortBy = ViewState["ItemsSortExpression"] as string ?? "SortOrder";
+                List<Item> items = repo.GetAll(sortBy);
+
+                // The textbox is part of ViewState and is the authoritative filter for
+                // this page instance. Session-cached lists can be missing or stale after
+                // an app recycle, which previously rebound edit mode to the full list.
+                string searchFilter = tbxItemSearch != null
+                    ? tbxItemSearch.Text.Trim()
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(searchFilter))
                 {
-                    items = (List<Item>)Session["ItemsGridData"];
+                    string normalizedFilter = searchFilter.Replace("%", "");
+                    items = items.Where(i => i.ItemDesc != null
+                        && i.ItemDesc.IndexOf(normalizedFilter,
+                            StringComparison.OrdinalIgnoreCase) >= 0).ToList();
                 }
-                else
-                {
-                    var repo = new ItemsRepository();
-                    string sortBy = ViewState["ItemsSortExpression"] as string ?? "SortOrder";
-                    
-                    // Get search filter from session if exists
-                    string searchFilter = Session["SearchItemContains"] as string;
-                    
-                    if (!string.IsNullOrEmpty(searchFilter) && searchFilter != "%")
-                    {
-                        // TODO: Implement search in repository
-                        items = repo.GetAll(sortBy);
-                        // For now, filter in memory (not ideal, but works)
-                        items = items.Where(i => i.ItemDesc != null && 
-                                                i.ItemDesc.IndexOf(searchFilter.Replace("%", ""), 
-                                                StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                    }
-                    else
-                    {
-                        items = repo.GetAll(sortBy);
-                    }
-                    
-                    // Cache the data for edit operations
-                    Session["ItemsGridData"] = items;
-                }
+
+                // Reset dropdown caches so each bind gets fresh lookup lists
+                _itemUnitsCache = null;
+                _itemServiceTypesCache = null;
+                _replacementItemsCache = null;
                 
                 gvItems.DataSource = items;
                 gvItems.DataBind();
@@ -838,6 +1362,130 @@ namespace TrackerSQL.Pages
             {
                 lblStatus.Text = "Error loading items: " + ex.Message;
             }
+        }
+
+        protected void gvItems_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow &&
+                e.Row.RowType != DataControlRowType.Footer)
+                return;
+
+            // TabContainer + nested UpdatePanel: full postback for row actions so
+            // edit after search refreshes reliably (same approach as Repair Statuses).
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm != null)
+            {
+                foreach (string id in new[] { "btnUpdate", "btnCancel", "btnEdit", "btnAdd" })
+                {
+                    Control btn = e.Row.FindControl(id);
+                    if (btn != null)
+                        sm.RegisterPostBackControl(btn);
+                }
+            }
+
+            var item = e.Row.DataItem as Item;
+            BindItemsLookupDropdowns(e.Row, item);
+
+            var unitLabel = e.Row.FindControl("lblItemUnit") as Label;
+            if (unitLabel != null)
+            {
+                ItemUnit unit = item?.ItemUnitID > 0
+                    ? GetItemUnitsCache().FirstOrDefault(candidate =>
+                        candidate.ItemUnitID == item.ItemUnitID.Value)
+                    : null;
+
+                unitLabel.Text = string.IsNullOrWhiteSpace(unit?.UnitOfMeasure)
+                    ? "n/a"
+                    : unit.UnitOfMeasure;
+            }
+        }
+
+        private void BindItemsLookupDropdowns(GridViewRow row, Item item)
+        {
+            BindDropDown(
+                row.FindControl("ddlUnits") as DropDownList,
+                GetItemUnitsCache(),
+                "UnitOfMeasure",
+                "ItemUnitID",
+                item?.ItemUnitID);
+
+            BindDropDown(
+                row.FindControl("ddlServiceType") as DropDownList,
+                GetItemServiceTypesCache(),
+                "ItemServiceTypeName",
+                "ItemServiceTypeID",
+                item?.ItemServiceTypeID);
+
+            BindDropDown(
+                row.FindControl("ddlReplacement") as DropDownList,
+                GetReplacementItemsCache(),
+                "ItemDesc",
+                "ItemTypeID",
+                item?.ReplacementItemID);
+        }
+
+        private static void BindDropDown<T>(
+            DropDownList ddl,
+            IList<T> data,
+            string textField,
+            string valueField,
+            int? selectedId)
+        {
+            if (ddl == null)
+                return;
+
+            ddl.Items.Clear();
+            ddl.Items.Add(new ListItem("n/a", "0"));
+            ddl.DataTextField = textField;
+            ddl.DataValueField = valueField;
+            ddl.DataSource = data;
+            ddl.DataBind();
+
+            string value = (selectedId.HasValue && selectedId.Value > 0)
+                ? selectedId.Value.ToString()
+                : "0";
+            var match = ddl.Items.FindByValue(value);
+            ddl.ClearSelection();
+            if (match != null)
+                match.Selected = true;
+            else
+                ddl.Items.FindByValue("0").Selected = true;
+        }
+
+        private List<ItemUnit> GetItemUnitsCache()
+        {
+            if (_itemUnitsCache == null)
+                _itemUnitsCache = new ItemUnitsRepository().GetAll("UnitOfMeasure") ?? new List<ItemUnit>();
+            return _itemUnitsCache;
+        }
+
+        private List<ItemServiceType> GetItemServiceTypesCache()
+        {
+            if (_itemServiceTypesCache == null)
+                _itemServiceTypesCache = new ItemServiceTypesRepository().GetAll("ItemServiceTypeName")
+                    ?? new List<ItemServiceType>();
+            return _itemServiceTypesCache;
+        }
+
+        private List<OrderItemLookup> GetReplacementItemsCache()
+        {
+            if (_replacementItemsCache == null)
+            {
+                // Canonical item lookup order: enabled first by SortOrder/description,
+                // then disabled items prefixed with "_".
+                _replacementItemsCache = new ItemsRepository().GetOrderItemLookups(null)
+                    ?? new List<OrderItemLookup>();
+            }
+            return _replacementItemsCache;
+        }
+
+        /// <summary>Maps dropdown "n/a" (0) / empty to null for optional FK columns.</summary>
+        private static int? OptionalFkId(string selectedValue)
+        {
+            if (string.IsNullOrWhiteSpace(selectedValue))
+                return null;
+            int id = Convert.ToInt32(selectedValue);
+            return id > 0 ? (int?)id : null;
         }
 
         // Items Search - Go Button Handler
@@ -858,6 +1506,7 @@ namespace TrackerSQL.Pages
                 gvItems.PageIndex = 0; // Reset to first page
                 gvItems.EditIndex = -1; // Exit edit mode if active
                 BindItemsGrid(forceRefresh: true); // Force refresh for new search
+                upnlItems?.Update();
             }
             catch (Exception ex)
             {
@@ -875,6 +1524,7 @@ namespace TrackerSQL.Pages
                 gvItems.PageIndex = 0; // Reset to first page
                 gvItems.EditIndex = -1; // Exit edit mode if active
                 BindItemsGrid(forceRefresh: true); // Force refresh for reset
+                upnlItems?.Update();
             }
             catch (Exception ex)
             {
@@ -951,7 +1601,20 @@ namespace TrackerSQL.Pages
                 string sortBy = ViewState["AreasSortExpression"] as string ?? "AreaName";
                 
                 var cities = repo.GetAll(sortBy);
-                
+
+                // Filter is always re-read from the textbox so edit row indexes
+                // stay in sync with what is on screen (same approach as Items).
+                string searchFilter = tbxAreaSearch != null
+                    ? tbxAreaSearch.Text.Trim()
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    cities = cities.Where(a => a.AreaName != null
+                        && a.AreaName.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
                 gvAreas.DataSource = cities;
                 gvAreas.DataBind();
             }
@@ -959,6 +1622,27 @@ namespace TrackerSQL.Pages
             {
                 lblStatus.Text = "Error loading areas: " + ex.Message;
             }
+        }
+
+        protected void btnAreaGo_Click(object sender, EventArgs e)
+        {
+            gvAreas.EditIndex = -1;
+            gvAreas.PageIndex = 0;
+            BindAreasGrid();
+        }
+
+        protected void btnAreaReset_Click(object sender, EventArgs e)
+        {
+            if (tbxAreaSearch != null)
+                tbxAreaSearch.Text = string.Empty;
+            gvAreas.EditIndex = -1;
+            gvAreas.PageIndex = 0;
+            BindAreasGrid();
+        }
+
+        protected void tbxAreaSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnAreaGo_Click(sender, e);
         }
 
         protected void gvPeople_RowUpdating(object sender, GridViewUpdateEventArgs e)
@@ -1013,6 +1697,13 @@ namespace TrackerSQL.Pages
                 lblStatus.Text = $"RowEditing error: {ex.Message}";
             }
         }
+
+        protected void gvPeople_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvPeople.EditIndex = -1;
+            BindPeopleGrid();
+        }
+
         protected void gvPeople_RowDataBound(object sender, GridViewRowEventArgs e)
         {
             if (e.Row.RowType != DataControlRowType.DataRow) return;
@@ -1202,49 +1893,53 @@ namespace TrackerSQL.Pages
 
         protected void gvPackaging_RowDataBound(object sender, GridViewRowEventArgs e)
         {
-            if (!e.Row.RowType.Equals((object)DataControlRowType.DataRow))
+            if (e.Row.RowType != DataControlRowType.DataRow)
                 return;
-            ItemPackaging dataItem = (ItemPackaging)e.Row.DataItem;
 
-            // Handle BGColour column (index 3)
-            if (!string.IsNullOrEmpty(dataItem.BGColour))
+            // ColorPicker + UpdatePanel often fail to refresh after Update/Cancel.
+            // Force a full postback for those buttons so edit mode exits reliably.
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm != null)
             {
-                try
+                foreach (string id in new[] { "btnUpdate", "btnCancel", "btnAdd", "btnEdit" })
                 {
-                    Color bgColor = ColorTranslator.FromHtml(dataItem.BGColour);
-                    e.Row.Cells[3].BackColor = bgColor;
-
-                    // Set contrasting text color for BGColour column
-                    int brightness = (int)(bgColor.R * 0.299 + bgColor.G * 0.587 + bgColor.B * 0.114);
-                    e.Row.Cells[3].ForeColor = brightness > 128 ? Color.Black : Color.White;
-                }
-                catch (Exception ex)
-                {
-                    this.lblStatus.Text = ex.Message;
+                    Control btn = e.Row.FindControl(id);
+                    if (btn != null)
+                        sm.RegisterPostBackControl(btn);
                 }
             }
 
-            // Handle Colour column (index 4) - convert int to hex and display
-            if (dataItem.Colour.HasValue && dataItem.Colour.Value != 0)
+            ItemPackaging dataItem = e.Row.DataItem as ItemPackaging;
+            if (dataItem == null)
+                return;
+
+            bool isEdit = (e.Row.RowState & DataControlRowState.Edit) == DataControlRowState.Edit;
+            if (isEdit)
+                return; // Edit values come from Bind(...) — do not overwrite posted colour text.
+
+            // Display mode: paint swatches from stored hex (keep-bg exempts hover repaint).
+            ApplyHexSwatch(e.Row.Cells[3], dataItem.BGColour, e.Row.FindControl("LabelBGColour") as Label);
+            ApplyHexSwatch(e.Row.Cells[4], dataItem.Colour, e.Row.FindControl("LabelColour") as Label);
+        }
+
+        private void ApplyHexSwatch(TableCell cell, string hexColour, Label label)
+        {
+            if (cell == null || string.IsNullOrWhiteSpace(hexColour))
+                return;
+
+            try
             {
-                try
-                {
-                    // Convert integer to hex color
-                    Color foreColor = Color.FromArgb(dataItem.Colour.Value);
-                    string hexValue = $"#{foreColor.R:X2}{foreColor.G:X2}{foreColor.B:X2}";
-
-                    // Set the hex value as text and apply the color as background
-                    e.Row.Cells[4].Text = hexValue;
-                    e.Row.Cells[4].BackColor = foreColor;
-
-                    // Set contrasting text color for Colour column
-                    int brightness = (int)(foreColor.R * 0.299 + foreColor.G * 0.587 + foreColor.B * 0.114);
-                    e.Row.Cells[4].ForeColor = brightness > 128 ? Color.Black : Color.White;
-                }
-                catch (Exception ex)
-                {
-                    this.lblStatus.Text = ex.Message;
-                }
+                Color color = ColorTranslator.FromHtml(NormalizeHexColour(hexColour));
+                if (label != null)
+                    label.Text = NormalizeHexColour(hexColour);
+                cell.BackColor = color;
+                cell.CssClass = "keep-bg";
+                int brightness = (int)(color.R * 0.299 + color.G * 0.587 + color.B * 0.114);
+                cell.ForeColor = brightness > 128 ? Color.Black : Color.White;
+            }
+            catch (Exception ex)
+            {
+                this.lblStatus.Text = ex.Message;
             }
         }
 
@@ -1259,30 +1954,32 @@ namespace TrackerSQL.Pages
                 TextBox controlBGColour = (TextBox)this.gvPackaging.FooterRow.FindControl("TextBoxBGColour");
                 TextBox controlColour = (TextBox)this.gvPackaging.FooterRow.FindControl("TextBoxColour");
                 TextBox controlSymbol = (TextBox)this.gvPackaging.FooterRow.FindControl("TextBoxSymbol");
-                
+
+                if (!TryNormalizeHexColour(controlBGColour?.Text, out string bgColour)
+                    || !TryNormalizeHexColour(controlColour?.Text, out string colour))
+                {
+                    SetLookupStatus("Colours must be hex values like #FF0000 (or leave blank).", true);
+                    return;
+                }
+
                 var packaging = new ItemPackaging
                 {
                     ItemPackagingDesc = controlDescription.Text,
                     AdditionalNotes = controlAdditionalNotes.Text,
-                    BGColour = controlBGColour.Text,
-                    Colour = string.IsNullOrEmpty(controlColour.Text) ? 0 : Convert.ToInt32(controlColour.Text),
+                    BGColour = bgColour,
+                    Colour = string.IsNullOrEmpty(colour) ? null : colour,
                     Symbol = controlSymbol.Text
                 };
-                
+
                 var repo = new ItemPackagingsRepository();
                 repo.Insert(packaging);
                 BindPackagingGrid();
+                SetLookupStatus("Packaging added.", false);
             }
             catch (Exception ex)
             {
-                this.lblStatus.Text = "Error adding record: " + ex.Message;
+                SetLookupStatus("Error adding record: " + ex.Message, true);
             }
-        }
-
-        protected void ColorPickerExtBGColour_OnClientColorSelectionChanged(object sender, EventArgs e)
-        {
-            TextBox control = (TextBox)this.gvPackaging.FindControl("TextBoxBGColour");
-            control.Text = "#" + control.Text;
         }
 
         // REMOVED: Duplicate btnReset_Click - now defined earlier with new implementation
@@ -1537,41 +2234,47 @@ namespace TrackerSQL.Pages
 
         protected void gvInvoiceTypes_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            GridViewRow namingContainer = (GridViewRow)((Control)e.CommandSource).NamingContainer;
-            if (namingContainer == null)
+            if (e.CommandName.Equals("Edit") || e.CommandName.Equals("Update") || e.CommandName.Equals("Cancel"))
                 return;
-            TextBox controlTypeDesc = (TextBox)namingContainer.FindControl("InvoiceTypeDescTextBox");
-            if (controlTypeDesc == null || string.IsNullOrEmpty(controlTypeDesc.Text))
-                return;
-            
-            var controlInvoiceTypeID = (HiddenField)namingContainer.FindControl("InvoiceTypeIDHidden");
-            int invoiceTypeID = controlInvoiceTypeID != null ? Convert.ToInt32(controlInvoiceTypeID.Value) : 0;
-            
-            var repo = new InvoiceTypesRepository();
-            
-            if (e.CommandName.Equals("Delete"))
+
+            if (e.CommandName.Equals("AddItem") || e.CommandName.Equals("Add") || e.CommandName.Equals("Insert"))
             {
-                repo.Delete(invoiceTypeID);
-            }
-            else
-            {
-                CheckBox controlEnabled = (CheckBox)namingContainer.FindControl("EnabledCheckBox");
-                TextBox controlNotes = (TextBox)namingContainer.FindControl("NotesTextBox");
-                
-                var invoiceType = new InvoiceType
+                try
                 {
-                    InvoiceTypeID = invoiceTypeID,
-                    InvoiceTypeDesc = controlTypeDesc.Text,
-                    Enabled = controlEnabled != null && controlEnabled.Checked,
-                    Notes = controlNotes != null ? controlNotes.Text : string.Empty
-                };
-                
-                if (e.CommandName.Equals("Add") || e.CommandName.Equals("Insert"))
-                    repo.Insert(invoiceType);
-                else if (e.CommandName.Equals("Update"))
-                    repo.Update(invoiceType);
+                    GridViewRow namingContainer = (GridViewRow)((Control)e.CommandSource).NamingContainer;
+                    if (namingContainer == null)
+                        return;
+
+                    TextBox controlTypeDesc = (TextBox)namingContainer.FindControl("InvoiceTypeDescTextBox");
+                    if (controlTypeDesc == null || string.IsNullOrEmpty(controlTypeDesc.Text))
+                    {
+                        SetLookupStatus("Enter an invoice type description before adding.", true);
+                        gvInvoiceTypesUpdatePanel?.Update();
+                        return;
+                    }
+
+                    CheckBox controlEnabled = (CheckBox)namingContainer.FindControl("EnabledCheckBox");
+                    TextBox controlNotes = (TextBox)namingContainer.FindControl("NotesTextBox");
+
+                    var invoiceType = new InvoiceType
+                    {
+                        InvoiceTypeDesc = controlTypeDesc.Text,
+                        Enabled = controlEnabled != null && controlEnabled.Checked,
+                        Notes = controlNotes != null ? controlNotes.Text : string.Empty
+                    };
+
+                    new InvoiceTypesRepository().Insert(invoiceType);
+                    gvInvoiceTypes.EditIndex = -1;
+                    BindInvoiceTypesGrid();
+                    SetLookupStatus("Invoice type added.", false);
+                    gvInvoiceTypesUpdatePanel?.Update();
+                }
+                catch (Exception ex)
+                {
+                    SetLookupStatus("Error adding invoice type: " + ex.Message, true);
+                    gvInvoiceTypesUpdatePanel?.Update();
+                }
             }
-            BindInvoiceTypesGrid();
         }
 
         protected void gvPriceLevels_RowCommand(object sender, GridViewCommandEventArgs e)

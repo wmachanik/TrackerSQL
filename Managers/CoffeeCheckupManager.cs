@@ -236,7 +236,7 @@ namespace TrackerSQL.Managers
             // Add pre-processing failures (disabled-at-max, DB errors, etc.)
             if (failedContacts.Count > 0)
             {
-                totalResult.TotalFailed += failedContacts.Count;
+            totalResult.TotalFailed += failedContacts.Count;
                 string failMsg = string.Join("; ", failedContacts);
                 totalResult.ErrorMessage = string.IsNullOrEmpty(totalResult.ErrorMessage)
                     ? failMsg

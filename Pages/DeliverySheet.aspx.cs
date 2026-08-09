@@ -128,10 +128,11 @@ namespace TrackerSQL.Pages
 
             if (!this.IsPostBack)
             {
-                Button control = (Button)this.pnlDeliveryDate.FindControl("btnFind");
-
-                if (control != null)
-                    this.Form.DefaultButton = control.UniqueID;
+                // Enter key should load the selected delivery date (Go), not Find.
+                // Defaulting to Find caused date AutoPostBack / Go to be overwritten by a
+                // contact search whenever the Find box had leftover text.
+                if (this.btnGo != null)
+                    this.Form.DefaultButton = this.btnGo.UniqueID;
 
                 this.BindActivePrepDates();
                 this.PageInitialize(pPrintForm);
@@ -641,30 +642,7 @@ namespace TrackerSQL.Pages
 
         protected void ddlActivePrepDates_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!TryGetSelectedDeliveryDate(out DateTime deliveryDate))
-                return;
-
-            Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = deliveryDate.ToString("yyyy-MM-dd");
-
-            this.ltrlWhichDate.Text = deliveryDate.ToString("yyyy-MM-dd");
-
-            this.Session[CONST_SESSION_SHEETDATE] = (object)this.ltrlWhichDate.Text;
-            this.Session[CONST_SESSION_DELIVERTBY] = (object)string.Empty;
-            this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = (object)string.Empty;
-
-            this.ltrlWhichDate.Visible = true;
-
-            if (string.IsNullOrEmpty(this.ltrlWhichDate.Text))
-                return;
-
-            Button control = (Button)this.pnlDeliveryDate.FindControl("btnGo");
-
-            if (control != null)
-                this.Form.DefaultButton = control.UniqueID;
-
-            this.SetVarsAndBuildDeliverySheet();
-
-            AppLogger.WriteLog("deliverysheet", $"Changed delivery date to {ddlActivePrepDates.SelectedValue}");
+            LoadSheetForSelectedDate("Changed delivery date");
         }
 
         protected void tbCalendarDate_TextChanged(object sender, EventArgs e)
@@ -790,25 +768,73 @@ namespace TrackerSQL.Pages
 
             this.ltrlWhichDate.Text = deliveryDate.ToString("yyyy-MM-dd");
             this.Session[CONST_SESSION_SHEETDATE] = this.ltrlWhichDate.Text;
-            this.BuildDeliverySheet();
+            // Date navigation must show the whole day — not a leftover "By" person filter.
+            this.Session[CONST_SESSION_DELIVERTBY] = string.Empty;
+            this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = string.Empty;
+            if (this.ddlDeliveryBy != null && this.ddlDeliveryBy.Items.Count > 0)
+            {
+                this.ddlDeliveryBy.ClearSelection();
+                if (this.ddlDeliveryBy.Items.FindByValue("%") != null)
+                    this.ddlDeliveryBy.SelectedValue = "%";
+                else
+                    this.ddlDeliveryBy.SelectedIndex = 0;
+            }
+
+            this.BuildDeliverySheet(false, this.ltrlWhichDate.Text, string.Empty);
+        }
+
+        /// <summary>
+        /// Selects the dropdown date (if needed), clears Find noise, and rebuilds the sheet.
+        /// Used by dropdown AutoPostBack, calendar pick, and Go.
+        /// </summary>
+        private void LoadSheetForSelectedDate(string logAction)
+        {
+            if (!TryGetSelectedDeliveryDate(out DateTime deliveryDate))
+            {
+                ShowPageStatus("Select a delivery date first.", false);
+                return;
+            }
+
+            string dateValue = deliveryDate.ToString("yyyy-MM-dd");
+            Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = dateValue;
+            this.ltrlWhichDate.Text = dateValue;
+            this.ltrlWhichDate.Visible = true;
+
+            // Leaving Find text in place caused DefaultButton/Find to replace the date sheet
+            // with a contact search on the same postback.
+            if (this.tbxFindClient != null)
+                this.tbxFindClient.Text = string.Empty;
+
+            if (this.btnGo != null)
+                this.Form.DefaultButton = this.btnGo.UniqueID;
+
+            this.SetVarsAndBuildDeliverySheet();
+
+            if (!string.IsNullOrEmpty(logAction))
+                AppLogger.WriteLog("deliverysheet", $"{logAction} to {dateValue}");
         }
 
         protected void btnGo_Click(object sender, EventArgs e)
         {
-            if (this.ddlActivePrepDates == null || this.ddlActivePrepDates.SelectedIndex <= 0)
-                return;
-
-            this.SetVarsAndBuildDeliverySheet();
+            LoadSheetForSelectedDate("Go delivery date");
         }
 
         protected void btnFind_Click(object sender, EventArgs e)
         {
-            AppLogger.WriteLog("deliverysheet", $"Searched for contact: {tbxFindClient.Text}");
+            string searchText = this.tbxFindClient != null ? this.tbxFindClient.Text.Trim() : string.Empty;
+            if (string.IsNullOrEmpty(searchText))
+            {
+                // Empty Find / accidental DefaultButton click → load selected date instead.
+                LoadSheetForSelectedDate(null);
+                return;
+            }
+
+            AppLogger.WriteLog("deliverysheet", $"Searched for contact: {searchText}");
 
             // Search SQL has moved to DeliverySheetRepository.
             // This removes the old inline SQL and avoids SQL injection from the search textbox.
             var repo = new DeliverySheetRepository();
-            var queryResult = repo.SearchDeliverySheetRowsByContact(this.tbxFindClient.Text);
+            var queryResult = repo.SearchDeliverySheetRowsByContact(searchText);
 
             if (!queryResult.Success)
             {
@@ -818,7 +844,7 @@ namespace TrackerSQL.Pages
             }
 
             if (queryResult.Items.Count == 0)
-                ShowPageStatus($"No open deliveries found matching '{tbxFindClient.Text.Trim()}'.", false);
+                ShowPageStatus($"No open deliveries found matching '{searchText}'.", false);
             else
                 ClearPageStatus();
 
@@ -833,11 +859,6 @@ namespace TrackerSQL.Pages
 
         protected void tbxFindClient_OnTextChanged(object sender, EventArgs e)
         {
-            Button control = (Button)this.pnlDeliveryDate.FindControl("btnFind");
-
-            if (control != null)
-                this.Form.DefaultButton = control.UniqueID;
-
             this.btnFind_Click(sender, e);
         }
 

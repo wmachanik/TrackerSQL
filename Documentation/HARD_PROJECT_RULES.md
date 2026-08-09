@@ -189,7 +189,7 @@ If you use Access database:
        ConnectionString="..." 
        SelectCommand="SELECT ..." />
    ```
-   - **Exception:** `sdsUserNames` is allowed (ASP.NET membership database only)
+   - **Exception:** `sdsUserNames` is allowed (ASP.NET membership views in TrackerDataSQL only)
 
 2. **Legacy ObjectDataSource:**
    ```aspx
@@ -451,17 +451,16 @@ There are **ZERO exceptions** to the Access database rule. SQL Server must be us
 **Only Exception:** `sdsUserNames`
 
 ```aspx
-<!-- ALLOWED - ASP.NET Membership database (separate from main DB) -->
+<!-- ALLOWED - ASP.NET membership users (same TrackerDataSQL catalog as app data) -->
 <asp:SqlDataSource ID="sdsUserNames" runat="server"
-    ConnectionString="<%$ ConnectionStrings:ApplicationServices %>"
+    ConnectionString="<%$ ConnectionStrings:TrackerDataSQL %>"
     SelectCommand="SELECT [UserName] AS SecurityUsername FROM [vw_aspnet_Users]" />
 ```
 
 **Why Allowed:**
-- Queries ASP.NET membership database (not TrackerDataSQL)
-- Standard ASP.NET security feature
-- Not part of main application data
-- Will be refactored in Phase 2
+- Reads ASP.NET membership views (`vw_aspnet_Users`) that now live in the TrackerDataSQL catalog
+- Standard ASP.NET security feature (not a business-table SqlDataSource)
+- Will be refactored to a repository/Membership API in a later phase
 
 **All other SqlDataSource controls are PROHIBITED.**
 

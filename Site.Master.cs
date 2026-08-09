@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -20,15 +21,20 @@ namespace TrackerSQL
             {
                 litUnsavedChangesScript.Text =
                     "<script type=\"text/javascript\" src=\"" +
-                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js")) +
+                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js?v=20260807-2")) +
                     "\"></script>";
             }
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            var sw = Stopwatch.StartNew();
+
             BindApplicationErrorBanner();
             HighlightCurrentMenuItem();
+
+            sw.Stop();
+            RequestTiming.Write("MASTER PAGE", sw.ElapsedMilliseconds + " ms");
         }
 
         private void BindApplicationErrorBanner()

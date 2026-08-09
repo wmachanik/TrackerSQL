@@ -1,7 +1,7 @@
 <%@ Page Title="System Tools" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="SystemTools.aspx.cs" Inherits="TrackerSQL.Tools.SystemTools" MaintainScrollPositionOnPostback="true" %>
 
-<asp:Content ID="cntSystemToolsHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntSystemToolsHdr" title="System Tools" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntSystemToolsBdy" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="tsmSystemTools" runat="server" />
@@ -44,7 +44,7 @@
                         <div class="dashboard-link tool-tone-reset">
                             <div class="dashboard-card">
                                 <div class="tool-card-header">
-                                    <img class="tool-card-icon" src="../images/imgButtons/Sync.png" alt="" />
+                                    <img class="tool-card-icon" src="../images/imgButtons/Copilot_ResetPrepDate_32.png" alt="" />
                                     <h4>Reset Prep/Delivery Date</h4>
                                 </div>
                                 <p>Recalculate next dates</p>
@@ -55,7 +55,7 @@
                         <div class="dashboard-link tool-tone-move">
                             <div class="dashboard-card">
                                 <div class="tool-card-header">
-                                    <img class="tool-card-icon" src="../images/imgButtons/MoveOnADay.gif" alt="" />
+                                    <img class="tool-card-icon" src="../images/imgButtons/icons8-move-date.png" alt="" />
                                     <h4>Move Delivery Date</h4>
                                 </div>
                                 <p>Shift delivery schedule</p>
@@ -110,7 +110,7 @@
                         <div class="dashboard-link tool-tone-lastorder">
                             <div class="dashboard-card">
                                 <div class="tool-card-header">
-                                    <img class="tool-card-icon" src="../images/imgButtons/Stopwatch.png" alt="" />
+                                    <img class="tool-card-icon" src="../images/imgButtons/icons8-set-min-date-30.png" alt="" />
                                     <h4>Set Last Recurring Order Date</h4>
                                 </div>
                                 <p>Sync DateLastDone from item usage</p>
@@ -126,6 +126,32 @@
                                 </div>
                                 <p>Edit resource messages</p>
                                 <asp:Button ID="btnMessagesEditor" runat="server" Text="Open" PostBackUrl="~/Tools/MessagesEditor.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-backup">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/icons8-data-backup-30.png" alt="" />
+                                    <h4>Database Backup</h4>
+                                </div>
+                                <p>Backup OtterDb to App_Data\Backup</p>
+                                <asp:Button ID="btnDatabaseBackup" runat="server" Text="Open"
+                                    PostBackUrl="~/Tools/DatabaseBackup.aspx"
+                                    ToolTip="Create and manage timestamped database backups" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-sysdata">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Table.png" alt="" />
+                                    <h4>SQL Connection Test</h4>
+                                </div>
+                                <p>Time Open() and verify SQL connectivity</p>
+                                <asp:Button ID="btnSqlConnectionTest" runat="server" Text="Open"
+                                    PostBackUrl="~/Tools/SqlConnectionTest.aspx"
+                                    ToolTip="Measure SQL connect time; works without login" />
                             </div>
                         </div>
 

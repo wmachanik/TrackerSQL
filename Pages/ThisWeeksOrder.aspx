@@ -1,4 +1,4 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerSQL.Pages.ThisWeeksOrder" %>
+<%@ Page Title="This Week's Order" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ThisWeeksOrder.aspx.cs" Inherits="TrackerSQL.Pages.ThisWeeksOrder" %>
 <asp:Content ID="cntThisWeeksOrderHdr" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 <asp:Content ID="cntThisWeeksOrderBdy" ContentPlaceHolderID="MainContent" runat="server">

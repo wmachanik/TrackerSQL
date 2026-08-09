@@ -32,6 +32,11 @@ namespace TrackerSQL.Models
             get { return SystemConstants.PageUrls.RecurringOrderDetailsUrl(RecurringOrderID); }
         }
 
+        public string EnabledDisplay
+        {
+            get { return Enabled == false ? "disabled" : "enabled"; }
+        }
+
         public string RecurringPatternDisplay
         {
             get
@@ -60,7 +65,9 @@ namespace TrackerSQL.Models
             get
             {
                 string itemDesc = ItemDesc ?? string.Empty;
-                string quantityText = QtyRequired.HasValue ? QtyRequired.Value.ToString("0.##") : string.Empty;
+                string quantityText = QtyRequired.HasValue
+                    ? SystemConstants.FormatConstants.FormatQuantity(QtyRequired.Value)
+                    : string.Empty;
                 string packagingDescription = ItemPackagingDesc ?? string.Empty;
 
                 var parts = new List<string>();

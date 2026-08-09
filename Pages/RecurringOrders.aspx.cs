@@ -14,6 +14,7 @@ namespace TrackerSQL.Pages
     {
         private const string CONST_SORTEXPRESSION_VIEWSTATE = "RecurringOrdersSortExpression";
         private const string DefaultReturnUrl = "~/Default.aspx";
+        private const string FlashStatusSessionKey = "RecurringOrders.FlashStatus";
 
         protected ScriptManager smRecurringOrders;
         protected UpdateProgress uprgRecurringOrders;
@@ -48,8 +49,35 @@ namespace TrackerSQL.Pages
                     tbxFilterBy.Text = Request.QueryString["CompanyName"];
                 }
 
+                // Bind only on first load. Rebinding on every postback destroys the delete
+                // LinkButtons before RowCommand runs (confirm fires, progress shows, but
+                // nothing is deleted). Pager buttons are rebuilt in RowCreated from ViewState
+                // (see GridPager); event handlers rebind after paging / filter / delete.
                 BindRecurringOrdersGrid();
+                ShowFlashStatusIfAny();
             }
+        }
+
+        protected void Page_PreRender(object sender, EventArgs e)
+        {
+            // GridView template LinkButtons are not re-bound on every postback — re-register
+            // full postbacks each request so ScriptManager does not treat Delete as async.
+            RegisterDeletePostBackControls();
+        }
+
+        /// <summary>
+        /// Shows a one-shot status (and alert) after redirects from Recurring Order Details
+        /// delete / save flows — startup scripts do not survive Response.Redirect.
+        /// </summary>
+        private void ShowFlashStatusIfAny()
+        {
+            string flash = Session[FlashStatusSessionKey] as string;
+            if (string.IsNullOrWhiteSpace(flash))
+                return;
+
+            Session.Remove(FlashStatusSessionKey);
+            SetStatus(flash, isError: false);
+            new showMessageBox(Page, "Recurring Orders", flash);
         }
 
         private void RegisterPostBackControls()
@@ -64,6 +92,20 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterAsyncPostBackControl(ddlEnabledFilter);
             scriptManager.RegisterAsyncPostBackControl(tbxFilterBy);
             scriptManager.RegisterPostBackControl(btnBack);
+        }
+
+        private void RegisterDeletePostBackControls()
+        {
+            var scriptManager = ScriptManager.GetCurrent(Page);
+            if (scriptManager == null || gvRecurringOrders == null)
+                return;
+
+            foreach (GridViewRow row in gvRecurringOrders.Rows)
+            {
+                var btnDelete = row.FindControl("btnDeleteRecurringOrder") as LinkButton;
+                if (btnDelete != null)
+                    scriptManager.RegisterPostBackControl(btnDelete);
+            }
         }
 
         private void SetStatus(string message, bool? isError)
@@ -187,19 +229,33 @@ namespace TrackerSQL.Pages
                 int lineCount = recurringOrderGroupSummary.RecurringLineCount;
                 string confirmMessage = "Delete the complete recurring order for '" + companyName + "' ("
                     + lineCount + " line(s))? This cannot be undone.";
-                btnDeleteRecurringOrder.OnClientClick =
-                    "return confirm('" + HttpUtility.JavaScriptStringEncode(confirmMessage) + "');";
 
+                // Capture-phase JS + OnClientClick both call beginRecurringOrderListDelete.
+                btnDeleteRecurringOrder.Attributes["data-confirm-delete"] = confirmMessage;
+                btnDeleteRecurringOrder.OnClientClick =
+                    "return beginRecurringOrderListDelete(this, "
+                    + HttpUtility.JavaScriptStringEncode(confirmMessage, true)
+                    + ");";
+
+                // Full postback so the list always re-renders cleanly after delete.
                 var scriptManager = ScriptManager.GetCurrent(Page);
                 if (scriptManager != null)
-                    scriptManager.RegisterAsyncPostBackControl(btnDeleteRecurringOrder);
+                    scriptManager.RegisterPostBackControl(btnDeleteRecurringOrder);
             }
         }
 
         protected void gvRecurringOrders_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
+            AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                "RecurringOrders paging to page " + (e.NewPageIndex + 1) + " of " + gvRecurringOrders.PageCount);
             gvRecurringOrders.PageIndex = e.NewPageIndex;
             BindRecurringOrdersGrid();
+        }
+
+        /// <summary>App-standard pager (Previous / squares / Next) — see Classes/GridPager.cs.</summary>
+        protected void gvRecurringOrders_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvRecurringOrders, e.Row);
         }
 
         protected void gvRecurringOrders_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -211,21 +267,38 @@ namespace TrackerSQL.Pages
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out recurringOrderId) || recurringOrderId <= 0)
             {
                 SetStatus("Could not delete: missing recurring order id.", isError: true);
+                upnlRecurringOrders.Update();
                 return;
             }
 
             try
             {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "RecurringOrders list delete starting for RecurringOrderID=" + recurringOrderId);
+
                 var recurringOrdersRepository = new RecurringOrdersRepository();
-                recurringOrdersRepository.Delete(recurringOrderId);
-                string statusMessage = "Recurring order deleted.";
-                BindRecurringOrdersGrid(statusMessage);
-                new showMessageBox(Page, "Recurring Orders", statusMessage);
+                string contactNote = recurringOrdersRepository.Delete(recurringOrderId);
+                string statusMessage = "Recurring order deleted."
+                    + (string.IsNullOrWhiteSpace(contactNote) ? string.Empty : " " + contactNote);
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "RecurringOrders list delete OK for RecurringOrderID=" + recurringOrderId);
+
+                // Full-page reload clears the stuck "Deleting..." client UI.
+                Session[FlashStatusSessionKey] = statusMessage;
+                Response.Redirect(SystemConstants.PageUrls.RecurringOrders, false);
+                Context.ApplicationInstance.CompleteRequest();
+            }
+            catch (System.Threading.ThreadAbortException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.System, "RecurringOrders gvRecurringOrders_RowCommand delete error: " + ex.Message);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "RecurringOrders gvRecurringOrders_RowCommand delete error: " + ex.Message);
                 SetStatus("Error deleting recurring order: " + ex.Message, isError: true);
+                upnlRecurringOrders.Update();
             }
         }
 
@@ -312,6 +385,24 @@ namespace TrackerSQL.Pages
                 return "∞";
 
             return untilDate.ToString("yyyy-MM-dd");
+        }
+
+        protected string FormatQty(object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return string.Empty;
+
+            double qty;
+            if (value is double)
+                qty = (double)value;
+            else if (value is float)
+                qty = (float)value;
+            else if (value is decimal)
+                qty = (double)(decimal)value;
+            else if (!double.TryParse(Convert.ToString(value), out qty))
+                return string.Empty;
+
+            return SystemConstants.FormatConstants.FormatQuantity(qty);
         }
 
         private void ApplyFilters()

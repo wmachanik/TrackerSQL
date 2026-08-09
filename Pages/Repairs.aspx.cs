@@ -150,6 +150,40 @@ namespace TrackerSQL.Pages
             return pRepairStatusID > 0 ? new RepairStatusesRepository().GetRepairStatusDesc(pRepairStatusID) : string.Empty;
         }
 
+        /// <summary>Order Detail URL when RelatedOrderID is known (from the batch resolve on bind).</summary>
+        public string GetRelatedOrderNavigateUrl(object relatedOrderIdObj, object relatedOrderLineIdObj)
+        {
+            int orderId;
+            try
+            {
+                orderId = Convert.ToInt32(relatedOrderIdObj ?? 0);
+            }
+            catch
+            {
+                orderId = 0;
+            }
+
+            // Fallback for legacy rows still holding an OrderID in RelatedOrderLineID
+            if (orderId <= 0)
+            {
+                try
+                {
+                    int lineId = Convert.ToInt32(relatedOrderLineIdObj ?? 0);
+                    if (lineId > 0 && new OrdersRepository().OrderExists(lineId))
+                        orderId = lineId;
+                }
+                catch
+                {
+                    return string.Empty;
+                }
+            }
+
+            if (orderId <= 0)
+                return string.Empty;
+
+            return ResolveUrl("~/Pages/OrderDetail.aspx?" + OrderDetail.CONST_QRYSTR_ORDERID + "=" + orderId);
+        }
+
         private void SetFilterStatus(string message, string cssClass = "status-message status-info")
         {
             lblFilter.Text = message ?? string.Empty;

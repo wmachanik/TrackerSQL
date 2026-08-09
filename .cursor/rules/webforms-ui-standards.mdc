@@ -1,0 +1,50 @@
+---
+description: WebForms UI — status at bottom, UpdatePanel pattern for pages
+globs: "**/*.{aspx,aspx.cs,ascx,ascx.cs}"
+alwaysApply: false
+---
+
+# WebForms UI Standards
+
+Reference: `Tools/HolidayClosureDetail.aspx` and `Documentation/WEBFORMS_UI_STANDARDS.md`.
+
+## Status messages
+
+- Put result/status text **below** the form button row (bottom of the main panel).
+- Use `status-message` plus `status-info` / `status-success` / `status-error`.
+- Do **not** put the result status strip above the input fields.
+
+## UpdatePanel (default)
+
+- New/updated interactive pages: `ScriptManager` + `UpdatePanel` + `UpdateProgress` (Quaffee/BlueArrows, `DisplayAfter="0"`).
+- **Save** (stay on page) → async postback so progress shows.
+- **Save & Return**, **Back**, and redirects after **Delete** → full postback (`PostBackTrigger` / `RegisterPostBackControl`).
+- Prefer `UpdateMode="Conditional"` and `.Update()` after async handlers.
+
+## Buttons
+
+- Prefer **Save**, **Save & Return**, **Delete** (when editing), **Back**.
+- **Back** must be `<asp:Button>`, not `HyperLink`.
+- Save & Return / Back default to the owning list page.
+- Icon (+ optional text) actions: global `span.image-button` shell with `<img>` + HyperLink/LinkButton siblings. Grouped lists: `grouping-table` / `grouping-card` / `nested-results-table` / `status-badge` — see `WEBFORMS_UI_STANDARDS.md` §3a. Do not invent page-prefixed copies.
+
+## Page tone panel
+
+- One **`page-tone-panel`** wraps title, toolbar, content, and status (no duplicate `<h1>` above the panel).
+- **`page-tone-header`**: single icon + **`page-tone-title`** + optional **`page-tone-subtitle`**.
+- **`page-tone-toolbar`**: filters and action buttons below the header divider.
+- Add a tone modifier class (`page-tone-reminders`, `page-tone-checkup`, `page-tone-contacts`, `page-tone-repairs`, …) matching the home dashboard card colours.
+
+Reference: `Pages/SentRemindersSheet.aspx`, `Pages/Contacts.aspx`, `Pages/Repairs.aspx`, `Documentation/WEBFORMS_UI_STANDARDS.md` §3.
+
+## Unsaved changes
+
+- Use shared `Scripts/unsavedChanges.js` (`window.TrackerUnsaved`), loaded from `Site.Master` (via Literal — no `<%= %>` in `<head>`).
+- Call `TrackerUnsaved.init({...})` at the **bottom of MainContent**, not in `HeadContent`.
+- Do **not** put `<%= %>` / code blocks in `HeadContent` on UpdatePanel pages (ScriptManager cannot modify `<head>`).
+- Leave without save → `confirmLeave`; intentional Save / navigate → `allowNavigate`.
+- Reference: `Pages/ContactDetails.aspx`, `Pages/OrderDetail.aspx`; details in `Documentation/WEBFORMS_UI_STANDARDS.md` §4.
+
+## Retrofit
+
+When editing a page that does not yet follow this, bring **status placement**, **UpdatePanel/progress**, and **page-tone panel** into compliance in the same change when practical. Checklist lives in `Documentation/WEBFORMS_UI_STANDARDS.md` §5.

@@ -1,0 +1,31 @@
+---
+description: Optional FKs must use DbParamHelpers.FkOrDbNull (Access 0 → SQL NULL)
+globs: Repositories/**/*.cs
+alwaysApply: false
+---
+
+# Optional FKs: FkOrDbNull
+
+Access stored `0` for “no FK”. SQL Server rejects `0` on foreign keys.
+
+## Required
+
+- On INSERT/UPDATE of **optional** FK columns, use `DbParamHelpers.FkOrDbNull(...)` (`Classes/DbParamHelpers.cs`).
+- Repos that inherit `RepositoryBase<T>` can call `FkOrDbNull(...)` directly (wrappers on the base).
+- Standalone repos (e.g. `ContactsRepository`): `using static TrackerSQL.Classes.DbParamHelpers;`
+- Do not add per-repo private `FkOrDbNull` copies.
+- Overloads: `int?` and `int` — both map null / ≤ 0 → `DBNull.Value`.
+
+```csharp
+new DBParameter {
+    ParamName = "@EquipTypeID",
+    DataValue = FkOrDbNull(entity.EquipTypeID),
+    DataDbType = DbType.Int32
+};
+```
+
+## Not for
+
+Required parent keys (e.g. child row `ContactID`) or non-FK fields.
+
+Hard rule: `Documentation/HARD_PROJECT_RULES.md` Rule #0e.

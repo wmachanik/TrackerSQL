@@ -8,7 +8,7 @@ namespace TrackerSQL.Repositories
 {
     public class RepairsRepository : RepositoryBase<Repair>
     {
-        private const int DoneStatusId = 7;
+        public const int DoneStatusId = 7;
 
         private const string SelectColumns = @"
             RepairID, ContactID, ContactName, ContactEmail, JobCardNumber, DateLogged, LastStatusChange,
@@ -128,6 +128,37 @@ namespace TrackerSQL.Repositories
             return QueryRepairs(sql, parameters, sortBy);
         }
 
+        /// <summary>All repairs for a contact (any status), newest first.</summary>
+        public List<Repair> GetByContactId(int contactId)
+        {
+            const string sql = "SELECT " + SelectColumns + @"
+                FROM RepairsTbl
+                WHERE ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            return QueryRepairs(sql, parameters, "DateLogged DESC");
+        }
+
+        /// <summary>All repairs for a contact logged on/after the given date, newest first.</summary>
+        public List<Repair> GetByContactSince(int contactId, DateTime sinceDate)
+        {
+            const string sql = "SELECT " + SelectColumns + @"
+                FROM RepairsTbl
+                WHERE ContactID = @ContactID AND DateLogged >= @SinceDate";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@SinceDate", DataValue = sinceDate.Date, DataDbType = DbType.DateTime }
+            };
+
+            return QueryRepairs(sql, parameters, "DateLogged DESC");
+        }
+
         public Repair GetRepairById(int repairId)
         {
             if (repairId <= 0) return null;
@@ -174,6 +205,31 @@ namespace TrackerSQL.Repositories
             return ExecNonQuery(sql, BuildParameters(repair, includeId: false)) > 0;
         }
 
+        /// <summary>
+        /// Inserts a repair and returns the new RepairID (0 on failure). Prefer this over
+        /// InsertRepair + GetLastIdInserted: DateLogged is date-only, so two same-day repairs
+        /// for one contact made GetLastIdInserted ambiguous (it returned the older repair).
+        /// </summary>
+        public int InsertRepairReturnId(Repair repair)
+        {
+            if (repair == null) throw new ArgumentNullException(nameof(repair));
+
+            const string sql = @"
+                INSERT INTO RepairsTbl
+                (ContactID, ContactName, ContactEmail, JobCardNumber, DateLogged, LastStatusChange,
+                 EquipTypeID, EquipSerialNumber, SwopOutMachineID, EquipConditionID,
+                 TakenFrother, TakenBeanLid, TakenWaterLid, BrokenFrother, BrokenBeanLid, BrokenWaterLid,
+                 RepairFaultID, RepairFaultDesc, RepairStatusID, RelatedOrderLineID, Notes)
+                VALUES
+                (@ContactID, @ContactName, @ContactEmail, @JobCardNumber, @DateLogged, @LastStatusChange,
+                 @EquipTypeID, @EquipSerialNumber, @SwopOutMachineID, @EquipConditionID,
+                 @TakenFrother, @TakenBeanLid, @TakenWaterLid, @BrokenFrother, @BrokenBeanLid, @BrokenWaterLid,
+                 @RepairFaultID, @RepairFaultDesc, @RepairStatusID, @RelatedOrderLineID, @Notes);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            return ExecuteScalar<int>(sql, BuildParameters(repair, includeId: false));
+        }
+
         public bool UpdateRepair(Repair repair, int originalRepairId = 0)
         {
             if (repair == null) throw new ArgumentNullException(nameof(repair));
@@ -204,7 +260,8 @@ namespace TrackerSQL.Repositories
 
         public int GetLastIdInserted(long contactId)
         {
-            const string sql = "SELECT TOP 1 RepairID FROM RepairsTbl WHERE ContactID = @ContactID ORDER BY DateLogged DESC";
+            // DateLogged is date-only — RepairID breaks same-day ties (newest wins).
+            const string sql = "SELECT TOP 1 RepairID FROM RepairsTbl WHERE ContactID = @ContactID ORDER BY DateLogged DESC, RepairID DESC";
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 }

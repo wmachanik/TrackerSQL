@@ -1,7 +1,7 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="OrderDetail.aspx.cs"
+<%@ Page Title="Order Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="OrderDetail.aspx.cs"
     Inherits="TrackerSQL.Pages.OrderDetail" MaintainScrollPositionOnPostback="true" EnableEventValidation="false" %>
 
-<asp:Content ID="cntOrderDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntOrderDetailHdr" title="Order Detail" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
 </asp:Content>
 <asp:Content ID="cntOrderDetailBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -97,7 +97,8 @@
                             <td>
                                 <asp:TextBox ID="tbxOrderDate" runat="server" />
                                 <ajaxToolkit:CalendarExtender ID="tbxOrderDate_CalendarExtender" runat="server"
-                                    Enabled="True" TargetControlID="tbxOrderDate" />
+                                    Enabled="True" TargetControlID="tbxOrderDate"
+                                    OnClientDateSelectionChanged="orderHeaderCalendarDateChanged" />
                             </td>
                         </tr>
                         <tr>
@@ -105,7 +106,8 @@
                             <td>
                                 <asp:TextBox ID="tbxPrepDate" runat="server" />
                                 <ajaxToolkit:CalendarExtender ID="tbxPrepDate_CalendarExtender" runat="server"
-                                    Enabled="True" TargetControlID="tbxPrepDate" />
+                                    Enabled="True" TargetControlID="tbxPrepDate"
+                                    OnClientDateSelectionChanged="orderHeaderCalendarDateChanged" />
                             </td>
                         </tr>
                         <tr>
@@ -123,7 +125,8 @@
                             <td>
                                 <asp:TextBox ID="tbxRequiredByDate" runat="server" />
                                 <ajaxToolkit:CalendarExtender ID="tbxRequiredByDate_CalendarExtender" runat="server"
-                                    Enabled="True" TargetControlID="tbxRequiredByDate" />
+                                    Enabled="True" TargetControlID="tbxRequiredByDate"
+                                    OnClientDateSelectionChanged="orderHeaderCalendarDateChanged" />
                             </td>
                         </tr>
                         <tr>
@@ -389,13 +392,24 @@
 
     <%-- Init in MainContent (not Head) so <%= ClientID %> does not block ScriptManager --%>
     <script type="text/javascript">
+        // CalendarExtender sets the textbox without firing input/change — mark header dirty explicitly.
+        function orderHeaderCalendarDateChanged(sender, args) {
+            if (window.TrackerUnsaved && TrackerUnsaved.markDirty) {
+                TrackerUnsaved.markDirty();
+            } else if (window.orderHeaderMarkDirty) {
+                orderHeaderMarkDirty();
+            }
+        }
+
         // Shared dirty guard (Scripts/unsavedChanges.js via Site.Master)
         TrackerUnsaved.init({
             dirtyFieldId: '<%= hdnHeaderDirty.ClientID %>',
+            rootId: '<%= pnlOrderHeader.ClientID %>',
             unsavedStatusMessage: '<%= HttpUtility.JavaScriptStringEncode(HeaderUnsavedStatusMessage) %>',
             statusLiteralId: '<%= ltrlStatus.ClientID %>',
             statusPanelId: '<%= pnlStatusMessage.ClientID %>',
             saveButtonSelector: '.order-detail-save-btn',
+            saveButtonsAlwaysEnabled: true,
             leaveMessage: 'You have unsaved changes. Leave without saving?',
             aliases: {
                 markDirty: 'orderHeaderMarkDirty',

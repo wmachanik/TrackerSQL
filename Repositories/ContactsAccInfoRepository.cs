@@ -58,6 +58,68 @@ namespace TrackerSQL.Repositories
                 });
         }
 
+        /// <summary>
+        /// Sets only the InvoiceTypeID for a contact. Creates a minimal acc-info row when the
+        /// contact does not have one yet, so the change is never silently lost.
+        /// When the type actually changes, a dated note is prepended to ContactsTbl.Notes.
+        /// </summary>
+        /// <param name="reason">Optional context for the note, e.g. "recurring order added".</param>
+        public bool SetInvoiceTypeByContactId(int contactId, int invoiceTypeId, string reason = null)
+        {
+            if (contactId <= 0 || invoiceTypeId <= 0)
+                return false;
+
+            int? previousTypeId = GetInvoiceTypeIdByContactId(contactId);
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@InvoiceTypeID", DataValue = invoiceTypeId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            int rows = ExecNonQuery(
+                "UPDATE ContactsAccInfoTbl SET InvoiceTypeID = @InvoiceTypeID WHERE ContactID = @ContactID",
+                parameters);
+
+            bool ok = rows > 0;
+            if (!ok)
+            {
+                ok = Insert(new ContactsAccInfo
+                {
+                    ContactID = contactId,
+                    InvoiceTypeID = invoiceTypeId,
+                    Enabled = true
+                }) > 0;
+            }
+
+            if (ok && (!previousTypeId.HasValue || previousTypeId.Value != invoiceTypeId))
+            {
+                string typeDesc = ResolveInvoiceTypeDesc(invoiceTypeId);
+                string note = string.IsNullOrWhiteSpace(reason)
+                    ? "Account type set to " + typeDesc
+                    : "Account type set to " + typeDesc + " — " + reason.Trim();
+                new ContactsRepository().AppendSystemNote(contactId, note);
+            }
+
+            return ok;
+        }
+
+        private static string ResolveInvoiceTypeDesc(int invoiceTypeId)
+        {
+            try
+            {
+                var invoiceType = new InvoiceTypesRepository().GetById(invoiceTypeId);
+                if (!string.IsNullOrWhiteSpace(invoiceType?.InvoiceTypeDesc))
+                    return invoiceType.InvoiceTypeDesc;
+            }
+            catch
+            {
+                // Fall through to id-based label
+            }
+
+            return "type " + invoiceTypeId;
+        }
+
         public override int Insert(ContactsAccInfo entity)
         {
             const string sql = @"

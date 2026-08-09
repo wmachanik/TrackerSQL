@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TrackerSQL.Classes;
@@ -99,11 +99,8 @@ namespace TrackerSQL.Managers
                 item.ContactID = SystemConstants.CustomerConstants.SundryCustomerNamePrefix;
 
                 string notes = row.Notes ?? string.Empty;
-
-                if (notes.Contains(":"))
-                    notes = notes.Remove(notes.IndexOf(":")).Trim();
-
-                string strippedNotes = StripEmailOut(notes);
+                string walkInName = ExtractSundryWalkInName(notes);
+                string strippedNotes = StripEmailOut(walkInName);
 
                 item.ContactName = CONST_ZZNAME_PREFIX + " " + strippedNotes;
             }
@@ -174,12 +171,20 @@ namespace TrackerSQL.Managers
             {
                 string notes = row.Notes ?? string.Empty;
 
-                if (isSundry && notes.Contains(":"))
-                    notes = notes.Substring(notes.IndexOf(":") + 1).Trim();
+                if (isSundry && !string.IsNullOrEmpty(notes))
+                {
+                    // Show [RepairStatus: …] (or text after the walk-in name) on the repair line
+                    string statusStart = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag;
+                    int statusIdx = notes.IndexOf(statusStart, StringComparison.OrdinalIgnoreCase);
+                    if (statusIdx >= 0)
+                        notes = notes.Substring(statusIdx).Trim();
+                    else if (notes.Contains(":"))
+                        notes = notes.Substring(notes.IndexOf(":") + 1).Trim();
+                }
 
                 string strippedNotes = StripEmailOut(notes);
-
-                itemDescription = string.Format("{0}: {1}", itemDescription, strippedNotes);
+                if (!string.IsNullOrWhiteSpace(strippedNotes))
+                    itemDescription = string.Format("{0}: {1}", itemDescription, strippedNotes);
             }
 
             string bgColour = string.IsNullOrEmpty(row.BGColour)
@@ -266,6 +271,29 @@ namespace TrackerSQL.Managers
             }
 
             return notes;
+        }
+
+        /// <summary>
+        /// Walk-in name from sundry (ZZName) order notes. Uses text before [RepairStatus: …]
+        /// so the colon inside that tag is not mistaken for the name delimiter.
+        /// </summary>
+        private static string ExtractSundryWalkInName(string notes)
+        {
+            if (string.IsNullOrWhiteSpace(notes))
+                return string.Empty;
+
+            string value = notes.Trim();
+            string statusStart = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag;
+            int statusIdx = value.IndexOf(statusStart, StringComparison.OrdinalIgnoreCase);
+            if (statusIdx >= 0)
+                value = value.Substring(0, statusIdx).Trim();
+
+            if (value.EndsWith(":"))
+                value = value.Substring(0, value.Length - 1).TrimEnd();
+            else if (value.Contains(":"))
+                value = value.Substring(0, value.IndexOf(':')).Trim();
+
+            return value;
         }
     }
 }

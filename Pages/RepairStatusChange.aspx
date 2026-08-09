@@ -1,6 +1,25 @@
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RepairStatusChange.aspx.cs" Inherits="TrackerSQL.Pages.RepairStatusChange" %>
+<%@ Page Title="Repair Status Change" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RepairStatusChange.aspx.cs" Inherits="TrackerSQL.Pages.RepairStatusChange" %>
 
-<asp:Content ID="cntRepairStatusChangeHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntRepairStatusChangeHdr" title="Repair Status Change" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        function beginRepairStatusSave(button) {
+            if (button.getAttribute("data-saving") === "true") {
+                return false;
+            }
+
+            button.setAttribute("data-saving", "true");
+            button.setAttribute("aria-disabled", "true");
+            button.style.pointerEvents = "none";
+            button.value = "Saving...";
+
+            var savingStatus = document.getElementById("repairStatusSaving");
+            if (savingStatus) {
+                savingStatus.style.display = "flex";
+            }
+
+            return true;
+        }
+    </script>
 </asp:Content>
 <asp:Content ID="cntRepairStatusChangeBdy" ContentPlaceHolderID="MainContent" runat="server">
     <h2>Repair Status Change</h2>
@@ -46,16 +65,27 @@
                         </tr>
                         <tr>
                             <td colspan="2" class="horizMiddle">
-                                <asp:Button ID="btnUpdateAndReturn" TabIndex="2" Text="Update & Return" runat="server" OnClick="btnUpdateAndReturn_Click" AccessKey="U" ToolTip="update and return (AltShftU)" />
+                                <asp:Button ID="btnUpdateAndReturn" TabIndex="2" Text="Update & Return" runat="server"
+                                    OnClick="btnUpdateAndReturn_Click" OnClientClick="return beginRepairStatusSave(this);"
+                                    AccessKey="U" ToolTip="update and return (AltShftU)" />
                                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <asp:Button ID="btnCancel" Text="Cancel" TabIndex="3" runat="server" OnClick="btnCancel_Click" />
                             </td>
                         </tr>
                     </table>
-                     <div class="status-message"><asp:Literal ID="ltrlStatus" runat="server" /></div>
+                    <div id="repairStatusSaving" class="status-message status-info page-tone-progress"
+                        style="display: none;" role="status" aria-live="polite">
+                        <img src="../images/animi/QuaffeeProgress.gif" alt="" />
+                        <span>&nbsp;Saving repair status, please wait...</span>
+                    </div>
+                    <div class="status-message"><asp:Literal ID="ltrlStatus" runat="server" /></div>
                 </div>
             </div>
         </ContentTemplate>
+        <Triggers>
+            <asp:PostBackTrigger ControlID="btnUpdateAndReturn" />
+            <asp:PostBackTrigger ControlID="btnCancel" />
+        </Triggers>
     </asp:UpdatePanel>
     <asp:UpdateProgress ID="udtpRepairStaus" runat="server" AssociatedUpdatePanelID="upnlRepairStaus">
         <ProgressTemplate>

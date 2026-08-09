@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
@@ -26,14 +26,21 @@ namespace TrackerSQL.Repositories
                 });
         }
 
+        /// <summary>
+        /// StatusNote for emails/order notes; falls back to RepairStatusDesc when StatusNote is blank
+        /// (same behaviour as legacy RepairStatusesTbl.GetStatusNote).
+        /// </summary>
         public string GetStatusNote(int repairStatusId)
         {
-            return ExecuteScalar<string>(
+            string statusNote = ExecuteScalar<string>(
                 "SELECT StatusNote FROM RepairStatusesTbl WHERE RepairStatusID = @RepairStatusID",
                 new List<DBParameter>
                 {
                     new DBParameter { ParamName = "@RepairStatusID", DataValue = repairStatusId, DataDbType = DbType.Int32 }
                 });
+            return string.IsNullOrWhiteSpace(statusNote)
+                ? GetRepairStatusDesc(repairStatusId)
+                : statusNote;
         }
     }
 }

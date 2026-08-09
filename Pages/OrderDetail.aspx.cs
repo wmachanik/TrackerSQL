@@ -149,10 +149,25 @@ namespace TrackerSQL.Pages
                 if (TryRedirectLegacyOrderUrl())
                     return;
 
-                if (Request.QueryString[CONST_QRYSTR_INVOICED] == "Y")
+                if (IsNewOrderRequest())
+                {
+                    InitializeNewOrder();
+                }
+                else if (OrderId > 0)
+                {
+                    // Action links from DeliverySheet still need the complete order loaded.
+                    // In particular, Done copies the bound grid lines into TempOrdersLinesTbl.
+                    LoadExistingOrder(OrderId);
+                }
+                else
+                {
+                    Response.Redirect("OrderDetail.aspx?NewOrder=true", true);
+                    return;
+                }
+
+                if (Request.QueryString[CONST_QRYSTR_INVOICED] == "Y" && OrderId > 0)
                 {
                     MarkItemAsInvoiced();
-                    return;
                 }
 
                 if (Request.QueryString[CONST_QRYSTR_DELIVERED] == "Y" && OrderId > 0)
@@ -160,13 +175,6 @@ namespace TrackerSQL.Pages
                     btnOrderDelivered_Click(this, EventArgs.Empty);
                     return;
                 }
-
-                if (IsNewOrderRequest())
-                    InitializeNewOrder();
-                else if (OrderId > 0)
-                    LoadExistingOrder(OrderId);
-                else
-                    Response.Redirect("OrderDetail.aspx?NewOrder=true", true);
             }
         }
 
@@ -270,6 +278,10 @@ namespace TrackerSQL.Pages
             {
                 btnLastOrder_Click(this, EventArgs.Empty);
             }
+
+            // Last Order runs after PreRender, so dirty-field wiring (which needs OrderId > 0)
+            // must be registered here once the order exists.
+            RegisterHeaderDirtyTracking();
         }
 
         #region Page initialization
@@ -722,7 +734,12 @@ namespace TrackerSQL.Pages
             if (hdnHeaderDirty != null)
                 hdnHeaderDirty.Value = "0";
 
-            SetSaveButtonsEnabled(false);
+            // Keep Save clickable for persisted orders — dirty wiring can lag after Add Last /
+            // UpdatePanel refresh; leave-warning still uses the dirty flag.
+            if (OrderId > 0 && (cbxDone == null || !cbxDone.Checked))
+                SetSaveButtonsEnabled(true);
+            else
+                SetSaveButtonsEnabled(false);
 
             RegisterPageStartupScript("orderHeaderClearDirty",
                 "if (window.TrackerUnsaved) { TrackerUnsaved.clearDirty(); } else if (window.orderHeaderClearDirty) { orderHeaderClearDirty(); }");
@@ -1100,6 +1117,9 @@ namespace TrackerSQL.Pages
             ApplyHeaderUiState();
             UpdateDuplicateMergeState();
             RefreshPageTitle();
+            // Re-wire unsaved tracking after draft becomes a real order (PreRender may have
+            // skipped this while OrderId was still 0 — e.g. Add Last / LastOrder=Y).
+            RegisterHeaderDirtyTracking();
             pnlOrderHeader.Update();
             upnlOrderLines.Update();
             SetStatusMessage(message, isSuccess: isSuccess);
@@ -1201,7 +1221,10 @@ namespace TrackerSQL.Pages
             if (btnSaveAndReturn != null)
                 btnSaveAndReturn.Visible = OrderId > 0 && !orderDone;
 
-            if (OrderId <= 0 || orderDone)
+            // Always enable Save for a real open order so Add Last / wiring gaps can't leave it dead.
+            if (OrderId > 0 && !orderDone)
+                SetSaveButtonsEnabled(true);
+            else
                 SetSaveButtonsEnabled(false);
 
             btnNewItem.Enabled = ShouldEnableNewItemButton();
@@ -2218,30 +2241,11 @@ namespace TrackerSQL.Pages
             if (OrderId <= 0)
                 return;
 
-            OrderHeaderData headerData = ReadHeaderFromControls();
-            headerData.OrderID = OrderId;
-            var orderLines = new List<OrderManager.TempOrderLineData>();
-            var itemsRepository = new ItemsRepository();
-
-            foreach (GridViewRow row in gvOrderLines.Rows)
+            // Always build Order Done from persisted OrderID data — not from the grid/controls.
+            // DeliverySheet Done (?Delivered=Y) must work even if the UI bind path changes.
+            if (!_orderManager.CompleteOrderDeliveryByOrderId(OrderId))
             {
-                int itemId = GetControlSelectedValue(row, CONST_ORDERLINE_ITEM_COMBOBOX_ID, CONST_ORDERLINE_HIDDENFIELD_ITEM_ID);
-                var qtyLbl = (Label)row.FindControl("lblQuantityOrdered");
-                int packagingId = GetControlSelectedValue(row, CONST_ORDERLINE_PACKAGING_COMBOBOX_ID, CONST_ORDERLINE_HIDDENFIELD_PACKAGING_ID);
-
-                orderLines.Add(new OrderManager.TempOrderLineData
-                {
-                    ItemID = itemId,
-                    Qty = Convert.ToDouble(qtyLbl.Text),
-                    PackagingID = packagingId,
-                    ServiceTypeID = itemsRepository.GetServiceTypeForItem(itemId),
-                    OriginalOrderID = OrderId
-                });
-            }
-
-            if (!_orderManager.CompleteOrderDelivery(headerData, orderLines))
-            {
-                SetStatusMessage("Error preparing order done workflow.", isError: true);
+                SetStatusMessage("Error preparing order done workflow. The order may have no lines.", isError: true);
                 return;
             }
 
@@ -2298,8 +2302,19 @@ namespace TrackerSQL.Pages
             if (header != null)
                 BindHeaderToControls(header);
 
+            // Lines were loaded before this call (DeliverySheet Invoiced=Y path).
+            // Drop Invoiced=Y from the browser URL so refresh does not re-enter the action.
+            string cleanUrl = ResolveUrl($"~/Pages/OrderDetail.aspx?{CONST_QRYSTR_ORDERID}={OrderId}");
+            ScriptManager.RegisterStartupScript(
+                this,
+                GetType(),
+                "orderInvoicedUrlSync",
+                $"if (window.history && window.history.replaceState) {{ window.history.replaceState(null, document.title, '{cleanUrl}'); }}",
+                true);
+
             SetStatusMessage("Order marked as invoiced.", isSuccess: true);
             pnlOrderHeader.Update();
+            upnlOrderLines.Update();
         }
 
         #endregion

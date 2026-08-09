@@ -31,6 +31,7 @@
     var dirty = false;
     var allowNavigate = false;
     var endRequestAttached = false;
+    var delegatedAttached = false;
     var WIRED_ATTR = 'data-tracker-unsaved-wired';
 
     function byId(id) {
@@ -50,7 +51,35 @@
         }
         var nodes = document.querySelectorAll(cfg.saveButtonSelector);
         for (var i = 0; i < nodes.length; i++) {
-            nodes[i].disabled = !enabled;
+            var node = nodes[i];
+            if (enabled) {
+                node.disabled = false;
+                node.removeAttribute('disabled');
+                if (node.classList) {
+                    node.classList.remove('aspNetDisabled');
+                }
+            } else {
+                node.disabled = true;
+            }
+        }
+    }
+
+    function setSaveButtonsHighlight(isDirty) {
+        if (!cfg || !cfg.saveButtonSelector) {
+            return;
+        }
+        var dirtyClass = cfg.dirtyClass || 'order-detail-save-dirty';
+        var nodes = document.querySelectorAll(cfg.saveButtonSelector);
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+            if (!node.classList) {
+                continue;
+            }
+            if (isDirty) {
+                node.classList.add(dirtyClass);
+            } else {
+                node.classList.remove(dirtyClass);
+            }
         }
     }
 
@@ -70,7 +99,13 @@
 
     function updateUi() {
         if (cfg && cfg.saveButtonSelector) {
-            setSaveButtonsEnabled(dirty);
+            if (cfg.saveButtonsAlwaysEnabled) {
+                setSaveButtonsEnabled(true);
+                setSaveButtonsHighlight(dirty);
+            } else {
+                setSaveButtonsEnabled(dirty);
+                setSaveButtonsHighlight(dirty);
+            }
         }
         if (dirty) {
             showUnsavedStatus();
@@ -153,11 +188,60 @@
         field.addEventListener('input', markDirty);
     }
 
+    function isEditableField(el) {
+        if (!el || !el.tagName) {
+            return false;
+        }
+        var tag = el.tagName.toLowerCase();
+        if (tag === 'textarea' || tag === 'select') {
+            return true;
+        }
+        if (tag !== 'input') {
+            return false;
+        }
+        var type = (el.type || 'text').toLowerCase();
+        return type !== 'hidden'
+            && type !== 'submit'
+            && type !== 'button'
+            && type !== 'image'
+            && type !== 'reset';
+    }
+
+    function onDelegatedEdit(e) {
+        if (!cfg || !cfg.rootId || !e || !e.target) {
+            return;
+        }
+        var root = byId(cfg.rootId);
+        if (!root || !root.contains(e.target)) {
+            return;
+        }
+        if (!isEditableField(e.target)) {
+            return;
+        }
+        markDirty();
+    }
+
+    function attachDelegatedWiring() {
+        if (delegatedAttached || !cfg || !cfg.rootId) {
+            return;
+        }
+        // Survive UpdatePanel refreshes: listen on document, filter by root.contains.
+        document.addEventListener('input', onDelegatedEdit, true);
+        document.addEventListener('change', onDelegatedEdit, true);
+        delegatedAttached = true;
+    }
+
     function wireFields(fieldIds) {
         var ids = fieldIds;
+        if (ids && ids.length && cfg) {
+            // Remember for UpdatePanel endRequest rewires (new DOM nodes).
+            cfg.fieldIds = ids;
+        }
         if ((!ids || !ids.length) && cfg && cfg.fieldIds && cfg.fieldIds.length) {
             ids = cfg.fieldIds;
         }
+
+        attachDelegatedWiring();
 
         if (ids && ids.length) {
             for (var i = 0; i < ids.length; i++) {
@@ -243,12 +327,14 @@
         cfg = options || {};
         dirty = false;
         allowNavigate = false;
+        delegatedAttached = false;
         window.TrackerUnsavedAllowNavigate = false;
 
         applyAliases(cfg.aliases);
 
         function start() {
             window.addEventListener('beforeunload', onBeforeUnload);
+            attachDelegatedWiring();
             wireFields();
             syncDirtyFromHidden();
             if (dirty) {

@@ -1,7 +1,34 @@
 <%@ Page Title="Lookups" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="Lookups.aspx.cs" Inherits="TrackerSQL.Pages.Lookups" MaintainScrollPositionOnPostback="true" %>
 
-<asp:Content ID="cntLookupHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntLookupHdr" title="Lookups" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        // In-cell <input type=color> (over the icon). Anchors the OS picker to the cell,
+        // unlike a temporary body input which Edge places at the top-left.
+        function packagingColorEditor(fromEl) {
+            var swatch = fromEl && fromEl.parentNode;
+            return swatch ? swatch.parentNode : null;
+        }
+
+        function packagingSyncColorHit(hit) {
+            try {
+                var editor = packagingColorEditor(hit);
+                var tb = editor ? editor.querySelector('input.packaging-color-hex') : null;
+                var v = (tb && tb.value ? tb.value : '').replace(/^#+/, '').trim();
+                if (/^[0-9A-Fa-f]{6}$/.test(v))
+                    hit.value = '#' + v;
+            } catch (ex) { }
+        }
+
+        function packagingApplyColorHit(hit) {
+            try {
+                if (!hit || !hit.value) return;
+                var editor = packagingColorEditor(hit);
+                var tb = editor ? editor.querySelector('input.packaging-color-hex') : null;
+                if (tb) tb.value = hit.value.toUpperCase();
+            } catch (ex) { }
+        }
+    </script>
 </asp:Content>
 <asp:Content ID="cntLookupBdy" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="scmLookup" runat="server" EnablePartialRendering="true" />
@@ -30,31 +57,45 @@
                 Items
             </HeaderTemplate>
             <ContentTemplate>
-                <asp:UpdatePanel ID="upnlItems" runat="server" UpdateMode="Conditional">
+                <asp:UpdatePanel ID="upnlItems" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvItems" />
+                        <asp:AsyncPostBackTrigger ControlID="btnGon" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="btnReset" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="tbxItemSearch" EventName="TextChanged" />
+                    </Triggers>
                     <ContentTemplate>
-                        <div class="filter-toolbar">
+                        <div class="filter-toolbar lookups-tab-toolbar">
                             <div class="filter-section search-controls">
                                 <div class="filter-control">
                                     <asp:Label AssociatedControlID="tbxItemSearch" runat="server" Text="Search:" />
                                     <asp:TextBox ID="tbxItemSearch" runat="server" OnTextChanged="tbxItemSearch_TextChanged" />
                                 </div>
                                 <asp:Button ID="btnGon" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
                                     ToolTip="search for this item" OnClick="btnGo_Click" />
                                 <asp:Button ID="btnReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
                                     OnClick="btnReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-items.png"
+                                    width="32" height="32" alt="" />
                             </div>
                         </div>
                         <div class="results-container scrollable-table-container">
                             <asp:GridView ID="gvItems" runat="server" AllowPaging="True"
                                 PageSize="20" CssClass="results-table sticky-first-column" Font-Size="Small" AllowSorting="True" AutoGenerateColumns="False"
                                 OnRowCommand="gvItems_RowCommand" ShowFooter="True" CellPadding="0"
-                                PagerStyle-CssClass="aspNetPager"
+                                PagerStyle-CssClass="pager-row"
                                 DataKeyNames="ItemID"
                                 OnPageIndexChanging="gvItems_PageIndexChanging"
                                 OnSorting="gvItems_Sorting"
                                 OnRowEditing="gvItems_RowEditing"
                                 OnRowCancelingEdit="gvItems_RowCancelingEdit"
-                                OnRowUpdating="gvItems_RowUpdating">
+                                OnRowUpdating="gvItems_RowUpdating"
+                                OnRowDataBound="gvItems_RowDataBound"
+                                OnRowCreated="gvItems_RowCreated">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
@@ -133,21 +174,21 @@
                                     <asp:TemplateField HeaderText="Type" SortExpression="ItemServiceTypeID">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlServiceType" runat="server"
-                                                AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
-                                                SelectedValue='<%# Bind("ItemServiceTypeID") %>' Width="10em">
+                                                AppendDataBoundItems="true" DataTextField="ItemServiceTypeName" DataValueField="ItemServiceTypeID"
+                                                Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlServiceType" runat="server"
-                                                AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
-                                                SelectedValue='<%# Bind("ItemServiceTypeID") %>' Width="10em">
+                                                AppendDataBoundItems="true" DataTextField="ItemServiceTypeName" DataValueField="ItemServiceTypeID"
+                                                Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:DropDownList ID="ddlServiceType" runat="server"
-                                                AppendDataBoundItems="true" DataTextField="ServiceType" DataValueField="ServiceTypeId"
+                                                AppendDataBoundItems="true" DataTextField="ItemServiceTypeName" DataValueField="ItemServiceTypeID"
                                                 Enabled="False" Width="10em">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
@@ -156,21 +197,20 @@
                                     <asp:TemplateField HeaderText="Replcment" SortExpression="ReplacementItemID">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="ItemDesc" DataValueField="ItemID"
-                                                SelectedValue='<%# Bind("ReplacementItemID") %>'>
+                                                DataTextField="ItemDesc" DataValueField="ItemID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="ItemDesc" DataValueField="ItemID"
-                                                SelectedValue='<%# Bind("ReplacementItemID") %>'>
+                                                DataTextField="ItemDesc" DataValueField="ItemID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:DropDownList ID="ddlReplacement" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="ItemDesc" DataValueField="ItemID">
+                                                DataTextField="ItemDesc" DataValueField="ItemID"
+                                                Enabled="False">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </ItemTemplate>
@@ -201,23 +241,19 @@
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
                                                 DataTextField="UnitOfMeasure" Width="6em"
-                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("ItemUnitID") %>'>
+                                                DataValueField="ItemUnitID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
                                                 DataTextField="UnitOfMeasure" Width="6em"
-                                                DataValueField="ItemUnitID" SelectedValue='<%# Bind("ItemUnitID") %>'>
+                                                DataValueField="ItemUnitID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="UnitOfMeasure" Width="6em"
-                                                DataValueField="ItemUnitID">
-                                                <asp:ListItem Value="0" Text="n/a" />
-                                            </asp:DropDownList>
+                                            <asp:Label ID="lblItemUnit" runat="server" Text="n/a" />
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="S/O" SortExpression="SortOrder" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
@@ -308,9 +344,9 @@
                                 </EmptyDataTemplate>
                                 <FooterStyle BackColor="#50D17C" Font-Bold="True" ForeColor="White" BorderStyle="Dashed" BorderColor="Cornsilk" />
                                 <HeaderStyle BackColor="#D0D17C" Font-Bold="True" ForeColor="Black" />
-                                <PagerSettings FirstPageImageUrl="~/images/imgButtons/FirstPage.gif" LastPageImageUrl="~/images/imgButtons/LastPage.gif"
-                                    Mode="NumericFirstLast" NextPageImageUrl="~/images/imgButtons/NextPage.gif"
-                                    PreviousPageImageUrl="~/images/imgButtons/PrevPage.gif" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
 
                             </asp:GridView>
                         </div>
@@ -328,71 +364,88 @@
                         <asp:AsyncPostBackTrigger ControlID="gvPeople" />
                     </Triggers>
                     <ContentTemplate>
-                        <div class="results-container">
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxPeopleSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxPeopleSearch" runat="server" OnTextChanged="tbxPeopleSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnPeopleGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search people by name or abbreviation" OnClick="btnPeopleGo_Click" />
+                                <asp:Button ID="btnPeopleReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnPeopleReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-people.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
+                        <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvPeople" runat="server" AllowPaging="True" AllowSorting="True"
-                                AutoGenerateColumns="False" CellPadding="1" PageSize="20" DataKeyNames="PersonID"
+                                AutoGenerateColumns="False" PageSize="20" DataKeyNames="PersonID"
                                 OnRowCommand="gvPeople_RowCommand" OnRowUpdating="gvPeople_RowUpdating"
-                                OnRowEditing="gvPeople_RowEditing" OnRowDataBound="gvPeople_RowDataBound"
+                                OnRowEditing="gvPeople_RowEditing" OnRowCancelingEdit="gvPeople_RowCancelingEdit"
+                                OnRowDataBound="gvPeople_RowDataBound"
                                 OnPageIndexChanging="gvPeople_PageIndexChanging"
                                 OnSorting="gvPeople_Sorting"
+                                OnRowCreated="gvPeople_RowCreated"
                                 CssClass="results-table" ShowFooter="True">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
                                             <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
-                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />&nbsp;
                                             <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
                                                 AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                         </EditItemTemplate>
                                         <ItemTemplate>
                                             <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False"
-                                                CommandName="Edit" CommandArgument='<%# Container.DataItemIndex %>'
-                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                                CommandName="Edit" AlternateText="Edit"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif" />
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="AddItem"
                                                 ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:BoundField DataField="PersonID" HeaderText="PersonID" InsertVisible="False"
-                                        ReadOnly="True" SortExpression="PersonID" />
-                                    <asp:TemplateField HeaderText="Person" SortExpression="PersonName">
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Person" SortExpression="PersonName">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="8em" Text='<%# Bind("PersonName") %>' />
+                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="15em" Text='<%# Bind("PersonName") %>' />
+                                            <asp:HiddenField ID="hdnPersonID" runat="server" Value='<%# Bind("PersonID") %>' />
                                         </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="8em" Text="" />
-                                        </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:Label ID="lblPersonName" runat="server" Text='<%# Bind("PersonName") %>' />
+                                            <asp:HiddenField ID="hdnPersonID" runat="server" Value='<%# Bind("PersonID") %>' />
                                         </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxPersonName" runat="server" Width="15em" />
+                                        </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Abbreviation" SortExpression="Abbreviation">
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Abbreviation" SortExpression="Abbreviation">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxAbbreviation" runat="server" Width="8em" Text='<%# Bind("Abbreviation") %>' />
                                         </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="tbxAbbreviation" runat="server" Width="8em" Text="" />
-                                        </FooterTemplate>
                                         <ItemTemplate>
                                             <asp:Label ID="lblAbbreviation" runat="server" Text='<%# Bind("Abbreviation") %>' />
                                         </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Enbld" SortExpression="Enabled">
-                                        <EditItemTemplate>
-                                            <asp:CheckBox ID="cbxEnabled" runat="server" Checked='<%# Bind("Enabled") %>' />
-                                        </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:CheckBox ID="cbxEnabled" runat="server" Checked="true" />
+                                            <asp:TextBox ID="tbxAbbreviation" runat="server" Width="8em" />
                                         </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Enabled" SortExpression="Enabled">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxEnabled" runat="server" Text="Yes" Checked='<%# Bind("Enabled") %>' />
+                                        </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:CheckBox ID="cbxEnabled" runat="server" Checked='<%# Bind("Enabled") %>'
-                                                Enabled="false" />
+                                            <asp:CheckBox ID="cbxEnabled" runat="server" Text="Yes" Checked='<%# Bind("Enabled") %>' Enabled="false" />
                                         </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxEnabled" runat="server" Text="Yes" Checked="true" />
+                                        </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Normal Delivery DoW" SortExpression="NormalDeliveryDoW">
                                         <EditItemTemplate>
-                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server" SelectedValue='<%# Bind("NormalDeliveryDoW") %>'>
+                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server">
                                                 <asp:ListItem Value="0" Text="0 - Any Day" />
                                                 <asp:ListItem Value="1" Text="1 - Sunday" />
                                                 <asp:ListItem Value="2" Text="2 - Monday" />
@@ -403,6 +456,18 @@
                                                 <asp:ListItem Value="7" Text="7 - Saturday" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server" Enabled="false">
+                                                <asp:ListItem Value="0" Text="0 - Any Day" />
+                                                <asp:ListItem Value="1" Text="1 - Sunday" />
+                                                <asp:ListItem Value="2" Text="2 - Monday" />
+                                                <asp:ListItem Value="3" Text="3 - Tuesday" />
+                                                <asp:ListItem Value="4" Text="4 - Wednesday" />
+                                                <asp:ListItem Value="5" Text="5 - Thursday" />
+                                                <asp:ListItem Value="6" Text="6 - Friday" />
+                                                <asp:ListItem Value="7" Text="7 - Saturday" />
+                                            </asp:DropDownList>
+                                        </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlDayOfWeek" runat="server">
                                                 <asp:ListItem Value="0" Text="0 - Any Day" Selected="True" />
@@ -415,18 +480,6 @@
                                                 <asp:ListItem Value="7" Text="7 - Saturday" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
-                                        <ItemTemplate>
-                                            <asp:DropDownList ID="ddlDayOfWeek" runat="server">
-                                                <asp:ListItem Value="0" Text="0 - Any Day" />
-                                                <asp:ListItem Value="1" Text="1 - Sunday" />
-                                                <asp:ListItem Value="2" Text="2 - Monday" />
-                                                <asp:ListItem Value="3" Text="3 - Tuesday" />
-                                                <asp:ListItem Value="4" Text="4 - Wednesday" />
-                                                <asp:ListItem Value="5" Text="5 - Thursday" />
-                                                <asp:ListItem Value="6" Text="6 - Friday" />
-                                                <asp:ListItem Value="7" Text="7 - Saturday" />
-                                            </asp:DropDownList>
-                                        </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Username" SortExpression="SecurityUsername">
                                         <EditItemTemplate>
@@ -435,18 +488,21 @@
                                                 <asp:ListItem Value="" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSecurityName" runat="server" Text='<%# Eval("SecurityUsername") %>' />
+                                        </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlSecurityNames" runat="server" AppendDataBoundItems="True"
                                                 DataTextField="SecurityUsername" DataValueField="SecurityUsername">
                                                 <asp:ListItem Value="" Text="n/a" />
                                             </asp:DropDownList>
                                         </FooterTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblSecurityName" runat="server" Text='<%# Eval("SecurityUsername") %>'></asp:Label>
-                                        </ItemTemplate>
                                     </asp:TemplateField>
                                 </Columns>
-                                <EditRowStyle BackColor="#7C6F57" />
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
                             </asp:GridView>
                         </div>
                     </ContentTemplate>
@@ -460,25 +516,39 @@
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlEquipment" runat="server" UpdateMode="Conditional">
                     <ContentTemplate>
-                        <div class="results-container">
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxEquipSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxEquipSearch" runat="server" OnTextChanged="tbxEquipSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnEquipGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search equipment types by name or description" OnClick="btnEquipGo_Click" />
+                                <asp:Button ID="btnEquipReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnEquipReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-equipment.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
+                        <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvEquipment" runat="server" AllowPaging="True" EmptyDataText="No equipment found"
-                                AllowSorting="True" AutoGenerateColumns="False" BackColor="White" ShowFooter="True"
-                                BorderColor="#E7E7FF" BorderStyle="None" BorderWidth="1px" CellPadding="3" DataKeyNames="EquipTypeID"
-                                OnRowCommand="gvEquipment_RowCommand" PageSize="20"
+                                AllowSorting="True" AutoGenerateColumns="False" ShowFooter="True"
+                                DataKeyNames="EquipTypeID" PageSize="20"
+                                OnRowCommand="gvEquipment_RowCommand"
                                 OnPageIndexChanging="gvEquipment_PageIndexChanging"
                                 OnSorting="gvEquipment_Sorting"
                                 CssClass="results-table"
-                                OnSelectedIndexChanged="gvEquipment_SelectedIndexChanged"
                                 OnRowEditing="gvEquipment_RowEditing"
                                 OnRowCancelingEdit="gvEquipment_RowCancelingEdit"
-                                OnRowUpdating="gvEquipment_RowUpdating">
-                                <AlternatingRowStyle BackColor="#F7F7F7" />
+                                OnRowUpdating="gvEquipment_RowUpdating"
+                                OnRowCreated="gvEquipment_RowCreated">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
                                             <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
-                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
-                                            &nbsp;
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />&nbsp;
                                             <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
                                                 AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
                                         </EditItemTemplate>
@@ -491,39 +561,35 @@
                                                 ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="EquipTypeName" SortExpression="EquipTypeName">
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Equipment Type" SortExpression="EquipTypeName">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Text='<%# Bind("EquipTypeName") %>'></asp:TextBox>
+                                            <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Text='<%# Bind("EquipTypeName") %>' Width="15em" />
                                             <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
                                         </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Text="" />
-                                            <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
-                                        </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="EquipTypeNameLabel" runat="server" Text='<%# Bind("EquipTypeName") %>'></asp:Label>
+                                            <asp:Label ID="EquipTypeNameLabel" runat="server" Text='<%# Bind("EquipTypeName") %>' />
                                             <asp:HiddenField ID="EquipTypeIdLabel" runat="server" Value='<%# Eval("EquipTypeID") %>' />
                                         </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="EquipTypeNameTextBox" runat="server" Width="15em" />
+                                        </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="EquipTypeDesc" SortExpression="EquipTypeDescription">
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Description" SortExpression="EquipTypeDescription">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text='<%# Bind("EquipTypeDescription") %>'></asp:TextBox>
+                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text='<%# Bind("EquipTypeDescription") %>' Width="30em" />
                                         </EditItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Text="" />
-                                        </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="EquipTypeDescLabel" runat="server" Text='<%# Bind("EquipTypeDescription") %>'></asp:Label>
+                                            <asp:Label ID="EquipTypeDescLabel" runat="server" Text='<%# Bind("EquipTypeDescription") %>' />
                                         </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="EquipTypeDescTextBox" runat="server" Width="30em" />
+                                        </FooterTemplate>
                                     </asp:TemplateField>
                                 </Columns>
-                                <FooterStyle BackColor="#B5C7DE" ForeColor="#4A3C8C" BorderStyle="Dashed" BorderColor="Cornsilk" />
-                                <PagerStyle BackColor="#E7E7FF" ForeColor="#4A3C8C" HorizontalAlign="Right" />
-                                <SelectedRowStyle BackColor="#738A9C" Font-Bold="True" ForeColor="#F7F7F7" />
-                                <SortedAscendingCellStyle BackColor="#F4F4FD" />
-                                <SortedAscendingHeaderStyle BackColor="#5A4C9D" ForeColor="AliceBlue" />
-                                <SortedDescendingCellStyle BackColor="#D8D8F0" />
-                                <SortedDescendingHeaderStyle BackColor="#3E3277" />
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
                             </asp:GridView>
                         </div>
                     </ContentTemplate>
@@ -537,10 +603,26 @@
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlAreas" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxAreaSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxAreaSearch" runat="server" OnTextChanged="tbxAreaSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnAreaGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search areas by name" OnClick="btnAreaGo_Click" />
+                                <asp:Button ID="btnAreaReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnAreaReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-areas.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
                         <div class="lookups-areas-layout">
                             <div class="lookups-areas-list">
                                 <div class="lookups-areas-list-scroll">
-                                    <asp:GridView ID="gvAreas" runat="server" AllowPaging="True" PageSize="20" AllowSorting="True"
+                                    <asp:GridView ID="gvAreas" runat="server" AllowPaging="True" PageSize="15" AllowSorting="True"
                                         AutoGenerateColumns="False" CssClass="results-table lookups-areas-table no-sticky-last"
                                         DataKeyNames="AreaID" ShowFooter="True"
                                         OnRowCommand="gvAreas_OnRowCommand" OnSelectedIndexChanged="gvAreas_OnSelectedIndexChanged"
@@ -548,7 +630,8 @@
                                         OnSorting="gvAreas_Sorting"
                                         OnRowEditing="gvAreas_RowEditing"
                                         OnRowCancelingEdit="gvAreas_RowCancelingEdit"
-                                        OnRowUpdating="gvAreas_RowUpdating">
+                                        OnRowUpdating="gvAreas_RowUpdating"
+                                        OnRowCreated="gvAreas_RowCreated">
                                         <Columns>
                                             <asp:CommandField ShowSelectButton="True"
                                                 SelectImageUrl="~/images/imgButtons/SelectItem.gif" ButtonType="Image"
@@ -596,7 +679,10 @@
                                             </asp:TemplateField>
                                         </Columns>
                                         <SelectedRowStyle CssClass="SelectedRowStyle" />
-                                        <PagerSettings Mode="NumericFirstLast" Position="Bottom" />
+                                        <PagerStyle CssClass="pager-row" />
+                                        <PagerTemplate>
+                                            <asp:PlaceHolder ID="plhPager" runat="server" />
+                                        </PagerTemplate>
                                     </asp:GridView>
                                 </div>
                             </div>
@@ -727,8 +813,24 @@
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlPackaging" runat="server" UpdateMode="Conditional">
                     <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxPackagingSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxPackagingSearch" runat="server" OnTextChanged="tbxPackagingSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnPackagingGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search packaging by description" OnClick="btnPackagingGo_Click" />
+                                <asp:Button ID="btnPackagingReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnPackagingReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-packaging.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
                         <div class="responsive-layout-container scrollable-table-container">
-                            <asp:GridView ID="gvPackaging" runat="server" AutoGenerateColumns="False" CssClass="TblWhite"
+                            <asp:GridView ID="gvPackaging" runat="server" AutoGenerateColumns="False" CssClass="results-table results-table-fit"
                                 OnRowCommand="gvPackaging_RowCommand" OnRowDataBound="gvPackaging_RowDataBound"
                                 ShowFooter="true" AllowPaging="True" PageSize="20"
                                 AllowSorting="True"
@@ -737,8 +839,8 @@
                                 DataKeyNames="ItemPackagingID"
                                 OnRowEditing="gvPackaging_RowEditing"
                                 OnRowCancelingEdit="gvPackaging_RowCancelingEdit"
-                                OnRowUpdating="gvPackaging_RowUpdating">
-                                <FooterStyle BorderStyle="Dashed" BorderColor="Cornsilk" />
+                                OnRowUpdating="gvPackaging_RowUpdating"
+                                OnRowCreated="gvPackaging_RowCreated">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -784,29 +886,72 @@
                                             <asp:TextBox ID="TextBoxAdditionalNotes" runat="server" Text="" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="BGColour" SortExpression="BGColour">
+                                    <asp:TemplateField HeaderText="BGColour" SortExpression="BGColour"
+                                        ItemStyle-CssClass="packaging-color-col" HeaderStyle-CssClass="packaging-color-col">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="TextBoxBGColour" runat="server" Text='<%# Bind("BGColour") %>' />
-                                            <asp:ImageButton ID="ImangeButtonBGColour" runat="server" ImageUrl="~/images/imgButtons/Picture.gif" />
-                                            <ajaxToolkit:ColorPickerExtender ID="ColorPickerExtBGColour" runat="server" TargetControlID="TextBoxBGColour"
-                                                PopupButtonID="ImangeButtonBGColour" PopupPosition="TopRight" OnClientColorSelectionChanged="ColorPickerExtBGColour_OnClientColorSelectionChanged" />
+                                            <span class="packaging-color-editor">
+                                                <asp:TextBox ID="TextBoxBGColour" runat="server" Text='<%# Bind("BGColour") %>'
+                                                    CssClass="packaging-color-hex" ToolTip="Background colour (#RRGGBB)" />
+                                                <span class="packaging-color-swatch" title="Pick background colour">
+                                                    <img class="packaging-color-icon" width="16" height="16" alt=""
+                                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAACQ0lEQVR4nHWS72sScRjA75X/ikuLXs5RE4JyK0gmTQtpECk1crqt+SI1vTwnU8LzPJ3NRWKsmh3RDyaeDiyqEcz1Y5u6LRKpVbaI7XTuXRdPnDQ5z3zg8/Lz+T5feBBEMHgPJg0oXETghCsfUGB7CZmMI5+QyYi5rq6DSLtB1aiIUGChqVM3/9CX5uC95QNsOIvw0+uFL3Y7rOh0kJbL2URnZ4iSSEQCmRJ5lL7IQ+1dWHcW4dP45wa/fL4GWx4PvOnvB1p7NEKhvIjj/J3J0JUkLFhXd/iyMMDxFTcyWVQJtFEerMvXtdFD4xfusRnXJrx0l+GVZXm7XYCTKzOjsB0zQebqMZYeOSJFHAPRQGz0dV1uYF1ubCKU98l7z0HK2E0g9oFoIWH/2BzgbfI/maMcGYSUUZ7nArXn/9YXsmBZqW7ixopQ5tiJDQNt6q4hJ/WzNZv/O9gDWy2YyRIzk51gdosOEMJsWCCFd1S5QGHMW2yRx8hS5cazXQiv3YYHSxNVYaD8zgQ0Ls4hvfo4obMtNr8cLDGcvB/guJ9tjhSS/ZDCxT6k5yIlPj346LfV/61F5gf4mzDrFsiEDrM0fkBav4VefTyoNWfqf+bLwkA9knVXluLHgfZ3kI1LVKspkXL4aURPvgXHY6ZtgFydgsuUDSykqvmU6xGUEmmwdFDrfsEaptfg2uwPcDypQDAXAe8iCeakC85Oj7B94SFSTaHNMn/OYLRU45zH1dh8ToOla6qwYa9v0pBThYcI5S2jRCj8BSWLZfvoLu3GAAAAAElFTkSuQmCC" />
+                                                    <input type="color" class="packaging-color-hit" value="#ffffff"
+                                                        onmousedown="packagingSyncColorHit(this);"
+                                                        oninput="packagingApplyColorHit(this);"
+                                                        onchange="packagingApplyColorHit(this);" />
+                                                </span>
+                                            </span>
                                         </EditItemTemplate>
                                         <ItemTemplate>
                                             <asp:Label ID="LabelBGColour" runat="server" Text='<%# Bind("BGColour") %>'></asp:Label>
                                         </ItemTemplate>
                                         <FooterTemplate>
-                                            <asp:TextBox ID="TextBoxBGColour" runat="server" Text='' />
+                                            <span class="packaging-color-editor">
+                                                <asp:TextBox ID="TextBoxBGColour" runat="server" Text=""
+                                                    CssClass="packaging-color-hex" ToolTip="Background colour (#RRGGBB)" />
+                                                <span class="packaging-color-swatch" title="Pick background colour">
+                                                    <img class="packaging-color-icon" width="16" height="16" alt=""
+                                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAACQ0lEQVR4nHWS72sScRjA75X/ikuLXs5RE4JyK0gmTQtpECk1crqt+SI1vTwnU8LzPJ3NRWKsmh3RDyaeDiyqEcz1Y5u6LRKpVbaI7XTuXRdPnDQ5z3zg8/Lz+T5feBBEMHgPJg0oXETghCsfUGB7CZmMI5+QyYi5rq6DSLtB1aiIUGChqVM3/9CX5uC95QNsOIvw0+uFL3Y7rOh0kJbL2URnZ4iSSEQCmRJ5lL7IQ+1dWHcW4dP45wa/fL4GWx4PvOnvB1p7NEKhvIjj/J3J0JUkLFhXd/iyMMDxFTcyWVQJtFEerMvXtdFD4xfusRnXJrx0l+GVZXm7XYCTKzOjsB0zQebqMZYeOSJFHAPRQGz0dV1uYF1ubCKU98l7z0HK2E0g9oFoIWH/2BzgbfI/maMcGYSUUZ7nArXn/9YXsmBZqW7ixopQ5tiJDQNt6q4hJ/WzNZv/O9gDWy2YyRIzk51gdosOEMJsWCCFd1S5QGHMW2yRx8hS5cazXQiv3YYHSxNVYaD8zgQ0Ls4hvfo4obMtNr8cLDGcvB/guJ9tjhSS/ZDCxT6k5yIlPj346LfV/61F5gf4mzDrFsiEDrM0fkBav4VefTyoNWfqf+bLwkA9knVXluLHgfZ3kI1LVKspkXL4aURPvgXHY6ZtgFydgsuUDSykqvmU6xGUEmmwdFDrfsEaptfg2uwPcDypQDAXAe8iCeakC85Oj7B94SFSTaHNMn/OYLRU45zH1dh8ToOla6qwYa9v0pBThYcI5S2jRCj8BSWLZfvoLu3GAAAAAElFTkSuQmCC" />
+                                                    <input type="color" class="packaging-color-hit" value="#ffffff"
+                                                        onmousedown="packagingSyncColorHit(this);"
+                                                        oninput="packagingApplyColorHit(this);"
+                                                        onchange="packagingApplyColorHit(this);" />
+                                                </span>
+                                            </span>
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Colour" SortExpression="Colour">
+                                    <asp:TemplateField HeaderText="Colour" SortExpression="Colour"
+                                        ItemStyle-CssClass="packaging-color-col" HeaderStyle-CssClass="packaging-color-col">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="TextBoxColour" runat="server" Text='<%# Bind("Colour") %>'></asp:TextBox>
+                                            <span class="packaging-color-editor">
+                                                <asp:TextBox ID="TextBoxColour" runat="server" Text='<%# Bind("Colour") %>'
+                                                    CssClass="packaging-color-hex" ToolTip="Foreground colour (#RRGGBB)" />
+                                                <span class="packaging-color-swatch" title="Pick foreground colour">
+                                                    <img class="packaging-color-icon" width="16" height="16" alt=""
+                                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAACQ0lEQVR4nHWS72sScRjA75X/ikuLXs5RE4JyK0gmTQtpECk1crqt+SI1vTwnU8LzPJ3NRWKsmh3RDyaeDiyqEcz1Y5u6LRKpVbaI7XTuXRdPnDQ5z3zg8/Lz+T5feBBEMHgPJg0oXETghCsfUGB7CZmMI5+QyYi5rq6DSLtB1aiIUGChqVM3/9CX5uC95QNsOIvw0+uFL3Y7rOh0kJbL2URnZ4iSSEQCmRJ5lL7IQ+1dWHcW4dP45wa/fL4GWx4PvOnvB1p7NEKhvIjj/J3J0JUkLFhXd/iyMMDxFTcyWVQJtFEerMvXtdFD4xfusRnXJrx0l+GVZXm7XYCTKzOjsB0zQebqMZYeOSJFHAPRQGz0dV1uYF1ubCKU98l7z0HK2E0g9oFoIWH/2BzgbfI/maMcGYSUUZ7nArXn/9YXsmBZqW7ixopQ5tiJDQNt6q4hJ/WzNZv/O9gDWy2YyRIzk51gdosOEMJsWCCFd1S5QGHMW2yRx8hS5cazXQiv3YYHSxNVYaD8zgQ0Ls4hvfo4obMtNr8cLDGcvB/guJ9tjhSS/ZDCxT6k5yIlPj346LfV/61F5gf4mzDrFsiEDrM0fkBav4VefTyoNWfqf+bLwkA9knVXluLHgfZ3kI1LVKspkXL4aURPvgXHY6ZtgFydgsuUDSykqvmU6xGUEmmwdFDrfsEaptfg2uwPcDypQDAXAe8iCeakC85Oj7B94SFSTaHNMn/OYLRU45zH1dh8ToOla6qwYa9v0pBThYcI5S2jRCj8BSWLZfvoLu3GAAAAAElFTkSuQmCC" />
+                                                    <input type="color" class="packaging-color-hit" value="#000000"
+                                                        onmousedown="packagingSyncColorHit(this);"
+                                                        oninput="packagingApplyColorHit(this);"
+                                                        onchange="packagingApplyColorHit(this);" />
+                                                </span>
+                                            </span>
                                         </EditItemTemplate>
                                         <ItemTemplate>
                                             <asp:Label ID="LabelColour" runat="server" Text='<%# Bind("Colour") %>'></asp:Label>
                                         </ItemTemplate>
                                         <FooterTemplate>
-                                            <asp:TextBox ID="TextBoxColour" runat="server" Text="" />
+                                            <span class="packaging-color-editor">
+                                                <asp:TextBox ID="TextBoxColour" runat="server" Text=""
+                                                    CssClass="packaging-color-hex" ToolTip="Foreground colour (#RRGGBB)" />
+                                                <span class="packaging-color-swatch" title="Pick foreground colour">
+                                                    <img class="packaging-color-icon" width="16" height="16" alt=""
+                                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAACQ0lEQVR4nHWS72sScRjA75X/ikuLXs5RE4JyK0gmTQtpECk1crqt+SI1vTwnU8LzPJ3NRWKsmh3RDyaeDiyqEcz1Y5u6LRKpVbaI7XTuXRdPnDQ5z3zg8/Lz+T5feBBEMHgPJg0oXETghCsfUGB7CZmMI5+QyYi5rq6DSLtB1aiIUGChqVM3/9CX5uC95QNsOIvw0+uFL3Y7rOh0kJbL2URnZ4iSSEQCmRJ5lL7IQ+1dWHcW4dP45wa/fL4GWx4PvOnvB1p7NEKhvIjj/J3J0JUkLFhXd/iyMMDxFTcyWVQJtFEerMvXtdFD4xfusRnXJrx0l+GVZXm7XYCTKzOjsB0zQebqMZYeOSJFHAPRQGz0dV1uYF1ubCKU98l7z0HK2E0g9oFoIWH/2BzgbfI/maMcGYSUUZ7nArXn/9YXsmBZqW7ixopQ5tiJDQNt6q4hJ/WzNZv/O9gDWy2YyRIzk51gdosOEMJsWCCFd1S5QGHMW2yRx8hS5cazXQiv3YYHSxNVYaD8zgQ0Ls4hvfo4obMtNr8cLDGcvB/guJ9tjhSS/ZDCxT6k5yIlPj346LfV/61F5gf4mzDrFsiEDrM0fkBav4VefTyoNWfqf+bLwkA9knVXluLHgfZ3kI1LVKspkXL4aURPvgXHY6ZtgFydgsuUDSykqvmU6xGUEmmwdFDrfsEaptfg2uwPcDypQDAXAe8iCeakC85Oj7B94SFSTaHNMn/OYLRU45zH1dh8ToOla6qwYa9v0pBThYcI5S2jRCj8BSWLZfvoLu3GAAAAAElFTkSuQmCC" />
+                                                    <input type="color" class="packaging-color-hit" value="#000000"
+                                                        onmousedown="packagingSyncColorHit(this);"
+                                                        oninput="packagingApplyColorHit(this);"
+                                                        onchange="packagingApplyColorHit(this);" />
+                                                </span>
+                                            </span>
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Symbol" SortExpression="Symbol">
@@ -821,6 +966,10 @@
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                 </Columns>
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
                             </asp:GridView>
                         </div>
                     </ContentTemplate>
@@ -829,13 +978,42 @@
         </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabInvoiceTypes" runat="server" HeaderText="InvoiceTypes">
             <ContentTemplate>
-                <asp:UpdateProgress runat="server" ID="gvInvoiceTypesUpdateProgress" AssociatedUpdatePanelID="gvInvoiceTypesUpdatePanel">
+                <asp:UpdateProgress runat="server" ID="gvInvoiceTypesUpdateProgress" AssociatedUpdatePanelID="gvInvoiceTypesUpdatePanel" DisplayAfter="0">
                     <ProgressTemplate>
-                        Please Wait&nbsp;<img src="../images/animi/QuaffeeProgress.gif" alt="Please Wait..." />&nbsp;...
+                        <div class="status-message status-info page-tone-progress">
+                            <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                            &nbsp;Please wait...
+                        </div>
                     </ProgressTemplate>
                 </asp:UpdateProgress>
-                <asp:UpdatePanel ID="gvInvoiceTypesUpdatePanel" runat="server">
+                <asp:UpdatePanel ID="gvInvoiceTypesUpdatePanel" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvInvoiceTypes" />
+                        <asp:AsyncPostBackTrigger ControlID="btnInvoiceTypeGo" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="btnInvoiceTypeReset" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="tbxInvoiceTypeSearch" EventName="TextChanged" />
+                    </Triggers>
                     <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxInvoiceTypeSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxInvoiceTypeSearch" runat="server"
+                                        CausesValidation="false"
+                                        OnTextChanged="tbxInvoiceTypeSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnInvoiceTypeGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    ToolTip="Search invoice types" OnClick="btnInvoiceTypeGo_Click" />
+                                <asp:Button ID="btnInvoiceTypeReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    OnClick="btnInvoiceTypeReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-invoice-types.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
                         <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvInvoiceTypes" runat="server" AllowSorting="True" DataKeyNames="InvoiceTypeID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
@@ -844,7 +1022,9 @@
                                 OnSorting="gvInvoiceTypes_Sorting"
                                 OnRowEditing="gvInvoiceTypes_RowEditing"
                                 OnRowCancelingEdit="gvInvoiceTypes_RowCancelingEdit"
-                                OnRowUpdating="gvInvoiceTypes_RowUpdating">
+                                OnRowUpdating="gvInvoiceTypes_RowUpdating"
+                                OnRowDeleting="gvInvoiceTypes_RowDeleting"
+                                OnRowDataBound="gvInvoiceTypes_RowDataBound">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <EditItemTemplate>
@@ -915,11 +1095,32 @@
         </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabPaymentTerms" runat="server" HeaderText="PaymentTerms">
             <ContentTemplate>
-                <asp:UpdateProgress runat="server" ID="PaymentTermsUpdateProgress" AssociatedUpdatePanelID="gvPaymentTermsUpdatePanel">
-                    <ProgressTemplate>please wait...</ProgressTemplate>
+                <asp:UpdateProgress runat="server" ID="PaymentTermsUpdateProgress" AssociatedUpdatePanelID="gvPaymentTermsUpdatePanel" DisplayAfter="0">
+                    <ProgressTemplate>
+                        <div class="status-message status-info page-tone-progress">
+                            <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                            &nbsp;Please wait...
+                        </div>
+                    </ProgressTemplate>
                 </asp:UpdateProgress>
                 <asp:UpdatePanel ID="gvPaymentTermsUpdatePanel" runat="server" ChildrenAsTriggers="true">
                     <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxPaymentTermSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxPaymentTermSearch" runat="server" OnTextChanged="tbxPaymentTermSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnPaymentTermGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search payment terms" OnClick="btnPaymentTermGo_Click" />
+                                <asp:Button ID="btnPaymentTermReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnPaymentTermReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-payment-terms.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
                         <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvPaymentTerms" runat="server" AllowSorting="True" DataKeyNames="PaymentTermID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
@@ -1035,11 +1236,32 @@
         </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabPriceLevels" runat="server" HeaderText="PriceLevels">
             <ContentTemplate>
-                <asp:UpdateProgress runat="server" ID="PriceLevelUpdateProgress" AssociatedUpdatePanelID="gvPriceLevelsUpdatePanel">
-                    <ProgressTemplate>please wait...</ProgressTemplate>
+                <asp:UpdateProgress runat="server" ID="PriceLevelUpdateProgress" AssociatedUpdatePanelID="gvPriceLevelsUpdatePanel" DisplayAfter="0">
+                    <ProgressTemplate>
+                        <div class="status-message status-info page-tone-progress">
+                            <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
+                            &nbsp;Please wait...
+                        </div>
+                    </ProgressTemplate>
                 </asp:UpdateProgress>
                 <asp:UpdatePanel ID="gvPriceLevelsUpdatePanel" runat="server" ChildrenAsTriggers="true">
                     <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxPriceLevelSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxPriceLevelSearch" runat="server" OnTextChanged="tbxPriceLevelSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnPriceLevelGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search price levels" OnClick="btnPriceLevelGo_Click" />
+                                <asp:Button ID="btnPriceLevelReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnPriceLevelReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-price-levels.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
                         <div class="responsive-layout-container scrollable-table-container">
                             <asp:GridView ID="gvPriceLevels" runat="server" AllowSorting="True" DataKeyNames="PriceLevelID"
                                 CssClass="results-table" AutoGenerateColumns="False" ShowFooter="true"
@@ -1132,10 +1354,37 @@
         </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabpnlRepairStatuses" runat="server" HeaderText="Repair Statuses">
             <ContentTemplate>
-                <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional">
+                <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvRepairStatuses" />
+                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusGo" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusReset" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="tbxRepairStatusSearch" EventName="TextChanged" />
+                    </Triggers>
                     <ContentTemplate>
-                        <div class="results-container">
+                        <asp:Panel ID="pnlRepairStatusSearch" runat="server" DefaultButton="btnRepairStatusGo" CssClass="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxRepairStatusSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxRepairStatusSearch" runat="server"
+                                        AutoPostBack="true"
+                                        OnTextChanged="tbxRepairStatusSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnRepairStatusGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    ToolTip="Search repair statuses" OnClick="btnRepairStatusGo_Click" />
+                                <asp:Button ID="btnRepairStatusReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    OnClick="btnRepairStatusReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-repair-statuses.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </asp:Panel>
+                        <div class="results-container scrollable-table-container">
                             <asp:GridView ID="gvRepairStatuses" runat="server" DataKeyNames="RepairStatusID"
+                                CssClass="results-table results-table-fit"
                                 AutoGenerateColumns="False" AllowPaging="True" AllowSorting="True"
                                 ShowFooter="True" PageSize="20"
                                 OnPageIndexChanging="gvRepairStatuses_PageIndexChanging"
@@ -1144,10 +1393,31 @@
                                 OnRowEditing="gvRepairStatuses_RowEditing"
                                 OnRowCancelingEdit="gvRepairStatuses_RowCancelingEdit"
                                 OnRowUpdating="gvRepairStatuses_RowUpdating"
-                                OnRowDeleting="gvRepairStatuses_RowDeleting">
+                                OnRowDeleting="gvRepairStatuses_RowDeleting"
+                                OnRowDataBound="gvRepairStatuses_RowDataBound"
+                                OnRowCreated="gvRepairStatuses_RowCreated">
                                 <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Update" />
+                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" />
+                                            <asp:ImageButton ID="btnDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                ImageUrl="~/images/imgButtons/Trashcan.gif" AlternateText="Delete"
+                                                OnClientClick="return confirm('Delete this repair status?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="Insert"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
                                     <asp:BoundField DataField="RepairStatusID" HeaderText="ID" ReadOnly="True" />
-                                    <asp:TemplateField HeaderText="Status">
+                                    <asp:TemplateField HeaderText="Status" SortExpression="RepairStatusDesc">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxStatusDesc" runat="server" Text='<%# Bind("RepairStatusDesc") %>' />
                                         </EditItemTemplate>
@@ -1158,9 +1428,32 @@
                                             <asp:TextBox ID="tbxStatusDescFooter" runat="server" Width="12em" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:CheckBoxField DataField="EmailContact" HeaderText="Email Contact" />
-                                    <asp:BoundField DataField="SortOrder" HeaderText="Sort Order" />
-                                    <asp:TemplateField HeaderText="Status Note">
+                                    <asp:TemplateField HeaderText="Email Contact" SortExpression="EmailContact">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxEmailContact" runat="server"
+                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxEmailContactView" runat="server"
+                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxEmailContactFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Sort Order" SortExpression="SortOrder">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxSortOrder" runat="server" Width="4em"
+                                                Text='<%# Eval("SortOrder") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSortOrder" runat="server" Text='<%# Eval("SortOrder") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxSortOrderFooter" runat="server" Width="4em" Text="0" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Status Note" SortExpression="StatusNote">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxStatusNote" runat="server" Text='<%# Bind("StatusNote") %>' Width="30em" />
                                         </EditItemTemplate>
@@ -1171,43 +1464,33 @@
                                             <asp:TextBox ID="tbxStatusNoteFooter" runat="server" Width="30em" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField ShowHeader="False">
-                                        <EditItemTemplate>
-                                            <asp:ImageButton ID="btnUpdate" runat="server" CommandName="Update"
-                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Update" />
-                                            <asp:ImageButton ID="btnCancel" runat="server" CommandName="Cancel"
-                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:ImageButton ID="btnEdit" runat="server" CommandName="Edit"
-                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" />
-                                            <asp:ImageButton ID="btnDelete" runat="server" CommandName="Delete"
-                                                ImageUrl="~/images/imgButtons/Trashcan.gif" AlternateText="Delete" />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:ImageButton ID="btnAdd" runat="server" CommandName="Insert"
-                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
                                 </Columns>
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
                             </asp:GridView>
-
+                        </div>
                     </ContentTemplate>
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
     </ajaxToolkit:TabContainer>
 
-        <div class="status-message status-error" style="margin-top: 12px;" id="pnlLookupStatus" runat="server" visible="false">
-            <asp:Label ID="lblStatus" runat="server" />
-        </div>
+        <asp:UpdatePanel ID="upnlLookupStatus" runat="server" UpdateMode="Conditional">
+            <ContentTemplate>
+                <div class="status-message" style="margin-top: 12px;" id="pnlLookupStatus" runat="server" visible="false">
+                    <asp:Label ID="lblStatus" runat="server" />
+                </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
     </asp:Panel>
 
     <%-- REMOVED: sdsItems SqlDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Use ItemsRepository in code-behind --%>
     <%-- REMOVED: odsAllItems ObjectDataSource - VIOLATES HARD_PROJECT_RULES.md Rule #2 - Legacy ItemTypeTbl, use ItemsRepository --%>
     
     <asp:SqlDataSource ID="sdsUserNames" runat="server"
-        ConnectionString="<%$ ConnectionStrings:ApplicationServices %>"
+        ConnectionString="<%$ ConnectionStrings:TrackerDataSQL %>"
         SelectCommand="SELECT [UserName] AS SecurityUsername FROM [vw_aspnet_Users]" />
     
 </asp:Content>

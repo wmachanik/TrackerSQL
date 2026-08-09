@@ -2,7 +2,7 @@
     MaintainScrollPositionOnPostback="true" CodeBehind="SendCoffeeCheckup.aspx.cs"
     Inherits="TrackerSQL.Pages.SendCoffeeCheckup" %>
 
-<asp:Content ID="cntSendCoffeeCheckupHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntSendCoffeeCheckupHdr" title="Send Coffee Checkup" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
 </asp:Content>
 
@@ -15,7 +15,7 @@
         <ProgressTemplate>
             <div class="status-message status-info page-tone-progress page-tone-send-progress">
                 <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
-                &nbsp;Sending checkup emails… this may take several minutes. Please wait.
+                &nbsp;Sending checkup emails... this may take several minutes. Please wait.
             </div>
         </ProgressTemplate>
     </asp:UpdateProgress>
@@ -153,7 +153,8 @@
                                         AllowSorting="False"
                                         OnSelectedIndexChanged="gvCustomerCheckup_SelectedIndexChanged"
                                         OnPageIndexChanging="gvCustomerCheckup_PageIndexChanging"
-                                        OnRowCommand="gvCustomerCheckup_RowCommand">
+                                        OnRowCommand="gvCustomerCheckup_RowCommand"
+                                        OnRowCreated="gvCustomerCheckup_RowCreated">
                                         <EmptyDataTemplate>
                                             <div class="status-message status-info" style="padding: 20px; text-align: left;">
                                                 <strong>No contacts prepared yet.</strong><br />
@@ -196,6 +197,10 @@
                                             <asp:BoundField DataField="ReminderCount" HeaderText="RCnt" />
                                         </Columns>
                                         <SelectedRowStyle CssClass="results-row-selected" BackColor="#FFF3CD" />
+                                        <PagerStyle CssClass="pager-row" />
+                                        <PagerTemplate>
+                                            <asp:PlaceHolder ID="plhPager" runat="server" />
+                                        </PagerTemplate>
                                     </asp:GridView>
                                 </td>
                                 <td style="vertical-align: top; padding-left: 8px;">

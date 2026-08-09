@@ -642,6 +642,42 @@ namespace TrackerSQL.Managers
                 orderLines.Select(line => line.OriginalOrderID));
             return true;
         }
+
+        /// <summary>
+        /// Builds the Order Done temp header/lines from persisted OrdersTbl / OrderLinesTbl.
+        /// Prefer this over scraping OrderDetail controls (DeliverySheet Done can arrive before UI bind).
+        /// </summary>
+        public bool CompleteOrderDeliveryByOrderId(int orderId)
+        {
+            if (orderId <= 0)
+                return false;
+
+            var headerData = GetOrderHeader(orderId);
+            if (headerData == null)
+                return false;
+
+            headerData.OrderID = orderId;
+            var persistedLines = GetOrderLines(orderId);
+            if (persistedLines == null || persistedLines.Count == 0)
+                return false;
+
+            var orderLines = persistedLines
+                .Where(line => line != null && line.ItemTypeID > 0)
+                .Select(line => new TempOrderLineData
+                {
+                    ItemID = line.ItemTypeID,
+                    Qty = line.QuantityOrdered,
+                    PackagingID = line.PackagingID,
+                    ServiceTypeID = _itemsRepository.GetServiceTypeForItem(line.ItemTypeID),
+                    OriginalOrderID = orderId
+                })
+                .ToList();
+
+            if (orderLines.Count == 0)
+                return false;
+
+            return CompleteOrderDelivery(headerData, orderLines);
+        }
         // NEW METHODS: Move business logic from OrderDetail
 
         /// <summary>

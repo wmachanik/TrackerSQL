@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
@@ -21,11 +22,33 @@ namespace TrackerSQL.Pages
         {
             if (!IsPostBack)
             {
-                txtToDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
-                txtFromDate.Text = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd");
+                ResetDates();
                 BindAll();
                 UpdateFilterStatus();
             }
+        }
+
+        protected DateTime GetFirstDoW(DateTime pDate)
+        {
+            int dayOfWeek = (int)pDate.DayOfWeek;
+            if (dayOfWeek < 0)
+                dayOfWeek += 7;
+            return pDate.AddDays(-1 * dayOfWeek).Date;
+        }
+
+        protected DateTime GetLastDoW(DateTime pDate)
+        {
+            int num = (int)(6 - pDate.DayOfWeek);
+            if (num < 0)
+                num = 0;
+            return pDate.AddDays(num).Date;
+        }
+
+        protected void ResetDates()
+        {
+            DateTime now = TimeZoneUtils.Now();
+            tbxDateFrom.Text = GetFirstDoW(now).ToString("yyyy-MM-dd");
+            tbxDateTo.Text = GetLastDoW(now).ToString("yyyy-MM-dd");
         }
 
         private void BindAll()
@@ -50,7 +73,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ItemsRequired BindPreparationDayData: " + ex.Message);
-                lblFilterStatus.Text = "Error loading prep-date items: " + ex.Message;
+                SetStatus("Error loading prep-date items: " + ex.Message, isError: true);
                 gvPreparationDay.DataSource = new List<ItemsRequiredSummary>();
                 gvPreparationDay.DataBind();
             }
@@ -72,7 +95,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ItemsRequired BindItemsRequiredByDeliveryDate: " + ex.Message);
-                lblFilterStatus.Text = "Error loading delivery-date items: " + ex.Message;
+                SetStatus("Error loading delivery-date items: " + ex.Message, isError: true);
                 gvItemsRequiredByDay.DataSource = new List<ItemsRequiredSummary>();
                 gvItemsRequiredByDay.DataBind();
             }
@@ -80,7 +103,7 @@ namespace TrackerSQL.Pages
 
         private DateTime? GetFromDate()
         {
-            if (DateTime.TryParse(txtFromDate.Text, out DateTime fromDate))
+            if (DateTime.TryParse(tbxDateFrom.Text, out DateTime fromDate))
                 return fromDate.Date;
             return null;
         }
@@ -88,46 +111,61 @@ namespace TrackerSQL.Pages
         /// <summary>Inclusive end-of-day so DATE/DATETIME required/prep dates on the To date are included.</summary>
         private DateTime? GetToDate()
         {
-            if (DateTime.TryParse(txtToDate.Text, out DateTime toDate))
+            if (DateTime.TryParse(tbxDateTo.Text, out DateTime toDate))
                 return toDate.Date.AddDays(1).AddTicks(-1);
             return null;
         }
 
         private void UpdateFilterStatus(int? prepCount = null, int? deliveryCount = null)
         {
-            if (!string.IsNullOrEmpty(txtFromDate.Text) && !string.IsNullOrEmpty(txtToDate.Text))
+            if (!string.IsNullOrEmpty(tbxDateFrom.Text) && !string.IsNullOrEmpty(tbxDateTo.Text))
             {
-                lblFilterStatus.Text = "Current filter: " + txtFromDate.Text + " to " + txtToDate.Text;
+                string message = "Current week filter: " + tbxDateFrom.Text + " to " + tbxDateTo.Text;
                 if (prepCount.HasValue || deliveryCount.HasValue)
                 {
-                    lblFilterStatus.Text += " — prep rows: " + (prepCount ?? 0)
+                    message += " — prep rows: " + (prepCount ?? 0)
                         + ", delivery rows: " + (deliveryCount ?? 0);
                 }
+                SetStatus(message, isError: false);
             }
             else
             {
-                lblFilterStatus.Text = "No filter applied - showing default range";
+                SetStatus("No dates selected", isError: false);
             }
         }
 
-        protected void btnFilter_Click(object sender, EventArgs e)
+        private void SetStatus(string message, bool isError)
         {
-            if (string.IsNullOrEmpty(txtFromDate.Text) || string.IsNullOrEmpty(txtToDate.Text))
+            if (lblFilterStatus != null)
+                lblFilterStatus.Text = message ?? string.Empty;
+
+            if (pnlStatus != null)
             {
-                lblFilterStatus.Text = "Error: Please enter both From Date and To Date";
+                pnlStatus.Visible = !string.IsNullOrWhiteSpace(message);
+                pnlStatus.Attributes["class"] = isError
+                    ? "status-message status-error"
+                    : "status-message status-info";
+            }
+        }
+
+        protected void GoBtn_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(tbxDateFrom.Text) || string.IsNullOrEmpty(tbxDateTo.Text))
+            {
+                SetStatus("Error: Please enter both From Date and To Date", isError: true);
                 return;
             }
 
-            if (!DateTime.TryParse(txtFromDate.Text, out DateTime fromDate) ||
-                !DateTime.TryParse(txtToDate.Text, out DateTime toDate))
+            if (!DateTime.TryParse(tbxDateFrom.Text, out DateTime fromDate) ||
+                !DateTime.TryParse(tbxDateTo.Text, out DateTime toDate))
             {
-                lblFilterStatus.Text = "Error: Invalid date format";
+                SetStatus("Error: Invalid date format", isError: true);
                 return;
             }
 
             if (fromDate > toDate)
             {
-                lblFilterStatus.Text = "Error: From Date cannot be greater than To Date";
+                SetStatus("Error: From Date cannot be greater than To Date", isError: true);
                 return;
             }
 
@@ -149,17 +187,48 @@ namespace TrackerSQL.Pages
             gvItemsRequiredByDay.DataSource = delivery;
             gvItemsRequiredByDay.DataBind();
 
-            lblFilterStatus.Text = "Filter applied: " + fromDate.ToString("yyyy-MM-dd") + " to "
-                + toDate.ToString("yyyy-MM-dd") + " at " + DateTime.Now.ToString("HH:mm:ss")
-                + " — prep rows: " + prep.Count + ", delivery rows: " + delivery.Count;
+            SetStatus("Filter applied: " + fromDate.ToString("yyyy-MM-dd") + " to "
+                + toDate.ToString("yyyy-MM-dd") + " — prep rows: " + prep.Count
+                + ", delivery rows: " + delivery.Count, isError: false);
         }
 
-        protected void btnClearFilter_Click(object sender, EventArgs e)
+        protected void ResetBtn_Click(object sender, EventArgs e)
         {
-            txtToDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
-            txtFromDate.Text = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd");
+            ResetDates();
             BindAll();
-            lblFilterStatus.Text = "Filter cleared - showing last 30 days at " + DateTime.Now.ToString("HH:mm:ss");
+            SetStatus("Reset to current week: " + tbxDateFrom.Text + " to " + tbxDateTo.Text, isError: false);
+        }
+
+        protected void PrevWeekBtn_Click(object sender, EventArgs e)
+        {
+            ShiftWeek(-7);
+            BindAll();
+            UpdateFilterStatus();
+        }
+
+        protected void NextWeekBtn_Click(object sender, EventArgs e)
+        {
+            ShiftWeek(7);
+            BindAll();
+            UpdateFilterStatus();
+        }
+
+        private void ShiftWeek(int days)
+        {
+            if (!DateTime.TryParse(tbxDateFrom.Text, out DateTime fromDate) ||
+                !DateTime.TryParse(tbxDateTo.Text, out DateTime toDate))
+            {
+                ResetDates();
+                return;
+            }
+
+            tbxDateFrom.Text = fromDate.AddDays(days).ToString("yyyy-MM-dd");
+            tbxDateTo.Text = toDate.AddDays(days).ToString("yyyy-MM-dd");
+        }
+
+        protected void btnBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Default.aspx");
         }
 
         protected void gvPreparationDay_RowDataBound(object sender, GridViewRowEventArgs e)

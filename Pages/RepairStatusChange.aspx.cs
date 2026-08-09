@@ -13,8 +13,15 @@ namespace TrackerSQL.Pages
     public partial class RepairStatusChange : Page
     {
         private const string CONST_SESSION_REPAIRDATA = "RepairDataUsed";
-        private static string prevPage = string.Empty;
+        private const string CONST_VIEWSTATE_PREV_PAGE = "RepairStatusChangePreviousPage";
+        private const string DEFAULT_RETURN_URL = "~/Pages/Repairs.aspx";
         private readonly RepairManager _repairManager = new RepairManager();
+
+        private string ReturnPageUrl
+        {
+            get { return this.ViewState[CONST_VIEWSTATE_PREV_PAGE] as string ?? string.Empty; }
+            set { this.ViewState[CONST_VIEWSTATE_PREV_PAGE] = value; }
+        }
 
         protected ScriptManager scrmRepairStaus;
         protected UpdatePanel upnlRepairStaus;
@@ -35,7 +42,24 @@ namespace TrackerSQL.Pages
         {
             if (this.IsPostBack)
                 return;
-            RepairStatusChange.prevPage = !(this.Request.UrlReferrer == (Uri)null) ? this.Request.UrlReferrer.ToString() : string.Empty;
+
+            string requestedReturnUrl = this.Request.QueryString["ReturnUrl"];
+            if (IsSafeReturnUrl(requestedReturnUrl)
+                && requestedReturnUrl.IndexOf("RepairStatusChange.aspx", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                this.ReturnPageUrl = requestedReturnUrl;
+            }
+            else
+            {
+                string referrer = this.Request.UrlReferrer != null
+                    ? this.Request.UrlReferrer.ToString()
+                    : string.Empty;
+                this.ReturnPageUrl = IsSafeReturnUrl(referrer)
+                    && referrer.IndexOf("RepairStatusChange.aspx", StringComparison.OrdinalIgnoreCase) < 0
+                    ? referrer
+                    : this.ResolveUrl(DEFAULT_RETURN_URL);
+            }
+
             if (this.Request.QueryString["RepairID"] == null)
                 return;
             this.lblRepairID.Text = this.Request.QueryString["RepairID"].ToString();
@@ -68,39 +92,101 @@ namespace TrackerSQL.Pages
 
         private void ReturnToPrevPage()
         {
-            if (string.IsNullOrWhiteSpace(RepairStatusChange.prevPage))
-                this.Response.Redirect("~/Pages/Repairs.aspx");
-            else
-                this.Response.Redirect(RepairStatusChange.prevPage);
+            string returnUrl = IsSafeReturnUrl(this.ReturnPageUrl)
+                && this.ReturnPageUrl.IndexOf("RepairStatusChange.aspx", StringComparison.OrdinalIgnoreCase) < 0
+                ? this.ReturnPageUrl
+                : this.ResolveUrl(DEFAULT_RETURN_URL);
+
+            this.Response.Redirect(returnUrl, false);
+            this.Context.ApplicationInstance.CompleteRequest();
         }
 
-        private void UpdateRecord()
+        private bool IsSafeReturnUrl(string url)
         {
-            RepairFormData pRepair = (RepairFormData)this.Session["RepairDataUsed"];
-            int int32 = Convert.ToInt32(this.ddlRepairStatuses.SelectedValue);
-            if (pRepair.RepairStatusID == int32)
-                return;
-            
-            pRepair.RepairStatusID = int32;
-            
-            string result = _repairManager.HandleStatusChange(pRepair);
-            
-            if (!string.IsNullOrWhiteSpace(result))
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
+                return url.IndexOf("://", StringComparison.Ordinal) < 0;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
+                return false;
+
+            return this.Request.Url != null
+                && string.Equals(absolute.Host, this.Request.Url.Host, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool UpdateRecord()
+        {
+            if (!int.TryParse(this.lblRepairID.Text, out int repairId) || repairId <= 0)
+            {
+                this.ltrlStatus.Text = "The repair ID is invalid. Reopen the repair and try again.";
+                return false;
+            }
+
+            // Session state can expire or be cleared while this page is open. Always reload
+            // the current database row so status changes do not depend on a cached form DTO.
+            RepairFormData repair = _repairManager.GetRepairFormDataById(repairId);
+            if (repair == null)
+            {
+                this.ltrlStatus.Text = "The repair record could not be loaded. Reopen the repair and try again.";
+                return false;
+            }
+
+            if (!int.TryParse(this.ddlRepairStatuses.SelectedValue, out int selectedStatusId)
+                || selectedStatusId <= 0)
+            {
+                this.ltrlStatus.Text = "Select a valid repair status.";
+                return false;
+            }
+
+            if (repair.RepairStatusID == selectedStatusId)
+                return true;
+
+            int previousStatusId = repair.RepairStatusID;
+            repair.RepairStatusID = selectedStatusId;
+            repair.LastStatusChange = TimeZoneUtils.Now();
+
+            string result = _repairManager.HandleStatusChange(repair);
+            string updateError = MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+            if (!string.IsNullOrWhiteSpace(result)
+                && !string.IsNullOrWhiteSpace(updateError)
+                && string.Equals(result.Trim(), updateError.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
                 this.ltrlStatus.Text = result;
-            else
-                this.ltrlStatus.Text = MessageProvider.Get(MessageKeys.Repairs.StatusUpdateSuccess);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {repair.RepairID} update failed: {result}");
+                return false;
+            }
+
+            this.Session[CONST_SESSION_REPAIRDATA] = repair;
+            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                $"RepairID {repair.RepairID} status changed from {previousStatusId} to {selectedStatusId}");
+            this.ltrlStatus.Text = string.IsNullOrWhiteSpace(result)
+                ? MessageProvider.Get(MessageKeys.Repairs.StatusUpdateSuccess)
+                : result;
+            return true;
         }
 
         protected void btnUpdateAndReturn_Click(object sender, EventArgs e)
         {
-            this.UpdateRecord();
-            string status = this.ltrlStatus.Text;
-
-            if (!string.IsNullOrWhiteSpace(status) && !status.Contains("Record Updated"))
+            try
             {
-                showMessageBox msgBox = new showMessageBox(this.Page, "Repair Status Update", status);
+                if (!this.UpdateRecord())
+                {
+                    this.upnlRepairStaus.Update();
+                    return;
+                }
+
+                this.ReturnToPrevPage();
             }
-            this.ReturnToPrevPage();
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {this.lblRepairID.Text} status update failed: {ex.Message}");
+                this.ltrlStatus.Text = "The repair status could not be updated. Please try again or check the repair log.";
+                this.upnlRepairStaus.Update();
+            }
         }
 
         protected void btnCancel_Click(object sender, EventArgs e) => this.ReturnToPrevPage();

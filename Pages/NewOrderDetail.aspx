@@ -1,5 +1,5 @@
 <%-- RETIRED 2026-07-14: replaced by OrderDetail.aspx?NewOrder=true. Not in menu or csproj. --%>
-<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="NewOrderDetail.aspx.cs"
+<%@ Page Title="New Order Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="NewOrderDetail.aspx.cs"
     Inherits="TrackerSQL.Pages.NewOrderDetail" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntOrderDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">

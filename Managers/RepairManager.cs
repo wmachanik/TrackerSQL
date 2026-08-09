@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
@@ -15,6 +16,7 @@ namespace TrackerSQL.Managers
         private readonly RepairStatusesRepository _repairStatusesRepository;
         private readonly NextPrepDateByAreaRepository _nextPrepDateRepository;
         private readonly TempOrdersLinesRepository _tempOrdersLinesRepository;
+        private readonly PersonsRepository _personsRepository;
         private readonly EquipTypesRepository _equipTypesRepository = new EquipTypesRepository();
 
         public RepairManager()
@@ -25,59 +27,19 @@ namespace TrackerSQL.Managers
             _repairStatusesRepository = new RepairStatusesRepository();
             _nextPrepDateRepository = new NextPrepDateByAreaRepository();
             _tempOrdersLinesRepository = new TempOrdersLinesRepository();
+            _personsRepository = new PersonsRepository();
         }
 
         public string HandleStatusChange(RepairFormData repair)
         {
-            switch (repair.RepairStatusID)
-            {
-                case 1:
-                    LogNewRepair(repair, true);
-                    break;
-
-                case 2:
-                    if (repair.RelatedOrderLineID == 0)
-                    {
-                        LogNewRepair(repair, true);
-                    }
-                    else
-                    {
-                        UpdateRelatedOrderDeliveryInc7(repair.RelatedOrderLineID);
-                    }
-                    break;
-
-                case 3:
-                    HandleWorkshopStatus(repair);
-                    break;
-
-                case 6:
-                    if (repair.RelatedOrderLineID > 0)
-                    {
-                        var nextDeliveryDate = _nextPrepDateRepository
-                            .GetNextDeliveryDateForContact((int)repair.CustomerID);
-                        if (nextDeliveryDate.HasValue)
-                        {
-                            UpdateRelatedOrderDeliveryDate(repair.RelatedOrderLineID, nextDeliveryDate.Value);
-                        }
-                    }
-                    break;
-
-                case 7:
-                    CompleteRelatedOrderIfSoleLine(repair.RelatedOrderLineID);
-                    break;
-            }
-
             if (!_repairsRepository.UpdateRepair(ToRepair(repair)))
             {
                 return MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
             }
 
-            string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
-            if (repair.RelatedOrderLineID > 0)
-            {
-                UpdateOrderNotesWithRepairStatus(repair, statusNote);
-            }
-
+            // A status change only updates the repair and notifies the contact.
+            // Related orders, delivery dates, contact equipment and order notes
+            // must not be created or modified from this operation.
             return SendStatusNotification(repair);
         }
 
@@ -170,11 +132,16 @@ namespace TrackerSQL.Managers
             var contact = _contactsRepository.GetById(contactId);
             if (contact == null) return 0;
 
+            // Sundry/walk-in (ZZName) repairs start with a blank contact name — the user types
+            // the actual person's name, which also ends up in the related order's notes.
+            bool isSundry = contactId == SystemConstants.CustomerConstants.SundryCustomerID;
+
             var repair = new Repair
             {
                 ContactID = contactId,
-                ContactName = contact.ContactFirstName ?? string.Empty,
-                ContactEmail = !string.IsNullOrWhiteSpace(contact.EmailAddress) ? contact.EmailAddress : contact.AltEmailAddress,
+                ContactName = isSundry ? string.Empty : contact.ContactFirstName ?? string.Empty,
+                ContactEmail = isSundry ? string.Empty
+                    : (!string.IsNullOrWhiteSpace(contact.EmailAddress) ? contact.EmailAddress : contact.AltEmailAddress),
                 EquipTypeID = contact.EquipTypeID,
                 EquipSerialNumber = contact.EquipentSN,
                 DateLogged = TimeZoneUtils.Now().Date,
@@ -182,16 +149,152 @@ namespace TrackerSQL.Managers
                 RepairStatusID = 1
             };
 
-            if (!_repairsRepository.InsertRepair(repair))
-                return 0;
+            // Returns the actual identity — GetLastIdInserted was ambiguous when the same
+            // contact had two repairs on one day (it opened the older repair).
+            return _repairsRepository.InsertRepairReturnId(repair);
+        }
 
-            return _repairsRepository.GetLastIdInserted(contactId);
+        /// <summary>
+        /// Creates the related order (repair-check line, delivery in 7 days) for a repair that
+        /// does not have one yet, and sets repair.RelatedOrderLineID. For the sundry (ZZName)
+        /// customer the entered contact name is written to the order notes as "Name:" so the
+        /// order/delivery system can identify who the order is for; order creation is deferred
+        /// until that name has been entered.
+        /// Returns a short user-facing note ("" when nothing was needed).
+        /// </summary>
+        public string EnsureRelatedOrder(RepairFormData repair)
+        {
+            if (repair == null)
+                return string.Empty;
+
+            // Prefer the DB link over a stale hidden field — otherwise a second Save creates
+            // another order/line for the same repair.
+            if (repair.RepairID > 0)
+            {
+                var dbRepair = _repairsRepository.GetRepairById(repair.RepairID);
+                if (dbRepair?.RelatedOrderLineID != null && dbRepair.RelatedOrderLineID.Value > 0)
+                {
+                    repair.RelatedOrderLineID = dbRepair.RelatedOrderLineID.Value;
+                    return string.Empty;
+                }
+            }
+
+            if (repair.RelatedOrderLineID > 0)
+                return string.Empty;
+
+            if (repair.RepairStatusID == RepairsRepository.DoneStatusId)
+                return string.Empty;
+
+            string sundryBlock = ValidateSundryContactName(repair);
+            if (!string.IsNullOrEmpty(sundryBlock))
+                return sundryBlock;
+
+            if (!LogNewRepair(repair, true) || repair.RelatedOrderLineID <= 0)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {repair.RepairID}: could not create the related order.");
+                return "The related order could NOT be created — please check the order manually.";
+            }
+
+            // Persist RelatedOrderLineID immediately so a later failure (e.g. email) or a
+            // second Save cannot create a duplicate related order.
+            if (!_repairsRepository.UpdateRepair(ToRepair(repair)))
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"RepairID {repair.RepairID}: related order line {repair.RelatedOrderLineID} created but could not be saved on the repair.");
+                return "Related order was created but could not be linked to the repair — please check manually.";
+            }
+
+            SyncRelatedOrderNotes(repair);
+
+            bool isSundry = repair.CustomerID == SystemConstants.CustomerConstants.SundryCustomerID;
+            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                $"RepairID {repair.RepairID}: related order line {repair.RelatedOrderLineID} created"
+                + (isSundry ? $" for {SystemConstants.CustomerConstants.SundryCustomerName} contact '{repair.ContactName.Trim()}'." : "."));
+            return "Related order created (delivery in 7 days).";
+        }
+
+        /// <summary>
+        /// ZZName (sundry) repairs must have a walk-in contact name before save / related order.
+        /// Returns an error message, or null/empty when OK.
+        /// </summary>
+        public string ValidateSundryContactName(RepairFormData repair)
+        {
+            if (repair == null)
+                return null;
+
+            if (repair.CustomerID != SystemConstants.CustomerConstants.SundryCustomerID)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(repair.ContactName))
+            {
+                repair.ContactName = repair.ContactName.Trim();
+                return null;
+            }
+
+            return "Enter the contact's name before saving a "
+                + SystemConstants.CustomerConstants.SundryCustomerName
+                + " repair — it identifies the order on the delivery sheet.";
+        }
+
+        /// <summary>
+        /// Rewrites the related order's Notes for this repair: ZZName gets "Name:[RepairStatus: …]";
+        /// other contacts keep/merge the [RepairStatus: …] tag. Called when the related order is
+        /// created and on every Repair Detail save.
+        /// </summary>
+        public void SyncRelatedOrderNotes(RepairFormData repair)
+        {
+            if (repair == null || repair.RelatedOrderLineID <= 0)
+                return;
+
+            if (string.IsNullOrEmpty(repair.JobCardNumber))
+            {
+                repair.JobCardNumber = "n/a";
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, has not Job Card number set!");
+            }
+
+            int? orderId = _ordersRepository.GetOrderIdByLineId(repair.RelatedOrderLineID);
+            if (!orderId.HasValue)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    $"Repair with related order line id: {repair.RelatedOrderLineID}, order not found!");
+                return;
+            }
+
+            // Sundry notes are owned by the repair flow — rewrite the whole Notes field so the
+            // walk-in name and status comment stay in sync with the repair.
+            if (repair.CustomerID == SystemConstants.CustomerConstants.SundryCustomerID)
+            {
+                string notes = BuildOrderNotesForRepair(repair);
+                bool ok = _ordersRepository.UpdateOrderNotes(orderId.Value, notes);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    ok
+                        ? $"RepairID {repair.RepairID}: order {orderId.Value} notes set to '{notes}'."
+                        : $"RepairID {repair.RepairID}: failed to update order {orderId.Value} notes.");
+                return;
+            }
+
+            string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
+            if (string.IsNullOrWhiteSpace(statusNote))
+                statusNote = "Unknown Status";
+
+            UpdateOrderNotesWithRepairStatus(repair, statusNote.Trim());
+        }
+
+        /// <summary>Backward-compatible alias — prefer SyncRelatedOrderNotes.</summary>
+        public void SyncRelatedOrderRepairStatusNotes(RepairFormData repair)
+        {
+            SyncRelatedOrderNotes(repair);
         }
 
         [DataObjectMethod(DataObjectMethodType.Insert)]
         public bool InsertRepair(RepairFormData repair)
         {
-            return _repairsRepository.InsertRepair(ToRepair(repair));
+            bool inserted = _repairsRepository.InsertRepair(ToRepair(repair));
+            if (inserted)
+                EnsureRelatedOrderDeliveryPerson(repair.RelatedOrderLineID);
+            return inserted;
         }
 
         [DataObjectMethod(DataObjectMethodType.Update)]
@@ -199,15 +302,58 @@ namespace TrackerSQL.Managers
         {
             repair.RepairID = orig_RepairID;
             repair.LastStatusChange = TimeZoneUtils.Now();
-            return _repairsRepository.UpdateRepair(ToRepair(repair), orig_RepairID)
-                ? string.Empty
-                : MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+            bool updated = _repairsRepository.UpdateRepair(ToRepair(repair), orig_RepairID);
+            if (!updated)
+                return MessageProvider.Get(MessageKeys.Repairs.ErrorUpdating);
+
+            EnsureRelatedOrderDeliveryPerson(repair.RelatedOrderLineID);
+            return string.Empty;
         }
 
         [DataObjectMethod(DataObjectMethodType.Delete)]
         public string DeleteRepair(int repairId)
         {
-            return _repairsRepository.DeleteRepair(repairId) ? string.Empty : "Failed to delete repair";
+            var repair = _repairsRepository.GetRepairById(repairId);
+            int relatedOrderLineId = repair?.RelatedOrderLineID ?? 0;
+
+            // Delete the repair first so RelatedOrderLineID no longer references the line.
+            if (!_repairsRepository.DeleteRepair(repairId))
+                return "Failed to delete repair";
+
+            DeleteRelatedOrderForRepair(relatedOrderLineId);
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Removes the order line linked to a deleted repair. If that was the only line
+        /// on the order, deletes the order (and any temp-order links) as well.
+        /// </summary>
+        private void DeleteRelatedOrderForRepair(int relatedOrderLineId)
+        {
+            if (relatedOrderLineId <= 0)
+                return;
+
+            int? orderId = _ordersRepository.GetOrderIdByLineId(relatedOrderLineId);
+            if (orderId.HasValue)
+            {
+                if (_ordersRepository.GetOrderLineCount(orderId.Value) <= 1)
+                {
+                    _tempOrdersLinesRepository.DeleteByOriginalOrderId(orderId.Value);
+                    _ordersRepository.DeleteOrderById(orderId.Value);
+                }
+                else
+                {
+                    _ordersRepository.DeleteOrderLineById(relatedOrderLineId);
+                }
+                return;
+            }
+
+            // Legacy: RelatedOrderLineID may still hold an OrderID rather than a line id.
+            if (_ordersRepository.OrderExists(relatedOrderLineId))
+            {
+                _tempOrdersLinesRepository.DeleteByOriginalOrderId(relatedOrderLineId);
+                _ordersRepository.DeleteOrderById(relatedOrderLineId);
+            }
         }
 
         private string SendStatusNotification(RepairFormData repair)
@@ -258,7 +404,7 @@ namespace TrackerSQL.Managers
                     CustomerID = repair.CustomerID,
                     ItemTypeID = repairItemId,
                     QuantityOrdered = 1.0,
-                    Notes = string.Empty
+                    Notes = BuildOrderNotesForRepair(repair)
                 };
 
                 if (calculateDelivery)
@@ -269,7 +415,22 @@ namespace TrackerSQL.Managers
 
                     orderData.OrderDate = TimeZoneUtils.Now().Date;
                     orderData.RequiredByDate = delivery;
-                    orderData.ToBeDeliveredBy = prefs.PreferredDeliveryByID;
+                    int preferredDeliveryPersonId = prefs.PreferredDeliveryByID;
+                    if (preferredDeliveryPersonId > 0
+                        && !string.IsNullOrWhiteSpace(_personsRepository.GetPersonNameById(preferredDeliveryPersonId)))
+                    {
+                        orderData.ToBeDeliveredBy = preferredDeliveryPersonId;
+                    }
+                    else
+                    {
+                        orderData.ToBeDeliveredBy =
+                            SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
+                        if (preferredDeliveryPersonId > 0)
+                        {
+                            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                                $"RepairID {repair.RepairID}: preferred delivery person ID {preferredDeliveryPersonId} no longer exists; using default person ID {SystemConstants.DeliveryConstants.DefaultDeliveryPersonID}.");
+                        }
+                    }
 
                     if (prefs.RequiresPurchOrder)
                     {
@@ -284,10 +445,17 @@ namespace TrackerSQL.Managers
                     orderData.RequiredByDate = delivery;
                 }
 
-                int? existingOrderId = _ordersRepository.FindOpenOrderIdForContactDay(
-                    orderData.CustomerID,
-                    orderData.RequiredByDate,
-                    orderData.PrepDate);
+                // ZZName (sundry) always gets a brand-new standalone order — never reuse an
+                // open order for contact 9, even if another ZZName order exists the same day.
+                // Other contacts: reuse an open order for that delivery/prep day (add a line),
+                // otherwise create a new order header + line.
+                int? existingOrderId =
+                    orderData.CustomerID == SystemConstants.CustomerConstants.SundryCustomerID
+                        ? null
+                        : _ordersRepository.FindOpenOrderIdForContactDay(
+                            orderData.CustomerID,
+                            orderData.RequiredByDate,
+                            orderData.PrepDate);
 
                 int lineId;
                 if (existingOrderId.HasValue && existingOrderId.Value > 0)
@@ -317,6 +485,32 @@ namespace TrackerSQL.Managers
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Order notes for a repair's related order. Sundry (ZZName) orders carry the person's
+        /// name followed by ": " — the delivery sheet reads the walk-in name from notes
+        /// (see DeliverySheetManager). Always includes [RepairStatus: …].
+        /// </summary>
+        private string BuildOrderNotesForRepair(RepairFormData repair)
+        {
+            string statusNote = _repairStatusesRepository.GetStatusNote(repair.RepairStatusID);
+            if (string.IsNullOrWhiteSpace(statusNote))
+                statusNote = "Unknown Status";
+
+            string statusBlock = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag
+                + " " + statusNote.Trim()
+                + SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd;
+
+            if (repair.CustomerID == SystemConstants.CustomerConstants.SundryCustomerID
+                && !string.IsNullOrWhiteSpace(repair.ContactName))
+            {
+                // Space after ':' keeps the delivery-sheet name parse distinct from the
+                // colon inside [RepairStatus: …].
+                return repair.ContactName.Trim() + ": " + statusBlock;
+            }
+
+            return statusBlock;
         }
 
         private void HandleWorkshopStatus(RepairFormData repair)
@@ -361,6 +555,8 @@ namespace TrackerSQL.Managers
                     repair.RepairStatusID = 7;
                     _repairsRepository.UpdateRepair(repair);
                 }
+
+                EnsureRelatedOrderDeliveryPerson(repair.RelatedOrderLineID ?? 0);
             }
         }
 
@@ -394,9 +590,23 @@ namespace TrackerSQL.Managers
                 _ordersRepository.UpdateOrderDeliveryDate(newDate, orderId.Value);
         }
 
+        private void EnsureRelatedOrderDeliveryPerson(int relatedOrderLineId)
+        {
+            if (relatedOrderLineId <= 0)
+                return;
+
+            int? orderId = _ordersRepository.GetOrderIdByLineId(relatedOrderLineId);
+            if (!orderId.HasValue)
+                return;
+
+            _ordersRepository.EnsureOrderDeliveryPerson(
+                orderId.Value,
+                SystemConstants.DeliveryConstants.DefaultDeliveryPersonID);
+        }
+
         private void UpdateOrderNotesWithRepairStatus(RepairFormData repair, string status)
         {
-            if (repair.JobCardNumber.Equals(string.Empty))
+            if (string.IsNullOrEmpty(repair.JobCardNumber))
             {
                 repair.JobCardNumber = "n/a";
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
@@ -420,21 +630,22 @@ namespace TrackerSQL.Managers
             }
 
             string startTag = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag;
-            int startIdx = order.Notes?.IndexOf(startTag, StringComparison.OrdinalIgnoreCase) ?? -1;
+            string notes = order.Notes ?? string.Empty;
+            int startIdx = notes.IndexOf(startTag, StringComparison.OrdinalIgnoreCase);
             if (startIdx >= 0)
             {
-                int endIdx = order.Notes.IndexOf(SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd, startIdx);
+                int endIdx = notes.IndexOf(SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd, startIdx);
                 if (endIdx > startIdx)
                 {
-                    string before = order.Notes.Substring(0, startIdx);
-                    string after = order.Notes.Substring(endIdx + 1);
+                    string before = notes.Substring(0, startIdx);
+                    string after = notes.Substring(endIdx + 1);
                     string newBlock = $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
                     order.Notes = before + newBlock + after;
                 }
             }
             else
             {
-                order.Notes += $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
+                order.Notes = notes + $"{startTag} {status}{SystemConstants.RepairConstants.OrderNoteRepairStatusTagEnd}";
             }
 
             bool success = _ordersRepository.UpdateOrderNotes(orderId.Value, order.Notes);
@@ -504,6 +715,7 @@ namespace TrackerSQL.Managers
                 RepairFaultDesc = repair.RepairFaultDesc ?? string.Empty,
                 RepairStatusID = repair.RepairStatusID ?? 0,
                 RelatedOrderLineID = repair.RelatedOrderLineID ?? 0,
+                RelatedOrderID = repair.RelatedOrderID ?? 0,
                 Notes = repair.Notes ?? string.Empty
             };
         }
@@ -516,6 +728,34 @@ namespace TrackerSQL.Managers
             foreach (var repair in repairs)
             {
                 list.Add(ToRepairFormData(repair));
+            }
+
+            // Fill RelatedOrderID in one batch so the repairs list can link R/OLID → Order Detail.
+            var lineIds = list
+                .Where(r => r.RelatedOrderLineID > 0 && r.RelatedOrderID <= 0)
+                .Select(r => r.RelatedOrderLineID)
+                .Distinct()
+                .ToList();
+            if (lineIds.Count == 0)
+                return list;
+
+            Dictionary<int, int> orderIdsByLine = new OrdersRepository().GetOrderIdsByLineIds(lineIds);
+            var ordersRepo = new OrdersRepository();
+            foreach (var item in list)
+            {
+                if (item.RelatedOrderID > 0 || item.RelatedOrderLineID <= 0)
+                    continue;
+
+                int orderId;
+                if (orderIdsByLine.TryGetValue(item.RelatedOrderLineID, out orderId))
+                {
+                    item.RelatedOrderID = orderId;
+                }
+                else if (ordersRepo.OrderExists(item.RelatedOrderLineID))
+                {
+                    // Legacy: RelatedOrderLineID still holds an OrderID
+                    item.RelatedOrderID = item.RelatedOrderLineID;
+                }
             }
 
             return list;

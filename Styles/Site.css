@@ -1,5 +1,10 @@
-﻿/* DEFAULTS
-    Rev: 20260726-8
+/* DEFAULTS
+    Rev: 20260807-15
+    Font sizes: use body (1em) everywhere. Keep overrides only for headings,
+    intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
+    and font-size:0 / inherit technique rules.
+    Shells/panels use ~4px radius to match filter-panel / image-button rectangles
+    (not soft 10–15px “pill” cards).
 ----------------------------------------------------------*/
 :root {
     --primary-brown: #302a20;
@@ -11,8 +16,8 @@
 }
 
 body {
+    font-size: 1em;
     background-color: var(--light-brown);
-    font-size: .90em;
     font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", sans-serif, Helvetica, Verdana, sans-serif;
     margin: 10px;
     margin-left:4px;
@@ -154,7 +159,6 @@ h6 {
     margin: 0px auto;
     text-align: center;
     line-height: normal;
-    font-size: 1.1em; /* Smaller text */
     background: transparent; /* Ensure no background */
 }
 
@@ -181,13 +185,11 @@ h6 {
     box-shadow: 0 2px 8px rgba(48, 42, 32, 0.08);
     color: var(--secondary-brown);
     font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
-    font-size: 0.95em;
     letter-spacing: 0.02em;
 }
 
 .site-footer-brand {
     font-weight: 700;
-    font-size: 1.05em;
     color: var(--primary-green);
     letter-spacing: 0.04em;
 }
@@ -220,7 +222,6 @@ h6 {
     .site-footer-inner {
         padding: 12px 14px;
         gap: 8px 12px;
-        font-size: 0.9em;
     }
 }
 /* ======================= */
@@ -234,7 +235,6 @@ h6 {
     width: 96%;
     margin: 0px auto 5px auto;
     font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
-    font-size: large;
 }
 
 /* Menu structure */
@@ -262,6 +262,13 @@ h6 {
             transition: all 0.3s ease;
             white-space: nowrap;
         }
+
+            .menu ul li a img {
+                height: 16px;
+                width: 16px;
+                vertical-align: middle;
+                border: 0;
+            }
 
             /* Hover states */
             .menu ul li a:hover {
@@ -337,13 +344,11 @@ h6 {
 /* Medium screens (960px - 800px): Make menu more compact but keep horizontal */
 @media (max-width: 960px) and (min-width: 800px) {
     .menuBG {
-        font-size: medium !important; /* Reduced from large */
         padding: 3px 0 !important;
     }
 
     .menu ul li a {
         padding: 6px 8px !important; /* Reduced padding */
-        font-size: 0.9em !important; /* Slightly smaller text */
     }
 
     .menu ul li {
@@ -354,7 +359,6 @@ h6 {
 /* Smaller medium screens (800px - 600px): Even more compact horizontal menu */
 @media (max-width: 800px) and (min-width: 600px) {
     .menuBG {
-        font-size: small !important; /* Even smaller */
         padding: 2px 0 !important;
     }
 
@@ -372,7 +376,6 @@ h6 {
 
             .menu ul li a {
                 padding: 4px 6px !important; /* Very compact */
-                font-size: 0.8em !important; /* Smaller text */
                 white-space: nowrap !important;
             }
 }
@@ -394,7 +397,6 @@ h6 {
 
             .menu ul li a {
                 padding: 8px 12px !important; /* Reset to full padding */
-                font-size: 1em !important; /* Reset font size */
             }
 
         .menu ul ul {
@@ -418,7 +420,6 @@ h6 {
         display: block !important;
         text-align: center !important;
         padding: 10px 0 !important;
-        font-size: 0.8em !important;
     }
 }
 
@@ -447,7 +448,6 @@ h6 {
     /* Make the menu container more compact */
     .menuBG {
         padding: 2px 0 !important;
-        font-size: small !important;
     }
 
     .menu ul {
@@ -469,14 +469,12 @@ h6 {
 
             .menu ul li a {
                 padding: 4px 6px !important;
-                font-size: 0.8em !important;
                 white-space: nowrap !important;
                 line-height: 1.2 !important;
             }
 
     /* Make login display smaller */
     .loginDisplay {
-        font-size: 0.85em !important;
         padding: 4px !important;
         margin-right: 8px !important;
         display: inline-block !important; /* Reset to inline for landscape */
@@ -512,11 +510,9 @@ h6 {
 
     .menu ul li a {
         padding: 3px 4px !important;
-        font-size: 0.75em !important;
     }
 
     .loginDisplay {
-        font-size: 0.75em !important;
         padding: 2px !important;
         margin-right: 4px !important;
     }
@@ -543,27 +539,6 @@ h6 {
             width: 90%;
             margin-left: 10%;
         }
-}
-
-/* Default mobile behavior - updated breakpoint */
-@media (max-width: 600px) {
-    .header table {
-        display: block;
-    }
-
-    .header td {
-        display: block;
-        width: 100% !important;
-        text-align: center;
-        padding: 5px 0;
-    }
-
-    .loginDisplay {
-        display: block !important;
-        text-align: center !important;
-        padding: 10px 0 !important;
-        font-size: 0.8em !important;
-    }
 }
 
 /* ======================= */
@@ -593,7 +568,6 @@ fieldset {
     }
 
 legend {
-    font-size: 1.1em;
     font-weight: 600;
     padding: 2px 4px 8px 4px;
 }
@@ -621,7 +595,6 @@ div.accountInfo {
 }
 
 .loginDisplay {
-    font-size: 0.9em;
     display: inline-block;
     text-align: right;
     padding: 8px;
@@ -645,7 +618,6 @@ div.accountInfo {
     }
 
 .failureNotification {
-    font-size: 1.2em;
     color: Red;
 }
 
@@ -733,7 +705,6 @@ table.TblCoffee tfoot th,
 table.TblCoffee tfoot td {
     border: 1px solid #523A0B;
     background: #EBE5D9;
-    font-size: 12px;
     display: table-cell;
 }
 
@@ -743,7 +714,6 @@ table.TblCoffee th {
     border: 1px solid #523A0B;
     padding: 0.25em 0.5em;
     text-align: left;
-    font-size: 12px;
 }
 
 table.TblCoffee tbody th,
@@ -788,7 +758,6 @@ table.TblCoffee tbody tr:hover th {
 table.TblCoffee caption {
     font-family: Georgia, Times, serif;
     font-weight: normal;
-    font-size: 1.4em;
     text-align: left;
     margin: 0;
     padding: 0.5em 0.25em;
@@ -814,7 +783,6 @@ table.TblZebra {
         color: Green;
         border: 0;
         border-bottom: 1px solid #797;
-        font-size: 16px;
         padding-left: 4px;
         font-weight: bold;
         background: #e9f9e3;
@@ -839,7 +807,6 @@ table.TblZebra {
     }
     table.TblZebra td {
         padding: .3em;
-        font-size: 14px;
         display: table-cell;
     }
 
@@ -857,13 +824,8 @@ table.TblSimple {
     background: #fffff9;
     height: auto;
     line-height: 1.5em;
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 10px 10px;
-    /*
-        -webkit-border-radius: 15px;
-        -moz-border-radius: 15px;
-        -o-border-radius: 15px;
-    */
 }
 
 .TblSimple th {
@@ -883,7 +845,6 @@ table.TblSimple {
 
 .TblSimple th {
     background-color: #9dD49c;
-    font-size: 120%;
 }
 
 .TblSimple tr:nth-child(even) {
@@ -965,7 +926,6 @@ table.TblSimple {
         border-width: 0px 1px 1px 0px;
         text-align: left;
         padding: 1px;
-        font-size: 11px;
         font-weight: normal;
         color: #000000;
         display: table-cell;
@@ -990,7 +950,6 @@ table.TblSimple {
         filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#cccc99", endColorstr="#cccc99");
         background: -o-linear-gradient(top, #cccc99, cccc99);
         background-color: #cccc99;
-        font-size: 14px;
         font-family: sans-serif;
         font-weight: bold;
         color: #ffffff;
@@ -1018,7 +977,6 @@ table.TblSimple {
 .imgRightBox {
     float: right;
     font-style: italic;
-    font-size: 94%;
     text-align: right;
     border: solid 2px #EEE;
     margin: 2px;
@@ -1028,7 +986,6 @@ table.TblSimple {
 .imgLeftBox {
     float: left;
     font-style: italic;
-    font-size: 94%;
     text-align: left;
     border: solid 2px #EEE;
     margin: 2px;
@@ -1135,7 +1092,7 @@ div.simpleLightBrownForm {
 .dashboard-card {
     background: #fff;
     border: 2px solid var(--light-green);
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 10px;
     height: 80px;
     display: flex;
@@ -1155,7 +1112,6 @@ div.simpleLightBrownForm {
     .dashboard-card p {
         color: var(--secondary-brown);
         margin: 0;
-        font-size: 0.9em;
         line-height: 1.3;
     }
 
@@ -1270,6 +1226,11 @@ div.simpleLightBrownForm {
     .tools-dashboard .tool-tone-disable .dashboard-card {
         border-left-color: #7a3e2e;
         background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+    }
+
+    .tools-dashboard .tool-tone-backup .dashboard-card {
+        border-left-color: #2f6f8f;
+        background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
     }
 
     .tools-dashboard .tool-tone-clienttype .dashboard-card {
@@ -1406,7 +1367,6 @@ div.simpleLightBrownForm {
 
         .dashboard-links.tools-dashboard .dashboard-card p {
             margin: 0 0 6px 0;
-            font-size: 0.9em;
             line-height: 1.25;
         }
 
@@ -1415,7 +1375,6 @@ div.simpleLightBrownForm {
     .dashboard-links.tools-dashboard button {
         height: 28px !important;
         padding: 3px 10px !important;
-        font-size: 0.9em !important;
         min-width: 100px !important;
     }
 
@@ -1435,7 +1394,6 @@ div.simpleLightBrownForm {
             height: 26px !important;
             padding: 2px 8px !important;
             min-width: 90px !important;
-            font-size: 0.85em !important;
         }
 }
 
@@ -1453,7 +1411,6 @@ div.simpleLightBrownForm {
             height: 24px !important;
             padding: 2px 6px !important;
             min-width: 80px !important;
-            font-size: 0.8em !important;
         }
 }
 /* Mobile responsiveness */
@@ -1477,7 +1434,6 @@ div.simpleLightBrownForm {
         }
 
         .dashboard-card p {
-            font-size: 0.8em;
         }
 }
 
@@ -1635,7 +1591,6 @@ div.simpleLightBrownForm {
             padding: 12px 20px;
             margin: 0;
             border-bottom: 1px solid #eee;
-            font-size: 1.1em;
             text-align: left;
         }
 
@@ -1648,6 +1603,14 @@ div.simpleLightBrownForm {
             text-decoration: none;
             display: block;
             width: 100%;
+        }
+
+        .mobile-nav-menu .mobile-nav-icon {
+            height: 16px;
+            width: 16px;
+            vertical-align: middle;
+            margin-right: 6px;
+            border: 0;
         }
 }
 
@@ -1665,7 +1628,6 @@ button,
     padding: 6px 12px !important;
     border-radius: 4px !important;
     font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-    font-size: 1.1em !important;
     min-width: 40px !important;
     height: 32px !important;
     box-sizing: border-box !important;
@@ -1724,7 +1686,47 @@ button,
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.05rem;
+}
+
+/* Generic blocking confirmation modal (e.g. recurring order account-type prompt) */
+.confirm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(48, 42, 32, 0.45);
+}
+
+.confirm-modal {
+    background: #fff;
+    border: 1px solid var(--secondary-brown);
+    border-radius: 4px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    padding: 18px 22px;
+    max-width: 480px;
+    width: calc(100% - 32px);
+}
+
+.confirm-modal h2 {
+    margin: 0 0 10px;
+    color: var(--primary-brown);
+}
+
+.confirm-modal-option {
+    margin: 8px 0;
+}
+
+.confirm-modal-option label {
+    margin-left: 4px;
+}
+
+.confirm-modal-buttons {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .order-detail-toolbar {
@@ -1738,7 +1740,6 @@ button,
 .order-detail-toolbar .order-detail-btn,
 .order-detail-toolbar input[type="submit"].order-detail-btn,
 .order-detail-toolbar button.order-detail-btn {
-    font-size: 0.82em !important;
     height: 26px !important;
     min-width: auto !important;
     max-width: none !important;
@@ -1860,7 +1861,7 @@ button,
 /* Main filter toolbar container - replaces inconsistent form classes */
 .filter-toolbar {
     background: var(--secondary-green);
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 12px 15px;
     margin-bottom: 15px;
     display: flex;
@@ -1916,7 +1917,6 @@ button,
         color: #666;
         margin-right: 4px;
         white-space: nowrap;
-        font-size: smaller;
     }
 
     .filter-control select,
@@ -1925,7 +1925,6 @@ button,
         padding: 4px 6px;
         border: 1px solid #ccc;
         border-radius: 3px;
-        font-size: 0.85em;
         /*width: auto !important; /* Allow auto-width */
         flex: 1 !important; /* Allow to grow */
     }
@@ -1940,7 +1939,6 @@ button,
     padding: 4px 10px !important;
     border-radius: 4px !important;
     font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-    font-size: 0.9em !important;
     min-width: 40px !important;
     max-width: 160px !important;
     height: 30px !important;
@@ -1968,7 +1966,6 @@ button,
     padding: 4px 10px !important;
     border-radius: 4px !important;
     font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-    font-size: 0.9em !important;
     min-width: 40px !important;
     max-width: 160px !important;
     height: 30px !important;
@@ -2015,7 +2012,6 @@ a.image-button,
     padding: 4px 10px !important;
     border-radius: 4px !important;
     font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-    font-size: 0.9em !important;
     font-weight: 600 !important;
     line-height: 1.2 !important;
     height: auto !important;
@@ -2032,6 +2028,12 @@ a.image-button,
     text-decoration: none !important;
     vertical-align: middle;
     position: relative;
+}
+
+/* Beats display:inline-flex !important when Add Line must hide while the new-line form is open. */
+span.image-button.is-collapsed,
+a.image-button.is-collapsed {
+    display: none !important;
 }
 
 span.image-button:hover,
@@ -2055,6 +2057,8 @@ a.image-button > img {
     background: transparent !important;
     position: relative;
     z-index: 0;
+    /* Decorative sibling icons — clicks must hit the LinkButton ::after hit-target */
+    pointer-events: none;
 }
 
 span.image-button > input[type="image"] {
@@ -2093,7 +2097,9 @@ span.image-button > span {
     z-index: 1;
 }
 
-/* Full-shell click target (covers sibling icon without changing layout) */
+/* Full-shell click target (covers sibling icon without changing layout).
+   Parent span.image-button is position:relative — keep the link static so
+   ::after inset covers the whole green shell including the icon. */
 span.image-button > a::after {
     content: "";
     position: absolute;
@@ -2235,7 +2241,6 @@ span.image-button > a:hover {
     .date-input-group label {
         font-weight: 500;
         color: #666;
-        font-size: 0.9em;
         margin-right: 4px;
     }
 
@@ -2243,7 +2248,6 @@ span.image-button > a:hover {
         min-width: 60px;
         /* makes it too big max-width: 150px;*/
         padding: 2px 4px;
-        font-size: 0.85em;
         border: 1px solid #ccc;
         border-radius: 3px;
     }
@@ -2252,7 +2256,6 @@ span.image-button > a:hover {
 .custom-date-range button,
 .custom-date-range input[type="submit"] {
     padding: 4px 12px !important;
-    font-size: 0.9em !important;
     min-width: 60px !important;
     height: 32px !important;
     margin-left: 8px;
@@ -2373,7 +2376,6 @@ span.image-button > a:hover {
     .custom-date-range input[type="submit"] {
         min-width: 80px !important;
         padding: 3px 8px !important;
-        font-size: 0.8em !important;
         height: 28px !important;
     }
 }
@@ -2384,7 +2386,7 @@ span.image-button > a:hover {
 /* Main results container - replaces various grid containers */
 .results-container {
     background: var(--light-green);
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 10px;
     margin-bottom: 15px;
     width: 100%;
@@ -2396,7 +2398,7 @@ span.image-button > a:hover {
 
 @media (max-width: 900px) {
     .results-container {
-        border-radius: 8px;
+        border-radius: 4px;
         padding: 8px;
         margin-bottom: 8px;
     }
@@ -2411,9 +2413,8 @@ table.results-table {
     border-spacing: 0;
     margin: 0;
     font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
-    font-size: 0.9em;
     background: #fff;
-    border-radius: 8px;
+    border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     min-width: 600px; /* Minimum width to ensure readability */
@@ -2430,7 +2431,6 @@ table.results-table {
         border-right: 1px solid rgba(224, 224, 224, 0.5) !important;
         border-bottom: 1px solid rgba(224, 224, 224, 0.5) !important;
         vertical-align: middle !important;
-        /*font-size: .9em !important;*/
         display: table-cell;
     }
 
@@ -2449,6 +2449,8 @@ table.results-table.in-panel-grid {
     min-width: 0 !important;
     max-width: 100% !important;
     table-layout: auto !important;
+    /* Default .results-table uses overflow:hidden — that chops ComboBox bottom borders */
+    overflow: visible !important;
 }
 
 .results-table.results-table-fit th,
@@ -2464,6 +2466,23 @@ table.results-table.in-panel-grid td {
     white-space: nowrap !important;
     overflow: visible !important;
     text-overflow: clip !important;
+}
+
+/* ComboBox guts sit inside .results-table td — undo fit/in-panel width+padding */
+.results-table.in-panel-grid td.ajax__combobox_textboxcontainer,
+.results-table.in-panel-grid td.ajax__combobox_buttoncontainer,
+.results-table.results-table-fit td.ajax__combobox_textboxcontainer,
+.results-table.results-table-fit td.ajax__combobox_buttoncontainer,
+table.results-table.in-panel-grid td.ajax__combobox_textboxcontainer,
+table.results-table.in-panel-grid td.ajax__combobox_buttoncontainer,
+.results-table.in-panel-grid .ajax__combobox td,
+.results-table.results-table-fit .ajax__combobox td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    border: none !important;
+    vertical-align: middle !important;
 }
 
 /*
@@ -2575,7 +2594,6 @@ span.cmd-button-row {
     background-color: var(--primary-green) !important;
     color: #fff !important;
     border: 1px solid var(--primary-green) !important;
-    font-size: 0.82em !important;
     height: 26px !important;
     min-height: 26px !important;
     padding: 2px 8px !important;
@@ -2623,12 +2641,19 @@ table.InputFrm td.status-flags .status-flag > span {
     width: auto !important;
     max-width: none !important;
     box-sizing: border-box !important;
+    vertical-align: bottom !important;
 }
 
 .results-table.in-panel-grid .col-tight input[type="text"] {
     width: 4.5em !important;
     min-width: 4em !important;
     max-width: 6em !important;
+}
+
+.results-table.in-panel-grid .col-tight .small,
+.results-table.in-panel-grid td .small {
+    vertical-align: bottom !important;
+    line-height: 22px !important;
 }
 
 .results-table.in-panel-grid input[type="image"],
@@ -2638,14 +2663,46 @@ table.InputFrm td.status-flags .status-flag > span {
     vertical-align: bottom;
 }
 
-/* ComboBox: keep native toolkit table; glue textbox + arrow (no gap) */
+/* ComboBox: keep native toolkit table; glue textbox + arrow (no gap).
+   Option list is often a sibling UL inside the <td> (not only inside .ajax__combobox).
+   It must be position:absolute or it stretches the row and leaves controls top-aligned. */
+.ajax__combobox {
+    position: relative !important;
+}
+
+.ajax__combobox_itemlist,
+.ajax__combobox > ul,
+.results-table td > ul,
+.results-table td ul[id$="_OptionList"],
+.TblFlex td > ul,
+.TblFlex td ul[id$="_OptionList"],
+.new-order-item-table td > ul,
+.new-order-item-table td ul[id$="_OptionList"],
+ul[id$="_OptionList"] {
+    position: absolute !important;
+    left: 0 !important;
+    top: auto !important;
+    z-index: 10000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    box-sizing: border-box !important;
+}
+
 .results-table .ajax__combobox,
 .TblFlex .ajax__combobox,
 .new-order-item-table .ajax__combobox {
     display: inline-block !important;
     vertical-align: middle !important;
     margin: 0 !important;
+    padding: 0 !important;
     max-width: 100%;
+    /* Do not clamp outer height — max-height:22px was clipping the 1px borders */
+    height: auto !important;
+    max-height: none !important;
+    line-height: normal !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
 }
 
 .results-table .ajax__combobox_inputcontainer,
@@ -2659,20 +2716,33 @@ table.InputFrm td.status-flags .status-flag > span {
     max-width: 100% !important;
     table-layout: auto !important;
     margin: 0 !important;
+    padding: 0 !important;
 }
 
-.results-table .ajax__combobox_textboxcontainer,
-.results-table .ajax__combobox_buttoncontainer,
-.TblFlex .ajax__combobox_textboxcontainer,
-.TblFlex .ajax__combobox_buttoncontainer,
-.new-order-item-table .ajax__combobox_textboxcontainer,
-.new-order-item-table .ajax__combobox_buttoncontainer {
+/* ComboBox inner <td>s must NOT inherit results-table cell padding/borders —
+   that is what puts a gap between the textbox and the pull-down arrow. */
+.results-table td.ajax__combobox_textboxcontainer,
+.results-table td.ajax__combobox_buttoncontainer,
+.results-table .ajax__combobox td,
+.TblFlex td.ajax__combobox_textboxcontainer,
+.TblFlex td.ajax__combobox_buttoncontainer,
+.TblFlex .ajax__combobox td,
+.new-order-item-table td.ajax__combobox_textboxcontainer,
+.new-order-item-table td.ajax__combobox_buttoncontainer,
+.new-order-item-table .ajax__combobox td {
     display: table-cell !important;
     vertical-align: middle !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
+    border-right: none !important;
     background: transparent !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    position: static !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
 }
 
 .results-table .ajax__combobox_textboxcontainer,
@@ -2704,6 +2774,8 @@ table.InputFrm td.status-flags .status-flag > span {
     margin: 0 !important;
     box-sizing: border-box !important;
     vertical-align: middle !important;
+    border-right: none !important;
+    border-radius: 3px 0 0 3px !important;
 }
 
 .results-table .ajax__combobox_buttoncontainer button,
@@ -2719,10 +2791,11 @@ table.InputFrm td.status-flags .status-flag > span {
     height: 22px !important;
     min-height: 22px !important;
     max-height: 22px !important;
-    margin: 0 !important;
+    margin: 0 0 0 -1px !important; /* overlap shared border with textbox */
     padding: 0 !important;
     line-height: 20px !important;
     box-sizing: border-box !important;
+    border-radius: 0 3px 3px 0 !important;
 }
 
 .results-table .empty-data {
@@ -2744,7 +2817,6 @@ table.InputFrm td.status-flags .status-flag > span {
         background: #4e664d !important;
         color: #ffffff !important;
         font-weight: bold !important;
-        font-size: 1em !important;
         text-align: left !important;
         /* Match data-cell grid lines (was nearly invisible white-on-green) */
         border-right: 1px solid rgba(224, 224, 224, 0.65) !important;
@@ -2754,7 +2826,6 @@ table.InputFrm td.status-flags .status-flag > span {
     .results-table input[type="text"] {
         width: 100% !important;
         padding: 2px 4px !important;
-        font-size: 0.9em !important;
         border: 1px solid #ccc !important;
         border-radius: 3px !important;
         box-sizing: border-box !important;
@@ -2763,7 +2834,6 @@ table.InputFrm td.status-flags .status-flag > span {
 
     .results-table select {
         width: 100% !important;
-        font-size: 0.85em !important;
         padding: 1px 2px !important;
         border: 1px solid #ccc !important;
         border-radius: 3px !important;
@@ -2771,9 +2841,19 @@ table.InputFrm td.status-flags .status-flag > span {
     }
 
     .results-table input[type="checkbox"] {
-        margin: 0 !important;
+        margin: 0 6px 0 0 !important;
         transform: scale(1.1);
         accent-color: var(--primary-green);
+        vertical-align: middle;
+    }
+
+    /* Enabled Yes/No — space between tick and label text */
+    .results-table input[type="checkbox"] + label,
+    .results-table span > input[type="checkbox"] + label {
+        margin-left: 6px !important;
+        padding-left: 0 !important;
+        vertical-align: middle;
+        white-space: nowrap;
     }
 
     .results-table input[type="image"] {
@@ -2804,8 +2884,7 @@ table.InputFrm td.status-flags .status-flag > span {
 
         /* Also handle cases where the last column header indicates it's for actions */
         .results-table th:last-child[headertext=""],
-        .results-table th:last-child:empty,
-        .results-table th:last-child:contains("Action") {
+        .results-table th:last-child:empty {
             text-align: center;
         }
 
@@ -2820,8 +2899,9 @@ table.InputFrm td.status-flags .status-flag > span {
         background-color: #fff;
     }
 
-    .results-table tr:hover td,
-    table.results-table tr:hover td {
+    /* .keep-bg cells (e.g. Packaging colour swatches) keep their inline colour on hover */
+    .results-table tr:hover td:not(.keep-bg),
+    table.results-table tr:hover td:not(.keep-bg) {
         background-color: #e8f5e8 !important;
     }
 
@@ -2942,7 +3022,6 @@ table.InputFrm td.status-flags .status-flag > span {
         background: #4e664d !important;
         color: #ffffff !important;
         font-weight: bold !important;
-        font-size: 1em !important;
         text-align: left !important;
         /* Match data-cell grid lines (was nearly invisible white-on-green) */
         border-right: 1px solid rgba(224, 224, 224, 0.65) !important;
@@ -2991,7 +3070,6 @@ table.InputFrm td.status-flags .status-flag > span {
         width: 100% !important;
         min-width: 100% !important;
         table-layout: auto !important;
-        font-size: 0.85em !important;
     }
 
         #gvReoccuringOrders th,
@@ -3055,12 +3133,14 @@ table.InputFrm td.status-flags .status-flag > span {
 /* EXCLUSIONS FROM DEFAULT BUTTON STYLING     */
 /* ============================================ */
 
-/* Exclude ImageButtons from global styling to maintain natural size */
+/* Exclude ImageButtons from global styling to maintain natural size.
+   The *[id*="btn"] catch-all must NOT hit .pager-btn — those LinkButtons
+   keep their rounded border / hover chrome (GridPager). */
 input[type="image"],
 .results-table input[type="image"],
 .scrollable-table-container input[type="image"],
 *[id*="ImageButton"],
-*[id*="btn"]:not(button):not(input[type="submit"]):not(input[type="button"]) {
+*[id*="btn"]:not(button):not(input[type="submit"]):not(input[type="button"]):not(.pager-btn) {
     background: none !important;
     border: none !important;
     padding: 0 !important;
@@ -3134,7 +3214,7 @@ input[type="image"],
 
 .complex-form-section {
     background: var(--light-brown);
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 20px;
     width: 100%;
     box-sizing: border-box;
@@ -3157,13 +3237,13 @@ input[type="image"],
     .complex-form-section .ajax__tab_body {
         padding: 15px !important;
         background: #fff;
-        border-radius: 0 0 8px 8px;
+        border-radius: 0 0 4px 4px;
     }
 
 .button-toolbar-rounded {
     text-align: center;
     padding: 8px 12px;
-    border-radius: 15px;
+    border-radius: 4px;
     background-color: var(--light-green);
     margin: 10px 2px;
     border: 1px solid rgba(78, 102, 77, 0.2);
@@ -3279,7 +3359,6 @@ input[type="image"],
         background: var(--primary-green) !important;
         color: #fff !important;
         font-weight: bold !important;
-        font-size: 0.95em !important;
         padding: 8px 6px !important;
         text-align: left !important;
         border: none !important;
@@ -3309,10 +3388,7 @@ table.TblSimple {
     background: #fffff9;
     height: auto;
     line-height: 1.5em;
-    -webkit-border-radius: 15px;
-    -moz-border-radius: 15px;
-    -o-border-radius: 15px;
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 10px 10px;
 }
 
@@ -3333,7 +3409,6 @@ table.TblSimple {
 .TblSimple th,
 .TblWhite th {
     background-color: #9dD49c;
-    font-size: 120%;
 }
 
 .TblSimple tr:nth-child(even) {
@@ -3357,7 +3432,6 @@ table.InputFrm {
 
 .TblLHColHdr {
     font-family: Calibri, sans-serif, "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
-    font-size: 12px;
     min-width: 480px;
     text-align: left;
     padding: 0;
@@ -3367,7 +3441,6 @@ table.InputFrm {
 }
 
     .TblLHColHdr th {
-        font-size: 14px;
         font-weight: normal;
         color: #103010;
         padding: 12px 15px;
@@ -3405,7 +3478,7 @@ table.InputFrm {
 
 .responsive-layout-container {
     background: var(--light-green);
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 15px;
     margin: 0px;
     margin-bottom: 15px;
@@ -3588,12 +3661,198 @@ table.InputFrm {
     margin-left: auto !important;
 }
 
+/* Unsaved header edits — make Save visually ready (buttons stay enabled for persisted orders) */
+.page-tone-panel.page-tone-orders .order-detail-save-btn.order-detail-save-dirty,
+.page-tone-panel.page-tone-neworder .order-detail-save-btn.order-detail-save-dirty {
+    background-color: #607060 !important;
+    border-color: #3f4f3f !important;
+    box-shadow: 0 0 0 2px rgba(78, 102, 77, 0.35);
+}
+
+/* Order lines grid: only style GridView cells — not ComboBox inner <td>s.
+   (Bare `td` selectors were padding the arrow cell away from the textbox.) */
+@media (min-width: 769px) {
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > th,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > th,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > th,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > th,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td {
+        display: table-cell !important;
+        vertical-align: middle !important;
+        padding: 6px 8px !important; /* room so ComboBox borders are not clipped */
+        position: relative !important; /* containing block for ComboBox option lists */
+        overflow: visible !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid,
+    .page-tone-panel.page-tone-orders table.results-table.in-panel-grid,
+    .page-tone-panel.page-tone-neworder table.results-table.in-panel-grid {
+        overflow: visible !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(2),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td:nth-child(2),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td:nth-child(2) {
+        min-width: 0 !important;
+        width: 1% !important;
+        max-width: none !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > th:nth-child(4),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(4),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > th:nth-child(4),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(4),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > th:nth-child(4),
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td:nth-child(4),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > th:nth-child(4),
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td:nth-child(4) {
+        min-width: 0 !important;
+        width: 1% !important;
+        max-width: none !important;
+    }
+
+    /* View mode: keep Item labels readable; same middle align as icons */
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2) > span,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(2) > span,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2) > label,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(2) > label,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td:nth-child(2) > span,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td:nth-child(2) > span,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td:nth-child(2) > label,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td:nth-child(2) > label {
+        display: inline-block !important;
+        min-width: 14rem !important;
+        line-height: 22px !important;
+        vertical-align: middle !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td .small,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td .small,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td .small,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td .small,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td > input[type="image"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > input[type="image"],
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td > input[type="image"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td > input[type="image"],
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td > img,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > img,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td > img,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td > img {
+        vertical-align: middle !important;
+        line-height: 22px !important;
+    }
+
+    /* QTY textbox only (not ComboBox text inputs) */
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td > input[type="text"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > input[type="text"],
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td > input[type="text"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td > input[type="text"] {
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
+        box-sizing: border-box !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(2) .ajax__combobox,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(2) .ajax__combobox,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(4) .ajax__combobox,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(4) .ajax__combobox {
+        display: inline-block !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        vertical-align: middle !important;
+        overflow: visible !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(2) .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(2) .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(4) .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(4) .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(2) .ajax__combobox > table,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(2) .ajax__combobox > table,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(4) .ajax__combobox > table,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(4) .ajax__combobox > table {
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        table-layout: auto !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        vertical-align: middle !important;
+    }
+
+    /* Re-assert zero padding on ComboBox guts (beats GridView td padding) */
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid .ajax__combobox td,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid .ajax__combobox td,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td.ajax__combobox_textboxcontainer,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td.ajax__combobox_textboxcontainer,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td.ajax__combobox_buttoncontainer,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td.ajax__combobox_buttoncontainer {
+        padding: 0 !important;
+        border: none !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        position: static !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(2)
+        .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(2)
+        .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 16rem !important;
+        min-width: 16rem !important;
+        max-width: 16rem !important;
+        box-sizing: border-box !important;
+        border-right: none !important;
+    }
+
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td:nth-child(4)
+        .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td:nth-child(4)
+        .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 10rem !important;
+        min-width: 10rem !important;
+        max-width: 10rem !important;
+        box-sizing: border-box !important;
+        border-right: none !important;
+    }
+
+    /* Option lists that Toolkit parks as siblings inside the cell */
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td > ul,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > ul,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td > ul,
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td > ul,
+    .page-tone-panel.page-tone-orders .results-table.in-panel-grid td ul[id$="_OptionList"],
+    .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td ul[id$="_OptionList"] {
+        position: absolute !important;
+        z-index: 10000 !important;
+        margin: 0 !important;
+    }
+}
+
 /* New-item table: Item | Qty | Prep — same ComboBox glue as order-lines grid */
 .page-tone-panel.page-tone-orders .new-order-item-table,
 .page-tone-panel.page-tone-neworder .new-order-item-table {
-    width: 100%;
+    width: auto;
     max-width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th,
@@ -3603,27 +3862,6 @@ table.InputFrm {
     vertical-align: middle !important;
     white-space: nowrap;
     padding: 6px 8px !important;
-}
-
-.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(1),
-.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(1),
-.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(1),
-.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(1) {
-    width: 44%;
-}
-
-.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(2),
-.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(2),
-.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(2),
-.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(2) {
-    width: 16%;
-}
-
-.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(3),
-.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(3),
-.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(3),
-.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(3) {
-    width: 40%;
 }
 
 /* Qty must match ComboBox height (same as order-lines grid) */
@@ -3637,8 +3875,65 @@ table.InputFrm {
     margin: 0 !important;
     box-sizing: border-box !important;
     vertical-align: middle !important;
-    width: 100% !important;
+    width: auto !important;
     max-width: 6em !important;
+}
+
+/* New order line: keep Item / Qty / Prep compact on desktop instead of
+   stretching three small controls across the full editor panel. */
+@media (min-width: 769px) {
+    .page-tone-panel.page-tone-orders .new-order-item-form,
+    .page-tone-panel.page-tone-neworder .new-order-item-form {
+        display: inline-block;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table,
+    .page-tone-panel.page-tone-neworder .new-order-item-table {
+        width: auto !important;
+        max-width: 100% !important;
+        table-layout: auto !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(1),
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(1),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(1),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(1) {
+        width: 17rem !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(2),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(2),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(2) {
+        width: 5rem !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th:nth-child(3),
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(3),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th:nth-child(3),
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(3) {
+        width: 13rem !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(1)
+        .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(1)
+        .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 14rem !important;
+        min-width: 14rem !important;
+        max-width: 14rem !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td:nth-child(3)
+        .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td:nth-child(3)
+        .ajax__combobox_textboxcontainer input[type="text"] {
+        width: 10rem !important;
+        min-width: 10rem !important;
+        max-width: 10rem !important;
+    }
 }
 
 .instruction-dialog-host {
@@ -3658,7 +3953,7 @@ table.InputFrm {
     width: 100%;
     box-sizing: border-box;
     overflow: hidden;
-    border-radius: 14px;
+    border-radius: 4px;
     border: 1px solid rgba(176, 148, 72, 0.5);
     background: linear-gradient(180deg, #fffef8 0%, #fff9e8 100%);
     box-shadow:
@@ -3674,7 +3969,6 @@ table.InputFrm {
     padding: 14px 18px 12px;
     color: #5c4a1a;
     line-height: 1.5;
-    font-size: 0.95em;
 }
 
 .action-bar {
@@ -3700,7 +3994,6 @@ table.InputFrm {
         padding: 8px 14px !important;
         border-radius: 4px !important;
         font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-        font-size: 0.88em !important;
         min-width: 110px !important;
         min-height: 36px !important;
         height: auto !important;
@@ -3747,9 +4040,9 @@ table.InputFrm {
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between;
-    /* Add rounded box styling like the header */
+    /* Add box styling like the header */
     background: #fff; /* White background like TblSimple */
-    border-radius: 15px; /* Rounded corners */
+    border-radius: 4px;
     padding: 15px; /* Internal padding */
     border: 1px solid #E9E9D0; /* Subtle border like TblSimple */
 }
@@ -3757,7 +4050,7 @@ table.InputFrm {
 .layout-footer-panel {
     grid-area: footer; /* Always stays in footer row */
     background: var(--secondary-green);
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 8px 12px;
     margin-top: 15px;
     max-width: 100%;
@@ -3781,7 +4074,6 @@ table.InputFrm {
         padding: 2px 8px !important;
         border-radius: 4px !important;
         font-family: Tahoma, sans-serif, Helvetica, sans-serif !important;
-        font-size: 0.82em !important;
         min-width: 40px !important;
         height: 26px !important;
         min-height: 26px !important;
@@ -3868,14 +4160,14 @@ table.InputFrm {
 
     .new-order-item-table > tbody {
         display: block !important;
-        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .new-order-item-table > tbody > tr {
         display: flex !important;
         flex-direction: column !important;
         gap: 0.55rem !important;
-        width: 100% !important;
+        max-width: 100% !important;
         margin: 0 0 12px 0 !important;
         padding: 10px !important;
         border: 1px solid rgba(78, 102, 77, 0.2) !important;
@@ -3885,15 +4177,15 @@ table.InputFrm {
         overflow: visible !important;
     }
 
-    /* Same label + control row as order-lines grid (vertical middle) */
+    /* Same label + control row as order-lines grid (grid so ComboBoxes fill) */
     .new-order-item-table > tbody > tr > td {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
+        display: grid !important;
+        grid-template-columns: 3.25rem minmax(0, 1fr) auto;
         align-items: center !important;
-        gap: 8px !important;
+        column-gap: 8px !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
@@ -3903,20 +4195,21 @@ table.InputFrm {
 
     .new-order-item-table > tbody > tr > td::before {
         content: attr(data-label);
-        flex: 0 0 3.25rem;
-        display: flex !important;
-        align-items: center !important;
+        grid-column: 1;
+        grid-row: 1;
+        display: block !important;
         font-weight: 600;
-        font-size: 0.85rem;
         color: #4e664d;
         margin: 0 !important;
         line-height: 1.2 !important;
     }
 
     .new-order-item-table > tbody > tr > td[data-label="Qty"] input[type="text"] {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: start;
         width: 5em !important;
         max-width: 6em !important;
-        flex: 0 0 auto !important;
         height: 36px !important;
         min-height: 36px !important;
         max-height: 36px !important;
@@ -3927,23 +4220,41 @@ table.InputFrm {
     }
 
     .new-order-item-table .ajax__combobox {
+        grid-column: 2 / -1;
+        grid-row: 1;
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
-        flex: 1 1 auto !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
     }
 
-    .new-order-item-table .ajax__combobox_inputcontainer {
+    .new-order-item-table .ajax__combobox_inputcontainer,
+    .new-order-item-table .ajax__combobox > table {
         display: table !important;
         width: 100% !important;
+        max-width: 100% !important;
         border-collapse: collapse !important;
         border-spacing: 0 !important;
         table-layout: fixed !important;
     }
 
+    .new-order-item-table .ajax__combobox_textboxcontainer {
+        display: table-cell !important;
+        width: auto !important;
+    }
+
+    .new-order-item-table .ajax__combobox_buttoncontainer {
+        display: table-cell !important;
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+    }
+
     .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
+        display: block !important;
         width: 100% !important;
+        min-width: 0 !important;
         max-width: none !important;
         height: 36px !important;
         min-height: 36px !important;
@@ -3952,10 +4263,13 @@ table.InputFrm {
         padding: 0 8px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     .new-order-item-table .ajax__combobox_buttoncontainer button,
     .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
+        display: block !important;
         width: 28px !important;
         min-width: 28px !important;
         max-width: 28px !important;
@@ -3964,6 +4278,7 @@ table.InputFrm {
         max-height: 36px !important;
         margin: 0 !important;
         padding: 0 !important;
+        position: relative !important;
     }
 
     /* Order-lines grid on mobile: usable stacked form (label + control on one line).
@@ -4007,7 +4322,7 @@ table.InputFrm {
     .page-tone-orders .results-table.in-panel-grid > tbody,
     .page-tone-neworder .results-table.in-panel-grid > tbody {
         display: block !important;
-        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr,
@@ -4015,7 +4330,7 @@ table.InputFrm {
         display: flex !important;
         flex-direction: column !important;
         gap: 0.55rem;
-        width: 100% !important;
+        max-width: 100% !important;
         margin: 0 0 12px 0;
         padding: 10px;
         border: 1px solid rgba(78, 102, 77, 0.2);
@@ -4025,16 +4340,17 @@ table.InputFrm {
         overflow: visible !important;
     }
 
-    /* Each field: Label + control on the SAME row */
+    /* Each field: label | control. Grid (not flex) so ComboBoxes fill the
+       remaining width — flex left empty space and crushed the arrow onto text. */
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
+        display: grid !important;
+        grid-template-columns: 3.25rem minmax(0, 1fr) auto;
         align-items: center !important;
-        gap: 8px !important;
+        column-gap: 8px !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         white-space: nowrap !important;
         padding: 0 !important;
         border: none !important;
@@ -4043,20 +4359,38 @@ table.InputFrm {
         box-sizing: border-box !important;
     }
 
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td > input[type="hidden"],
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > input[type="hidden"] {
+        display: none !important;
+    }
+
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td::before,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td::before {
-        flex: 0 0 3.25rem;
+        grid-column: 1;
+        grid-row: 1;
         font-weight: 600;
-        font-size: 0.85rem;
         color: #4e664d;
         text-align: left;
     }
 
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(1),
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(1),
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(5),
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5),
+    .page-tone-orders .results-table.in-panel-grid .col-cmd,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd {
+        display: flex !important;
+        grid-template-columns: none;
+        justify-content: flex-start;
+        text-align: left !important;
+        max-width: none !important;
+    }
+
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before,
-    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before {
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before,
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before {
         content: none;
-        flex: 0 0 0;
-        width: 0;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2)::before,
@@ -4074,43 +4408,51 @@ table.InputFrm {
         content: "Prep";
     }
 
-    /* Trailing cmd/hidden cell — keep icons if any, no fake label */
-    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before,
-    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before {
-        content: none;
-        flex: 0 0 0;
-    }
-
-    .page-tone-orders .results-table.in-panel-grid .col-cmd,
-    .page-tone-neworder .results-table.in-panel-grid .col-cmd {
-        text-align: left !important;
-        max-width: none !important;
-        justify-content: flex-start;
-    }
-
-    /* ComboBox: fill width beside label; keep arrow glued (no wrap / no gap) */
+    /* ComboBox: fill the middle+right grid tracks; keep arrow glued. */
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox {
+        grid-column: 2 / -1;
+        grid-row: 1;
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
-        flex: 1 1 auto !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_inputcontainer,
-    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_inputcontainer {
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_inputcontainer,
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox > table,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox > table {
         display: table !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         border-collapse: collapse !important;
         border-spacing: 0 !important;
         table-layout: fixed !important;
     }
 
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_textboxcontainer,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_textboxcontainer {
+        display: table-cell !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer,
+    .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer {
+        display: table-cell !important;
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+    }
+
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_textboxcontainer input[type="text"],
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_textboxcontainer input[type="text"] {
+        display: block !important;
         width: 100% !important;
+        min-width: 0 !important;
         max-width: none !important;
         height: 36px !important;
         min-height: 36px !important;
@@ -4119,12 +4461,15 @@ table.InputFrm {
         padding: 0 8px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer input[type="button"],
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer input[type="button"] {
+        display: block !important;
         width: 28px !important;
         min-width: 28px !important;
         max-width: 28px !important;
@@ -4133,6 +4478,23 @@ table.InputFrm {
         max-height: 36px !important;
         margin: 0 !important;
         padding: 0 !important;
+        position: relative !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(3) > input[type="text"],
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(3) > input[type="text"] {
+        grid-column: 2;
+        grid-row: 1;
+        width: 5em !important;
+        max-width: 6em !important;
+        justify-self: start;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(3) .small,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(3) .small {
+        grid-column: 3;
+        grid-row: 1;
+        justify-self: start;
     }
 
     .new-order-item-actions {
@@ -4229,7 +4591,9 @@ table.InputFrm {
     }
 }
 
-/* Mobile responsive - switch to single column */
+/* Mobile responsive - switch to single column.
+   Order/NewOrder panel widths are set once in the earlier @768 shell;
+   this block only adds layout-area / grid stacking rules. */
 @media (max-width: 768px) {
     .responsive-layout-container {
         grid-template-columns: 1fr;
@@ -4239,26 +4603,21 @@ table.InputFrm {
             "footer"
             "status";
         gap: 15px;
-        width: 100%;
         max-width: 100%;
     }
 
     .page-tone-panel.page-tone-orders .responsive-layout-container,
     .page-tone-panel.page-tone-neworder .responsive-layout-container {
-        width: 100%;
         grid-template-columns: 1fr;
+        max-width: 100%;
     }
 
     .page-tone-panel.page-tone-orders,
     .page-tone-panel.page-tone-neworder {
-        width: 100% !important;
         max-width: 100% !important;
     }
 
-    .page-tone-panel.page-tone-orders .layout-main-panel,
-    .page-tone-panel.page-tone-neworder .layout-main-panel,
-    .page-tone-panel.page-tone-orders .layout-detail-panel,
-    .page-tone-panel.page-tone-neworder .layout-detail-panel,
+    /* These selectors are not covered by the earlier shell — keep full-bleed */
     .page-tone-panel.page-tone-orders .layout-panel-top,
     .page-tone-panel.page-tone-neworder .layout-panel-top,
     .page-tone-panel.page-tone-orders .layout-panel-bottom,
@@ -4275,7 +4634,6 @@ table.InputFrm {
     .page-tone-panel.page-tone-orders .layout-main-panel,
     .page-tone-panel.page-tone-neworder .layout-main-panel {
         max-width: 100% !important;
-        width: 100% !important;
         align-self: stretch !important;
         align-items: stretch !important;
     }
@@ -4284,13 +4642,13 @@ table.InputFrm {
     .page-tone-panel.page-tone-neworder .layout-detail-panel {
         align-items: stretch !important;
         align-self: stretch !important;
+        max-width: 100% !important;
     }
 
     .page-tone-panel.page-tone-orders .detail-form-table,
     .page-tone-panel.page-tone-neworder .detail-form-table,
     .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
     .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
-        width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
@@ -4300,7 +4658,6 @@ table.InputFrm {
     .page-tone-panel.page-tone-neworder .detail-form-table tr,
     .page-tone-panel.page-tone-orders .TblSimple.detail-form-table tr,
     .page-tone-panel.page-tone-neworder .TblSimple.detail-form-table tr {
-        width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
@@ -4309,13 +4666,11 @@ table.InputFrm {
     .page-tone-panel.page-tone-neworder .layout-main-panel > div,
     .page-tone-panel.page-tone-orders .order-detail-toolbar,
     .page-tone-panel.page-tone-neworder .order-detail-toolbar {
-        width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
 
     .order-detail-stack {
-        width: 100%;
         max-width: 100%;
     }
 
@@ -4338,7 +4693,6 @@ table.InputFrm {
             flex: 1 1 calc(50% - 10px);
             max-width: none;
             min-width: 0 !important;
-            font-size: 0.82em !important;
             padding: 10px 8px !important;
             min-height: 40px !important;
         }
@@ -4370,7 +4724,6 @@ table.InputFrm {
     .layout-footer-panel .btn,
     .layout-footer-panel .filter-panel-btn {
         padding: 10px 14px !important;
-        font-size: 1em !important;
         min-width: 44px !important;
         height: auto !important;
         min-height: 44px !important;
@@ -4406,7 +4759,6 @@ table.InputFrm {
             flex: 1 1 100%;
             width: 100%;
             max-width: none;
-            font-size: 0.8em !important;
             min-height: 42px !important;
         }
 
@@ -4420,7 +4772,6 @@ table.InputFrm {
         .layout-footer-panel .btn,
         .layout-footer-panel .filter-panel-btn {
             padding: 12px 14px !important;
-            font-size: 1em !important;
             min-width: 44px !important;
             height: auto !important;
             min-height: 48px !important;
@@ -4442,7 +4793,6 @@ table.InputFrm {
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     font-family: Calibri, 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;
-    font-size: 0.95em;
     border: 1px solid rgba(78, 102, 77, 0.3);
     table-layout: auto;
 }
@@ -4453,7 +4803,6 @@ table.InputFrm {
         background: var(--primary-green) !important;
         color: #fff !important;
         font-weight: bold;
-        font-size: 0.9em;
         padding: 8px 10px;
         text-align: left;
         border: none !important;
@@ -4518,7 +4867,6 @@ table.InputFrm {
         padding: 4px 6px;
         border: 1px solid rgba(78, 102, 77, 0.4);
         border-radius: 4px;
-        font-size: 0.9em;
         box-sizing: border-box;
         background: #fff;
     }
@@ -4540,7 +4888,6 @@ table.InputFrm {
         min-height: 1em;
         height: 1.8em !important;
         padding: initial;
-        font-size: 12px !important;
         font-family: inherit !important;
         color: #333 !important;
         display: inline-block !important;
@@ -4596,7 +4943,6 @@ table.InputFrm {
 /* Large desktop */
 @media (min-width: 1200px) {
     .TblFlex {
-        font-size: 1em;
     }
 
         .TblFlex th,
@@ -4614,7 +4960,6 @@ table.InputFrm {
 /* Tablet breakpoint */
 @media (max-width: 1024px) {
     .TblFlex {
-        font-size: 0.9em;
     }
 
         .TblFlex th,
@@ -4633,7 +4978,6 @@ table.InputFrm {
 /* Mobile breakpoint - much more compact */
 @media (max-width: 768px) {
     .TblFlex {
-        font-size: 0.8em;
         border-radius: 6px;
     }
 
@@ -4643,7 +4987,6 @@ table.InputFrm {
         }
 
         .TblFlex th {
-            font-size: 0.8em;
             padding: 6px 6px;
         }
 
@@ -4651,7 +4994,6 @@ table.InputFrm {
         .TblFlex select,
         .TblFlex textarea {
             max-width: 120px;
-            font-size: 0.85em;
             padding: 3px 5px;
         }
 
@@ -4664,14 +5006,12 @@ table.InputFrm {
             min-width: 16px !important;
             height: auto !important;
             padding: 1px 2px !important;
-            font-size: 10px !important;
         }
 
         .TblFlex input[type="submit"],
         .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
         .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
             padding: 3px 6px !important;
-            font-size: 0.75em !important;
             height: 20px !important;
             min-width: 12px !important;
         }
@@ -4693,7 +5033,6 @@ table.InputFrm {
 @media (max-width: 480px) {
     .TblFlex {
         border-radius: 4px;
-        font-size: 0.75em;
     }
 
         .TblFlex th,
@@ -4704,7 +5043,6 @@ table.InputFrm {
         }
 
         .TblFlex th {
-            font-size: 0.75em;
             padding: 4px 4px;
         }
 
@@ -4712,7 +5050,6 @@ table.InputFrm {
         .TblFlex select,
         .TblFlex textarea {
             max-width: 90px;
-            font-size: 0.8em;
             padding: 2px 4px;
         }
 
@@ -4724,14 +5061,12 @@ table.InputFrm {
             width: 14px !important;
             min-width: 14px !important;
             padding: 1px !important;
-            font-size: 9px !important;
         }
 
         .TblFlex input[type="submit"],
         .TblFlex input[type="button"]:not(.ajax__combobox_button):not([class*="ajax__combobox"]),
         .TblFlex button:not(.ajax__combobox_button):not([class*="ajax__combobox"]) {
             padding: 2px 4px !important;
-            font-size: 0.7em !important;
             height: 20px !important;
             min-width: 25px !important;
         }
@@ -4775,7 +5110,6 @@ table.InputFrm {
     .TblFlex .empty-data,
     .TblFlex .simpleLightBrownForm {
         padding: 15px 10px;
-        font-size: 0.85em;
         margin: 5px;
     }
 }
@@ -4912,11 +5246,21 @@ table.results-table:has(.col-priority-5) {
         min-width: 350px !important;
     }
 
-    /* In-panel edit grids still hug content (Order lines, Lookups area days) */
+    /* In-panel edit grids still hug content on tablet.
+       Order Detail mobile (<=768) stacks rows and must keep full width. */
     .results-table.in-panel-grid,
     table.results-table.in-panel-grid {
         table-layout: auto !important;
         width: max-content !important;
+        min-width: 0 !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid,
+    .page-tone-neworder .results-table.in-panel-grid,
+    .page-tone-orders table.results-table.in-panel-grid,
+    .page-tone-neworder table.results-table.in-panel-grid {
+        width: 100% !important;
+        max-width: 100% !important;
         min-width: 0 !important;
     }
 
@@ -5216,7 +5560,6 @@ input.passwordEntry {
     input[type="text"],
     input[type="password"],
     input[type="email"] {
-        font-size: 14px !important; /* Prevent zoom on iOS */
         padding: 2px 4px !important;
     }
 
@@ -5227,7 +5570,6 @@ input.passwordEntry {
         .filter-toolbar input[type="text"],
         .filter-toolbar select {
             min-width: 80px !important;
-            font-size: 12px !important;
             width: 100% !important; /* Full width on very small screens */
         }
 
@@ -5236,14 +5578,12 @@ input.passwordEntry {
         display: block !important;
         /*width: 100% !important;*/
         margin-bottom: 2px !important;
-        font-size: 0.85em !important;
         align-self: flex-start;
     }
 
     /* Ensure login form doesn't overflow */
     fieldset.login input[type="text"],
     fieldset.login input[type="password"] {
-        font-size: 14px !important;
         padding: 8px 6px !important;
     }
 
@@ -5310,7 +5650,7 @@ table.InputFrm {
     table.InputFrm textarea {
         max-width: 100% !important;
         box-sizing: border-box !important;
-        font-size: 14px !important; /* Prevent iOS zoom */
+        font-size: 16px !important; /* Prevent iOS zoom */
     }
 
 /* DeliverySheet Totals table rounding fix */
@@ -5408,7 +5748,6 @@ table.InputFrm {
                 font-weight: bold !important;
                 color: var(--primary-green) !important;
                 margin-bottom: 6px !important;
-                font-size: 0.9em !important;
                 text-transform: capitalize !important;
             }
 
@@ -5416,11 +5755,7 @@ table.InputFrm {
             .TblMudZebra td:empty,
             .TblCoffee td:empty,
             .detail-form-table td:empty,
-            table.InputFrm td:empty,
-            .TblMudZebra td:contains("&nbsp;"),
-            .TblCoffee td:contains("&nbsp;"),
-            .detail-form-table td:contains("&nbsp;"),
-            table.InputFrm td:contains("&nbsp;") {
+            table.InputFrm td:empty {
                 display: none !important;
             }
 
@@ -5491,7 +5826,6 @@ table.InputFrm {
                 max-width: 300px !important;
                 margin: 6px auto !important;
                 padding: 12px 16px !important;
-                font-size: 1em !important;
                 border-radius: 6px !important;
                 border: none !important;
                 background: var(--primary-green) !important;
@@ -5622,7 +5956,6 @@ table.InputFrm {
             width: 100% !important;
             margin: 4px 0 !important;
             padding: 10px 12px !important;
-            font-size: 0.9em !important;
         }
 }
 
@@ -5643,7 +5976,6 @@ table.InputFrm {
     }
 
     .ajax__tab_tab {
-        font-size: 0.9em !important;
         padding: 8px 12px !important;
         min-width: auto !important;
     }
@@ -5676,7 +6008,6 @@ table.InputFrm {
         .ajax__tab_body table[id*="gv"] th,
         .ajax__tab_body table[id*="gv"] td {
             padding: 4px 6px !important;
-            font-size: 0.8em !important;
             white-space: nowrap !important;
         }
 }
@@ -5736,7 +6067,6 @@ table.results-table tr[style*="background-color: #63cb66"],
 .TblMudZebra .ajax__calendar_months,
 .TblMudZebra .ajax__calendar_years {
     box-sizing: border-box;
-    font-size: 10px !important;
     font-family: tahoma,verdana,helvetica !important;
     /*background: #fff !important;*/
     /*color: #333 !important;*/
@@ -5829,15 +6159,91 @@ td.wordwrap {
     margin-right: 0 !important;
 }
 
+/* Numbered pager: "Previous | 1 2 [3] 4 5 | Next" (built in code-behind).
+   Selectors deliberately beat .results-table a and the *[id*="btn"] ImageButton
+   exclusion so LinkButtons keep their border / hover fill (rounded like filter buttons). */
+.results-table tr.pager-row > td,
+table.results-table tr.pager-row > td {
+    text-align: left !important;
+    padding: 6px 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    border: none !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+}
+
+.pager-nav {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.pager-nav a.pager-btn,
+.pager-nav span.pager-btn,
+.results-table .pager-nav a.pager-btn,
+.results-table .pager-nav span.pager-btn,
+table.results-table .pager-nav a.pager-btn,
+table.results-table .pager-nav span.pager-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 2.1rem !important;
+    height: 2.1rem !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    border: 1px solid #4e664d !important;
+    border-radius: 4px !important; /* match filter-panel / image-button */
+    background: #fff !important;
+    color: #4e664d !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    overflow: visible !important;
+    cursor: pointer !important;
+}
+
+.pager-nav a.pager-btn:hover,
+.results-table .pager-nav a.pager-btn:hover,
+table.results-table .pager-nav a.pager-btn:hover {
+    background: #4e664d !important;
+    border-color: #4e664d !important;
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
+.pager-nav span.pager-btn.pager-current,
+.results-table .pager-nav span.pager-btn.pager-current {
+    background: #4e664d !important;
+    border-color: #4e664d !important;
+    color: #fff !important;
+    cursor: default !important;
+}
+
+.pager-nav span.pager-btn.pager-disabled,
+.results-table .pager-nav span.pager-btn.pager-disabled {
+    opacity: 0.45;
+    cursor: default !important;
+}
+
+.pager-nav .pager-ellipsis {
+    padding: 0 2px;
+    color: #6b7a6b;
+}
+
 /* Status message styles */
 .status-message {
     margin-top: 8px;
     padding: 10px 16px;
-    border-radius: 10px;
+    border-radius: 4px;
     border: 1px solid #d9e2ec;
     background: #f5f7fa;
     color: #2f3b48;
-    font-size: 0.9rem;
     line-height: 1.35;
     width: auto;
     max-width: 100%;
@@ -5891,7 +6297,6 @@ td.wordwrap {
     background: #fff;
     border: 1px solid #ccc;
     font-family: Arial, sans-serif;
-    font-size: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
@@ -5982,7 +6387,7 @@ td.wordwrap {
     max-width: 42rem;
     margin-top: 8px;
     padding: 16px 20px 20px;
-    border-radius: 10px;
+    border-radius: 4px;
     border: 1px solid #e2d0d0;
     border-left: 5px solid #8b3a3a;
     background: linear-gradient(135deg, #f5e4e4 0%, #fff 72%);
@@ -6008,7 +6413,7 @@ td.wordwrap {
     box-sizing: border-box;
     margin-top: 0;
     padding: 16px 20px 20px;
-    border-radius: 10px;
+    border-radius: 4px;
     border: 1px solid #ccd6e6;
     border-left: 5px solid #3d5a80;
     background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%);
@@ -6053,6 +6458,99 @@ td.wordwrap {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+}
+
+/* Week date filter (Weekly Summary + Items Required) — same clean input chrome on both pages.
+   Must beat .detail-form-table card/borders so the toolbars match. */
+.page-tone-toolbar:has(.date-range-toolbar) {
+    display: block;
+}
+
+.page-tone-toolbar table.date-range-toolbar.detail-form-table,
+.page-tone-toolbar table.date-range-toolbar {
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+}
+
+.page-tone-toolbar table.date-range-toolbar td {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 6px 8px !important;
+    vertical-align: middle !important;
+}
+
+.page-tone-toolbar table.date-range-toolbar td.TblLHCol-first {
+    width: 7.5em;
+    white-space: nowrap;
+    font-weight: 600 !important;
+    color: #292909 !important;
+    background: transparent !important;
+    border: none !important;
+    padding-right: 12px !important;
+}
+
+.page-tone-toolbar table.date-range-toolbar td > span.image-button {
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+/* Clean date fields / select — no box borders */
+.page-tone-toolbar .date-field-clean,
+.page-tone-toolbar input.date-field-clean,
+.page-tone-toolbar table.date-range-toolbar input.date-field-clean,
+.page-tone-toolbar table.date-range-toolbar input[type="text"] {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 2px 4px !important;
+    min-width: 7.5em;
+    width: auto !important;
+    max-width: none !important;
+    font-weight: 600 !important;
+    color: #292909 !important;
+}
+
+.page-tone-toolbar .date-field-clean:focus,
+.page-tone-toolbar table.date-range-toolbar input.date-field-clean:focus,
+.page-tone-toolbar table.date-range-toolbar input[type="text"]:focus {
+    border: none !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.page-tone-toolbar table.date-range-toolbar select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 2px 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 12em;
+    font-weight: 600 !important;
+    color: #292909 !important;
+}
+
+.page-tone-toolbar table.date-range-toolbar .button-row {
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
 }
 
 .page-tone-toolbar select {
@@ -6157,6 +6655,27 @@ td.wordwrap {
     color: #9a6b1f;
 }
 
+/* Related order line → Order Detail link on Repair Detail */
+a.repair-related-order-link {
+    color: #4e664d !important;
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+}
+
+a.repair-related-order-link:hover {
+    color: #2f4a2e !important;
+}
+
+a.repair-related-order-link.is-disabled,
+a.repair-related-order-link:not([href]),
+a.repair-related-order-link[href=""] {
+    color: inherit !important;
+    font-weight: normal !important;
+    text-decoration: none !important;
+    cursor: default !important;
+}
+
 .page-tone-orders {
     border-color: #e8d4bc;
     border-left-color: #c47a2c;
@@ -6213,6 +6732,20 @@ td.wordwrap {
     color: #5a4a2f;
 }
 
+.page-tone-required {
+    border-color: #e8d0d0;
+    border-left-color: #8b3a3a;
+    background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+}
+
+.page-tone-required .page-tone-header {
+    border-bottom-color: rgba(139, 58, 58, 0.15);
+}
+
+.page-tone-required .page-tone-title {
+    color: #8b3a3a;
+}
+
 .page-tone-lookups {
     border-color: #d4e0c8;
     border-left-color: #4a6b3a;
@@ -6227,12 +6760,114 @@ td.wordwrap {
     color: #4a6b3a;
 }
 
+/* Lookups tab toolbars: search on the left, tab icon right-justified */
+.lookups-tab-toolbar {
+    justify-content: space-between;
+}
+
+.lookups-tab-toolbar .filter-section.search-controls {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.lookups-tab-toolbar .lookups-tab-icon-wrap {
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.lookups-tab-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Packaging colour picker: in-cell colour input over icon (anchors OS picker to the cell) */
+.page-tone-lookups .scrollable-table-container:has(.packaging-color-col),
+.page-tone-lookups table.results-table.results-table-fit:has(.packaging-color-col) {
+    overflow: visible !important;
+}
+
+.page-tone-lookups .results-table th.packaging-color-col,
+.page-tone-lookups .results-table td.packaging-color-col {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    min-width: max-content !important;
+    width: 1% !important;
+    padding: 6px 12px !important;
+    vertical-align: middle !important;
+    box-sizing: border-box !important;
+}
+
+.page-tone-lookups .packaging-color-editor {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    vertical-align: middle;
+}
+
+.page-tone-lookups .packaging-color-hex {
+    width: 6.5em !important;
+    min-width: 6.5em !important;
+    max-width: 6.5em !important;
+    margin: 0 !important;
+    flex: 0 0 auto;
+    vertical-align: middle;
+}
+
+.page-tone-lookups .packaging-color-swatch {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background: #fff;
+    vertical-align: middle;
+    overflow: visible;
+}
+
+.page-tone-lookups .packaging-color-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Real colour control — nearly invisible but keeps a layout box for picker anchoring */
+.page-tone-lookups .packaging-color-hit {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    opacity: 0.02;
+    z-index: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
 .page-tone-groups {
+    width: fit-content;
+    max-width: 100%;
     border-color: #c5dde6;
     border-left-color: #1f6f8a;
     background: linear-gradient(135deg, #dceef4 0%, #fff 70%);
-    width: fit-content;
-    max-width: 100%;
     box-sizing: border-box;
 }
 
@@ -6428,7 +7063,6 @@ td.wordwrap {
 
 .page-tone-users fieldset legend {
     color: #3d5a80;
-    font-size: 1em;
     padding: 0 6px;
 }
 
@@ -6519,29 +7153,31 @@ td.wordwrap {
     box-sizing: border-box !important;
 }
 
-/* Dual-list transfer layout (Item Groups and similar admin tools) */
+/* Dual-list transfer layout (Item Groups and similar admin tools).
+   Desktop: hug content (fit-content). Mobile (@768) forces full-width stack. */
 .dual-list-layout {
     display: flex;
     flex-wrap: nowrap;
     gap: 12px;
     align-items: stretch; /* equal-height columns */
-    width: max-content;
+    width: fit-content;
     max-width: 100%;
     box-sizing: border-box;
+    overflow-x: auto;
 }
 
 .dual-list-panel {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
     align-self: stretch;
-    width: max-content;
+    width: fit-content;
     max-width: 100%;
-    min-width: 0;
+    min-width: 12rem;
     min-height: 100%;
     /* Single card chrome — grid itself stays flat */
     background: #fff;
-    border-radius: 15px;
+    border-radius: 4px;
     padding: 12px 14px;
     border: 1px solid #c5dde6;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -6556,7 +7192,7 @@ td.wordwrap {
 .dual-list-panel .results-table,
 .dual-list-panel table.results-table,
 .dual-list-panel .results-table.in-panel-grid {
-    width: max-content !important;
+   /* width: 100% !important;*/
     min-width: 0 !important;
     max-width: 100% !important;
     box-shadow: none !important;
@@ -6591,10 +7227,37 @@ td.wordwrap {
 
 .dual-list-panel-title {
     margin: 0 0 8px 0;
-    font-size: 1rem;
     font-weight: 600;
     color: #1f6f8a;
     letter-spacing: 0.02em;
+}
+
+.dual-list-avail-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin: 0 0 10px 0;
+}
+
+.dual-list-avail-filter .dual-list-filter-input {
+    flex: 1 1 8rem;
+    min-width: 6rem;
+    max-width: 16rem;
+    height: 32px;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    border: 1px solid #9aab92;
+    border-radius: 4px;
+}
+
+.dual-list-avail-filter input.dual-list-filter-icon[type="image"] {
+    width: 16px !important;
+    height: 16px !important;
+    max-height: 16px !important;
+    flex: 0 0 16px;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .dual-list-actions {
@@ -6609,7 +7272,7 @@ td.wordwrap {
     margin: 0;
     background: #fff;
     border: 1px solid #c5dde6;
-    border-radius: 15px;
+    border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     box-sizing: border-box;
     min-width: 7.75rem;
@@ -6636,7 +7299,6 @@ td.wordwrap {
     background-position: 8px center !important;
     background-size: 16px 16px !important;
     font-weight: 600 !important;
-    font-size: 0.9em !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
     text-decoration: none !important;
@@ -6735,7 +7397,6 @@ td.wordwrap {
         height: auto !important;
         max-height: none !important;
         padding: 10px 14px 10px 36px !important;
-        font-size: 1em !important;
         justify-content: flex-start !important;
     }
 
@@ -6790,7 +7451,6 @@ td.wordwrap {
 
 .lookups-areas-days-title {
     margin: 0 0 10px 0;
-    font-size: 1rem;
     color: #4a6b3a;
     text-transform: none;
     letter-spacing: normal;
@@ -6801,7 +7461,9 @@ td.wordwrap {
     flex: 1 1 auto;
     overflow-x: hidden;
     overflow-y: auto;
-    max-height: 520px;
+    /* Grow with the screen so a full page (15 rows + insert footer + pager)
+       fits without an inner scrollbar; 520px floor for short viewports. */
+    max-height: max(520px, calc(100vh - 280px));
     max-width: 100%;
 }
 
@@ -6938,7 +7600,7 @@ table.grouping-table {
     margin: 0 0 14px;
     padding: 10px 12px 12px;
     border: 1px solid #d5e3eb;
-    border-radius: 8px;
+    border-radius: 4px;
     background: rgba(255, 255, 255, 0.7);
 }
 
@@ -7012,20 +7674,18 @@ table.grouping-table .image-button > a {
 .grouping-card-title-link,
 .grouping-card-title-label {
     font-weight: 600;
-    font-size: 18px;
+    font-size: 1.125em;
     line-height: 1.2;
     color: #2f6f8f;
 }
 
 .grouping-card-count {
-    font-size: 0.85rem;
     color: #666;
     white-space: nowrap;
 }
 
 /* Compact status chip (enabled/disabled, etc.) — reusable */
 .status-badge {
-    font-size: 0.8rem;
     font-weight: 600;
     text-transform: lowercase;
     padding: 2px 8px;
@@ -7208,7 +7868,7 @@ table.recurring-order-editor-grid .col-ro-recurrence select {
 table.recurring-order-editor-grid input.col-ro-narrow-input,
 table.recurring-order-editor-grid .col-ro-qty input[type="text"],
 table.recurring-order-editor-grid .col-ro-value input[type="text"] {
-    width: 100% !important;
+    width: auto !important;
     max-width: 52px !important;
     margin: 0 auto !important;
     display: block !important;
@@ -7217,7 +7877,7 @@ table.recurring-order-editor-grid .col-ro-value input[type="text"] {
 
 table.recurring-order-editor-grid input.col-ro-date-input,
 table.recurring-order-editor-grid .col-ro-date input[type="text"] {
-    width: 100% !important;
+    width: auto !important;
     max-width: 96px !important;
 }
 
@@ -7254,7 +7914,6 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
 
 .recurring-order-pending-calc .pending-calc-indicator {
     color: #856404;
-    font-size: 0.9rem;
 }
 
 .recurring-order-calculated-date {
@@ -7268,7 +7927,7 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     box-sizing: border-box;
     margin-top: 8px;
     padding: 16px 20px 20px;
-    border-radius: 10px;
+    border-radius: 4px;
     border: 1px solid #d0e3ec;
     border-left: 5px solid #2f6f8f;
     background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
@@ -7302,7 +7961,7 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
 
 .xmltosql-panel .file-browser {
     border: 1px solid #c5dbe6;
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 10px 12px;
     margin: 10px 0 0;
     background: rgba(255, 255, 255, 0.72);
@@ -7433,13 +8092,13 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
 /* ============================================================ */
 /* Order Detail mobile: head cards match items width            */
 /* (beats universal detail-form padding:15px green shell)       */
+/* Widths already set in earlier @768 shells — chrome only here */
 /* ============================================================ */
 @media (max-width: 768px) {
     .page-tone-panel.page-tone-orders .layout-main-panel,
     .page-tone-panel.page-tone-neworder .layout-main-panel,
     .page-tone-panel.page-tone-orders .layout-detail-panel,
     .page-tone-panel.page-tone-neworder .layout-detail-panel {
-        width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
         align-self: stretch !important;
@@ -7451,7 +8110,6 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     .page-tone-panel.page-tone-neworder .detail-form-table,
     .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
     .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
-        width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 0 8px 0 !important;
@@ -7466,7 +8124,6 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     .page-tone-panel.page-tone-neworder .detail-form-table tr,
     .page-tone-panel.page-tone-orders .TblSimple.detail-form-table tr,
     .page-tone-panel.page-tone-neworder .TblSimple.detail-form-table tr {
-        width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
         margin-bottom: 12px !important;
@@ -7485,7 +8142,6 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     .page-tone-panel.page-tone-neworder .layout-main-panel > div,
     .page-tone-panel.page-tone-orders .order-detail-toolbar,
     .page-tone-panel.page-tone-neworder .order-detail-toolbar {
-        width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }

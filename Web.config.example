@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  EXAMPLE configuration — copy to Web.config and fill in real values.
+  Do not commit real passwords into source control.
+-->
+<configuration>
+	<appSettings>
+		<add key="Version" value="3.0.0.1" />
+		<add key="SysEmailFrom" value="orders@mydomain.co.za" />
+		<add key="SysCCEmailAddress" value="orders@mydomain.co.za" />
+		<add key="EMailLogIn" value="noreply@mydomain.co.za" />
+		<add key="EMailPassword" value="password" />
+		<add key="EMailSMTP" value="smtp.office365.com" />
+		<add key="EMailPort" value="587" />
+		<add key="EMailSSLEnabled" value="true" />
+		<add key="GMailSMTP" value="mail.mydomain.co.za" />
+		<add key="DefaultDeliveryID" value="6" />
+		<add key="EmailSocketOption" value="StartTls" />
+		<add key="EmailTimeout" value="60000" />
+		<add key="AppTimeZoneId" value="South Africa Standard Time" />
+		<add key="DisableClientSecret" value="password" />
+		<add key="ApplicationBaseUrl" value="" />
+		<add key="EmailTestMode" value="true" />
+		<add key="EmailTestRecipient" value="test@mydomain.co.za" />
+		<add key="EnableDatabaseDetailedLogging" value="false" />
+		<add key="CoffeeCheckupReminderWindowDays" value="9" />
+		<add key="CoffeeCheckupReminderWindowMin" value="5" />
+		<add key="CoffeeCheckupReminderWindowMax" value="30" />
+		<add key="CoffeeCheckupMinMonthlyRecurringDays" value="20" />
+		<add key="CoffeeCheckupDateMatrixTTLMinutes" value="10" />
+		<add key="CoffeeCheckupDateMatrixBufferDays" value="5" />
+		<add key="CoffeeCheckupUseSqlMatrix" value="false" />
+		<add key="CoffeeCheckupRebuildIfSourceChanges" value="true" />
+		<add key="TestNow.Enabled" value="false" />
+		<add key="TestNow.Value" value="2025-10-12" />
+		<add key="TestNow.InputKind" value="Local" />
+		<add key="HolidayClosureImminentDays" value="4" />
+		<add key="ContactRepairHistoryMonths" value="48" />
+		<add key="RequestChanges.NotifyEmail" value="true" />
+		<add key="DisableAccessDb" value="true" />
+		<!-- When true: App_Data/email.log + App_Data/pre_send_*.eml dumps -->
+		<add key="EnableEmailLogging" value="false" />
+		<!-- Legacy alias for pre_send_*.eml only; prefer EnableEmailLogging -->
+		<add key="EmailDebugSaveMime" value="false" />
+		<!-- Slow-load diagnosis: logs to App_Data/timing.log + Debug. Set false when done. -->
+		<add key="EnableRequestTiming" value="false" />
+	</appSettings>
+	<connectionStrings>
+		<!-- App data (and aspnet_* if you re-enable membership later) -->
+		<add name="TrackerDataSQL" connectionString="Data Source=.\SQLExpress;Initial Catalog=OtterDb;Persist Security Info=True;User ID=sa;Password=password" providerName="System.Data.SqlClient" />
+	</connectionStrings>
+	<system.web>
+		<compilation debug="true" targetFramework="4.8">
+			<assemblies>
+				<add assembly="System.Web.Extensions.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" />
+				<add assembly="System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=B03F5F7F11D50A3A" />
+				<add assembly="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=B77A5C561934E089" />
+			</assemblies>
+		</compilation>
+		<httpRuntime targetFramework="4.8" />
+
+		<authentication mode="Forms">
+			<forms loginUrl="~/Account/Login.aspx" timeout="2880" />
+		</authentication>
+		<authorization>
+			<allow roles="Administrators, Agent Manager, Agents, Repair" />
+			<deny users="?" />
+		</authorization>
+		<membership>
+			<providers>
+				<clear />
+				<add name="AspNetSqlMembershipProvider" type="System.Web.Security.SqlMembershipProvider" connectionStringName="TrackerDataSQL" enablePasswordRetrieval="false" enablePasswordReset="true" requiresQuestionAndAnswer="false" requiresUniqueEmail="true" maxInvalidPasswordAttempts="5" minRequiredPasswordLength="6" minRequiredNonalphanumericCharacters="1" passwordAttemptWindow="10" applicationName="/" />
+			</providers>
+		</membership>
+		<profile>
+			<providers>
+				<clear />
+				<add name="AspNetSqlProfileProvider" type="System.Web.Profile.SqlProfileProvider" connectionStringName="TrackerDataSQL" applicationName="/" />
+			</providers>
+		</profile>
+		<roleManager enabled="true">
+			<providers>
+				<clear />
+				<add connectionStringName="TrackerDataSQL" applicationName="/" name="AspNetSqlRoleProvider" type="System.Web.Security.SqlRoleProvider" />
+				<add applicationName="/" name="AspNetWindowsTokenRoleProvider" type="System.Web.Security.WindowsTokenRoleProvider" />
+			</providers>
+		</roleManager>
+
+		<pages controlRenderingCompatibilityVersion="3.5" clientIDMode="AutoID">
+			<controls>
+				<add tagPrefix="ajaxToolkit" assembly="AjaxControlToolkit" namespace="AjaxControlToolkit" />
+			</controls>
+		</pages>
+		<customErrors mode="Off" />
+		<!-- Generate your own keys for production (IIS Manager → Machine Key, or Tools/GenMachineKeys.aspx) -->
+		<machineKey decryptionKey="ENTER_DECRYPTION_KEY_HERE" validationKey="ENTER_VALIDATION_KEY_HERE" />
+	</system.web>
+
+	<location path="Default.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<!-- Login must be anonymous-reachable under deny ? -->
+	<location path="Account/Login.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<system.webServer>
+		<modules runAllManagedModulesForAllRequests="false" />
+		<directoryBrowse enabled="true" />
+		<defaultDocument>
+			<files>
+				<clear />
+				<add value="Default.aspx" />
+			</files>
+		</defaultDocument>
+		<httpErrors errorMode="Detailed" />
+		<urlCompression doDynamicCompression="false" />
+		<caching enabled="false" />
+		<rewrite>
+			<rules>
+				<rule name="PublicOrderToken" stopProcessing="true">
+					<match url="^o/([A-Za-z0-9_\-~.=]+)$" />
+					<action type="Rewrite" url="Pages/ViewMyOrder.aspx?t={R:1}" appendQueryString="false" />
+				</rule>
+			</rules>
+		</rewrite>
+	</system.webServer>
+	<system.net>
+		<mailSettings>
+			<smtp from="orders@mydomain.co.za">
+				<network host="mail.mydomain.co.za" userName="orders@mydomain.co.za" password="password" />
+			</smtp>
+		</mailSettings>
+	</system.net>
+	<runtime>
+		<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+			<dependentAssembly>
+				<assemblyIdentity name="AjaxControlToolkit" publicKeyToken="28f01b0e84b6d53e" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-20.1.0.0" newVersion="20.1.0.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="HtmlAgilityPack" publicKeyToken="bd319b19eaf3b43a" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-1.12.1.0" newVersion="1.12.1.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="Microsoft.Data.Edm" publicKeyToken="31bf3856ad364e35" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-5.8.5.0" newVersion="5.8.5.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Memory" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-4.0.2.0" newVersion="4.0.2.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Buffers" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-4.0.4.0" newVersion="4.0.4.0" />
+			</dependentAssembly>
+		</assemblyBinding>
+	</runtime>
+
+	<location path="Administration/ResetPasswordHelper.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<location path="DisableClient.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<location path="Pages/ViewMyOrder.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+		<system.webServer>
+			<httpProtocol>
+				<customHeaders>
+					<add name="Cache-Control" value="no-store, no-cache, must-revalidate" />
+					<add name="Pragma" value="no-cache" />
+					<add name="Expires" value="0" />
+				</customHeaders>
+			</httpProtocol>
+		</system.webServer>
+	</location>
+	<location path="Tools/SqlConnectionTest.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<location path="Test.aspx">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+</configuration>

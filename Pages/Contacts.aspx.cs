@@ -94,6 +94,12 @@ namespace TrackerSQL.Pages
             BindContactsGrid();
         }
 
+        /// <summary>App-standard pager (Previous / squares / Next) — see Classes/GridPager.cs.</summary>
+        protected void gvContacts_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvContacts, e.Row);
+        }
+
         protected void gvContacts_Sorting(object sender, GridViewSortEventArgs e)
         {
             ViewState[CONST_SORTEXPRESSION_VIEWSTATE] = e.SortExpression;
@@ -102,11 +108,19 @@ namespace TrackerSQL.Pages
 
         protected void btnGon_Click(object sender, EventArgs e)
         {
-            if (ddlFilterBy.SelectedValue == "0" || string.IsNullOrWhiteSpace(tbxFilterBy.Text))
+            if (string.IsNullOrWhiteSpace(tbxFilterBy.Text))
+            {
+                SetFilterStatus("Type something to search for, then click Go.", true);
                 return;
+            }
+
+            // No field chosen -> assume Company Name (and show that in the dropdown).
+            if (ddlFilterBy.SelectedValue == "0")
+                ddlFilterBy.SelectedValue = "CompanyName";
 
             string filterField = ddlFilterBy.SelectedValue;
-            string filterValue = tbxFilterBy.Text.Trim();
+            // Escape single quotes — names like O'Brien must not break the LIKE clause.
+            string filterValue = tbxFilterBy.Text.Trim().Replace("'", "''");
 
             if (filterField == "ContactID")
             {

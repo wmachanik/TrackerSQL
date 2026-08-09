@@ -2,7 +2,7 @@
     CodeBehind="ContactsAwayDetail.aspx.cs" Inherits="TrackerSQL.Pages.ContactsAwayDetail"
     MaintainScrollPositionOnPostback="true" %>
 
-<asp:Content ID="cntContactsAwayDetailHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntContactsAwayDetailHdr" title="Contact Away Detail" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
 </asp:Content>
 

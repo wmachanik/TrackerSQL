@@ -2,7 +2,7 @@
     CodeBehind="XMLtoSQL.aspx.cs" Inherits="TrackerSQL.Tools.XMLtoSQL"
     Title="XML to SQL" %>
 
-<asp:Content ID="cntXMLtoSQLHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntXMLtoSQLHdr" title="XML to SQL" ContentPlaceHolderID="HeadContent" runat="server">
     <script type="text/javascript">
         function selectFile(filePath) {
             var tb = document.getElementById('<%= FileNameTextBox.ClientID %>');

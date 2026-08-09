@@ -49,7 +49,9 @@ namespace TrackerSQL.Models
             var parts = new[]
             {
                 ItemDesc,
-                QtyRequired.HasValue ? QtyRequired.Value.ToString("0.##") : string.Empty,
+                QtyRequired.HasValue
+                    ? TrackerSQL.Classes.SystemConstants.FormatConstants.FormatQuantity(QtyRequired.Value)
+                    : string.Empty,
                 ItemPackagingDesc
             };
 

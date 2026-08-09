@@ -64,18 +64,22 @@ namespace TrackerSQL.Repositories
 
         public RepositoryListResult<DeliverySheetOrderRow> SearchDeliverySheetRowsByContact(string contactName)
         {
+            // Match company name OR order notes. ZZName (sundry) walk-ins share ContactID 9
+            // with CompanyName "ZZName"; the real person/company is stored in Notes as
+            // "Name:" or "Company, Name:" — Find must search Notes or those never appear.
             var parameters = new List<DBParameter>
             {
                 new DBParameter
                 {
                     DataValue = "%" + (contactName ?? string.Empty).Trim() + "%",
                     DataDbType = DbType.String,
-                    ParamName = "@CompanyName"
+                    ParamName = "@SearchText"
                 }
             };
 
             string sql = BaseDeliverySheetSql() + @"
-                WHERE c.CompanyName LIKE @CompanyName
+                WHERE c.CompanyName LIKE @SearchText
+                   OR ISNULL(o.Notes, '') LIKE @SearchText
                 ORDER BY
                     o.Done,
                     o.RequiredByDate,

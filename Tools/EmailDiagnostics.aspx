@@ -1,9 +1,8 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
+﻿<%@ Page Title="Email Diagnostics" Language="C#" AutoEventWireup="true" MasterPageFile="~/Site.Master" MaintainScrollPositionOnPostback="true" CodeBehind="EmailDiagnostics.aspx.cs" Inherits="TrackerSQL.Tools.EmailDiagnostics" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajax" %>
 
-<asp:Content ID="cntEmailTestHdr" ContentPlaceHolderID="HeadContent" runat="server">
-    <title>QonT Email Configuration Tester</title>
+<asp:Content ID="cntEmailTestHdr" title="Email Diagnostics" ContentPlaceHolderID="HeadContent" runat="server">
     <link rel="stylesheet" type="text/css" href="./EmailDiagnostics.css" />
     <style type="text/css">
         .auto-style1 {

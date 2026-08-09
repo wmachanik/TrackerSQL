@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
+using static TrackerSQL.Classes.DbParamHelpers;
 
 namespace TrackerSQL.Repositories
 {
@@ -270,6 +272,55 @@ namespace TrackerSQL.Repositories
 
             int orderId = ExecuteScalar<int>(sql, parameters);
             return orderId > 0 ? orderId : (int?)null;
+        }
+
+        /// <summary>Batch resolve OrderLineID → OrderID for repair list links.</summary>
+        public Dictionary<int, int> GetOrderIdsByLineIds(IEnumerable<int> orderLineIds)
+        {
+            var map = new Dictionary<int, int>();
+            if (orderLineIds == null)
+                return map;
+
+            var ids = orderLineIds.Where(id => id > 0).Distinct().ToList();
+            if (ids.Count == 0)
+                return map;
+
+            // Parameterised IN list — small page-sized sets from the repairs grid.
+            var parameters = new List<DBParameter>();
+            var placeholders = new List<string>();
+            for (int i = 0; i < ids.Count; i++)
+            {
+                string name = "@LineId" + i;
+                placeholders.Add(name);
+                parameters.Add(new DBParameter { ParamName = name, DataValue = ids[i], DataDbType = DbType.Int32 });
+            }
+
+            string sql = "SELECT OrderLineID, OrderID FROM OrderLinesTbl WHERE OrderLineID IN ("
+                + string.Join(",", placeholders) + ")";
+
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                {
+                    int lineId = Convert.ToInt32(rdr["OrderLineID"]);
+                    int orderId = Convert.ToInt32(rdr["OrderID"]);
+                    if (lineId > 0 && orderId > 0)
+                        map[lineId] = orderId;
+                }
+            }
+
+            return map;
+        }
+
+        /// <summary>True when OrdersTbl has a header with this OrderID (no lines loaded).</summary>
+        public bool OrderExists(int orderId)
+        {
+            if (orderId <= 0)
+                return false;
+
+            const string sql = "SELECT COUNT(1) FROM OrdersTbl WHERE OrderID = @OrderID";
+            return ExecuteScalar<int>(sql, OrderIdParam(orderId)) > 0;
         }
 
         /// <summary>
@@ -629,7 +680,7 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@ContactID", DataValue = orderData.CustomerID, DataDbType = DbType.Int64 },
                 new DBParameter { ParamName = "@OrderDate", DataValue = orderData.OrderDate.Date, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@PrepDate", DataValue = orderData.PrepDate.Date, DataDbType = DbType.Date },
-                new DBParameter { ParamName = "@ToBeDeliveredByID", DataValue = orderData.ToBeDeliveredBy, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ToBeDeliveredByID", DataValue = FkOrDbNull(orderData.ToBeDeliveredBy), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@RequiredByDate", DataValue = orderData.RequiredByDate.Date, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@Confirmed", DataValue = orderData.Confirmed, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@Done", DataValue = orderData.Done, DataDbType = DbType.Boolean },
@@ -694,6 +745,33 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@RequiredByDate", DataValue = newDate.Date, DataDbType = DbType.Date },
                 new DBParameter { ParamName = "@OrderID", DataValue = orderId, DataDbType = DbType.Int64 }
             };
+            return ExecNonQuery(sql, parameters) >= 0;
+        }
+
+        public bool EnsureOrderDeliveryPerson(int orderId, int defaultPersonId)
+        {
+            if (orderId <= 0 || defaultPersonId <= 0)
+                return false;
+
+            const string sql = @"
+                UPDATE OrdersTbl
+                SET ToBeDeliveredByID = @DefaultPersonID
+                WHERE OrderID = @OrderID
+                  AND (
+                      ToBeDeliveredByID IS NULL
+                      OR NOT EXISTS (
+                          SELECT 1
+                          FROM PeopleTbl
+                          WHERE PersonID = OrdersTbl.ToBeDeliveredByID
+                      )
+                  )";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@DefaultPersonID", DataValue = defaultPersonId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@OrderID", DataValue = orderId, DataDbType = DbType.Int32 }
+            };
+
             return ExecNonQuery(sql, parameters) >= 0;
         }
 
@@ -1180,6 +1258,86 @@ namespace TrackerSQL.Repositories
             {
                 return db.ExecuteNonQuery(sql, parameters);
             }
+        }
+
+        /// <summary>
+        /// Orders for a contact (newest delivery first), with first line item + line count for UI preview.
+        /// </summary>
+        public List<ContactOrderSummary> GetSummariesByContactId(int contactId)
+        {
+            var list = new List<ContactOrderSummary>();
+            if (contactId <= 0)
+                return list;
+
+            const string sql = @"
+                SELECT
+                    o.OrderID,
+                    o.OrderDate,
+                    o.PrepDate,
+                    o.RequiredByDate,
+                    o.Confirmed,
+                    o.Done,
+                    o.InvoiceDone,
+                    ISNULL(o.Notes, '') AS Notes,
+                    ISNULL(firstLine.ItemID, 0) AS FirstItemID,
+                    ISNULL(i.ItemDesc, '') AS FirstItemDesc,
+                    ISNULL(firstLine.QtyOrdered, 0) AS FirstQty,
+                    ISNULL(lineCount.Cnt, 0) AS LineCount
+                FROM OrdersTbl o
+                OUTER APPLY (
+                    SELECT TOP 1 ol.ItemID, ol.QtyOrdered
+                    FROM OrderLinesTbl ol
+                    WHERE ol.OrderID = o.OrderID
+                    ORDER BY ol.OrderLineID
+                ) firstLine
+                LEFT JOIN ItemsTbl i ON firstLine.ItemID = i.ItemID
+                OUTER APPLY (
+                    SELECT COUNT(*) AS Cnt
+                    FROM OrderLinesTbl ol2
+                    WHERE ol2.OrderID = o.OrderID
+                ) lineCount
+                WHERE o.ContactID = @ContactID
+                ORDER BY
+                    CASE WHEN o.RequiredByDate IS NULL THEN 1 ELSE 0 END,
+                    o.RequiredByDate DESC,
+                    o.OrderID DESC";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                {
+                    list.Add(new ContactOrderSummary
+                    {
+                        OrderID = rdr["OrderID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["OrderID"]),
+                        OrderDate = rdr["OrderDate"] == DBNull.Value
+                            ? (DateTime?)null
+                            : Convert.ToDateTime(rdr["OrderDate"]).Date,
+                        PrepDate = rdr["PrepDate"] == DBNull.Value
+                            ? (DateTime?)null
+                            : Convert.ToDateTime(rdr["PrepDate"]).Date,
+                        RequiredByDate = rdr["RequiredByDate"] == DBNull.Value
+                            ? (DateTime?)null
+                            : Convert.ToDateTime(rdr["RequiredByDate"]).Date,
+                        Confirmed = rdr["Confirmed"] != DBNull.Value && Convert.ToBoolean(rdr["Confirmed"]),
+                        Done = rdr["Done"] != DBNull.Value && Convert.ToBoolean(rdr["Done"]),
+                        InvoiceDone = rdr["InvoiceDone"] != DBNull.Value && Convert.ToBoolean(rdr["InvoiceDone"]),
+                        Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
+                        FirstItemID = rdr["FirstItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["FirstItemID"]),
+                        FirstItemDesc = rdr["FirstItemDesc"] == DBNull.Value
+                            ? string.Empty
+                            : rdr["FirstItemDesc"].ToString(),
+                        FirstQty = rdr["FirstQty"] == DBNull.Value ? 0 : Convert.ToDouble(rdr["FirstQty"]),
+                        LineCount = rdr["LineCount"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["LineCount"])
+                    });
+                }
+            }
+
+            return list;
         }
 
         private T ExecuteScalar<T>(string sql, List<DBParameter> parameters = null)

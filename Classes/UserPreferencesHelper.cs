@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Web;
 using System.Web.Security;
 
@@ -11,7 +9,20 @@ namespace TrackerSQL.Classes
     public static class UserPreferencesHelper
     {
         private const string SessionKey = "UserPreferences";
-        private static readonly string DefaultTimeZone = ConfigHelper.GetString("AppTimeZoneId","South Africa Standard Time");
+        private const string ConnectionStringName = "TrackerDataSQL";
+        private static readonly string DefaultTimeZone = ConfigHelper.GetString("AppTimeZoneId", "South Africa Standard Time");
+
+        private static string GetConnectionString()
+        {
+            var setting = ConfigurationManager.ConnectionStrings[ConnectionStringName];
+            if (setting == null || string.IsNullOrWhiteSpace(setting.ConnectionString))
+            {
+                throw new ConfigurationErrorsException(
+                    "Connection string '" + ConnectionStringName + "' is missing or empty in configuration.");
+            }
+
+            return setting.ConnectionString;
+        }
 
         public static UserPreferences GetCurrentPreferences()
         {
@@ -34,7 +45,7 @@ namespace TrackerSQL.Classes
             HttpContext.Current.Session[SessionKey] = prefs;
             return prefs;
         }
-        
+
         public static DateTime Now()
         {
             var prefs = GetCurrentPreferences();
@@ -53,7 +64,7 @@ namespace TrackerSQL.Classes
 
         public static void EnsureUserPreferencesTableExists()
         {
-            string connString = ConfigurationManager.ConnectionStrings["ApplicationServices"].ConnectionString;
+            string connString = GetConnectionString();
             string checkQuery = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'UserPreferences'";
 
             using (SqlConnection conn = new SqlConnection(connString))
@@ -64,7 +75,7 @@ namespace TrackerSQL.Classes
 
                 if (count == 0)
                 {
-                    string createQuery = @"CREATE TABLE UserPreferences (UserId UNIQUEIDENTIFIER PRIMARY KEY,"+
+                    string createQuery = @"CREATE TABLE UserPreferences (UserId UNIQUEIDENTIFIER PRIMARY KEY," +
                                                          "TimeZoneId NVARCHAR(100) NOT NULL," +
                                                          "Language NVARCHAR(10) NOT NULL," +
                                                          "CreatedOn DATETIME NOT NULL, " +
@@ -73,11 +84,12 @@ namespace TrackerSQL.Classes
                     using (SqlCommand createCmd = new SqlCommand(createQuery, conn))
                     {
                         createCmd.ExecuteNonQuery();
-                        AppLogger.WriteLog("system", "? Created UserPreferences table in QOnTSecurity.");
+                        AppLogger.WriteLog("system", "Created UserPreferences table in TrackerDataSQL catalog.");
                     }
                 }
             }
         }
+
         public static UserPreferences GetCurrentPreferencesForUser(Guid userId)
         {
             EnsureUserPreferencesTableExists();
@@ -97,9 +109,10 @@ namespace TrackerSQL.Classes
 
             return prefs;
         }
+
         public static UserPreferences LoadPreferencesFromDb(Guid userId)
         {
-            string connString = ConfigurationManager.ConnectionStrings["ApplicationServices"].ConnectionString;
+            string connString = GetConnectionString();
             string query = "SELECT UserId, TimeZoneId, Language FROM UserPreferences WHERE UserId = @UserId";
 
             using (SqlConnection conn = new SqlConnection(connString))
@@ -127,7 +140,7 @@ namespace TrackerSQL.Classes
 
         public static void SavePreferencesToDb(UserPreferences prefs)
         {
-            string connString = ConfigurationManager.ConnectionStrings["ApplicationServices"].ConnectionString;
+            string connString = GetConnectionString();
             string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, CreatedOn, UpdatedOn)
                      VALUES (@UserId, @TimeZoneId, @Language, @CreatedOn, @UpdatedOn)";
 
@@ -144,9 +157,10 @@ namespace TrackerSQL.Classes
                 cmd.ExecuteNonQuery();
             }
         }
+
         public static void UpdatePreferencesInDb(UserPreferences prefs)
         {
-            string connString = ConfigurationManager.ConnectionStrings["ApplicationServices"].ConnectionString;
+            string connString = GetConnectionString();
             string query = @"UPDATE UserPreferences
                      SET TimeZoneId = @TimeZoneId,
                          Language = @Language,
@@ -165,6 +179,7 @@ namespace TrackerSQL.Classes
                 cmd.ExecuteNonQuery();
             }
         }
+
         public static void SaveOrUpdatePreferences(UserPreferences prefs)
         {
             var existing = LoadPreferencesFromDb(prefs.UserId);
@@ -177,8 +192,5 @@ namespace TrackerSQL.Classes
                 UpdatePreferencesInDb(prefs);
             }
         }
-
-
     }
-
 }

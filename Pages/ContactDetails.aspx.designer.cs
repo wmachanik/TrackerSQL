@@ -858,6 +858,69 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.GridView gvContactItems;
 
         /// <summary>
+        /// tabpnlOrders control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::AjaxControlToolkit.TabPanel tabpnlOrders;
+
+        /// <summary>
+        /// upnlContactOrders control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel upnlContactOrders;
+
+        /// <summary>
+        /// gvContactOrders control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvContactOrders;
+
+        /// <summary>
+        /// tabpnlRecurring control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::AjaxControlToolkit.TabPanel tabpnlRecurring;
+
+        /// <summary>
+        /// gvContactRecurring control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvContactRecurring;
+
+        /// <summary>
+        /// tabpnlRepairs control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::AjaxControlToolkit.TabPanel tabpnlRepairs;
+
+        /// <summary>
+        /// gvContactRepairs control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvContactRepairs;
+
+        /// <summary>
         /// odsAreas control.
         /// </summary>
         /// <remarks>

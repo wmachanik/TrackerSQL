@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
@@ -12,6 +13,8 @@ namespace TrackerSQL.Tools
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            var sw = Stopwatch.StartNew();
+
             if (!IsPostBack)
             {
                 pnlToolResults.Visible = false;
@@ -22,6 +25,9 @@ namespace TrackerSQL.Tools
             }
 
             SetMessagesEditorButtonVisibility();
+
+            sw.Stop();
+            RequestTiming.Write("SYSTEM TOOLS PAGE", sw.ElapsedMilliseconds + " ms");
         }
 
         private void SetMessagesEditorButtonVisibility()

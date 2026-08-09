@@ -1,0 +1,21 @@
+---
+description: When Styles/Site.css changes, bump Rev and Site.Master ?v= cache-bust
+globs: Styles/Site.css,Site.Master,**/Site.css
+alwaysApply: true
+---
+
+# Site.css cache-bust version
+
+Whenever you change `Styles/Site.css`, **always** bump the version in **both** places in the same edit:
+
+1. **Header** in `Styles/Site.css` — top comment, e.g. `Rev: 20260722-1`
+2. **Link** in `Site.Master` — `href="~/Styles/Site.css?v=20260722-1"`
+
+## Format
+
+`YYYYMMDD-n` (same as project docs: `Documentation/PROJECT_OVERVIEW.md`)
+
+- `YYYYMMDD` = calendar date of the change (e.g. `20260722` = 22 Jul 2026)
+- `n` = revision that day: start at `1`, then `2`, `3`… if CSS is changed again the same day
+
+Do **not** leave an old `?v=` after CSS edits — browsers will keep serving cached CSS.

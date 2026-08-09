@@ -4,7 +4,38 @@
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
 
-<asp:Content ID="cntHolidayClosuresHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntHolidayClosuresHdr" title="Holiday / Closure Dates" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        // Keep HeadContent free of server expressions (empty percent-equals breaks the page parser).
+        function beginHolidayClosureShowAdd(button) {
+            return beginHolidayClosureFullPost(button, "Opening...", "Opening form, please wait...");
+        }
+
+        function beginHolidayClosureAdd(button) {
+            return beginHolidayClosureFullPost(button, "Adding...", "Adding closure, please wait...");
+        }
+
+        function beginHolidayClosureFullPost(button, buttonText, stripText) {
+            if (!button || button.getAttribute("data-saving") === "true") {
+                return false;
+            }
+            button.setAttribute("data-saving", "true");
+            button.setAttribute("aria-disabled", "true");
+            if (button.value !== undefined) {
+                button.value = buttonText || "Please wait...";
+            }
+
+            var strip = document.getElementById("holidayClosureWorking");
+            if (strip) {
+                var label = strip.querySelector("span");
+                if (label) {
+                    label.innerHTML = "&nbsp;" + (stripText || "Please wait...");
+                }
+                strip.style.display = "flex";
+            }
+            return true;
+        }
+    </script>
 </asp:Content>
 
 <asp:Content ID="cntHolidayClosuresBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -20,7 +51,19 @@
         </ProgressTemplate>
     </asp:UpdateProgress>
 
+    <div id="holidayClosureWorking" class="status-message status-info page-tone-progress"
+        style="display: none;" role="status" aria-live="polite">
+        <img src="../images/animi/QuaffeeProgress.gif" alt="" />
+        <span>&nbsp;Please wait...</span>
+    </div>
+
     <asp:UpdatePanel ID="upnlHolidayClosures" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+        <Triggers>
+            <%-- Full postbacks: CalendarExtender + hiding the add form mid-async leaves the UI stuck. --%>
+            <asp:PostBackTrigger ControlID="btnShowAddPanel" />
+            <asp:PostBackTrigger ControlID="btnAddInline" />
+            <asp:PostBackTrigger ControlID="btnCancelInline" />
+        </Triggers>
         <ContentTemplate>
             <asp:Panel ID="pnlHolidayClosures" runat="server" CssClass="simpleForm page-tone-panel page-tone-holiday">
                 <div class="page-tone-header tool-card-header">
@@ -76,7 +119,8 @@
 
                     <div class="filter-section action-buttons">
                         <asp:Button ID="btnShowAddPanel" runat="server" Text="New (Inline)" CssClass="filter-panel-btn"
-                            OnClick="btnShowAddPanel_Click" CausesValidation="false" />
+                            OnClick="btnShowAddPanel_Click" CausesValidation="false"
+                            OnClientClick="return beginHolidayClosureShowAdd(this);" />
                         <span class="image-button" title="Add / manage on detail page">
                             <img src="../images/imgButtons/AddItem.gif" alt="" />
                             <asp:HyperLink ID="lnkAddDetail" runat="server"
@@ -86,7 +130,9 @@
                     </div>
                 </div>
 
-                <asp:Panel ID="pnlAddInline" runat="server" CssClass="simpleForm" Visible="false" style="margin-bottom: 12px;">
+                <%-- Always rendered (CSS-hidden). Visible=false + CalendarExtender on first async show breaks UpdatePanel. --%>
+                <asp:Panel ID="pnlAddInline" runat="server" CssClass="simpleForm"
+                    style="display: none; margin-bottom: 12px;">
                     <fieldset>
                         <legend>New Closure</legend>
                         <table class="TblCoffee">
@@ -95,7 +141,9 @@
                                 <td>
                                     <asp:TextBox ID="txtNewDate" runat="server" Width="100" />
                                     <ajaxToolkit:CalendarExtender ID="calNewDate" runat="server"
-                                        TargetControlID="txtNewDate" Format="yyyy-MM-dd" FirstDayOfWeek="Monday" />
+                                        TargetControlID="txtNewDate"
+                                        Format="yyyy-MM-dd" FirstDayOfWeek="Monday"
+                                        CssClass="calendar-popup" />
                                 </td>
                                 <td>Days</td>
                                 <td>
@@ -120,10 +168,12 @@
                                 </td>
                                 <td colspan="2" style="text-align: right">
                                     <asp:Button ID="btnAddInline" runat="server" Text="Add" CssClass="filter-panel-btn"
-                                        OnClick="btnAddInline_Click" />
+                                        OnClick="btnAddInline_Click" CausesValidation="false"
+                                        OnClientClick="return beginHolidayClosureAdd(this);" />
                                     &nbsp;
                                     <asp:Button ID="btnCancelInline" runat="server" Text="Cancel" CssClass="filter-panel-btn"
-                                        OnClick="btnCancelInline_Click" CausesValidation="false" />
+                                        OnClick="btnCancelInline_Click" CausesValidation="false"
+                                        OnClientClick="return beginHolidayClosureFullPost(this, 'Cancelling...', 'Cancelling, please wait...');" />
                                 </td>
                             </tr>
                         </table>

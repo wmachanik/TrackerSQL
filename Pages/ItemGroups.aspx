@@ -1,7 +1,53 @@
 <%@ Page Title="Item Groups" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="ItemGroups.aspx.cs" Inherits="TrackerSQL.Pages.ItemGroups" %>
 
-<asp:Content ID="cntItemGroupsHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntItemGroupsHdr" title="Item Groups" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript">
+        function itemGroupsAutoFilter(textBox) {
+            clearTimeout(window._itemGroupsAvailFilterTimer);
+            var value = (textBox && textBox.value ? textBox.value : "").trim();
+
+            // Automatically filter when cleared or after at least two characters.
+            if (value.length !== 0 && value.length < 2) {
+                return;
+            }
+
+            window._itemGroupsAvailFilterTimer = setTimeout(function () {
+                var filterButton = textBox.parentNode.querySelector(".dual-list-filter-apply");
+                if (filterButton) {
+                    filterButton.click();
+                }
+            }, 400);
+        }
+
+        // Add/Remove feedback: swap the button text to "Adding..."/"Removing..." while the
+        // async postback runs. The UpdatePanel re-render restores the normal text; the
+        // endRequest hook below only matters if the request fails and no re-render happens.
+        function itemGroupsBeginAction(button, busyText) {
+            if (!button || button.getAttribute("data-busy") === "true") {
+                return false; // ignore double-clicks while a request is running
+            }
+            button.setAttribute("data-busy", "true");
+            button.setAttribute("data-idle-text", button.value);
+            button.style.pointerEvents = "none";
+            button.value = busyText;
+            return true;
+        }
+
+        window.addEventListener("load", function () {
+            if (typeof Sys === "undefined" || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
+                return;
+            }
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () {
+                var busyButtons = document.querySelectorAll('input[data-busy="true"]');
+                for (var i = 0; i < busyButtons.length; i++) {
+                    busyButtons[i].value = busyButtons[i].getAttribute("data-idle-text") || busyButtons[i].value;
+                    busyButtons[i].style.pointerEvents = "";
+                    busyButtons[i].removeAttribute("data-busy");
+                }
+            });
+        });
+    </script>
 </asp:Content>
 
 <asp:Content ID="cntItemGroupsBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -56,17 +102,22 @@
                         <h2 class="dual-list-panel-title">Items in group</h2>
                         <div class="dual-list-panel-body">
                         <asp:GridView ID="gvItemsInList" runat="server"
-                            DataSourceID="odsItemInGroup" AutoGenerateColumns="False"
+                            AutoGenerateColumns="False"
                             CssClass="results-table in-panel-grid no-sticky-last"
                             DataKeyNames="ItemTypeID"
                             AllowSorting="true" AllowPaging="true" PageSize="20"
                             OnRowCommand="gvItemsInList_RowCommand"
+                            OnPageIndexChanging="gvItemsInList_PageIndexChanging"
+                            OnSorting="gvItemsInList_Sorting"
+                            OnRowCreated="gvItemsInList_RowCreated"
                             EmptyDataText="No items in this group yet.">
                             <Columns>
-                                <asp:TemplateField HeaderText="" HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd">
+                                <asp:TemplateField HeaderText="Sel" HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd">
                                     <ItemTemplate>
+                                        <asp:HiddenField ID="hdnInGroupItemId" runat="server"
+                                            Value='<%# Eval("ItemTypeID") %>' />
                                         <asp:CheckBox ID="cbxRemoveItem" runat="server"
-                                            ToolTip="Select to remove from group" />
+                                            ToolTip="Tick, then click Remove" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
                                 <asp:BoundField DataField="ItemDesc" HeaderText="Item" SortExpression="ItemDesc"
@@ -96,7 +147,10 @@
                                     </ItemTemplate>
                                 </asp:TemplateField>
                             </Columns>
-                            <PagerStyle CssClass="aspNetPager" />
+                            <PagerStyle CssClass="pager-row" />
+                            <PagerTemplate>
+                                <asp:PlaceHolder ID="plhPager" runat="server" />
+                            </PagerTemplate>
                         </asp:GridView>
                         </div>
                     </div>
@@ -105,28 +159,53 @@
                         <asp:Button ID="btnAddToGroup" runat="server" Text="Add"
                             CssClass="filter-panel-btn dual-list-btn dual-list-btn-add"
                             OnClick="btnAddToGroup_Click" CausesValidation="false"
+                            OnClientClick="return itemGroupsBeginAction(this, 'Adding...');"
                             ToolTip="Add checked items to the selected group" />
                         <asp:Button ID="btnRemoveFromGroup" runat="server" Text="Remove"
                             CssClass="filter-panel-btn dual-list-btn dual-list-btn-remove"
                             OnClick="btnRemoveFromGroup_Click" CausesValidation="false"
+                            OnClientClick="return itemGroupsBeginAction(this, 'Removing...');"
                             ToolTip="Remove checked items from the selected group" />
                     </div>
 
                     <div class="dual-list-panel dual-list-panel-avail">
                         <h2 class="dual-list-panel-title">Items to add</h2>
+                        <div class="dual-list-avail-filter">
+                            <asp:Label ID="lblAvailFilter" runat="server" Text="Filter:"
+                                AssociatedControlID="tbxAvailFilter" CssClass="small" />
+                            <asp:TextBox ID="tbxAvailFilter" runat="server"
+                                CssClass="dual-list-filter-input"
+                                ToolTip="Type at least two letters to filter automatically"
+                                oninput="itemGroupsAutoFilter(this);" />
+                            <asp:ImageButton ID="btnApplyAvailFilter" runat="server"
+                                ImageUrl="~/images/imgButtons/Filter.gif"
+                                CssClass="toolbar-icon-btn dual-list-filter-icon dual-list-filter-apply"
+                                OnClick="btnApplyAvailFilter_Click" CausesValidation="false"
+                                OnClientClick="clearTimeout(window._itemGroupsAvailFilterTimer);"
+                                AlternateText="Filter" ToolTip="Filter items" />
+                            <asp:ImageButton ID="btnClearAvailFilter" runat="server"
+                                ImageUrl="~/images/imgButtons/Cancel.gif"
+                                CssClass="toolbar-icon-btn dual-list-filter-icon"
+                                OnClick="btnClearAvailFilter_Click" CausesValidation="false"
+                                OnClientClick="clearTimeout(window._itemGroupsAvailFilterTimer);"
+                                AlternateText="Clear filter" ToolTip="Clear the filter and show all items" />
+                        </div>
                         <div class="dual-list-panel-body">
                         <asp:GridView ID="gvItemsNotInGroup" runat="server"
-                            DataSourceID="odsItemsNotInGroup" AutoGenerateColumns="False"
+                            AutoGenerateColumns="False"
                             CssClass="results-table in-panel-grid no-sticky-last"
                             DataKeyNames="ItemTypeID"
                             AllowPaging="true" PageSize="20"
-                            PagerSettings-Mode="NumericFirstLast"
-                            EmptyDataText="All coffee items are already in this group.">
+                            OnPageIndexChanging="gvItemsNotInGroup_PageIndexChanging"
+                            OnRowCreated="gvItemsNotInGroup_RowCreated"
+                            EmptyDataText="No matching items to add.">
                             <Columns>
-                                <asp:TemplateField HeaderText="" HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd">
+                                <asp:TemplateField HeaderText="Sel" HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd">
                                     <ItemTemplate>
+                                        <asp:HiddenField ID="hdnAvailItemId" runat="server"
+                                            Value='<%# Eval("ItemTypeID") %>' />
                                         <asp:CheckBox ID="cbxAddItem" runat="server"
-                                            ToolTip="Select to add to group" />
+                                            ToolTip="Tick, then click Add" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
                                 <asp:BoundField DataField="ItemDesc" HeaderText="Item" ReadOnly="true" />
@@ -134,7 +213,10 @@
                                     HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight col-align-center"
                                     ReadOnly="true" />
                             </Columns>
-                            <PagerStyle CssClass="aspNetPager" />
+                            <PagerStyle CssClass="pager-row" />
+                            <PagerTemplate>
+                                <asp:PlaceHolder ID="plhPager" runat="server" />
+                            </PagerTemplate>
                         </asp:GridView>
                         </div>
                     </div>
@@ -143,27 +225,6 @@
                 <div class="page-tone-footer">
                     <div class="status-message" id="pnlStatus" runat="server"><asp:Literal ID="ltrlStatus" runat="server" /></div>
                 </div>
-
-                <asp:ObjectDataSource ID="odsItemsNotInGroup" runat="server"
-                    TypeName="TrackerSQL.Managers.ItemGroupDataSource"
-                    SelectMethod="GetAllItemsNotInItemGroup"
-                    OldValuesParameterFormatString="original_{0}">
-                    <SelectParameters>
-                        <asp:ControlParameter ControlID="ddlGroupItems" Name="groupItemTypeId"
-                            PropertyName="SelectedValue" Type="Int32" />
-                    </SelectParameters>
-                </asp:ObjectDataSource>
-                <asp:ObjectDataSource ID="odsItemInGroup" runat="server"
-                    DataObjectTypeName="TrackerSQL.Models.ItemGroupGridRow"
-                    DeleteMethod="DeleteItemGroup" InsertMethod="InsertItemGroup"
-                    SelectMethod="GetAllByGroupItemTypeId" SortParameterName="sortBy"
-                    TypeName="TrackerSQL.Managers.ItemGroupDataSource">
-                    <SelectParameters>
-                        <asp:ControlParameter ControlID="ddlGroupItems" Name="groupItemId"
-                            PropertyName="SelectedValue" Type="Int32" />
-                        <asp:Parameter Name="sortBy" Type="String" />
-                    </SelectParameters>
-                </asp:ObjectDataSource>
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>

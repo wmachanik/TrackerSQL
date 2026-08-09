@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.UI;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
@@ -37,6 +38,26 @@ namespace TrackerSQL.Tools
             set => ViewState["HC_RangeTo"] = value;
         }
 
+        private void SetStatus(string message, bool? isError)
+        {
+            ltrlStatus.Text = message ?? string.Empty;
+            if (pnlStatus == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                pnlStatus.Attributes["class"] = "status-message";
+                return;
+            }
+
+            if (isError == true)
+                pnlStatus.Attributes["class"] = "status-message status-error";
+            else if (isError == false)
+                pnlStatus.Attributes["class"] = "status-message status-success";
+            else
+                pnlStatus.Attributes["class"] = "status-message status-info";
+        }
+
         private void ApplySelectedDateRange()
         {
             DateTime today = TimeZoneUtils.Now().Date;
@@ -69,24 +90,47 @@ namespace TrackerSQL.Tools
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Panel stays in the tree; only CSS toggles visibility (CalendarExtender must exist on first load).
+            if (pnlAddInline != null)
+                pnlAddInline.Visible = true;
+
+            var scriptManager = ScriptManager.GetCurrent(Page);
+            if (scriptManager != null)
+            {
+                if (btnShowAddPanel != null)
+                    scriptManager.RegisterPostBackControl(btnShowAddPanel);
+                if (btnAddInline != null)
+                    scriptManager.RegisterPostBackControl(btnAddInline);
+                if (btnCancelInline != null)
+                    scriptManager.RegisterPostBackControl(btnCancelInline);
+            }
+
             if (!IsPostBack)
             {
                 if (string.IsNullOrEmpty(ddlDateRange.SelectedValue))
                     ddlDateRange.SelectedValue = "ThisYear";
 
                 ApplySelectedDateRange();
+                HideInlineAddPanel();
                 BindGrid();
             }
+
+            SyncShowAddButtonText();
         }
 
         protected void ddlDateRange_SelectedIndexChanged(object sender, EventArgs e)
         {
             ApplySelectedDateRange();
             BindGrid();
+            upnlHolidayClosures.Update();
         }
 
         private void BindGrid()
         {
+            // Keep range aligned with the dropdown (ViewState can lag after async posts)
+            if (ViewState["HC_RangeFrom"] == null || ViewState["HC_RangeTo"] == null)
+                ApplySelectedDateRange();
+
             var closures = _manager.GetRange(RangeFrom, RangeTo).ToList();
 
             if (!string.IsNullOrEmpty(ddlFilterStrategy.SelectedValue))
@@ -127,7 +171,6 @@ namespace TrackerSQL.Tools
 
             gvClosures.DataSource = rows;
             gvClosures.DataBind();
-            ltrlStatus.Text = rows.Count + " closure(s)";
         }
 
         private static List<ClosureRow> SortRows(List<ClosureRow> rows, string exp, string dir)
@@ -162,7 +205,13 @@ namespace TrackerSQL.Tools
             }
         }
 
-        protected void btnFilter_Click(object sender, EventArgs e) => BindGrid();
+        protected void btnFilter_Click(object sender, EventArgs e)
+        {
+            ApplySelectedDateRange();
+            BindGrid();
+            SetStatus("Filtered.", isError: null);
+            upnlHolidayClosures.Update();
+        }
 
         protected void btnReset_Click(object sender, EventArgs e)
         {
@@ -173,12 +222,15 @@ namespace TrackerSQL.Tools
             ViewState[SORTEXP_KEY] = null;
             ViewState[SORTDIR_KEY] = null;
             BindGrid();
+            SetStatus("Filters reset.", isError: null);
+            upnlHolidayClosures.Update();
         }
 
         protected void gvClosures_PageIndexChanging(object sender, System.Web.UI.WebControls.GridViewPageEventArgs e)
         {
             gvClosures.PageIndex = e.NewPageIndex;
             BindGrid();
+            upnlHolidayClosures.Update();
         }
 
         protected void gvClosures_Sorting(object sender, System.Web.UI.WebControls.GridViewSortEventArgs e)
@@ -197,28 +249,71 @@ namespace TrackerSQL.Tools
             ViewState[SORTEXP_KEY] = currentExp;
             ViewState[SORTDIR_KEY] = currentDir;
             BindGrid();
+            upnlHolidayClosures.Update();
         }
 
         protected void gvClosures_RowDeleting(object sender, System.Web.UI.WebControls.GridViewDeleteEventArgs e)
         {
             int id = (int)gvClosures.DataKeys[e.RowIndex].Value;
             if (_manager.Delete(id, out string err))
-                ltrlStatus.Text = "Deleted.";
+            {
+                BindGrid();
+                SetStatus("Deleted.", isError: false);
+            }
             else
-                ltrlStatus.Text = "Error: " + err;
+            {
+                BindGrid();
+                SetStatus("Error: " + err, isError: true);
+            }
 
-            BindGrid();
+            upnlHolidayClosures.Update();
         }
 
         protected void btnShowAddPanel_Click(object sender, EventArgs e)
         {
-            pnlAddInline.Visible = !pnlAddInline.Visible;
+            if (IsInlineAddPanelShown())
+                HideInlineAddPanel();
+            else
+                ShowInlineAddPanel();
+            upnlHolidayClosures.Update();
         }
 
         protected void btnCancelInline_Click(object sender, EventArgs e)
         {
-            pnlAddInline.Visible = false;
+            HideInlineAddPanel();
+            SetStatus(string.Empty, isError: null);
+            upnlHolidayClosures.Update();
+        }
+
+        private bool IsInlineAddPanelShown()
+        {
+            if (pnlAddInline == null)
+                return false;
+            string display = pnlAddInline.Style["display"];
+            return !string.Equals(display, "none", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ShowInlineAddPanel()
+        {
+            pnlAddInline.Visible = true;
+            pnlAddInline.Style["display"] = "block";
             ClearInlineAdd();
+            SyncShowAddButtonText();
+        }
+
+        private void HideInlineAddPanel()
+        {
+            ClearInlineAdd();
+            pnlAddInline.Visible = true;
+            pnlAddInline.Style["display"] = "none";
+            SyncShowAddButtonText();
+        }
+
+        private void SyncShowAddButtonText()
+        {
+            if (btnShowAddPanel == null)
+                return;
+            btnShowAddPanel.Text = IsInlineAddPanelShown() ? "Hide form" : "New (Inline)";
         }
 
         private void ClearInlineAdd()
@@ -233,41 +328,73 @@ namespace TrackerSQL.Tools
 
         protected void btnAddInline_Click(object sender, EventArgs e)
         {
-            if (!DateTime.TryParse(txtNewDate.Text, out DateTime startDate))
+            try
             {
-                ltrlStatus.Text = "Invalid start date";
-                return;
-            }
+                if (!DateTime.TryParse(txtNewDate.Text, out DateTime startDate))
+                {
+                    SetStatus("Invalid start date.", isError: true);
+                    upnlHolidayClosures.Update();
+                    return;
+                }
 
-            if (!int.TryParse(txtNewDays.Text, out int days) || days < 1)
-                days = 1;
+                if (!int.TryParse(txtNewDays.Text, out int days) || days < 1)
+                    days = 1;
 
-            if (_manager.Insert(
-                startDate,
-                days,
-                chkNewPrep.Checked,
-                chkNewDelivery.Checked,
-                ddlNewStrategy.SelectedValue,
-                txtNewDesc.Text,
-                out string err))
-            {
-                ltrlStatus.Text = "Added.";
-                ClearInlineAdd();
-                pnlAddInline.Visible = false;
-                BindGrid();
+                ApplySelectedDateRange();
+
+                if (_manager.Insert(
+                    startDate,
+                    days,
+                    chkNewPrep.Checked,
+                    chkNewDelivery.Checked,
+                    ddlNewStrategy.SelectedValue,
+                    txtNewDesc.Text,
+                    out string err))
+                {
+                    HideInlineAddPanel();
+                    HolidayClosureManager.Invalidate();
+                    BindGrid();
+                    SetStatus("Added " + startDate.ToString("yyyy-MM-dd") + ".", isError: false);
+                }
+                else
+                {
+                    // Always rebind — a double-click often inserts on the first post and fails
+                    // uniqueness on the second; without rebind the new row stays invisible.
+                    HolidayClosureManager.Invalidate();
+                    BindGrid();
+
+                    bool alreadyExists = !string.IsNullOrEmpty(err)
+                        && err.IndexOf("already starts", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (alreadyExists)
+                    {
+                        HideInlineAddPanel();
+                        SetStatus(err + " The list has been refreshed.", isError: true);
+                    }
+                    else
+                    {
+                        SetStatus("Error: " + err, isError: true);
+                    }
+                }
+
+                upnlHolidayClosures.Update();
             }
-            else
+            catch (Exception ex)
             {
-                ltrlStatus.Text = "Error: " + err;
+                SetStatus("Add failed: " + ex.Message, isError: true);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "HolidayClosures.btnAddInline_Click: " + ex.Message);
+                upnlHolidayClosures.Update();
             }
         }
 
         protected void btnCopyToNextYear_Click(object sender, EventArgs e)
         {
+            ApplySelectedDateRange();
             var source = _manager.GetRange(RangeFrom, RangeTo);
             if (source == null || source.Count == 0)
             {
-                ltrlStatus.Text = "No closures to copy.";
+                SetStatus("No closures to copy.", isError: true);
+                upnlHolidayClosures.Update();
                 return;
             }
 
@@ -302,8 +429,10 @@ namespace TrackerSQL.Tools
                 }
             }
 
+            HolidayClosureManager.Invalidate();
             BindGrid();
-            ltrlStatus.Text = $"Copied {inserted} closure(s); {skipped} skipped.";
+            SetStatus($"Copied {inserted} closure(s); {skipped} skipped.", isError: false);
+            upnlHolidayClosures.Update();
         }
     }
 }

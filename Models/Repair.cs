@@ -24,6 +24,8 @@ namespace TrackerSQL.Models
         public string RepairFaultDesc { get; set; }
         public int? RepairStatusID { get; set; }
         public int? RelatedOrderLineID { get; set; }
+        /// <summary>Resolved from OrderLinesTbl for RelatedOrderLineID (list links). Not a RepairsTbl column.</summary>
+        public int? RelatedOrderID { get; set; }
         public string Notes { get; set; }
     }
 }

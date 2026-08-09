@@ -1,7 +1,7 @@
 ﻿<%@ Page Title="Contacts Away" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
     CodeBehind="ContactsAway.aspx.cs" Inherits="TrackerSQL.Pages.ContactsAway" %>
 
-<asp:Content ID="cntContactsAwayHdr" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="cntContactsAwayHdr" title="Contacts Away" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
 
 <asp:Content ID="cntContactsAwayBdy" ContentPlaceHolderID="MainContent" runat="server">

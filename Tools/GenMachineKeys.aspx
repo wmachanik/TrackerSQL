@@ -45,7 +45,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
-    <title>Access Auto class maker</title>
+    <title>Generate Machine Keys</title>
 </head>
 <body>
 

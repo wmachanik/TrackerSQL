@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerSQL.SiteMaster" %>
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerSQL.SiteMaster" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
 
@@ -6,12 +6,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head runat="server">
     <title>QOnT</title>
-    <link href="~/Styles/Site.css?v=20260726-8" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20260807-15" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
     <meta name="HandheldFriendly" content="true" />
-    <%-- Literal (not <%= %>) so ScriptManager can inject into <head> --%>
+    <%-- Literal (not a server expression) so ScriptManager can inject into head --%>
     <asp:Literal ID="litUnsavedChangesScript" runat="server" EnableViewState="false" />
     <asp:ContentPlaceHolder ID="HeadContent" runat="server">
     </asp:ContentPlaceHolder>
@@ -173,7 +173,9 @@
                                 <DynamicMenuItemStyle ForeColor="White" HorizontalPadding="5px" VerticalPadding="2px" />
                                 <DynamicMenuStyle BackColor="#201606" VerticalPadding="2px" HorizontalPadding="2px" BorderColor="Transparent" BorderStyle="Solid" />
                                 <Items>
-                                    <asp:MenuItem NavigateUrl="~/Default.aspx" Text="🏠" />
+                                    <asp:MenuItem NavigateUrl="~/Default.aspx" Text=""
+                                        ImageUrl="~/images/imgButtons/Home.gif"
+                                        ToolTip="Home" Value="Home" />
                                     <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts" ToolTip="Contact List"
                                         Value="Contacts">
                                         <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts"
@@ -271,19 +273,19 @@
         </div>
         <nav id="mobileNavMenu" class="mobile-nav-menu">
             <ul class="mobile-nav-list">
-                <li><a href="/Default.aspx">🏠 Home</a></li>
-                <li><a href="/Pages/Contacts.aspx">👥 Contacts</a></li>
-                <li><a href="/Pages/ContactsAway.aspx">🛫 Contacts Away</a></li>
-                <li><a href="/Pages/SendCoffeeCheckup.aspx">☕ Send Checkup</a></li>
-                <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">📋 New Order</a></li>
-                <li><a href="/Pages/ItemsRequired.aspx">📋 Items Required</a></li>
-                <li><a href="/Pages/DeliverySheet.aspx">🚚 Deliveries</a></li>
-                <li><a href="/Pages/Repairs.aspx">🔧 Repairs</a></li>
-                <li><a href="/Pages/Lookups.aspx">📊 Lookup Tables</a></li>
+                <li><a href="/Default.aspx"><img src="/images/imgButtons/Home.gif" alt="" class="mobile-nav-icon" /> Home</a></li>
+                <li><a href="/Pages/Contacts.aspx">Contacts</a></li>
+                <li><a href="/Pages/ContactsAway.aspx">Contacts Away</a></li>
+                <li><a href="/Pages/SendCoffeeCheckup.aspx">Send Checkup</a></li>
+                <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">New Order</a></li>
+                <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
+                <li><a href="/Pages/DeliverySheet.aspx">Deliveries</a></li>
+                <li><a href="/Pages/Repairs.aspx">Repairs</a></li>
+                <li><a href="/Pages/Lookups.aspx">Lookup Tables</a></li>
                 <li>
                     <asp:LoginView ID="MobileLoginView" runat="server">
                         <AnonymousTemplate>
-                            <a href="/Account/Login.aspx" class="mobile-login-link">🔑 Login</a>
+                            <a href="/Account/Login.aspx" class="mobile-login-link">Login</a>
                         </AnonymousTemplate>
                         <LoggedInTemplate>
                             <span class="mobile-login-user">

@@ -35,11 +35,11 @@
                 </div>
 
                 <div class="page-tone-toolbar">
-                    <table class="TblLHCol-brown detail-form-table" style="margin: 0;">
+                    <table class="TblLHCol-brown detail-form-table date-range-toolbar" style="margin: 0;">
                         <tr>
                             <td class="TblLHCol-first">Date From:</td>
                             <td>
-                                <asp:TextBox ID="tbxDateFrom" runat="server" />
+                                <asp:TextBox ID="tbxDateFrom" runat="server" CssClass="date-field-clean" />
                                 <span class="image-button" title="Pick from date">
                                     <asp:ImageButton ID="btnCalendarFrom" runat="server"
                                         ImageUrl="~/images/imgButtons/CalendarBtn.png"
@@ -54,7 +54,7 @@
                         <tr>
                             <td class="TblLHCol-first">Date To:</td>
                             <td>
-                                <asp:TextBox ID="tbxDateTo" runat="server" />
+                                <asp:TextBox ID="tbxDateTo" runat="server" CssClass="date-field-clean" />
                                 <span class="image-button" title="Pick to date">
                                     <asp:ImageButton ID="btnCalendarTo" runat="server"
                                         ImageUrl="~/images/imgButtons/CalendarBtn.png"

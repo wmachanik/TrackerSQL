@@ -8,18 +8,20 @@ using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
-// //- only form later versions #nullable disable --- not for this version of C#
-public partial class PrintMasterPage : MasterPage
+namespace TrackerSQL
 {
-  protected HtmlHead Head1;
-  protected ContentPlaceHolder HeadContent;
-  protected Image imgQuaffeeLogo;
-  protected HtmlForm frmMain;
-  protected ContentPlaceHolder MainContent;
+    public partial class PrintMasterPage : MasterPage
+    {
+        protected HtmlHead Head1;
+        protected ContentPlaceHolder HeadContent;
+        protected Image imgQuaffeeLogo;
+        protected HtmlForm frmMain;
+        protected ContentPlaceHolder MainContent;
 
-  protected void Page_Load(object sender, EventArgs e) => this.Response.Write("  ");
+        protected void Page_Load(object sender, EventArgs e) => this.Response.Write("  ");
 
-  protected void btnClose_Click(object sender, EventArgs e)
-  {
-  }
+        protected void btnClose_Click(object sender, EventArgs e)
+        {
+        }
+    }
 }

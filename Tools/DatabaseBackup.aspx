@@ -49,7 +49,7 @@
                     <img class="tool-card-icon" src="../images/imgButtons/icons8-data-backup-30.png" alt="" />
                     <div>
                         <h1 class="page-tone-title">Database Backup</h1>
-                        <p class="page-tone-subtitle">Backup OtterDb to App_Data\Backup (timestamped .bak files)</p>
+                        <p class="page-tone-subtitle">Folder from Web.config <code>DatabaseBackupFolder</code> (default App_Data\Backup)</p>
                     </div>
                 </div>
 

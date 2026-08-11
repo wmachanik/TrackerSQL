@@ -47,7 +47,7 @@ Apply when creating or editing a page. Bring non-compliant pages into line as th
 
 Legacy `Controls/*Tbl.cs` may still contain old names until retired — **do not copy those spellings** into repositories, models, managers, or pages.
 
-See also: [`Docs/MIGRATION_NAMING_ALIGNMENT.md`](../Docs/MIGRATION_NAMING_ALIGNMENT.md)
+See also: [`MIGRATION_NAMING_ALIGNMENT.md`](MIGRATION_NAMING_ALIGNMENT.md)
 
 ---
 
@@ -503,7 +503,7 @@ There are **ZERO exceptions** to the Access database rule. SQL Server must be us
 3. **Repository Standards:** `Documentation/REPOSITORY_STANDARDS.md` (naming conventions & standard methods)
 4. **Architecture:** `Documentation/ARCHITECTURE_RULES.md`
 5. **Project Overview:** `Documentation/PROJECT_OVERVIEW.md`
-6. **Implementation Guide:** `Documentation/WorkInProgress/REPOSITORY_ENFORCEMENT_PHASE1_COMPLETE.md`
+6. **Implementation Guide (archived):** `Documentation/Archive/WorkInProgress/REPOSITORY_ENFORCEMENT_PHASE1_COMPLETE.md`
 
 ---
 

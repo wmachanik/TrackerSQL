@@ -260,7 +260,7 @@ namespace TrackerSQL.Pages
             if (!queryResult.Success)
             {
                 ShowPageStatus("Could not load delivery sheet: " + queryResult.ErrorMessage, true);
-                BuildDeliveryTable(new DeliverySheetBuildResult(), pPrintForm);
+                BuildDeliveryTable(new DeliverySheetBuildResult(), pPrintForm, pOnlyDeliveryBy);
                 return;
             }
 
@@ -280,7 +280,7 @@ namespace TrackerSQL.Pages
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
             // UI rendering stays in the WebForms page.
-            this.BuildDeliveryTable(buildResult, pPrintForm);
+            this.BuildDeliveryTable(buildResult, pPrintForm, pOnlyDeliveryBy);
         }
 
         /*
@@ -299,7 +299,7 @@ namespace TrackerSQL.Pages
          * The page should now only handle WebForms UI rendering.
          */
 
-        private void BuildDeliveryTable(DeliverySheetBuildResult buildResult, bool pPrintForm)
+        private void BuildDeliveryTable(DeliverySheetBuildResult buildResult, bool pPrintForm, string selectedDeliveryBy = null)
         {
             // Clear previous table rows and totals
             while (1 < this.tblDeliveries.Rows.Count)
@@ -329,7 +329,7 @@ namespace TrackerSQL.Pages
 
             // 6. Update the delivery by dropdown if not printing
             if (!pPrintForm)
-                UpdateDeliveryByDropdown(buildResult.DeliveryPeople);
+                UpdateDeliveryByDropdown(buildResult.DeliveryPeople, selectedDeliveryBy);
 
             // 7. Update the UI panel
             this.upnlDeliveryItems.Update();
@@ -585,32 +585,50 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// Updates the delivery by dropdown and label visibility.
         /// </summary>
-        private void UpdateDeliveryByDropdown(List<DeliveryPersonOption> deliveryPeople)
+        private void UpdateDeliveryByDropdown(List<DeliveryPersonOption> deliveryPeople, string selectedDeliveryBy)
         {
-            bool flag = deliveryPeople != null && deliveryPeople.Count > 1;
+            // Keep the full person list available even when filtered to one person.
+            bool flag = deliveryPeople != null && deliveryPeople.Count >= 1;
+
+            string preferred =
+                !string.IsNullOrEmpty(selectedDeliveryBy) ? selectedDeliveryBy
+                : (Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] as string)
+                  ?? (Session[CONST_SESSION_DELIVERTBY] as string)
+                  ?? string.Empty;
 
             this.ddlDeliveryBy.Items.Clear();
             this.ddlDeliveryBy.Visible = flag;
             this.lblDeliveryBy.Visible = flag;
 
-            if (flag)
+            if (!flag)
+                return;
+
+            this.ddlDeliveryBy.Items.Add(new ListItem()
+            {
+                Text = "--- All ---",
+                Value = "%"
+            });
+
+            foreach (var person in deliveryPeople)
             {
                 this.ddlDeliveryBy.Items.Add(new ListItem()
                 {
-                    Text = "--- All ---",
-                    Value = "%",
-                    Selected = true
+                    Text = person.Abbreviation,
+                    Value = person.PersonID
                 });
-
-                foreach (var person in deliveryPeople)
-                {
-                    this.ddlDeliveryBy.Items.Add(new ListItem()
-                    {
-                        Text = person.Abbreviation,
-                        Value = person.PersonID
-                    });
-                }
             }
+
+            this.ddlDeliveryBy.ClearSelection();
+            ListItem match = null;
+            if (!string.IsNullOrEmpty(preferred) && preferred != "%")
+                match = this.ddlDeliveryBy.Items.FindByValue(preferred);
+
+            if (match != null)
+                match.Selected = true;
+            else if (this.ddlDeliveryBy.Items.FindByValue("%") != null)
+                this.ddlDeliveryBy.SelectedValue = "%";
+            else if (this.ddlDeliveryBy.Items.Count > 0)
+                this.ddlDeliveryBy.SelectedIndex = 0;
         }
 
         /*
@@ -637,7 +655,26 @@ namespace TrackerSQL.Pages
                     ? deliveryDate.ToString("yyyy-MM-dd")
                     : string.Empty;
 
-            this.Response.Redirect("~/Pages/DeliverySheet.aspx?Print=Y");
+            string deliveryBy =
+                this.ddlDeliveryBy != null
+                && this.ddlDeliveryBy.Items.Count > 0
+                && this.ddlDeliveryBy.SelectedIndex > 0
+                && !string.IsNullOrEmpty(this.ddlDeliveryBy.SelectedValue)
+                && this.ddlDeliveryBy.SelectedValue != "%"
+                    ? this.ddlDeliveryBy.SelectedValue
+                    : (Session[CONST_SESSION_DELIVERTBY] as string) ?? string.Empty;
+
+            if (deliveryBy == "%")
+                deliveryBy = string.Empty;
+
+            this.Session[CONST_SESSION_DELIVERTBY] = deliveryBy;
+            this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = deliveryBy;
+
+            string url = "~/Pages/DeliverySheet.aspx?Print=Y";
+            if (!string.IsNullOrEmpty(deliveryBy))
+                url += "&DeliveryBy=" + HttpUtility.UrlEncode(deliveryBy);
+
+            this.Response.Redirect(url);
         }
 
         protected void ddlActivePrepDates_SelectedIndexChanged(object sender, EventArgs e)

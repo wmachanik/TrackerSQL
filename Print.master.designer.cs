@@ -7,8 +7,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-
-
-public partial class PrintMasterPage
+namespace TrackerSQL
 {
+    public partial class PrintMasterPage
+    {
+    }
 }

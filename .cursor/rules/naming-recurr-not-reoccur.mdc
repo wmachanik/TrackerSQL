@@ -12,6 +12,6 @@ Canonical SQL Server / app names:
 - `NextPreparationDate` / `Preparation` — **never** `NextPreperationDate` / `Preperation`
 
 Do not copy legacy spellings from `Controls/*Tbl.cs` into repositories, models, managers, or pages.
-Full table: `Docs/MIGRATION_NAMING_ALIGNMENT.md`. Hard rule: `Documentation/HARD_PROJECT_RULES.md` Rule #0c.
+Full table: `Documentation/MIGRATION_NAMING_ALIGNMENT.md`. Hard rule: `Documentation/HARD_PROJECT_RULES.md` Rule #0c.
 
 Schema/migrate SQL: **TrackerMigration** only — not `Data/Metadata/Sql` or `Migrations/` under TrackerSQL (those are legacy and excluded from the project).

@@ -1,5 +1,6 @@
 <%@ Page Title="Order Detail" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="True" CodeBehind="OrderDetail.aspx.cs"
     Inherits="TrackerSQL.Pages.OrderDetail" MaintainScrollPositionOnPostback="true" EnableEventValidation="false" %>
+<%@ Import Namespace="TrackerSQL.Classes" %>
 
 <asp:Content ID="cntOrderDetailHdr" title="Order Detail" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Keep HeadContent free of <%= %> — ScriptManager cannot modify <head> when it contains code blocks. --%>
@@ -155,7 +156,9 @@
                             <td>Notes:</td>
                             <td>
                                 <asp:TextBox ID="tbxNotes" runat="server" TextMode="MultiLine" Height="4em"
-                                    Width="98%" />
+                                    Width="98%" AutoPostBack="true"
+                                    OnTextChanged="tbxNotes_TextChanged"
+                                    ToolTip="For ZZName / sundry orders, enter notes to enable New Item" />
                             </td>
                         </tr>
                     </table>
@@ -183,6 +186,7 @@
                 </ContentTemplate>
                 <Triggers>
                     <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
+                    <asp:AsyncPostBackTrigger ControlID="tbxNotes" EventName="TextChanged" />
                     <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
@@ -292,6 +296,7 @@
                 <asp:UpdatePanel ID="upnlNewOrderItem" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <Triggers>
                         <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
+                        <asp:AsyncPostBackTrigger ControlID="tbxNotes" EventName="TextChanged" />
                         <asp:AsyncPostBackTrigger ControlID="btnNewItem" EventName="Click" />
                         <asp:AsyncPostBackTrigger ControlID="btnAdd" EventName="Click" />
                         <asp:AsyncPostBackTrigger ControlID="btnCancel" EventName="Click" />
@@ -420,6 +425,130 @@
                 confirmLeave: 'orderHeaderConfirmLeave'
             }
         });
+
+        // ZZName / sundry: enable New Item as soon as Notes length > 1 (no wait for postback).
+        (function () {
+            var sundryId = '<%= SystemConstants.CustomerConstants.SundryCustomerIDStr %>';
+            var sundryPrefix = '<%= SystemConstants.CustomerConstants.SundryCustomerNamePrefix %>';
+            var notesId = '<%= tbxNotes.ClientID %>';
+            var contactHiddenId = '<%= hdnSelectedContactId.ClientID %>';
+            var newItemBtnId = '<%= btnNewItem.ClientID %>';
+            var contactsComboId = '<%= cboContacts.ClientID %>';
+
+            function byId(id) {
+                return id ? document.getElementById(id) : null;
+            }
+
+            function getContactId() {
+                var h = byId(contactHiddenId);
+                if (h && h.value && parseInt(h.value, 10) > 0)
+                    return String(parseInt(h.value, 10));
+
+                // Ajax ComboBox posts as _HiddenField / select — try common siblings
+                var combo = byId(contactsComboId);
+                if (combo) {
+                    if (combo.tagName === 'SELECT' && combo.value && combo.value !== '0')
+                        return String(combo.value);
+                    var hidden = document.getElementById(contactsComboId + '_HiddenField');
+                    if (hidden && hidden.value && hidden.value !== '0')
+                        return String(hidden.value);
+                }
+                return '';
+            }
+
+            function getContactName() {
+                var combo = byId(contactsComboId);
+                if (!combo) return '';
+                if (combo.tagName === 'SELECT' && combo.selectedIndex >= 0)
+                    return (combo.options[combo.selectedIndex].text || '').trim();
+                if (combo.tagName === 'INPUT')
+                    return (combo.value || '').trim();
+                var input = document.getElementById(contactsComboId + '_TextBox')
+                    || (combo.querySelector && combo.querySelector('input[type="text"]'));
+                return input ? (input.value || '').trim() : '';
+            }
+
+            function isSundryContact() {
+                var id = getContactId();
+                if (id === sundryId) return true;
+                var name = getContactName();
+                return name.toUpperCase().indexOf(sundryPrefix.toUpperCase()) === 0;
+            }
+
+            function notesOk() {
+                var notes = byId(notesId);
+                if (!notes) return false;
+                return (notes.value || '').trim().length > 1;
+            }
+
+            function hasContact() {
+                var id = getContactId();
+                if (id && id !== '0') return true;
+                var name = getContactName();
+                return !!(name && name.toLowerCase() !== 'none' && name.indexOf('Select') < 0);
+            }
+
+            function setNewItemEnabled(enabled) {
+                var btn = byId(newItemBtnId);
+                if (!btn) return;
+                btn.disabled = !enabled;
+                if (enabled) {
+                    btn.removeAttribute('disabled');
+                    btn.classList.remove('aspNetDisabled');
+                    btn.style.opacity = '';
+                    btn.style.pointerEvents = '';
+                } else {
+                    btn.setAttribute('disabled', 'disabled');
+                    btn.classList.add('aspNetDisabled');
+                    btn.style.opacity = '0.55';
+                    btn.style.pointerEvents = 'none';
+                }
+            }
+
+            function syncNewItemButton() {
+                if (!hasContact()) {
+                    setNewItemEnabled(false);
+                    return;
+                }
+                if (isSundryContact()) {
+                    setNewItemEnabled(notesOk());
+                    return;
+                }
+                setNewItemEnabled(true);
+            }
+
+            window.orderDetailSyncNewItemButton = syncNewItemButton;
+
+            function wire() {
+                var notes = byId(notesId);
+                if (notes) {
+                    ['input', 'keyup', 'change', 'blur', 'paste'].forEach(function (evt) {
+                        notes.addEventListener(evt, function () {
+                            window.setTimeout(syncNewItemButton, 0);
+                        });
+                    });
+                }
+                syncNewItemButton();
+            }
+
+            function onReady(fn) {
+                if (document.readyState === 'loading')
+                    document.addEventListener('DOMContentLoaded', fn);
+                else
+                    fn();
+            }
+
+            onReady(function () {
+                wire();
+                if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                    var prm = Sys.WebForms.PageRequestManager.getInstance();
+                    prm.add_endRequest(function () {
+                        wire();
+                        syncNewItemButton();
+                    });
+                }
+            });
+        })();
 
         // OrderDetail-only: Save & Return overlay / redirect (uses TrackerUnsaved for leave guard)
         (function () {

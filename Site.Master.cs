@@ -13,6 +13,8 @@ namespace TrackerSQL
         protected Label lblApplicationError;
         protected HyperLink lnkViewLogs;
         protected LinkButton btnDismissAppError;
+        protected Literal litAppVersionHeader;
+        protected Literal litAppVersionFooter;
 
         protected void Page_Init(object sender, EventArgs e)
         {
@@ -22,6 +24,9 @@ namespace TrackerSQL
                 litUnsavedChangesScript.Text =
                     "<script type=\"text/javascript\" src=\"" +
                     HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js?v=20260807-2")) +
+                    "\"></script>" +
+                    "<script type=\"text/javascript\" src=\"" +
+                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/comboBoxPosition.js?v=20260811-2")) +
                     "\"></script>";
             }
         }
@@ -30,11 +35,26 @@ namespace TrackerSQL
         {
             var sw = Stopwatch.StartNew();
 
+            BindAppVersionLabels();
             BindApplicationErrorBanner();
             HighlightCurrentMenuItem();
 
             sw.Stop();
             RequestTiming.Write("MASTER PAGE", sw.ElapsedMilliseconds + " ms");
+        }
+
+        /// <summary>
+        /// AppSettings are cached by ASP.NET — reading Version each request is negligible.
+        /// </summary>
+        private void BindAppVersionLabels()
+        {
+            string version = ConfigHelper.GetString("Version", string.Empty).Trim();
+            string display = string.IsNullOrEmpty(version) ? string.Empty : "v" + version;
+
+            if (litAppVersionHeader != null)
+                litAppVersionHeader.Text = HttpUtility.HtmlEncode(display);
+            if (litAppVersionFooter != null)
+                litAppVersionFooter.Text = HttpUtility.HtmlEncode(display);
         }
 
         private void BindApplicationErrorBanner()

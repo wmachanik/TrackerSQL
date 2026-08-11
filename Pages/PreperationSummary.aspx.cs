@@ -110,6 +110,8 @@ namespace TrackerSQL.Pages
             if (this.IsPostBack)
                 return;
             this.ResetDates();
+            // Default: show this week's summary (same as clicking Go with selected dates).
+            this.GoBtn_Click(this.GoBtn, EventArgs.Empty);
         }
 
         protected void GoBtn_Click(object sender, EventArgs e)

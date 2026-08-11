@@ -332,18 +332,19 @@ Documentation\
 
 **Related Documentation Elsewhere:**
 ```
-Docs\
+Documentation\Migration\
 ??? MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md
+??? MigrationPlan_TrackerDotNet_to_TrackerSQL.md
+??? DATETIME_TO_DATE_MIGRATION_CHECKLIST.md
 
-Migrations\
-??? README_MIGRATION.md
-??? README_FIX.md
-??? Data\
-    ??? TableMigrationReport-10-Mar-26.xlsx  # MASTER REFERENCE
+Documentation\Archive\            # Historical / completed session notes
+
+Migrations\                       # LEGACY (excluded from project; TrackerMigration owns SQL)
+??? README_LEGACY.md
 
 Data\
 ??? Metadata\
-    ??? README.md
+    ??? README_LEGACY.md
 ```
 
 ---

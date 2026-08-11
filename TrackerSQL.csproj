@@ -229,6 +229,7 @@
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
     <Content Include="Scripts\unsavedChanges.js" />
+    <Content Include="Scripts\comboBoxPosition.js" />
     <Content Include="Styles\MobileSite.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="Tools\EmailDiagnostics.aspx" />
@@ -251,7 +252,7 @@
     <Content Include="Web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
-    <!-- Dev-only on disk, not published: Documentation\, Docs\, DevTools\ -->
+    <!-- Dev-only on disk, not published: Documentation\, DevTools\ -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account\ChangePassword.aspx.cs">

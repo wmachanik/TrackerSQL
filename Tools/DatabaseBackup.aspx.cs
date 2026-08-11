@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 // TrackerSQL v3.x — Database Backup tool
-// Creates timestamped SQL Server .bak files under App_Data\Backup and lists/deletes them.
+// Creates timestamped SQL Server .bak files. Folder from Web.config
+// DatabaseBackupFolder (absolute or ~/...), default ~/App_Data/Backup.
 //------------------------------------------------------------------------------
 
 using System;
@@ -19,7 +20,8 @@ namespace TrackerSQL.Tools
 {
     public partial class DatabaseBackup : Page
     {
-        private const string BackupFolderVirtualPath = "~/App_Data/Backup";
+        private const string BackupFolderSettingKey = "DatabaseBackupFolder";
+        private const string DefaultBackupFolderVirtualPath = "~/App_Data/Backup";
         private const string ConnectionStringName = "TrackerDataSQL";
 
         protected ScriptManager smDatabaseBackup;
@@ -47,11 +49,62 @@ namespace TrackerSQL.Tools
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            EnsureBackupFolder();
+            try
+            {
+                EnsureBackupFolder();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "DatabaseBackup: could not create backup folder: " + ex.Message);
+            }
+
             ltrlBackupFolder.Text = HttpUtility.HtmlEncode(GetBackupFolderPath());
 
             if (!IsPostBack)
-                BindBackupList();
+            {
+                try
+                {
+                    BindBackupList();
+                }
+                catch (Exception ex)
+                {
+                    SetStatus("Could not list backups: " + ex.Message, isError: true);
+                }
+
+                ApplyBackupAvailabilityHint();
+            }
+        }
+
+        /// <summary>
+        /// Warn when SQL is remote and folder is still the web App_Data default (SQL usually cannot see it).
+        /// Custom absolute DatabaseBackupFolder (e.g. host www\db) stays enabled for try.
+        /// </summary>
+        private void ApplyBackupAvailabilityHint()
+        {
+            bool remote = IsRemoteSqlServer(GetConnectionStringBuilder());
+            bool usingDefaultAppData = !HasCustomBackupFolderConfigured();
+
+            if (remote && usingDefaultAppData)
+            {
+                SetStatus(
+                    "SQL Server appears remote and DatabaseBackupFolder is not set. "
+                    + "Set appSetting DatabaseBackupFolder in Web.config to a path SQL can write "
+                    + "(on this host often h:\\root\\home\\…\\www\\db). "
+                    + "Default App_Data\\Backup is only for local SQL Express.",
+                    isError: null);
+                btnBackupNow.Enabled = false;
+                btnBackupNow.ToolTip = "Set DatabaseBackupFolder in Web.config to a SQL-visible path";
+                return;
+            }
+
+            if (remote)
+            {
+                SetStatus(
+                    "Using configured DatabaseBackupFolder. Path must be visible to the SQL Server service "
+                    + "(same as your host manual backup folder).",
+                    isError: null);
+            }
         }
 
         protected void btnBackupNow_Click(object sender, EventArgs e)
@@ -67,11 +120,8 @@ namespace TrackerSQL.Tools
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "DatabaseBackup failed: " + ex.Message);
-                SetStatus(
-                    "Backup failed: " + ex.Message
-                    + " — ensure the SQL Server service account can write to App_Data\\Backup.",
-                    isError: true);
-                BindBackupList();
+                SetStatus("Backup failed: " + ex.Message, isError: true);
+                try { BindBackupList(); } catch { /* ignore list errors after backup fail */ }
             }
         }
 
@@ -198,7 +248,7 @@ namespace TrackerSQL.Tools
             string fileName = safeDbName + "_" + stamp + ".bak";
             string backupPath = Path.Combine(GetBackupFolderPath(), fileName);
 
-            // SQL Server writes the file as its own service account — path must be absolute.
+            // SQL Server writes the file as its own service account — path must exist for SQL, not only IIS.
             string sql = "BACKUP DATABASE [" + databaseName.Replace("]", "]]") + "] TO DISK = @BackupPath "
                 + "WITH COPY_ONLY, INIT, NAME = @BackupName, STATS = 10";
 
@@ -213,7 +263,10 @@ namespace TrackerSQL.Tools
             }
 
             if (!File.Exists(backupPath))
-                throw new FileNotFoundException("SQL Server reported success but the backup file was not found.", backupPath);
+                throw new FileNotFoundException(
+                    "SQL Server reported success but the web app cannot see the .bak file yet "
+                    + "(folder permissions or SQL wrote elsewhere). Check: " + backupPath,
+                    backupPath);
 
             return backupPath;
         }
@@ -313,9 +366,27 @@ namespace TrackerSQL.Tools
                 Directory.CreateDirectory(path);
         }
 
+        /// <summary>
+        /// Resolves backup directory from Web.config DatabaseBackupFolder.
+        /// Absolute path as-is; ~/virtual path via MapPath; empty → ~/App_Data/Backup.
+        /// </summary>
         private string GetBackupFolderPath()
         {
-            return Server.MapPath(BackupFolderVirtualPath);
+            string configured = ConfigHelper.GetString(BackupFolderSettingKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(configured))
+                return Path.GetFullPath(Server.MapPath(DefaultBackupFolderVirtualPath));
+
+            configured = configured.Trim();
+            if (configured.StartsWith("~/", StringComparison.Ordinal)
+                || configured.StartsWith("~\\", StringComparison.Ordinal))
+                return Path.GetFullPath(Server.MapPath(configured));
+
+            return Path.GetFullPath(configured);
+        }
+
+        private static bool HasCustomBackupFolderConfigured()
+        {
+            return !string.IsNullOrWhiteSpace(ConfigHelper.GetString(BackupFolderSettingKey, string.Empty));
         }
 
         private static SqlConnectionStringBuilder GetConnectionStringBuilder()
@@ -325,6 +396,37 @@ namespace TrackerSQL.Tools
                 throw new ConfigurationErrorsException("Connection string '" + ConnectionStringName + "' was not found.");
 
             return new SqlConnectionStringBuilder(cs.ConnectionString);
+        }
+
+        /// <summary>
+        /// True when Data Source is not this machine.
+        /// </summary>
+        private static bool IsRemoteSqlServer(SqlConnectionStringBuilder builder)
+        {
+            if (builder == null)
+                return true;
+
+            string dataSource = (builder.DataSource ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(dataSource))
+                return true;
+
+            string host = dataSource;
+            int slash = host.IndexOf('\\');
+            if (slash >= 0)
+                host = host.Substring(0, slash);
+            int comma = host.IndexOf(',');
+            if (comma >= 0)
+                host = host.Substring(0, comma);
+            host = host.Trim().TrimStart('(').TrimEnd(')');
+
+            if (string.IsNullOrEmpty(host))
+                return true;
+
+            return !(host.Equals(".", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("(local)", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("::1", StringComparison.OrdinalIgnoreCase));
         }
 
         private static string SanitizeFileToken(string value)

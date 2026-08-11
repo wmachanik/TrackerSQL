@@ -342,10 +342,16 @@ Update version number and add entry when making significant changes.
 
 ### Other Documentation in Repository
 
-**`Docs\MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md`**
+**`Documentation\Migration\MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md`**
 - Original migration playbook
 - Junior developer focused
 - Detailed phase-by-phase guide
+
+**`Documentation\MIGRATION_NAMING_ALIGNMENT.md`**
+- Access → SQL naming alignment table
+
+**`Documentation\Archive\`**
+- Historical / completed session notes (not current guidance)
 
 **`Migrations\README_MIGRATION.md`**
 - Quick migration execution guide

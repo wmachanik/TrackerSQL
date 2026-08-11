@@ -682,6 +682,7 @@ namespace TrackerSQL.Pages
                 return;
 
             scriptManager.RegisterAsyncPostBackControl(cboContacts);
+            scriptManager.RegisterAsyncPostBackControl(tbxNotes);
             scriptManager.RegisterAsyncPostBackControl(btnSaveHeader);
             scriptManager.RegisterAsyncPostBackControl(btnSaveAndReturn);
             scriptManager.RegisterAsyncPostBackControl(btnUndoHeader);
@@ -911,7 +912,36 @@ namespace TrackerSQL.Pages
             if (btnNewItem == null)
                 return;
 
-            btnNewItem.Enabled = ShouldEnableNewItemButton();
+            // Keep Enabled=true so a JS-enabled click can post back (WebForms ignores
+            // clicks on controls rendered disabled). Gate is JS visual + ShouldEnableNewItemButton on click.
+            long contactId = GetEffectiveContactId();
+            string contactName = GetSelectedContactDisplayName() ?? string.Empty;
+            bool hasContact = contactId > 0
+                || (!string.IsNullOrWhiteSpace(contactName)
+                    && !string.Equals(contactName, "none", StringComparison.OrdinalIgnoreCase));
+
+            btnNewItem.Enabled = hasContact;
+            if (hasContact && Page?.ClientScript != null)
+            {
+                ScriptManager.RegisterStartupScript(
+                    this,
+                    GetType(),
+                    "orderDetailSyncNewItem",
+                    "if (window.orderDetailSyncNewItemButton) window.orderDetailSyncNewItemButton();",
+                    true);
+            }
+        }
+
+        /// <summary>
+        /// ZZName / sundry (ID 9): New Item stays disabled until Notes has text.
+        /// AutoPostBack on blur refreshes the New Item button.
+        /// </summary>
+        protected void tbxNotes_TextChanged(object sender, EventArgs e)
+        {
+            MarkHeaderDirty();
+            UpdateNewItemButtonState();
+            if (upnlNewOrderItem != null && upnlNewOrderItem.UpdateMode == UpdatePanelUpdateMode.Conditional)
+                upnlNewOrderItem.Update();
         }
 
         protected void cboContacts_SelectedIndexChanged(object sender, EventArgs e)
@@ -1227,7 +1257,7 @@ namespace TrackerSQL.Pages
             else
                 SetSaveButtonsEnabled(false);
 
-            btnNewItem.Enabled = ShouldEnableNewItemButton();
+            UpdateNewItemButtonState();
             btnConfirmOrder.Enabled = OrderId > 0;
             btnMerge.Visible = MergeableOrderId > 0 && OrderId > 0 && !orderDone;
             btnMerge.Enabled = MergeableOrderId > 0 && OrderId > 0 && !orderDone;
@@ -1655,7 +1685,16 @@ namespace TrackerSQL.Pages
         {
             if (!ShouldEnableNewItemButton())
             {
-                SetStatusMessage("Please select a contact before adding items.", isError: true);
+                long contactId = GetEffectiveContactId();
+                string contactName = GetSelectedContactDisplayName() ?? string.Empty;
+                bool needsNotes = contactId == SystemConstants.CustomerConstants.SundryCustomerID
+                    || contactName.StartsWith(SystemConstants.CustomerConstants.SundryCustomerNamePrefix, StringComparison.OrdinalIgnoreCase);
+
+                SetStatusMessage(
+                    needsNotes
+                        ? "Enter notes (more than 1 character) for ZZName before adding items."
+                        : "Please select a contact before adding items.",
+                    isError: true);
                 return;
             }
 
@@ -2932,7 +2971,12 @@ namespace TrackerSQL.Pages
                 return false;
 
             if (contactId == SystemConstants.CustomerConstants.SundryCustomerID)
-                return !string.IsNullOrWhiteSpace(tbxNotes?.Text);
+                return (tbxNotes?.Text ?? string.Empty).Trim().Length > 1;
+
+            // Fallback: ZZ* display name without resolved id still requires notes
+            string contactName = GetSelectedContactDisplayName() ?? string.Empty;
+            if (contactName.StartsWith(SystemConstants.CustomerConstants.SundryCustomerNamePrefix, StringComparison.OrdinalIgnoreCase))
+                return (tbxNotes?.Text ?? string.Empty).Trim().Length > 1;
 
             return true;
         }

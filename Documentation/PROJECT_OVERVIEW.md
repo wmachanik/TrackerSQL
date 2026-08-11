@@ -165,9 +165,9 @@ C:\SRC\ASP.net\TrackerSQL\
 ?   ??? TABLE_SCHEMA_REFERENCE.md  # Complete table documentation
 ?   ??? CODE_STRUCTURE.md          # Codebase organization
 ?   ??? AI_CONTEXT.md              # AI assistant guidelines
-?
-??? Docs\                          # Original documentation
-?   ??? MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md
+?   ??? MIGRATION_NAMING_ALIGNMENT.md
+?   ??? Migration\                 # Playbooks / plans (former Docs\)
+?   ??? Archive\                   # Historical session notes
 ?
 ??? Controls\                      # Data access classes
 ?   ??? SentRemindersLogTbl.cs     # Reminder tracking

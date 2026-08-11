@@ -1,5 +1,5 @@
 /* DEFAULTS
-    Rev: 20260807-15
+    Rev: 20260811-5
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -2664,8 +2664,9 @@ table.InputFrm td.status-flags .status-flag > span {
 }
 
 /* ComboBox: keep native toolkit table; glue textbox + arrow (no gap).
-   Option list is often a sibling UL inside the <td> (not only inside .ajax__combobox).
-   It must be position:absolute or it stretches the row and leaves controls top-aligned. */
+   Option list must stay position:absolute, but do NOT force left/top — the
+   Ajax Toolkit sets those in pixels. left:0 !important pinned the list to the
+   left edge of the page panel instead of under the Item input. */
 .ajax__combobox {
     position: relative !important;
 }
@@ -2679,14 +2680,51 @@ table.InputFrm td.status-flags .status-flag > span {
 .new-order-item-table td > ul,
 .new-order-item-table td ul[id$="_OptionList"],
 ul[id$="_OptionList"] {
-    position: absolute !important;
-    left: 0 !important;
-    top: auto !important;
-    z-index: 10000 !important;
+    /* left/top/position applied by Scripts/comboBoxPosition.js (fixed under the textbox) */
+    z-index: 2147483000 !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 2px 0 !important;
     list-style: none !important;
     box-sizing: border-box !important;
+    background: #fff !important;
+    color: #292909 !important;
+    border: 1px solid #4e664d !important;
+    border-radius: 3px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+    max-height: 240px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    min-width: 12em !important;
+}
+
+ul[id$="_OptionList"] li,
+.ajax__combobox_itemlist li {
+    display: block !important;
+    padding: 4px 10px !important;
+    color: #292909 !important;
+    background: #fff !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+}
+
+ul[id$="_OptionList"] li:hover,
+ul[id$="_OptionList"] li[highlighted="true"],
+.ajax__combobox_itemlist li:hover {
+    background: #e5f0d4 !important;
+    color: #292909 !important;
+}
+
+/* New-item Item/Prep cells: containing block if the option UL is a sibling in the <td> */
+.new-order-item-table > tbody > tr > td {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+.page-tone-panel.page-tone-orders .new-order-item-form,
+.page-tone-panel.page-tone-neworder .new-order-item-form {
+    overflow: visible !important;
+    position: relative;
+    z-index: 50;
 }
 
 .results-table .ajax__combobox,
@@ -3511,13 +3549,14 @@ table.InputFrm {
     box-sizing: border-box;
 }
 
-/* Keep order detail content inside the page-tone shell */
+/* Keep order detail content inside the page-tone shell.
+   overflow must stay visible so Ajax ComboBox option lists are not clipped. */
 .page-tone-panel.page-tone-orders,
 .page-tone-panel.page-tone-neworder {
     width: fit-content;
     max-width: 100%;
     box-sizing: border-box;
-    overflow-x: auto;
+    overflow: visible;
 }
 
 .page-tone-panel.page-tone-orders .responsive-layout-container,
@@ -3552,7 +3591,7 @@ table.InputFrm {
     max-width: 100%;
     box-sizing: border-box;
     justify-content: flex-start;
-    overflow-x: auto;
+    overflow: visible !important;
     padding-bottom: 12px;
 }
 
@@ -3638,6 +3677,9 @@ table.InputFrm {
     border-top: 1px solid rgba(78, 102, 77, 0.15);
     text-align: left;
     align-self: stretch;
+    overflow: visible !important;
+    position: relative;
+    z-index: 40;
 }
 
 .page-tone-panel.page-tone-orders .layout-panel-bottom .filter-panel-btn,
@@ -3834,15 +3876,14 @@ table.InputFrm {
         border-right: none !important;
     }
 
-    /* Option lists that Toolkit parks as siblings inside the cell */
+    /* Option lists: do not force absolute here — comboBoxPosition.js uses fixed on body */
     .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tbody > tr > td > ul,
     .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tbody > tr > td > ul,
     .page-tone-panel.page-tone-orders .results-table.in-panel-grid > tr > td > ul,
     .page-tone-panel.page-tone-neworder .results-table.in-panel-grid > tr > td > ul,
     .page-tone-panel.page-tone-orders .results-table.in-panel-grid td ul[id$="_OptionList"],
     .page-tone-panel.page-tone-neworder .results-table.in-panel-grid td ul[id$="_OptionList"] {
-        position: absolute !important;
-        z-index: 10000 !important;
+        z-index: 2147483000 !important;
         margin: 0 !important;
     }
 }
@@ -6460,10 +6501,15 @@ table.results-table .pager-nav a.pager-btn:hover {
     gap: 8px;
 }
 
-/* Week date filter (Weekly Summary + Items Required) — same clean input chrome on both pages.
-   Must beat .detail-form-table card/borders so the toolbars match. */
+/* Week date filter (Weekly Summary + Items Required) — white panel with visible inputs. */
 .page-tone-toolbar:has(.date-range-toolbar) {
     display: block;
+    background: #fff;
+    border: 1px solid #cfd8c8;
+    border-radius: 4px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .page-tone-toolbar table.date-range-toolbar.detail-form-table,
@@ -6504,19 +6550,20 @@ table.results-table .pager-nav a.pager-btn:hover {
     margin-left: 4px;
 }
 
-/* Clean date fields / select — no box borders */
+/* Visible date fields / select inside the white date panel */
 .page-tone-toolbar .date-field-clean,
 .page-tone-toolbar input.date-field-clean,
 .page-tone-toolbar table.date-range-toolbar input.date-field-clean,
 .page-tone-toolbar table.date-range-toolbar input[type="text"] {
-    border: none !important;
-    background: transparent !important;
+    border: 1px solid #b8c4b0 !important;
+    background: #fff !important;
     box-shadow: none !important;
     outline: none !important;
-    padding: 2px 4px !important;
+    padding: 4px 8px !important;
     min-width: 7.5em;
     width: auto !important;
     max-width: none !important;
+    border-radius: 3px !important;
     font-weight: 600 !important;
     color: #292909 !important;
 }
@@ -6524,25 +6571,25 @@ table.results-table .pager-nav a.pager-btn:hover {
 .page-tone-toolbar .date-field-clean:focus,
 .page-tone-toolbar table.date-range-toolbar input.date-field-clean:focus,
 .page-tone-toolbar table.date-range-toolbar input[type="text"]:focus {
-    border: none !important;
-    background: rgba(255, 255, 255, 0.45) !important;
+    border-color: #6b8f71 !important;
+    background: #fff !important;
     box-shadow: none !important;
     outline: none !important;
 }
 
 .page-tone-toolbar table.date-range-toolbar select {
-    border: none !important;
-    background: transparent !important;
+    border: 1px solid #b8c4b0 !important;
+    background: #fff !important;
     box-shadow: none !important;
     outline: none !important;
-    padding: 2px 4px !important;
+    padding: 4px 8px !important;
     width: auto !important;
     max-width: none !important;
     min-width: 12em;
+    border-radius: 3px !important;
     font-weight: 600 !important;
     color: #292909 !important;
 }
-
 .page-tone-toolbar table.date-range-toolbar .button-row {
     display: inline-flex !important;
     flex-wrap: wrap;

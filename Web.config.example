@@ -5,7 +5,7 @@
 -->
 <configuration>
 	<appSettings>
-		<add key="Version" value="3.0.0.1" />
+		<add key="Version" value="3.0.0.2" />
 		<add key="SysEmailFrom" value="orders@mydomain.co.za" />
 		<add key="SysCCEmailAddress" value="orders@mydomain.co.za" />
 		<add key="EMailLogIn" value="noreply@mydomain.co.za" />
@@ -44,6 +44,8 @@
 		<add key="EmailDebugSaveMime" value="false" />
 		<!-- Slow-load diagnosis: logs to App_Data/timing.log + Debug. Set false when done. -->
 		<add key="EnableRequestTiming" value="false" />
+		<!-- SQL BACKUP TO DISK folder: absolute path or ~/App_Data/Backup (empty/default). Must be visible to SQL Server. -->
+		<add key="DatabaseBackupFolder" value="" />
 	</appSettings>
 	<connectionStrings>
 		<!-- App data (and aspnet_* if you re-enable membership later) -->

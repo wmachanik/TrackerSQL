@@ -114,12 +114,12 @@ TrackerSQL\
 ?   ??? MIGRATION_GUIDE.md        # Migration procedures
 ?   ??? TABLE_SCHEMA_REFERENCE.md # Complete schema reference
 ?   ??? CODE_STRUCTURE.md         # This file
-?
-??? Docs\                         # Original documentation
-?   ??? MigrationPlaybook_TrackerDotNet_to_TrackerSQL.md
+?   ??? MIGRATION_NAMING_ALIGNMENT.md
+?   ??? Migration\                # Playbooks / plans (former Docs\)
+?   ??? Archive\                  # Historical session notes
 ?
 ??? Data\                         # Metadata and configuration
-?   ??? Metadata\                 # Migration metadata files
+?   ??? Metadata\                 # Migration metadata files (legacy under TrackerSQL)
 ?
 ??? Styles\                       # CSS files
 ??? Scripts\                      # JavaScript files
@@ -948,10 +948,16 @@ dotnet run
 
 ### Deploying Web Application
 
-1. Build in Release mode
-2. Publish to folder or IIS
-3. Update Web.config connection string
+1. Build / Publish with **Release** configuration (Visual Studio applies [Web.Release.config](../Web.Release.config) XDT to `Web.config`).
+2. Confirm published `Web.config`: production `TrackerDataSQL`, `EmailTestMode=false`, HTTPS rewrite, no `compilation debug`, `DatabaseBackupFolder` set.
+3. Or overwrite live `Web.config` from [weblive.config](../weblive.config) after a manual/FTP deploy (full production snapshot; keep aligned with `Web.Release.config`).
 4. Configure IIS application pool (.NET 4.x)
+
+**Config roles:**
+- `Web.config` — local/dev
+- `Web.Release.config` — Release publish transforms (deltas → live)
+- `weblive.config` — full live file for manual overwrite
+- `Web.config.example` — sanitized template (no real secrets)
 
 ---
 

@@ -436,9 +436,25 @@ namespace TrackerSQL.Managers
 
         public string MarkItemAsInvoiced(int orderId)
         {
-            return _ordersRepository.UpdateSetInvoicedByOrderId(true, orderId)
-                ? string.Empty
-                : "Failed to mark invoiced";
+            if (!_ordersRepository.UpdateSetInvoicedByOrderId(true, orderId))
+                return "Failed to mark invoiced";
+
+            // Same style as OrderDoneManager — log at the manager so the page UI path cannot skip it.
+            var header = GetOrderHeader(orderId);
+            long contactId = header?.CustomerID ?? 0;
+            string companyName = contactId > 0
+                ? (_contactsRepository.GetContactNameById((int)contactId) ?? string.Empty)
+                : string.Empty;
+            string contactPart = contactId <= 0
+                ? "Contact=(none)"
+                : (string.IsNullOrWhiteSpace(companyName)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({companyName})");
+            AppLogger.WriteLog(
+                SystemConstants.LogTypes.Orders,
+                $"Order {orderId} | {contactPart} | Order marked invoiced");
+
+            return string.Empty;
         }
 
         public string MarkItemAsInvoiced(long customerId, DateTime deliveryDate, string notes)
@@ -621,6 +637,10 @@ namespace TrackerSQL.Managers
                 int? serviceTypeId = line.ServiceTypeID > 0
                     ? line.ServiceTypeID
                     : _itemsRepository.GetItemServiceTypeId(line.ItemID);
+
+                // ItemsTbl has legacy rows with ItemServiceTypeID=0/null; TempOrdersLinesTbl FK requires a real type.
+                if (!serviceTypeId.HasValue || serviceTypeId.Value <= 0)
+                    serviceTypeId = SystemConstants.ServiceTypeConstants.NotApplicable;
 
                 if (!_tempOrdersLinesRepository.InsertLine(new TempOrdersLine
                 {

@@ -151,7 +151,7 @@ namespace TrackerSQL.Pages
                 pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect(DefaultReturnUrl, false);
             Context.ApplicationInstance.CompleteRequest();

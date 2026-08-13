@@ -22,7 +22,6 @@
             <asp:AsyncPostBackTrigger ControlID="ddlActivePrepDates" EventName="SelectedIndexChanged" />
             <asp:AsyncPostBackTrigger ControlID="btnGo" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnFind" EventName="Click" />
-            <asp:AsyncPostBackTrigger ControlID="tbxFindClient" EventName="TextChanged" />
             <asp:AsyncPostBackTrigger ControlID="ddlDeliveryBy" EventName="SelectedIndexChanged" />
             <asp:PostBackTrigger ControlID="btnPrint" />
             <asp:PostBackTrigger ControlID="btnRefresh" />
@@ -85,21 +84,43 @@
                         </div>
                         <div class="filter-section admin-controls">
                             <asp:Label runat="server" Text="To:" AssociatedControlID="tbxFindClient" CssClass="small" />
-                            <asp:TextBox ID="tbxFindClient" runat="server" OnTextChanged="tbxFindClient_OnTextChanged" AutoPostBack="true" />
-                            <asp:Button ID="btnFind" Text="Find" runat="server" CssClass="filter-panel-btn" OnClick="btnFind_Click" />
-                            <asp:Button ID="btnPrint" runat="server" CssClass="filter-panel-btn hideWhenPrinting" Text="Print"
-                                OnClick="btnPrint_Click" AccessKey="P" ToolTip="print sheet (AltShftP)" />
-                            <asp:HyperLink ID="hlAddDeliveryItem" runat="server"
-                                ImageUrl="~/images/imgButtons/AddItem.gif"
-                                ToolTip="New item(s) to deliver"
-                                NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                OnClick="btnBack_Click" CausesValidation="false" ToolTip="Return to home" />
+                            <asp:TextBox ID="tbxFindClient" runat="server" />
+                            <span class="toolbar-icon-row">
+                                <span class="image-button" title="Find contact on open delivery days">
+                                    <asp:ImageButton ID="btnFind" runat="server"
+                                        ImageUrl="~/images/imgButtons/Find.gif"
+                                        AlternateText="Find"
+                                        ToolTip="Find contact on open delivery days"
+                                        OnClick="btnFind_Click"
+                                        CausesValidation="false" />
+                                </span>
+                                <span class="image-button hideWhenPrinting" title="Print sheet (Alt+Shift+P)">
+                                    <asp:ImageButton ID="btnPrint" runat="server"
+                                        ImageUrl="~/images/imgButtons/Print.gif"
+                                        AlternateText="Print"
+                                        ToolTip="Print sheet (Alt+Shift+P)"
+                                        OnClick="btnPrint_Click"
+                                        AccessKey="P"
+                                        CausesValidation="false" />
+                                </span>
+                                <asp:HyperLink ID="hlAddDeliveryItem" runat="server"
+                                    ImageUrl="~/images/imgButtons/AddItem.gif"
+                                    ToolTip="New item(s) to deliver"
+                                    NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" />
+                                <span class="image-button" title="Return to home">
+                                    <asp:ImageButton ID="btnBack" runat="server"
+                                        ImageUrl="~/images/imgButtons/Back.gif"
+                                        AlternateText="Back"
+                                        ToolTip="Return to home"
+                                        OnClick="btnBack_Click"
+                                        CausesValidation="false" />
+                                </span>
+                            </span>
                         </div>
                     </div>
                 </asp:Panel>
 
-                <asp:Table ID="tblDeliveries" runat="server" CssClass="TblZebra" Width="100%" CellPadding="0">
+                <asp:Table ID="tblDeliveries" runat="server" EnableViewState="false" CssClass="TblZebra" Width="100%" CellPadding="0">
                     <asp:TableHeaderRow TableSection="TableHeader">
                         <asp:TableHeaderCell>By</asp:TableHeaderCell>
                         <asp:TableHeaderCell>To</asp:TableHeaderCell>

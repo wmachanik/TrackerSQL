@@ -28,7 +28,7 @@ namespace TrackerSQL.Pages
         protected Panel pnlNewRepair;
         protected ComboBox cboNewCompany;
         protected Button btnInsert;
-        protected Button btnCancelInsert;
+        protected ImageButton btnCancelInsert;
         protected Panel pnlRepairDetail;
         protected ComboBox cboCompany;
         protected TextBox tbxContactName;
@@ -56,7 +56,7 @@ namespace TrackerSQL.Pages
         protected Button btnUpdate;
         protected Button btnUpdateAndReturn;
         protected Button btnDelete;
-        protected Button btnCancel;
+        protected ImageButton btnCancel;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatusMessage;
         protected Literal ltrlStatus;
         protected ObjectDataSource odsCompanys;
@@ -186,6 +186,42 @@ namespace TrackerSQL.Pages
                 pnlStatusMessage.Attributes["class"] = "status-message status-success";
             else
                 pnlStatusMessage.Attributes["class"] = "status-message status-info";
+        }
+
+        /// <summary>
+        /// Writes a repairs.log audit line. AppLogger already prefixes the logged-in user.
+        /// </summary>
+        private void LogRepairAudit(string action, string details = null, int? repairIdOverride = null, int? contactIdOverride = null)
+        {
+            int repairId = repairIdOverride
+                ?? (int.TryParse(lblRepairID?.Text, out int parsedId) ? parsedId : 0);
+
+            int contactId = contactIdOverride ?? 0;
+            if (contactId <= 0 && cboCompany != null && cboCompany.SelectedIndex > 0)
+                int.TryParse(cboCompany.SelectedValue, out contactId);
+            if (contactId <= 0 && cboNewCompany != null && cboNewCompany.SelectedIndex > 0)
+                int.TryParse(cboNewCompany.SelectedValue, out contactId);
+
+            string company = string.Empty;
+            if (cboCompany?.SelectedItem != null && cboCompany.SelectedIndex > 0)
+                company = cboCompany.SelectedItem.Text?.Trim() ?? string.Empty;
+            else if (cboNewCompany?.SelectedItem != null && cboNewCompany.SelectedIndex > 0)
+                company = cboNewCompany.SelectedItem.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(company) && contactId > 0)
+                company = new ContactsRepository().GetContactNameById(contactId) ?? string.Empty;
+
+            string repairPart = repairId > 0 ? $"Repair {repairId}" : "New repair";
+            string contactPart = contactId > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({company})")
+                : "Contact=(none)";
+
+            string line = $"{repairPart} | {contactPart} | {action}";
+            if (!string.IsNullOrWhiteSpace(details))
+                line += $" | {details}";
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, line);
         }
 
         private void ClearDirtyState()
@@ -340,7 +376,7 @@ namespace TrackerSQL.Pages
                 return;
             }
 
-            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"New repair created for ContactID {contactId}, RepairID {repairId}");
+            LogRepairAudit("Repair created", null, repairIdOverride: repairId, contactIdOverride: contactId);
 
             // Full redirect (PostBackTrigger) so refresh does not re-post Insert and create a second repair.
             Response.Redirect("RepairDetail.aspx?RepairID=" + repairId + "&new=1", false);
@@ -382,21 +418,24 @@ namespace TrackerSQL.Pages
                 && !string.IsNullOrWhiteSpace(updateError)
                 && string.Equals(result.Trim(), updateError.Trim(), StringComparison.OrdinalIgnoreCase))
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs, $"RepairID {dataFromForm.RepairID} update failed: {result}");
+                LogRepairAudit("Update failed", result, contactIdOverride: (int)dataFromForm.CustomerID);
                 message = result;
                 return false;
             }
 
             if (dataFromForm.RepairStatusID != previousStatusId)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"RepairID {dataFromForm.RepairID} status changed from {previousStatusId} to {dataFromForm.RepairStatusID}");
+                LogRepairAudit(
+                    "Status changed",
+                    $"from={previousStatusId} to={dataFromForm.RepairStatusID}",
+                    contactIdOverride: (int)dataFromForm.CustomerID);
             }
             else
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"RepairID {dataFromForm.RepairID} updated (no status change)");
+                LogRepairAudit("Repair saved", null, contactIdOverride: (int)dataFromForm.CustomerID);
             }
+
+            // Status email success/fail is logged in RepairManager.SendStatusNotification → repairs.log
 
             this.Session[CONST_SESSION_REPAIRSTATUSID] = dataFromForm.RepairStatusID;
             message = string.IsNullOrWhiteSpace(result) ? "Record updated." : result;
@@ -440,11 +479,13 @@ namespace TrackerSQL.Pages
 
         protected void btnDelete_Click(object sender, EventArgs e)
         {
-            _repairManager.DeleteRepair(Convert.ToInt32(this.lblRepairID.Text));
+            int repairId = Convert.ToInt32(this.lblRepairID.Text);
+            LogRepairAudit("Repair deleted");
+            _repairManager.DeleteRepair(repairId);
             Session[SESSION_RETURN_URL] = ResolveUrl(DefaultReturnUrl);
             ReturnToCaller();
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e) => ReturnToCaller();
+        protected void btnCancel_Click(object sender, ImageClickEventArgs e) => ReturnToCaller();
     }
 }

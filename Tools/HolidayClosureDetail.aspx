@@ -96,9 +96,14 @@
                                 OnClick="btnDelete_Click" CausesValidation="false"
                                 OnClientClick="return confirm('Delete this closure?');"
                                 ToolTip="Delete this closure" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                OnClick="btnBack_Click" CausesValidation="false"
-                                ToolTip="Return to holiday closures list without saving" />
+                            <span class="image-button" title="Return to holiday closures list without saving">
+                                <asp:ImageButton ID="btnBack" runat="server"
+                                    ImageUrl="~/images/imgButtons/Back.gif"
+                                    AlternateText="Back"
+                                    ToolTip="Return to holiday closures list without saving"
+                                    OnClick="btnBack_Click"
+                                    CausesValidation="false" />
+                            </span>
                         </td>
                     </tr>
                 </table>

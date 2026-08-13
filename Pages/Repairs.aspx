@@ -83,12 +83,16 @@
                                 <asp:ListItem Selected="True" Value="OPEN" Text="-all open repairs-" />
                             </asp:DropDownList>
                         </div>
-                        <div class="filter-section action-buttons">
+                        <div class="filter-section action-buttons toolbar-icon-row">
                             <asp:HyperLink ID="hlAddRepair" ImageUrl="~/images/imgButtons/AddItem.gif" ToolTip="New Repair"
                                 NavigateUrl="~/Pages/RepairDetail.aspx" runat="server" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                CausesValidation="false"
-                                ToolTip="Return to home" />
+                            <span class="image-button" title="Return to home">
+                                <asp:ImageButton ID="btnBack" runat="server"
+                                    ImageUrl="~/images/imgButtons/Back.gif"
+                                    AlternateText="Back"
+                                    ToolTip="Return to home"
+                                    CausesValidation="false" />
+                            </span>
                         </div>
                     </div>
                 </div>

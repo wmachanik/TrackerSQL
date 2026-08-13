@@ -68,9 +68,14 @@
                     <asp:Button ID="btnRefresh" runat="server" Text="Refresh" CssClass="filter-panel-btn"
                         OnClick="btnRefresh_Click" CausesValidation="false"
                         ToolTip="Reload the backup list" />
-                    <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                        OnClick="btnBack_Click" CausesValidation="false"
-                        ToolTip="Return to System Tools" />
+                    <span class="image-button" title="Return to System Tools">
+                        <asp:ImageButton ID="btnBack" runat="server"
+                            ImageUrl="~/images/imgButtons/Back.gif"
+                            AlternateText="Back"
+                            ToolTip="Return to System Tools"
+                            OnClick="btnBack_Click"
+                            CausesValidation="false" />
+                    </span>
                 </div>
 
                 <div id="databaseBackupSaving" class="status-message status-info page-tone-progress"

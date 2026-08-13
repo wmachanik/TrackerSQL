@@ -155,13 +155,18 @@ namespace TrackerSQL.Pages
             {
                 this.ltrlStatus.Text = result;
                 AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                    $"RepairID {repair.RepairID} update failed: {result}");
+                    $"Repair {repair.RepairID} | Contact={repair.CustomerID} | Update failed | {result}");
                 return false;
             }
 
             this.Session[CONST_SESSION_REPAIRDATA] = repair;
+            string company = new ContactsRepository().GetContactNameById((int)repair.CustomerID) ?? string.Empty;
+            string contactPart = string.IsNullOrWhiteSpace(company)
+                ? $"Contact={repair.CustomerID}"
+                : $"Contact={repair.CustomerID} ({company})";
             AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
-                $"RepairID {repair.RepairID} status changed from {previousStatusId} to {selectedStatusId}");
+                $"Repair {repair.RepairID} | {contactPart} | Status changed | from={previousStatusId} to={selectedStatusId}");
+            // Status email success/fail logged in RepairManager.SendStatusNotification
             this.ltrlStatus.Text = string.IsNullOrWhiteSpace(result)
                 ? MessageProvider.Get(MessageKeys.Repairs.StatusUpdateSuccess)
                 : result;

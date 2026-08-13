@@ -37,7 +37,7 @@ namespace TrackerSQL.Tools
             string logFolder = Server.MapPath("~/App_Data/");
             var logFiles = Directory.GetFiles(logFolder, "*.log")
                 .Select(f => Path.GetFileName(f))
-                .OrderByDescending(f => f)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             ddlLogFile.DataSource = logFiles;

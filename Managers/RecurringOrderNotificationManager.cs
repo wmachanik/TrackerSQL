@@ -106,12 +106,16 @@ namespace TrackerSQL.Managers
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Email, MessageProvider.Format(
                         MessageKeys.Email.SendError, recipient, email.LastErrorSummary));
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Recurring,
+                        $"RecurringOrder {recurringOrderId} | Contact={contactId} ({companyName}) | Notification email failed | kind={kind}; to={recipient}; {email.LastErrorSummary}");
                     return email.LastErrorSummary;
                 }
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                     $"RecurringOrder {kind} notification sent to {recipient} "
                     + $"(ContactID={contactId}, RecurringOrderID={recurringOrderId}).");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Recurring,
+                    $"RecurringOrder {recurringOrderId} | Contact={contactId} ({companyName}) | Notification email sent | kind={kind}; to={recipient}; status=OK");
                 return null;
             }
             catch (Exception ex)
@@ -119,6 +123,8 @@ namespace TrackerSQL.Managers
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                     $"RecurringOrder notify failed ContactID={contactId} "
                     + $"RecurringOrderID={recurringOrderId} kind={kind}: {ex.Message}");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Recurring,
+                    $"RecurringOrder {recurringOrderId} | Contact={contactId} | Notification email failed | kind={kind}; {ex.Message}");
                 return ex.Message;
             }
         }

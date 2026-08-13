@@ -17,7 +17,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnGon;
         protected global::System.Web.UI.WebControls.Button btnReset;
         protected global::System.Web.UI.WebControls.DropDownList ddlContactEnabled;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.WebControls.GridView gvContacts;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected global::System.Web.UI.WebControls.Label lblFilter;

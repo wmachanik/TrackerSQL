@@ -25,7 +25,7 @@ namespace TrackerSQL.Pages
         protected Button btnUpdate;
         protected Button btnUpdateAndReturn;
         protected Button btnDelete;
-        protected Button btnCancel;
+        protected ImageButton btnCancel;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
 
@@ -299,7 +299,7 @@ namespace TrackerSQL.Pages
             }
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e)
+        protected void btnCancel_Click(object sender, ImageClickEventArgs e)
         {
             ReturnToList();
         }

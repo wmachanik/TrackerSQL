@@ -1,5 +1,5 @@
 /* DEFAULTS
-    Rev: 20260811-5
+    Rev: 20260812-4
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -1305,23 +1305,23 @@ div.simpleLightBrownForm {
 }
 
 .home-dashboard .home-tone-repairs {
-    border-left-color: #9a6b1f;
-    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
+    border-left-color: #7a3e2e;
+    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
 }
 
 .home-dashboard .home-tone-newrepair {
-    border-left-color: #5a7a3a;
-    background: linear-gradient(135deg, #eaf3dc 0%, #fff 70%);
+    border-left-color: #8f3d5c;
+    background: linear-gradient(135deg, #f5e0e8 0%, #fff 70%);
 }
 
 .home-dashboard .home-tone-required {
-    border-left-color: #8b3a3a;
-    background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+    border-left-color: #b89218;
+    background: linear-gradient(135deg, #faf4c4 0%, #fff 70%);
 }
 
 .home-dashboard .home-tone-delivery {
-    border-left-color: #7a3e2e;
-    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+    border-left-color: #9a6b1f;
+    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
 }
 
 .home-dashboard .home-tone-summary {
@@ -1904,6 +1904,20 @@ button,
         gap: 8px;
     }
 
+/* Keep Find / Print / New / Back (and similar) on one row — including mobile */
+.toolbar-icon-row,
+.filter-section.action-buttons.toolbar-icon-row {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    max-width: 100%;
+    flex: 0 0 auto !important;
+}
+
 /* Individual filter controls */
 .filter-control {
     display: flex;
@@ -1996,10 +2010,16 @@ button,
    Icon-only:
      <span class="image-button"><asp:ImageButton ... /></span>
    Green chrome is ALWAYS on the span — never on nested table links.
+
+   Toolbar "New" HyperLinks (ImageUrl=AddItem.gif etc.) render as <a><img/></a>
+   without a wrapper — style those the same way via :has(> img).
 */
 span.image-button,
 a.image-button,
-.filter-toolbar span.image-button {
+.filter-toolbar span.image-button,
+.filter-toolbar a:has(> img:only-child),
+.page-tone-toolbar a:has(> img:only-child),
+.filter-section.action-buttons a:has(> img:only-child) {
     display: inline-flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
@@ -2038,7 +2058,10 @@ a.image-button.is-collapsed {
 
 span.image-button:hover,
 a.image-button:hover,
-.filter-toolbar span.image-button:hover {
+.filter-toolbar span.image-button:hover,
+.filter-toolbar a:has(> img:only-child):hover,
+.page-tone-toolbar a:has(> img:only-child):hover,
+.filter-section.action-buttons a:has(> img:only-child):hover {
     background-color: #607060 !important;
     border-color: #607060 !important;
     color: #fff !important;
@@ -2046,7 +2069,10 @@ a.image-button:hover,
 }
 
 span.image-button > img,
-a.image-button > img {
+a.image-button > img,
+.filter-toolbar a:has(> img:only-child) > img,
+.page-tone-toolbar a:has(> img:only-child) > img,
+.filter-section.action-buttons a:has(> img:only-child) > img {
     width: 16px !important;
     height: 16px !important;
     display: block !important;
@@ -2119,20 +2145,8 @@ span.image-button > a:hover {
     margin-bottom: 12px !important;
 }
 
-/* Special styling for add/new buttons */
-.filter-toolbar .btn-add,
-.filter-toolbar a[href*="Details.aspx"],
-.filter-toolbar a[href*="NewOrder"] {
-    /*background-color: #228B22 !important;*/
-    border-color: #228B22 !important;
-}
-
-    .filter-toolbar .btn-add:hover,
-    .filter-toolbar a[href*="Details.aspx"]:hover,
-    .filter-toolbar a[href*="NewOrder"]:hover {
-        background-color: #32CD32 !important;
-        border-color: #32CD32 !important;
-    }
+/* Former .btn-add / Details.aspx / NewOrder toolbar link overrides removed —
+   icon HyperLinks now share the image-button green shell via :has(> img). */
 
 @media (min-width: 900px) and (max-width: 1180px) {
     .filter-toolbar:has(.filter-section.date-controls) .filter-section.admin-controls {
@@ -2148,25 +2162,57 @@ span.image-button > a:hover {
 }
 
 @media (max-width: 900px) {
-    .filter-toolbar {
-        flex-direction: column;
-        flex-wrap: wrap;
-        align-items: stretch;
+    /* Higher specificity than .page-tone-panel .page-tone-toolbar so mobile stacks left */
+    .filter-toolbar,
+    .page-tone-panel .page-tone-toolbar,
+    .page-tone-panel .page-tone-toolbar.filter-toolbar {
+        flex-direction: column !important;
+        flex-wrap: wrap !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
         gap: 8px;
         padding: 8px;
         margin-bottom: 12px;
     }
 
     .filter-section {
-        justify-content: left;
+        justify-content: flex-start !important;
         flex-wrap: wrap;
         gap: 8px;
+        width: 100%;
+        margin-left: 0 !important;
     }
 
-        .filter-section.action-buttons {
-            margin-left: 0;
-            order: 999;
-        }
+    .filter-section.search-controls {
+        min-width: 0 !important;
+        flex: 1 1 100% !important;
+        width: 100% !important;
+    }
+
+    .filter-section.admin-controls {
+        width: 100% !important;
+        margin-left: 0 !important;
+        justify-content: flex-start !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+    }
+
+    .filter-section.action-buttons {
+        margin-left: 0 !important;
+        order: 999;
+        justify-content: flex-start !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        width: auto !important;
+    }
+
+    .toolbar-icon-row,
+    .filter-section.action-buttons.toolbar-icon-row {
+        flex-wrap: nowrap !important;
+        flex-direction: row !important;
+    }
 
     .filter-control {
         margin: 2px 0;
@@ -2179,6 +2225,23 @@ span.image-button > a:hover {
         flex-wrap: wrap;
         align-items: stretch;
         gap: 6px;
+    }
+
+    /* Icon clusters stay horizontal even when the parent section stacks */
+    .filter-section.action-buttons,
+    .filter-section.admin-controls {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+    }
+
+    .toolbar-icon-row,
+    .filter-section.action-buttons.toolbar-icon-row,
+    .filter-section.action-buttons {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        width: auto !important;
     }
 
     .filter-control {
@@ -6689,17 +6752,17 @@ table.results-table .pager-nav a.pager-btn:hover {
 }
 
 .page-tone-repairs {
-    border-color: #e2d4b0;
-    border-left-color: #9a6b1f;
-    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
+    border-color: #e4d0c8;
+    border-left-color: #7a3e2e;
+    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
 }
 
 .page-tone-repairs .page-tone-header {
-    border-bottom-color: rgba(154, 107, 31, 0.15);
+    border-bottom-color: rgba(122, 62, 46, 0.15);
 }
 
 .page-tone-repairs .page-tone-title {
-    color: #9a6b1f;
+    color: #7a3e2e;
 }
 
 /* Related order line → Order Detail link on Repair Detail */
@@ -6752,17 +6815,17 @@ a.repair-related-order-link[href=""] {
 }
 
 .page-tone-delivery {
-    border-color: #e4d0c8;
-    border-left-color: #7a3e2e;
-    background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
+    border-color: #e2d4b0;
+    border-left-color: #9a6b1f;
+    background: linear-gradient(135deg, #f6edd9 0%, #fff 70%);
 }
 
 .page-tone-delivery .page-tone-header {
-    border-bottom-color: rgba(122, 62, 46, 0.15);
+    border-bottom-color: rgba(154, 107, 31, 0.15);
 }
 
 .page-tone-delivery .page-tone-title {
-    color: #7a3e2e;
+    color: #9a6b1f;
 }
 
 .page-tone-summary {
@@ -6780,17 +6843,17 @@ a.repair-related-order-link[href=""] {
 }
 
 .page-tone-required {
-    border-color: #e8d0d0;
-    border-left-color: #8b3a3a;
-    background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%);
+    border-color: #e8d98a;
+    border-left-color: #b89218;
+    background: linear-gradient(135deg, #faf4c4 0%, #fff 70%);
 }
 
 .page-tone-required .page-tone-header {
-    border-bottom-color: rgba(139, 58, 58, 0.15);
+    border-bottom-color: rgba(184, 146, 24, 0.15);
 }
 
 .page-tone-required .page-tone-title {
-    color: #8b3a3a;
+    color: #b89218;
 }
 
 .page-tone-lookups {
@@ -7678,6 +7741,13 @@ table.grouping-table {
     flex-wrap: nowrap;
 }
 
+/* Mobile: drop delete / enabled badge / line count — Edit + company name remain */
+@media (max-width: 1024px) {
+    .page-tone-recurring .grouping-card-header-meta {
+        display: none !important;
+    }
+}
+
 /* Recurring Orders card actions — icon + label are siblings inside .image-button */
 .grouping-card-header .image-button,
 .grouping-card-header-main .image-button,
@@ -7767,8 +7837,9 @@ table.nested-results-table thead th {
 }
 
 /*
- * Recurring Orders list nested grid — fixed layout + explicit % shares (sum 100%).
- * No col-fill / results-table-full / col-priority-* (those fight Contacts mobile widths).
+ * Recurring Orders list nested grid — fixed layout + % shares.
+ * Uses standard col-priority-* for responsive hide (1=always … 5=hide first).
+ * Contacts-style priority width rules are overridden below so Item/Qty/Next stay usable.
  */
 table.results-table.recurring-summary-grid,
 .results-table.recurring-summary-grid {
@@ -7818,7 +7889,11 @@ table.results-table.recurring-summary-grid .col-ro-sum-recur,
 }
 
 table.results-table.recurring-summary-grid .col-ro-sum-date,
-.results-table.recurring-summary-grid .col-ro-sum-date {
+.results-table.recurring-summary-grid .col-ro-sum-date,
+table.results-table.recurring-summary-grid .col-ro-sum-last,
+.results-table.recurring-summary-grid .col-ro-sum-last,
+table.results-table.recurring-summary-grid .col-ro-sum-next,
+.results-table.recurring-summary-grid .col-ro-sum-next {
     width: 12% !important;
 }
 
@@ -7827,14 +7902,135 @@ table.results-table.recurring-summary-grid .col-ro-sum-until,
     width: 9% !important;
 }
 
-/* Keep Contacts-style last-column / priority width rules off this grid */
+/* Do not apply Contacts last-column action widths to Until / Next Date */
 table.results-table.recurring-summary-grid th:last-child,
 table.results-table.recurring-summary-grid td:last-child,
 .results-table.recurring-summary-grid th:last-child,
 .results-table.recurring-summary-grid td:last-child {
-    width: 9% !important;
     max-width: none !important;
     text-align: left !important;
+}
+
+table.results-table.recurring-summary-grid th.col-ro-sum-until:last-child,
+table.results-table.recurring-summary-grid td.col-ro-sum-until:last-child,
+.results-table.recurring-summary-grid th.col-ro-sum-until:last-child,
+.results-table.recurring-summary-grid td.col-ro-sum-until:last-child {
+    width: 9% !important;
+}
+
+/* <=1600: Until (priority-5) already display:none — give a little to Item */
+@media (max-width: 1600px) {
+    table.results-table.recurring-summary-grid .col-ro-sum-item,
+    .results-table.recurring-summary-grid .col-ro-sum-item {
+        width: 34% !important;
+    }
+}
+
+/* <=1200: Packaging (4) + Until (5) hidden */
+@media (max-width: 1200px) {
+    table.results-table.recurring-summary-grid .col-ro-sum-item,
+    .results-table.recurring-summary-grid .col-ro-sum-item {
+        width: 36% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-qty,
+    .results-table.recurring-summary-grid .col-ro-sum-qty {
+        width: 6% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-value,
+    .results-table.recurring-summary-grid .col-ro-sum-value {
+        width: 8% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-recur,
+    .results-table.recurring-summary-grid .col-ro-sum-recur {
+        width: 16% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-last,
+    .results-table.recurring-summary-grid .col-ro-sum-last,
+    table.results-table.recurring-summary-grid .col-ro-sum-next,
+    .results-table.recurring-summary-grid .col-ro-sum-next {
+        width: 14% !important;
+    }
+}
+
+/* <=1024: Item / Qty / Recurrence (2) / Next — undo Contacts priority width clamps */
+@media (max-width: 1024px) {
+    table.results-table.recurring-summary-grid .col-priority-1,
+    .results-table.recurring-summary-grid .col-priority-1,
+    table.results-table.recurring-summary-grid th.col-priority-1,
+    table.results-table.recurring-summary-grid td.col-priority-1,
+    .results-table.recurring-summary-grid th.col-priority-1,
+    .results-table.recurring-summary-grid td.col-priority-1,
+    table.results-table.recurring-summary-grid .col-priority-2,
+    .results-table.recurring-summary-grid .col-priority-2,
+    table.results-table.recurring-summary-grid th.col-priority-2,
+    table.results-table.recurring-summary-grid td.col-priority-2,
+    .results-table.recurring-summary-grid th.col-priority-2,
+    .results-table.recurring-summary-grid td.col-priority-2 {
+        max-width: none !important;
+        width: auto !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-item,
+    .results-table.recurring-summary-grid .col-ro-sum-item {
+        width: 40% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-qty,
+    .results-table.recurring-summary-grid .col-ro-sum-qty {
+        width: 10% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-recur,
+    .results-table.recurring-summary-grid .col-ro-sum-recur {
+        width: 22% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-next,
+    .results-table.recurring-summary-grid .col-ro-sum-next {
+        width: 28% !important;
+    }
+
+    table.results-table.recurring-summary-grid th:last-child,
+    table.results-table.recurring-summary-grid td:last-child,
+    .results-table.recurring-summary-grid th:last-child,
+    .results-table.recurring-summary-grid td:last-child {
+        width: auto !important;
+        max-width: none !important;
+        text-align: left !important;
+    }
+
+    table.results-table.recurring-summary-grid th.col-ro-sum-next:last-child,
+    table.results-table.recurring-summary-grid td.col-ro-sum-next:last-child,
+    .results-table.recurring-summary-grid th.col-ro-sum-next:last-child,
+    .results-table.recurring-summary-grid td.col-ro-sum-next:last-child {
+        width: 28% !important;
+    }
+}
+
+/* <=480: Recurrence (priority-2) hidden — Item / Qty / Next only */
+@media (max-width: 480px) {
+    table.results-table.recurring-summary-grid .col-ro-sum-item,
+    .results-table.recurring-summary-grid .col-ro-sum-item {
+        width: 50% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-qty,
+    .results-table.recurring-summary-grid .col-ro-sum-qty {
+        width: 12% !important;
+    }
+
+    table.results-table.recurring-summary-grid .col-ro-sum-next,
+    .results-table.recurring-summary-grid .col-ro-sum-next,
+    table.results-table.recurring-summary-grid th.col-ro-sum-next:last-child,
+    table.results-table.recurring-summary-grid td.col-ro-sum-next:last-child,
+    .results-table.recurring-summary-grid th.col-ro-sum-next:last-child,
+    .results-table.recurring-summary-grid td.col-ro-sum-next:last-child {
+        width: 38% !important;
+    }
 }
 
 .nested-results-table th.col-align-left,

@@ -107,9 +107,15 @@
                                     <asp:Button ID="btnInsert" Text="Insert" runat="server" CssClass="filter-panel-btn"
                                         OnClick="btnInsert_Click"
                                         OnClientClick="return beginRepairDetailSave(this, 'Creating...');" />
-                                    <asp:Button ID="btnCancelInsert" Text="Back" runat="server" CssClass="filter-panel-btn"
-                                        OnClick="btnCancel_Click" CausesValidation="false"
-                                        OnClientClick="return repairDetailConfirmLeave();" />
+                                    <span class="image-button" title="Return without saving">
+                                        <asp:ImageButton ID="btnCancelInsert" runat="server"
+                                            ImageUrl="~/images/imgButtons/Back.gif"
+                                            AlternateText="Back"
+                                            ToolTip="Return without saving"
+                                            OnClick="btnCancel_Click"
+                                            CausesValidation="false"
+                                            OnClientClick="return repairDetailConfirmLeave();" />
+                                    </span>
                                 </div>
                             </td>
                         </tr>
@@ -256,10 +262,15 @@
                                         OnClick="btnDelete_Click"
                                         OnClientClick="return beginRepairDetailSave(this, 'Deleting...', 'Delete this repair?');"
                                         ToolTip="Delete this repair" />
-                                    <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
-                                        OnClick="btnCancel_Click" CausesValidation="false"
-                                        OnClientClick="return repairDetailConfirmLeave();"
-                                        ToolTip="Return without saving" />
+                                    <span class="image-button" title="Return without saving">
+                                        <asp:ImageButton ID="btnCancel" runat="server"
+                                            ImageUrl="~/images/imgButtons/Back.gif"
+                                            AlternateText="Back"
+                                            ToolTip="Return without saving"
+                                            OnClick="btnCancel_Click"
+                                            CausesValidation="false"
+                                            OnClientClick="return repairDetailConfirmLeave();" />
+                                    </span>
                                 </div>
                             </td>
                         </tr>

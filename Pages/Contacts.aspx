@@ -62,14 +62,19 @@
                                 <asp:ListItem Value="0" Text="disabled only" />
                             </asp:DropDownList>
                         </div>
-                        <div class="filter-section action-buttons">
+                        <div class="filter-section action-buttons toolbar-icon-row">
                             <asp:HyperLink ImageUrl="~/images/imgButtons/CalendarClock.gif" ToolTip="Contacts Away Times"
                                 NavigateUrl="~/Pages/ContactsAway.aspx" runat="server" />
                             <asp:HyperLink ImageUrl="~/images/imgButtons/AddItem.gif" ToolTip="New Contact"
                                 NavigateUrl="~/Pages/ContactDetails.aspx" runat="server" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                OnClick="btnBack_Click" CausesValidation="false"
-                                ToolTip="Return to home" />
+                            <span class="image-button" title="Return to home">
+                                <asp:ImageButton ID="btnBack" runat="server"
+                                    ImageUrl="~/images/imgButtons/Back.gif"
+                                    AlternateText="Back"
+                                    ToolTip="Return to home"
+                                    OnClick="btnBack_Click"
+                                    CausesValidation="false" />
+                            </span>
                         </div>
                     </div>
                 </div>

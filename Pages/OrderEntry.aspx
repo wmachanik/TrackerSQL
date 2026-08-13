@@ -66,8 +66,14 @@
                                 NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true"
                                 ToolTip="Create a new order" />
                         </span>
-                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                            OnClick="btnBack_Click" CausesValidation="false" ToolTip="Return to home" />
+                        <span class="image-button" title="Return to home">
+                            <asp:ImageButton ID="btnBack" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Return to home"
+                                OnClick="btnBack_Click"
+                                CausesValidation="false" />
+                        </span>
                     </div>
                 </div>
 

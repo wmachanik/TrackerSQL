@@ -116,7 +116,12 @@ namespace TrackerSQL.Managers
             if (!_contactsUsageRepository.UpdateLastCupCount(customerId, updatedCupCount))
             {
                 result.Success = false;
-                result.Message = "Error updating last count";
+                result.Message =
+                    "Could not save the cup count for this contact (no usage/prediction record could be created). " +
+                    "Try again, or enter a cup count and retry.";
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Orders,
+                    $"OrderDone: UpdateLastCupCount failed for ContactID={customerId}, cupCount={updatedCupCount}");
                 return result;
             }
 
@@ -126,6 +131,20 @@ namespace TrackerSQL.Managers
             else
                 _ordersRepository.MarkDoneForTempOrderHeader(tempHeaderId);
             _contactsRepository.ResetReminderCount(customerId, hasCoffee);
+
+            string companyName = _contactsRepository.GetContactNameById(customerId) ?? string.Empty;
+            string orderPart = orderId > 0 ? $"Order {orderId}" : $"TempOrder {tempHeaderId}";
+            string contactPart = string.IsNullOrWhiteSpace(companyName)
+                ? $"Contact={customerId}"
+                : $"Contact={customerId} ({companyName})";
+            string countNote = pIsActual
+                ? $"cupCount={updatedCupCount} (actual)"
+                : $"cupCount={updatedCupCount} (estimate)";
+            string stockNote = pStock > 0 ? $"; stockKg={pStock}" : string.Empty;
+            // AppLogger prefixes the authenticated user (e.g. [User: warren]).
+            AppLogger.WriteLog(
+                SystemConstants.LogTypes.Orders,
+                $"{orderPart} | {contactPart} | Order marked done | delivery={deliveryDate:yyyy-MM-dd}; {countNote}{stockNote}");
 
             string sentStatus = null;
             if (!string.IsNullOrEmpty(statusKey))

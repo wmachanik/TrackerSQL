@@ -386,10 +386,47 @@ namespace TrackerSQL.Managers
                     MessageKeys.Email.SendError,
                     repair.ContactEmail,
                     email.LastErrorSummary));
+                AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                    FormatRepairAuditLine(repair, "Status email failed",
+                        $"to={TrackerTools.SafeString(repair.ContactEmail, "(none)")}; {email.LastErrorSummary}"));
                 return email.LastErrorSummary;
             }
 
+            AppLogger.WriteLog(SystemConstants.LogTypes.Repairs,
+                FormatRepairAuditLine(repair, "Status email sent",
+                    $"to={TrackerTools.SafeString(repair.ContactEmail, "(none)")}; status=OK"));
             return null;
+        }
+
+        private static string FormatRepairAuditLine(RepairFormData repair, string action, string details = null)
+        {
+            int repairId = repair?.RepairID ?? 0;
+            long contactIdLong = repair?.CustomerID ?? 0;
+            int contactId = contactIdLong > int.MaxValue ? 0 : (int)contactIdLong;
+            string company = string.Empty;
+            if (contactId > 0)
+            {
+                try
+                {
+                    company = new ContactsRepository().GetContactNameById(contactId) ?? string.Empty;
+                }
+                catch
+                {
+                    company = string.Empty;
+                }
+            }
+
+            string repairPart = repairId > 0 ? $"Repair {repairId}" : "New repair";
+            string contactPart = contactId > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({company})")
+                : "Contact=(none)";
+
+            string line = $"{repairPart} | {contactPart} | {action}";
+            if (!string.IsNullOrWhiteSpace(details))
+                line += $" | {details}";
+            return line;
         }
 
         private bool LogNewRepair(RepairFormData repair, bool calculateDelivery)

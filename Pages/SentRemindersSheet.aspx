@@ -53,9 +53,14 @@
                     <asp:Button ID="btnRefresh" runat="server" Text="Refresh" CssClass="filter-panel-btn"
                         OnClick="btnRefresh_Click" CausesValidation="false"
                         ToolTip="Reload reminders for the selected date" />
-                    <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                        OnClick="btnBack_Click" CausesValidation="false"
-                        ToolTip="Return to home" />
+                    <span class="image-button" title="Return to home">
+                        <asp:ImageButton ID="btnBack" runat="server"
+                            ImageUrl="~/images/imgButtons/Back.gif"
+                            AlternateText="Back"
+                            ToolTip="Return to home"
+                            OnClick="btnBack_Click"
+                            CausesValidation="false" />
+                    </span>
                 </div>
 
                 <asp:Literal ID="ltrlReminderSummary" runat="server" Mode="PassThrough" />

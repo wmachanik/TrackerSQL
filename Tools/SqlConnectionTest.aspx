@@ -49,9 +49,14 @@
             <asp:Button ID="btnReloadConfig" runat="server" Text="Reload from Web.config" CssClass="filter-panel-btn"
                 OnClick="btnReloadConfig_Click" CausesValidation="false"
                 ToolTip="Reset the text box to TrackerDataSQL from Web.config" />
-            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                OnClick="btnBack_Click" CausesValidation="false"
-                ToolTip="Return to System Tools (requires login)" />
+            <span class="image-button" title="Return to System Tools (requires login)">
+                <asp:ImageButton ID="btnBack" runat="server"
+                    ImageUrl="~/images/imgButtons/Back.gif"
+                    AlternateText="Back"
+                    ToolTip="Return to System Tools (requires login)"
+                    OnClick="btnBack_Click"
+                    CausesValidation="false" />
+            </span>
         </div>
 
         <div class="page-tone-footer" style="margin-top: 16px;">

@@ -90,11 +90,12 @@
                         OnClick="btnEditGroup_Click" CausesValidation="false"
                         AlternateText="Edit group" ToolTip="Edit the selected group name and details"
                         CssClass="toolbar-icon-btn" />
-                    <asp:ImageButton ID="imgbtnBack" runat="server"
-                        ImageUrl="~/images/imgButtons/Back.gif"
-                        OnClick="btnBack_Click" CausesValidation="false"
-                        AlternateText="Back" ToolTip="Return to home"
-                        CssClass="toolbar-icon-btn" />
+                    <span class="image-button" title="Return to home">
+                        <asp:ImageButton ID="imgbtnBack" runat="server"
+                            ImageUrl="~/images/imgButtons/Back.gif"
+                            OnClick="btnBack_Click" CausesValidation="false"
+                            AlternateText="Back" ToolTip="Return to home" />
+                    </span>
                 </div>
 
                 <asp:Panel ID="pnlDualList" runat="server" CssClass="dual-list-layout" Visible="false">

@@ -132,9 +132,14 @@
                     <div class="button-row" style="margin-top: 16px;">
                         <asp:Button ID="btnDone" Text="Done" runat="server" AccessKey="D" CssClass="filter-panel-btn"
                             OnClick="btnDone_Click" ToolTip="Mark order delivered and update usage (Alt+D)" />
-                        <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnCancel_Click" CausesValidation="false"
-                            ToolTip="Cancel and return to delivery sheet" />
+                        <span class="image-button" title="Cancel and return to delivery sheet">
+                            <asp:ImageButton ID="btnCancel" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Cancel and return to delivery sheet"
+                                OnClick="btnCancel_Click"
+                                CausesValidation="false" />
+                        </span>
                     </div>
                 </asp:Panel>
 

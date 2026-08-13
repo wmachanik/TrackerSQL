@@ -453,7 +453,7 @@ namespace TrackerSQL.Pages
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancel;
+        protected global::System.Web.UI.WebControls.ImageButton btnCancel;
 
         /// <summary>
         /// hdnContactDirty — unsaved changes flag (client + server).

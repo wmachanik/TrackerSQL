@@ -158,9 +158,14 @@
                             <asp:HyperLink ID="hlAddRecurringOrder" ImageUrl="~/images/imgButtons/AddItem.gif"
                                 ToolTip="Add Recurring Order"
                                 runat="server" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                OnClick="btnBack_Click" CausesValidation="false"
-                                ToolTip="Return to home" />
+                            <span class="image-button" title="Return to home">
+                                <asp:ImageButton ID="btnBack" runat="server"
+                                    ImageUrl="~/images/imgButtons/Back.gif"
+                                    AlternateText="Back"
+                                    ToolTip="Return to home"
+                                    OnClick="btnBack_Click"
+                                    CausesValidation="false" />
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -226,40 +231,40 @@
                                             GridLines="None" ShowHeader="True">
                                             <Columns>
                                                 <asp:BoundField DataField="ItemDesc" HeaderText="Item"
-                                                    HeaderStyle-CssClass="col-ro-sum-item col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-item col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-item col-priority-1 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-item col-priority-1 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
                                                 <asp:TemplateField HeaderText="Qty"
-                                                    HeaderStyle-CssClass="col-ro-sum-qty col-align-center"
-                                                    ItemStyle-CssClass="col-ro-sum-qty col-align-center"
+                                                    HeaderStyle-CssClass="col-ro-sum-qty col-priority-1 col-align-center"
+                                                    ItemStyle-CssClass="col-ro-sum-qty col-priority-1 col-align-center"
                                                     HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center">
                                                     <ItemTemplate>
                                                         <%# FormatQty(Eval("QtyRequired")) %>
                                                     </ItemTemplate>
                                                 </asp:TemplateField>
                                                 <asp:BoundField DataField="ItemPackagingDesc" HeaderText="Packaging"
-                                                    HeaderStyle-CssClass="col-ro-sum-pack col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-pack col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-pack col-priority-4 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-pack col-priority-4 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
                                                 <asp:BoundField DataField="Value" HeaderText="Value"
-                                                    HeaderStyle-CssClass="col-ro-sum-value col-align-center"
-                                                    ItemStyle-CssClass="col-ro-sum-value col-align-center"
+                                                    HeaderStyle-CssClass="col-ro-sum-value col-priority-3 col-align-center"
+                                                    ItemStyle-CssClass="col-ro-sum-value col-priority-3 col-align-center"
                                                     HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" />
                                                 <asp:BoundField DataField="RecurringTypeDesc" HeaderText="Recurrence"
-                                                    HeaderStyle-CssClass="col-ro-sum-recur col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-recur col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-recur col-priority-2 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-recur col-priority-2 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
                                                 <asp:BoundField DataField="DateLastDone" HeaderText="Last Date" DataFormatString="{0:yyyy-MM-dd}"
-                                                    HeaderStyle-CssClass="col-ro-sum-date col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-last col-ro-sum-date col-priority-3 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-last col-ro-sum-date col-priority-3 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
                                                 <asp:BoundField DataField="NextDateRequired" HeaderText="Next Date" DataFormatString="{0:yyyy-MM-dd}"
-                                                    HeaderStyle-CssClass="col-ro-sum-date col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-date col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-next col-ro-sum-date col-priority-1 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-next col-ro-sum-date col-priority-1 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left" />
                                                 <asp:TemplateField HeaderText="Until"
-                                                    HeaderStyle-CssClass="col-ro-sum-until col-align-left"
-                                                    ItemStyle-CssClass="col-ro-sum-until col-align-left"
+                                                    HeaderStyle-CssClass="col-ro-sum-until col-priority-5 col-align-left"
+                                                    ItemStyle-CssClass="col-ro-sum-until col-priority-5 col-align-left"
                                                     HeaderStyle-HorizontalAlign="Left" ItemStyle-HorizontalAlign="Left">
                                                     <ItemTemplate>
                                                         <%# FormatRequireUntilDate(Eval("RequireUntilDate")) %>

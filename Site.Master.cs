@@ -23,10 +23,10 @@ namespace TrackerSQL
             {
                 litUnsavedChangesScript.Text =
                     "<script type=\"text/javascript\" src=\"" +
-                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js?v=20260807-2")) +
+                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/unsavedChanges.js?v=20260812-1")) +
                     "\"></script>" +
                     "<script type=\"text/javascript\" src=\"" +
-                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/comboBoxPosition.js?v=20260811-2")) +
+                    HttpUtility.HtmlAttributeEncode(ResolveUrl("~/Scripts/comboBoxPosition.js?v=20260811-3")) +
                     "\"></script>";
             }
         }

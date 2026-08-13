@@ -27,7 +27,7 @@ namespace TrackerSQL.Pages
         protected Button btnCalcNextRequired;
         protected DropDownList ddlEnabledFilter;
         protected HyperLink hlAddRecurringOrder;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvRecurringOrders;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
@@ -273,16 +273,24 @@ namespace TrackerSQL.Pages
 
             try
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "RecurringOrders list delete starting for RecurringOrderID=" + recurringOrderId);
-
                 var recurringOrdersRepository = new RecurringOrdersRepository();
+                var existing = recurringOrdersRepository.GetById(recurringOrderId);
+                int contactId = existing?.ContactID ?? 0;
+                string company = contactId > 0
+                    ? (new ContactsRepository().GetContactNameById(contactId) ?? string.Empty)
+                    : string.Empty;
+                string contactPart = contactId > 0
+                    ? (string.IsNullOrWhiteSpace(company)
+                        ? $"Contact={contactId}"
+                        : $"Contact={contactId} ({company})")
+                    : "Contact=(none)";
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.Recurring,
+                    $"RecurringOrder {recurringOrderId} | {contactPart} | Recurring order deleted | via=list");
+
                 string contactNote = recurringOrdersRepository.Delete(recurringOrderId);
                 string statusMessage = "Recurring order deleted."
                     + (string.IsNullOrWhiteSpace(contactNote) ? string.Empty : " " + contactNote);
-
-                AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "RecurringOrders list delete OK for RecurringOrderID=" + recurringOrderId);
 
                 // Full-page reload clears the stuck "Deleting..." client UI.
                 Session[FlashStatusSessionKey] = statusMessage;
@@ -295,8 +303,8 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "RecurringOrders gvRecurringOrders_RowCommand delete error: " + ex.Message);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Recurring,
+                    $"RecurringOrder {recurringOrderId} | Contact=(unknown) | Delete failed | via=list; {ex.Message}");
                 SetStatus("Error deleting recurring order: " + ex.Message, isError: true);
                 upnlRecurringOrders.Update();
             }
@@ -355,7 +363,7 @@ namespace TrackerSQL.Pages
             ApplyFilters();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect(DefaultReturnUrl, false);
             Context.ApplicationInstance.CompleteRequest();

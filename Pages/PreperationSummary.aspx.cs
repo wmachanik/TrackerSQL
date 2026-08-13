@@ -36,7 +36,7 @@ namespace TrackerSQL.Pages
         protected Button ResetBtn;
         protected Button PrevWeekBtn;
         protected Button NextWeekBtn;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvPreperationSummary;
         protected Literal ltrlDates;
         protected HtmlGenericControl pnlStatus;
@@ -212,7 +212,7 @@ namespace TrackerSQL.Pages
             this.gvPreperationSummary.DataBind();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Default.aspx");
         }

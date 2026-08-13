@@ -230,7 +230,7 @@ namespace TrackerSQL.Pages
             Context.ApplicationInstance.CompleteRequest();
         }
 
-        protected void btnCancel_Click(object sender, EventArgs e)
+        protected void btnCancel_Click(object sender, ImageClickEventArgs e)
         {
             TempOrderSession.CleanupCurrentTempOrder();
             Response.Redirect("~/Pages/DeliverySheet.aspx", false);

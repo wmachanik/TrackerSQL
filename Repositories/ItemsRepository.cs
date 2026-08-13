@@ -134,7 +134,10 @@ namespace TrackerSQL.Repositories
 
         public int GetServiceTypeForItem(int itemId)
         {
-            return GetItemServiceTypeId(itemId) ?? 0;
+            int? serviceTypeId = GetItemServiceTypeId(itemId);
+            if (!serviceTypeId.HasValue || serviceTypeId.Value <= 0)
+                return SystemConstants.ServiceTypeConstants.NotApplicable;
+            return serviceTypeId.Value;
         }
 
         public List<int> GetItemIdsByServiceType(int serviceTypeId)

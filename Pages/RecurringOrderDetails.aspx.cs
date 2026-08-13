@@ -56,7 +56,7 @@ namespace TrackerSQL.Pages
         protected Button btnInsert;
         protected Button btnDelete;
         protected Button btnRevert;
-        protected Button btnReturn;
+        protected ImageButton btnReturn;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
         protected Panel pnlInvoiceTypePrompt;
@@ -285,6 +285,35 @@ namespace TrackerSQL.Pages
                 pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
+        /// <summary>
+        /// Writes a recurring.log audit line. AppLogger already prefixes the logged-in user.
+        /// </summary>
+        private void LogRecurringAudit(string action, string details = null, int? recurringOrderIdOverride = null)
+        {
+            int recurringOrderId = recurringOrderIdOverride ?? ResolveCurrentRecurringOrderId();
+            int contactId = GetNullableInt(GetPostedOrControlValue(ddlCompanyName))
+                ?? GetNullableInt(ddlCompanyName?.SelectedValue)
+                ?? 0;
+            string company = GetSelectedContactName();
+            if (string.IsNullOrWhiteSpace(company) && contactId > 0)
+                company = new ContactsRepository().GetContactNameById(contactId) ?? string.Empty;
+
+            string orderPart = recurringOrderId > 0
+                ? $"RecurringOrder {recurringOrderId}"
+                : "New recurring order";
+            string contactPart = contactId > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({company})")
+                : "Contact=(none)";
+
+            string line = $"{orderPart} | {contactPart} | {action}";
+            if (!string.IsNullOrWhiteSpace(details))
+                line += $" | {details}";
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Recurring, line);
+        }
+
         private void ClearDirtyClientState()
         {
             ScriptManager.RegisterStartupScript(this, GetType(), "recurringOrderClearDirty",
@@ -505,6 +534,11 @@ namespace TrackerSQL.Pages
             LoadRecurringOrder(recurringOrder.RecurringOrderID, setStatus: false);
             ClearDirtyClientState();
 
+            string auditAction = manualDisable
+                ? "Recurring order disabled"
+                : (manualEnable ? "Recurring order enabled" : "Recurring order updated");
+            LogRecurringAudit(auditAction, $"lines={recurringOrder.Items.Count}; nextDatesAuto={calculatedCount}");
+
             var notifyKind = manualDisable
                 ? RecurringOrderNotificationManager.ChangeKind.Disabled
                 : RecurringOrderNotificationManager.ChangeKind.Updated;
@@ -561,9 +595,7 @@ namespace TrackerSQL.Pages
             if (recurringOrder.RecurringOrderID <= 0)
             {
                 SetStatus("Insert failed — the recurring order was not saved. Please try again.", isError: true);
-                AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "RecurringOrderDetails.InsertRecord: Insert returned 0 for ContactID="
-                    + recurringOrder.ContactID);
+                LogRecurringAudit("Insert failed", "Insert returned 0");
                 return false;
             }
 
@@ -574,6 +606,11 @@ namespace TrackerSQL.Pages
             btnInsert.Enabled = false;
             btnDelete.Enabled = true;
             ClearDirtyClientState();
+
+            LogRecurringAudit(
+                "Recurring order created",
+                $"lines={recurringOrder.Items.Count}; nextDatesAuto={calculatedCount}",
+                recurringOrderIdOverride: recurringOrder.RecurringOrderID);
 
             string emailNote = NotifyContactQuietly(
                 recurringOrder.ContactID, recurringOrder.RecurringOrderID,
@@ -751,7 +788,7 @@ namespace TrackerSQL.Pages
             }
         }
 
-        protected void btnReturn_Click(object sender, EventArgs e)
+        protected void btnReturn_Click(object sender, ImageClickEventArgs e)
         {
             ReturnToPrevPage();
         }
@@ -1080,6 +1117,7 @@ namespace TrackerSQL.Pages
 
                 string forContact = FormatForContactPhrase();
                 string contactNote = recurringOrdersRepository.Delete(recurringOrderId);
+                LogRecurringAudit("Recurring order deleted", contactNote, recurringOrderIdOverride: recurringOrderId);
                 string status = "Recurring order" + forContact + " deleted."
                     + (string.IsNullOrWhiteSpace(contactNote) ? string.Empty : " " + contactNote);
 
@@ -1095,8 +1133,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 SetStatus("Delete failed: " + ex.Message, isError: true);
-                AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "RecurringOrderDetails.btnDelete_Click: " + ex.Message);
+                LogRecurringAudit("Delete failed", ex.Message);
                 upnlReoccuringOrderDetails.Update();
             }
         }
@@ -1188,11 +1225,17 @@ namespace TrackerSQL.Pages
                     string status = calculatedCount > 0
                         ? string.Format("Line added and saved{0}. {1} next date(s) auto-calculated.", forContact, calculatedCount)
                         : "Line added and saved" + forContact + ".";
+                    LogRecurringAudit(
+                        "Line added",
+                        $"ItemID={newItem.ItemRequiredID}; Qty={newItem.QtyRequired}; nextDatesAuto={calculatedCount}");
                     SetStatus(status, isError: false);
                 }
                 else
                 {
                     ShowNewLinePanel(false);
+                    LogRecurringAudit(
+                        "Line added (draft)",
+                        $"ItemID={newItem.ItemRequiredID}; Qty={newItem.QtyRequired}");
                     SetStatus("Line added. Click Save to create the new recurring order.", isError: null);
                 }
 
@@ -1303,6 +1346,9 @@ namespace TrackerSQL.Pages
 
                 StoreWorkingItems(items, force: true);
                 BindRecurringItemsGrid(items);
+                LogRecurringAudit(
+                    "Line removed",
+                    $"itemId={recurringOrderItemId}; remaining={afterCount}");
                 SetStatus(
                     "Line removed (" + afterCount + " remaining) — click Save to persist.",
                     isError: null);

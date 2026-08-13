@@ -27,7 +27,7 @@ namespace TrackerSQL.Pages
         protected TextBox tbxToDate;
         protected Button btnApplyDateFilter;
         protected HyperLink hlAddAway;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvContactsAway;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
@@ -183,7 +183,7 @@ namespace TrackerSQL.Pages
             ApplyFilters();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Pages/Contacts.aspx");
         }

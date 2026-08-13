@@ -30,12 +30,12 @@ namespace TrackerSQL.Pages
         protected DropDownList ddlActivePrepDates;
         protected Button btnGo;
         protected Button btnRefresh;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected Label lblDeliveryBy;
         protected DropDownList ddlDeliveryBy;
         protected TextBox tbxFindClient;
-        protected Button btnFind;
-        protected Button btnPrint;
+        protected ImageButton btnFind;
+        protected ImageButton btnPrint;
         protected HyperLink hlAddDeliveryItem;
         protected UpdatePanel upnlDeliveryItems;
         protected Table tblDeliveries;
@@ -299,11 +299,53 @@ namespace TrackerSQL.Pages
          * The page should now only handle WebForms UI rendering.
          */
 
-        private void BuildDeliveryTable(DeliverySheetBuildResult buildResult, bool pPrintForm, string selectedDeliveryBy = null)
+        private void BuildDeliveryTable(
+            DeliverySheetBuildResult buildResult,
+            bool pPrintForm,
+            string selectedDeliveryBy = null,
+            bool updateDeliveryByDropdown = true)
         {
             // Clear previous table rows and totals
             while (1 < this.tblDeliveries.Rows.Count)
                 this.tblDeliveries.Rows.RemoveAt(1);
+
+            // Declarative header is always "To"; restore Action column after EnableViewState=false.
+            if (this.tblDeliveries.Rows.Count > 0)
+            {
+                TableCellCollection cells = this.tblDeliveries.Rows[0].Cells;
+                if (cells.Count > 1)
+                    cells[1].Text = "To";
+
+                if (pPrintForm)
+                {
+                    // DataBound may have already built a non-print sheet in this request and
+                    // hidden Received By / Signature / In Stock — force them visible for print.
+                    if (cells.Count > 5)
+                    {
+                        cells[2].Visible = true;
+                        cells[3].Visible = true;
+                        cells[5].Visible = true;
+                    }
+
+                    if (cells.Count > 0 && cells[cells.Count - 1].Text == "Action")
+                        cells.RemoveAt(cells.Count - 1);
+                }
+                else
+                {
+                    if ((this.Session["RunningOnMoble"] == null || !(bool)this.Session["RunningOnMoble"]) &&
+                        (cells.Count == 0 || cells[cells.Count - 1].Text != "Action"))
+                    {
+                        cells.Add(new TableHeaderCell { Text = "Action" });
+                    }
+
+                    if (cells.Count > 5)
+                    {
+                        cells[2].Visible = false;
+                        cells[3].Visible = false;
+                        cells[5].Visible = false;
+                    }
+                }
+            }
 
             this.tblTotals.Rows.Clear();
 
@@ -328,7 +370,7 @@ namespace TrackerSQL.Pages
             BuildTotalsTable(buildResult.Totals);
 
             // 6. Update the delivery by dropdown if not printing
-            if (!pPrintForm)
+            if (!pPrintForm && updateDeliveryByDropdown)
                 UpdateDeliveryByDropdown(buildResult.DeliveryPeople, selectedDeliveryBy);
 
             // 7. Update the UI panel
@@ -643,17 +685,19 @@ namespace TrackerSQL.Pages
          * Do not restore the old IDataReader-based method.
          */
 
-        protected void btnPrint_Click(object sender, EventArgs e)
+        protected void btnPrint_Click(object sender, ImageClickEventArgs e)
         {
             if (this.ddlActivePrepDates == null || this.ddlActivePrepDates.SelectedIndex <= 0)
                 return;
 
             AppLogger.WriteLog("deliverysheet", "Printed delivery sheet");
 
-            this.Session[CONST_SESSION_SHEETDATE] =
+            string sheetDate =
                 TryGetSelectedDeliveryDate(out DateTime deliveryDate)
                     ? deliveryDate.ToString("yyyy-MM-dd")
                     : string.Empty;
+
+            this.Session[CONST_SESSION_SHEETDATE] = sheetDate;
 
             string deliveryBy =
                 this.ddlDeliveryBy != null
@@ -671,6 +715,8 @@ namespace TrackerSQL.Pages
             this.Session[CONST_SESSION_DDLDELIVERTBY_SELECTED] = deliveryBy;
 
             string url = "~/Pages/DeliverySheet.aspx?Print=Y";
+            if (!string.IsNullOrEmpty(sheetDate))
+                url += "&DateValue=" + HttpUtility.UrlEncode(sheetDate);
             if (!string.IsNullOrEmpty(deliveryBy))
                 url += "&DeliveryBy=" + HttpUtility.UrlEncode(deliveryBy);
 
@@ -714,7 +760,13 @@ namespace TrackerSQL.Pages
             {
                 SelectDeliveryDateFromSession();
 
-                if (TryGetSelectedDeliveryDate(out _))
+                // Print layout is built in PageInitialize(true). Building here with pPrintForm=false
+                // hid Received By / Signature headers for the rest of the request.
+                bool isPrint =
+                    this.Request.QueryString["Print"] != null &&
+                    this.Request.QueryString["Print"].ToString() == "Y";
+
+                if (!isPrint && TryGetSelectedDeliveryDate(out _))
                     SetVarsAndBuildDeliverySheet();
             }
 
@@ -757,7 +809,7 @@ namespace TrackerSQL.Pages
             this.Response.Redirect("DeliverySheet.aspx");
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             this.Response.Redirect("~/Default.aspx");
         }
@@ -856,7 +908,7 @@ namespace TrackerSQL.Pages
             LoadSheetForSelectedDate("Go delivery date");
         }
 
-        protected void btnFind_Click(object sender, EventArgs e)
+        protected void btnFind_Click(object sender, ImageClickEventArgs e)
         {
             string searchText = this.tbxFindClient != null ? this.tbxFindClient.Text.Trim() : string.Empty;
             if (string.IsNullOrEmpty(searchText))
@@ -866,22 +918,24 @@ namespace TrackerSQL.Pages
                 return;
             }
 
-            AppLogger.WriteLog("deliverysheet", $"Searched for contact: {searchText}");
+            // Search is across all open delivery days — not the dropdown date.
+            ClearDeliveryDateSelectionForSearch();
 
-            // Search SQL has moved to DeliverySheetRepository.
-            // This removes the old inline SQL and avoids SQL injection from the search textbox.
+            AppLogger.WriteLog("deliverysheet", $"Searched for contact: {searchText} on open delivery days");
+
+            // Any RequiredByDate that still has Done = 0 orders (includes Done rows on those days).
             var repo = new DeliverySheetRepository();
             var queryResult = repo.SearchDeliverySheetRowsByContact(searchText);
 
             if (!queryResult.Success)
             {
                 ShowPageStatus("Contact search failed: " + queryResult.ErrorMessage, true);
-                BuildDeliveryTable(new DeliverySheetBuildResult(), false);
+                BuildDeliveryTable(new DeliverySheetBuildResult(), false, updateDeliveryByDropdown: false);
                 return;
             }
 
             if (queryResult.Items.Count == 0)
-                ShowPageStatus($"No open deliveries found matching '{searchText}'.", false);
+                ShowPageStatus($"No deliveries matching '{searchText}' on open delivery days.", false);
             else
                 ClearPageStatus();
 
@@ -889,14 +943,29 @@ namespace TrackerSQL.Pages
             var manager = new DeliverySheetManager(
                 contactId => accInfoRepository.GetInvoiceTypeIdByContactId((int)contactId) ?? 0);
 
-            var buildResult = manager.Build(queryResult.Items, true);
+            // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
+            var buildResult = manager.Build(queryResult.Items, false);
 
-            this.BuildDeliveryTable(buildResult, false);
+            this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
         }
 
-        protected void tbxFindClient_OnTextChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Find spans every open RequiredByDate — clear the day dropdown so Go/Refresh
+        /// are not confused with a single-day sheet.
+        /// </summary>
+        private void ClearDeliveryDateSelectionForSearch()
         {
-            this.btnFind_Click(sender, e);
+            if (this.ddlActivePrepDates != null && this.ddlActivePrepDates.Items.Count > 0)
+            {
+                this.ddlActivePrepDates.ClearSelection();
+                this.ddlActivePrepDates.SelectedIndex = 0;
+            }
+
+            this.Session[CONST_SESSION_DDLSHEETDATE_SELECTED] = string.Empty;
+            this.Session[CONST_SESSION_SHEETDATE] = string.Empty;
+
+            if (this.ltrlWhichDate != null)
+                this.ltrlWhichDate.Text = "open days";
         }
 
         /*

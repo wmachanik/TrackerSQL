@@ -13,7 +13,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Label lblFilterByDate;
         protected global::System.Web.UI.WebControls.DropDownList ddlFilterByDate;
         protected global::System.Web.UI.WebControls.Button btnRefresh;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.WebControls.Literal ltrlReminderSummary;
         protected global::System.Web.UI.WebControls.GridView gvSentReminders;
         protected global::System.Web.UI.WebControls.Literal ltrlReminderFooter;

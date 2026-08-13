@@ -228,6 +228,7 @@ namespace TrackerSQL.Classes
             public const string Customers = "customers";
             public const string Repairs = "repairs";
             public const string Orders = "orders";
+            public const string Recurring = "recurring";
             public const string SendCheckup = "sendcheckup";
             public const string Email = "email";
             public const string Delivery = "delivery";

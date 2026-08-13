@@ -562,14 +562,13 @@ namespace TrackerSQL.Pages
             if (conflictingId.HasValue)
             {
                 SetMergeableOrder(conflictingId.Value);
-                SetStatusMessage(
-                    "Another order already exists for this contact and delivery date. Use Merge to combine orders.",
-                    log: false);
+                ShowDuplicateMergePrompt(conflictingId.Value);
                 pnlOrderHeader.Update();
                 return false;
             }
 
             ClearMergeableOrder();
+            HideDuplicateMergePrompt();
 
             OrderHeaderData previousHeader = _orderManager.GetOrderHeader(OrderId);
 
@@ -580,8 +579,12 @@ namespace TrackerSQL.Pages
                 return false;
             }
 
-            if (previousHeader != null && HeaderFieldsDiffer(previousHeader, header))
+            bool headerChanged = previousHeader != null && HeaderFieldsDiffer(previousHeader, header);
+            if (headerChanged)
+            {
                 HeaderUndoSnapshot = CloneHeader(previousHeader);
+                LogOrderAudit("Header saved", SummarizeHeaderChanges(previousHeader, header));
+            }
 
             SyncSessionForDataSources(header);
 
@@ -593,7 +596,7 @@ namespace TrackerSQL.Pages
             SetStatusMessage(
                 _orderLineSavedDuringHeaderSave ? "Order and line changes saved." : "Changes saved.",
                 isSuccess: true,
-                logMessage: $"Order header saved (prep {header.PrepDate:yyyy-MM-dd}, delivery {header.RequiredByDate:yyyy-MM-dd}).");
+                log: !headerChanged && !_orderLineSavedDuringHeaderSave);
             UpdateDuplicateMergeState();
             return true;
         }
@@ -650,12 +653,15 @@ namespace TrackerSQL.Pages
                 return;
             }
 
+            var beforeUndo = ReadHeaderFromControls();
+
             BindHeaderToControls(snapshot);
             SyncSessionForDataSources(snapshot);
             ClearHeaderUndo();
             ClearHeaderDirtyState();
             ApplyHeaderUiState();
-            SetStatusMessage("Last change undone.", isSuccess: true);
+            LogOrderAudit("Header undo", SummarizeHeaderChanges(beforeUndo, snapshot));
+            SetStatusMessage("Last change undone.", isSuccess: true, log: false);
             pnlOrderHeader.Update();
         }
 
@@ -682,7 +688,6 @@ namespace TrackerSQL.Pages
                 return;
 
             scriptManager.RegisterAsyncPostBackControl(cboContacts);
-            scriptManager.RegisterAsyncPostBackControl(tbxNotes);
             scriptManager.RegisterAsyncPostBackControl(btnSaveHeader);
             scriptManager.RegisterAsyncPostBackControl(btnSaveAndReturn);
             scriptManager.RegisterAsyncPostBackControl(btnUndoHeader);
@@ -695,6 +700,9 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterAsyncPostBackControl(btnOpenExistingOrder);
             scriptManager.RegisterAsyncPostBackControl(btnDismissConflict);
             scriptManager.RegisterAsyncPostBackControl(btnMerge);
+            scriptManager.RegisterAsyncPostBackControl(btnConfirmMergeDuplicate);
+            scriptManager.RegisterAsyncPostBackControl(btnOpenDuplicateOrder);
+            scriptManager.RegisterAsyncPostBackControl(btnDismissMergePrompt);
         }
 
         /// <summary>Contact id from hdnSelectedContactId — single source of truth on the form.</summary>
@@ -735,12 +743,8 @@ namespace TrackerSQL.Pages
             if (hdnHeaderDirty != null)
                 hdnHeaderDirty.Value = "0";
 
-            // Keep Save clickable for persisted orders — dirty wiring can lag after Add Last /
-            // UpdatePanel refresh; leave-warning still uses the dirty flag.
-            if (OrderId > 0 && (cbxDone == null || !cbxDone.Checked))
-                SetSaveButtonsEnabled(true);
-            else
-                SetSaveButtonsEnabled(false);
+            // Header-only Save: disabled until a header field change (line items save via OrderID).
+            SetSaveButtonsEnabled(false);
 
             RegisterPageStartupScript("orderHeaderClearDirty",
                 "if (window.TrackerUnsaved) { TrackerUnsaved.clearDirty(); } else if (window.orderHeaderClearDirty) { orderHeaderClearDirty(); }");
@@ -905,6 +909,36 @@ namespace TrackerSQL.Pages
             // Hide New Item while the add-line form is open (CSS !important was overriding inline display:none).
             if (btnNewItem != null)
                 btnNewItem.Visible = !visible;
+
+            // "Please add items…" is redundant while the add-line form is open.
+            SetEmptyOrderLinesHintVisible(!visible);
+        }
+
+        /// <summary>
+        /// EmptyDataTemplate hint lives in upnlOrderLines — hide the empty grid shell
+        /// while pnlNewItem is open (avoids a leftover bordered square).
+        /// </summary>
+        private void SetEmptyOrderLinesHintVisible(bool showHint)
+        {
+            if (gvOrderLines == null)
+                return;
+
+            bool hasDataRows = false;
+            foreach (GridViewRow row in gvOrderLines.Rows)
+            {
+                if (row.RowType == DataControlRowType.DataRow)
+                {
+                    hasDataRows = true;
+                    break;
+                }
+            }
+
+            // Real lines must stay visible while adding another item.
+            // Empty grid: hide entirely while the add-line form is open.
+            gvOrderLines.Visible = hasDataRows || showHint;
+
+            if (upnlOrderLines != null && upnlOrderLines.UpdateMode == UpdatePanelUpdateMode.Conditional)
+                upnlOrderLines.Update();
         }
 
         private void UpdateNewItemButtonState()
@@ -930,18 +964,6 @@ namespace TrackerSQL.Pages
                     "if (window.orderDetailSyncNewItemButton) window.orderDetailSyncNewItemButton();",
                     true);
             }
-        }
-
-        /// <summary>
-        /// ZZName / sundry (ID 9): New Item stays disabled until Notes has text.
-        /// AutoPostBack on blur refreshes the New Item button.
-        /// </summary>
-        protected void tbxNotes_TextChanged(object sender, EventArgs e)
-        {
-            MarkHeaderDirty();
-            UpdateNewItemButtonState();
-            if (upnlNewOrderItem != null && upnlNewOrderItem.UpdateMode == UpdatePanelUpdateMode.Conditional)
-                upnlNewOrderItem.Update();
         }
 
         protected void cboContacts_SelectedIndexChanged(object sender, EventArgs e)
@@ -1034,7 +1056,7 @@ namespace TrackerSQL.Pages
                 upnlStatus.Update();
         }
 
-        private void SetStatusMessage(string message, bool isError = false, bool isSuccess = false, bool log = true, string logMessage = null)
+        private void SetStatusMessage(string message, bool isError = false, bool isSuccess = false, bool log = true, string logMessage = null, bool isWarn = false)
         {
             message = message ?? string.Empty;
             ltrlStatus.Text = message;
@@ -1046,6 +1068,8 @@ namespace TrackerSQL.Pages
                 {
                     if (isError)
                         cssClass += " status-error";
+                    else if (isWarn)
+                        cssClass += " status-warn";
                     else if (isSuccess)
                         cssClass += " status-success";
                     else
@@ -1057,12 +1081,78 @@ namespace TrackerSQL.Pages
 
             if (log && !string.IsNullOrWhiteSpace(message))
             {
-                string prefix = OrderId > 0 ? $"Order {OrderId}" : "New order";
                 string textForLog = string.IsNullOrWhiteSpace(logMessage) ? message : logMessage;
-                AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"{prefix}: {textForLog}");
+                LogOrderAudit("Status", textForLog);
             }
 
             RefreshStatusPanel();
+        }
+
+        /// <summary>
+        /// Writes an orders.log audit line. AppLogger already prefixes the logged-in user.
+        /// </summary>
+        private void LogOrderAudit(string action, string details = null)
+        {
+            long contactId = GetEffectiveContactId();
+            string company = GetSelectedContactDisplayName();
+            if (string.IsNullOrWhiteSpace(company) && contactId > 0)
+                company = new ContactsRepository().GetContactNameById((int)contactId) ?? string.Empty;
+
+            string orderPart = OrderId > 0 ? $"Order {OrderId}" : "New order";
+            string contactPart = contactId > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({company})")
+                : "Contact=(none)";
+
+            string line = $"{orderPart} | {contactPart} | {action}";
+            if (!string.IsNullOrWhiteSpace(details))
+                line += $" | {details}";
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Orders, line);
+        }
+
+        private string FormatItemAuditDetails(int itemId, double qty, int packagingId)
+        {
+            string itemDesc = GetItemDescById(itemId);
+            if (string.IsNullOrWhiteSpace(itemDesc))
+                itemDesc = $"ItemID={itemId}";
+
+            string prep = packagingId > 0 ? GetPackagingDesc(packagingId) : "n/a";
+            if (string.IsNullOrWhiteSpace(prep))
+                prep = packagingId > 0 ? $"PackagingID={packagingId}" : "n/a";
+
+            return $"Item={itemDesc} (ID={itemId}); Qty={qty}; Prep={prep}";
+        }
+
+        private static string SummarizeHeaderChanges(OrderHeaderData previous, OrderHeaderData current)
+        {
+            if (previous == null || current == null)
+                return "header updated";
+
+            var parts = new List<string>();
+            if (previous.CustomerID != current.CustomerID)
+                parts.Add($"Contact {previous.CustomerID}->{current.CustomerID}");
+            if (previous.ToBeDeliveredBy != current.ToBeDeliveredBy)
+                parts.Add($"DeliveryBy {previous.ToBeDeliveredBy}->{current.ToBeDeliveredBy}");
+            if (previous.OrderDate.Date != current.OrderDate.Date)
+                parts.Add($"OrderDate {previous.OrderDate:yyyy-MM-dd}->{current.OrderDate:yyyy-MM-dd}");
+            if (previous.PrepDate.Date != current.PrepDate.Date)
+                parts.Add($"Prep {previous.PrepDate:yyyy-MM-dd}->{current.PrepDate:yyyy-MM-dd}");
+            if (previous.RequiredByDate.Date != current.RequiredByDate.Date)
+                parts.Add($"Delivery {previous.RequiredByDate:yyyy-MM-dd}->{current.RequiredByDate:yyyy-MM-dd}");
+            if (previous.Confirmed != current.Confirmed)
+                parts.Add($"Confirmed {previous.Confirmed}->{current.Confirmed}");
+            if (previous.Done != current.Done)
+                parts.Add($"Done {previous.Done}->{current.Done}");
+            if (previous.InvoiceDone != current.InvoiceDone)
+                parts.Add($"Invoiced {previous.InvoiceDone}->{current.InvoiceDone}");
+            if ((previous.PurchaseOrder ?? string.Empty) != (current.PurchaseOrder ?? string.Empty))
+                parts.Add("PO changed");
+            if ((previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty))
+                parts.Add("Notes changed");
+
+            return parts.Count > 0 ? string.Join("; ", parts) : "header updated";
         }
 
         private string BuildOrderDetailUrl(int orderId)
@@ -1152,7 +1242,13 @@ namespace TrackerSQL.Pages
             RegisterHeaderDirtyTracking();
             pnlOrderHeader.Update();
             upnlOrderLines.Update();
-            SetStatusMessage(message, isSuccess: isSuccess);
+
+            string activateAction = !string.IsNullOrEmpty(message)
+                && message.IndexOf("created", StringComparison.OrdinalIgnoreCase) >= 0
+                ? "Order created"
+                : "Order opened";
+            LogOrderAudit(activateAction, message);
+            SetStatusMessage(message, isSuccess: isSuccess, log: false);
 
             string url = ResolveUrl($"~/Pages/OrderDetail.aspx?{CONST_QRYSTR_ORDERID}={orderId}");
             ScriptManager.RegisterStartupScript(
@@ -1251,9 +1347,10 @@ namespace TrackerSQL.Pages
             if (btnSaveAndReturn != null)
                 btnSaveAndReturn.Visible = OrderId > 0 && !orderDone;
 
-            // Always enable Save for a real open order so Add Last / wiring gaps can't leave it dead.
+            // Enable Save only when the header is dirty (typing/change). Line items persist via OrderID.
+            bool headerDirty = hdnHeaderDirty != null && hdnHeaderDirty.Value == "1";
             if (OrderId > 0 && !orderDone)
-                SetSaveButtonsEnabled(true);
+                SetSaveButtonsEnabled(headerDirty);
             else
                 SetSaveButtonsEnabled(false);
 
@@ -1366,8 +1463,10 @@ namespace TrackerSQL.Pages
                 string message =
                     "Merge the other order for this contact and delivery date into this order?\n\n" +
                     "All lines from the other order will be moved here and that order will be removed.";
+                // Do not use "return confirm(...)" — for UpdatePanel async postbacks that
+                // returns true and skips the ScriptManager __doPostBack that follows.
                 btnMerge.OnClientClick =
-                    "return confirm(\"" + System.Web.HttpUtility.JavaScriptStringEncode(message) + "\");";
+                    "if (!confirm(\"" + System.Web.HttpUtility.JavaScriptStringEncode(message) + "\")) return false;";
             }
             else
             {
@@ -1380,7 +1479,26 @@ namespace TrackerSQL.Pages
             int mergeFromOrderId = MergeableOrderId;
             int keepOrderId = OrderId;
             if (mergeFromOrderId <= 0 || keepOrderId <= 0)
-                return;
+            {
+                // Re-resolve from current header in case ViewState was stale after Save conflict.
+                if (keepOrderId > 0)
+                {
+                    var header = ReadHeaderFromControls();
+                    int? duplicateId = _orderManager.FindDuplicateOrderForHeader(header, keepOrderId);
+                    mergeFromOrderId = duplicateId ?? 0;
+                    if (mergeFromOrderId > 0)
+                        MergeableOrderId = mergeFromOrderId;
+                }
+
+                if (mergeFromOrderId <= 0 || keepOrderId <= 0)
+                {
+                    SetStatusMessage(
+                        "Nothing to merge — no other open order was found for this contact and delivery date.",
+                        isError: true);
+                    ApplyHeaderUiState();
+                    return;
+                }
+            }
 
             try
             {
@@ -1404,10 +1522,10 @@ namespace TrackerSQL.Pages
                 string message = $"Orders merged. {linesNote}";
                 if (MergeableOrderId > 0)
                     message += " Another duplicate order still exists — use Merge again if needed.";
-                SetStatusMessage(message, isSuccess: true);
-                AppLogger.WriteLog(
-                    SystemConstants.LogTypes.Orders,
-                    $"Order {keepOrderId}: merged order #{mergeFromOrderId} ({result.LinesMoved} line(s)).");
+                SetStatusMessage(message, isSuccess: true, log: false);
+                LogOrderAudit(
+                    "Orders merged",
+                    $"from=#{mergeFromOrderId}; linesMoved={result.LinesMoved}");
             }
             catch (Exception ex)
             {
@@ -1427,12 +1545,17 @@ namespace TrackerSQL.Pages
         {
             ConflictOrderId = existingOrderId;
             litConflictMessage.Text =
-                "Another order already exists for this contact on the required-by date. <br />" +
-                "Merge, create a separate order, open the existing order, or cancel to drop the line.";
+                "<strong>Another order already exists</strong> for this contact on the required-by date.<br />" +
+                "What would you like to do?";
+            if (pnlAddLineConflictActions != null)
+                pnlAddLineConflictActions.Visible = true;
+            if (pnlMergePromptActions != null)
+                pnlMergePromptActions.Visible = false;
             pnlOrderConflictShell.Visible = true;
             upnlOrderConflict?.Update();
             SetStatusMessage(
                 "Another order exists for this delivery date. Choose how to continue.",
+                isWarn: true,
                 log: false);
 
             string shellId = pnlOrderConflictShell.ClientID;
@@ -1444,11 +1567,84 @@ namespace TrackerSQL.Pages
                 true);
         }
 
+        /// <summary>
+        /// Shown when saving an existing order whose contact+date already has another open order.
+        /// Asks clearly whether to merge (instead of a quiet green status line).
+        /// </summary>
+        private void ShowDuplicateMergePrompt(int duplicateOrderId)
+        {
+            SetMergeableOrder(duplicateOrderId);
+            ConflictOrderId = duplicateOrderId;
+            litConflictMessage.Text =
+                "<strong>Another order already exists</strong> for this contact and delivery date.<br />" +
+                "Do you want to merge that order into this one?<br />" +
+                "<span class='small'>Merging moves all lines here and removes the other order.</span>";
+            if (pnlAddLineConflictActions != null)
+                pnlAddLineConflictActions.Visible = false;
+            if (pnlMergePromptActions != null)
+                pnlMergePromptActions.Visible = true;
+            pnlOrderConflictShell.Visible = true;
+            upnlOrderConflict?.Update();
+            SetStatusMessage(
+                "Another order exists for this contact and delivery date — choose whether to merge.",
+                isWarn: true,
+                log: false);
+
+            string shellId = pnlOrderConflictShell.ClientID;
+            ScriptManager.RegisterStartupScript(
+                this,
+                GetType(),
+                "scrollMergePrompt",
+                $"var el = document.getElementById('{shellId}'); if (el) {{ el.scrollIntoView({{ behavior: 'smooth', block: 'start' }}); }}",
+                true);
+        }
+
+        private void HideDuplicateMergePrompt()
+        {
+            if (pnlMergePromptActions != null)
+                pnlMergePromptActions.Visible = false;
+            if (pnlOrderConflictShell != null && pnlAddLineConflictActions != null
+                && !pnlAddLineConflictActions.Visible)
+            {
+                pnlOrderConflictShell.Visible = false;
+            }
+
+            upnlOrderConflict?.Update();
+        }
+
         private void HideOrderConflict()
         {
             ConflictOrderId = 0;
+            if (pnlAddLineConflictActions != null)
+                pnlAddLineConflictActions.Visible = true;
+            if (pnlMergePromptActions != null)
+                pnlMergePromptActions.Visible = false;
             pnlOrderConflictShell.Visible = false;
             upnlOrderConflict?.Update();
+        }
+
+        protected void btnConfirmMergeDuplicate_Click(object sender, EventArgs e)
+        {
+            HideDuplicateMergePrompt();
+            btnMerge_Click(sender, e);
+        }
+
+        protected void btnOpenDuplicateOrder_Click(object sender, EventArgs e)
+        {
+            int otherOrderId = ConflictOrderId > 0 ? ConflictOrderId : MergeableOrderId;
+            HideDuplicateMergePrompt();
+            if (otherOrderId > 0)
+                Response.Redirect($"OrderDetail.aspx?{CONST_QRYSTR_ORDERID}={otherOrderId}", true);
+        }
+
+        protected void btnDismissMergePrompt_Click(object sender, EventArgs e)
+        {
+            HideDuplicateMergePrompt();
+            SetStatusMessage(
+                "Merge cancelled. Use the Merge button when you are ready, or change the delivery date before saving.",
+                isWarn: true,
+                log: false);
+            ApplyHeaderUiState();
         }
 
         protected void btnOpenExistingOrder_Click(object sender, EventArgs e)
@@ -1490,6 +1686,11 @@ namespace TrackerSQL.Pages
                         return;
                     }
 
+                    LogOrderAudit(
+                        "Item added",
+                        FormatItemAuditDetails(PendingItemId, PendingQty, PendingPackagingId)
+                        + "; via=merge-into-existing");
+
                     ClearPendingConflictActions();
                     HideOrderConflict();
                     HideNewOrderItemPanel();
@@ -1502,7 +1703,7 @@ namespace TrackerSQL.Pages
 
                     BindOrderLines();
                     ApplyHeaderUiState();
-                    SetStatusMessage("Line merged into the existing order.", isSuccess: true);
+                    SetStatusMessage("Line merged into the existing order.", isSuccess: true, log: false);
                     pnlOrderHeader.Update();
                     RefreshNewItemPanel();
                     upnlOrderLines.Update();
@@ -1554,6 +1755,10 @@ namespace TrackerSQL.Pages
                         SetStatusMessage("Error adding item: " + addResult.Error, isError: true);
                         return;
                     }
+
+                    LogOrderAudit(
+                        "Item added",
+                        FormatItemAuditDetails(itemId, qty, packagingId) + "; via=create-new-anyway");
 
                     HideNewOrderItemPanel();
                     ActivatePersistedOrder(ensure.OrderId, "Order created. Item added.");
@@ -1647,6 +1852,8 @@ namespace TrackerSQL.Pages
                 return;
             }
 
+            LogOrderAudit("Last order items added", $"lines={lines.Count}");
+
             if (wasDraftOrder || OrderId <= 0)
             {
                 ActivatePersistedOrder(addResult.OrderId, "Last order items added.");
@@ -1655,7 +1862,7 @@ namespace TrackerSQL.Pages
 
             BindOrderLines();
             ApplyHeaderUiState();
-            SetStatusMessage("Last order items added.", isSuccess: true);
+            SetStatusMessage("Last order items added.", isSuccess: true, log: false);
             pnlOrderHeader.Update();
             upnlOrderLines.Update();
         }
@@ -1671,6 +1878,8 @@ namespace TrackerSQL.Pages
                 // Bind an empty list so EmptyDataTemplate ("Please add items…") always renders.
                 gvOrderLines.DataSource = new List<OrderDetailData>();
                 gvOrderLines.DataBind();
+                // Keep hidden if the add-line form is open (no leftover empty square).
+                gvOrderLines.Visible = pnlNewItem == null || !pnlNewItem.Visible;
                 if (upnlOrderLines != null && upnlOrderLines.UpdateMode == UpdatePanelUpdateMode.Conditional)
                     upnlOrderLines.Update();
                 return;
@@ -1678,6 +1887,7 @@ namespace TrackerSQL.Pages
 
             gvOrderLines.DataSource = _orderManager.GetOrderLines(OrderId);
             gvOrderLines.DataBind();
+            gvOrderLines.Visible = true;
             upnlOrderLines.Update();
         }
 
@@ -1776,6 +1986,8 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
+                LogOrderAudit("Item added", FormatItemAuditDetails(itemId, qty, packagingId));
+
                 if (isNewOrder)
                 {
                     ActivatePersistedOrder(orderId, "Order created. Item added.");
@@ -1785,7 +1997,7 @@ namespace TrackerSQL.Pages
                 HideNewOrderItemPanel();
                 BindOrderLines();
                 ApplyHeaderUiState();
-                SetStatusMessage("Item added.", isSuccess: true);
+                SetStatusMessage("Item added.", isSuccess: true, log: false);
                 pnlOrderHeader.Update();
                 RefreshNewItemPanel();
                 upnlOrderLines.Update();
@@ -1869,7 +2081,7 @@ namespace TrackerSQL.Pages
         {
             e.Cancel = true;
             if (TrySaveEditedOrderLine(e.RowIndex, exitEditMode: true))
-                SetStatusMessage("Line updated.", isSuccess: true);
+                SetStatusMessage("Line updated.", isSuccess: true, log: false);
         }
 
         private bool TrySaveActiveOrderLineEdit(bool exitEditMode)
@@ -1946,6 +2158,16 @@ namespace TrackerSQL.Pages
                 SetStatusMessage("Error updating order line.", isError: true);
                 return false;
             }
+
+            string oldItem = existingLine != null
+                ? $"{GetItemDescById(existingLine.ItemTypeID)} (ID={existingLine.ItemTypeID})"
+                : "(unknown)";
+            string newItem = $"{GetItemDescById(itemId)} (ID={itemId})";
+            double oldQty = existingLine?.QuantityOrdered ?? 0;
+            int oldPack = existingLine?.PackagingID ?? 0;
+            LogOrderAudit(
+                "Line updated",
+                $"OrderLineID={orderLineId}; Item {oldItem}->{newItem}; Qty {oldQty}->{qty}; Prep {oldPack}->{packagingId}");
 
             if (exitEditMode)
                 gvOrderLines.EditIndex = -1;
@@ -2205,7 +2427,10 @@ namespace TrackerSQL.Pages
         {
             string result = _orderManager.DeleteOrderLine(Convert.ToInt32(orderLineId));
             if (string.IsNullOrEmpty(result))
-                SetStatusMessage("Item deleted.", isSuccess: true);
+            {
+                LogOrderAudit("Item deleted", $"OrderLineID={orderLineId}");
+                SetStatusMessage("Item deleted.", isSuccess: true, log: false);
+            }
             else
                 SetStatusMessage("Error deleting item: " + result, isError: true);
         }
@@ -2231,9 +2456,18 @@ namespace TrackerSQL.Pages
             string notes = header.Notes ?? string.Empty;
             var emailManager = new OrderDetailManager();
             bool success = emailManager.SendOrderConfirmation(contact, header, orderLines, notes, out string statusMsg);
-            AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Order confirmation sent, status: {statusMsg}");
+
+            string recipient = contact?.EmailAddress;
+            if (string.IsNullOrWhiteSpace(recipient))
+                recipient = "(no email)";
+
+            if (success)
+                LogOrderAudit("Confirmation email sent", $"to={recipient}; status=OK");
+            else
+                LogOrderAudit("Confirmation email failed", $"to={recipient}; {GetShortUserMessage(statusMsg)}");
+
             string displayMessage = success ? statusMsg : FormatEmailSendError(statusMsg);
-            SetStatusMessage(displayMessage, isError: !success, isSuccess: success);
+            SetStatusMessage(displayMessage, isError: !success, isSuccess: success, log: false);
         }
 
         private static string FormatEmailSendError(string fullMessage)
@@ -2280,6 +2514,14 @@ namespace TrackerSQL.Pages
             if (OrderId <= 0)
                 return;
 
+            // Client confirmSaveThenContinue posts with hdnHeaderDirty=1 when the user agreed to save first.
+            bool headerDirty = hdnHeaderDirty != null && hdnHeaderDirty.Value == "1";
+            if (headerDirty)
+            {
+                if (!TrySaveOrderChanges(navigatingAway: true))
+                    return;
+            }
+
             // Always build Order Done from persisted OrderID data — not from the grid/controls.
             // DeliverySheet Done (?Delivered=Y) must work even if the UI bind path changes.
             if (!_orderManager.CompleteOrderDeliveryByOrderId(OrderId))
@@ -2306,9 +2548,15 @@ namespace TrackerSQL.Pages
             Response.Redirect("DeliverySheet.aspx", true);
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect(GetReturnUrl(), true);
+        }
+
+        protected void btnNewOrder_Click(object sender, EventArgs e)
+        {
+            // PostBackUrl left IsPostBack=true on the target page, so InitializeNewOrder never ran.
+            Response.Redirect(ResolveUrl("~/Pages/OrderDetail.aspx?NewOrder=true"), true);
         }
 
         protected void btnUnDoDone_Click(object sender, EventArgs e)
@@ -2336,7 +2584,14 @@ namespace TrackerSQL.Pages
             if (OrderId <= 0)
                 return;
 
-            _orderManager.MarkItemAsInvoiced(OrderId);
+            string markResult = _orderManager.MarkItemAsInvoiced(OrderId);
+            if (!string.IsNullOrEmpty(markResult))
+            {
+                SetStatusMessage(markResult, isError: true);
+                pnlOrderHeader.Update();
+                return;
+            }
+
             var header = _orderManager.GetOrderHeader(OrderId);
             if (header != null)
                 BindHeaderToControls(header);
@@ -2351,7 +2606,8 @@ namespace TrackerSQL.Pages
                 $"if (window.history && window.history.replaceState) {{ window.history.replaceState(null, document.title, '{cleanUrl}'); }}",
                 true);
 
-            SetStatusMessage("Order marked as invoiced.", isSuccess: true);
+            // Audit line is written in OrderManager.MarkItemAsInvoiced (do not also log status).
+            SetStatusMessage("Order marked as invoiced.", isSuccess: true, log: false);
             pnlOrderHeader.Update();
             upnlOrderLines.Update();
         }

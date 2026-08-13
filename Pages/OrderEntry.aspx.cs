@@ -21,7 +21,7 @@ namespace TrackerSQL.Pages
         protected Button btnGo;
         protected Button btnReset;
         protected HyperLink btnNewOrder;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvListOfOrders;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
@@ -131,7 +131,7 @@ namespace TrackerSQL.Pages
             RebindOrders("Filters cleared.");
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect(DefaultReturnUrl, endResponse: false);
             Context.ApplicationInstance.CompleteRequest();

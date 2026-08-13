@@ -53,9 +53,14 @@
                                 CausesValidation="false"
                                 OnClientClick="return confirm('Execute all enabled commands in this XML against SQL Server?');"
                                 ToolTip="Run commands from the selected XML file" />
-                            <asp:Button ID="btnBack" runat="server" Text="Back"
-                                CssClass="filter-panel-btn" OnClick="btnBack_Click"
-                                CausesValidation="false" ToolTip="Return to System Tools" />
+                            <span class="image-button" title="Return to System Tools">
+                                <asp:ImageButton ID="btnBack" runat="server"
+                                    ImageUrl="~/images/imgButtons/Back.gif"
+                                    AlternateText="Back"
+                                    ToolTip="Return to System Tools"
+                                    OnClick="btnBack_Click"
+                                    CausesValidation="false" />
+                            </span>
                         </td>
                     </tr>
                 </table>

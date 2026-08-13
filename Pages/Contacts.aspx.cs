@@ -172,7 +172,7 @@ namespace TrackerSQL.Pages
             BindContactsGrid();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Default.aspx");
         }

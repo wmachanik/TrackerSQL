@@ -22,6 +22,7 @@
  *   });
  *
  * API: markDirty(), clearDirty(), allowNavigate(), confirmLeave(),
+ *      confirmSaveThenContinue(optionalMessage),
  *      wireFields(optionalFieldIds), isDirty(), restoreGuard()
  */
 (function (window, document) {
@@ -179,6 +180,27 @@
         return false;
     }
 
+    /// Ask to save dirty changes before continuing (e.g. Order Done).
+    /// OK = allow navigate and proceed (server should save while dirty flag is still posted).
+    /// Cancel = stay on the page.
+    function confirmSaveThenContinue(message) {
+        if (!dirty) {
+            allowNavigateFn();
+            return true;
+        }
+
+        var prompt = message
+            || (cfg && cfg.saveThenContinueMessage)
+            || 'You have unsaved changes. Save them and continue?';
+
+        if (!window.confirm(prompt)) {
+            return false;
+        }
+
+        allowNavigateFn();
+        return true;
+    }
+
     function wireOneField(field) {
         if (!field || field.getAttribute(WIRED_ATTR) === '1') {
             return;
@@ -314,6 +336,9 @@
         if (aliases.confirmLeave) {
             window[aliases.confirmLeave] = confirmLeave;
         }
+        if (aliases.confirmSaveThenContinue) {
+            window[aliases.confirmSaveThenContinue] = confirmSaveThenContinue;
+        }
         if (aliases.wireFields) {
             window[aliases.wireFields] = wireFields;
         }
@@ -358,6 +383,7 @@
         clearDirty: clearDirty,
         allowNavigate: allowNavigateFn,
         confirmLeave: confirmLeave,
+        confirmSaveThenContinue: confirmSaveThenContinue,
         wireFields: wireFields,
         restoreGuard: restoreGuard,
         isDirty: function () { return dirty; },

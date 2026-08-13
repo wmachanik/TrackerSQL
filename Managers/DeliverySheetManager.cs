@@ -94,7 +94,9 @@ namespace TrackerSQL.Managers
                 Notes = row.Notes ?? string.Empty
             };
 
-            if (item.ContactName.StartsWith(SystemConstants.CustomerConstants.SundryCustomerName))
+            // Sundry / ZZName: walk-in name is in Notes — match ContactID as well as CompanyName.
+            if (row.ContactID == SystemConstants.CustomerConstants.SundryCustomerID
+                || item.ContactName.StartsWith(SystemConstants.CustomerConstants.SundryCustomerName, StringComparison.OrdinalIgnoreCase))
             {
                 item.ContactID = SystemConstants.CustomerConstants.SundryCustomerNamePrefix;
 

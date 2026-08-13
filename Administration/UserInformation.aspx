@@ -69,8 +69,14 @@
                 OnClick="btnUpdateUser_Click" />
             <asp:Button ID="btnDeleteUser" Text="Delete User" runat="server" CssClass="filter-panel-btn"
                 OnClick="btnDeleteUser_Click" CausesValidation="false" />
-            <asp:Button ID="btnReturnToManagerUser" Text="Back" runat="server" CssClass="filter-panel-btn"
-                PostBackUrl="~/Administration/ManageUsers.aspx" CausesValidation="false" />
+            <span class="image-button" title="Return to Manage Users">
+                <asp:ImageButton ID="btnReturnToManagerUser" runat="server"
+                    ImageUrl="~/images/imgButtons/Back.gif"
+                    AlternateText="Back"
+                    ToolTip="Return to Manage Users"
+                    PostBackUrl="~/Administration/ManageUsers.aspx"
+                    CausesValidation="false" />
+            </span>
         </div>
 
         <div class="status-message" style="margin-top: 12px;">

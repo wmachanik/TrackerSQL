@@ -63,7 +63,7 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// btnBack control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
 
         /// <summary>
         /// tbxEmailSubject control.

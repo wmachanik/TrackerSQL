@@ -27,7 +27,7 @@ namespace TrackerSQL.Administration
         protected Label EmailLabel;
         protected Button btnDeleteUser;
         protected Button btnUpdate;
-        protected Button btnReturnToManagerUser;
+        protected ImageButton btnReturnToManagerUser;
         protected Label lblStatusMessage;
 
         private void Page_PreRender()

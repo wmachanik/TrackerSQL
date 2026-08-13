@@ -223,7 +223,7 @@
     <Content Include="Pages\SentRemindersSheet.aspx" />
     <Content Include="Classes\Web.config" />
     <Content Include="Tools\Generate-MigrationPlan.ps1" />
-    <Content Include="CONTRIBUTING.md" />
+    <None Include="CONTRIBUTING.md" />
     <Content Include="README.md" />
     <None Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
@@ -499,9 +499,6 @@
     <Compile Include="Classes\TrackerTools.cs" />
     <Compile Include="Classes\UserPreferences.cs" />
     <Compile Include="Classes\UserPreferencesHelper.cs" />
-    <Compile Include="DataSets\CustomersCls.cs" />
-    <Compile Include="DataSets\CustomersDataSet.cs" />
-    <Compile Include="DataSets\TrackerDataSet.cs" />
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -852,4 +849,5 @@
   <!-- RETIRED 2026-07-14: direct-URL / legacy pages excluded from build+publish. Files remain on disk. See Documentation/WorkInProgress/Page_Migration_Gap_Analysis.md Ã‚Â§2.4. Also on disk but never in project: Pages/NewOrder*.aspx, Pages/CustomerDetails.aspx, Pages/RepairDetailOld.aspx, Pages/LoadSendCoffeeCheckup.aspx, Pages/Print.aspx, Tools/MergeCustomersFromQB.aspx -->
   <ItemGroup />
   <!-- LEGACY migration artifacts under Migrations/, Data/Metadata/, etc. are NOT in this project. Canonical SQL/migrations live in TrackerMigration. Files may remain on disk but must not be published or treated as source of truth. -->
+  <!-- LEGACY typed DataSets under DataSets/ are excluded (Access-era TableAdapters). Active pages use Repositories/. Folder remains on disk for reference only. -->
 </Project>

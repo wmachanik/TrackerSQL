@@ -25,7 +25,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button ResetBtn;
         protected global::System.Web.UI.WebControls.Button PrevWeekBtn;
         protected global::System.Web.UI.WebControls.Button NextWeekBtn;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected global::System.Web.UI.WebControls.Label lblFilterStatus;
         protected global::AjaxControlToolkit.TabContainer tabRequired;

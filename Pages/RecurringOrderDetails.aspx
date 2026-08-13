@@ -413,10 +413,15 @@
                                     OnClick="btnRevert_Click"
                                     OnClientClick="return recurringOrderAllowNavigate();"
                                     ToolTip="Reload last saved values" />
-                                <asp:Button ID="btnReturn" Text="Back" runat="server" CssClass="filter-panel-btn"
-                                    OnClick="btnReturn_Click" CausesValidation="false"
-                                    OnClientClick="return recurringOrderConfirmLeave();"
-                                    ToolTip="Return without saving" />
+                                <span class="image-button" title="Return without saving">
+                                    <asp:ImageButton ID="btnReturn" runat="server"
+                                        ImageUrl="~/images/imgButtons/Back.gif"
+                                        AlternateText="Back"
+                                        ToolTip="Return without saving"
+                                        OnClick="btnReturn_Click"
+                                        CausesValidation="false"
+                                        OnClientClick="return recurringOrderConfirmLeave();" />
+                                </span>
                             </div>
                         </td>
                     </tr>

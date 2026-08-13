@@ -49,6 +49,8 @@
             <Triggers>
                 <asp:AsyncPostBackTrigger ControlID="btnAdd" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
             </Triggers>
             <ContentTemplate>
                 <asp:Panel ID="pnlOrderConflictShell" runat="server" Visible="false" CssClass="instruction-dialog-shell">
@@ -57,7 +59,7 @@
                             <div class="instruction-dialog-message">
                                 <asp:Literal ID="litConflictMessage" runat="server" />
                             </div>
-                            <div class="instruction-dialog-actions action-bar button-row">
+                            <asp:Panel ID="pnlAddLineConflictActions" runat="server" CssClass="instruction-dialog-actions action-bar button-row">
                                 <asp:Button ID="btnUseExistingOrder" runat="server" Text="Merge with existing order"
                                     OnClick="btnUseExistingOrder_Click" CssClass="filter-panel-btn" />
                                 <asp:Button ID="btnCreateNewOrderAnyway" runat="server" Text="Create new order anyway"
@@ -66,7 +68,21 @@
                                     OnClick="btnOpenExistingOrder_Click" CausesValidation="false" CssClass="filter-panel-btn" />
                                 <asp:Button ID="btnDismissConflict" runat="server" Text="Cancel (drop line)"
                                     OnClick="btnDismissConflict_Click" CausesValidation="false" CssClass="filter-panel-btn" />
-                            </div>
+                            </asp:Panel>
+                            <asp:Panel ID="pnlMergePromptActions" runat="server" Visible="false"
+                                CssClass="instruction-dialog-actions action-bar button-row">
+                                <asp:Button ID="btnConfirmMergeDuplicate" runat="server" Text="Yes, merge orders"
+                                    OnClick="btnConfirmMergeDuplicate_Click" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    ToolTip="Move lines from the other order into this one" />
+                                <asp:Button ID="btnOpenDuplicateOrder" runat="server" Text="Open the other order"
+                                    OnClick="btnOpenDuplicateOrder_Click" CssClass="filter-panel-btn"
+                                    CausesValidation="false" />
+                                <asp:Button ID="btnDismissMergePrompt" runat="server" Text="Not now"
+                                    OnClick="btnDismissMergePrompt_Click" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    ToolTip="Keep working on this order — Merge stays available in the footer" />
+                            </asp:Panel>
                         </asp:Panel>
                     </div>
                 </asp:Panel>
@@ -156,8 +172,7 @@
                             <td>Notes:</td>
                             <td>
                                 <asp:TextBox ID="tbxNotes" runat="server" TextMode="MultiLine" Height="4em"
-                                    Width="98%" AutoPostBack="true"
-                                    OnTextChanged="tbxNotes_TextChanged"
+                                    Width="98%"
                                     ToolTip="For ZZName / sundry orders, enter notes to enable New Item" />
                             </td>
                         </tr>
@@ -186,7 +201,6 @@
                 </ContentTemplate>
                 <Triggers>
                     <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
-                    <asp:AsyncPostBackTrigger ControlID="tbxNotes" EventName="TextChanged" />
                     <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
@@ -296,7 +310,6 @@
                 <asp:UpdatePanel ID="upnlNewOrderItem" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <Triggers>
                         <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
-                        <asp:AsyncPostBackTrigger ControlID="tbxNotes" EventName="TextChanged" />
                         <asp:AsyncPostBackTrigger ControlID="btnNewItem" EventName="Click" />
                         <asp:AsyncPostBackTrigger ControlID="btnAdd" EventName="Click" />
                         <asp:AsyncPostBackTrigger ControlID="btnCancel" EventName="Click" />
@@ -349,11 +362,19 @@
         </div>
         <div class="layout-footer-panel">
             <asp:UpdatePanel ID="updtButtonPanel" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional">
+                <Triggers>
+                    <asp:PostBackTrigger ControlID="btnNewOrder" />
+                    <asp:PostBackTrigger ControlID="btnDlSheet" />
+                    <asp:PostBackTrigger ControlID="btnOrderCancelled" />
+                    <asp:PostBackTrigger ControlID="btnOrderDelivered" />
+                    <asp:PostBackTrigger ControlID="btnBack" />
+                </Triggers>
                 <ContentTemplate>
                     <div class="button-row order-detail-actions" style="margin-top: 8px;">
                         <asp:Button ID="btnNewOrder" runat="server" Text="New Order" AccessKey="N"
                             CssClass="filter-panel-btn"
-                            PostBackUrl="~/Pages/OrderDetail.aspx?NewOrder=true"
+                            OnClick="btnNewOrder_Click"
+                            CausesValidation="false"
                             ToolTip="new order (AltShftN)" />
                         <asp:Button ID="btnConfirmOrder" runat="server" Text="Email Confirmation" AccessKey="E"
                             CssClass="filter-panel-btn"
@@ -373,11 +394,18 @@
                             OnClick="btnUnDoDone_Click" ToolTip="undo a done order (AltShftU)" />
                         <asp:Button ID="btnOrderDelivered" runat="server" Text="Order Done" AccessKey="D"
                             CssClass="filter-panel-btn"
-                            OnClick="btnOrderDelivered_Click" ToolTip="start order done process (AltShftD)" />
-                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                            OnClick="btnBack_Click" CausesValidation="false"
-                            OnClientClick="return (window.TrackerUnsaved && TrackerUnsaved.confirmLeave) ? TrackerUnsaved.confirmLeave() : true;"
-                            ToolTip="Return without saving" />
+                            OnClick="btnOrderDelivered_Click"
+                            OnClientClick="return (window.TrackerUnsaved && TrackerUnsaved.confirmSaveThenContinue) ? TrackerUnsaved.confirmSaveThenContinue('You have unsaved changes. Save them and continue to Order Done?') : true;"
+                            ToolTip="start order done process (AltShftD)" />
+                        <span class="image-button" title="Return without saving">
+                            <asp:ImageButton ID="btnBack" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Return without saving"
+                                OnClick="btnBack_Click"
+                                CausesValidation="false"
+                                OnClientClick="return (window.TrackerUnsaved && TrackerUnsaved.confirmLeave) ? TrackerUnsaved.confirmLeave() : true;" />
+                        </span>
                     </div>
                 </ContentTemplate>
             </asp:UpdatePanel>
@@ -414,15 +442,16 @@
             statusLiteralId: '<%= ltrlStatus.ClientID %>',
             statusPanelId: '<%= pnlStatusMessage.ClientID %>',
             saveButtonSelector: '.order-detail-save-btn',
-            saveButtonsAlwaysEnabled: true,
             leaveMessage: 'You have unsaved changes. Leave without saving?',
+            saveThenContinueMessage: 'You have unsaved changes. Save them and continue to Order Done?',
             aliases: {
                 markDirty: 'orderHeaderMarkDirty',
                 clearDirty: 'orderHeaderClearDirty',
                 markDirtyFromServer: 'orderHeaderMarkDirtyFromServer',
                 wireFields: 'orderHeaderWireFields',
                 allowNavigate: 'orderHeaderAllowNavigateFn',
-                confirmLeave: 'orderHeaderConfirmLeave'
+                confirmLeave: 'orderHeaderConfirmLeave',
+                confirmSaveThenContinue: 'orderHeaderConfirmSaveThenContinue'
             }
         });
 

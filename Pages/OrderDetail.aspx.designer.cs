@@ -21,10 +21,15 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlOrderConflict;
         protected global::System.Web.UI.WebControls.Panel pnlOrderConflict;
         protected global::System.Web.UI.WebControls.Literal litConflictMessage;
+        protected global::System.Web.UI.WebControls.Panel pnlAddLineConflictActions;
         protected global::System.Web.UI.WebControls.Button btnUseExistingOrder;
         protected global::System.Web.UI.WebControls.Button btnCreateNewOrderAnyway;
         protected global::System.Web.UI.WebControls.Button btnOpenExistingOrder;
         protected global::System.Web.UI.WebControls.Button btnDismissConflict;
+        protected global::System.Web.UI.WebControls.Panel pnlMergePromptActions;
+        protected global::System.Web.UI.WebControls.Button btnConfirmMergeDuplicate;
+        protected global::System.Web.UI.WebControls.Button btnOpenDuplicateOrder;
+        protected global::System.Web.UI.WebControls.Button btnDismissMergePrompt;
         protected global::System.Web.UI.UpdatePanel pnlOrderHeader;
         protected global::System.Web.UI.WebControls.HyperLink hlContactHdr;
         protected global::AjaxControlToolkit.ComboBox cboContacts;
@@ -64,7 +69,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnOrderCancelled;
         protected global::System.Web.UI.WebControls.Button btnUnDoDone;
         protected global::System.Web.UI.WebControls.Button btnOrderDelivered;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.UpdatePanel upnlStatus;
         protected global::System.Web.UI.WebControls.Panel pnlStatusMessage;
         protected global::System.Web.UI.WebControls.Literal ltrlStatus;

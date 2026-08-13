@@ -87,8 +87,14 @@
                                         OnClick="BackBtn_Click" ToolTip="Move date range back one week" />
                                     <asp:Button ID="NextWeekBtn" Text="Next Week" runat="server" CssClass="filter-panel-btn"
                                         OnClick="ForwardBtn_Click" ToolTip="Move date range forward one week" />
-                                    <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                                        OnClick="btnBack_Click" CausesValidation="false" ToolTip="Return to home" />
+                                    <span class="image-button" title="Return to home">
+                                        <asp:ImageButton ID="btnBack" runat="server"
+                                            ImageUrl="~/images/imgButtons/Back.gif"
+                                            AlternateText="Back"
+                                            ToolTip="Return to home"
+                                            OnClick="btnBack_Click"
+                                            CausesValidation="false" />
+                                    </span>
                                 </div>
                             </td>
                         </tr>

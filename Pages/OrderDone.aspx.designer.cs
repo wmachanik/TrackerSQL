@@ -22,7 +22,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.RadioButtonList rbtnSendConfirm;
         protected global::System.Web.UI.WebControls.TextBox tbxCount;
         protected global::System.Web.UI.WebControls.Button btnDone;
-        protected global::System.Web.UI.WebControls.Button btnCancel;
+        protected global::System.Web.UI.WebControls.ImageButton btnCancel;
         protected global::System.Web.UI.WebControls.Panel pnlCustomerDetailsUpdated;
         protected global::System.Web.UI.WebControls.Label tbxCustomerName;
         protected global::System.Web.UI.WebControls.DataGrid dgCustomerUsage;

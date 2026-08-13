@@ -78,9 +78,14 @@
                     <div class="filter-section action-buttons">
                         <asp:HyperLink ID="hlAddAway" ImageUrl="~/images/imgButtons/AddItem.gif" ToolTip="Add Away Period"
                             NavigateUrl="~/Pages/ContactsAwayDetail.aspx" runat="server" />
-                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="filter-panel-btn"
-                            OnClick="btnBack_Click" CausesValidation="false"
-                            ToolTip="Return to Contacts" />
+                        <span class="image-button" title="Return to Contacts">
+                            <asp:ImageButton ID="btnBack" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Return to Contacts"
+                                OnClick="btnBack_Click"
+                                CausesValidation="false" />
+                        </span>
                     </div>
                 </div>
 

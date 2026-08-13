@@ -108,9 +108,14 @@
                         <asp:Button ID="btnRefreshCustomerCheckupList" Text="Refresh List" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnPrepData_Click"
                             ToolTip="Refresh the contact list (re-runs Prep — excluded contacts may return)" />
-                        <asp:Button ID="btnBack" Text="Back" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnBack_Click" CausesValidation="false"
-                            ToolTip="Return to home without sending" />
+                        <span class="image-button" title="Return to home without sending">
+                            <asp:ImageButton ID="btnBack" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Return to home without sending"
+                                OnClick="btnBack_Click"
+                                CausesValidation="false" />
+                        </span>
                         <span class="checkup-send-cc">
                             <asp:CheckBox ID="chkCcOrdersEmail" runat="server" Checked="true" CssClass="small"
                                 Text="Send CC"

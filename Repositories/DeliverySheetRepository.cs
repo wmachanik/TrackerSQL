@@ -62,24 +62,64 @@ namespace TrackerSQL.Repositories
             return ExecuteDeliverySheetQuery(sql, parameters, "DeliverySheetRepository.GetDeliverySheetRows");
         }
 
+        /// <summary>
+        /// Find contacts on any day that still has open work (RequiredByDate in the
+        /// set of dates that have Done = 0 orders). Includes already-delivered rows
+        /// on those days; excludes fully closed historical dates.
+        /// Matches company name, and notes for the contact name only — not item text.
+        /// ZZName / sundry Notes are "WalkInName: item details…"; Find uses only the
+        /// part before the first ':' so item descriptions (e.g. Wacaco) do not match.
+        /// </summary>
         public RepositoryListResult<DeliverySheetOrderRow> SearchDeliverySheetRowsByContact(string contactName)
         {
-            // Match company name OR order notes. ZZName (sundry) walk-ins share ContactID 9
-            // with CompanyName "ZZName"; the real person/company is stored in Notes as
-            // "Name:" or "Company, Name:" — Find must search Notes or those never appear.
+            string pattern = "%" + (contactName ?? string.Empty).Trim() + "%";
             var parameters = new List<DBParameter>
             {
                 new DBParameter
                 {
-                    DataValue = "%" + (contactName ?? string.Empty).Trim() + "%",
+                    DataValue = pattern,
                     DataDbType = DbType.String,
                     ParamName = "@SearchText"
+                },
+                new DBParameter
+                {
+                    DataValue = pattern,
+                    DataDbType = DbType.String,
+                    ParamName = "@SearchNotes"
+                },
+                new DBParameter
+                {
+                    DataValue = (int)SystemConstants.CustomerConstants.SundryCustomerID,
+                    DataDbType = DbType.Int32,
+                    ParamName = "@SundryContactId"
                 }
             };
 
+            // NotesName: walk-in / note label before first ':' (ZZName stores items after it).
             string sql = BaseDeliverySheetSql() + @"
-                WHERE c.CompanyName LIKE @SearchText
-                   OR ISNULL(o.Notes, '') LIKE @SearchText
+                WHERE CAST(o.RequiredByDate AS DATE) IN (
+                    SELECT DISTINCT CAST(openOrders.RequiredByDate AS DATE)
+                    FROM OrdersTbl openOrders
+                    WHERE openOrders.Done = 0
+                      AND openOrders.RequiredByDate IS NOT NULL
+                )
+                  AND (
+                        c.CompanyName LIKE @SearchText
+                     OR (
+                            o.ContactID = @SundryContactId
+                        AND (
+                                CASE
+                                    WHEN CHARINDEX(':', ISNULL(o.Notes, '')) > 0
+                                    THEN LEFT(o.Notes, CHARINDEX(':', o.Notes) - 1)
+                                    ELSE ISNULL(o.Notes, '')
+                                END
+                            ) LIKE @SearchNotes
+                     )
+                     OR (
+                            o.ContactID <> @SundryContactId
+                        AND ISNULL(o.Notes, '') LIKE @SearchNotes
+                     )
+                  )
                 ORDER BY
                     o.Done,
                     o.RequiredByDate,

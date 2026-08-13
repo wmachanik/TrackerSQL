@@ -86,9 +86,14 @@
                                     OnClick="btnDelete_Click" Visible="false"
                                     OnClientClick="return confirm('Are you sure you want to delete this away period?');"
                                     ToolTip="Delete this away period" />
-                                <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
-                                    OnClick="btnCancel_Click" CausesValidation="false"
-                                    ToolTip="Return without saving" />
+                                <span class="image-button" title="Return without saving">
+                                    <asp:ImageButton ID="btnCancel" runat="server"
+                                        ImageUrl="~/images/imgButtons/Back.gif"
+                                        AlternateText="Back"
+                                        ToolTip="Return without saving"
+                                        OnClick="btnCancel_Click"
+                                        CausesValidation="false" />
+                                </span>
                             </div>
                         </td>
                     </tr>

@@ -26,7 +26,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnSave;
         protected global::System.Web.UI.WebControls.Button btnSaveReturn;
         protected global::System.Web.UI.WebControls.Button btnDelete;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected global::System.Web.UI.WebControls.Literal ltrlStatus;
     }

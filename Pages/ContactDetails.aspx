@@ -198,10 +198,15 @@
                             ToolTip="Force contact into next checkup cycle (Next Coffee in 5 days, reset reminders)" />
                         <asp:Button ID="btnRecalcAverage" Text="Recalc Ave" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnRecalcAverage_Click" CausesValidation="false" />
-                        <asp:Button ID="btnCancel" Text="Back" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnCancel_Click" CausesValidation="false"
-                            OnClientClick="return contactDetailsConfirmLeave();"
-                            ToolTip="Return to the page you came from without saving" />
+                        <span class="image-button" title="Return to the page you came from without saving">
+                            <asp:ImageButton ID="btnCancel" runat="server"
+                                ImageUrl="~/images/imgButtons/Back.gif"
+                                AlternateText="Back"
+                                ToolTip="Return to the page you came from without saving"
+                                OnClick="btnCancel_Click"
+                                CausesValidation="false"
+                                OnClientClick="return contactDetailsConfirmLeave();" />
+                        </span>
                     </td>
                 </tr>
             </table>

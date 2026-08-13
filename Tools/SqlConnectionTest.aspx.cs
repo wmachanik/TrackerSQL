@@ -32,7 +32,7 @@ namespace TrackerSQL.Tools
         protected Button btnTest;
         protected Button btnTestContacts;
         protected Button btnReloadConfig;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
         protected Panel pnlResults;
@@ -62,7 +62,7 @@ namespace TrackerSQL.Tools
             ltrlResults.Text = string.Empty;
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Tools/SystemTools.aspx", false);
             Context.ApplicationInstance.CompleteRequest();

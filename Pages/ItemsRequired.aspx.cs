@@ -226,7 +226,7 @@ namespace TrackerSQL.Pages
             tbxDateTo.Text = toDate.AddDays(days).ToString("yyyy-MM-dd");
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Default.aspx");
         }

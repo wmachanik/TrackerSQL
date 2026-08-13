@@ -243,7 +243,7 @@ namespace TrackerSQL.Tools
                 RedirectToList();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             RedirectToList();
         }

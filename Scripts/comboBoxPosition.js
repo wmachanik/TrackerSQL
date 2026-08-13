@@ -2,6 +2,9 @@
  * Ajax Control Toolkit ComboBox option lists often open off-screen or clipped
  * inside overflow/grid/UpdatePanel ancestors. Park visible *_OptionList on
  * document.body with position:fixed under the matching textbox.
+ *
+ * After reparenting, ACT's own scroll-to-match is lost (list jumps back to top).
+ * We scroll the highlighted / first typed match into view again.
  */
 (function (window, document) {
     'use strict';
@@ -100,6 +103,58 @@
         }
     }
 
+    function findMatchItem(list, query) {
+        if (!list) return null;
+
+        var hi = list.querySelector(
+            'li[highlighted="true"], li[highlighted=true], li.ajax__combobox_itemlist_item_highlighted, li[aria-selected="true"]'
+        );
+        if (hi) return hi;
+
+        query = (query || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+        if (!query) return null;
+
+        var items = list.querySelectorAll('li');
+        var containsMatch = null;
+        for (var i = 0; i < items.length; i++) {
+            var t = (items[i].textContent || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+            if (!t) continue;
+            // Prefer prefix match (Warren…); skip underscore-disabled prefix for compare
+            var bare = t.charAt(0) === '_' ? t.substring(1) : t;
+            if (bare.indexOf(query) === 0 || t.indexOf(query) === 0) {
+                return items[i];
+            }
+            if (!containsMatch && (bare.indexOf(query) >= 0 || t.indexOf(query) >= 0)) {
+                containsMatch = items[i];
+            }
+        }
+        return containsMatch;
+    }
+
+    function scrollMatchIntoView(list) {
+        if (!list) return;
+        var input = findTextBoxForList(list);
+        var query = input ? input.value : '';
+        var item = findMatchItem(list, query);
+        if (!item) return;
+
+        try {
+            if (typeof item.scrollIntoView === 'function') {
+                item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            } else {
+                var listRect = list.getBoundingClientRect();
+                var itemRect = item.getBoundingClientRect();
+                if (itemRect.top < listRect.top) {
+                    list.scrollTop -= (listRect.top - itemRect.top);
+                } else if (itemRect.bottom > listRect.bottom) {
+                    list.scrollTop += (itemRect.bottom - listRect.bottom);
+                }
+            }
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
     function placeOptionList(list) {
         var input = findTextBoxForList(list);
         if (!input) return;
@@ -145,6 +200,9 @@
         list.style.setProperty('pointer-events', 'auto', 'important');
         list.style.setProperty('clip', 'auto', 'important');
         list.style.setProperty('clip-path', 'none', 'important');
+
+        // Reparenting resets scrollTop — bring the typed/highlighted match back into view.
+        scrollMatchIntoView(list);
     }
 
     function fixAllVisibleLists() {
@@ -177,6 +235,14 @@
         }
     }
 
+    function onTyping(e) {
+        if (!eventNearCombo(e.target)) return;
+        scheduleBurst();
+        // ACT highlights after keyup — scroll again once highlight is applied
+        window.setTimeout(scheduleFix, 10);
+        window.setTimeout(scheduleFix, 60);
+    }
+
     function startObserver() {
         if (!window.MutationObserver) return;
         var obs = new MutationObserver(function () {
@@ -186,7 +252,7 @@
             subtree: true,
             childList: true,
             attributes: true,
-            attributeFilter: ['style', 'class']
+            attributeFilter: ['style', 'class', 'highlighted']
         });
     }
 
@@ -194,8 +260,9 @@
         document.addEventListener('click', onDocEvent, true);
         document.addEventListener('mousedown', onDocEvent, true);
         document.addEventListener('mouseup', onDocEvent, true);
-        document.addEventListener('keyup', onDocEvent, true);
+        document.addEventListener('keyup', onTyping, true);
         document.addEventListener('keydown', onDocEvent, true);
+        document.addEventListener('input', onTyping, true);
         document.addEventListener('focusin', onDocEvent, true);
         window.addEventListener('scroll', scheduleFix, true);
         window.addEventListener('resize', scheduleFix);

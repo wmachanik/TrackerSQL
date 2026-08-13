@@ -32,7 +32,7 @@ namespace TrackerSQL.Tools
         protected Button btnDownloadSelected;
         protected Button btnDeleteSelected;
         protected Button btnRefresh;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvBackups;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
@@ -228,7 +228,7 @@ namespace TrackerSQL.Tools
             SetStatus("Backup list refreshed.", isError: null);
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Tools/SystemTools.aspx", false);
             Context.ApplicationInstance.CompleteRequest();

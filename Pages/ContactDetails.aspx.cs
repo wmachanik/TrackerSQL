@@ -217,6 +217,33 @@ namespace TrackerSQL.Pages
                 pnlStatus.Attributes["class"] = "status-message status-info";
         }
 
+        /// <summary>
+        /// Writes a customers.log audit line. AppLogger already prefixes the logged-in user.
+        /// </summary>
+        private void LogContactAudit(string action, string details = null, int? contactIdOverride = null)
+        {
+            int contactId = contactIdOverride
+                ?? (TryGetContactId(out int id) ? id : 0);
+
+            string company = CompanyNameTextBox?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(company) && contactId > 0)
+                company = new ContactsRepository().GetContactNameById(contactId) ?? string.Empty;
+
+            string contactPart = contactId > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? $"Contact={contactId}"
+                    : $"Contact={contactId} ({company})")
+                : (string.IsNullOrWhiteSpace(company)
+                    ? "Contact=(new)"
+                    : $"Contact=(new) ({company})");
+
+            string line = $"{contactPart} | {action}";
+            if (!string.IsNullOrWhiteSpace(details))
+                line += $" | {details}";
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Customers, line);
+        }
+
         private bool TryGetContactId(out int contactId)
         {
             contactId = 0;
@@ -955,11 +982,16 @@ namespace TrackerSQL.Pages
                 errorMessage = accWasSaved
                     ? "Contact and account info saved."
                     : "Contact saved.";
+                LogContactAudit(
+                    "Contact saved",
+                    accWasSaved ? "accountInfo=yes" : "accountInfo=no",
+                    contactIdOverride: contactId);
                 return true;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails TrySaveContact error: " + ex.Message);
+                LogContactAudit("Contact save failed", ex.Message);
                 errorMessage = "Error saving contact: " + ex.Message;
                 return false;
             }
@@ -1057,6 +1089,7 @@ namespace TrackerSQL.Pages
                 int newId = repo.Insert(contact);
                 if (newId <= 0)
                 {
+                    LogContactAudit("Contact create failed", "Insert returned 0");
                     SetStatus("Insert failed — contact was not created.", true);
                     RefreshAfterSave();
                     return;
@@ -1068,12 +1101,20 @@ namespace TrackerSQL.Pages
 
                 if (!TrySaveAccInfo(newId, contact, out bool accWasSaved, out string accError))
                 {
+                    LogContactAudit(
+                        "Contact created (account info failed)",
+                        accError,
+                        contactIdOverride: newId);
                     SetStatus("Contact created (ID " + newId + "), but account info failed: " + accError, true);
                     RefreshAfterSave();
                     return;
                 }
 
                 ClearDirtyState();
+                LogContactAudit(
+                    "Contact created",
+                    accWasSaved ? "accountInfo=yes" : "accountInfo=no",
+                    contactIdOverride: newId);
                 SetStatus(accWasSaved
                     ? "Contact and account info created (ID " + newId + ")."
                     : "Contact created (ID " + newId + ").", false);
@@ -1082,6 +1123,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails Insert error: " + ex.Message);
+                LogContactAudit("Contact create failed", ex.Message);
                 SetStatus("Error inserting contact: " + ex.Message, true);
                 RefreshAfterSave();
             }
@@ -1164,18 +1206,13 @@ namespace TrackerSQL.Pages
                 string msg = name + " forced to skip a week of prediction. Next coffee set to "
                     + nextDate.ToString("d") + ".";
 
-                AppLogger.WriteLog(
-                    SystemConstants.LogTypes.Customers,
-                    "User '" + (User?.Identity?.Name ?? "?") + "' Force Next for contact "
-                        + contactId + " -> " + nextDate.ToString("d") + ".");
+                LogContactAudit("Force Next", $"nextCoffee={nextDate:yyyy-MM-dd}", contactIdOverride: contactId);
 
                 NotifyForceAction("Force Next", msg, false);
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(
-                    SystemConstants.LogTypes.Customers,
-                    "Error in btnForceNext_Click: " + ex.Message);
+                LogContactAudit("Force Next failed", ex.Message);
                 NotifyForceAction("Force Next", "Error: " + ex.Message, true);
             }
         }
@@ -1217,18 +1254,13 @@ namespace TrackerSQL.Pages
                     + " forced into next checkup cycle. Next coffee date set to "
                     + forceDate.ToString("d") + ".";
 
-                AppLogger.WriteLog(
-                    SystemConstants.LogTypes.Customers,
-                    "User '" + (User?.Identity?.Name ?? "?") + "' Force Checkup for contact "
-                        + contactId + " -> " + forceDate.ToString("d") + ".");
+                LogContactAudit("Force Checkup", $"nextCoffee={forceDate:yyyy-MM-dd}", contactIdOverride: contactId);
 
                 NotifyForceAction("Force Checkup", msg, false);
             }
             catch (Exception ex)
             {
-                AppLogger.WriteLog(
-                    SystemConstants.LogTypes.Customers,
-                    "Error in btnForceCheckup_Click: " + ex.Message);
+                LogContactAudit("Force Checkup failed", ex.Message);
                 NotifyForceAction("Force Checkup", "Error forcing checkup: " + ex.Message, true);
             }
         }
@@ -1263,7 +1295,7 @@ namespace TrackerSQL.Pages
             SetStatus("Recalc average (SQL) pending migration.", null);
             upnlContactDetails.Update();
         }
-        protected void btnCancel_Click(object sender, EventArgs e)
+        protected void btnCancel_Click(object sender, ImageClickEventArgs e)
         {
             ReturnToCaller();
         }
@@ -1287,12 +1319,15 @@ namespace TrackerSQL.Pages
 
             if (!TrySaveAccInfo(contactId, ReadContactForAccMerge(contactId), out bool accWasSaved, out string error))
             {
+                LogContactAudit("Account info save failed", error, contactIdOverride: contactId);
                 SetStatus(error ?? "Account info save failed.", true);
                 RefreshAfterSave();
                 return;
             }
 
             ClearDirtyState();
+            if (accWasSaved)
+                LogContactAudit("Account info saved", "via=add", contactIdOverride: contactId);
             SetStatus(accWasSaved ? "Account details saved." : "No account data to save.", accWasSaved ? (bool?)false : null);
             RefreshAfterSave();
         }
@@ -1308,12 +1343,15 @@ namespace TrackerSQL.Pages
 
             if (!TrySaveAccInfo(contactId, ReadContactForAccMerge(contactId), out bool accWasSaved, out string error))
             {
+                LogContactAudit("Account info save failed", error, contactIdOverride: contactId);
                 SetStatus(error ?? "Account info save failed.", true);
                 RefreshAfterSave();
                 return;
             }
 
             ClearDirtyState();
+            if (accWasSaved)
+                LogContactAudit("Account info saved", "via=update", contactIdOverride: contactId);
             SetStatus(accWasSaved ? "Account details saved." : "No account data to save.", accWasSaved ? (bool?)false : null);
             RefreshAfterSave();
         }
@@ -1481,8 +1519,10 @@ namespace TrackerSQL.Pages
                 };
 
                 new ContactsItemUsageRepository().Update(usage);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                    $"User '{User.Identity.Name}' updated item usage line {lineNo} for contact {contactId}.");
+                LogContactAudit(
+                    "Item usage updated",
+                    $"line={lineNo}; itemId={usage.ItemProvidedID}; qty={usage.QtyProvided}",
+                    contactIdOverride: contactId);
 
                 gvContactItems.EditIndex = -1;
                 BindItemUsageGrid(contactId);
@@ -1493,6 +1533,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "gvContactItems_RowUpdating error: " + ex.Message);
+                LogContactAudit("Item usage update failed", ex.Message);
                 SetStatus("Error updating item usage: " + ex.Message, true);
                 upnlContactDetails.Update();
             }
@@ -1512,8 +1553,7 @@ namespace TrackerSQL.Pages
             {
                 int lineNo = Convert.ToInt32(gvContactItems.DataKeys[e.RowIndex].Value);
                 new ContactsItemUsageRepository().DeleteUsageLine(lineNo, contactId);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                    $"User '{User.Identity.Name}' deleted item usage line {lineNo} for contact {contactId}.");
+                LogContactAudit("Item usage deleted", $"line={lineNo}", contactIdOverride: contactId);
 
                 gvContactItems.EditIndex = -1;
                 BindItemUsageGrid(contactId);
@@ -1524,6 +1564,7 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "gvContactItems_RowDeleting error: " + ex.Message);
+                LogContactAudit("Item usage delete failed", ex.Message);
                 SetStatus("Error deleting item usage: " + ex.Message, true);
                 upnlContactDetails.Update();
             }

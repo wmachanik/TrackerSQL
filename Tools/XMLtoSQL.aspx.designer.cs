@@ -15,7 +15,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.TextBox FileNameTextBox;
         protected global::System.Web.UI.WebControls.Button RefreshFilesButton;
         protected global::System.Web.UI.WebControls.Button GoButton;
-        protected global::System.Web.UI.WebControls.Button btnBack;
+        protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.WebControls.Panel pnlFileBrowser;
         protected global::System.Web.UI.WebControls.Literal ltrlFileList;
         protected global::System.Web.UI.WebControls.GridView gvSQLResults;

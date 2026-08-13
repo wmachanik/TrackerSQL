@@ -24,7 +24,7 @@ namespace TrackerSQL.Pages
         protected Button btnApplyDateFilter;
         protected DropDownList ddlRepairStatus;
         protected HyperLink hlAddRepair;
-        protected Button btnBack;
+        protected ImageButton btnBack;
         protected GridView gvRepairs;
         protected ObjectDataSource odsRepairs;
         protected ObjectDataSource odsRepairsStatuses;
@@ -35,7 +35,7 @@ namespace TrackerSQL.Pages
         {
             base.OnInit(e);
             if (btnBack != null)
-                btnBack.Click += btnBack_Click;
+                btnBack.Click += new ImageClickEventHandler(btnBack_Click);
         }
 
         protected void Page_PreInit(object sender, EventArgs e)
@@ -323,7 +323,7 @@ namespace TrackerSQL.Pages
             this.upnlRepairs.Update();
         }
 
-        protected void btnBack_Click(object sender, EventArgs e)
+        protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect("~/Default.aspx");
         }

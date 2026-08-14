@@ -1032,19 +1032,20 @@ namespace TrackerSQL.Managers
             }
         }
         /// <summary>
-        /// Fetch recurring orders limited by window end (raw, un-normalized).
+        /// All enabled recurring lines. Due-date filtering uses last-done + interval,
+        /// not the stored NextDateRequired (which can be stale or window-snapped).
         /// </summary>
         private List<RecurringCheckupContext> LoadRawRecurringOrders(DateTime windowEnd)
         {
-            return _recurringOrdersRepository.GetEnabledSummariesDueByDate(windowEnd)
+            return _recurringOrdersRepository.GetSummaries(string.Empty, null, 1)
                 .Select(summary => new RecurringCheckupContext { Summary = summary })
                 .ToList();
         }
 
         /// <summary>
-        /// Aligns due/overdue recurring items into the active checkup window.
-        /// Overdue NextDateRequired (before today) must still fire — snap into the window.
-        /// Does NOT advance from DateLastDone to the next future cycle (that would skip overdue).
+        /// Keeps only lines whose cycle due date (last done + interval, else stored next)
+        /// is on or before the checkup window end (includes overdue). Aligns delivery to the
+        /// area calendar for this send only — does not overwrite stored NextDateRequired.
         /// </summary>
         private List<RecurringCheckupContext> NormalizeAndFilterRecurringOrders(
             List<RecurringCheckupContext> raw,
@@ -1059,16 +1060,29 @@ namespace TrackerSQL.Managers
                 if (order?.Summary == null || !order.Summary.ContactID.HasValue)
                     continue;
 
+                DateTime? cycleDue = _recurringOrdersRepository.GetCycleDueDate(order.Summary);
+                if (!cycleDue.HasValue)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        $"NormalizeAndFilterRecurringOrders: skip item {order.Summary.RecurringOrderItemID} — no last-done or next date");
+                    continue;
+                }
+
                 DateTime storedNext = order.Summary.NextDateRequired?.Date
                     ?? SystemConstants.DatabaseConstants.SystemMinDate;
 
-                if (storedNext == SystemConstants.DatabaseConstants.SystemMinDate || storedNext > windowEnd)
+                // Not due in this window (e.g. monthly line while weekly coffee is due).
+                if (cycleDue.Value.Date > windowEnd)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        $"NormalizeAndFilterRecurringOrders: skip item {order.Summary.RecurringOrderItemID} Cust={order.Summary.ContactID} " +
+                        $"cycleDue={cycleDue:yyyy-MM-dd} storedNext={storedNext:yyyy-MM-dd} windowEnd={windowEnd:yyyy-MM-dd}");
                     continue;
+                }
 
-                bool wasOverdue = storedNext < windowStart;
-                DateTime deliveryTarget = wasOverdue ? windowStart : storedNext;
+                bool wasOverdue = cycleDue.Value.Date < windowStart;
+                DateTime deliveryTarget = wasOverdue ? windowStart : cycleDue.Value.Date;
 
-                // Snap to area delivery calendar from the due/overdue target — not from DateLastDone.
                 var calc = dateCalculator.CalculateOptimalWeeklyDeliveryDates(
                     order.Summary.ContactID.Value,
                     deliveryTarget);
@@ -1079,7 +1093,6 @@ namespace TrackerSQL.Managers
                 if (alignedDelivery < windowStart)
                     alignedDelivery = windowStart;
 
-                // Area snap can land past the window; overdue/due items must still fire.
                 if (alignedDelivery > windowEnd)
                 {
                     AreaDeliveryMatrix.EnsureBuilt();
@@ -1097,29 +1110,16 @@ namespace TrackerSQL.Managers
                         alignedDelivery = windowStart;
                         order.PrepDate = dateCalculator.CalculatePrepDateFromDelivery(alignedDelivery);
                     }
-
-                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
-                        $"RecurringOverduePullIn: OrderItemID={order.Summary.RecurringOrderItemID} Cust={order.Summary.ContactID} " +
-                        $"stored={storedNext:yyyy-MM-dd} aligned into window as {alignedDelivery:yyyy-MM-dd}");
                 }
 
                 if (wasOverdue)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
                         $"RecurringOverdue: OrderItemID={order.Summary.RecurringOrderItemID} Cust={order.Summary.ContactID} " +
-                        $"NextDateRequired was {storedNext:yyyy-MM-dd}, firing in window as {alignedDelivery:yyyy-MM-dd}");
+                        $"cycleDue={cycleDue:yyyy-MM-dd}, firing in window as {alignedDelivery:yyyy-MM-dd}");
                 }
 
                 order.Summary.NextDateRequired = alignedDelivery;
-
-                // Persist only when we pull overdue into the window or area-align within the window.
-                // Never write a next-cycle jump that would clear an overdue due date.
-                if (alignedDelivery != storedNext && alignedDelivery <= windowEnd)
-                {
-                    _recurringOrdersRepository.UpdateItemNextDateRequired(
-                        order.Summary.RecurringOrderItemID,
-                        alignedDelivery);
-                }
 
                 if (alignedDelivery >= windowStart && alignedDelivery <= windowEnd)
                     result.Add(order);
@@ -1771,37 +1771,69 @@ namespace TrackerSQL.Managers
                 // Safety: do not create a second coffee order for the same delivery day
                 // (last-cycle contacts may still be on the list so they get the final email).
                 // Recurring DateLastDone / disable-past-until is owned by Order Done, not Send Checkup.
-                if (HasConflictingOrders(pContact.CustomerID, 0, optimalDeliveryDate, optimalDeliveryDate))
+                if (pContact.SkipOrderCreationDueToConflict
+                    || HasConflictingOrders(pContact.CustomerID, 0, optimalDeliveryDate, optimalDeliveryDate))
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
                         $"CreateOrderForContact: Skipping order create for {FormatContactDisplayName(pContact)} — coffee order already exists on {optimalDeliveryDate:yyyy-MM-dd}");
                     return string.Empty;
                 }
 
-                // Build base order object (one object reused per line)
-                OrderTblData pOrderData = CreateBaseOrder(pContact, optimalPrepDate, optimalDeliveryDate, pOrderType);
+                var lines = pContact.ItemsContactRequires
+                    .Where(line => line != null && line.ItemID > 0)
+                    .ToList();
+                if (lines.Count == 0)
+                    return string.Empty;
 
-                var testEmailClient = new EmailMailKitCls();
-                bool isTestMode = testEmailClient.IsTestMode;
-
-                string errorMessage = string.Empty;
-
-                for (int i = 0; i < pContact.ItemsContactRequires.Count && string.IsNullOrEmpty(errorMessage); i++)
+                var trackerTools = new TrackerTools();
+                bool usedGroupItem = false;
+                for (int i = 0; i < lines.Count; i++)
                 {
-                    var line = pContact.ItemsContactRequires[i];
-                    pOrderData.ItemTypeID = line.ItemID;
-                    pOrderData.QuantityOrdered = line.ItemQty;
-                    pOrderData.PackagingID = line.ItemPackagID;
-                    pOrderData.PrepTypeID = line.ItemPrepID;
-
-                    errorMessage = _ordersRepository.InsertNewOrderLine(pOrderData) > 0
-                        ? string.Empty
-                        : "Failed to insert order line";
-
-                    // Recurring dates / until-disable: OrderDoneManager.SyncRecurringOrderLastDone
+                    var line = lines[i];
+                    int originalItemId = line.ItemID;
+                    int resolvedItemId = trackerTools.ChangeItemIfGroupToNextItemInGroup(
+                        pContact.CustomerID,
+                        line.ItemID,
+                        optimalDeliveryDate);
+                    if (resolvedItemId > 0 && resolvedItemId != originalItemId)
+                    {
+                        AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                            $"CreateOrderForContact: Group item {originalItemId} -> {resolvedItemId} for {FormatContactDisplayName(pContact)}");
+                        line.ItemID = resolvedItemId;
+                        usedGroupItem = true;
+                    }
                 }
 
-                return errorMessage;
+                // One order header, then a line per due item (not a new order per line).
+                OrderTblData pOrderData = CreateBaseOrder(pContact, optimalPrepDate, optimalDeliveryDate, pOrderType);
+                if (usedGroupItem)
+                {
+                    string groupNote = SystemConstants.UIConstants.LastOrderGroupNote;
+                    pOrderData.Notes = string.IsNullOrEmpty(pOrderData.Notes)
+                        ? groupNote
+                        : pOrderData.Notes + "; " + groupNote;
+                    if (pOrderData.Notes.Length > 255)
+                        pOrderData.Notes = pOrderData.Notes.Substring(0, 255);
+                }
+
+                int orderId = _ordersRepository.InsertOrderHeader(pOrderData);
+                if (orderId <= 0)
+                    return "Failed to insert order";
+
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    var line = lines[i];
+                    int lineId = _ordersRepository.InsertOrderLine(
+                        orderId,
+                        line.ItemID,
+                        line.ItemQty,
+                        line.ItemPrepID,
+                        line.ItemPackagID);
+                    if (lineId <= 0)
+                        return "Failed to insert order line";
+                }
+
+                return string.Empty;
             }
             catch (Exception ex)
             {

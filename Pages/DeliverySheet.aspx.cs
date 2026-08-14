@@ -33,7 +33,9 @@ namespace TrackerSQL.Pages
         protected ImageButton btnBack;
         protected Label lblDeliveryBy;
         protected DropDownList ddlDeliveryBy;
+        protected Panel pnlFindContact;
         protected TextBox tbxFindClient;
+        protected Button btnFindDefault;
         protected ImageButton btnFind;
         protected ImageButton btnPrint;
         protected HyperLink hlAddDeliveryItem;
@@ -909,6 +911,16 @@ namespace TrackerSQL.Pages
         }
 
         protected void btnFind_Click(object sender, ImageClickEventArgs e)
+        {
+            FindContactOnOpenDeliveryDays();
+        }
+
+        protected void btnFindDefault_Click(object sender, EventArgs e)
+        {
+            FindContactOnOpenDeliveryDays();
+        }
+
+        private void FindContactOnOpenDeliveryDays()
         {
             string searchText = this.tbxFindClient != null ? this.tbxFindClient.Text.Trim() : string.Empty;
             if (string.IsNullOrEmpty(searchText))

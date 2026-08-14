@@ -1075,6 +1075,36 @@ namespace TrackerSQL.Repositories
             return list;
         }
 
+        /// <summary>
+        /// Next due date for a recurring line: DateLastDone + interval/occurrence when last-done
+        /// is set; otherwise the stored NextDateRequired (initial schedule).
+        /// Does not snap overdue cycles to today — overdue stays overdue so checkup can fire it.
+        /// </summary>
+        public DateTime? GetCycleDueDate(RecurringOrderSummary summary)
+        {
+            if (summary == null || !summary.ContactID.HasValue)
+                return null;
+
+            DateTime? lastDone = NormalizeOptionalDate(summary.DateLastDone);
+            if (lastDone.HasValue)
+            {
+                return CalculateNextDateRequired(
+                    summary.ContactID,
+                    summary.RecurringTypeID,
+                    summary.Value,
+                    lastDone,
+                    null);
+            }
+
+            return NormalizeOptionalDate(summary.NextDateRequired);
+        }
+
+        /// <summary>
+        /// Cycle next date from last-done + type/value. Weekly = last + (weeks * 7).
+        /// Monthly = day-of-month in the following month (skip if same Monday week or
+        /// same calendar month within the minimum interval). Does not floor to today
+        /// or snap onto the area delivery calendar — that is send-time only.
+        /// </summary>
         private DateTime? CalculateNextDateRequired(
             int? contactId,
             int? recurringTypeId,
@@ -1095,7 +1125,7 @@ namespace TrackerSQL.Repositories
             DateTime nextDateRequired;
             switch (recurringTypeId.Value)
             {
-                case 1:
+                case 1: // weekly
                     int weeks = value.HasValue && value.Value > 0 ? value.Value : 1;
                     int intervalDays = weeks * 7;
 
@@ -1104,35 +1134,9 @@ namespace TrackerSQL.Repositories
                         : lastDoneDate.AddDays(intervalDays).Date;
                     break;
 
-                case 5:
+                case 5: // day of month
                     int targetDay = value.HasValue && value.Value > 0 ? value.Value : 1;
-                    DateTime targetDate;
-                    if (isFirstTime)
-                    {
-                        int daysInThisMonth = DateTime.DaysInMonth(today.Year, today.Month);
-                        int thisMonthTargetDay = Math.Min(targetDay, daysInThisMonth);
-                        targetDate = new DateTime(today.Year, today.Month, thisMonthTargetDay);
-
-                        if (targetDate < today)
-                        {
-                            DateTime nextMonth = today.AddMonths(1);
-                            int daysInNextMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
-                            int nextMonthTargetDay = Math.Min(targetDay, daysInNextMonth);
-                            targetDate = new DateTime(nextMonth.Year, nextMonth.Month, nextMonthTargetDay);
-                        }
-                    }
-                    else
-                    {
-                        DateTime cycleMonth = lastDoneDate.AddMonths(1);
-                        targetDate = BuildMonthlyTargetDate(cycleMonth, targetDay);
-
-                        if (AreInSameMondayWeek(lastDoneDate, targetDate))
-                        {
-                            targetDate = BuildMonthlyTargetDate(cycleMonth.AddMonths(1), targetDay);
-                        }
-                    }
-
-                    nextDateRequired = CalculateClosestMonthlyDeliveryDate(contactId.Value, targetDate);
+                    nextDateRequired = CalculateMonthlyCycleDate(lastDoneDate, targetDay, today, isFirstTime);
                     break;
 
                 default:
@@ -1150,69 +1154,44 @@ namespace TrackerSQL.Repositories
             return nextDateRequired.Date;
         }
 
+        private static DateTime CalculateMonthlyCycleDate(
+            DateTime lastDoneDate,
+            int targetDay,
+            DateTime today,
+            bool isFirstTime)
+        {
+            if (isFirstTime)
+            {
+                DateTime thisMonth = BuildMonthlyTargetDate(today, targetDay);
+                if (thisMonth >= today)
+                    return thisMonth;
+
+                return BuildMonthlyTargetDate(today.AddMonths(1), targetDay);
+            }
+
+            DateTime cycleMonth = lastDoneDate.AddMonths(1);
+            DateTime targetDate = BuildMonthlyTargetDate(cycleMonth, targetDay);
+
+            if (AreInSameMondayWeek(lastDoneDate, targetDate))
+                return BuildMonthlyTargetDate(cycleMonth.AddMonths(1), targetDay);
+
+            int daysSinceLast = (targetDate - lastDoneDate).Days;
+            bool sameCalendarMonth = targetDate.Year == lastDoneDate.Year
+                && targetDate.Month == lastDoneDate.Month;
+            if (sameCalendarMonth
+                && daysSinceLast < SystemConstants.CheckupConstants.DefaultMinimumMonthlyRecurringDays)
+            {
+                return BuildMonthlyTargetDate(cycleMonth.AddMonths(1), targetDay);
+            }
+
+            return targetDate;
+        }
+
         private static DateTime BuildMonthlyTargetDate(DateTime anyDayInTargetMonth, int targetDayOfMonth)
         {
             int daysInMonth = DateTime.DaysInMonth(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month);
             int day = Math.Min(Math.Max(1, targetDayOfMonth), daysInMonth);
             return new DateTime(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month, day);
-        }
-
-        private DateTime CalculateClosestMonthlyDeliveryDate(int contactId, DateTime targetDate)
-        {
-            var prepRules = GetPrepRulesForContact(contactId);
-            DateTime today = TimeZoneUtils.Now().Date;
-            targetDate = targetDate.Date;
-
-            if (prepRules.Count == 0)
-            {
-                return targetDate < today ? today : targetDate;
-            }
-
-            const int searchRadius = 21;
-            bool found = false;
-            DateTime bestDelivery = DateTime.MaxValue;
-            DateTime bestPrep = DateTime.MaxValue;
-            double bestMetric = double.MaxValue;
-
-            for (int radius = 0; radius <= searchRadius; radius++)
-            {
-                int[] offsets = radius == 0 ? new[] { 0 } : new[] { radius, -radius };
-
-                foreach (int offset in offsets)
-                {
-                    DateTime candidatePrep = targetDate.AddDays(offset).Date;
-                    int dayOfWeek = (int)candidatePrep.DayOfWeek;
-
-                    foreach (var prepRule in prepRules.Where(rule => rule.PrepDayOfWeekID == dayOfWeek))
-                    {
-                        DateTime candidateDelivery = candidatePrep.AddDays(prepRule.DeliveryDelayDays).Date;
-                        if (candidateDelivery < today)
-                        {
-                            continue;
-                        }
-
-                        double metric = Math.Abs((candidateDelivery - targetDate).TotalDays);
-                        if (!found
-                            || metric < bestMetric
-                            || (metric == bestMetric && candidateDelivery < bestDelivery)
-                            || (metric == bestMetric && candidateDelivery == bestDelivery && candidatePrep < bestPrep))
-                        {
-                            bestMetric = metric;
-                            bestDelivery = candidateDelivery;
-                            bestPrep = candidatePrep;
-                            found = true;
-                        }
-                    }
-                }
-            }
-
-            return found ? bestDelivery : (targetDate < today ? today : targetDate);
-        }
-            
-        private List<PrepRule> GetPrepRulesForContact(int contactId)
-        {
-            var areasRepository = new AreasRepository();
-            return areasRepository.GetPrepRulesForContact(contactId);
         }
 
         private static bool AreInSameMondayWeek(DateTime fiPreperationDate, DateTime secondDate)

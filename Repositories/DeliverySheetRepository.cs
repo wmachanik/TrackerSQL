@@ -66,13 +66,12 @@ namespace TrackerSQL.Repositories
         /// Find contacts on any day that still has open work (RequiredByDate in the
         /// set of dates that have Done = 0 orders). Includes already-delivered rows
         /// on those days; excludes fully closed historical dates.
-        /// Matches company name, and notes for the contact name only — not item text.
-        /// ZZName / sundry Notes are "WalkInName: item details…"; Find uses only the
-        /// part before the first ':' so item descriptions (e.g. Wacaco) do not match.
+        /// Matches company name, contact first/last name, and ZZName walk-in label
+        /// (Notes text before the first colon — not item descriptions after it).
         /// </summary>
         public RepositoryListResult<DeliverySheetOrderRow> SearchDeliverySheetRowsByContact(string contactName)
         {
-            string pattern = "%" + (contactName ?? string.Empty).Trim() + "%";
+            string pattern = "%" + EscapeLike(contactName) + "%";
             var parameters = new List<DBParameter>
             {
                 new DBParameter
@@ -83,19 +82,12 @@ namespace TrackerSQL.Repositories
                 },
                 new DBParameter
                 {
-                    DataValue = pattern,
-                    DataDbType = DbType.String,
-                    ParamName = "@SearchNotes"
-                },
-                new DBParameter
-                {
                     DataValue = (int)SystemConstants.CustomerConstants.SundryCustomerID,
                     DataDbType = DbType.Int32,
                     ParamName = "@SundryContactId"
                 }
             };
 
-            // NotesName: walk-in / note label before first ':' (ZZName stores items after it).
             string sql = BaseDeliverySheetSql() + @"
                 WHERE CAST(o.RequiredByDate AS DATE) IN (
                     SELECT DISTINCT CAST(openOrders.RequiredByDate AS DATE)
@@ -104,7 +96,10 @@ namespace TrackerSQL.Repositories
                       AND openOrders.RequiredByDate IS NOT NULL
                 )
                   AND (
-                        c.CompanyName LIKE @SearchText
+                        ISNULL(c.CompanyName, '') LIKE @SearchText ESCAPE '\'
+                     OR ISNULL(c.ContactFirstName, '') LIKE @SearchText ESCAPE '\'
+                     OR ISNULL(c.ContactLastName, '') LIKE @SearchText ESCAPE '\'
+                     OR (ISNULL(c.ContactFirstName, '') + ' ' + ISNULL(c.ContactLastName, '')) LIKE @SearchText ESCAPE '\'
                      OR (
                             o.ContactID = @SundryContactId
                         AND (
@@ -113,11 +108,7 @@ namespace TrackerSQL.Repositories
                                     THEN LEFT(o.Notes, CHARINDEX(':', o.Notes) - 1)
                                     ELSE ISNULL(o.Notes, '')
                                 END
-                            ) LIKE @SearchNotes
-                     )
-                     OR (
-                            o.ContactID <> @SundryContactId
-                        AND ISNULL(o.Notes, '') LIKE @SearchNotes
+                            ) LIKE @SearchText ESCAPE '\'
                      )
                   )
                 ORDER BY
@@ -129,6 +120,16 @@ namespace TrackerSQL.Repositories
                     i.SortOrder";
 
             return ExecuteDeliverySheetQuery(sql, parameters, "DeliverySheetRepository.SearchDeliverySheetRowsByContact");
+        }
+
+        private static string EscapeLike(string value)
+        {
+            string text = (value ?? string.Empty).Trim();
+            return text
+                .Replace(@"\", @"\\")
+                .Replace("%", @"\%")
+                .Replace("_", @"\_")
+                .Replace("[", @"\[");
         }
 
         public RepositoryListResult<DeliverySheetOrderRow> SearchDeliverySheetRowsByClient(string clientName)

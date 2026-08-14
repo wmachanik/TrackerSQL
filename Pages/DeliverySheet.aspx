@@ -22,6 +22,7 @@
             <asp:AsyncPostBackTrigger ControlID="ddlActivePrepDates" EventName="SelectedIndexChanged" />
             <asp:AsyncPostBackTrigger ControlID="btnGo" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnFind" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnFindDefault" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="ddlDeliveryBy" EventName="SelectedIndexChanged" />
             <asp:PostBackTrigger ControlID="btnPrint" />
             <asp:PostBackTrigger ControlID="btnRefresh" />
@@ -83,17 +84,27 @@
                                 OnSelectedIndexChanged="ddlDeliveryBy_SelectedIndexChanged" />
                         </div>
                         <div class="filter-section admin-controls">
-                            <asp:Label runat="server" Text="To:" AssociatedControlID="tbxFindClient" CssClass="small" />
-                            <asp:TextBox ID="tbxFindClient" runat="server" />
-                            <span class="toolbar-icon-row">
-                                <span class="image-button" title="Find contact on open delivery days">
-                                    <asp:ImageButton ID="btnFind" runat="server"
-                                        ImageUrl="~/images/imgButtons/Find.gif"
-                                        AlternateText="Find"
-                                        ToolTip="Find contact on open delivery days"
-                                        OnClick="btnFind_Click"
-                                        CausesValidation="false" />
+                            <asp:Panel ID="pnlFindContact" runat="server" DefaultButton="btnFindDefault" CssClass="delivery-find-panel">
+                                <asp:Label runat="server" Text="To:" AssociatedControlID="tbxFindClient" CssClass="small" />
+                                <asp:TextBox ID="tbxFindClient" runat="server" />
+                                <asp:Button ID="btnFindDefault" runat="server"
+                                    Text="Find"
+                                    OnClick="btnFindDefault_Click"
+                                    CausesValidation="false"
+                                    TabIndex="-1"
+                                    CssClass="delivery-find-default-btn" />
+                                <span class="toolbar-icon-row">
+                                    <span class="image-button" title="Find contact on open delivery days">
+                                        <asp:ImageButton ID="btnFind" runat="server"
+                                            ImageUrl="~/images/imgButtons/Find.gif"
+                                            AlternateText="Find"
+                                            ToolTip="Find company or ZZName on open delivery days"
+                                            OnClick="btnFind_Click"
+                                            CausesValidation="false" />
+                                    </span>
                                 </span>
+                            </asp:Panel>
+                            <span class="toolbar-icon-row">
                                 <span class="image-button hideWhenPrinting" title="Print sheet (Alt+Shift+P)">
                                     <asp:ImageButton ID="btnPrint" runat="server"
                                         ImageUrl="~/images/imgButtons/Print.gif"

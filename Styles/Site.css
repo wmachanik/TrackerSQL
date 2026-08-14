@@ -1,5 +1,5 @@
 /* DEFAULTS
-    Rev: 20260813-11
+    Rev: 20260814-1
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -1903,6 +1903,21 @@ button,
     .filter-section.admin-controls {
         gap: 8px;
     }
+
+.delivery-find-panel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.delivery-find-default-btn {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
 
 /* Keep Find / Print / New / Back (and similar) on one row — including mobile */
 .toolbar-icon-row,

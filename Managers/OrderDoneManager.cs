@@ -287,44 +287,53 @@ namespace TrackerSQL.Managers
                 $"SyncRecurringOrderLastDone: Cust={customerId} RecurCnt={reoccurOrders.Count} DeliveredCnt={deliveredItems.Count}");
 
             var updatedOrderIds = new HashSet<int>();
+            int updatedLineCount = 0;
 
             foreach (var reoccurOrder in reoccurOrders)
             {
+                bool matched = false;
                 foreach (var item in deliveredItems)
                 {
-                    if (!IsCoffeeOrConsumable(item.ItemID))
-                    {
+                    if (!OrderMatchesReoccuringOrder(item, reoccurOrder))
                         continue;
-                    }
 
-                    if (OrderMatchesReoccuringOrder(item, reoccurOrder))
+                    matched = true;
+                    bool wasEnabled = reoccurOrder.Enabled != false;
+                    _recurringOrdersRepository.SetRecurringOrderItemDates(
+                        deliveryDate,
+                        reoccurOrder.RecurringOrderItemID,
+                        orderDone: true);
+                    updatedLineCount++;
+
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                        $"Recurring updated (Cust={customerId}, RecItemID={reoccurOrder.RecurringOrderItemID}, RequiredItem={reoccurOrder.ItemRequiredID}) using delivered ItemID={item.ItemID}");
+
+                    if (wasEnabled && !updatedOrderIds.Contains(reoccurOrder.RecurringOrderID))
                     {
-                        bool wasEnabled = reoccurOrder.Enabled != false;
-                        _recurringOrdersRepository.SetRecurringOrderItemDates(
-                            deliveryDate,
-                            reoccurOrder.RecurringOrderItemID,
-                            orderDone: true);
-
-                        AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                            $"Recurring updated (Cust={customerId}, RecItemID={reoccurOrder.RecurringOrderItemID}) using delivered ItemID={item.ItemID}");
-
-                        if (wasEnabled && !updatedOrderIds.Contains(reoccurOrder.RecurringOrderID))
+                        updatedOrderIds.Add(reoccurOrder.RecurringOrderID);
+                        // Re-read enabled flag after update (SetRecurringOrderItemDates may have disabled)
+                        var refreshed = _recurringOrdersRepository.GetById(reoccurOrder.RecurringOrderID);
+                        if (refreshed != null && refreshed.Enabled == false)
                         {
-                            updatedOrderIds.Add(reoccurOrder.RecurringOrderID);
-                            // Re-read enabled flag after update (SetRecurringOrderItemDates may have disabled)
-                            var refreshed = _recurringOrdersRepository.GetById(reoccurOrder.RecurringOrderID);
-                            if (refreshed != null && refreshed.Enabled == false)
-                            {
-                                string name = string.IsNullOrWhiteSpace(reoccurOrder.CompanyName)
-                                    ? "contact"
-                                    : reoccurOrder.CompanyName.Trim();
-                                notes.Add($"Recurring order for {name} ended (past until date) and was disabled.");
-                            }
+                            string name = string.IsNullOrWhiteSpace(reoccurOrder.CompanyName)
+                                ? "contact"
+                                : reoccurOrder.CompanyName.Trim();
+                            notes.Add($"Recurring order for {name} ended (past until date) and was disabled.");
                         }
-                        break;
                     }
+
+                    break;
+                }
+
+                if (!matched)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                        $"SyncRecurringOrderLastDone: no delivered match for Cust={customerId} RecItemID={reoccurOrder.RecurringOrderItemID} RequiredItem={reoccurOrder.ItemRequiredID}");
                 }
             }
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                $"SyncRecurringOrderLastDone: Cust={customerId} updated {updatedLineCount}/{reoccurOrders.Count} recurring lines");
 
             return notes;
         }

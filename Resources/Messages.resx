@@ -707,4 +707,320 @@ If you would like this restarted, please reply to this email.&lt;br /&gt;</value
   <data name="Security.TokenInvalid" xml:space="preserve">
     <value>Security token is invalid or expired</value>
   </data>
+  <data name="SystemPreferences.PageTitle" xml:space="preserve">
+    <value>System Preferences</value>
+  </data>
+  <data name="SystemPreferences.PageSubtitle" xml:space="preserve">
+    <value>General system settings and optional integrations</value>
+  </data>
+  <data name="SystemPreferences.NavGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="SystemPreferences.NavWooCommerce" xml:space="preserve">
+    <value>WooCommerce</value>
+  </data>
+  <data name="SystemPreferences.SectionsHeading" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="SystemPreferences.AccessDenied" xml:space="preserve">
+    <value>You must be an administrator to manage system preferences.</value>
+  </data>
+  <data name="SystemPreferences.GeneralSaved" xml:space="preserve">
+    <value>General system settings saved.</value>
+  </data>
+  <data name="WooCommerce.SectionTitle" xml:space="preserve">
+    <value>WooCommerce integration</value>
+  </data>
+  <data name="WooCommerce.EnableButton" xml:space="preserve">
+    <value>Enable WooCommerce integration</value>
+  </data>
+  <data name="WooCommerce.DisableButton" xml:space="preserve">
+    <value>Disable WooCommerce integration</value>
+  </data>
+  <data name="WooCommerce.StartWizard" xml:space="preserve">
+    <value>Start setup wizard</value>
+  </data>
+  <data name="WooCommerce.RerunWizard" xml:space="preserve">
+    <value>Re-run setup wizard</value>
+  </data>
+  <data name="WooCommerce.WizardStepPrepTitle" xml:space="preserve">
+    <value>Step 1 — Prepare your WooCommerce site</value>
+  </data>
+  <data name="WooCommerce.WizardStepPrepBody" xml:space="preserve">
+    <value>Before connecting Tracker, configure your WordPress / WooCommerce store:&lt;br /&gt;&lt;br /&gt;
+1. Use &lt;b&gt;HTTPS&lt;/b&gt; for the store URL.&lt;br /&gt;
+2. In WordPress, set &lt;b&gt;Settings → Permalinks&lt;/b&gt; to a pretty permalink structure (not Plain) so the REST API works.&lt;br /&gt;
+3. &lt;b&gt;Recommended:&lt;/b&gt; create a dedicated WordPress user for Tracker (for example &lt;i&gt;qtracker-api&lt;/i&gt;) with Administrator or Shop Manager role. Do &lt;b&gt;not&lt;/b&gt; use a personal staff login for the API key — if that person leaves or the account is deleted/disabled, the key usually stops working.&lt;br /&gt;
+4. Go to &lt;b&gt;WooCommerce → Settings → Advanced → REST API&lt;/b&gt; and click &lt;b&gt;Add key&lt;/b&gt;.&lt;br /&gt;
+5. Description: e.g. QTracker_Integration. &lt;b&gt;User:&lt;/b&gt; select the dedicated integration user (not your day-to-day login). &lt;b&gt;Permissions:&lt;/b&gt; Read/Write.&lt;br /&gt;
+6. If Woo shows &lt;i&gt;User is missing&lt;/i&gt;, clear and re-select the user from the list, then generate the key again.&lt;br /&gt;
+7. Copy the &lt;b&gt;Consumer key&lt;/b&gt; and &lt;b&gt;Consumer secret&lt;/b&gt; (the secret is shown only once).&lt;br /&gt;
+8. Note your store base URL (example: https://shop.example.com) with no trailing path.&lt;br /&gt;
+9. Optional: note the wp-admin base URL used to open orders in Woo (example: https://shop.example.com/wp-admin).&lt;br /&gt;&lt;br /&gt;
+When you continue, Tracker will create companion database tables (orders and items tables are not altered).</value>
+  </data>
+  <data name="WooCommerce.WizardStepSchemaTitle" xml:space="preserve">
+    <value>Step 2 — Create support tables</value>
+  </data>
+  <data name="WooCommerce.WizardStepSchemaBody" xml:space="preserve">
+    <value>Create the WooCommerce companion tables used for settings, mappings, and imports. This uses the same SQL pack as Tools → XML to SQL (&lt;code&gt;SQLCommands-WooCommerce-01.xml&lt;/code&gt;). Existing tables are left unchanged.</value>
+  </data>
+  <data name="WooCommerce.WizardStepCredentialsTitle" xml:space="preserve">
+    <value>Step 3 — Store URL and API keys</value>
+  </data>
+  <data name="WooCommerce.WizardStepTestTitle" xml:space="preserve">
+    <value>Step 4 — Test connection</value>
+  </data>
+  <data name="WooCommerce.WizardStepTestBody" xml:space="preserve">
+    <value>Tracker will call the WooCommerce REST API using your saved keys. A successful test is required before you can finish setup.</value>
+  </data>
+  <data name="WooCommerce.WizardStepOptionsTitle" xml:space="preserve">
+    <value>Step 5 — Defaults</value>
+  </data>
+  <data name="WooCommerce.WizardStepFinishTitle" xml:space="preserve">
+    <value>Step 6 — Finish</value>
+  </data>
+  <data name="WooCommerce.WizardStepFinishBody" xml:space="preserve">
+    <value>Connection tested successfully. Finish to enable WooCommerce integration. Next you will map Woo categories and products to Tracker items.</value>
+  </data>
+  <data name="WooCommerce.OpenMappingAfterEnable" xml:space="preserve">
+    <value>Open WooCommerce Mapping after enabling (recommended)</value>
+  </data>
+  <data name="WooCommerce.LabelStoreUrl" xml:space="preserve">
+    <value>Store base URL</value>
+  </data>
+  <data name="WooCommerce.LabelAdminUrl" xml:space="preserve">
+    <value>Woo admin base URL (optional)</value>
+  </data>
+  <data name="WooCommerce.LabelConsumerKey" xml:space="preserve">
+    <value>Consumer key</value>
+  </data>
+  <data name="WooCommerce.LabelConsumerSecret" xml:space="preserve">
+    <value>Consumer secret</value>
+  </data>
+  <data name="WooCommerce.LabelCategoryMode" xml:space="preserve">
+    <value>Category sync mode</value>
+  </data>
+  <data name="WooCommerce.LabelDispatchIds" xml:space="preserve">
+    <value>Dispatch delivery-person IDs (comma-separated)</value>
+  </data>
+  <data name="WooCommerce.LabelTrackingRequired" xml:space="preserve">
+    <value>Require tracking number when dispatching</value>
+  </data>
+  <data name="WooCommerce.SecretSavedPlaceholder" xml:space="preserve">
+    <value>(saved — enter a new value to replace)</value>
+  </data>
+  <data name="WooCommerce.ButtonNext" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="WooCommerce.ButtonBack" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="WooCommerce.ButtonEnsureSchema" xml:space="preserve">
+    <value>Create / verify tables</value>
+  </data>
+  <data name="WooCommerce.ButtonSaveCredentials" xml:space="preserve">
+    <value>Save connection settings</value>
+  </data>
+  <data name="WooCommerce.ButtonTestConnection" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="WooCommerce.ButtonFinish" xml:space="preserve">
+    <value>Finish setup</value>
+  </data>
+  <data name="WooCommerce.ButtonCancelWizard" xml:space="preserve">
+    <value>Cancel wizard</value>
+  </data>
+  <data name="WooCommerce.SchemaOk" xml:space="preserve">
+    <value>Support tables are ready ({0} create commands processed).</value>
+  </data>
+  <data name="WooCommerce.SchemaFailed" xml:space="preserve">
+    <value>Could not create support tables: {0}</value>
+  </data>
+  <data name="WooCommerce.CredentialsSaved" xml:space="preserve">
+    <value>Connection settings saved. Secrets are stored encrypted.</value>
+  </data>
+  <data name="WooCommerce.TestOk" xml:space="preserve">
+    <value>Connection successful ({0}).</value>
+  </data>
+  <data name="WooCommerce.TestFailed" xml:space="preserve">
+    <value>Connection failed: {0}</value>
+  </data>
+  <data name="WooCommerce.FinishBlockedNoTest" xml:space="preserve">
+    <value>Run a successful Test connection before finishing setup.</value>
+  </data>
+  <data name="WooCommerce.FinishOk" xml:space="preserve">
+    <value>WooCommerce integration is enabled. Use WooCommerce Mapping for categories and item maps.</value>
+  </data>
+  <data name="WooCommerce.CryptoKeyMissing" xml:space="preserve">
+    <value>Add WooCommerceCryptoKey to appSettings (Base64 32-byte key or passphrase) before saving API secrets.</value>
+  </data>
+  <data name="WooCommerce.IntegrationEnabled" xml:space="preserve">
+    <value>WooCommerce integration is on.</value>
+  </data>
+  <data name="WooCommerce.IntegrationDisabled" xml:space="preserve">
+    <value>WooCommerce integration is off. Orders and items continue to work without Woo tables.</value>
+  </data>
+  <data name="WooCommerce.CategoryModeAll" xml:space="preserve">
+    <value>All categories (refine include/exclude later)</value>
+  </data>
+  <data name="WooCommerce.ButtonShowSecret" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="WooCommerce.ButtonHideSecret" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="WooCommerce.ProgressLabel" xml:space="preserve">
+    <value>Setup progress</value>
+  </data>
+  <data name="WooCommerce.ProgressStep1" xml:space="preserve">
+    <value>1. Prep</value>
+  </data>
+  <data name="WooCommerce.ProgressStep2" xml:space="preserve">
+    <value>2. Tables</value>
+  </data>
+  <data name="WooCommerce.ProgressStep3" xml:space="preserve">
+    <value>3. Keys</value>
+  </data>
+  <data name="WooCommerce.ProgressStep4" xml:space="preserve">
+    <value>4. Test</value>
+  </data>
+  <data name="WooCommerce.ProgressStep5" xml:space="preserve">
+    <value>5. Defaults</value>
+  </data>
+  <data name="WooCommerce.ProgressStep6" xml:space="preserve">
+    <value>6. Finish</value>
+  </data>
+  <data name="WooCommerce.WizardResumed" xml:space="preserve">
+    <value>Resumed WooCommerce setup at step {0}.</value>
+  </data>
+  <data name="WooCommerce.CredentialsSavedKeepBlank" xml:space="preserve">
+    <value>Connection settings saved. Secrets are stored encrypted — the key boxes are cleared on purpose. Leave them blank to keep the saved key/secret, or paste new values to replace.</value>
+  </data>
+  <data name="WooCommerce.SavedKeyHint" xml:space="preserve">
+    <value>Saved key on file: {0}</value>
+  </data>
+  <data name="WooCommerce.EnableNextStepHint" xml:space="preserve">
+    <value>Connection looks good. Next step: enable the integration for Tracker.</value>
+  </data>
+  <data name="WooCommerce.ButtonEnableNow" xml:space="preserve">
+    <value>Enable WooCommerce integration</value>
+  </data>
+  <data name="WooCommerce.DisableHint" xml:space="preserve">
+    <value>Integration is on. You can turn it off without deleting saved keys or tables.</value>
+  </data>
+  <data name="WooCommerce.Phase2ComingSoon" xml:space="preserve">
+    <value>Phase 2 tools: open WooCommerce Mapping to choose categories, map products to Tracker items, set SKU wildcards, and push enabled/disabled to Woo.</value>
+  </data>
+  <data name="WooCommerce.Phase2OpenMapping" xml:space="preserve">
+    <value>Open WooCommerce Mapping</value>
+  </data>
+  <data name="WooCommerce.MapPageTitle" xml:space="preserve">
+    <value>WooCommerce Mapping</value>
+  </data>
+  <data name="WooCommerce.MapPageSubtitle" xml:space="preserve">
+    <value>Categories, product↔item maps, SKU wildcards, and enabled sync</value>
+  </data>
+  <data name="WooCommerce.MapTabCategories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="WooCommerce.MapTabMappings" xml:space="preserve">
+    <value>Mappings</value>
+  </data>
+  <data name="WooCommerce.MapTabWildcards" xml:space="preserve">
+    <value>Wildcards</value>
+  </data>
+  <data name="WooCommerce.MapTabSync" xml:space="preserve">
+    <value>Enabled sync</value>
+  </data>
+  <data name="WooCommerce.MapCatHelp" xml:space="preserve">
+    <value>Pull categories from Woo, tick Include as needed, then Save includes (one save for the whole list — edits are kept if you change page). Mode All uses every category; Included only uses the ticked rows. Child categories are indented. Uncategorized is off by default when other categories exist. ZZName routing is decided when importing orders, not here.</value>
+  </data>
+  <data name="WooCommerce.MapMapHelp" xml:space="preserve">
+    <value>Pull Woo products (and variations). Exact SKU matches and wildcard rules suggest Tracker items. Save each row to create a mapping. Stock quantity is not synced — only later enabled/disabled push.</value>
+  </data>
+  <data name="WooCommerce.MapWildHelp" xml:space="preserve">
+    <value>Example: prefix 9QRCcoDec, suffix 250g, qty 0.25 maps SKUs like 9QRCcoDec…250g to a Tracker kg item with packaging qty 0.25.</value>
+  </data>
+  <data name="WooCommerce.MapSyncHelp" xml:space="preserve">
+    <value>Push Tracker ItemEnabled to Woo product/variation status (publish vs private). Use dry-run first. No stock quantities are written.</value>
+  </data>
+  <data name="WooCommerce.MapPullCategories" xml:space="preserve">
+    <value>Pull categories from Woo</value>
+  </data>
+  <data name="WooCommerce.MapPullCategoriesOk" xml:space="preserve">
+    <value>Pulled {0} of {1} categories from WooCommerce. Include ticks on existing categories were kept.</value>
+  </data>
+  <data name="WooCommerce.MapPullCatsConfirm" xml:space="preserve">
+    <value>Pull refreshes category names and parent/child from Woo. Include ticks on categories you already have are kept. New categories get defaults (Uncategorized off when others exist). Continue?</value>
+  </data>
+  <data name="WooCommerce.MapCatPageInfo" xml:space="preserve">
+    <value>{0} categories — page {1} of {2}</value>
+  </data>
+  <data name="WooCommerce.MapUnsavedLeave" xml:space="preserve">
+    <value>You have unsaved category changes. Leave this screen anyway?</value>
+  </data>
+  <data name="WooCommerce.MapBackToPreferences" xml:space="preserve">
+    <value>Return to System Preferences</value>
+  </data>
+  <data name="WooCommerce.MapPullProducts" xml:space="preserve">
+    <value>Pull products from Woo</value>
+  </data>
+  <data name="WooCommerce.MapPullProductsOk" xml:space="preserve">
+    <value>Loaded {0} Woo products/variations for mapping.</value>
+  </data>
+  <data name="WooCommerce.MapExistingTitle" xml:space="preserve">
+    <value>Saved mappings</value>
+  </data>
+  <data name="WooCommerce.MapSaveCatMode" xml:space="preserve">
+    <value>Save mode</value>
+  </data>
+  <data name="WooCommerce.MapSaveIncludes" xml:space="preserve">
+    <value>Save includes</value>
+  </data>
+  <data name="WooCommerce.MapCatModeSaved" xml:space="preserve">
+    <value>Category filter mode saved.</value>
+  </data>
+  <data name="WooCommerce.MapCatRowSaved" xml:space="preserve">
+    <value>Category flags saved.</value>
+  </data>
+  <data name="WooCommerce.MapIncludesSaved" xml:space="preserve">
+    <value>Saved Include settings for {0} categor(ies).</value>
+  </data>
+  <data name="WooCommerce.MapSaved" xml:space="preserve">
+    <value>Mapping saved.</value>
+  </data>
+  <data name="WooCommerce.MapDeleted" xml:space="preserve">
+    <value>Mapping deleted.</value>
+  </data>
+  <data name="WooCommerce.MapWildPrefix" xml:space="preserve">
+    <value>SKU prefix (e.g. 9QRCcoDec)</value>
+  </data>
+  <data name="WooCommerce.MapWildSuffix" xml:space="preserve">
+    <value>Suffix token (e.g. 250g)</value>
+  </data>
+  <data name="WooCommerce.MapWildQty" xml:space="preserve">
+    <value>Qty factor</value>
+  </data>
+  <data name="WooCommerce.MapWildItem" xml:space="preserve">
+    <value>Tracker item</value>
+  </data>
+  <data name="WooCommerce.MapWildNotes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="WooCommerce.MapSaveWildcard" xml:space="preserve">
+    <value>Save wildcard rule</value>
+  </data>
+  <data name="WooCommerce.MapWildSaved" xml:space="preserve">
+    <value>Wildcard rule saved.</value>
+  </data>
+  <data name="WooCommerce.MapWildDeleted" xml:space="preserve">
+    <value>Wildcard rule deleted.</value>
+  </data>
+  <data name="WooCommerce.MapDryPush" xml:space="preserve">
+    <value>Dry-run enabled push</value>
+  </data>
+  <data name="WooCommerce.MapPushEnabled" xml:space="preserve">
+    <value>Push enabled/disabled to Woo</value>
+  </data>
 </root>

@@ -78,10 +78,21 @@
                             <div class="dashboard-card">
                                 <div class="tool-card-header">
                                     <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
-                                    <h4>System Data</h4>
+                                    <h4>System Preferences</h4>
                                 </div>
-                                <p>Manage system settings</p>
-                                <asp:Button ID="btnEditSystemData" runat="server" Text="Open" PostBackUrl="~/Tools/SystemData.aspx" />
+                                <p>General settings and WooCommerce integration</p>
+                                <asp:Button ID="btnEditSystemData" runat="server" Text="Open" PostBackUrl="~/Tools/SystemPreferences.aspx" />
+                            </div>
+                        </div>
+
+                        <div class="dashboard-link tool-tone-sysdata">
+                            <div class="dashboard-card">
+                                <div class="tool-card-header">
+                                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                    <h4>WooCommerce Mapping</h4>
+                                </div>
+                                <p>Categories, item SKU maps, and enabled sync</p>
+                                <asp:Button ID="btnWooMapping" runat="server" Text="Open" PostBackUrl="~/Tools/WooCommerceMapping.aspx" />
                             </div>
                         </div>
 

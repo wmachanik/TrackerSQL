@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WooCommerce companion schema (TrackerSQL 3.0.1.0).
+  Idempotent creates — safe to re-run via Tools → XMLtoSQL or the System Preferences wizard.
+  Does NOT alter OrdersTbl / ItemsTbl / ContactsTbl.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.SystemPreferencesHdrTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.SystemPreferencesHdrTbl
+          (
+              PrefsID INT NOT NULL CONSTRAINT PK_SystemPreferencesHdrTbl PRIMARY KEY,
+              WooCommerceEnabled BIT NOT NULL CONSTRAINT DF_SysPrefs_WooEnabled DEFAULT (0),
+              WooWizardCompleted BIT NOT NULL CONSTRAINT DF_SysPrefs_WooWizard DEFAULT (0),
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+          INSERT INTO dbo.SystemPreferencesHdrTbl (PrefsID, WooCommerceEnabled, WooWizardCompleted, UpdatedAt, UpdatedBy)
+          VALUES (1, 0, 0, SYSUTCDATETIME(), N'seed');
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooCommerceSettingsTbl
+          (
+              SettingsID INT NOT NULL CONSTRAINT PK_WooCommerceSettingsTbl PRIMARY KEY,
+              StoreBaseUrl NVARCHAR(500) NULL,
+              AdminBaseUrl NVARCHAR(500) NULL,
+              ConsumerKeyEncrypted NVARCHAR(MAX) NULL,
+              ConsumerSecretEncrypted NVARCHAR(MAX) NULL,
+              IntegrationEnabled BIT NOT NULL CONSTRAINT DF_WooSet_Enabled DEFAULT (0),
+              WizardCompleted BIT NOT NULL CONSTRAINT DF_WooSet_Wizard DEFAULT (0),
+              LastConnectionTestUtc DATETIME2 NULL,
+              LastConnectionTestOk BIT NULL,
+              LastItemsSyncUtc DATETIME2 NULL,
+              LastOrdersSyncUtc DATETIME2 NULL,
+              LastOrdersSyncOrderNumber NVARCHAR(50) NULL,
+              LastContactsSyncUtc DATETIME2 NULL,
+              PushEnabledStateToWoo BIT NOT NULL CONSTRAINT DF_WooSet_PushEnabled DEFAULT (1),
+              DisableScopeDefault NVARCHAR(50) NOT NULL CONSTRAINT DF_WooSet_DisableScope DEFAULT (N'MappedOnly'),
+              PullStockQtyEnabled BIT NOT NULL CONSTRAINT DF_WooSet_PullQty DEFAULT (0),
+              CategoryFilterMode NVARCHAR(20) NOT NULL CONSTRAINT DF_WooSet_CatMode DEFAULT (N'All'),
+              GuestCheckoutContactMode NVARCHAR(20) NOT NULL CONSTRAINT DF_WooSet_Guest DEFAULT (N'ZZName'),
+              DispatchDeliveryPersonIds NVARCHAR(100) NOT NULL CONSTRAINT DF_WooSet_DispatchIds DEFAULT (N'5,7'),
+              TrackingNumberRequired BIT NOT NULL CONSTRAINT DF_WooSet_TrackReq DEFAULT (1),
+              DispatchedWooStatus NVARCHAR(50) NOT NULL CONSTRAINT DF_WooSet_DispStatus DEFAULT (N'processing'),
+              AutoCompleteOnWooCompleted BIT NOT NULL CONSTRAINT DF_WooSet_AutoDone DEFAULT (0),
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+          INSERT INTO dbo.WooCommerceSettingsTbl (SettingsID, IntegrationEnabled, WizardCompleted, UpdatedAt, UpdatedBy)
+          VALUES (1, 0, 0, SYSUTCDATETIME(), N'seed');
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooCategoryFilterTbl
+          (
+              FilterID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooCategoryFilterTbl PRIMARY KEY,
+              WooCategoryId BIGINT NOT NULL,
+              CategoryName NVARCHAR(255) NULL,
+              ParentWooCategoryId BIGINT NOT NULL CONSTRAINT DF_WooCat_Parent DEFAULT (0),
+              IncludeInSync BIT NOT NULL CONSTRAINT DF_WooCat_Include DEFAULT (1),
+              CONSTRAINT UQ_WooCategoryFilter_WooCategoryId UNIQUE (WooCategoryId)
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'ParentWooCategoryId') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCategoryFilterTbl
+          ADD ParentWooCategoryId BIGINT NOT NULL
+              CONSTRAINT DF_WooCat_Parent DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <!-- Drop legacy category flags (Include-only; ZZName at order import). -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'ExcludeFromSync') IS NOT NULL
+      BEGIN
+          DECLARE @dfExclude sysname;
+          SELECT @dfExclude = dc.name
+          FROM sys.default_constraints dc
+          INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
+          WHERE dc.parent_object_id = OBJECT_ID(N'dbo.WooCategoryFilterTbl')
+            AND c.name = N'ExcludeFromSync';
+          IF @dfExclude IS NOT NULL
+              EXEC(N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT [' + REPLACE(@dfExclude, N']', N']]') + N']');
+          ALTER TABLE dbo.WooCategoryFilterTbl DROP COLUMN ExcludeFromSync;
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'RouteToZzName') IS NOT NULL
+      BEGIN
+          DECLARE @dfZz sysname;
+          SELECT @dfZz = dc.name
+          FROM sys.default_constraints dc
+          INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
+          WHERE dc.parent_object_id = OBJECT_ID(N'dbo.WooCategoryFilterTbl')
+            AND c.name = N'RouteToZzName';
+          IF @dfZz IS NOT NULL
+              EXEC(N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT [' + REPLACE(@dfZz, N']', N']]') + N']');
+          ALTER TABLE dbo.WooCategoryFilterTbl DROP COLUMN RouteToZzName;
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooItemMappingsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooItemMappingsTbl
+          (
+              MappingID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooItemMappingsTbl PRIMARY KEY,
+              ItemID INT NOT NULL,
+              WooProductId BIGINT NULL,
+              WooVariationId BIGINT NULL,
+              MapType NVARCHAR(20) NOT NULL CONSTRAINT DF_WooMap_Type DEFAULT (N'Exact'),
+              SkuPattern NVARCHAR(255) NULL,
+              QtyFactor FLOAT NOT NULL CONSTRAINT DF_WooMap_Qty DEFAULT (1),
+              PackagingID INT NULL,
+              DisableScope NVARCHAR(50) NULL,
+              LastSyncedUtc DATETIME2 NULL,
+              LastWooStatus NVARCHAR(50) NULL,
+              IsActive BIT NOT NULL CONSTRAINT DF_WooMap_Active DEFAULT (1)
+          );
+          CREATE INDEX IX_WooItemMappings_ItemID ON dbo.WooItemMappingsTbl (ItemID);
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooSkuWildcardRulesTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooSkuWildcardRulesTbl
+          (
+              RuleID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooSkuWildcardRulesTbl PRIMARY KEY,
+              SkuPrefixPattern NVARCHAR(255) NOT NULL,
+              SuffixToken NVARCHAR(50) NULL,
+              QtyFactor FLOAT NOT NULL,
+              PackagingID INT NULL,
+              ItemID INT NOT NULL,
+              IsActive BIT NOT NULL CONSTRAINT DF_WooWild_Active DEFAULT (1),
+              Notes NVARCHAR(255) NULL
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooOrderInfoTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooOrderInfoTbl
+          (
+              OrderID BIGINT NOT NULL CONSTRAINT PK_WooOrderInfoTbl PRIMARY KEY,
+              WooOrderId BIGINT NOT NULL,
+              WooOrderNumber NVARCHAR(50) NULL,
+              WooStatus NVARCHAR(50) NULL,
+              PaymentMethod NVARCHAR(100) NULL,
+              PaymentStatus NVARCHAR(50) NULL,
+              PaymentPaid BIT NOT NULL CONSTRAINT DF_WooOrd_Paid DEFAULT (0),
+              TrackingNumber NVARCHAR(100) NULL,
+              LastSyncedUtc DATETIME2 NULL,
+              RawSnapshotJson NVARCHAR(MAX) NULL,
+              CONSTRAINT UQ_WooOrderInfo_WooOrderId UNIQUE (WooOrderId)
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooContactInfoTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooContactInfoTbl
+          (
+              ContactID BIGINT NOT NULL CONSTRAINT PK_WooContactInfoTbl PRIMARY KEY,
+              WooCustomerId BIGINT NULL,
+              MatchEmail NVARCHAR(255) NULL,
+              LastSyncedUtc DATETIME2 NULL
+          );
+          CREATE UNIQUE INDEX UX_WooContactInfo_WooCustomerId
+              ON dbo.WooContactInfoTbl (WooCustomerId)
+              WHERE WooCustomerId IS NOT NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooImportBatchesTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooImportBatchesTbl
+          (
+              BatchID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooImportBatchesTbl PRIMARY KEY,
+              BatchType NVARCHAR(20) NOT NULL,
+              Status NVARCHAR(20) NOT NULL,
+              CreatedUtc DATETIME2 NOT NULL CONSTRAINT DF_WooBatch_Created DEFAULT (SYSUTCDATETIME()),
+              ConfirmedUtc DATETIME2 NULL,
+              CreatedBy NVARCHAR(100) NULL,
+              Notes NVARCHAR(500) NULL
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooImportBatchLinesTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooImportBatchLinesTbl
+          (
+              BatchLineID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooImportBatchLinesTbl PRIMARY KEY,
+              BatchID INT NOT NULL,
+              ExternalId NVARCHAR(50) NULL,
+              PreviewJson NVARCHAR(MAX) NULL,
+              MatchStatus NVARCHAR(50) NULL,
+              IsSelected BIT NOT NULL CONSTRAINT DF_WooBatchLine_Sel DEFAULT (1),
+              ImportResult NVARCHAR(50) NULL,
+              TrackerEntityId BIGINT NULL
+          );
+          CREATE INDEX IX_WooImportBatchLines_BatchID ON dbo.WooImportBatchLinesTbl (BatchID);
+      END
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT name
+      FROM sys.tables
+      WHERE name IN (
+          N'SystemPreferencesHdrTbl',
+          N'WooCommerceSettingsTbl',
+          N'WooCategoryFilterTbl',
+          N'WooItemMappingsTbl',
+          N'WooSkuWildcardRulesTbl',
+          N'WooOrderInfoTbl',
+          N'WooContactInfoTbl',
+          N'WooImportBatchesTbl',
+          N'WooImportBatchLinesTbl'
+      )
+      ORDER BY name;
+    ]]>
+  </command>
+</root>

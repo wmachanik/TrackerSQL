@@ -272,5 +272,121 @@ namespace TrackerSQL.Classes
             public const string ErrorCalculatingPrepDate = "DeliveryCalculation.ErrorCalculatingPrepDate";
             public const string ErrorValidatingDate = "DeliveryCalculation.ErrorValidatingDate";
         }
+
+        /// <summary>
+        /// System Preferences page (replaces System Data).
+        /// </summary>
+        public static class SystemPreferences
+        {
+            public const string PageTitle = "SystemPreferences.PageTitle";
+            public const string PageSubtitle = "SystemPreferences.PageSubtitle";
+            public const string NavGeneral = "SystemPreferences.NavGeneral";
+            public const string NavWooCommerce = "SystemPreferences.NavWooCommerce";
+            public const string SectionsHeading = "SystemPreferences.SectionsHeading";
+            public const string AccessDenied = "SystemPreferences.AccessDenied";
+            public const string GeneralSaved = "SystemPreferences.GeneralSaved";
+        }
+
+        /// <summary>
+        /// WooCommerce integration UI / wizard / connection messages.
+        /// </summary>
+        public static class WooCommerce
+        {
+            public const string SectionTitle = "WooCommerce.SectionTitle";
+            public const string EnableButton = "WooCommerce.EnableButton";
+            public const string DisableButton = "WooCommerce.DisableButton";
+            public const string StartWizard = "WooCommerce.StartWizard";
+            public const string RerunWizard = "WooCommerce.RerunWizard";
+            public const string WizardStepPrepTitle = "WooCommerce.WizardStepPrepTitle";
+            public const string WizardStepPrepBody = "WooCommerce.WizardStepPrepBody";
+            public const string WizardStepSchemaTitle = "WooCommerce.WizardStepSchemaTitle";
+            public const string WizardStepSchemaBody = "WooCommerce.WizardStepSchemaBody";
+            public const string WizardStepCredentialsTitle = "WooCommerce.WizardStepCredentialsTitle";
+            public const string WizardStepTestTitle = "WooCommerce.WizardStepTestTitle";
+            public const string WizardStepTestBody = "WooCommerce.WizardStepTestBody";
+            public const string WizardStepOptionsTitle = "WooCommerce.WizardStepOptionsTitle";
+            public const string WizardStepFinishTitle = "WooCommerce.WizardStepFinishTitle";
+            public const string WizardStepFinishBody = "WooCommerce.WizardStepFinishBody";
+            public const string OpenMappingAfterEnable = "WooCommerce.OpenMappingAfterEnable";
+            public const string LabelStoreUrl = "WooCommerce.LabelStoreUrl";
+            public const string LabelAdminUrl = "WooCommerce.LabelAdminUrl";
+            public const string LabelConsumerKey = "WooCommerce.LabelConsumerKey";
+            public const string LabelConsumerSecret = "WooCommerce.LabelConsumerSecret";
+            public const string LabelCategoryMode = "WooCommerce.LabelCategoryMode";
+            public const string LabelDispatchIds = "WooCommerce.LabelDispatchIds";
+            public const string LabelTrackingRequired = "WooCommerce.LabelTrackingRequired";
+            public const string SecretSavedPlaceholder = "WooCommerce.SecretSavedPlaceholder";
+            public const string ButtonNext = "WooCommerce.ButtonNext";
+            public const string ButtonBack = "WooCommerce.ButtonBack";
+            public const string ButtonEnsureSchema = "WooCommerce.ButtonEnsureSchema";
+            public const string ButtonSaveCredentials = "WooCommerce.ButtonSaveCredentials";
+            public const string ButtonTestConnection = "WooCommerce.ButtonTestConnection";
+            public const string ButtonFinish = "WooCommerce.ButtonFinish";
+            public const string ButtonCancelWizard = "WooCommerce.ButtonCancelWizard";
+            public const string SchemaOk = "WooCommerce.SchemaOk";
+            public const string SchemaFailed = "WooCommerce.SchemaFailed";
+            public const string CredentialsSaved = "WooCommerce.CredentialsSaved";
+            public const string TestOk = "WooCommerce.TestOk";
+            public const string TestFailed = "WooCommerce.TestFailed";
+            public const string FinishBlockedNoTest = "WooCommerce.FinishBlockedNoTest";
+            public const string FinishOk = "WooCommerce.FinishOk";
+            public const string CryptoKeyMissing = "WooCommerce.CryptoKeyMissing";
+            public const string IntegrationEnabled = "WooCommerce.IntegrationEnabled";
+            public const string IntegrationDisabled = "WooCommerce.IntegrationDisabled";
+            public const string CategoryModeAll = "WooCommerce.CategoryModeAll";
+            public const string ButtonShowSecret = "WooCommerce.ButtonShowSecret";
+            public const string ButtonHideSecret = "WooCommerce.ButtonHideSecret";
+            public const string ProgressLabel = "WooCommerce.ProgressLabel";
+            public const string ProgressStep1 = "WooCommerce.ProgressStep1";
+            public const string ProgressStep2 = "WooCommerce.ProgressStep2";
+            public const string ProgressStep3 = "WooCommerce.ProgressStep3";
+            public const string ProgressStep4 = "WooCommerce.ProgressStep4";
+            public const string ProgressStep5 = "WooCommerce.ProgressStep5";
+            public const string ProgressStep6 = "WooCommerce.ProgressStep6";
+            public const string WizardResumed = "WooCommerce.WizardResumed";
+            public const string CredentialsSavedKeepBlank = "WooCommerce.CredentialsSavedKeepBlank";
+            public const string SavedKeyHint = "WooCommerce.SavedKeyHint";
+            public const string EnableNextStepHint = "WooCommerce.EnableNextStepHint";
+            public const string ButtonEnableNow = "WooCommerce.ButtonEnableNow";
+            public const string DisableHint = "WooCommerce.DisableHint";
+            public const string Phase2ComingSoon = "WooCommerce.Phase2ComingSoon";
+            public const string Phase2OpenMapping = "WooCommerce.Phase2OpenMapping";
+            public const string MapPageTitle = "WooCommerce.MapPageTitle";
+            public const string MapPageSubtitle = "WooCommerce.MapPageSubtitle";
+            public const string MapTabCategories = "WooCommerce.MapTabCategories";
+            public const string MapTabMappings = "WooCommerce.MapTabMappings";
+            public const string MapTabWildcards = "WooCommerce.MapTabWildcards";
+            public const string MapTabSync = "WooCommerce.MapTabSync";
+            public const string MapCatHelp = "WooCommerce.MapCatHelp";
+            public const string MapMapHelp = "WooCommerce.MapMapHelp";
+            public const string MapWildHelp = "WooCommerce.MapWildHelp";
+            public const string MapSyncHelp = "WooCommerce.MapSyncHelp";
+            public const string MapPullCategories = "WooCommerce.MapPullCategories";
+            public const string MapPullCategoriesOk = "WooCommerce.MapPullCategoriesOk";
+            public const string MapPullCatsConfirm = "WooCommerce.MapPullCatsConfirm";
+            public const string MapCatPageInfo = "WooCommerce.MapCatPageInfo";
+            public const string MapUnsavedLeave = "WooCommerce.MapUnsavedLeave";
+            public const string MapBackToPreferences = "WooCommerce.MapBackToPreferences";
+            public const string MapPullProducts = "WooCommerce.MapPullProducts";
+            public const string MapPullProductsOk = "WooCommerce.MapPullProductsOk";
+            public const string MapExistingTitle = "WooCommerce.MapExistingTitle";
+            public const string MapSaveCatMode = "WooCommerce.MapSaveCatMode";
+            public const string MapSaveIncludes = "WooCommerce.MapSaveIncludes";
+            public const string MapCatModeSaved = "WooCommerce.MapCatModeSaved";
+            public const string MapCatRowSaved = "WooCommerce.MapCatRowSaved";
+            public const string MapIncludesSaved = "WooCommerce.MapIncludesSaved";
+            public const string MapSaved = "WooCommerce.MapSaved";
+            public const string MapDeleted = "WooCommerce.MapDeleted";
+            public const string MapWildPrefix = "WooCommerce.MapWildPrefix";
+            public const string MapWildSuffix = "WooCommerce.MapWildSuffix";
+            public const string MapWildQty = "WooCommerce.MapWildQty";
+            public const string MapWildItem = "WooCommerce.MapWildItem";
+            public const string MapWildNotes = "WooCommerce.MapWildNotes";
+            public const string MapSaveWildcard = "WooCommerce.MapSaveWildcard";
+            public const string MapWildSaved = "WooCommerce.MapWildSaved";
+            public const string MapWildDeleted = "WooCommerce.MapWildDeleted";
+            public const string MapDryPush = "WooCommerce.MapDryPush";
+            public const string MapPushEnabled = "WooCommerce.MapPushEnabled";
+        }
     }
 }

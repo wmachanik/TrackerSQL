@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TrackerSQL XMLtoSQL CRUD smoke test (SQL Server).
+  Exercises: select, drop, create, insert, select, delete, select, drop.
+  Uses disposable table dbo.XmlToSqlSmokeTbl only — does not touch app data.
+  Open Tools → XMLtoSQL, select this file, Execute.
+-->
+<root>
+  <!-- 1) Read-only sanity check against live schema -->
+  <command type="select">
+    <![CDATA[
+      SELECT TOP (5)
+          AreaID,
+          AreaName
+      FROM AreasTbl
+      ORDER BY AreaName
+    ]]>
+  </command>
+
+  <!-- 2) Ensure clean slate -->
+  <command type="drop">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.XmlToSqlSmokeTbl', N'U') IS NOT NULL
+          DROP TABLE dbo.XmlToSqlSmokeTbl;
+    ]]>
+  </command>
+
+  <!-- 3) Create disposable smoke table -->
+  <command type="create">
+    <![CDATA[
+      CREATE TABLE dbo.XmlToSqlSmokeTbl
+      (
+          SmokeID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+          Note NVARCHAR(100) NOT NULL,
+          CreatedAt DATE NOT NULL
+              CONSTRAINT DF_XmlToSqlSmoke_CreatedAt DEFAULT (CAST(GETDATE() AS DATE))
+      );
+    ]]>
+  </command>
+
+  <!-- 4) Insert sample rows -->
+  <command type="insert">
+    <![CDATA[
+      INSERT INTO dbo.XmlToSqlSmokeTbl (Note)
+      VALUES
+          (N'XMLtoSQL smoke row A'),
+          (N'XMLtoSQL smoke row B'),
+          (N'XMLtoSQL smoke row C');
+    ]]>
+  </command>
+
+  <!-- 5) Select inserted rows -->
+  <command type="select">
+    <![CDATA[
+      SELECT SmokeID, Note, CreatedAt
+      FROM dbo.XmlToSqlSmokeTbl
+      ORDER BY SmokeID;
+    ]]>
+  </command>
+
+  <!-- 6) Delete one row -->
+  <command type="delete">
+    <![CDATA[
+      DELETE FROM dbo.XmlToSqlSmokeTbl
+      WHERE Note = N'XMLtoSQL smoke row B';
+    ]]>
+  </command>
+
+  <!-- 7) Confirm delete -->
+  <command type="select">
+    <![CDATA[
+      SELECT SmokeID, Note, CreatedAt
+      FROM dbo.XmlToSqlSmokeTbl
+      ORDER BY SmokeID;
+    ]]>
+  </command>
+
+  <!-- 8) Drop disposable table -->
+  <command type="drop">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.XmlToSqlSmokeTbl', N'U') IS NOT NULL
+          DROP TABLE dbo.XmlToSqlSmokeTbl;
+    ]]>
+  </command>
+
+  <!-- 9) Confirm table gone -->
+  <command type="select">
+    <![CDATA[
+      SELECT
+          CASE
+              WHEN OBJECT_ID(N'dbo.XmlToSqlSmokeTbl', N'U') IS NULL THEN N'XmlToSqlSmokeTbl removed (OK)'
+              ELSE N'XmlToSqlSmokeTbl still exists (FAIL)'
+          END AS CleanupStatus;
+    ]]>
+  </command>
+
+  <!-- Intentionally skipped — must not run -->
+  <command type="disabled">
+    <![CDATA[
+      DROP TABLE IF EXISTS dbo.XmlToSql_ShouldNeverExist;
+    ]]>
+  </command>
+</root>

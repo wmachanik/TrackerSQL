@@ -33,6 +33,7 @@ This is the **master index** for all TrackerSQL documentation. Use this to find 
 | **Verify migration status** | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | Current Migration Status |
 | **Understand naming rules** | [AI_CONTEXT.md](AI_CONTEXT.md) | Naming Conventions Reference |
 | **Run migration tools** | [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Migration Process |
+| **WooCommerce integration (3.0.1.0)** | [WooIntegration/README.md](WooIntegration/README.md) | Plan, status, phases |
 
 ---
 

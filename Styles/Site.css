@@ -1,5 +1,4 @@
-/* DEFAULTS
-    Rev: 20260814-1
+/* Rev: 20260816-3
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -1620,6 +1619,7 @@ div.simpleLightBrownForm {
 
 /* Apply filter-toolbar button styling to all buttons by default */
 input[type="submit"],
+input[type="button"],
 button,
 .btn {
     background-color: var(--primary-green) !important;
@@ -1641,6 +1641,7 @@ button,
 }
 
     input[type="submit"]:hover,
+    input[type="button"]:hover,
     button:hover,
     .btn:hover {
         background-color: #607060 !important;
@@ -1649,8 +1650,13 @@ button,
 
     /* Disabled button styling */
     input[type="submit"]:disabled,
+    input[type="button"]:disabled,
     button:disabled,
-    .btn:disabled {
+    .btn:disabled,
+    input[type="submit"][data-woo-save-ready="0"],
+    input[type="button"][data-woo-save-ready="0"],
+    button[data-woo-save-ready="0"],
+    .btn[data-woo-save-ready="0"] {
         background-color: #aaa !important;
         border-color: #999 !important;
         color: #666 !important;
@@ -6907,6 +6913,28 @@ a.repair-related-order-link[href=""] {
     display: block;
 }
 
+/* Items grid: UoM / S/O dropdowns need a floor width in edit/footer (col-tight + table-layout:fixed otherwise crush them to the arrow). */
+.page-tone-lookups .results-table select.lookups-item-uom {
+    min-width: 5.5em !important;
+    width: 6em !important;
+    max-width: none !important;
+}
+.page-tone-lookups .results-table select.lookups-item-so {
+    min-width: 9.5em !important;
+    width: 11em !important;
+    max-width: none !important;
+    font-size: smaller !important;
+    padding: 1px 4px !important;
+    line-height: 1.2 !important;
+}
+.page-tone-lookups .results-table td:has(> select.lookups-item-uom),
+.page-tone-lookups .results-table td:has(> select.lookups-item-so) {
+    width: auto !important;
+    min-width: max-content !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
 /* Packaging colour picker: in-cell colour input over icon (anchors OS picker to the cell) */
 .page-tone-lookups .scrollable-table-container:has(.packaging-color-col),
 .page-tone-lookups table.results-table.results-table-fit:has(.packaging-color-col) {
@@ -7338,6 +7366,30 @@ a.sys-prefs-mapping-link:visited {
 .woo-map-cat-grid .woo-cat-depth-5,
 .woo-map-cat-grid .woo-cat-depth-6 { padding-left: 4.4rem; }
 
+.woo-map-pull-grid select.woo-map-so,
+.woo-map-cat-grid select.woo-map-so {
+    min-width: 8.5em !important;
+    width: 9.5em !important;
+    max-width: 10em !important;
+    font-size: smaller !important;
+    padding: 1px 4px !important;
+    line-height: 1.2 !important;
+}
+
+.woo-map-cat-grid select.woo-map-cat-import {
+    min-width: 12em;
+    max-width: 18em;
+    font-size: smaller;
+    padding: 1px 4px;
+    line-height: 1.2;
+}
+
+.woo-map-pull-grid td.woo-map-so-col,
+.woo-map-pull-grid th.woo-map-so-col {
+    width: 10em;
+    max-width: 10.5em;
+}
+
 .woo-map-cat-grid .woo-cat-depth-1::before,
 .woo-map-cat-grid .woo-cat-depth-2::before,
 .woo-map-cat-grid .woo-cat-depth-3::before,
@@ -7352,9 +7404,176 @@ a.sys-prefs-mapping-link:visited {
 .woo-map-cat-grid input[type="submit"][disabled],
 .woo-map-cat-toolbar input[type="submit"][disabled],
 .woo-map-cat-grid input[type="button"][disabled],
-.woo-map-cat-toolbar input[type="button"][disabled] {
+.woo-map-cat-toolbar input[type="button"][disabled],
+.woo-map-attr-toolbar input[type="submit"][disabled],
+.woo-map-attr-toolbar input[type="button"][disabled],
+.woo-map-attr-parents-grid input[type="submit"][disabled],
+.woo-map-attr-parents-grid input[type="button"][disabled] {
     opacity: 0.45;
     cursor: default;
+}
+
+a.sys-prefs-tab.is-disabled,
+a.sys-prefs-tab[disabled] {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
+.woo-map-busy {
+    display: block;
+    max-width: 28rem;
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem 1rem;
+}
+
+body.woo-map-quiet-postback .woo-map-busy,
+body.woo-map-quiet-postback [id$="upgWooMap"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+.woo-map-busy-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.woo-map-busy-head img {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+.woo-map-busy-bar {
+    height: 0.55rem;
+    background: rgba(48, 42, 32, 0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.woo-map-busy-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-green, #4e664d);
+    border-radius: 2px;
+    transition: width 0.2s linear;
+}
+.woo-map-pull-grid {
+    table-layout: auto;
+    width: 100%;
+    max-width: 100%;
+}
+
+.woo-map-pull-grid .woo-map-dest {
+    max-width: 18rem;
+}
+
+.woo-map-pull-grid .woo-map-variant-col {
+    max-width: 18rem;
+    min-width: 10rem;
+    word-break: break-word;
+    font-size: 0.92em;
+}
+
+.woo-map-pull-grid .woo-map-match-col,
+.woo-map-pull-grid .woo-map-name-col {
+    max-width: 12rem;
+    word-break: break-word;
+}
+
+.woo-map-pull-grid tr.woo-map-row-parent td {
+    background-color: rgba(90, 74, 47, 0.12);
+    font-weight: 600;
+    border-top: 2px solid rgba(90, 74, 47, 0.35);
+}
+
+.woo-map-pull-grid tr.woo-map-row-excluded td {
+    background-color: rgba(120, 80, 80, 0.12);
+    color: #6a4a4a;
+}
+
+.woo-map-pull-grid tr.woo-map-row-variant td {
+    background-color: rgba(78, 102, 77, 0.05);
+    border-left: 3px solid rgba(78, 102, 77, 0.45);
+}
+
+.woo-map-pull-grid .woo-map-saved-col {
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+.woo-map-saved-yes {
+    color: #3d6b3d;
+    font-weight: 700;
+    font-size: 1.1em;
+}
+.woo-map-saved-dirty {
+    color: #a86a12;
+    font-weight: 700;
+    font-size: 1.05em;
+}
+.woo-map-saved-no {
+    color: rgba(90, 74, 47, 0.45);
+}
+.woo-map-pull-grid tr.woo-map-row-saved td .woo-map-saved-yes {
+    letter-spacing: 0.02em;
+}
+
+.woo-map-toggle {
+    display: inline-block;
+    min-width: 1.15em;
+    margin-right: 0.25rem;
+    padding: 0 0.2rem;
+    font-weight: 700;
+    font-size: 1.05em;
+    line-height: 1.2;
+    text-decoration: none;
+    color: #5a4a2f;
+    border: 1px solid rgba(90, 74, 47, 0.35);
+    background: #f4efe4;
+    border-radius: 3px;
+}
+.woo-map-toggle:hover {
+    background: #e8dcc4;
+    text-decoration: none;
+}
+
+.woo-map-name.woo-map-depth-1 {
+    display: inline-block;
+    padding-left: 1.1rem;
+}
+
+.woo-map-name.woo-map-depth-1::before {
+    content: "↳ ";
+    color: #7a8a6e;
+    font-weight: 400;
+}
+
+.woo-map-sku-variant {
+    display: inline-block;
+    padding-left: 1.25rem;
+    color: #3d4f3c;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.woo-map-sku-simple {
+    font-weight: 600;
+    color: #5a4a2f;
+}
+
+.woo-map-sku-variant::before {
+    content: "↳ ";
+    font-weight: 400;
+    color: #7a8a6e;
+}
+
+.woo-map-busy-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin-top: 0.45rem;
+    font-size: 0.92em;
+    opacity: 0.9;
 }
 
 .page-tone-logs {

@@ -71,6 +71,8 @@
               CategoryName NVARCHAR(255) NULL,
               ParentWooCategoryId BIGINT NOT NULL CONSTRAINT DF_WooCat_Parent DEFAULT (0),
               IncludeInSync BIT NOT NULL CONSTRAINT DF_WooCat_Include DEFAULT (1),
+              DefaultSortValue INT NULL,
+              DefaultImportMode NVARCHAR(32) NULL,
               CONSTRAINT UQ_WooCategoryFilter_WooCategoryId UNIQUE (WooCategoryId)
           );
       END
@@ -89,20 +91,42 @@
     ]]>
   </command>
 
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'DefaultSortValue') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCategoryFilterTbl
+          ADD DefaultSortValue INT NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'DefaultImportMode') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCategoryFilterTbl
+          ADD DefaultImportMode NVARCHAR(32) NULL;
+      END
+    ]]>
+  </command>
+
   <!-- Drop legacy category flags (Include-only; ZZName at order import). -->
   <command type="alter">
     <![CDATA[
       IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
          AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'ExcludeFromSync') IS NOT NULL
       BEGIN
-          DECLARE @dfExclude sysname;
-          SELECT @dfExclude = dc.name
+          DECLARE @sqlExclude nvarchar(4000);
+          SELECT @sqlExclude = N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT ' + QUOTENAME(dc.name)
           FROM sys.default_constraints dc
           INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
           WHERE dc.parent_object_id = OBJECT_ID(N'dbo.WooCategoryFilterTbl')
             AND c.name = N'ExcludeFromSync';
-          IF @dfExclude IS NOT NULL
-              EXEC(N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT [' + REPLACE(@dfExclude, N']', N']]') + N']');
+          IF @sqlExclude IS NOT NULL
+              EXEC sp_executesql @sqlExclude;
           ALTER TABLE dbo.WooCategoryFilterTbl DROP COLUMN ExcludeFromSync;
       END
     ]]>
@@ -113,14 +137,14 @@
       IF OBJECT_ID(N'dbo.WooCategoryFilterTbl', N'U') IS NOT NULL
          AND COL_LENGTH(N'dbo.WooCategoryFilterTbl', N'RouteToZzName') IS NOT NULL
       BEGIN
-          DECLARE @dfZz sysname;
-          SELECT @dfZz = dc.name
+          DECLARE @sqlZz nvarchar(4000);
+          SELECT @sqlZz = N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT ' + QUOTENAME(dc.name)
           FROM sys.default_constraints dc
           INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
           WHERE dc.parent_object_id = OBJECT_ID(N'dbo.WooCategoryFilterTbl')
             AND c.name = N'RouteToZzName';
-          IF @dfZz IS NOT NULL
-              EXEC(N'ALTER TABLE dbo.WooCategoryFilterTbl DROP CONSTRAINT [' + REPLACE(@dfZz, N']', N']]') + N']');
+          IF @sqlZz IS NOT NULL
+              EXEC sp_executesql @sqlZz;
           ALTER TABLE dbo.WooCategoryFilterTbl DROP COLUMN RouteToZzName;
       END
     ]]>
@@ -143,28 +167,115 @@
               DisableScope NVARCHAR(50) NULL,
               LastSyncedUtc DATETIME2 NULL,
               LastWooStatus NVARCHAR(50) NULL,
-              IsActive BIT NOT NULL CONSTRAINT DF_WooMap_Active DEFAULT (1)
+              IsActive BIT NOT NULL CONSTRAINT DF_WooMap_Active DEFAULT (1),
+              IncludeInImport BIT NOT NULL CONSTRAINT DF_WooMap_Import DEFAULT (1)
           );
           CREATE INDEX IX_WooItemMappings_ItemID ON dbo.WooItemMappingsTbl (ItemID);
       END
     ]]>
   </command>
 
+  <!-- Drop legacy SKU wildcards (replaced by variation attribute maps). -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooSkuWildcardRulesTbl', N'U') IS NOT NULL
+          DROP TABLE dbo.WooSkuWildcardRulesTbl;
+    ]]>
+  </command>
+
+  <!-- Stage 1: Woo attribute parents; tick UseForVariants before mapping options. -->
   <command type="create">
     <![CDATA[
-      IF OBJECT_ID(N'dbo.WooSkuWildcardRulesTbl', N'U') IS NULL
+      IF OBJECT_ID(N'dbo.WooAttributeParentTbl', N'U') IS NULL
       BEGIN
-          CREATE TABLE dbo.WooSkuWildcardRulesTbl
+          CREATE TABLE dbo.WooAttributeParentTbl
           (
-              RuleID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooSkuWildcardRulesTbl PRIMARY KEY,
-              SkuPrefixPattern NVARCHAR(255) NOT NULL,
-              SuffixToken NVARCHAR(50) NULL,
-              QtyFactor FLOAT NOT NULL,
-              PackagingID INT NULL,
-              ItemID INT NOT NULL,
-              IsActive BIT NOT NULL CONSTRAINT DF_WooWild_Active DEFAULT (1),
-              Notes NVARCHAR(255) NULL
+              ParentID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooAttributeParentTbl PRIMARY KEY,
+              WooAttributeId BIGINT NOT NULL,
+              AttributeName NVARCHAR(100) NOT NULL,
+              Slug NVARCHAR(200) NULL,
+              UseForVariants BIT NOT NULL CONSTRAINT DF_WooAttrParent_Use DEFAULT (0),
+              TermCount INT NOT NULL CONSTRAINT DF_WooAttrParent_Terms DEFAULT (0),
+              ResolvePriority INT NOT NULL CONSTRAINT DF_WooAttrParent_Pri DEFAULT (100),
+              CONSTRAINT UQ_WooAttributeParent_WooId UNIQUE (WooAttributeId)
           );
+          CREATE INDEX IX_WooAttrParent_Name ON dbo.WooAttributeParentTbl (AttributeName);
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooAttributeMapTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooAttributeMapTbl
+          (
+              MapID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooAttributeMapTbl PRIMARY KEY,
+              AttributeName NVARCHAR(100) NOT NULL,
+              AttributeOption NVARCHAR(255) NOT NULL,
+              QtyFactor FLOAT NOT NULL CONSTRAINT DF_WooAttr_Qty DEFAULT (1),
+              PackagingID INT NULL,
+              MapRole NVARCHAR(20) NOT NULL CONSTRAINT DF_WooAttr_Role DEFAULT (N'Both'),
+              ItemServiceTypeID INT NOT NULL CONSTRAINT DF_WooAttr_Svc DEFAULT (0),
+              IsActive BIT NOT NULL CONSTRAINT DF_WooAttr_Active DEFAULT (1),
+              Notes NVARCHAR(255) NULL,
+              CONSTRAINT UQ_WooAttributeMap_NameOptionType UNIQUE (AttributeName, AttributeOption, ItemServiceTypeID)
+          );
+      END
+    ]]>
+  </command>
+
+  <!-- Attribute parent resolve priority (lower wins when multiple maps match). -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooAttributeParentTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooAttributeParentTbl', N'ResolvePriority') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooAttributeParentTbl
+          ADD ResolvePriority INT NOT NULL
+              CONSTRAINT DF_WooAttrParent_Pri DEFAULT (100);
+      END
+    ]]>
+  </command>
+
+  <!-- Option map role: Both | QtyOnly | PackagingOnly. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooAttributeMapTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooAttributeMapTbl', N'MapRole') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooAttributeMapTbl
+          ADD MapRole NVARCHAR(20) NOT NULL
+              CONSTRAINT DF_WooAttr_Role DEFAULT (N'Both');
+      END
+    ]]>
+  </command>
+
+  <!-- Include line on order import; MapType Notes uses ItemID 0 (order notes / guest). -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooItemMappingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooItemMappingsTbl', N'IncludeInImport') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooItemMappingsTbl
+          ADD IncludeInImport BIT NOT NULL
+              CONSTRAINT DF_WooMap_Import DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooPackagingServiceTypeTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooPackagingServiceTypeTbl
+          (
+              PackagingServiceTypeID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooPackagingServiceTypeTbl PRIMARY KEY,
+              ItemPackagingID INT NOT NULL,
+              ItemServiceTypeID INT NOT NULL,
+              CONSTRAINT UQ_WooPackSvc_PackType UNIQUE (ItemPackagingID, ItemServiceTypeID)
+          );
+          CREATE INDEX IX_WooPackSvc_ServiceType ON dbo.WooPackagingServiceTypeTbl (ItemServiceTypeID);
       END
     ]]>
   </command>
@@ -247,6 +358,54 @@
     ]]>
   </command>
 
+  <!-- Local snapshot of last Woo product/variation pull. Tabs read this; Sync products refreshes it. -->
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCatalogCacheTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooCatalogCacheTbl
+          (
+              CacheID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooCatalogCacheTbl PRIMARY KEY,
+              WooProductId BIGINT NOT NULL,
+              WooVariationId BIGINT NOT NULL CONSTRAINT DF_WooCatCache_Var DEFAULT (0),
+              IsParentGroup BIT NOT NULL CONSTRAINT DF_WooCatCache_Parent DEFAULT (0),
+              IsVariation BIT NOT NULL CONSTRAINT DF_WooCatCache_VarFlag DEFAULT (0),
+              Name NVARCHAR(500) NULL,
+              Sku NVARCHAR(255) NULL,
+              ParentSku NVARCHAR(255) NULL,
+              ParentName NVARCHAR(500) NULL,
+              Status NVARCHAR(50) NULL,
+              StockStatus NVARCHAR(50) NULL,
+              ProductType NVARCHAR(50) NULL,
+              CategoriesLabel NVARCHAR(1000) NULL,
+              CategoryIds NVARCHAR(500) NULL,
+              AttributesJson NVARCHAR(MAX) NULL,
+              PulledUtc DATETIME2 NOT NULL CONSTRAINT DF_WooCatCache_Pulled DEFAULT (SYSUTCDATETIME()),
+              VariationTotalCount INT NULL,
+              VariationInStockCount INT NULL,
+              CONSTRAINT UQ_WooCatalogCache_ProductVar UNIQUE (WooProductId, WooVariationId)
+          );
+          CREATE INDEX IX_WooCatalogCache_Sku ON dbo.WooCatalogCacheTbl (Sku);
+      END
+    ]]>
+  </command>
+
+  <!-- Variation in-stock vs total counts on the cached parent row. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCatalogCacheTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCatalogCacheTbl', N'VariationTotalCount') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCatalogCacheTbl ADD VariationTotalCount INT NULL;
+      END
+      IF OBJECT_ID(N'dbo.WooCatalogCacheTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCatalogCacheTbl', N'VariationInStockCount') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCatalogCacheTbl ADD VariationInStockCount INT NULL;
+      END
+    ]]>
+  </command>
+
   <command type="select">
     <![CDATA[
       SELECT name
@@ -256,11 +415,14 @@
           N'WooCommerceSettingsTbl',
           N'WooCategoryFilterTbl',
           N'WooItemMappingsTbl',
-          N'WooSkuWildcardRulesTbl',
+          N'WooAttributeParentTbl',
+          N'WooAttributeMapTbl',
+          N'WooPackagingServiceTypeTbl',
           N'WooOrderInfoTbl',
           N'WooContactInfoTbl',
           N'WooImportBatchesTbl',
-          N'WooImportBatchLinesTbl'
+          N'WooImportBatchLinesTbl',
+          N'WooCatalogCacheTbl'
       )
       ORDER BY name;
     ]]>

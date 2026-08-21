@@ -32,6 +32,19 @@ namespace TrackerSQL.Managers
             return _prefsRepo.GetHeader();
         }
 
+        /// <summary>True when schema exists and WooCommerce integration is enabled.</summary>
+        public bool IsIntegrationEnabled()
+        {
+            try
+            {
+                return IsSchemaReady() && GetPreferencesHeader().WooCommerceEnabled;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public WooCommerceSettings GetSettings()
         {
             if (!IsSchemaReady())

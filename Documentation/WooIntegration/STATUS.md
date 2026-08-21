@@ -1,6 +1,6 @@
 # WooCommerce Integration — Status
 
-**Last updated:** 2026-08-13  
+**Last updated:** 2026-08-14  
 **Version target:** 3.0.1.0  
 **Branch:** `feature/woocommerce-3.0.1.0`
 
@@ -8,7 +8,7 @@
 |-------|--------|-------|
 | 0 — Branch + docs | Done | Docs under `Documentation/WooIntegration/` |
 | 1 — System Preferences + wizard + Test Connection + schema | Code complete | Section cookie, Enable/Disable UX |
-| 2 — Categories + item mapping + SKU wildcards | Code complete | `Tools/WooCommerceMapping.aspx` |
+| 2 — Categories + item mapping + **variation attributes** | In progress | SKU wildcards removed; Attributes tab → qty/packaging |
 | 3 — Staged order import | Pending | |
 | 4 — Order Detail Woo panel | Pending | |
 | 5 — Status / dispatch / tracking | Pending | |
@@ -30,29 +30,23 @@
 ## Phase 2 checklist
 
 - [x] Pull Woo categories → `WooCategoryFilterTbl`
-- [x] Include / Exclude / ZZName flags + category filter mode
-- [x] Pull products/variations → suggest maps (SKU + wildcards)
-- [x] Save/delete exact item mappings
-- [x] SKU wildcard rules (prefix / suffix / qty factor)
+- [x] Include flags + category filter mode (saved with Save includes)
+- [x] Pull products/variations → suggest maps (SKU + parent + attributes)
+- [x] Save/delete exact item mappings (qty + packaging)
+- [x] **Variation attribute maps** — parents (`Use for variants` + Priority) then options (`MapRole` Both/QtyOnly/PackagingOnly) → qty + packaging
+- [x] Drop SKU wildcards (`WooSkuWildcardRulesTbl`)
 - [x] Dry-run + push Tracker `ItemEnabled` → Woo publish/private (no stock qty)
 - [x] Menu / System Tools / Preferences link to Mapping
-- [ ] Manual UAT on live store (categories → maps → wildcards → dry-run)
+- [ ] Manual UAT: re-run SQLCommands XML (drop wildcards / create attribute tables) → Attributes pull → map 250g → Mappings pull
 
-## How to smoke-test Phase 2
+## How to smoke-test Phase 2 (attributes)
 
 1. Woo integration must be **enabled** (Phase 1 done).
-2. Open **Woo Mapping** (menu, System Tools, or Preferences → Open WooCommerce Mapping).
-3. **Categories:** Pull from Woo → set Include/Exclude/ZZName → save mode (All / Include list / Exclude list).
-4. **Mappings:** Pull products → review suggested Tracker items → Save rows.
-5. **Wildcards:** Add prefix/suffix/qty rules (e.g. `9QRCcoDec` + `250g` → 0.25).
-6. **Enabled sync:** Dry-run first, then push if OK. Check `App_Data/woo.log`.
-
-## How to smoke-test Phase 1
-
-1. Log in as Administrators / Admin.
-2. Open **System → System Tools → System Preferences** (or menu **System Preferences**).
-3. Confirm **General** still edits SysData.
-4. Open **WooCommerce** → **Enable / Start setup wizard**.
-5. Follow prep steps → **Create / verify tables** (or run `App_Data/SQLCommands-WooCommerce-01.xml` via XMLtoSQL).
-6. Enter store URL + REST keys → Save → **Test connection** → Finish.
-7. Confirm `WooCommerceCryptoKey` is set in `Web.config`.
+2. Re-run **`App_Data/SQLCommands-WooCommerce-01.xml`** via XMLtoSQL or Preferences Ensure schema (drops wildcards; creates attribute + packaging-service tables).
+3. Open **Woo Mapping**.
+4. **Categories:** Pull → Include ticks + mode → **Save includes**.
+5. **Attribute parents:** Pull parents → set **Priority** (lower wins) + **Use for variants** → **Save selection**.
+6. **Variant attributes:** Pull options → set **Role** (Both / Qty only / Packaging only) + qty/packaging → **Save attribute maps**.
+7. **Mappings:** Sync products (published + in-stock/not managed). Parents nest variants; Mode = Import variants | Parent → notes. Search / Apply / **Save selected**.
+8. **Missing SKUs:** Enter New SKU → Apply → **Write SKUs to Woo** → re-sync Mappings.
+9. **Enabled sync:** Dry-run first. Check `App_Data/woo.log`. Notes mappings are skipped. If status warns catalog cap, raise limit or narrow categories.

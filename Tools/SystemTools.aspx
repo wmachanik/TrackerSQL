@@ -85,14 +85,14 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-link tool-tone-sysdata">
+                        <div class="dashboard-link tool-tone-sysdata" id="pnlWooMappingTool" runat="server">
                             <div class="dashboard-card">
                                 <div class="tool-card-header">
                                     <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
                                     <h4>WooCommerce Mapping</h4>
                                 </div>
-                                <p>Categories, item SKU maps, and enabled sync</p>
-                                <asp:Button ID="btnWooMapping" runat="server" Text="Open" PostBackUrl="~/Tools/WooCommerceMapping.aspx" />
+                                <p><asp:Literal ID="litWooMappingToolBlurb" runat="server" Text="Categories, item SKU maps, and enabled sync" /></p>
+                                <asp:Button ID="btnWooMapping" runat="server" Text="Open" OnClick="btnWooMapping_Click" />
                             </div>
                         </div>
 

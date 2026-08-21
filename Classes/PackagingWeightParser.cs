@@ -60,6 +60,23 @@ namespace TrackerSQL.Classes
             return Math.Round(qtyKg / packKg, 1, MidpointRounding.AwayFromZero);
         }
 
+        /// <summary>
+        /// If the text looks like a pack weight (250g, 1kg), returns that weight in kilograms
+        /// for use as a Woo qty factor. Otherwise null.
+        /// </summary>
+        public static double? TryParseQtyFactorFromOption(string optionText)
+        {
+            if (string.IsNullOrWhiteSpace(optionText))
+                return null;
+
+            string text = optionText.Trim();
+            if (!KgPattern.IsMatch(text) && !GramsPattern.IsMatch(text))
+                return null;
+
+            double kg = ParsePackWeightKg(text);
+            return kg > 0 ? (double?)kg : null;
+        }
+
         private static bool TryParseNumber(string value, out double number)
         {
             string normalized = (value ?? string.Empty).Replace(',', '.');

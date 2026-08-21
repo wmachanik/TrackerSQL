@@ -164,6 +164,60 @@ namespace TrackerSQL.Repositories
             return list;
         }
 
+        public Item GetBySku(string sku)
+        {
+            if (string.IsNullOrWhiteSpace(sku))
+                return null;
+            const string sql = @"
+SELECT TOP 1 ItemID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail,
+       ItemServiceTypeID, ReplacementItemID, ItemUnitID, BasePrice, ItemShortName, SortOrder, UnitsPerQty
+FROM ItemsTbl
+WHERE SKU = @SKU";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@SKU", DataValue = sku.Trim(), DataDbType = DbType.String }
+            };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read())
+                    return Map(rdr);
+            }
+            return null;
+        }
+
+        /// <summary>Inserts and returns the new ItemID.</summary>
+        public int InsertReturningId(Item item)
+        {
+            if (item == null) throw new ArgumentNullException(nameof(item));
+            const string sql = @"
+INSERT INTO ItemsTbl (ItemDesc, SKU, ItemEnabled, ItemsCharacteritics, ItemDetail,
+                      ItemServiceTypeID, ReplacementItemID, ItemShortName, SortOrder, UnitsPerQty, ItemUnitID)
+VALUES (@ItemDesc, @SKU, @ItemEnabled, @ItemsCharacteritics, @ItemDetail,
+        @ServiceTypeId, @ReplacementID, @ItemShortName, @SortOrder, @UnitsPerQty, @UoMID);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ItemDesc", DataValue = item.ItemDesc ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@SKU", DataValue = item.SKU ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ItemEnabled", DataValue = item.ItemEnabled ?? true, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@ItemsCharacteritics", DataValue = item.ItemsCharacteritics ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ItemDetail", DataValue = item.ItemDetail ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ServiceTypeId", DataValue = item.ItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ReplacementID", DataValue = item.ReplacementItemID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemShortName", DataValue = item.ItemShortName ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@SortOrder", DataValue = item.SortOrder ?? 1, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@UnitsPerQty", DataValue = item.UnitsPerQty ?? 1.0, DataDbType = DbType.Double },
+                new DBParameter { ParamName = "@UoMID", DataValue = item.ItemUnitID ?? (object)DBNull.Value, DataDbType = DbType.Int32 }
+            };
+
+            using (var db = new TrackerSQLDb())
+            {
+                return db.ExecuteScalar<int>(sql, parameters);
+            }
+        }
+
         public string GetItemDescById(int itemId)
         {
             var item = GetById(itemId);

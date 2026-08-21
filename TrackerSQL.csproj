@@ -1,4 +1,4 @@
-﻿<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -116,7 +116,7 @@
     <Content Include="Administration\ManageUsers.aspx" />
     <Content Include="Administration\ResetPasswordHelper.aspx" />
     <Content Include="Administration\UserInformation.aspx" />
-    <Content Include="App_Data\SQLCommands-HolidayClosure-01.xml" />
+    <Content Include="App_Data\SQLCommands-ItemSortOrder-01.xml" />
     <Content Include="App_Data\SQLCommands-ShowAwayChangesXML.xml" />
     <Content Include="App_Data\SQLCommands-RepStatusUpdate-01.xml" />
     <Content Include="App_Data\SQLCommands001.xml" />
@@ -327,6 +327,7 @@
     <Compile Include="Classes\AreaDeliveryMatrix.cs" />
     <Compile Include="Classes\ConfigHelper.cs" />
     <Compile Include="Classes\PackagingWeightParser.cs" />
+    <Compile Include="Classes\PackagingOptionMatcher.cs" />
     <Compile Include="Classes\DateCalculator.cs" />
     <Compile Include="Classes\DiagnosticsIconHelper.cs" />
     <Compile Include="Classes\OrderViewTokenHelper.cs" />
@@ -362,6 +363,7 @@
     <Compile Include="Models\ILookupEntity.cs" />
     <Compile Include="Models\InactiveContactResult.cs" />
     <Compile Include="Models\InvoiceType.cs" />
+    <Compile Include="Models\ItemSortOrder.cs" />
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\ItemGroup.cs" />
     <Compile Include="Models\ItemGroupGridRow.cs" />
@@ -433,6 +435,7 @@
     <Compile Include="Repositories\ItemPackagingsRepository.cs" />
     <Compile Include="Repositories\ItemPrepTypesRepository.cs" />
     <Compile Include="Repositories\ItemServiceTypesRepository.cs" />
+    <Compile Include="Repositories\ItemSortOrdersRepository.cs" />
     <Compile Include="Repositories\ItemsRepository.cs" />
     <Compile Include="Repositories\ItemUnitsRepository.cs" />
     <Compile Include="Repositories\MembershipRepository.cs" />
@@ -786,11 +789,17 @@
     <Compile Include="Managers\WooCommerceMappingManager.cs" />
     <Compile Include="Models\WooCategoryFilter.cs" />
     <Compile Include="Models\WooItemMapping.cs" />
-    <Compile Include="Models\WooSkuWildcardRule.cs" />
+    <Compile Include="Models\WooAttributeMap.cs" />
+    <Compile Include="Models\WooAttributeParent.cs" />
+    <Compile Include="Models\WooPackagingServiceType.cs" />
     <Compile Include="Models\WooCatalogDtos.cs" />
+    <Compile Include="Models\WooCatalogCacheRow.cs" />
     <Compile Include="Repositories\WooCategoryFilterRepository.cs" />
+    <Compile Include="Repositories\WooCatalogCacheRepository.cs" />
     <Compile Include="Repositories\WooItemMappingRepository.cs" />
-    <Compile Include="Repositories\WooSkuWildcardRuleRepository.cs" />
+    <Compile Include="Repositories\WooAttributeMapRepository.cs" />
+    <Compile Include="Repositories\WooAttributeParentRepository.cs" />
+    <Compile Include="Repositories\WooPackagingServiceTypeRepository.cs" />
     <Compile Include="Tools\WooCommerceMapping.aspx.cs">
       <DependentUpon>WooCommerceMapping.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

@@ -16,10 +16,22 @@ namespace TrackerSQL.Models
         public DateTime? LastSyncedUtc { get; set; }
         public string LastWooStatus { get; set; }
         public bool IsActive { get; set; } = true;
+        /// <summary>When false, order import skips this Woo line.</summary>
+        public bool IncludeInImport { get; set; } = true;
 
         // UI helpers (not DB columns — ignored if Insert maps all props; override repos)
         public string ItemDesc { get; set; }
         public string ItemSku { get; set; }
         public bool? ItemEnabled { get; set; }
+
+        public bool IsNotesMap
+        {
+            get { return string.Equals(MapType, "Notes", StringComparison.OrdinalIgnoreCase); }
+        }
+
+        public bool IsExcludeMap
+        {
+            get { return string.Equals(MapType, "Exclude", StringComparison.OrdinalIgnoreCase); }
+        }
     }
 }

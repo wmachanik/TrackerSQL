@@ -29,13 +29,13 @@
         <%-- No AssociatedUpdatePanelID: show for all async postbacks (form, tabs, account actions) --%>
         <asp:UpdateProgress ID="uprgContactDetails" runat="server"
             DisplayAfter="0" DynamicLayout="true">
-            <ProgressTemplate>
+        <ProgressTemplate>
                 <div class="status-message status-info page-tone-progress">
                     <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
                     &nbsp;Please wait...
                 </div>
-            </ProgressTemplate>
-        </asp:UpdateProgress>
+        </ProgressTemplate>
+    </asp:UpdateProgress>
 
         <asp:HiddenField ID="hdnContactDirty" runat="server" Value="0" />
 
@@ -463,7 +463,7 @@
                                         AutoGenerateColumns="False" EmptyDataText="no orders yet"
                                         AllowPaging="True" PageSize="15"
                                         DataKeyNames="OrderID">
-                                        <Columns>
+                                    <Columns>
                                             <asp:TemplateField ShowHeader="False">
                                                 <ItemTemplate>
                                                     <asp:HyperLink ID="hlEditOrder" runat="server"
@@ -491,13 +491,13 @@
                                                 </ItemTemplate>
                                                 <ItemStyle HorizontalAlign="Center" />
                                             </asp:TemplateField>
-                                            <asp:BoundField DataField="Notes" HeaderText="Notes" />
-                                        </Columns>
+                                        <asp:BoundField DataField="Notes" HeaderText="Notes" />
+                                    </Columns>
                                         <PagerStyle CssClass="pager-row" />
                                         <PagerTemplate>
                                             <asp:PlaceHolder ID="plhPager" runat="server" />
                                         </PagerTemplate>
-                                    </asp:GridView>
+                                </asp:GridView>
                                 </div>
                             </ContentTemplate>
                         </asp:UpdatePanel>

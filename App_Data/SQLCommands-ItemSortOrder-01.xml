@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Item sort-order lookup (major product categories).
+  Idempotent — safe to re-run via Tools → XMLtoSQL.
+  ItemsTbl.SortOrder stores SortValue (1 Coffee … 15 Groups).
+  Existing description edits in Lookups are not overwritten on re-run.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ItemSortOrderTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ItemSortOrderTbl
+          (
+              SortOrderID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ItemSortOrderTbl PRIMARY KEY,
+              SortValue INT NOT NULL,
+              SortOrderDesc NVARCHAR(100) NOT NULL,
+              IsEnabled BIT NOT NULL CONSTRAINT DF_ItemSortOrder_Enabled DEFAULT (1),
+              CONSTRAINT UQ_ItemSortOrder_Value UNIQUE (SortValue)
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="insert">
+    <![CDATA[
+      MERGE dbo.ItemSortOrderTbl AS t
+      USING (VALUES
+          (1,  N'Coffee'),
+          (2,  N'Other Beverage'),
+          (3,  N'Maintenance'),
+          (4,  N'Jura Maintenance'),
+          (5,  N'Water Filters'),
+          (6,  N'Paper Filters'),
+          (7,  N'Jura Accessories'),
+          (8,  N'Gear'),
+          (9,  N'Green'),
+          (10, N'General'),
+          (11, N'Misc'),
+          (15, N'Groups')
+      ) AS s(SortValue, SortOrderDesc)
+      ON t.SortValue = s.SortValue
+      WHEN NOT MATCHED THEN
+          INSERT (SortValue, SortOrderDesc, IsEnabled)
+          VALUES (s.SortValue, s.SortOrderDesc, 1);
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT SortOrderID, SortValue, SortOrderDesc, IsEnabled
+      FROM dbo.ItemSortOrderTbl
+      ORDER BY SortValue;
+    ]]>
+  </command>
+</root>

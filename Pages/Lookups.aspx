@@ -240,14 +240,14 @@
                                     <asp:TemplateField HeaderText="UoM" SortExpression="ItemUnitID" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="UnitOfMeasure" Width="6em"
+                                                CssClass="lookups-item-uom" DataTextField="UnitOfMeasure" Width="6em"
                                                 DataValueField="ItemUnitID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
                                         </EditItemTemplate>
                                         <FooterTemplate>
                                             <asp:DropDownList ID="ddlUnits" runat="server" AppendDataBoundItems="True"
-                                                DataTextField="UnitOfMeasure" Width="6em"
+                                                CssClass="lookups-item-uom" DataTextField="UnitOfMeasure" Width="6em"
                                                 DataValueField="ItemUnitID">
                                                 <asp:ListItem Value="0" Text="n/a" />
                                             </asp:DropDownList>
@@ -258,13 +258,13 @@
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="S/O" SortExpression="SortOrder" HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                         <EditItemTemplate>
-                                            <asp:TextBox ID="tbxSortOrder" runat="server" Width="1.1em" Text='<%# Bind("SortOrder") %>'></asp:TextBox>
+                                            <asp:DropDownList ID="ddlSortOrder" runat="server" CssClass="lookups-item-so" Font-Size="Smaller" Width="11em" />
                                         </EditItemTemplate>
                                         <FooterTemplate>
-                                            <asp:TextBox ID="tbxSortOrder" runat="server" Text='1' Width="1.1em" />
+                                            <asp:DropDownList ID="ddlSortOrder" runat="server" CssClass="lookups-item-so" Font-Size="Smaller" Width="11em" />
                                         </FooterTemplate>
                                         <ItemTemplate>
-                                            <asp:Label ID="lblSortOrder" runat="server" Width="1.1em" Text='<%# Bind("SortOrder") %>'></asp:Label>
+                                            <asp:Label ID="lblSortOrder" runat="server" />
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                 </Columns>
@@ -976,6 +976,208 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
+        <ajaxToolkit:TabPanel ID="tabpnlSortOrders" runat="server" HeaderText="Sort Orders">
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlSortOrders" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvSortOrders" />
+                    </Triggers>
+                    <ContentTemplate>
+                        <p class="page-tone-subtitle" style="margin:0.6rem 0;">
+                            Major item categories. The number is stored on each item as Sort Order (S/O).
+                        </p>
+                        <div class="results-container scrollable-table-container">
+                            <asp:GridView ID="gvSortOrders" runat="server" DataKeyNames="SortOrderID"
+                                CssClass="results-table results-table-fit" AutoGenerateColumns="False" ShowFooter="true"
+                                OnRowCommand="gvSortOrders_RowCommand"
+                                OnRowEditing="gvSortOrders_RowEditing"
+                                OnRowCancelingEdit="gvSortOrders_RowCancelingEdit"
+                                OnRowUpdating="gvSortOrders_RowUpdating"
+                                OnRowDeleting="gvSortOrders_RowDeleting"
+                                OnRowDataBound="gvSortOrders_RowDataBound">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnSoUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
+                                            <asp:ImageButton ID="btnSoCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnSoEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                            <asp:ImageButton ID="btnSoDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                AlternateText="Delete" ImageUrl="~/images/imgButtons/Trashcan.gif"
+                                                OnClientClick="return confirm('Delete this sort order?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnSoAdd" runat="server" CausesValidation="False" CommandName="AddItem"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Value" SortExpression="SortValue">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxSortValue" runat="server" Text='<%# Bind("SortValue") %>' Width="4em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSortValue" runat="server" Text='<%# Bind("SortValue") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxSortValueFooter" runat="server" Width="4em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Description" SortExpression="SortOrderDesc">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxSortDesc" runat="server" Text='<%# Bind("SortOrderDesc") %>' Width="16em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSortDesc" runat="server" Text='<%# Bind("SortOrderDesc") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxSortDescFooter" runat="server" Width="16em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Enabled" SortExpression="IsEnabled">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxSortEnabled" runat="server" Checked='<%# Bind("IsEnabled") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxSortEnabled" runat="server" Checked='<%# Bind("IsEnabled") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxSortEnabledFooter" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
+        <ajaxToolkit:TabPanel ID="tabpnlRepairStatuses" runat="server" HeaderText="Repair Statuses">
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvRepairStatuses" />
+                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusGo" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusReset" EventName="Click" />
+                        <asp:AsyncPostBackTrigger ControlID="tbxRepairStatusSearch" EventName="TextChanged" />
+                    </Triggers>
+                    <ContentTemplate>
+                        <asp:Panel ID="pnlRepairStatusSearch" runat="server" DefaultButton="btnRepairStatusGo" CssClass="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxRepairStatusSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxRepairStatusSearch" runat="server"
+                                        AutoPostBack="true"
+                                        OnTextChanged="tbxRepairStatusSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnRepairStatusGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    ToolTip="Search repair statuses" OnClick="btnRepairStatusGo_Click" />
+                                <asp:Button ID="btnRepairStatusReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    CausesValidation="false"
+                                    OnClick="btnRepairStatusReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-repair-statuses.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </asp:Panel>
+                        <div class="results-container scrollable-table-container">
+                            <asp:GridView ID="gvRepairStatuses" runat="server" DataKeyNames="RepairStatusID"
+                                CssClass="results-table results-table-fit"
+                                AutoGenerateColumns="False" AllowPaging="True" AllowSorting="True"
+                                ShowFooter="True" PageSize="20"
+                                OnPageIndexChanging="gvRepairStatuses_PageIndexChanging"
+                                OnSorting="gvRepairStatuses_Sorting"
+                                OnRowCommand="gvRepairStatuses_RowCommand"
+                                OnRowEditing="gvRepairStatuses_RowEditing"
+                                OnRowCancelingEdit="gvRepairStatuses_RowCancelingEdit"
+                                OnRowUpdating="gvRepairStatuses_RowUpdating"
+                                OnRowDeleting="gvRepairStatuses_RowDeleting"
+                                OnRowDataBound="gvRepairStatuses_RowDataBound"
+                                OnRowCreated="gvRepairStatuses_RowCreated">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Update" />
+                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" />
+                                            <asp:ImageButton ID="btnDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                ImageUrl="~/images/imgButtons/Trashcan.gif" AlternateText="Delete"
+                                                OnClientClick="return confirm('Delete this repair status?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="Insert"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="RepairStatusID" HeaderText="ID" ReadOnly="True" />
+                                    <asp:TemplateField HeaderText="Status" SortExpression="RepairStatusDesc">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxStatusDesc" runat="server" Text='<%# Bind("RepairStatusDesc") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblStatusDesc" runat="server" Text='<%# Bind("RepairStatusDesc") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxStatusDescFooter" runat="server" Width="12em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Email Contact" SortExpression="EmailContact">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxEmailContact" runat="server"
+                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxEmailContactView" runat="server"
+                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxEmailContactFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Sort Order" SortExpression="SortOrder">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxSortOrder" runat="server" Width="4em"
+                                                Text='<%# Eval("SortOrder") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSortOrder" runat="server" Text='<%# Eval("SortOrder") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxSortOrderFooter" runat="server" Width="4em" Text="0" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Status Note" SortExpression="StatusNote">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxStatusNote" runat="server" Text='<%# Bind("StatusNote") %>' Width="30em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblStatusNote" runat="server" Text='<%# Bind("StatusNote") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxStatusNoteFooter" runat="server" Width="30em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabInvoiceTypes" runat="server" HeaderText="InvoiceTypes">
             <ContentTemplate>
                 <asp:UpdateProgress runat="server" ID="gvInvoiceTypesUpdateProgress" AssociatedUpdatePanelID="gvInvoiceTypesUpdatePanel" DisplayAfter="0">
@@ -1352,129 +1554,7 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
-        <ajaxToolkit:TabPanel ID="tabpnlRepairStatuses" runat="server" HeaderText="Repair Statuses">
-            <ContentTemplate>
-                <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
-                    <Triggers>
-                        <asp:AsyncPostBackTrigger ControlID="gvRepairStatuses" />
-                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusGo" EventName="Click" />
-                        <asp:AsyncPostBackTrigger ControlID="btnRepairStatusReset" EventName="Click" />
-                        <asp:AsyncPostBackTrigger ControlID="tbxRepairStatusSearch" EventName="TextChanged" />
-                    </Triggers>
-                    <ContentTemplate>
-                        <asp:Panel ID="pnlRepairStatusSearch" runat="server" DefaultButton="btnRepairStatusGo" CssClass="filter-toolbar lookups-tab-toolbar">
-                            <div class="filter-section search-controls">
-                                <div class="filter-control">
-                                    <asp:Label AssociatedControlID="tbxRepairStatusSearch" runat="server" Text="Search:" />
-                                    <asp:TextBox ID="tbxRepairStatusSearch" runat="server"
-                                        AutoPostBack="true"
-                                        OnTextChanged="tbxRepairStatusSearch_TextChanged" />
-                                </div>
-                                <asp:Button ID="btnRepairStatusGo" Text="Go" runat="server" CssClass="filter-panel-btn"
-                                    CausesValidation="false"
-                                    ToolTip="Search repair statuses" OnClick="btnRepairStatusGo_Click" />
-                                <asp:Button ID="btnRepairStatusReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
-                                    CausesValidation="false"
-                                    OnClick="btnRepairStatusReset_Click" />
-                            </div>
-                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
-                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-repair-statuses.png"
-                                    width="32" height="32" alt="" />
-                            </div>
-                        </asp:Panel>
-                        <div class="results-container scrollable-table-container">
-                            <asp:GridView ID="gvRepairStatuses" runat="server" DataKeyNames="RepairStatusID"
-                                CssClass="results-table results-table-fit"
-                                AutoGenerateColumns="False" AllowPaging="True" AllowSorting="True"
-                                ShowFooter="True" PageSize="20"
-                                OnPageIndexChanging="gvRepairStatuses_PageIndexChanging"
-                                OnSorting="gvRepairStatuses_Sorting"
-                                OnRowCommand="gvRepairStatuses_RowCommand"
-                                OnRowEditing="gvRepairStatuses_RowEditing"
-                                OnRowCancelingEdit="gvRepairStatuses_RowCancelingEdit"
-                                OnRowUpdating="gvRepairStatuses_RowUpdating"
-                                OnRowDeleting="gvRepairStatuses_RowDeleting"
-                                OnRowDataBound="gvRepairStatuses_RowDataBound"
-                                OnRowCreated="gvRepairStatuses_RowCreated">
-                                <Columns>
-                                    <asp:TemplateField ShowHeader="False">
-                                        <EditItemTemplate>
-                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
-                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Update" />
-                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
-                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
-                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" />
-                                            <asp:ImageButton ID="btnDelete" runat="server" CausesValidation="False" CommandName="Delete"
-                                                ImageUrl="~/images/imgButtons/Trashcan.gif" AlternateText="Delete"
-                                                OnClientClick="return confirm('Delete this repair status?');" />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="Insert"
-                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
-                                    <asp:BoundField DataField="RepairStatusID" HeaderText="ID" ReadOnly="True" />
-                                    <asp:TemplateField HeaderText="Status" SortExpression="RepairStatusDesc">
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="tbxStatusDesc" runat="server" Text='<%# Bind("RepairStatusDesc") %>' />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblStatusDesc" runat="server" Text='<%# Bind("RepairStatusDesc") %>' />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="tbxStatusDescFooter" runat="server" Width="12em" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Email Contact" SortExpression="EmailContact">
-                                        <EditItemTemplate>
-                                            <asp:CheckBox ID="cbxEmailContact" runat="server"
-                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:CheckBox ID="cbxEmailContactView" runat="server"
-                                                Checked='<%# (Eval("EmailContact") as bool?) == true %>' Enabled="false" />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:CheckBox ID="cbxEmailContactFooter" runat="server" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Sort Order" SortExpression="SortOrder">
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="tbxSortOrder" runat="server" Width="4em"
-                                                Text='<%# Eval("SortOrder") %>' />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblSortOrder" runat="server" Text='<%# Eval("SortOrder") %>' />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="tbxSortOrderFooter" runat="server" Width="4em" Text="0" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Status Note" SortExpression="StatusNote">
-                                        <EditItemTemplate>
-                                            <asp:TextBox ID="tbxStatusNote" runat="server" Text='<%# Bind("StatusNote") %>' Width="30em" />
-                                        </EditItemTemplate>
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblStatusNote" runat="server" Text='<%# Bind("StatusNote") %>' />
-                                        </ItemTemplate>
-                                        <FooterTemplate>
-                                            <asp:TextBox ID="tbxStatusNoteFooter" runat="server" Width="30em" />
-                                        </FooterTemplate>
-                                    </asp:TemplateField>
-                                </Columns>
-                                <PagerStyle CssClass="pager-row" />
-                                <PagerTemplate>
-                                    <asp:PlaceHolder ID="plhPager" runat="server" />
-                                </PagerTemplate>
-                            </asp:GridView>
-                        </div>
-                    </ContentTemplate>
-                </asp:UpdatePanel>
-            </ContentTemplate>
-        </ajaxToolkit:TabPanel>
+
     </ajaxToolkit:TabContainer>
 
         <asp:UpdatePanel ID="upnlLookupStatus" runat="server" UpdateMode="Conditional">

@@ -10,7 +10,7 @@ namespace TrackerSQL.Classes
 {
     /// <summary>
     /// Lightweight SQL Server data access helper intended to sit alongside the existing Access-based
-    /// TrackerDb class. This is not a full replacement ó it provides a small set of safe helper
+    /// TrackerDb class. This is not a full replacement ù it provides a small set of safe helper
     /// methods to execute queries and map DBParameter objects to named SqlParameters.
     /// </summary>
     public class TrackerSQLDb : IDisposable
@@ -47,6 +47,8 @@ namespace TrackerSQL.Classes
                 case DbType.Currency: return SqlDbType.Money;
                 case DbType.Date: return SqlDbType.Date;
                 case DbType.DateTime: return SqlDbType.DateTime2;
+                case DbType.DateTime2: return SqlDbType.DateTime2;
+                case DbType.DateTimeOffset: return SqlDbType.DateTimeOffset;
                 case DbType.Decimal: return SqlDbType.Decimal;
                 case DbType.Double: return SqlDbType.Float;
                 case DbType.Guid: return SqlDbType.UniqueIdentifier;
@@ -81,6 +83,7 @@ namespace TrackerSQL.Classes
                         return dateVal;
 
                     case DbType.DateTime:
+                    case DbType.DateTime2:
                         DateTime dtVal = value is DateTime dt ? dt : Convert.ToDateTime(value);
                         if (dtVal < new DateTime(1900, 1, 1) || dtVal > new DateTime(2079, 12, 31))
                         {

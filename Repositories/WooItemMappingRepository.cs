@@ -53,9 +53,9 @@ ORDER BY m.MappingID DESC";
         {
             string sql = @"
 INSERT INTO WooItemMappingsTbl
-(ItemID, WooProductId, WooVariationId, MapType, SkuPattern, QtyFactor, PackagingID, DisableScope, LastSyncedUtc, LastWooStatus, IsActive)
+(ItemID, WooProductId, WooVariationId, MapType, SkuPattern, QtyFactor, PackagingID, DisableScope, LastSyncedUtc, LastWooStatus, IsActive, IncludeInImport)
 VALUES
-(@ItemID, @WooProductId, @WooVariationId, @MapType, @SkuPattern, @QtyFactor, @PackagingID, @DisableScope, @LastSyncedUtc, @LastWooStatus, @IsActive);
+(@ItemID, @WooProductId, @WooVariationId, @MapType, @SkuPattern, @QtyFactor, @PackagingID, @DisableScope, @LastSyncedUtc, @LastWooStatus, @IsActive, @IncludeInImport);
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
             return ExecuteScalar<int>(sql, BuildParams(entity, includeKey: false));
         }
@@ -74,7 +74,8 @@ UPDATE WooItemMappingsTbl SET
  DisableScope = @DisableScope,
  LastSyncedUtc = @LastSyncedUtc,
  LastWooStatus = @LastWooStatus,
- IsActive = @IsActive
+ IsActive = @IsActive,
+ IncludeInImport = @IncludeInImport
 WHERE MappingID = @MappingID";
             return ExecNonQuery(sql, BuildParams(entity, includeKey: true));
         }
@@ -85,6 +86,20 @@ WHERE MappingID = @MappingID";
             var p = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@MappingID", DataValue = mappingId, DataDbType = DbType.Int32 }
+            };
+            return ExecNonQuery(sql, p);
+        }
+
+        public int SetIncludeInImportForProduct(long productId, bool include)
+        {
+            const string sql = @"
+UPDATE WooItemMappingsTbl
+SET IncludeInImport = @IncludeInImport
+WHERE WooProductId = @P AND IsActive = 1";
+            var p = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@IncludeInImport", DataValue = include, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@P", DataValue = productId, DataDbType = DbType.Int64 }
             };
             return ExecNonQuery(sql, p);
         }
@@ -103,7 +118,8 @@ WHERE MappingID = @MappingID";
                 new DBParameter { ParamName = "@DisableScope", DataValue = (object)e.DisableScope ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@LastSyncedUtc", DataValue = (object)e.LastSyncedUtc ?? DBNull.Value, DataDbType = DbType.DateTime2 },
                 new DBParameter { ParamName = "@LastWooStatus", DataValue = (object)e.LastWooStatus ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@IsActive", DataValue = e.IsActive, DataDbType = DbType.Boolean }
+                new DBParameter { ParamName = "@IsActive", DataValue = e.IsActive, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@IncludeInImport", DataValue = e.IncludeInImport, DataDbType = DbType.Boolean }
             };
             if (includeKey)
                 p.Add(new DBParameter { ParamName = "@MappingID", DataValue = e.MappingID, DataDbType = DbType.Int32 });

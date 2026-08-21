@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -915,38 +915,182 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.Phase2OpenMapping" xml:space="preserve">
     <value>Open WooCommerce Mapping</value>
   </data>
+  <data name="WooCommerce.MapNeedWooEnabled" xml:space="preserve">
+    <value>WooCommerce integration is not enabled yet. Run the setup wizard in System Preferences before using Mapping.</value>
+  </data>
   <data name="WooCommerce.MapPageTitle" xml:space="preserve">
     <value>WooCommerce Mapping</value>
   </data>
   <data name="WooCommerce.MapPageSubtitle" xml:space="preserve">
-    <value>Categories, product↔item maps, SKU wildcards, and enabled sync</value>
+    <value>Categories, attribute parents, variant attribute maps, product↔item maps, and enabled sync</value>
   </data>
   <data name="WooCommerce.MapTabCategories" xml:space="preserve">
     <value>Categories</value>
   </data>
+  <data name="WooCommerce.MapTabAttrParents" xml:space="preserve">
+    <value>Attribute parents</value>
+  </data>
+  <data name="WooCommerce.MapTabAttrVariants" xml:space="preserve">
+    <value>Variant attributes</value>
+  </data>
   <data name="WooCommerce.MapTabMappings" xml:space="preserve">
     <value>Mappings</value>
   </data>
-  <data name="WooCommerce.MapTabWildcards" xml:space="preserve">
-    <value>Wildcards</value>
+  <data name="WooCommerce.MapTabSavedMaps" xml:space="preserve">
+    <value>Saved maps</value>
+  </data>
+  <data name="WooCommerce.MapTabMissingSku" xml:space="preserve">
+    <value>Missing SKUs</value>
   </data>
   <data name="WooCommerce.MapTabSync" xml:space="preserve">
     <value>Enabled sync</value>
   </data>
   <data name="WooCommerce.MapCatHelp" xml:space="preserve">
-    <value>Pull categories from Woo, tick Include as needed, then Save includes (one save for the whole list — edits are kept if you change page). Mode All uses every category; Included only uses the ticked rows. Child categories are indented. Uncategorized is off by default when other categories exist. ZZName routing is decided when importing orders, not here.</value>
+    <value>Pull categories from Woo, tick Include as needed, set All vs Included only, then Save includes. Unticked categories (e.g. Referral) are excluded from Mappings and Missing SKUs — even if mode is still All. Child categories are indented. S/O and Import defaults apply to unmapped products. Import "(inherit)" uses the parent category's Import setting — it is not the same as "Parent → order notes". Set the root (e.g. Gear) to Parent → order notes so children on (inherit) pick that up. Uncategorized is off by default when other categories exist.</value>
+  </data>
+  <data name="WooCommerce.MapAttrParentsHelp" xml:space="preserve">
+    <value>Pull attribute parents from Woo. Set Priority (Highest wins when several attributes match — e.g. Size=Highest, Grind=Average). Tick Use for variants for attributes that drive variations. Save selection is enabled when you change a tick or priority. Next: Variant attributes to map options with a Role (Both / Qty only / Packaging only).</value>
+  </data>
+  <data name="WooCommerce.MapAttrOptionsHelp" xml:space="preserve">
+    <value>Pull options for attributes marked Use for variants. Weight/size options (1kg Packet, 250g Box) should be Qty only; Prep Type / grind options should be Packaging only (matched to Tracker rows like GrndPlnger). Priority on the parent decides which map wins each channel. Re-pull and Save after changing roles.</value>
+  </data>
+  <data name="WooCommerce.MapAttrVariantsLocked" xml:space="preserve">
+    <value>Pull attribute parents first, then return here to map options for the attributes you marked Use for variants.</value>
+  </data>
+  <data name="WooCommerce.MapPullAttrParents" xml:space="preserve">
+    <value>Pull attribute parents</value>
+  </data>
+  <data name="WooCommerce.MapSyncAttrParents" xml:space="preserve">
+    <value>Sync attribute parents</value>
+  </data>
+  <data name="WooCommerce.MapPullAttrParentsOk" xml:space="preserve">
+    <value>Pulled {0} attribute parents from Woo. Existing Use for variants selections were kept.</value>
+  </data>
+  <data name="WooCommerce.MapSaveAttrParents" xml:space="preserve">
+    <value>Save selection</value>
+  </data>
+  <data name="WooCommerce.MapAttrParentsSaved" xml:space="preserve">
+    <value>Saved selection for {0} attribute parents.</value>
+  </data>
+  <data name="WooCommerce.MapAttrNeedParents" xml:space="preserve">
+    <value>Mark at least one attribute as Use for variants and click Save selection before pulling options.</value>
   </data>
   <data name="WooCommerce.MapMapHelp" xml:space="preserve">
-    <value>Pull Woo products (and variations). Exact SKU matches and wildcard rules suggest Tracker items. Save each row to create a mapping. Stock quantity is not synced — only later enabled/disabled push.</value>
+    <value>Applied shows ✓ when the Mode/Destination rule is stored in Tracker, ✎ if you changed it since last save, and — if not saved yet. Edit Mode, Destination, Item SKU, Qty, or Pack, then Save changes. Import controls whether the line is used on order import. Use the Saved maps tab to browse or delete stored maps.</value>
   </data>
-  <data name="WooCommerce.MapWildHelp" xml:space="preserve">
-    <value>Example: prefix 9QRCcoDec, suffix 250g, qty 0.25 maps SKUs like 9QRCcoDec…250g to a Tracker kg item with packaging qty 0.25.</value>
+  <data name="WooCommerce.MapSavedMapsHelp" xml:space="preserve">
+    <value>Every mapping already stored in Tracker (Exact, Notes, Exclude). Delete here to clear a map — the Mappings tab Applied column updates after refresh. Configure new maps on the Mappings tab, then Save changes.</value>
+  </data>
+  <data name="WooCommerce.MapSavedMapsPageInfo" xml:space="preserve">
+    <value>{0} saved mapping(s) — page {1} of {2}</value>
+  </data>
+  <data name="WooCommerce.MapMissingSkuHelp" xml:space="preserve">
+    <value>These published products/variations have no Woo SKU — including parent products whose variants exist but the parent SKU is blank. Enter a New SKU, tick Apply, then Write SKUs to Woo. After a successful write, the local catalog is updated; you do not need to re-download from Woo unless you click Sync products.</value>
+  </data>
+  <data name="WooCommerce.MapFindSku" xml:space="preserve">
+    <value>Search:</value>
+  </data>
+  <data name="WooCommerce.MapFindSkuBtn" xml:space="preserve">
+    <value>Go</value>
+  </data>
+  <data name="WooCommerce.MapClearFindSku" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="WooCommerce.MapPullPageInfo" xml:space="preserve">
+    <value>{0} products — page {1} of {2}</value>
+  </data>
+  <data name="WooCommerce.MapPullPageInfoFiltered" xml:space="preserve">
+    <value>{0} of {1} products matching "{4}" — page {2} of {3}</value>
+  </data>
+  <data name="WooCommerce.MapMissingSkuPageInfo" xml:space="preserve">
+    <value>{0} without SKU — page {1} of {2}</value>
+  </data>
+  <data name="WooCommerce.MapDestNotMapped" xml:space="preserve">
+    <value>(not mapped)</value>
+  </data>
+  <data name="WooCommerce.MapDestCreateParent" xml:space="preserve">
+    <value>Create Tracker item (parent SKU)</value>
+  </data>
+  <data name="WooCommerce.MapDestCreateVariant" xml:space="preserve">
+    <value>Create Tracker item ({0})</value>
+  </data>
+  <data name="WooCommerce.MapDestNotes" xml:space="preserve">
+    <value>→ order notes</value>
+  </data>
+  <data name="WooCommerce.MapNeedDestination" xml:space="preserve">
+    <value>Choose a Tracker item or → order notes before saving.</value>
+  </data>
+  <data name="WooCommerce.MapSaveSelected" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="WooCommerce.MapSaveSelectedOk" xml:space="preserve">
+    <value>Saved {0} mapping(s); created {1} Tracker item(s).</value>
+  </data>
+  <data name="WooCommerce.MapSaveSelectedNone" xml:space="preserve">
+    <value>Nothing to save — change Mode, Destination, SKU, Qty, or Pack on a row first.</value>
+  </data>
+  <data name="WooCommerce.MapSaveSelectedTip" xml:space="preserve">
+    <value>Writes pending and edited mapping rules to Tracker. Rows with Applied ✎ or — (when Mode needs a map) are included.</value>
+  </data>
+  <data name="WooCommerce.MapColAppliedTip" xml:space="preserve">
+    <value>✓ = this Mode/Destination rule is stored in Tracker. ✎ = you changed it since last save. — = not stored yet. Hover a cell for that row’s status.</value>
+  </data>
+  <data name="WooCommerce.MapColImportTip" xml:space="preserve">
+    <value>When ticked, this product (or line) can be pulled onto orders. Untick to skip it on import. On a group, untick also means Do not import unless Mode is Parent → notes / Parent SKU.</value>
+  </data>
+  <data name="WooCommerce.MapColModeTip" xml:space="preserve">
+    <value>How this Woo product maps: Import variants, Parent SKU only, Parent → order notes, or Do not import. Category defaults apply until you change Mode and Save changes.</value>
+  </data>
+  <data name="WooCommerce.MapColDestinationTip" xml:space="preserve">
+    <value>Tracker item, Create Tracker item, or order notes. For groups in Import variants, Destination stays on each variant row.</value>
+  </data>
+  <data name="WooCommerce.MapColMatchTip" xml:space="preserve">
+    <value>Why this row looks the way it does (saved map, category default, suggested SKU match, etc.).</value>
+  </data>
+  <data name="WooCommerce.MapColVariantTip" xml:space="preserve">
+    <value>Variation options from Woo (size, grind, colour, …).</value>
+  </data>
+  <data name="WooCommerce.MapColSkuTip" xml:space="preserve">
+    <value>Woo SKU. + expands a variable product’s variants. group = parent row; var = variation.</value>
+  </data>
+  <data name="WooCommerce.MapColQtyTip" xml:space="preserve">
+    <value>Quantity factor when mapping to a Tracker item (e.g. 0.25 for 250g of a 1kg item).</value>
+  </data>
+  <data name="WooCommerce.MapColPackTip" xml:space="preserve">
+    <value>Tracker packaging for this mapped line.</value>
+  </data>
+  <data name="WooCommerce.MapColItemSkuTip" xml:space="preserve">
+    <value>Tracker SKU to create or rename when Destination is Create / an existing item.</value>
+  </data>
+  <data name="WooCommerce.MapColSortTip" xml:space="preserve">
+    <value>Tracker item sort order (major category) when creating or renaming.</value>
+  </data>
+  <data name="WooCommerce.MapImportCellTip" xml:space="preserve">
+    <value>Include this product or line when importing Woo orders into Tracker.</value>
+  </data>
+  <data name="WooCommerce.MapModeCellTip" xml:space="preserve">
+    <value>Mapping rule for this whole Woo product. Save changes after editing.</value>
+  </data>
+  <data name="WooCommerce.MapDestCellTip" xml:space="preserve">
+    <value>Where this line goes in Tracker. Save changes after editing.</value>
+  </data>
+  <data name="WooCommerce.MapWriteMissingSkus" xml:space="preserve">
+    <value>Write SKUs to Woo</value>
+  </data>
+  <data name="WooCommerce.MapMissingSkuWriteOk" xml:space="preserve">
+    <value>Wrote {0} SKU(s) to WooCommerce.</value>
+  </data>
+  <data name="WooCommerce.MapMissingSkuWritePartial" xml:space="preserve">
+    <value>Wrote {0} SKU(s); {1} failed.</value>
   </data>
   <data name="WooCommerce.MapSyncHelp" xml:space="preserve">
-    <value>Push Tracker ItemEnabled to Woo product/variation status (publish vs private). Use dry-run first. No stock quantities are written.</value>
+    <value>Push Tracker ItemEnabled to Woo product/variation status (publish vs private). Use dry-run first. No stock quantities are written. Notes mappings are skipped.</value>
   </data>
   <data name="WooCommerce.MapPullCategories" xml:space="preserve">
     <value>Pull categories from Woo</value>
+  </data>
+  <data name="WooCommerce.MapSyncCategories" xml:space="preserve">
+    <value>Sync categories from Woo</value>
   </data>
   <data name="WooCommerce.MapPullCategoriesOk" xml:space="preserve">
     <value>Pulled {0} of {1} categories from WooCommerce. Include ticks on existing categories were kept.</value>
@@ -954,11 +1098,14 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapPullCatsConfirm" xml:space="preserve">
     <value>Pull refreshes category names and parent/child from Woo. Include ticks on categories you already have are kept. New categories get defaults (Uncategorized off when others exist). Continue?</value>
   </data>
+  <data name="WooCommerce.MapSyncCatsConfirm" xml:space="preserve">
+    <value>Sync refreshes category names and parent/child from Woo. Include ticks on categories you already have are kept. New categories get defaults. Continue?</value>
+  </data>
   <data name="WooCommerce.MapCatPageInfo" xml:space="preserve">
     <value>{0} categories — page {1} of {2}</value>
   </data>
   <data name="WooCommerce.MapUnsavedLeave" xml:space="preserve">
-    <value>You have unsaved category changes. Leave this screen anyway?</value>
+    <value>You have unsaved changes. Leave anyway?</value>
   </data>
   <data name="WooCommerce.MapBackToPreferences" xml:space="preserve">
     <value>Return to System Preferences</value>
@@ -966,14 +1113,65 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapPullProducts" xml:space="preserve">
     <value>Pull products from Woo</value>
   </data>
+  <data name="WooCommerce.MapSyncProducts" xml:space="preserve">
+    <value>Sync products from Woo</value>
+  </data>
+  <data name="WooCommerce.MapResetCatalog" xml:space="preserve">
+    <value>Reset catalog</value>
+  </data>
+  <data name="WooCommerce.MapResetCatalogOk" xml:space="preserve">
+    <value>Cleared the saved Woo catalog. Saved mappings are kept. Click Sync products to download again.</value>
+  </data>
   <data name="WooCommerce.MapPullProductsOk" xml:space="preserve">
-    <value>Loaded {0} Woo products/variations for mapping.</value>
+    <value>Pulled {0} mappable row(s); {1} without SKU; scanned {2} Woo parent product(s).</value>
+  </data>
+  <data name="WooCommerce.MapPullProductsCapWarn" xml:space="preserve">
+    <value>Catalog cap reached (2000 parents) — narrow categories or raise the pull limit if products are missing.</value>
+  </data>
+  <data name="WooCommerce.MapImportModeVariants" xml:space="preserve">
+    <value>Import variants</value>
+  </data>
+  <data name="WooCommerce.MapImportModeParentItem" xml:space="preserve">
+    <value>Parent SKU only (variants → notes)</value>
+  </data>
+  <data name="WooCommerce.MapImportModeParentNotes" xml:space="preserve">
+    <value>Parent → order notes</value>
+  </data>
+  <data name="WooCommerce.MapImportModeExclude" xml:space="preserve">
+    <value>Do not import</value>
+  </data>
+  <data name="WooCommerce.MapImportModeInherit" xml:space="preserve">
+    <value>(inherit)</value>
+  </data>
+  <data name="WooCommerce.MapSkuExistsInItems" xml:space="preserve">
+    <value>SKU {0} is already used by Tracker item #{1}.</value>
+  </data>
+  <data name="WooCommerce.MapSkuWooWriteFailed" xml:space="preserve">
+    <value>Woo rejected SKU {0} for product {1}: {2}</value>
+  </data>
+  <data name="WooCommerce.MapExpandAll" xml:space="preserve">
+    <value>Expand all</value>
+  </data>
+  <data name="WooCommerce.MapCollapseAll" xml:space="preserve">
+    <value>Collapse all</value>
+  </data>
+  <data name="WooCommerce.MapPullAttributes" xml:space="preserve">
+    <value>Pull options for ticked attributes</value>
+  </data>
+  <data name="WooCommerce.MapSyncAttributes" xml:space="preserve">
+    <value>Sync options for ticked attributes</value>
+  </data>
+  <data name="WooCommerce.MapPullAttributesOk" xml:space="preserve">
+    <value>Pulled {0} options for variant attributes. Review qty/packaging then Save attribute maps.</value>
+  </data>
+  <data name="WooCommerce.MapSaveAttributeMaps" xml:space="preserve">
+    <value>Save attribute maps</value>
+  </data>
+  <data name="WooCommerce.MapAttrSaved" xml:space="preserve">
+    <value>Saved {0} attribute map(s).</value>
   </data>
   <data name="WooCommerce.MapExistingTitle" xml:space="preserve">
-    <value>Saved mappings</value>
-  </data>
-  <data name="WooCommerce.MapSaveCatMode" xml:space="preserve">
-    <value>Save mode</value>
+    <value></value>
   </data>
   <data name="WooCommerce.MapSaveIncludes" xml:space="preserve">
     <value>Save includes</value>
@@ -982,40 +1180,19 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Category filter mode saved.</value>
   </data>
   <data name="WooCommerce.MapCatRowSaved" xml:space="preserve">
-    <value>Category flags saved.</value>
+    <value>Category include flag saved.</value>
   </data>
   <data name="WooCommerce.MapIncludesSaved" xml:space="preserve">
-    <value>Saved Include settings for {0} categor(ies).</value>
+    <value>Saved {0} include change(s) (and category mode if changed).</value>
   </data>
   <data name="WooCommerce.MapSaved" xml:space="preserve">
     <value>Mapping saved.</value>
   </data>
+  <data name="WooCommerce.MapItemCreated" xml:space="preserve">
+    <value>Created/selected Tracker item SKU {0} (#{1}). Sibling variations were updated — Save map on each row to persist.</value>
+  </data>
   <data name="WooCommerce.MapDeleted" xml:space="preserve">
     <value>Mapping deleted.</value>
-  </data>
-  <data name="WooCommerce.MapWildPrefix" xml:space="preserve">
-    <value>SKU prefix (e.g. 9QRCcoDec)</value>
-  </data>
-  <data name="WooCommerce.MapWildSuffix" xml:space="preserve">
-    <value>Suffix token (e.g. 250g)</value>
-  </data>
-  <data name="WooCommerce.MapWildQty" xml:space="preserve">
-    <value>Qty factor</value>
-  </data>
-  <data name="WooCommerce.MapWildItem" xml:space="preserve">
-    <value>Tracker item</value>
-  </data>
-  <data name="WooCommerce.MapWildNotes" xml:space="preserve">
-    <value>Notes</value>
-  </data>
-  <data name="WooCommerce.MapSaveWildcard" xml:space="preserve">
-    <value>Save wildcard rule</value>
-  </data>
-  <data name="WooCommerce.MapWildSaved" xml:space="preserve">
-    <value>Wildcard rule saved.</value>
-  </data>
-  <data name="WooCommerce.MapWildDeleted" xml:space="preserve">
-    <value>Wildcard rule deleted.</value>
   </data>
   <data name="WooCommerce.MapDryPush" xml:space="preserve">
     <value>Dry-run enabled push</value>

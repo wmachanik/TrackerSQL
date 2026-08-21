@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
@@ -25,9 +26,57 @@ namespace TrackerSQL.Tools
             }
 
             SetMessagesEditorButtonVisibility();
+            SyncWooMappingToolCard();
 
             sw.Stop();
             RequestTiming.Write("SYSTEM TOOLS PAGE", sw.ElapsedMilliseconds + " ms");
+        }
+
+        private void SyncWooMappingToolCard()
+        {
+            if (btnWooMapping == null)
+                return;
+
+            bool wooOn = false;
+            try
+            {
+                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
+            }
+            catch
+            {
+                wooOn = false;
+            }
+
+            if (wooOn)
+            {
+                btnWooMapping.Text = "Open";
+                if (litWooMappingToolBlurb != null)
+                    litWooMappingToolBlurb.Text = "Categories, item SKU maps, and enabled sync";
+            }
+            else
+            {
+                btnWooMapping.Text = MessageProvider.Get(MessageKeys.WooCommerce.StartWizard);
+                if (litWooMappingToolBlurb != null)
+                    litWooMappingToolBlurb.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapNeedWooEnabled);
+            }
+        }
+
+        protected void btnWooMapping_Click(object sender, EventArgs e)
+        {
+            bool wooOn = false;
+            try
+            {
+                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
+            }
+            catch
+            {
+                wooOn = false;
+            }
+
+            if (wooOn)
+                Response.Redirect("~/Tools/WooCommerceMapping.aspx");
+            else
+                Response.Redirect("~/Tools/SystemPreferences.aspx?section=woo&wizard=1");
         }
 
         private void SetMessagesEditorButtonVisibility()

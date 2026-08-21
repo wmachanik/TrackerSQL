@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 
 namespace TrackerSQL
 {
@@ -37,10 +38,61 @@ namespace TrackerSQL
 
             BindAppVersionLabels();
             BindApplicationErrorBanner();
+            SyncWooMappingMenuItem();
             HighlightCurrentMenuItem();
 
             sw.Stop();
             RequestTiming.Write("MASTER PAGE", sw.ElapsedMilliseconds + " ms");
+        }
+
+        /// <summary>Hide Woo Mapping until WooCommerce integration is enabled.</summary>
+        private void SyncWooMappingMenuItem()
+        {
+            if (NavigationMenu == null)
+                return;
+
+            bool wooOn = false;
+            try
+            {
+                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
+            }
+            catch
+            {
+                wooOn = false;
+            }
+
+            MenuItem item = FindMenuItemByValue(NavigationMenu.Items, "WooMapping");
+            if (item == null)
+                return;
+
+            if (wooOn)
+            {
+                item.Enabled = true;
+                item.NavigateUrl = "~/Tools/WooCommerceMapping.aspx";
+                item.ToolTip = string.Empty;
+            }
+            else
+            {
+                // Keep visible but send to Preferences wizard instead of Mapping.
+                item.Enabled = true;
+                item.NavigateUrl = "~/Tools/SystemPreferences.aspx?section=woo&wizard=1";
+                item.ToolTip = "Enable WooCommerce integration first (setup wizard)";
+            }
+        }
+
+        private static MenuItem FindMenuItemByValue(MenuItemCollection items, string value)
+        {
+            if (items == null)
+                return null;
+            foreach (MenuItem item in items)
+            {
+                if (string.Equals(item.Value, value, StringComparison.OrdinalIgnoreCase))
+                    return item;
+                MenuItem nested = FindMenuItemByValue(item.ChildItems, value);
+                if (nested != null)
+                    return nested;
+            }
+            return null;
         }
 
         /// <summary>

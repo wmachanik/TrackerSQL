@@ -21,7 +21,7 @@ namespace TrackerSQL.Pages
 {
     public partial class Lookups : Page
     {
-        private const string CONST_ITEMSEARCHSESIONVAR = "SearchItemContains";
+        private const string DefaultItemsSort = "SortOrder, ItemDesc";
         private const int CONST_BGCOLOURCOL = 4;
         protected ScriptManager scmLookup;
         protected UpdateProgress uprgLookup;
@@ -89,12 +89,23 @@ namespace TrackerSQL.Pages
         protected Button btnRepairStatusGo;
         protected Button btnRepairStatusReset;
         protected GridView gvRepairStatuses;
+        protected TabPanel tabpnlSortOrders;
+        protected UpdatePanel upnlSortOrders;
+        protected GridView gvSortOrders;
         protected SqlDataSource sdsUserNames;
 
         // Per-request caches for Items grid lookup dropdowns (filled once per bind)
         private List<ItemUnit> _itemUnitsCache;
         private List<ItemServiceType> _itemServiceTypesCache;
         private List<OrderItemLookup> _replacementItemsCache;
+        private ItemSortOrdersRepository _sortOrdersRepo;
+
+        private ItemSortOrdersRepository GetSortOrdersRepo()
+        {
+            if (_sortOrdersRepo == null)
+                _sortOrdersRepo = new ItemSortOrdersRepository();
+            return _sortOrdersRepo;
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -123,6 +134,7 @@ namespace TrackerSQL.Pages
                 BindPaymentTermsGrid();
                 BindPriceLevelsGrid();
                 BindRepairStatusesGrid();
+                BindSortOrdersGrid();
             }
         }
 
@@ -1179,11 +1191,14 @@ namespace TrackerSQL.Pages
                 DropDownList control6 = (DropDownList)this.gvItems.FooterRow.FindControl("ddlServiceType");
                 DropDownList control7 = (DropDownList)this.gvItems.FooterRow.FindControl("ddlReplacement");
                 TextBox control8 = (TextBox)this.gvItems.FooterRow.FindControl("tbxItemShortName");
-                TextBox control9 = (TextBox)this.gvItems.FooterRow.FindControl("tbxSortOrder");
+                DropDownList ddlSortOrder = (DropDownList)this.gvItems.FooterRow.FindControl("ddlSortOrder");
                 TextBox control10 = (TextBox)this.gvItems.FooterRow.FindControl("tbxUnitsPerQty");
                 DropDownList control11 = (DropDownList)this.gvItems.FooterRow.FindControl("ddlUnits");
                 
                 // Use Repository Pattern instead of SqlDataSource
+                int sortOrder = 1;
+                if (ddlSortOrder != null)
+                    int.TryParse(ddlSortOrder.SelectedValue, out sortOrder);
                 var newItem = new Item
                 {
                     ItemDesc = control1.Text,
@@ -1194,7 +1209,7 @@ namespace TrackerSQL.Pages
                     ItemServiceTypeID = OptionalFkId(control6?.SelectedValue),
                     ReplacementItemID = OptionalFkId(control7?.SelectedValue),
                     ItemShortName = control8.Text,
-                    SortOrder = Convert.ToInt32(control9.Text),
+                    SortOrder = sortOrder,
                     UnitsPerQty = Convert.ToDouble(control10.Text),
                     ItemUnitID = OptionalFkId(control11?.SelectedValue)
                 };
@@ -1250,11 +1265,137 @@ namespace TrackerSQL.Pages
             GridPager.BuildPager(gvRepairStatuses, e.Row);
         }
 
+        private void BindSortOrdersGrid()
+        {
+            try
+            {
+                var list = GetSortOrdersRepo().GetAll("SortValue") ?? new List<ItemSortOrder>();
+                gvSortOrders.DataSource = list;
+                gvSortOrders.DataBind();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error loading sort orders: " + ex.Message, true);
+            }
+        }
+
+        protected void gvSortOrders_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvSortOrders.EditIndex = e.NewEditIndex;
+            BindSortOrdersGrid();
+            upnlSortOrders?.Update();
+        }
+
+        protected void gvSortOrders_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvSortOrders.EditIndex = -1;
+            BindSortOrdersGrid();
+            upnlSortOrders?.Update();
+        }
+
+        protected void gvSortOrders_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvSortOrders.DataKeys[e.RowIndex].Value);
+                GridViewRow row = gvSortOrders.Rows[e.RowIndex];
+                var tbxVal = (TextBox)row.FindControl("tbxSortValue");
+                var tbxDesc = (TextBox)row.FindControl("tbxSortDesc");
+                var cbx = (CheckBox)row.FindControl("cbxSortEnabled");
+                int sortValue;
+                int.TryParse(tbxVal != null ? tbxVal.Text : "0", out sortValue);
+                GetSortOrdersRepo().Update(new ItemSortOrder
+                {
+                    SortOrderID = id,
+                    SortValue = sortValue,
+                    SortOrderDesc = tbxDesc != null ? tbxDesc.Text.Trim() : string.Empty,
+                    IsEnabled = cbx != null && cbx.Checked
+                });
+                gvSortOrders.EditIndex = -1;
+                BindSortOrdersGrid();
+                upnlSortOrders?.Update();
+                SetLookupStatus("Sort order saved.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error updating sort order: " + ex.Message, true);
+            }
+        }
+
+        protected void gvSortOrders_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvSortOrders.DataKeys[e.RowIndex].Value);
+                GetSortOrdersRepo().Delete(id);
+                gvSortOrders.EditIndex = -1;
+                BindSortOrdersGrid();
+                upnlSortOrders?.Update();
+                SetLookupStatus("Sort order deleted.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error deleting sort order: " + ex.Message, true);
+            }
+        }
+
+        protected void gvSortOrders_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+            foreach (string id in new[] { "btnSoUpdate", "btnSoCancel", "btnSoEdit", "btnSoDelete", "btnSoAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
+            }
+        }
+
+        protected void gvSortOrders_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "AddItem", StringComparison.Ordinal))
+                return;
+            try
+            {
+                if (gvSortOrders.FooterRow == null)
+                    return;
+                var tbxVal = (TextBox)gvSortOrders.FooterRow.FindControl("tbxSortValueFooter");
+                var tbxDesc = (TextBox)gvSortOrders.FooterRow.FindControl("tbxSortDescFooter");
+                var cbx = (CheckBox)gvSortOrders.FooterRow.FindControl("cbxSortEnabledFooter");
+                int sortValue;
+                if (tbxVal == null || !int.TryParse(tbxVal.Text, out sortValue))
+                {
+                    SetLookupStatus("Enter a numeric sort value.", true);
+                    return;
+                }
+                GetSortOrdersRepo().Insert(new ItemSortOrder
+                {
+                    SortValue = sortValue,
+                    SortOrderDesc = tbxDesc != null ? tbxDesc.Text.Trim() : string.Empty,
+                    IsEnabled = cbx == null || cbx.Checked
+                });
+                gvSortOrders.EditIndex = -1;
+                BindSortOrdersGrid();
+                upnlSortOrders?.Update();
+                SetLookupStatus("Sort order added.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error adding sort order: " + ex.Message, true);
+            }
+        }
+
         // Items Grid - Sorting Event Handler
         protected void gvItems_Sorting(object sender, GridViewSortEventArgs e)
         {
             // Store sort expression in ViewState
-            ViewState["ItemsSortExpression"] = e.SortExpression;
+            string expr = e.SortExpression;
+            if (string.Equals(expr, "SortOrder", StringComparison.OrdinalIgnoreCase))
+                expr = DefaultItemsSort;
+            ViewState["ItemsSortExpression"] = expr;
             gvItems.EditIndex = -1; // Exit edit mode when sorting
             BindItemsGrid(forceRefresh: true);
             upnlItems?.Update();
@@ -1292,9 +1433,13 @@ namespace TrackerSQL.Pages
                 var ddlServiceType = (DropDownList)row.FindControl("ddlServiceType");
                 var ddlReplacement = (DropDownList)row.FindControl("ddlReplacement");
                 var tbxItemShortName = (TextBox)row.FindControl("tbxItemShortName");
-                var tbxSortOrder = (TextBox)row.FindControl("tbxSortOrder");
+                var ddlSortOrder = (DropDownList)row.FindControl("ddlSortOrder");
                 var tbxUnitsPerQty = (TextBox)row.FindControl("tbxUnitsPerQtyr");
                 var ddlUnits = (DropDownList)row.FindControl("ddlUnits");
+
+                int sortOrder = 1;
+                if (ddlSortOrder != null)
+                    int.TryParse(ddlSortOrder.SelectedValue, out sortOrder);
 
                 var item = new Item
                 {
@@ -1307,7 +1452,7 @@ namespace TrackerSQL.Pages
                     ItemServiceTypeID = OptionalFkId(ddlServiceType?.SelectedValue),
                     ReplacementItemID = OptionalFkId(ddlReplacement?.SelectedValue),
                     ItemShortName = tbxItemShortName?.Text ?? "",
-                    SortOrder = tbxSortOrder != null ? (int?)Convert.ToInt32(tbxSortOrder.Text) : null,
+                    SortOrder = sortOrder,
                     UnitsPerQty = tbxUnitsPerQty != null ? Convert.ToDouble(tbxUnitsPerQty.Text) : 1.0,
                     ItemUnitID = OptionalFkId(ddlUnits?.SelectedValue)
                 };
@@ -1332,8 +1477,9 @@ namespace TrackerSQL.Pages
             try
             {
                 var repo = new ItemsRepository();
-                string sortBy = ViewState["ItemsSortExpression"] as string ?? "SortOrder";
-                List<Item> items = repo.GetAll(sortBy);
+                string sortBy = ViewState["ItemsSortExpression"] as string ?? DefaultItemsSort;
+                List<Item> items = repo.GetAll(null);
+                items = ApplyItemsSort(items, sortBy);
 
                 // The textbox is part of ViewState and is the authoritative filter for
                 // this page instance. Session-cached lists can be missing or stale after
@@ -1364,6 +1510,60 @@ namespace TrackerSQL.Pages
             }
         }
 
+        /// <summary>
+        /// S/O is an int (1 Coffee … 15 Groups). Sorting in memory so 15 cannot
+        /// appear before 1 the way it does with name order or a string sort.
+        /// </summary>
+        private static List<Item> ApplyItemsSort(List<Item> items, string sortBy)
+        {
+            if (items == null || items.Count == 0)
+                return items ?? new List<Item>();
+
+            string key = (sortBy ?? string.Empty).Trim();
+            bool sortOrderFirst = string.IsNullOrEmpty(key)
+                || key.StartsWith("SortOrder", StringComparison.OrdinalIgnoreCase);
+
+            if (sortOrderFirst)
+            {
+                return items
+                    .OrderBy(i => i.SortOrder ?? int.MaxValue)
+                    .ThenBy(i => i.ItemDesc ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            if (key.StartsWith("ItemDesc", StringComparison.OrdinalIgnoreCase))
+            {
+                return items
+                    .OrderBy(i => i.ItemDesc ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(i => i.SortOrder ?? int.MaxValue)
+                    .ToList();
+            }
+
+            if (key.StartsWith("SKU", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.SKU ?? string.Empty, StringComparer.OrdinalIgnoreCase).ToList();
+            if (key.StartsWith("ItemShortName", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ItemShortName ?? string.Empty, StringComparer.OrdinalIgnoreCase).ToList();
+            if (key.StartsWith("ItemEnabled", StringComparison.OrdinalIgnoreCase))
+                return items.OrderByDescending(i => i.ItemEnabled ?? false).ThenBy(i => i.SortOrder ?? int.MaxValue).ToList();
+            if (key.StartsWith("UnitsPerQty", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.UnitsPerQty ?? 0).ToList();
+            if (key.StartsWith("ItemUnitID", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ItemUnitID ?? 0).ToList();
+            if (key.StartsWith("ItemServiceTypeID", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ItemServiceTypeID ?? 0).ToList();
+            if (key.StartsWith("ReplacementItemID", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ReplacementItemID ?? 0).ToList();
+            if (key.StartsWith("ItemsCharacteritics", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ItemsCharacteritics ?? string.Empty, StringComparer.OrdinalIgnoreCase).ToList();
+            if (key.StartsWith("ItemDetail", StringComparison.OrdinalIgnoreCase))
+                return items.OrderBy(i => i.ItemDetail ?? string.Empty, StringComparer.OrdinalIgnoreCase).ToList();
+
+            return items
+                .OrderBy(i => i.SortOrder ?? int.MaxValue)
+                .ThenBy(i => i.ItemDesc ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         protected void gvItems_RowDataBound(object sender, GridViewRowEventArgs e)
         {
             if (e.Row.RowType != DataControlRowType.DataRow &&
@@ -1385,6 +1585,19 @@ namespace TrackerSQL.Pages
 
             var item = e.Row.DataItem as Item;
             BindItemsLookupDropdowns(e.Row, item);
+
+            var sortDdl = e.Row.FindControl("ddlSortOrder") as DropDownList;
+            if (sortDdl != null)
+                GetSortOrdersRepo().FillDropDown(sortDdl, item != null ? item.SortOrder : 1);
+
+            var sortLabel = e.Row.FindControl("lblSortOrder") as Label;
+            if (sortLabel != null)
+            {
+                sortLabel.Text = item != null && item.SortOrder.HasValue
+                    ? item.SortOrder.Value.ToString()
+                    : string.Empty;
+                sortLabel.ToolTip = GetSortOrdersRepo().Describe(item != null ? item.SortOrder : null);
+            }
 
             var unitLabel = e.Row.FindControl("lblItemUnit") as Label;
             if (unitLabel != null)
@@ -1521,6 +1734,7 @@ namespace TrackerSQL.Pages
             {
                 tbxItemSearch.Text = string.Empty;
                 Session["SearchItemContains"] = "%"; // Show all
+                ViewState["ItemsSortExpression"] = DefaultItemsSort;
                 gvItems.PageIndex = 0; // Reset to first page
                 gvItems.EditIndex = -1; // Exit edit mode if active
                 BindItemsGrid(forceRefresh: true); // Force refresh for reset

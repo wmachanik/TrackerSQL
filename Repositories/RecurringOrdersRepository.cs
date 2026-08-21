@@ -72,7 +72,7 @@ namespace TrackerSQL.Repositories
             // return no rows while the first reader is still open.
             if (recurringOrder != null)
             {
-                recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
+                    recurringOrder.Items = GetItemsForRecurring(recurringOrder.RecurringOrderID);
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                     "RecurringOrdersRepository.GetById: RecurringOrderID=" + recurringOrder.RecurringOrderID
                         + " items=" + (recurringOrder.Items == null ? 0 : recurringOrder.Items.Count));
@@ -554,7 +554,7 @@ namespace TrackerSQL.Repositories
                 if (disableAfterUntil)
                 {
                     DisableRecurringOrder(summary.RecurringOrderID);
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                         $"RecurringOrderID={summary.RecurringOrderID} disabled — next cycle past until {until:yyyy-MM-dd} ({summary.CompanyName})");
                 }
 

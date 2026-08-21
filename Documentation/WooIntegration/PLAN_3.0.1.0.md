@@ -127,7 +127,8 @@ flowchart TB
    - `ItemID` → Items PK; `WooProductId`, `WooVariationId`, `MapType`, `SkuPattern`, `QtyFactor`, `PackagingID`, `DisableScope`, sync metadata.  
    - Optional slim **`WooItemInfoTbl`** only if we need item-level Woo cache without touching `ItemsTbl`.
 
-6. **`WooSkuWildcardRulesTbl`** — pattern → qty factor + packaging.
+6. **`WooAttributeMapTbl`** — Woo variation attribute name/option → Tracker qty factor + packaging (replaces SKU wildcards).
+7. **`WooPackagingServiceTypeTbl`** — optional companion filter: packaging allowed per ItemServiceType (empty = all).
 
 7. **`WooOrderInfoTbl`** (companion to `OrdersTbl`)  
    - PK/FK `OrderID`; `WooOrderId` (unique), `WooOrderNumber`, `WooStatus`, `PaymentMethod`, `PaymentStatus` / `PaymentPaid`, `TrackingNumber`, `LastSyncedUtc`, snapshot fields as needed.  

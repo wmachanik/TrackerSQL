@@ -37,17 +37,52 @@ namespace TrackerSQL.Tools
             {
                 BindStaticLabels();
                 int section = 0;
-                TryReadSectionCookie(out section);
+                bool startWizard = false;
+                if (!TryReadSectionQuery(out section, out startWizard))
+                    TryReadSectionCookie(out section);
+
                 ShowSection(section);
                 dvSystemData.DataBind();
                 RefreshWooHome();
-                // Wizard resume only when Woo section is active (or cookie forces Woo).
-                TryResumeWizardFromCookie();
+                if (startWizard && section == 1 && !_wooManager.GetPreferencesHeader().WooCommerceEnabled)
+                    StartWizardAtStep(0, announceResume: false);
+                else
+                    TryResumeWizardFromCookie();
             }
             else
             {
                 ApplyNavHighlight(GetSection());
             }
+        }
+
+        /// <summary>Supports ?section=woo|1 and &amp;wizard=1 from Mapping / menu deep-links.</summary>
+        private bool TryReadSectionQuery(out int section, out bool startWizard)
+        {
+            section = 0;
+            startWizard = false;
+            string raw = Request.QueryString["section"];
+            string wiz = Request.QueryString["wizard"];
+            if (string.IsNullOrWhiteSpace(raw) && string.IsNullOrWhiteSpace(wiz))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                if (string.Equals(raw, "woo", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(raw, "woocommerce", StringComparison.OrdinalIgnoreCase)
+                    || raw == "1")
+                    section = 1;
+                else if (raw == "0" || string.Equals(raw, "general", StringComparison.OrdinalIgnoreCase))
+                    section = 0;
+                else if (!int.TryParse(raw, out section) || section < 0 || section > 1)
+                    section = 0;
+            }
+
+            startWizard = wiz == "1"
+                || string.Equals(wiz, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(wiz, "yes", StringComparison.OrdinalIgnoreCase);
+            if (startWizard)
+                section = 1;
+            return true;
         }
 
         protected void Page_PreRender(object sender, EventArgs e)

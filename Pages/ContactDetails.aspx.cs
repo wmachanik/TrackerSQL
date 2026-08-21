@@ -5,6 +5,7 @@ using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
+using TrackerSQL.Managers;
 using TrackerSQL.Classes; // for TimeZoneUtils, AppLogger
 
 namespace TrackerSQL.Pages
@@ -1292,8 +1293,60 @@ namespace TrackerSQL.Pages
 
         protected void btnRecalcAverage_Click(object sender, EventArgs e)
         {
-            SetStatus("Recalc average (SQL) pending migration.", null);
-            upnlContactDetails.Update();
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction("Recalc Ave", "No contact selected.", true);
+                    return;
+                }
+
+                var usage = new ContactsUsageRepository().GetByContactId(contactId);
+                if (usage == null)
+                {
+                    NotifyForceAction(
+                        "Recalc Ave",
+                        "No prediction record for this contact — cannot recalculate.",
+                        true);
+                    return;
+                }
+
+                bool ok = new PredictionManager().CalcAndSaveNextRequiredDates(contactId);
+                if (!ok)
+                {
+                    NotifyForceAction(
+                        "Recalc Ave",
+                        "Failed to recalculate averages / next dates for contact " + contactId + ".",
+                        true);
+                    return;
+                }
+
+                RefreshPredictionAfterForce(contactId);
+
+                usage = new ContactsUsageRepository().GetByContactId(contactId);
+                string name = string.IsNullOrWhiteSpace(CompanyNameTextBox.Text)
+                    ? ("Contact " + contactId)
+                    : CompanyNameTextBox.Text.Trim();
+                string next = usage?.NextCoffeeBy.HasValue == true
+                    ? usage.NextCoffeeBy.Value.ToString("d")
+                    : "(none)";
+                string daily = usage?.DailyConsumption.HasValue == true
+                    ? usage.DailyConsumption.Value.ToString("0.####")
+                    : "(n/a)";
+                string msg = name + " averages recalculated. Daily use=" + daily
+                    + "; next coffee=" + next + ".";
+
+                LogContactAudit(
+                    "Recalc Ave",
+                    $"daily={daily}; nextCoffee={usage?.NextCoffeeBy:yyyy-MM-dd}",
+                    contactIdOverride: contactId);
+                NotifyForceAction("Recalc Ave", msg, false);
+            }
+            catch (Exception ex)
+            {
+                LogContactAudit("Recalc Ave failed", ex.Message);
+                NotifyForceAction("Recalc Ave", "Error: " + ex.Message, true);
+            }
         }
         protected void btnCancel_Click(object sender, ImageClickEventArgs e)
         {

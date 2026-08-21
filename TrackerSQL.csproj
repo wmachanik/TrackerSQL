@@ -425,6 +425,7 @@
     <Compile Include="Repositories\ContactTrackedServiceItemsRepository.cs" />
     <Compile Include="Repositories\ContactTypesRepository.cs" />
     <Compile Include="Repositories\ContactUsageLinesRepository.cs" />
+    <Compile Include="Repositories\TrackedServiceItemRepository.cs" />
     <Compile Include="Repositories\DbMapper.cs" />
     <Compile Include="Repositories\DeliveryRepository.cs" />
     <Compile Include="Repositories\EquipConditionsRepository.cs" />
@@ -479,6 +480,7 @@
     <Compile Include="Managers\OrderDetailManager .cs" />
     <Compile Include="Managers\OrderDoneDataSource.cs" />
     <Compile Include="Managers\OrderDoneManager.cs" />
+    <Compile Include="Managers\PredictionManager.cs" />
     <Compile Include="Managers\OrderManager.cs" />
     <Compile Include="Managers\OrderDetailDataSource.cs" />
     <Compile Include="Managers\OrderEntryDataSource.cs" />

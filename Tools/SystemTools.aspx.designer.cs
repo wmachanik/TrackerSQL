@@ -23,6 +23,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnLogViewer;
         protected global::System.Web.UI.WebControls.Button btnEmailDiagnostics;
         protected global::System.Web.UI.WebControls.Button btnSetLastOrderDate;
+        protected global::System.Web.UI.WebControls.CheckBox chkRecalcPredictionsStaleOnly;
+        protected global::System.Web.UI.WebControls.Button btnRecalcPredictions;
         protected global::System.Web.UI.WebControls.Button btnMessagesEditor;
         protected global::System.Web.UI.WebControls.Button btnDatabaseBackup;
         protected global::System.Web.UI.WebControls.Button btnSqlConnectionTest;

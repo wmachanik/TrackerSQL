@@ -431,12 +431,19 @@ namespace TrackerSQL.Managers
         private void UpdatePredictions(int contactId, int lastCupCount)
         {
             // LastCupCount is already written via UpdateLastCupCount in CompleteOrderInternal.
-            // Do NOT call RepositoryBase.Update here — it binds parameters as DbType.Object (sql_variant)
-            // and SQL Server rejects implicit conversion to int/date columns.
+            // Recalculate NextCoffeeBy / service dates from latest usage (legacy UpdatePredictions).
             if (contactId <= 0 || lastCupCount <= 0)
                 return;
 
-            _contactsUsageRepository.UpdateLastCupCount(contactId, lastCupCount);
+            try
+            {
+                new PredictionManager().UpdatePredictions(contactId, lastCupCount);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    $"OrderDone: UpdatePredictions failed for ContactID={contactId}: {ex.Message}");
+            }
         }
     }
 }

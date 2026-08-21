@@ -287,6 +287,92 @@ namespace TrackerSQL.Tools
             }
         }
 
+        protected void btnRecalcPredictions_Click(object sender, EventArgs e)
+        {
+            AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools: btnRecalcPredictions_Click started.");
+
+            try
+            {
+                bool staleOnly = chkRecalcPredictionsStaleOnly == null || chkRecalcPredictionsStaleOnly.Checked;
+                var results = new PredictionManager().RecalculateBulk(staleOnly)
+                    ?? new List<PredictionBulkRecalcResult>();
+
+                int changed = 0;
+                int unchanged = 0;
+                int failed = 0;
+                var changedNames = new List<string>();
+                foreach (var row in results)
+                {
+                    if (row.Changed)
+                    {
+                        changed++;
+                        if (!string.IsNullOrWhiteSpace(row.CompanyName))
+                            changedNames.Add(row.CompanyName.Trim());
+                        else
+                            changedNames.Add("Contact " + row.ContactID);
+                    }
+                    else if (string.Equals(row.Result, "Unchanged", StringComparison.OrdinalIgnoreCase))
+                    {
+                        unchanged++;
+                    }
+                    else
+                    {
+                        failed++;
+                    }
+                }
+
+                string scope = staleOnly ? "stale prediction contacts" : "all enabled prediction contacts";
+                ResultsTitleLabel.Text = results.Count == 0
+                    ? "Recalc Prediction Averages: no " + scope + " found."
+                    : "Recalc Prediction Averages (" + scope + "): " + results.Count
+                        + " processed — " + changed + " changed, " + unchanged + " unchanged"
+                        + (failed > 0 ? ", " + failed + " failed" : string.Empty) + ".";
+
+                // Grid: who changed first (already sorted), with before/after next coffee + daily.
+                gvResults.DataSource = results;
+                gvResults.DataBind();
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: results.Count > 0);
+
+                string whoChanged;
+                if (changedNames.Count == 0)
+                {
+                    whoChanged = "No next-date / average values changed.";
+                }
+                else if (changedNames.Count <= 25)
+                {
+                    whoChanged = "Changed: " + string.Join("; ", changedNames) + ".";
+                }
+                else
+                {
+                    whoChanged = "Changed (" + changedNames.Count + "): "
+                        + string.Join("; ", changedNames.GetRange(0, 25))
+                        + "; … and " + (changedNames.Count - 25) + " more (see grid).";
+                }
+
+                SetStatus(
+                    results.Count > 0
+                        ? whoChanged
+                        : "No matching prediction contacts to recalculate.",
+                    isError: failed > 0 ? true : (changed > 0 ? false : (bool?)null));
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: RecalcPredictions staleOnly=" + staleOnly
+                    + " count=" + results.Count + " changed=" + changed
+                    + " unchanged=" + unchanged + " failed=" + failed
+                    + (changedNames.Count > 0 ? " names=" + string.Join(", ", changedNames) : string.Empty));
+                upnlSystemToolsButtons.Update();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: RecalcPredictions error: " + ex.Message);
+                ResultsTitleLabel.Text = "Recalc Prediction Averages: Error";
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ex.Message, isError: true);
+                upnlSystemToolsButtons.Update();
+            }
+        }
+
         protected void btnDisableInactiveClients_Click(object sender, EventArgs e)
         {
             try

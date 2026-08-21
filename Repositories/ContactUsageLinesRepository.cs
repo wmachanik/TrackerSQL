@@ -73,5 +73,66 @@ namespace TrackerSQL.Repositories
 
             return null;
         }
+
+        /// <summary>Earliest usage date for the contact (install / first delivery proxy).</summary>
+        public DateTime GetInstallDate(int contactId)
+        {
+            const string sql = @"
+                SELECT MIN(UsageDate) AS MinDate
+                FROM ContactsItemSvcSummaryTbl
+                WHERE ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read() && rdr["MinDate"] != DBNull.Value)
+                    return Convert.ToDateTime(rdr["MinDate"]).Date;
+            }
+
+            return DateTime.MinValue;
+        }
+
+        /// <summary>
+        /// Latest usage lines for averaging / holiday extension (most recent first).
+        /// Pass serviceTypeId 0 for all service types.
+        /// </summary>
+        public List<ContactUsageLine> GetLast10UsageLines(int contactId, int serviceTypeId = 0)
+        {
+            string sql = $@"
+                SELECT TOP 10 {CoreColumns}
+                FROM {TableName}
+                WHERE ContactID = @ContactID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+
+            if (serviceTypeId > 0)
+            {
+                sql += " AND ItemServiceTypeID = @ItemServiceTypeID";
+                parameters.Add(new DBParameter
+                {
+                    ParamName = "@ItemServiceTypeID",
+                    DataValue = serviceTypeId,
+                    DataDbType = DbType.Int32
+                });
+            }
+
+            sql += " ORDER BY UsageDate DESC";
+
+            var list = new List<ContactUsageLine>();
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                    list.Add(DbMapper.Map<ContactUsageLine>(rdr));
+            }
+
+            return list;
+        }
     }
 }

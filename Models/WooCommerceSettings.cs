@@ -29,6 +29,20 @@ namespace TrackerSQL.Models
         public bool TrackingNumberRequired { get; set; } = true;
         public string DispatchedWooStatus { get; set; } = "processing";
         public bool AutoCompleteOnWooCompleted { get; set; }
+        /// <summary>When postcode is not in any configured range (order import).</summary>
+        public int? DefaultImportAreaID { get; set; }
+        /// <summary>Include province/state in semicolon billing address on import.</summary>
+        public bool ImportAddressIncludeProvince { get; set; }
+        /// <summary>Include country in semicolon billing address on import.</summary>
+        public bool ImportAddressIncludeCountry { get; set; }
+        /// <summary>Replace +27 with 0 on imported phone numbers.</summary>
+        public bool ImportPhoneReplacePlus27 { get; set; } = true;
+        /// <summary>Format SA phones as aaa bbb-cccc.</summary>
+        public bool ImportPhoneFormatSa { get; set; } = true;
+        /// <summary>
+        /// Tracker ItemsTbl.ItemID for the Notes line added when Woo SKUs are written to order notes.
+        /// </summary>
+        public int? ImportNotesItemID { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

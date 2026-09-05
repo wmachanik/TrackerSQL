@@ -21,6 +21,10 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.TextBox tbxStock;
         protected global::System.Web.UI.WebControls.RadioButtonList rbtnSendConfirm;
         protected global::System.Web.UI.WebControls.TextBox tbxCount;
+        protected global::System.Web.UI.WebControls.Panel pnlTracking;
+        protected global::System.Web.UI.WebControls.Label lblTracking;
+        protected global::System.Web.UI.WebControls.TextBox tbxTrackingNumber;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvTracking;
         protected global::System.Web.UI.WebControls.Button btnDone;
         protected global::System.Web.UI.WebControls.ImageButton btnCancel;
         protected global::System.Web.UI.WebControls.Panel pnlCustomerDetailsUpdated;

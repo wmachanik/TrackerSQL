@@ -115,8 +115,8 @@
                                         CausesValidation="false" />
                                 </span>
                                 <asp:HyperLink ID="hlAddDeliveryItem" runat="server"
-                                    ImageUrl="~/images/imgButtons/AddItem.gif"
-                                    ToolTip="New item(s) to deliver"
+                                    ImageUrl="~/images/imgButtons/Add-Order.png"
+                                    ToolTip="Add order"
                                     NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" />
                                 <span class="image-button" title="Return to home">
                                     <asp:ImageButton ID="btnBack" runat="server"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Go-live data pack for XMLtoSQL (shared hosting — no SSMS).
+  Source: 06-WooPackagingServiceTypeTbl.sql
+  Uses SET IDENTITY_INSERT for tables with identity PKs.
+  Run in order: SQLCommands-GoLive-00 … 09 via Tools → XMLtoSQL.
+-->
+<root>
+<command type="exec"><![CDATA[
+/* Packaging service-type rows — empty on local; no data to import. */
+SET NOCOUNT ON;
+]]></command>
+</root>

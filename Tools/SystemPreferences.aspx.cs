@@ -465,6 +465,8 @@ namespace TrackerSQL.Tools
         {
             var result = _wooManager.EnsureSchema();
             if (result.Succeeded)
+                WooCommerceSettingsManager.InvalidateSchemaCache();
+            if (result.Succeeded)
                 SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.SchemaOk, result.CommandsRun), false);
             else
                 SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.SchemaFailed, result.Message), true);

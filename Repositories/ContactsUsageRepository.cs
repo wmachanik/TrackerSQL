@@ -93,6 +93,49 @@ namespace TrackerSQL.Repositories
             return ExecNonQuery(insertSql, insertParameters) > 0;
         }
 
+        /// <summary>
+        /// Home-page total: sum of each contact's last cup reading (legacy ClientUsageTbl SUM).
+        /// </summary>
+        public long GetSumOfLastCupCounts()
+        {
+            const string sql = @"
+SELECT ISNULL(SUM(CAST(ISNULL(LastCupCount, 0) AS BIGINT)), 0)
+FROM ContactsItemsPredictedTbl";
+            return ExecuteScalar<long>(sql);
+        }
+
+        /// <summary>
+        /// Live cup-count breakdown for home page / System Tools recalc.
+        /// </summary>
+        public CupCountTotalSummary GetCupCountSummary()
+        {
+            const string sql = @"
+SELECT
+    ISNULL(SUM(CAST(ISNULL(p.LastCupCount, 0) AS BIGINT)), 0) AS TotalCups,
+    COUNT(*) AS PredictedRows,
+    SUM(CASE WHEN ISNULL(p.LastCupCount, 0) > 0 THEN 1 ELSE 0 END) AS ContactsWithCount,
+    ISNULL(SUM(CASE WHEN ISNULL(c.Enabled, 1) = 1 THEN CAST(ISNULL(p.LastCupCount, 0) AS BIGINT) ELSE 0 END), 0) AS EnabledTotalCups,
+    SUM(CASE WHEN ISNULL(c.Enabled, 1) = 1 AND ISNULL(p.LastCupCount, 0) > 0 THEN 1 ELSE 0 END) AS EnabledContactsWithCount
+FROM ContactsItemsPredictedTbl p
+LEFT JOIN ContactsTbl c ON c.ContactID = p.ContactID";
+
+            var summary = new CupCountTotalSummary();
+            using (var rdr = ExecReader(sql))
+            {
+                if (rdr != null && rdr.Read())
+                {
+                    summary.TotalCups = rdr["TotalCups"] == DBNull.Value ? 0 : Convert.ToInt64(rdr["TotalCups"]);
+                    summary.PredictedRows = rdr["PredictedRows"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["PredictedRows"]);
+                    summary.ContactsWithCount = rdr["ContactsWithCount"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ContactsWithCount"]);
+                    summary.EnabledTotalCups = rdr["EnabledTotalCups"] == DBNull.Value ? 0 : Convert.ToInt64(rdr["EnabledTotalCups"]);
+                    summary.EnabledContactsWithCount = rdr["EnabledContactsWithCount"] == DBNull.Value
+                        ? 0
+                        : Convert.ToInt32(rdr["EnabledContactsWithCount"]);
+                }
+            }
+            return summary;
+        }
+
         public bool ForceNextCoffeeDate(int contactId, DateTime nextDate)
         {
             const string sql = @"
@@ -224,5 +267,14 @@ namespace TrackerSQL.Repositories
         public double? PreviousDailyConsumption { get; set; }
         public int LastCupCount { get; set; }
         public DateTime? LastCoffeeDate { get; set; }
+    }
+
+    public class CupCountTotalSummary
+    {
+        public long TotalCups { get; set; }
+        public int PredictedRows { get; set; }
+        public int ContactsWithCount { get; set; }
+        public long EnabledTotalCups { get; set; }
+        public int EnabledContactsWithCount { get; set; }
     }
 }

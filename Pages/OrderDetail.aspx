@@ -168,6 +168,13 @@
                                 </span>
                             </td>
                         </tr>
+                        <tr id="trWaybill" runat="server" visible="false">
+                            <td>Waybill</td>
+                            <td>
+                                <asp:Label ID="lblDispatchStatus" runat="server" CssClass="status-flag" style="margin-right: 8px;" />
+                                <asp:Label ID="lblWaybill" runat="server" Font-Bold="true" />
+                            </td>
+                        </tr>
                         <tr>
                             <td>Notes:</td>
                             <td>

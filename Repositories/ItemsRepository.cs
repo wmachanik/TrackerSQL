@@ -68,12 +68,12 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@ItemEnabled", DataValue = item.ItemEnabled ?? true, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@ItemsCharacteritics", DataValue = item.ItemsCharacteritics ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ItemDetail", DataValue = item.ItemDetail ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ServiceTypeId", DataValue = item.ItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@ReplacementID", DataValue = item.ReplacementItemID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ServiceTypeId", DataValue = OptionalFkValue(item.ItemServiceTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ReplacementID", DataValue = OptionalFkValue(item.ReplacementItemID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemShortName", DataValue = item.ItemShortName ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@SortOrder", DataValue = item.SortOrder ?? 1, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@UnitsPerQty", DataValue = item.UnitsPerQty ?? 1.0, DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@UoMID", DataValue = item.ItemUnitID ?? (object)DBNull.Value, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@UoMID", DataValue = OptionalFkValue(item.ItemUnitID), DataDbType = DbType.Int32 }
             };
 
             using (var db = new TrackerSQLDb())
@@ -97,12 +97,12 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@ItemEnabled", DataValue = item.ItemEnabled ?? true, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@ItemsCharacteritics", DataValue = item.ItemsCharacteritics ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ItemDetail", DataValue = item.ItemDetail ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ServiceTypeId", DataValue = item.ItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@Replacement", DataValue = item.ReplacementItemID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ServiceTypeId", DataValue = OptionalFkValue(item.ItemServiceTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@Replacement", DataValue = OptionalFkValue(item.ReplacementItemID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemShortName", DataValue = item.ItemShortName ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@SortOrder", DataValue = item.SortOrder ?? 1, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@UnitsPerQty", DataValue = item.UnitsPerQty ?? 1.0, DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@UoMID", DataValue = item.ItemUnitID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@UoMID", DataValue = OptionalFkValue(item.ItemUnitID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemID", DataValue = item.ItemID, DataDbType = DbType.Int32 }
             };
 
@@ -168,11 +168,12 @@ namespace TrackerSQL.Repositories
         {
             if (string.IsNullOrWhiteSpace(sku))
                 return null;
+            // Case-insensitive + trim so Woo/Tracker casing or trailing spaces still match.
             const string sql = @"
 SELECT TOP 1 ItemID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail,
        ItemServiceTypeID, ReplacementItemID, ItemUnitID, BasePrice, ItemShortName, SortOrder, UnitsPerQty
 FROM ItemsTbl
-WHERE SKU = @SKU";
+WHERE LTRIM(RTRIM(SKU)) = LTRIM(RTRIM(@SKU)) COLLATE Latin1_General_CI_AI";
             var parameters = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@SKU", DataValue = sku.Trim(), DataDbType = DbType.String }
@@ -204,17 +205,50 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 new DBParameter { ParamName = "@ItemEnabled", DataValue = item.ItemEnabled ?? true, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@ItemsCharacteritics", DataValue = item.ItemsCharacteritics ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ItemDetail", DataValue = item.ItemDetail ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ServiceTypeId", DataValue = item.ItemServiceTypeID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@ReplacementID", DataValue = item.ReplacementItemID ?? (object)DBNull.Value, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ServiceTypeId", DataValue = OptionalFkValue(item.ItemServiceTypeID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ReplacementID", DataValue = OptionalFkValue(item.ReplacementItemID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ItemShortName", DataValue = item.ItemShortName ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@SortOrder", DataValue = item.SortOrder ?? 1, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@UnitsPerQty", DataValue = item.UnitsPerQty ?? 1.0, DataDbType = DbType.Double },
-                new DBParameter { ParamName = "@UoMID", DataValue = item.ItemUnitID ?? (object)DBNull.Value, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@UoMID", DataValue = OptionalFkValue(item.ItemUnitID), DataDbType = DbType.Int32 }
             };
 
             using (var db = new TrackerSQLDb())
             {
                 return db.ExecuteScalar<int>(sql, parameters);
+            }
+        }
+
+        /// <summary>
+        /// Woo mappings only change Tracker SKU and sort order — do not rewrite ReplacementItemID
+        /// (Access often stored 0 for "none", which SQL Server FK rejects).
+        /// </summary>
+        public int UpdateSkuAndSort(int itemId, string sku, int sortOrder)
+        {
+            const string sql = "UPDATE ItemsTbl SET SKU = @SKU, SortOrder = @SortOrder WHERE ItemID = @ItemID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@SKU", DataValue = sku ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@SortOrder", DataValue = sortOrder, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 }
+            };
+            using (var db = new TrackerSQLDb())
+            {
+                return db.ExecuteNonQuery(sql, parameters);
+            }
+        }
+
+        public int SetEnabled(int itemId, bool enabled)
+        {
+            const string sql = "UPDATE ItemsTbl SET ItemEnabled = @Enabled WHERE ItemID = @ItemID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@Enabled", DataValue = enabled, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@ItemID", DataValue = itemId, DataDbType = DbType.Int32 }
+            };
+            using (var db = new TrackerSQLDb())
+            {
+                return db.ExecuteNonQuery(sql, parameters);
             }
         }
 
@@ -231,6 +265,79 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
         {
             var item = GetById(itemId);
             return item?.SortOrder ?? 0;
+        }
+
+        /// <summary>First enabled item whose description is an exact match (e.g. Notes).</summary>
+        public Item FindFirstByDescription(string itemDesc)
+        {
+            if (string.IsNullOrWhiteSpace(itemDesc))
+                return null;
+
+            const string sql = @"
+SELECT TOP 1 ItemID, SKU, ItemDesc, ItemEnabled, ItemsCharacteritics, ItemDetail,
+       ItemServiceTypeID, ReplacementItemID, ItemUnitID, BasePrice, ItemShortName, SortOrder, UnitsPerQty
+FROM ItemsTbl
+WHERE LTRIM(RTRIM(ItemDesc)) = LTRIM(RTRIM(@ItemDesc))
+ORDER BY CASE WHEN ItemEnabled = 1 THEN 0 ELSE 1 END, ItemID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ItemDesc", DataValue = itemDesc.Trim(), DataDbType = DbType.String }
+            };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read())
+                    return Map(rdr);
+            }
+            return null;
+        }
+
+        /// <summary>Dropdown candidates for Woo import Notes item (sort-order notes, name match, plus current id).</summary>
+        public List<OrderItemLookup> GetNotesItemChoices(int? includeItemId)
+        {
+            var list = new List<OrderItemLookup>();
+            const string sql = @"
+SELECT ItemID,
+       CASE WHEN ItemEnabled = 1 THEN ItemDesc ELSE '_' + ISNULL(ItemDesc, '') END AS ItemDesc
+FROM ItemsTbl
+WHERE ItemEnabled = 1
+  AND (
+        SortOrder = @NotesSortOrder
+     OR ItemDesc LIKE N'%Notes%'
+     OR (@IncludeItemID > 0 AND ItemID = @IncludeItemID)
+  )
+ORDER BY CASE WHEN LTRIM(RTRIM(ItemDesc)) = N'Notes' THEN 0 ELSE 1 END, SortOrder, ItemDesc";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter
+                {
+                    ParamName = "@NotesSortOrder",
+                    DataValue = SystemConstants.ItemConstants.NotesSortOrder,
+                    DataDbType = DbType.Int32
+                },
+                new DBParameter
+                {
+                    ParamName = "@IncludeItemID",
+                    DataValue = includeItemId.GetValueOrDefault(0),
+                    DataDbType = DbType.Int32
+                }
+            };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                {
+                    int id = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]);
+                    if (id <= 0 || list.Exists(x => x.ItemTypeID == id))
+                        continue;
+                    list.Add(new OrderItemLookup
+                    {
+                        ItemTypeID = id,
+                        ItemDesc = rdr["ItemDesc"]?.ToString() ?? string.Empty
+                    });
+                }
+            }
+            return list;
         }
 
         public string GetItemSku(int itemId)
@@ -434,14 +541,30 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 ItemEnabled = r["ItemEnabled"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["ItemEnabled"]),
                 ItemsCharacteritics = r["ItemsCharacteritics"] == DBNull.Value ? string.Empty : r["ItemsCharacteritics"].ToString(),
                 ItemDetail = r["ItemDetail"] == DBNull.Value ? string.Empty : r["ItemDetail"].ToString(),
-                ItemServiceTypeID = r["ItemServiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["ItemServiceTypeID"]),
-                ReplacementItemID = r["ReplacementItemID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["ReplacementItemID"]),
-                ItemUnitID = r["ItemUnitID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["ItemUnitID"]),
+                ItemServiceTypeID = OptionalFkFromReader(r["ItemServiceTypeID"]),
+                ReplacementItemID = OptionalFkFromReader(r["ReplacementItemID"]),
+                ItemUnitID = OptionalFkFromReader(r["ItemUnitID"]),
                 BasePrice = r["BasePrice"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["BasePrice"]),
                 ItemShortName = r["ItemShortName"] == DBNull.Value ? string.Empty : r["ItemShortName"].ToString(),
                 SortOrder = r["SortOrder"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["SortOrder"]),
                 UnitsPerQty = r["UnitsPerQty"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["UnitsPerQty"])
             };
+        }
+
+        /// <summary>Access used 0 for "no FK"; SQL Server requires NULL.</summary>
+        private static object OptionalFkValue(int? id)
+        {
+            if (!id.HasValue || id.Value <= 0)
+                return DBNull.Value;
+            return id.Value;
+        }
+
+        private static int? OptionalFkFromReader(object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return null;
+            int id = Convert.ToInt32(value);
+            return id <= 0 ? (int?)null : id;
         }
     }
 }

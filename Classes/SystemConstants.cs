@@ -94,6 +94,13 @@ namespace TrackerSQL.Classes
             public const string ParcelDispatchIDStr = "Prgo";
         }
 
+        /// <summary>Sales / agent defaults for new contacts (PeopleTbl abbreviation).</summary>
+        public static class PersonConstants
+        {
+            public const string DefaultSalesAgentAbbr = "Q";
+            public const string DefaultSalesAgentName = "Quaffee";
+        }
+
         // Service Type constants
         public static class ServiceTypeConstants
         {

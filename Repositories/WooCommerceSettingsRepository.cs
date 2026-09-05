@@ -1,4 +1,5 @@
 using System;
+using TrackerSQL.Classes;
 using TrackerSQL.Models;
 
 namespace TrackerSQL.Repositories
@@ -16,7 +17,10 @@ namespace TrackerSQL.Repositories
             "LastItemsSyncUtc, LastOrdersSyncUtc, LastOrdersSyncOrderNumber, LastContactsSyncUtc, " +
             "PushEnabledStateToWoo, DisableScopeDefault, PullStockQtyEnabled, CategoryFilterMode, " +
             "GuestCheckoutContactMode, DispatchDeliveryPersonIds, TrackingNumberRequired, " +
-            "DispatchedWooStatus, AutoCompleteOnWooCompleted, UpdatedAt, UpdatedBy";
+            "DispatchedWooStatus, AutoCompleteOnWooCompleted, DefaultImportAreaID, " +
+            "ImportAddressIncludeProvince, ImportAddressIncludeCountry, ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
+            "ImportNotesItemID, " +
+            "UpdatedAt, UpdatedBy";
 
         public WooCommerceSettings GetSettings()
         {
@@ -65,7 +69,8 @@ namespace TrackerSQL.Repositories
                 GuestCheckoutContactMode = "ZZName",
                 DispatchDeliveryPersonIds = "5,7",
                 TrackingNumberRequired = true,
-                DispatchedWooStatus = "processing"
+                DispatchedWooStatus = "processing",
+                ImportNotesItemID = SystemConstants.ItemConstants.NoteItemTimeID
             };
         }
     }

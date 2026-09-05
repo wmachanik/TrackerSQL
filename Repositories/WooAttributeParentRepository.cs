@@ -16,15 +16,22 @@ namespace TrackerSQL.Repositories
         {
             const string sql = @"
 SELECT * FROM WooAttributeParentTbl
-ORDER BY ResolvePriority, AttributeName, WooAttributeId";
+ORDER BY AttributeName, WooAttributeId";
             var list = new List<WooAttributeParent>();
             using (var db = CreateDb())
             using (var rdr = db.ExecuteReader(sql))
             {
                 while (rdr != null && rdr.Read())
-                    list.Add(DbMapper.Map<WooAttributeParent>(rdr));
+                {
+                    var row = MapParent(rdr);
+                    list.Add(row);
+                }
             }
-            return list;
+            return list
+                .OrderBy(p => p.DisplaySortRank)
+                .ThenBy(p => p.AttributeName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(p => p.WooAttributeId)
+                .ToList();
         }
 
         public List<WooAttributeParent> GetUsedForVariants()
@@ -41,7 +48,42 @@ ORDER BY ResolvePriority, AttributeName, WooAttributeId";
                 StringComparer.OrdinalIgnoreCase);
         }
 
-        public Dictionary<string, int> GetPriorityByAttributeName()
+        public HashSet<string> GetLineAttributeNames()
+        {
+            return new HashSet<string>(
+                GetUsedForVariants()
+                    .Where(p => p.ContributesLine)
+                    .Select(p => (p.AttributeName ?? string.Empty).Trim())
+                    .Where(n => n.Length > 0),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        public HashSet<string> GetNotesAttributeNames()
+        {
+            return new HashSet<string>(
+                GetUsedForVariants()
+                    .Where(p => p.ContributesNote)
+                    .Select(p => (p.AttributeName ?? string.Empty).Trim())
+                    .Where(n => n.Length > 0),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Attribute name → ranks for stamping onto option maps at resolve time.</summary>
+        public Dictionary<string, WooAttributeParent> GetUsedByAttributeName()
+        {
+            var dict = new Dictionary<string, WooAttributeParent>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in GetUsedForVariants())
+            {
+                string name = (p.AttributeName ?? string.Empty).Trim();
+                if (name.Length == 0 || dict.ContainsKey(name))
+                    continue;
+                dict[name] = p;
+            }
+            return dict;
+        }
+
+        /// <summary>Lower display sort first (for attribute label ordering).</summary>
+        public Dictionary<string, int> GetDisplaySortByAttributeName()
         {
             var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in GetAllOrdered())
@@ -50,7 +92,7 @@ ORDER BY ResolvePriority, AttributeName, WooAttributeId";
                 if (name.Length == 0)
                     continue;
                 if (!dict.ContainsKey(name))
-                    dict[name] = p.ResolvePriority;
+                    dict[name] = p.DisplaySortRank;
             }
             return dict;
         }
@@ -62,7 +104,13 @@ ORDER BY ResolvePriority, AttributeName, WooAttributeId";
             {
                 new DBParameter { ParamName = "@WooAttributeId", DataValue = wooAttributeId, DataDbType = DbType.Int64 }
             };
-            return ExecuteQuerySingle<WooAttributeParent>(sql, p);
+            using (var db = CreateDb())
+            using (var rdr = db.ExecuteReader(sql, p))
+            {
+                if (rdr != null && rdr.Read())
+                    return MapParent(rdr);
+            }
+            return null;
         }
 
         public void UpsertFromWoo(long wooAttributeId, string name, string slug, int termCount, bool defaultUseForVariants)
@@ -77,7 +125,9 @@ ORDER BY ResolvePriority, AttributeName, WooAttributeId";
                     Slug = slug,
                     UseForVariants = defaultUseForVariants,
                     TermCount = termCount < 0 ? 0 : termCount,
-                    ResolvePriority = 100
+                    QtyRank = 0,
+                    PackRank = 0,
+                    NoteRank = 0
                 });
                 return;
             }
@@ -88,17 +138,21 @@ ORDER BY ResolvePriority, AttributeName, WooAttributeId";
             Update(existing);
         }
 
-        public void UpdateSelection(int parentId, bool useForVariants, int resolvePriority)
+        public void UpdateSelection(int parentId, bool useForVariants, int qtyRank, int packRank, int noteRank)
         {
             const string sql = @"
 UPDATE WooAttributeParentTbl
 SET UseForVariants = @UseForVariants,
-    ResolvePriority = @ResolvePriority
+    QtyRank = @QtyRank,
+    PackRank = @PackRank,
+    NoteRank = @NoteRank
 WHERE ParentID = @ParentID";
             var p = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@UseForVariants", DataValue = useForVariants, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@ResolvePriority", DataValue = resolvePriority, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@QtyRank", DataValue = WooAttributeParent.NormalizeRank(qtyRank), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PackRank", DataValue = WooAttributeParent.NormalizeRank(packRank), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@NoteRank", DataValue = WooAttributeParent.NormalizeRank(noteRank), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ParentID", DataValue = parentId, DataDbType = DbType.Int32 }
             };
             ExecNonQuery(sql, p);
@@ -109,9 +163,9 @@ WHERE ParentID = @ParentID";
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             const string sql = @"
 INSERT INTO WooAttributeParentTbl
-(WooAttributeId, AttributeName, Slug, UseForVariants, TermCount, ResolvePriority)
+(WooAttributeId, AttributeName, Slug, UseForVariants, TermCount, QtyRank, PackRank, NoteRank)
 VALUES
-(@WooAttributeId, @AttributeName, @Slug, @UseForVariants, @TermCount, @ResolvePriority);
+(@WooAttributeId, @AttributeName, @Slug, @UseForVariants, @TermCount, @QtyRank, @PackRank, @NoteRank);
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
             return ExecuteScalar<int>(sql, BuildParams(entity, includeKey: false));
         }
@@ -126,9 +180,23 @@ UPDATE WooAttributeParentTbl SET
  Slug = @Slug,
  UseForVariants = @UseForVariants,
  TermCount = @TermCount,
- ResolvePriority = @ResolvePriority
+ QtyRank = @QtyRank,
+ PackRank = @PackRank,
+ NoteRank = @NoteRank
 WHERE ParentID = @ParentID";
             return ExecNonQuery(sql, BuildParams(entity, includeKey: true));
+        }
+
+        private static WooAttributeParent MapParent(IDataReader rdr)
+        {
+            var row = DbMapper.Map<WooAttributeParent>(rdr);
+            if (row == null)
+                return null;
+            row.QtyRank = WooAttributeParent.NormalizeRank(row.QtyRank);
+            row.PackRank = WooAttributeParent.NormalizeRank(row.PackRank);
+            row.NoteRank = WooAttributeParent.NormalizeRank(row.NoteRank);
+            row.ApplyLegacyChannelIfNeeded();
+            return row;
         }
 
         private static List<DBParameter> BuildParams(WooAttributeParent e, bool includeKey)
@@ -140,7 +208,9 @@ WHERE ParentID = @ParentID";
                 new DBParameter { ParamName = "@Slug", DataValue = (object)e.Slug ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@UseForVariants", DataValue = e.UseForVariants, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@TermCount", DataValue = e.TermCount < 0 ? 0 : e.TermCount, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@ResolvePriority", DataValue = e.ResolvePriority <= 0 ? 100 : e.ResolvePriority, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@QtyRank", DataValue = WooAttributeParent.NormalizeRank(e.QtyRank), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PackRank", DataValue = WooAttributeParent.NormalizeRank(e.PackRank), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@NoteRank", DataValue = WooAttributeParent.NormalizeRank(e.NoteRank), DataDbType = DbType.Int32 }
             };
             if (includeKey)
                 parameters.Add(new DBParameter { ParamName = "@ParentID", DataValue = e.ParentID, DataDbType = DbType.Int32 });

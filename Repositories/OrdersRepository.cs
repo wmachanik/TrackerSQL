@@ -666,6 +666,7 @@ namespace TrackerSQL.Repositories
 
         public int InsertOrderHeader(OrderTblData orderData)
         {
+            EnsureNotesColumnWide();
             const string sql = @"
                 INSERT INTO OrdersTbl
                 (ContactID, OrderDate, PrepDate, ToBeDeliveredByID, RequiredByDate, Confirmed, Done, Packed,
@@ -691,6 +692,63 @@ namespace TrackerSQL.Repositories
             };
 
             return ExecuteScalar<int>(sql, parameters);
+        }
+
+        private static readonly object NotesWidenLock = new object();
+        private static bool _notesColumnWide;
+
+        /// <summary>
+        /// Woo ZZName notes exceed NVARCHAR(255). Notes is INCLUDE'd on
+        /// IX_OrdersTbl_ContactID_RequiredByDate, so that index must be rebuilt without Notes.
+        /// </summary>
+        private static void EnsureNotesColumnWide()
+        {
+            if (_notesColumnWide)
+                return;
+            lock (NotesWidenLock)
+            {
+                if (_notesColumnWide)
+                    return;
+                try
+                {
+                    using (var db = new TrackerSQLDb())
+                    {
+                        int maxLen = db.ExecuteScalar<int>(@"
+SELECT ISNULL((
+    SELECT c.max_length
+    FROM sys.columns c
+    WHERE c.object_id = OBJECT_ID(N'dbo.OrdersTbl') AND c.name = N'Notes'
+), -1)");
+                        if (maxLen <= 0)
+                        {
+                            _notesColumnWide = true;
+                            return;
+                        }
+
+                        db.ExecuteNonQuery(@"
+IF EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl')
+      AND name = N'IX_OrdersTbl_ContactID_RequiredByDate')
+    DROP INDEX IX_OrdersTbl_ContactID_RequiredByDate ON dbo.OrdersTbl;
+
+ALTER TABLE dbo.OrdersTbl ALTER COLUMN Notes NVARCHAR(MAX) NULL;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl')
+      AND name = N'IX_OrdersTbl_ContactID_RequiredByDate')
+    CREATE NONCLUSTERED INDEX IX_OrdersTbl_ContactID_RequiredByDate
+    ON dbo.OrdersTbl (ContactID, RequiredByDate)
+    INCLUDE (Done, PrepDate, OrderID);");
+                    }
+                    _notesColumnWide = true;
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog("woo", "EnsureNotesColumnWide failed: " + ex.Message);
+                }
+            }
         }
 
         public int InsertOrderLine(int orderId, int itemId, double quantityOrdered, int prepTypeId, int packagingId)
@@ -814,7 +872,34 @@ namespace TrackerSQL.Repositories
         public bool DeleteOrderById(long orderId)
         {
             DeleteLinesForOrder((int)orderId);
+            try
+            {
+                new WooOrderInfoRepository().DeleteByOrderId((int)orderId);
+            }
+            catch
+            {
+                // Companion table optional / schema not installed.
+            }
             return ExecNonQuery("DELETE FROM OrdersTbl WHERE OrderID = @OrderID", OrderIdParam(orderId)) >= 0;
+        }
+
+        /// <summary>Latest Tracker order whose PurchaseOrder equals the Woo order number.</summary>
+        public int? FindOrderIdByPurchaseOrder(string purchaseOrder)
+        {
+            if (string.IsNullOrWhiteSpace(purchaseOrder))
+                return null;
+
+            const string sql = @"
+SELECT TOP 1 OrderID
+FROM OrdersTbl
+WHERE LTRIM(RTRIM(PurchaseOrder)) = LTRIM(RTRIM(@PurchaseOrder))
+ORDER BY OrderID DESC";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PurchaseOrder", DataValue = purchaseOrder.Trim(), DataDbType = DbType.String }
+            };
+            int id = ExecuteScalar<int>(sql, parameters);
+            return id > 0 ? id : (int?)null;
         }
 
         public bool UpdateOrderNotes(long orderId, string notes)
@@ -1269,7 +1354,10 @@ namespace TrackerSQL.Repositories
             if (contactId <= 0)
                 return list;
 
-            const string sql = @"
+            new OrderWaybillRepository().EnsureTable();
+            bool hasWaybill = new OrderWaybillRepository().TableExists();
+
+            string sql = @"
                 SELECT
                     o.OrderID,
                     o.OrderDate,
@@ -1282,7 +1370,10 @@ namespace TrackerSQL.Repositories
                     ISNULL(firstLine.ItemID, 0) AS FirstItemID,
                     ISNULL(i.ItemDesc, '') AS FirstItemDesc,
                     ISNULL(firstLine.QtyOrdered, 0) AS FirstQty,
-                    ISNULL(lineCount.Cnt, 0) AS LineCount
+                    ISNULL(lineCount.Cnt, 0) AS LineCount,
+                    " + (hasWaybill
+                        ? "wb.WaybillNumber, wb.DispatchStatus, wb.DispatchedAt"
+                        : "CAST(NULL AS NVARCHAR(100)) AS WaybillNumber, CAST(NULL AS NVARCHAR(30)) AS DispatchStatus, CAST(NULL AS DATETIME2) AS DispatchedAt") + @"
                 FROM OrdersTbl o
                 OUTER APPLY (
                     SELECT TOP 1 ol.ItemID, ol.QtyOrdered
@@ -1296,6 +1387,7 @@ namespace TrackerSQL.Repositories
                     FROM OrderLinesTbl ol2
                     WHERE ol2.OrderID = o.OrderID
                 ) lineCount
+                " + (hasWaybill ? "LEFT JOIN OrderWaybillTbl wb ON wb.OrderID = o.OrderID" : string.Empty) + @"
                 WHERE o.ContactID = @ContactID
                 ORDER BY
                     CASE WHEN o.RequiredByDate IS NULL THEN 1 ELSE 0 END,
@@ -1332,12 +1424,71 @@ namespace TrackerSQL.Repositories
                             ? string.Empty
                             : rdr["FirstItemDesc"].ToString(),
                         FirstQty = rdr["FirstQty"] == DBNull.Value ? 0 : Convert.ToDouble(rdr["FirstQty"]),
-                        LineCount = rdr["LineCount"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["LineCount"])
+                        LineCount = rdr["LineCount"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["LineCount"]),
+                        WaybillNumber = rdr["WaybillNumber"] == DBNull.Value ? null : rdr["WaybillNumber"].ToString(),
+                        DispatchStatus = rdr["DispatchStatus"] == DBNull.Value ? null : rdr["DispatchStatus"].ToString(),
+                        DispatchedAt = rdr["DispatchedAt"] == DBNull.Value
+                            ? (DateTime?)null
+                            : Convert.ToDateTime(rdr["DispatchedAt"])
                     });
                 }
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// Most recent packaging used on a prior order line for this contact where the item shares SortOrder (sort group).
+        /// </summary>
+        public PriorOrderPackagingHint GetRecentPackagingForContactSortGroup(long contactId, int sortOrder, int excludeOrderId = 0)
+        {
+            if (contactId <= 0 || sortOrder <= 0)
+                return null;
+
+            const string sql = @"
+SELECT TOP 1
+    ol.PackagingID,
+    o.OrderID,
+    ol.ItemID,
+    i.SKU,
+    i.ItemDesc,
+    ISNULL(i.SortOrder, 0) AS SortOrder
+FROM OrdersTbl o
+INNER JOIN OrderLinesTbl ol ON o.OrderID = ol.OrderID
+INNER JOIN ItemsTbl i ON ol.ItemID = i.ItemID
+WHERE o.ContactID = @ContactID
+  AND ISNULL(ol.PackagingID, 0) > 0
+  AND ISNULL(i.SortOrder, 0) = @SortOrder
+  AND (@ExcludeOrderId <= 0 OR o.OrderID <> @ExcludeOrderId)
+ORDER BY o.OrderDate DESC, o.OrderID DESC, ol.OrderLineID DESC";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 },
+                new DBParameter { ParamName = "@SortOrder", DataValue = sortOrder, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ExcludeOrderId", DataValue = excludeOrderId, DataDbType = DbType.Int32 }
+            };
+
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, parameters))
+            {
+                if (rdr == null || !rdr.Read())
+                    return null;
+
+                int packagingId = rdr["PackagingID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["PackagingID"]);
+                if (packagingId <= 0)
+                    return null;
+
+                return new PriorOrderPackagingHint
+                {
+                    PackagingId = packagingId,
+                    SourceOrderId = rdr["OrderID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["OrderID"]),
+                    SourceItemId = rdr["ItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ItemID"]),
+                    SourceItemSku = rdr["SKU"] == DBNull.Value ? string.Empty : rdr["SKU"].ToString(),
+                    SourceItemDesc = rdr["ItemDesc"] == DBNull.Value ? string.Empty : rdr["ItemDesc"].ToString(),
+                    SortOrder = rdr["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["SortOrder"])
+                };
+            }
         }
 
         private T ExecuteScalar<T>(string sql, List<DBParameter> parameters = null)

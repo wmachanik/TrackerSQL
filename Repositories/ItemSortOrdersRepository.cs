@@ -86,6 +86,17 @@ WHERE SortOrderID = @SortOrderID";
 
         public void FillDropDown(ListControl ddl, int? selectedValue, bool includeBlank)
         {
+            FillDropDown(ddl, selectedValue, includeBlank, compactDisplay: false);
+        }
+
+        /// <summary>Sort order dropdown showing number only; full label in option title.</summary>
+        public void FillDropDownCompact(ListControl ddl, int? selectedValue)
+        {
+            FillDropDown(ddl, selectedValue, includeBlank: false, compactDisplay: true);
+        }
+
+        public void FillDropDown(ListControl ddl, int? selectedValue, bool includeBlank, bool compactDisplay)
+        {
             if (ddl == null)
                 return;
             ddl.Items.Clear();
@@ -107,10 +118,17 @@ WHERE SortOrderID = @SortOrderID";
                 bool enabled = row.IsEnabled ?? true;
                 if (!enabled && (!selectedValue.HasValue || selectedValue.Value != row.SortValue))
                     continue;
-                string text = row.DisplayText;
+                string text = compactDisplay ? row.SortValue.ToString() : row.DisplayText;
                 if (!enabled)
                     text = "_" + text;
-                ddl.Items.Add(new ListItem(text, row.SortValue.ToString()));
+                var item = new ListItem(text, row.SortValue.ToString());
+                if (compactDisplay)
+                {
+                    string full = !enabled ? "_" + row.DisplayText : row.DisplayText;
+                    item.Attributes["data-compact"] = text;
+                    item.Attributes["data-full"] = full;
+                }
+                ddl.Items.Add(item);
             }
 
             if (includeBlank && (!selectedValue.HasValue || selectedValue.Value <= 0))
@@ -121,7 +139,16 @@ WHERE SortOrderID = @SortOrderID";
 
             string sel = (selectedValue.HasValue ? selectedValue.Value : 1).ToString();
             if (ddl.Items.FindByValue(sel) == null && selectedValue.HasValue)
-                ddl.Items.Add(new ListItem(sel + " - (unlisted)", sel));
+            {
+                string unlisted = sel + " - (unlisted)";
+                var item = new ListItem(compactDisplay ? sel : unlisted, sel);
+                if (compactDisplay)
+                {
+                    item.Attributes["data-compact"] = sel;
+                    item.Attributes["data-full"] = unlisted;
+                }
+                ddl.Items.Add(item);
+            }
             if (ddl.Items.FindByValue(sel) != null)
                 ddl.SelectedValue = sel;
             else if (ddl.Items.Count > 0)

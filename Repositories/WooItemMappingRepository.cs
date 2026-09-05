@@ -15,9 +15,24 @@ namespace TrackerSQL.Repositories
         {
             var list = new List<WooItemMapping>();
             string sql = @"
-SELECT m.*, i.ItemDesc, i.SKU AS ItemSku, i.ItemEnabled
+SELECT m.*, i.ItemDesc, i.SKU AS ItemSku, i.ItemEnabled,
+       COALESCE(NULLIF(LTRIM(RTRIM(p.Symbol)), N''), p.ItemPrepDescription) AS PackagingDesc,
+       CASE
+           WHEN c.CacheID IS NULL THEN NULL
+           WHEN ISNULL(m.WooVariationId, 0) > 0 THEN COALESCE(NULLIF(LTRIM(RTRIM(c.ParentName)), N''), c.Name)
+           ELSE c.Name
+       END AS WooProductLabel,
+       CASE
+           WHEN ISNULL(m.WooVariationId, 0) <= 0 THEN NULL
+           WHEN c.CacheID IS NULL THEN NULL
+           ELSE c.Name
+       END AS WooVariationLabel
 FROM WooItemMappingsTbl m
 LEFT JOIN ItemsTbl i ON i.ItemID = m.ItemID
+LEFT JOIN ItemPackagingsTbl p ON p.ItemPackagingID = m.PackagingID
+LEFT JOIN WooCatalogCacheTbl c
+       ON c.WooProductId = m.WooProductId
+      AND ISNULL(c.WooVariationId, 0) = ISNULL(m.WooVariationId, 0)
 ORDER BY m.MappingID DESC";
             using (var db = CreateDb())
             using (var rdr = db.ExecuteReader(sql))
@@ -29,6 +44,12 @@ ORDER BY m.MappingID DESC";
                     if (HasColumn(rdr, "ItemSku")) row.ItemSku = rdr["ItemSku"] as string;
                     if (HasColumn(rdr, "ItemEnabled") && rdr["ItemEnabled"] != DBNull.Value)
                         row.ItemEnabled = Convert.ToBoolean(rdr["ItemEnabled"]);
+                    if (HasColumn(rdr, "PackagingDesc"))
+                        row.PackagingDesc = rdr["PackagingDesc"] as string;
+                    if (HasColumn(rdr, "WooProductLabel"))
+                        row.WooProductLabel = rdr["WooProductLabel"] as string;
+                    if (HasColumn(rdr, "WooVariationLabel"))
+                        row.WooVariationLabel = rdr["WooVariationLabel"] as string;
                     list.Add(row);
                 }
             }

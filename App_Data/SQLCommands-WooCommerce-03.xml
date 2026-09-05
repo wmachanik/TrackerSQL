@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WooCommerce order-import address / phone formatting settings.
+  Idempotent — safe to re-run via Ensure schema or XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAddressIncludeProvince') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressIncludeProvince BIT NOT NULL
+              CONSTRAINT DF_WooSet_AddrProv DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAddressIncludeCountry') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressIncludeCountry BIT NOT NULL
+              CONSTRAINT DF_WooSet_AddrCountry DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportPhoneReplacePlus27') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportPhoneReplacePlus27 BIT NOT NULL
+              CONSTRAINT DF_WooSet_Phone27 DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportPhoneFormatSa') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportPhoneFormatSa BIT NOT NULL
+              CONSTRAINT DF_WooSet_PhoneFmt DEFAULT (1);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCatalogCacheTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCatalogCacheTbl', N'FirstSeenUtc') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCatalogCacheTbl ADD FirstSeenUtc DATETIME2 NULL;
+          -- UPDATE must be dynamic: SQL Server compiles the batch before ALTER is visible.
+          EXEC(N'UPDATE dbo.WooCatalogCacheTbl SET FirstSeenUtc = PulledUtc WHERE FirstSeenUtc IS NULL');
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportNotesItemID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportNotesItemID INT NULL;
+      END
+    ]]>
+  </command>
+  <!-- Notes is INCLUDE'd on IX_OrdersTbl_ContactID_RequiredByDate; nvarchar(max) cannot stay in that index. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND EXISTS (
+             SELECT 1 FROM sys.columns
+             WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl')
+               AND name = N'Notes'
+               AND max_length > 0
+         )
+      BEGIN
+          IF EXISTS (
+              SELECT 1 FROM sys.indexes
+              WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl')
+                AND name = N'IX_OrdersTbl_ContactID_RequiredByDate'
+          )
+              DROP INDEX IX_OrdersTbl_ContactID_RequiredByDate ON dbo.OrdersTbl;
+
+          ALTER TABLE dbo.OrdersTbl ALTER COLUMN Notes NVARCHAR(MAX) NULL;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM sys.indexes
+              WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl')
+                AND name = N'IX_OrdersTbl_ContactID_RequiredByDate'
+          )
+              CREATE NONCLUSTERED INDEX IX_OrdersTbl_ContactID_RequiredByDate
+              ON dbo.OrdersTbl (ContactID, RequiredByDate)
+              INCLUDE (Done, PrepDate, OrderID);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrderWaybillTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.OrderWaybillTbl
+          (
+              WaybillID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderWaybillTbl PRIMARY KEY,
+              OrderID INT NOT NULL,
+              ContactID INT NULL,
+              WaybillNumber NVARCHAR(100) NOT NULL,
+              Carrier NVARCHAR(50) NULL,
+              DispatchStatus NVARCHAR(30) NOT NULL CONSTRAINT DF_OrderWaybill_Status DEFAULT (N'Dispatched'),
+              DispatchedAt DATETIME2 NOT NULL CONSTRAINT DF_OrderWaybill_At DEFAULT (SYSUTCDATETIME()),
+              WooOrderId BIGINT NULL,
+              WooNotePosted BIT NOT NULL CONSTRAINT DF_OrderWaybill_WooNote DEFAULT (0),
+              CustomerEmailSent BIT NOT NULL CONSTRAINT DF_OrderWaybill_Email DEFAULT (0),
+              CreatedBy NVARCHAR(100) NULL,
+              CONSTRAINT UQ_OrderWaybill_OrderID UNIQUE (OrderID)
+          );
+          CREATE INDEX IX_OrderWaybill_ContactID ON dbo.OrderWaybillTbl (ContactID);
+      END
+    ]]>
+  </command>
+</root>

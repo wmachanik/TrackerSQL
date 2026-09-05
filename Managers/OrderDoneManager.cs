@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
@@ -47,9 +48,60 @@ namespace TrackerSQL.Managers
             DateTime deliveryDate,
             string stockText,
             string cupCountText,
-            string statusKey)
+            string statusKey,
+            string trackingNumber = null)
         {
-            return new OrderDoneManager().CompleteOrderInternal(customerId, deliveryDate, stockText, cupCountText, statusKey);
+            return new OrderDoneManager().CompleteOrderInternal(
+                customerId, deliveryDate, stockText, cupCountText, statusKey, trackingNumber);
+        }
+
+        public static bool RequiresTrackingNumber(int? deliveredByPersonId, string confirmValue)
+        {
+            bool dispatchContext = string.Equals(confirmValue, "dispatched", StringComparison.OrdinalIgnoreCase)
+                || IsDispatchDeliveryPerson(deliveredByPersonId);
+            if (!dispatchContext)
+                return false;
+
+            try
+            {
+                var settings = new WooCommerceSettingsManager().GetSettings();
+                if (settings != null && !settings.TrackingNumberRequired)
+                    return false;
+            }
+            catch
+            {
+                // default: require
+            }
+            return true;
+        }
+
+        public static bool IsDispatchDeliveryPerson(int? personId)
+        {
+            if (!personId.HasValue || personId.Value <= 0)
+                return false;
+
+            try
+            {
+                string ids = new WooCommerceSettingsManager().GetSettings()?.DispatchDeliveryPersonIds;
+                if (!string.IsNullOrWhiteSpace(ids))
+                {
+                    foreach (string part in ids.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        int id;
+                        if (int.TryParse(part.Trim(), out id) && id == personId.Value)
+                            return true;
+                    }
+                    return false;
+                }
+            }
+            catch
+            {
+                // fall through to built-in defaults
+            }
+
+            // Defaults when Woo settings row has never been saved (Prgo / Cour).
+            return personId.Value == SystemConstants.DeliveryConstants.CourierDeliveryID
+                || personId.Value == SystemConstants.DeliveryConstants.ParcelDispatchID;
         }
 
         private OrderDoneResult CompleteOrderInternal(
@@ -57,7 +109,8 @@ namespace TrackerSQL.Managers
             DateTime deliveryDate,
             string stockText,
             string cupCountText,
-            string statusKey)
+            string statusKey,
+            string trackingNumber)
         {
             var result = new OrderDoneResult();
             if (!TempOrderSession.TryResolve(out int tempHeaderId, out int orderId))
@@ -96,7 +149,8 @@ namespace TrackerSQL.Managers
             }
 
             double pStock = string.IsNullOrEmpty(stockText) ? 0.0 : Math.Round(Convert.ToDouble(stockText), SystemConstants.DatabaseConstants.NumDecimalPoints);
-            var latestUsageData = GetLatestUsageData(customerId, 2);
+            var latestUsageData = GetLatestUsageData(customerId, SystemConstants.ServiceTypeConstants.Coffee);
+            int existingLastCupCount = _contactsUsageRepository.GetByContactId(customerId)?.LastCupCount ?? 0;
 
             bool pIsActual = !string.IsNullOrEmpty(cupCountText);
             int pCupCount = 0;
@@ -107,8 +161,18 @@ namespace TrackerSQL.Managers
 
             if (pCupCount < 1 || pCupCount < latestUsageData.LastCount)
             {
-                pCupCount = CalcEstCupCount(customerId, latestUsageData, hasCoffee);
-                pIsActual = false;
+                int estimated = CalcEstCupCount(customerId, latestUsageData, hasCoffee, tempHeaderId, existingLastCupCount);
+                if (estimated >= 1)
+                {
+                    pCupCount = estimated;
+                    pIsActual = false;
+                }
+                else if (existingLastCupCount >= 1)
+                {
+                    // Do not wipe a known contact reading when estimate cannot be calculated.
+                    pCupCount = existingLastCupCount;
+                    pIsActual = false;
+                }
             }
 
             int updatedCupCount = AddItemsToUsageTables(customerId, tempHeaderId, pIsActual, pCupCount, pStock, deliveryDate);
@@ -124,6 +188,8 @@ namespace TrackerSQL.Managers
                     $"OrderDone: UpdateLastCupCount failed for ContactID={customerId}, cupCount={updatedCupCount}");
                 return result;
             }
+
+            RecordSystemCupCountTotal(orderId, customerId, updatedCupCount);
 
             UpdatePredictions(customerId, updatedCupCount);
             if (orderId > 0)
@@ -147,10 +213,15 @@ namespace TrackerSQL.Managers
                 $"{orderPart} | {contactPart} | Order marked done | delivery={deliveryDate:yyyy-MM-dd}; {countNote}{stockNote}");
 
             string sentStatus = null;
+            bool emailSent = false;
             if (!string.IsNullOrEmpty(statusKey))
             {
-                sentStatus = SendOrderStatusEmail(customerId, statusKey);
+                sentStatus = SendOrderStatusEmail(customerId, statusKey, orderId, trackingNumber);
+                emailSent = sentStatus == null;
             }
+
+            string wooNoteStatus = ApplyDispatchTracking(
+                orderId, customerId, trackingNumber, !string.IsNullOrEmpty(statusKey), emailSent);
 
             var recurringNotes = SyncRecurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
             TempOrderSession.CleanupCompletedOrder(orderId, tempHeaderId);
@@ -161,6 +232,9 @@ namespace TrackerSQL.Managers
                 result.Message = "Order completed successfully.";
             else
                 result.Message = "Order completed, but confirmation email failed: " + sentStatus;
+
+            if (!string.IsNullOrWhiteSpace(wooNoteStatus))
+                result.Message += " " + wooNoteStatus;
 
             if (recurringNotes != null && recurringNotes.Count > 0)
                 result.Message += " " + string.Join(" ", recurringNotes);
@@ -218,7 +292,7 @@ namespace TrackerSQL.Managers
             return pCupCount;
         }
 
-        public static string SendOrderStatusEmail(long customerId, string statusKey)
+        public static string SendOrderStatusEmail(long customerId, string statusKey, int orderId = 0, string trackingNumber = null)
         {
             if (statusKey == null)
             {
@@ -232,6 +306,16 @@ namespace TrackerSQL.Managers
             }
 
             string recipient = !string.IsNullOrWhiteSpace(customer.EmailAddress) ? customer.EmailAddress : customer.AltEmailAddress;
+
+            // ZZName / sundry: email lives in order notes as [#address#] (same as Order Detail confirm).
+            if (customerId == SystemConstants.CustomerConstants.SundryCustomerID && orderId > 0)
+            {
+                var header = new OrdersRepository().GetOrderHeaderByOrderId(orderId);
+                string fromNotes = new OrderManager().ExtractEmailFromNotes(header?.Notes);
+                if (!string.IsNullOrWhiteSpace(fromNotes))
+                    recipient = fromNotes.Trim();
+            }
+
             if (string.IsNullOrWhiteSpace(recipient))
             {
                 return "? No recipient email address found.";
@@ -251,6 +335,8 @@ namespace TrackerSQL.Managers
             string statusMessage = MessageProvider.Get(statusKey);
             string body = MessageProvider.Format(MessageKeys.Order.StatusBody, contactName, statusMessage);
             email.AddToBody(body);
+            if (!string.IsNullOrWhiteSpace(trackingNumber))
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, trackingNumber.Trim()));
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.StatusFooter));
             email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
 
@@ -265,6 +351,103 @@ namespace TrackerSQL.Managers
             }
 
             return success ? null : $"? Failed to send email to {recipient}: {email.myResults.sResult}";
+        }
+
+        /// <summary>
+        /// Saves the waybill on the Tracker order, emails already sent above,
+        /// and posts a Woo customer note (does not complete the Woo order).
+        /// </summary>
+        private string ApplyDispatchTracking(
+            int orderId,
+            int customerId,
+            string trackingNumber,
+            bool emailAttempted,
+            bool emailSent)
+        {
+            if (orderId <= 0 || string.IsNullOrWhiteSpace(trackingNumber))
+                return null;
+
+            string track = trackingNumber.Trim();
+            var header = _ordersRepository.GetOrderHeaderByOrderId(orderId);
+            if (header != null)
+            {
+                string notes = header.Notes ?? string.Empty;
+                if (notes.IndexOf(track, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    if (notes.Length > 0)
+                        notes = notes.TrimEnd() + " | ";
+                    notes += "Tracking: " + track;
+                    _ordersRepository.UpdateOrderNotes(orderId, notes);
+                }
+            }
+
+            var wooRepo = new WooOrderInfoRepository();
+            var info = wooRepo.GetByTrackerOrderId(orderId);
+            long? wooOrderId = info != null && info.WooOrderId > 0 ? info.WooOrderId : (long?)null;
+
+            bool wooNotePosted = false;
+            string wooMessage = null;
+            if (wooOrderId.HasValue)
+            {
+                info.TrackingNumber = track;
+                wooRepo.Upsert(info);
+
+                WooCommerceApiClient.ApiCredentials creds;
+                string credError;
+                if (!new WooCommerceSettingsManager().TryGetApiCredentials(out creds, out credError))
+                {
+                    wooMessage = "Woo tracking note not sent (" + (credError ?? "no credentials") + "). Woo order was not completed.";
+                }
+                else
+                {
+                    string note = "Your order has been dispatched. Waybill / tracking number: " + track
+                        + ". This number is also on your order in the shop. The order stays open until the parcel is received.";
+                    string detail;
+                    wooNotePosted = new WooCommerceApiClient().AddOrderNote(
+                        creds, wooOrderId.Value, note, customerNote: true, out detail);
+                    if (wooNotePosted)
+                    {
+                        AppLogger.WriteLog("woo",
+                            "Order Done posted Woo customer note for Woo #" + (info.WooOrderNumber ?? wooOrderId.Value.ToString())
+                            + " waybill=" + track + " (status not completed)");
+                        wooMessage = "Waybill saved and sent to WooCommerce as a customer note. The Woo order was left open.";
+                    }
+                    else
+                    {
+                        AppLogger.WriteLog("woo", "Order Done Woo customer note failed: " + (detail ?? "unknown"));
+                        wooMessage = "Waybill saved on the Tracker order, but the Woo customer note failed: "
+                            + (detail ?? "unknown") + " Woo order was not completed.";
+                    }
+                }
+            }
+
+            var waybill = new OrderWaybill
+            {
+                OrderID = orderId,
+                ContactID = customerId > 0 ? customerId : (int?)null,
+                WaybillNumber = track,
+                Carrier = CarrierLabel(header?.ToBeDeliveredBy ?? 0),
+                DispatchStatus = "Dispatched",
+                DispatchedAt = TimeZoneUtils.Now(),
+                WooOrderId = wooOrderId,
+                WooNotePosted = wooNotePosted,
+                CustomerEmailSent = emailAttempted && emailSent,
+                CreatedBy = HttpContext.Current?.User?.Identity?.Name
+            };
+            new OrderWaybillRepository().Upsert(waybill);
+
+            if (wooMessage != null)
+                return wooMessage;
+            return "Waybill " + track + " saved on the order.";
+        }
+
+        private static string CarrierLabel(int personId)
+        {
+            if (personId == SystemConstants.DeliveryConstants.ParcelDispatchID)
+                return "Pargo";
+            if (personId == SystemConstants.DeliveryConstants.CourierDeliveryID)
+                return "Courier";
+            return null;
         }
 
         private static bool IsCoffeeOrConsumableServiceType(int serviceType)
@@ -406,26 +589,59 @@ namespace TrackerSQL.Managers
             };
         }
 
-        private int CalcEstCupCount(int contactId, LineUsageData usageData, bool hasCoffee)
+        private int CalcEstCupCount(
+            int contactId,
+            LineUsageData usageData,
+            bool hasCoffee,
+            int tempHeaderId,
+            int existingLastCupCount)
         {
-            if (usageData.UsageDate <= DateTime.MinValue)
-            {
-                return 0;
-            }
-
             double dailyAverage = _contactsUsageRepository.GetByContactId(contactId)?.DailyConsumption
                 ?? SystemConstants.BusinessConstants.TypicalAverageConsumption;
             if (dailyAverage <= 0)
-            {
                 dailyAverage = SystemConstants.BusinessConstants.TypicalAverageConsumption;
+
+            if (usageData.UsageDate > DateTime.MinValue)
+            {
+                int daysSince = (TimeZoneUtils.Now().Date - usageData.UsageDate.Date).Days;
+                double estimate = !hasCoffee || usageData.LastQty == 0.0
+                    ? usageData.LastCount + (daysSince * dailyAverage)
+                    : usageData.LastCount + (usageData.LastQty * SystemConstants.BusinessConstants.TypicalCupsPerKg);
+
+                return Convert.ToInt32(Math.Round(estimate));
             }
 
-            int daysSince = (TimeZoneUtils.Now().Date - usageData.UsageDate.Date).Days;
-            double estimate = !hasCoffee || usageData.LastQty == 0.0
-                ? usageData.LastCount + (daysSince * dailyAverage)
-                : usageData.LastCount + (usageData.LastQty * 100.0);
+            // First usable estimate: previous contact reading + coffee on this order (kg × cups/kg).
+            if (hasCoffee && tempHeaderId > 0 && contactId > 0)
+            {
+                double coffeeKg = GetCoffeeKgOnTempOrder(contactId, tempHeaderId);
+                if (coffeeKg > 0)
+                {
+                    int baseCount = Math.Max(existingLastCupCount, usageData.LastCount);
+                    return baseCount + Convert.ToInt32(Math.Round(coffeeKg * SystemConstants.BusinessConstants.TypicalCupsPerKg));
+                }
+            }
 
-            return Convert.ToInt32(Math.Round(estimate));
+            return existingLastCupCount > 0 ? existingLastCupCount : 0;
+        }
+
+        private double GetCoffeeKgOnTempOrder(int contactId, int tempHeaderId)
+        {
+            try
+            {
+                List<TempOrderUsageLine> lines = _tempOrdersLinesRepository.GetUsageLinesForContact(contactId, tempHeaderId);
+                if (lines == null || lines.Count == 0)
+                    return 0;
+
+                int coffeeType = SystemConstants.ServiceTypeConstants.Coffee;
+                return lines
+                    .Where(l => l.ItemServiceTypeID == coffeeType)
+                    .Sum(l => l.Qty * l.UnitsPerQty);
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         private void UpdatePredictions(int contactId, int lastCupCount)
@@ -443,6 +659,37 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                     $"OrderDone: UpdatePredictions failed for ContactID={contactId}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Snapshot the live SUM(LastCupCount) into TotalCountTrackerTbl after each Order Done.
+        /// Home page uses the live sum; this keeps the tracker history in sync.
+        /// </summary>
+        private void RecordSystemCupCountTotal(int orderId, int contactId, int contactCupCount)
+        {
+            try
+            {
+                long totalCups = _contactsUsageRepository.GetSumOfLastCupCounts();
+                if (totalCups > int.MaxValue)
+                    totalCups = int.MaxValue;
+
+                string comments = orderId > 0
+                    ? string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "Order {0} done; Contact {1} cupCount={2}",
+                        orderId, contactId, contactCupCount)
+                    : string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "Order done; Contact {0} cupCount={1}",
+                        contactId, contactCupCount);
+
+                new TotalCountTrackerRepository().Add((int)totalCups, comments);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "OrderDone: TotalCountTracker update failed: " + ex.Message);
             }
         }
     }

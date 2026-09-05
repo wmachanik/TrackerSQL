@@ -39,6 +39,7 @@ namespace TrackerSQL
             BindAppVersionLabels();
             BindApplicationErrorBanner();
             SyncWooMappingMenuItem();
+            SyncWooOrderImportMenuItem();
             HighlightCurrentMenuItem();
 
             sw.Stop();
@@ -78,6 +79,34 @@ namespace TrackerSQL
                 item.NavigateUrl = "~/Tools/SystemPreferences.aspx?section=woo&wizard=1";
                 item.ToolTip = "Enable WooCommerce integration first (setup wizard)";
             }
+        }
+
+        /// <summary>Hide Woo Order Import under Orders until WooCommerce integration is enabled.</summary>
+        private void SyncWooOrderImportMenuItem()
+        {
+            if (NavigationMenu == null)
+                return;
+
+            bool wooOn = false;
+            try
+            {
+                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
+            }
+            catch
+            {
+                wooOn = false;
+            }
+
+            MenuItem ordersMenu = FindMenuItemByValue(NavigationMenu.Items, "Orders");
+            if (ordersMenu == null)
+                return;
+
+            MenuItem item = FindMenuItemByValue(ordersMenu.ChildItems, "WooOrderImport");
+            if (item == null)
+                return;
+
+            if (!wooOn)
+                ordersMenu.ChildItems.Remove(item);
         }
 
         private static MenuItem FindMenuItemByValue(MenuItemCollection items, string value)

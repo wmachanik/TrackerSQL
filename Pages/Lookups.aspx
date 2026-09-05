@@ -68,8 +68,10 @@
                         <div class="filter-toolbar lookups-tab-toolbar">
                             <div class="filter-section search-controls">
                                 <div class="filter-control">
-                                    <asp:Label AssociatedControlID="tbxItemSearch" runat="server" Text="Search:" />
-                                    <asp:TextBox ID="tbxItemSearch" runat="server" OnTextChanged="tbxItemSearch_TextChanged" />
+                                    <asp:Label AssociatedControlID="tbxItemSearch" runat="server" Text="Search (name / SKU / ID):" />
+                                    <asp:TextBox ID="tbxItemSearch" runat="server" AutoPostBack="true"
+                                        OnTextChanged="tbxItemSearch_TextChanged"
+                                        ToolTip="Search by item name, SKU, abbreviation, or Item ID (e.g. 8JuraDecT36 or 634)" />
                                 </div>
                                 <asp:Button ID="btnGon" Text="Go" runat="server" CssClass="filter-panel-btn"
                                     CausesValidation="false"

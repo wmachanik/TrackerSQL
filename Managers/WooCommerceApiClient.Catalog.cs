@@ -472,17 +472,22 @@ namespace TrackerSQL.Managers
                 }
 
                 var options = a["options"] as JArray;
-                if (options == null)
-                    continue;
-                foreach (JToken opt in options)
+                if (options != null && options.Count > 0)
                 {
-                    string optText = opt.Type == JTokenType.String
-                        ? opt.Value<string>()
-                        : opt.ToString();
-                    if (string.IsNullOrWhiteSpace(optText))
-                        continue;
-                    list.Add(new WooAttributeValue { Name = name.Trim(), Option = optText.Trim() });
+                    foreach (JToken opt in options)
+                    {
+                        string optText = opt.Type == JTokenType.String
+                            ? opt.Value<string>()
+                            : opt.ToString();
+                        if (string.IsNullOrWhiteSpace(optText))
+                            continue;
+                        list.Add(new WooAttributeValue { Name = name.Trim(), Option = optText.Trim() });
+                    }
+                    continue;
                 }
+
+                // Variation "Any Prep Type…" / empty option — keep the attribute so mapping can show it.
+                list.Add(new WooAttributeValue { Name = name.Trim(), Option = "(any)" });
             }
             return list;
         }

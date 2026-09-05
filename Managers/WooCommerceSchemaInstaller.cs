@@ -9,11 +9,20 @@ namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Ensures WooCommerce companion tables exist by running create commands
-    /// from App_Data/SQLCommands-WooCommerce-01.xml (same pack as XMLtoSQL).
+    /// from App_Data/SQLCommands-WooCommerce-*.xml (same pack as XMLtoSQL).
     /// </summary>
     public class WooCommerceSchemaInstaller
     {
         public const string XmlFileName = "SQLCommands-WooCommerce-01.xml";
+        public const string XmlFileNameAreas = "SQLCommands-WooCommerce-02.xml";
+        public const string XmlFileNameAddress = "SQLCommands-WooCommerce-03.xml";
+
+        public static readonly string[] XmlFileNames =
+        {
+            XmlFileName,
+            XmlFileNameAreas,
+            XmlFileNameAddress
+        };
 
         public class EnsureResult
         {
@@ -27,23 +36,25 @@ namespace TrackerSQL.Managers
             var result = new EnsureResult();
             try
             {
-                string path = ResolveXmlPath();
-                if (!File.Exists(path))
-                {
-                    result.Succeeded = false;
-                    result.Message = "Schema XML not found: " + XmlFileName;
-                    AppLogger.WriteLog("woo", "Schema ensure failed — file missing: " + path);
-                    return result;
-                }
-
-                var statements = LoadSchemaCommands(path);
                 int ran = 0;
                 using (var db = new TrackerSQLDb())
                 {
-                    foreach (string sql in statements)
+                    foreach (string file in XmlFileNames)
                     {
-                        db.ExecuteNonQuery(sql);
-                        ran++;
+                        string path = ResolveXmlPath(file);
+                        if (!File.Exists(path))
+                        {
+                            result.Succeeded = false;
+                            result.Message = "Schema XML not found: " + file;
+                            AppLogger.WriteLog("woo", "Schema ensure failed — file missing: " + path);
+                            return result;
+                        }
+
+                        foreach (string sql in LoadSchemaCommands(path))
+                        {
+                            db.ExecuteNonQuery(sql);
+                            ran++;
+                        }
                     }
                 }
 
@@ -80,16 +91,13 @@ namespace TrackerSQL.Managers
             }
         }
 
-        private static string ResolveXmlPath()
+        private static string ResolveXmlPath(string fileName)
         {
             if (HttpContext.Current != null)
-                return HttpContext.Current.Server.MapPath("~/App_Data/" + XmlFileName);
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", XmlFileName);
+                return HttpContext.Current.Server.MapPath("~/App_Data/" + fileName);
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", fileName);
         }
 
-        /// <summary>
-        /// Runs create + alter in document order (alters add/drop columns on existing tables).
-        /// </summary>
         private static List<string> LoadSchemaCommands(string path)
         {
             var list = new List<string>();

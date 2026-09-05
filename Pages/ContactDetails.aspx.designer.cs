@@ -139,6 +139,7 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox PostalCodeTextBox;
+        protected global::System.Web.UI.WebControls.Button btnSuggestPostal;
 
         /// <summary>
         /// ddlAreas control.
@@ -883,6 +884,16 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactOrders;
+
+        /// <summary>
+        /// tabpnlWaybills control.
+        /// </summary>
+        protected global::AjaxControlToolkit.TabPanel tabpnlWaybills;
+
+        /// <summary>
+        /// gvContactWaybills control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvContactWaybills;
 
         /// <summary>
         /// tabpnlRecurring control.

@@ -59,6 +59,7 @@ namespace TrackerSQL.Tools
                 if (litWooMappingToolBlurb != null)
                     litWooMappingToolBlurb.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapNeedWooEnabled);
             }
+
         }
 
         protected void btnWooMapping_Click(object sender, EventArgs e)
@@ -367,6 +368,75 @@ namespace TrackerSQL.Tools
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "SystemTools: RecalcPredictions error: " + ex.Message);
                 ResultsTitleLabel.Text = "Recalc Prediction Averages: Error";
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ex.Message, isError: true);
+                upnlSystemToolsButtons.Update();
+            }
+        }
+
+        protected void btnRecalcTotalCups_Click(object sender, EventArgs e)
+        {
+            AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools: btnRecalcTotalCups_Click started.");
+
+            try
+            {
+                var usageRepo = new ContactsUsageRepository();
+                var trackerRepo = new TotalCountTrackerRepository();
+                var previous = trackerRepo.GetLatest();
+                var summary = usageRepo.GetCupCountSummary() ?? new CupCountTotalSummary();
+
+                long total = summary.TotalCups;
+                int snapshotValue = total > int.MaxValue ? int.MaxValue : (int)total;
+                string userName = Context?.User?.Identity?.Name ?? "system";
+                string comments = "System Tools: Recalc total cups by " + userName;
+
+                int snapshotId = trackerRepo.Add(snapshotValue, comments);
+                bool saved = snapshotId > 0;
+
+                string previousText = previous?.TotalCount.HasValue == true
+                    ? previous.TotalCount.Value.ToString("n0")
+                    : "(none)";
+                string previousDateText = previous?.CountDate.HasValue == true
+                    ? previous.CountDate.Value.ToString("yyyy-MM-dd HH:mm")
+                    : "—";
+
+                var rows = new List<object>
+                {
+                    new { Item = "Previous tracker total", Value = previousText },
+                    new { Item = "Previous tracker date", Value = previousDateText },
+                    new { Item = "Recalculated total (home page)", Value = total.ToString("n0") },
+                    new { Item = "Contacts with a cup reading", Value = summary.ContactsWithCount.ToString("n0") },
+                    new { Item = "Prediction rows", Value = summary.PredictedRows.ToString("n0") },
+                    new { Item = "Enabled contacts total", Value = summary.EnabledTotalCups.ToString("n0") },
+                    new { Item = "Enabled contacts with a reading", Value = summary.EnabledContactsWithCount.ToString("n0") },
+                    new { Item = "Tracker snapshot saved", Value = saved ? "Yes" : "No" }
+                };
+
+                ResultsTitleLabel.Text = saved
+                    ? "Recalc Total Cups: " + total.ToString("n0") + " cups"
+                    : "Recalc Total Cups: calculated " + total.ToString("n0") + " but snapshot was not saved.";
+                gvResults.DataSource = rows;
+                gvResults.DataBind();
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: true);
+
+                SetStatus(
+                    saved
+                        ? "Home page total is now " + total.ToString("n0") + " cups (sum of each contact’s last cup count)."
+                        : "Calculated " + total.ToString("n0") + " cups but could not write TotalCountTrackerTbl.",
+                    isError: saved ? false : true);
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: RecalcTotalCups previous=" + previousText
+                    + " new=" + total
+                    + " contactsWithCount=" + summary.ContactsWithCount
+                    + " snapshotSaved=" + saved);
+                upnlSystemToolsButtons.Update();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SystemTools: RecalcTotalCups error: " + ex.Message);
+                ResultsTitleLabel.Text = "Recalc Total Cups: Error";
                 ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
                 SetStatus(ex.Message, isError: true);
                 upnlSystemToolsButtons.Update();

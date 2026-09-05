@@ -15,12 +15,25 @@ namespace TrackerSQL.Models
         public bool Done { get; set; }
         public bool InvoiceDone { get; set; }
         public string Notes { get; set; }
+        public string WaybillNumber { get; set; }
+        public string DispatchStatus { get; set; }
+        public DateTime? DispatchedAt { get; set; }
         public int FirstItemID { get; set; }
         public string FirstItemDesc { get; set; }
         public double FirstQty { get; set; }
         public int LineCount { get; set; }
 
         public bool IsEditable => !Done;
+
+        public string StatusDisplay
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(WaybillNumber))
+                    return string.IsNullOrWhiteSpace(DispatchStatus) ? "Dispatched" : DispatchStatus;
+                return Done ? "Done" : string.Empty;
+            }
+        }
 
         public string EditNavigateUrl =>
             "~/Pages/OrderDetail.aspx?OrderID=" + OrderID;

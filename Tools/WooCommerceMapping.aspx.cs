@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
@@ -14,22 +15,32 @@ namespace TrackerSQL.Tools
     public partial class WooCommerceMapping : Page
     {
         private readonly WooCommerceMappingManager _manager = new WooCommerceMappingManager();
+        private readonly WooCommerceAreaMappingManager _areaManager = new WooCommerceAreaMappingManager();
+        private readonly WooCommerceOrderImportManager _orderImportManager = new WooCommerceOrderImportManager();
         private readonly WooCommerceSettingsManager _settings = new WooCommerceSettingsManager();
         private readonly ItemsRepository _itemsRepo = new ItemsRepository();
         private readonly ItemServiceTypesRepository _svcRepo = new ItemServiceTypesRepository();
         private readonly ItemPackagingsRepository _packRepo = new ItemPackagingsRepository();
         private readonly ItemSortOrdersRepository _sortOrdersRepo = new ItemSortOrdersRepository();
+        private readonly AreasRepository _areasRepo = new AreasRepository();
+        private readonly PersonsRepository _personsRepo = new PersonsRepository();
+        private readonly OrderManager _orderManager = new OrderManager();
 
         private const string SessionPull = "WooMap.PullRows";
         private const string SessionPullFind = "WooMap.PullFind";
+        private const string SessionPullNewOnly = "WooMap.PullNewOnly";
+        private const string SessionSavedMapsFind = "WooMap.SavedMapsFind";
+        private const string SessionSavedMapsSort = "WooMap.SavedMapsSort";
+        private const string SessionSavedMapsSortDir = "WooMap.SavedMapsSortDir";
         private const string SessionPullDirty = "WooMap.PullDirty";
         private const string SessionMissingSku = "WooMap.MissingSkuRows";
         private const string SessionPullVer = "WooMap.PullVer";
         private const string SessionPendingSorts = "WooMap.PendingSorts";
         private const string SessionPendingImportModes = "WooMap.PendingImportModes";
-        private const int PullRowsVersion = 21;
+        private const int PullRowsVersion = 29;
         private const string SessionAttrPull = "WooMap.AttrRows";
         private const string SessionPendingIncludes = "WooMap.PendingIncludes";
+        private const string SessionEnabledPush = "WooMap.EnabledPushRows";
         private const string VsTab = "WooMap.Tab";
         private const string ItemLookupSort = "ItemEnabled DESC, SortOrder, ItemDesc";
 
@@ -37,7 +48,12 @@ namespace TrackerSQL.Tools
         private Dictionary<int, int?> _dbSorts;
         private Dictionary<int, string> _dbImportModes;
         private Dictionary<int, bool> _dbAttrUseForVariants;
-        private Dictionary<int, int> _dbAttrPriorities;
+        private Dictionary<int, int> _dbAttrQtyRanks;
+        private Dictionary<int, int> _dbAttrPackRanks;
+        private Dictionary<int, int> _dbAttrNoteRanks;
+        private List<ListItem> _itemDropdownTemplate;
+        private List<ListItem> _personDropdownTemplate;
+        private readonly Dictionary<int, List<ItemPackaging>> _packagingsByServiceType = new Dictionary<int, List<ItemPackaging>>();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -61,15 +77,18 @@ namespace TrackerSQL.Tools
             }
 
             pnlWooDisabled.Visible = false;
+            _settings.EnsureSchemaOnce();
 
             if (!IsPostBack)
             {
                 ClearPendingIncludes();
                 BindLabels();
-                BindItemDropdowns();
-                ShowTab(0);
-                BindCategories();
-                LoadCatMode();
+                if (!TryShowInitialTabFromQuery())
+                {
+                    ShowTab(0);
+                    BindCategories();
+                    LoadCatMode();
+                }
                 SyncAttrVariantTabAvailability();
             }
             else
@@ -99,6 +118,9 @@ namespace TrackerSQL.Tools
             btnTabAttrParents.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabAttrParents);
             btnTabAttrVariants.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabAttrVariants);
             btnTabMap.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabMappings);
+            btnTabAreas.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabAreas);
+            btnTabShipping.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabShipping);
+            btnTabPayment.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabPayment);
             btnTabSavedMaps.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabSavedMaps);
             btnTabMissingSku.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabMissingSku);
             btnTabSync.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabSync);
@@ -107,13 +129,45 @@ namespace TrackerSQL.Tools
             litAttrOptionsHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAttrOptionsHelp);
             litAttrVariantsLocked.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAttrVariantsLocked);
             litMapHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapMapHelp);
+            litAreasHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAreasHelp);
+            litAreaSectionTitle.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAreaSectionTitle);
+            lblDefaultImportArea.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDefaultImportAreaLbl);
+            btnSaveDefaultArea.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveDefaultArea);
+            lblImportNotesItem.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapImportNotesItemLbl);
+            btnSaveImportNotesItem.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveImportNotesItem);
+            litAddressConfigTitle.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAddressConfigTitle);
+            litAddressConfigNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAddressConfigNote);
+            btnSaveAddressConfig.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveAddressConfig);
+            litAreaDefaultsNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAreaDefaultsNote);
+            btnSaveAreaDefaults.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveAreaDefaults);
+            litShippingMapsNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShippingMapsNote);
+            litShippingHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShippingHelp);
+            litShippingEmptyHint.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShippingEmptyHint);
+            btnSaveShippingMaps.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveShippingMaps);
+            litDispatchWaybillTitle.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDispatchWaybillTitle);
+            litDispatchWaybillNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDispatchWaybillNote);
+            lblDispatchPeople.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDispatchPeopleLbl);
+            btnSaveDispatchWaybill.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveDispatchWaybill);
+            chkTrackingNumberRequired.Text = MessageProvider.Get(MessageKeys.WooCommerce.LabelTrackingRequired);
+            litPaymentMapsNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapPaymentMapsNote);
+            btnSavePaymentMaps.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSavePaymentMaps);
+            litPaymentHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapPaymentHelp);
+            lblTestPostal.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTestPostalLbl);
+            lblTestSuburb.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTestSuburbLbl);
+            btnTestResolve.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTestResolveBtn);
             litSavedMapsHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSavedMapsHelp);
+            lblFindSavedMap.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapFindSku);
+            btnFindSavedMap.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapFindSkuBtn);
+            btnClearFindSavedMap.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapClearFindSku);
             litMissingSkuHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapMissingSkuHelp);
             lblFindSku.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapFindSku);
             btnFindSku.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapFindSkuBtn);
             btnClearFindSku.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapClearFindSku);
+            chkNewSinceSync.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapNewSinceSync);
             btnSaveSelectedMaps.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveSelected);
             btnSaveSelectedMaps.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveSelectedTip);
+            btnSaveSelectedMapsBottom.Text = btnSaveSelectedMaps.Text;
+            btnSaveSelectedMapsBottom.ToolTip = btnSaveSelectedMaps.ToolTip;
             btnResetCatalog.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapResetCatalog);
             btnExpandAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapExpandAll);
             btnCollapseAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapCollapseAll);
@@ -170,7 +224,12 @@ namespace TrackerSQL.Tools
 
         private void BindItemDropdowns()
         {
-            var items = _itemsRepo.GetAll(ItemLookupSort) ?? new List<Item>();
+            // Display Tracker SKU (_ if disabled). Sort like item lookups: enabled, SortOrder, name.
+            var items = (_itemsRepo.GetAll(ItemLookupSort) ?? new List<Item>())
+                .OrderByDescending(i => i.ItemEnabled != false)
+                .ThenBy(i => i.SortOrder ?? int.MaxValue)
+                .ThenBy(i => i.ItemDesc ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToList();
             ddlItemLookup.Items.Clear();
             ddlItemLookup.Items.Add(new ListItem(MessageProvider.Get(MessageKeys.WooCommerce.MapDestNotMapped), "0"));
             ddlItemLookup.Items.Add(new ListItem(MessageProvider.Get(MessageKeys.WooCommerce.MapDestCreateParent),
@@ -179,11 +238,38 @@ namespace TrackerSQL.Tools
                 WooProductMapRow.DestinationNotesValue.ToString()));
             foreach (var i in items)
             {
-                string text = string.IsNullOrWhiteSpace(i.SKU)
-                    ? i.FormattedDisplayText
-                    : (i.SKU + " — " + i.FormattedDisplayText);
-                ddlItemLookup.Items.Add(new ListItem(text, i.ItemID.ToString()));
+                string sku = (i.SKU ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(sku))
+                    sku = "-";
+                string label = sku;
+                string desc = (i.ItemDesc ?? string.Empty).Trim();
+                if (desc.Length > 0 && !string.Equals(desc, sku, StringComparison.OrdinalIgnoreCase))
+                    label = sku + " - " + desc;
+                ddlItemLookup.Items.Add(new ListItem(
+                    LookupFormatter.FormatLookupText(label, i.ItemEnabled),
+                    i.ItemID.ToString()));
             }
+            _itemDropdownTemplate = null;
+        }
+
+        /// <summary>Only load the full Tracker item list when the Mappings grid needs it.</summary>
+        private void EnsureItemDropdowns()
+        {
+            if (ddlItemLookup.Items.Count > 0)
+                return;
+            BindItemDropdowns();
+        }
+
+        private List<ListItem> GetItemDropdownTemplate()
+        {
+            EnsureItemDropdowns();
+            if (_itemDropdownTemplate == null)
+            {
+                _itemDropdownTemplate = ddlItemLookup.Items.Cast<ListItem>()
+                    .Select(li => new ListItem(li.Text, li.Value))
+                    .ToList();
+            }
+            return _itemDropdownTemplate;
         }
 
         private int GetTab()
@@ -200,15 +286,52 @@ namespace TrackerSQL.Tools
             SyncAttrVariantTabAvailability();
         }
 
+        /// <summary>Deep-link e.g. ?tab=payment from order import.</summary>
+        private bool TryShowInitialTabFromQuery()
+        {
+            string tab = Request.QueryString["tab"];
+            if (string.IsNullOrWhiteSpace(tab))
+                return false;
+
+            switch (tab.Trim().ToLowerInvariant())
+            {
+                case "payment":
+                    ShowTab(6);
+                    BindPaymentTab();
+                    return true;
+                case "shipping":
+                    ShowTab(5);
+                    BindShippingTab();
+                    return true;
+                case "areas":
+                    ShowTab(4);
+                    BindAreasTab();
+                    return true;
+                case "mappings":
+                case "map":
+                    ShowTab(3);
+                    BindImportNotesItemDropdown();
+                    EnsurePullRowsLoaded();
+                    RebindPull();
+                    SyncSaveSelectedButton();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private void ApplyTabHighlight(int index)
         {
             btnTabCat.CssClass = index == 0 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             btnTabAttrParents.CssClass = index == 1 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             btnTabAttrVariants.CssClass = index == 2 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             btnTabMap.CssClass = index == 3 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabSavedMaps.CssClass = index == 4 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabMissingSku.CssClass = index == 5 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabSync.CssClass = index == 6 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabAreas.CssClass = index == 4 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabShipping.CssClass = index == 5 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabPayment.CssClass = index == 6 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabSavedMaps.CssClass = index == 7 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabMissingSku.CssClass = index == 8 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabSync.CssClass = index == 9 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
         }
 
         protected void btnTabCat_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(0); BindCategories(); LoadCatMode(); }
@@ -218,25 +341,49 @@ namespace TrackerSQL.Tools
         {
             PersistActiveTabEdits();
             ShowTab(3);
+            BindImportNotesItemDropdown();
             EnsurePullRowsLoaded();
             RebindPull();
             SyncSaveSelectedButton();
         }
-        protected void btnTabSavedMaps_Click(object sender, EventArgs e)
+        protected void btnTabAreas_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
             ShowTab(4);
+            BindAreasTab();
+        }
+        protected void btnTabShipping_Click(object sender, EventArgs e)
+        {
+            PersistActiveTabEdits();
+            ShowTab(5);
+            BindShippingTab();
+        }
+        protected void btnTabPayment_Click(object sender, EventArgs e)
+        {
+            PersistActiveTabEdits();
+            ShowTab(6);
+            BindPaymentTab();
+        }
+        protected void btnTabSavedMaps_Click(object sender, EventArgs e)
+        {
+            PersistActiveTabEdits();
+            ShowTab(7);
             BindExistingMaps();
         }
         protected void btnTabMissingSku_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(5);
+            ShowTab(8);
             EnsurePullRowsLoaded();
             RebindMissingSku();
             SyncWriteMissingButton();
         }
-        protected void btnTabSync_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(6); }
+        protected void btnTabSync_Click(object sender, EventArgs e)
+        {
+            PersistActiveTabEdits();
+            ShowTab(9);
+            BindEnabledPushGrid();
+        }
 
         private void PersistActiveTabEdits()
         {
@@ -259,7 +406,7 @@ namespace TrackerSQL.Tools
                 MergeAttrGridEditsIntoSession();
             else if (tab == 3)
                 MergeVisiblePullEdits();
-            else if (tab == 5)
+            else if (tab == 7)
                 MergeVisibleMissingSkuEdits();
         }
 
@@ -291,13 +438,14 @@ namespace TrackerSQL.Tools
         {
             if (headerRow == null)
                 return;
-            SetHeaderTip(headerRow, "Applied", MessageKeys.WooCommerce.MapColAppliedTip);
-            SetHeaderTip(headerRow, "Import", MessageKeys.WooCommerce.MapColImportTip);
-            SetHeaderTip(headerRow, "SKU", MessageKeys.WooCommerce.MapColSkuTip);
+            SetHeaderTip(headerRow, "Svd", MessageKeys.WooCommerce.MapColAppliedTip);
+            SetHeaderTip(headerRow, "Impt", MessageKeys.WooCommerce.MapColImportTip);
+            SetHeaderTip(headerRow, "Woo SKU", MessageKeys.WooCommerce.MapColSkuTip);
             SetHeaderTip(headerRow, "Variant", MessageKeys.WooCommerce.MapColVariantTip);
+            SetHeaderTip(headerRow, "Pack cascade / notes", MessageKeys.WooCommerce.MapColNotesAttrTip);
             SetHeaderTip(headerRow, "Mode", MessageKeys.WooCommerce.MapColModeTip);
             SetHeaderTip(headerRow, "Match", MessageKeys.WooCommerce.MapColMatchTip);
-            SetHeaderTip(headerRow, "Destination", MessageKeys.WooCommerce.MapColDestinationTip);
+            SetHeaderTip(headerRow, "Tracker SKU", MessageKeys.WooCommerce.MapColDestinationTip);
             SetHeaderTip(headerRow, "Item SKU", MessageKeys.WooCommerce.MapColItemSkuTip);
             SetHeaderTip(headerRow, "S/O", MessageKeys.WooCommerce.MapColSortTip);
             SetHeaderTip(headerRow, "Qty", MessageKeys.WooCommerce.MapColQtyTip);
@@ -520,6 +668,10 @@ namespace TrackerSQL.Tools
             if (previous == null || previous.Count == 0 || neu == null || neu.Count == 0)
                 return;
 
+            var prevByKey = previous.Where(r => r != null && !string.IsNullOrEmpty(r.RowKey))
+                .GroupBy(r => r.RowKey, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+
             var prevParents = previous.Where(r => r != null && r.IsParentGroup)
                 .GroupBy(r => r.WooProductId)
                 .ToDictionary(g => g.Key, g => g.First());
@@ -554,6 +706,30 @@ namespace TrackerSQL.Tools
                 parent.ExistingMappingID = prev.ExistingMappingID;
                 parent.ChildrenHaveSavedMapping = prev.ChildrenHaveSavedMapping;
                 parent.SavedSnapshot = prev.SavedSnapshot;
+            }
+
+            // Keep unsaved variant Item SKU / S/O / Qty / Pack / destination across rebuild.
+            foreach (var row in neu.Where(r => r != null && !r.IsParentGroup))
+            {
+                WooProductMapRow prev;
+                if (!prevByKey.TryGetValue(row.RowKey, out prev))
+                    continue;
+                if (!prev.CreateSkuUserSet && !prev.IsDirtyVsSaved && !prev.ImportModeUserSet)
+                    continue;
+                if (prev.CreateSkuUserSet || prev.IsDirtyVsSaved)
+                {
+                    row.CreateSku = prev.CreateSku;
+                    row.CreateSkuUserSet = prev.CreateSkuUserSet;
+                    row.CreateSortOrder = prev.CreateSortOrder;
+                    row.QtyFactor = prev.QtyFactor;
+                    row.PackagingID = prev.PackagingID;
+                    row.MappedItemID = prev.MappedItemID;
+                    row.MapToNotes = prev.MapToNotes;
+                    row.IncludeInImport = prev.IncludeInImport;
+                    row.ApplySelected = prev.ApplySelected;
+                    if (!string.IsNullOrEmpty(prev.SavedSnapshot))
+                        row.SavedSnapshot = prev.SavedSnapshot;
+                }
             }
 
             WooCommerceMappingManager.ApplyParentImportModes(neu);
@@ -762,13 +938,16 @@ namespace TrackerSQL.Tools
                     continue;
                 int parentId = Convert.ToInt32(gvAttrParents.DataKeys[row.RowIndex].Value);
                 var chk = (CheckBox)row.FindControl("chkUseForVariants");
-                var ddlPri = (DropDownList)row.FindControl("ddlAttrPriority");
-                int pri = SnapResolvePriority(ddlPri != null ? ddlPri.SelectedValue : null);
+                var ddlQty = (DropDownList)row.FindControl("ddlQtyRank");
+                var ddlPack = (DropDownList)row.FindControl("ddlPackRank");
+                var ddlNote = (DropDownList)row.FindControl("ddlNoteRank");
                 selections.Add(new WooAttributeParent
                 {
                     ParentID = parentId,
                     UseForVariants = chk != null && chk.Checked,
-                    ResolvePriority = pri
+                    QtyRank = WooAttributeParent.ParseRank(ddlQty != null ? ddlQty.SelectedValue : null),
+                    PackRank = WooAttributeParent.ParseRank(ddlPack != null ? ddlPack.SelectedValue : null),
+                    NoteRank = WooAttributeParent.ParseRank(ddlNote != null ? ddlNote.SelectedValue : null)
                 });
             }
             int saved = _manager.SaveAttributeParentVariants(selections, UserName());
@@ -782,7 +961,9 @@ namespace TrackerSQL.Tools
         {
             var list = _manager.GetAttributeParents() ?? new List<WooAttributeParent>();
             _dbAttrUseForVariants = list.ToDictionary(x => x.ParentID, x => x.UseForVariants);
-            _dbAttrPriorities = list.ToDictionary(x => x.ParentID, x => x.ResolvePriority);
+            _dbAttrQtyRanks = list.ToDictionary(x => x.ParentID, x => x.QtyRank);
+            _dbAttrPackRanks = list.ToDictionary(x => x.ParentID, x => x.PackRank);
+            _dbAttrNoteRanks = list.ToDictionary(x => x.ParentID, x => x.NoteRank);
             gvAttrParents.DataSource = list;
             gvAttrParents.DataBind();
             SyncSaveAttrParentsButton(dirty: false);
@@ -839,37 +1020,29 @@ namespace TrackerSQL.Tools
                 chk.InputAttributes["data-original"] = dbVal ? "1" : "0";
             }
 
-            var txtPri = e.Row.FindControl("ddlAttrPriority") as DropDownList;
-            if (txtPri != null)
-            {
-                int dbPri = row.ResolvePriority;
-                if (_dbAttrPriorities != null && _dbAttrPriorities.ContainsKey(row.ParentID))
-                    dbPri = _dbAttrPriorities[row.ParentID];
-                string band = SnapResolvePriority(dbPri).ToString(CultureInfo.InvariantCulture);
-                if (txtPri.Items.FindByValue(band) != null)
-                    txtPri.SelectedValue = band;
-                txtPri.Attributes["data-original"] = band;
-            }
+            BindRankDropdown(e.Row, "ddlQtyRank", row.QtyRank, _dbAttrQtyRanks, row.ParentID);
+            BindRankDropdown(e.Row, "ddlPackRank", row.PackRank, _dbAttrPackRanks, row.ParentID);
+            BindRankDropdown(e.Row, "ddlNoteRank", row.NoteRank, _dbAttrNoteRanks, row.ParentID);
         }
 
-        /// <summary>
-        /// Maps free-form / legacy priorities onto Highest=10 … Lowest=100.
-        /// </summary>
-        private static int SnapResolvePriority(string selectedValue)
+        private static void BindRankDropdown(
+            GridViewRow gridRow,
+            string controlId,
+            int currentRank,
+            Dictionary<int, int> dbRanks,
+            int parentId)
         {
-            int n;
-            if (!int.TryParse(selectedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out n))
-                return 100;
-            return SnapResolvePriority(n);
-        }
-
-        private static int SnapResolvePriority(int value)
-        {
-            if (value <= 17) return 10;
-            if (value <= 37) return 25;
-            if (value <= 62) return 50;
-            if (value <= 87) return 75;
-            return 100;
+            var ddl = gridRow.FindControl(controlId) as DropDownList;
+            if (ddl == null)
+                return;
+            int rank = currentRank;
+            if (dbRanks != null && dbRanks.ContainsKey(parentId))
+                rank = dbRanks[parentId];
+            rank = WooAttributeParent.NormalizeRank(rank);
+            string value = rank.ToString(CultureInfo.InvariantCulture);
+            if (ddl.Items.FindByValue(value) != null)
+                ddl.SelectedValue = value;
+            ddl.Attributes["data-original"] = value;
         }
 
         protected void btnPullAttributes_Click(object sender, EventArgs e)
@@ -902,7 +1075,9 @@ namespace TrackerSQL.Tools
             var rows = Session[SessionAttrPull] as List<WooAttributeMap>;
             if (rows == null)
             {
-                rows = _manager.GetAttributeMaps() ?? new List<WooAttributeMap>();
+                rows = (_manager.GetAttributeMaps() ?? new List<WooAttributeMap>())
+                    .Where(m => m != null && m.ItemServiceTypeID == 0)
+                    .ToList();
                 Session[SessionAttrPull] = rows;
             }
             return rows;
@@ -943,11 +1118,11 @@ namespace TrackerSQL.Tools
                 var hdnName = (HiddenField)row.FindControl("hdnAttrName");
                 var hdnOption = (HiddenField)row.FindControl("hdnAttrOption");
                 var hdnId = (HiddenField)row.FindControl("hdnAttrMapId");
+                var hdnRole = (HiddenField)row.FindControl("hdnAttrRole");
                 var txtQty = (TextBox)row.FindControl("txtAttrQty");
                 var ddlPack = (DropDownList)row.FindControl("ddlAttrPack");
                 var ddlSvc = (DropDownList)row.FindControl("ddlAttrSvc");
-                var ddlRole = (DropDownList)row.FindControl("ddlAttrRole");
-                if (txtQty == null || ddlPack == null || ddlSvc == null)
+                if (txtQty == null || ddlPack == null)
                     continue;
 
                 WooAttributeMap target = null;
@@ -964,13 +1139,15 @@ namespace TrackerSQL.Tools
                 {
                     target = rows.FirstOrDefault(r =>
                         string.Equals(r.AttributeName, hdnName.Value, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(r.AttributeOption, hdnOption.Value, StringComparison.OrdinalIgnoreCase));
+                        && string.Equals(r.AttributeOption, hdnOption.Value, StringComparison.OrdinalIgnoreCase)
+                        && r.ItemServiceTypeID == 0);
                 }
                 if (target == null)
                     continue;
 
                 int svcId = 0;
-                int.TryParse(ddlSvc.SelectedValue, out svcId);
+                if (ddlSvc != null)
+                    int.TryParse(ddlSvc.SelectedValue, out svcId);
                 double qty;
                 if (!double.TryParse(txtQty.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out qty))
                     qty = 1;
@@ -980,8 +1157,8 @@ namespace TrackerSQL.Tools
                 target.QtyFactor = qty;
                 target.PackagingID = packId > 0 ? (int?)packId : null;
                 target.ItemServiceTypeID = svcId;
-                if (ddlRole != null)
-                    target.MapRole = WooAttributeMapRoles.Normalize(ddlRole.SelectedValue);
+                if (hdnRole != null && !string.IsNullOrWhiteSpace(hdnRole.Value))
+                    target.MapRole = WooAttributeMapRoles.Normalize(hdnRole.Value);
                 if (hdnId != null)
                 {
                     int mapId;
@@ -1002,7 +1179,6 @@ namespace TrackerSQL.Tools
 
             var ddlPack = e.Row.FindControl("ddlAttrPack") as DropDownList;
             var ddlSvc = e.Row.FindControl("ddlAttrSvc") as DropDownList;
-            var ddlRole = e.Row.FindControl("ddlAttrRole") as DropDownList;
             if (ddlPack != null)
             {
                 FillPackagingDropdown(ddlPack, row.PackagingID ?? row.SuggestedPackagingID, null);
@@ -1013,16 +1189,15 @@ namespace TrackerSQL.Tools
                 FillServiceTypeDropdown(ddlSvc, row.ItemServiceTypeID);
                 MarkOriginal(ddlSvc, ddlSvc.SelectedValue);
             }
-            if (ddlRole != null)
-            {
-                string role = WooAttributeMapRoles.Normalize(row.MapRole);
-                if (ddlRole.Items.FindByValue(role) != null)
-                    ddlRole.SelectedValue = role;
-                MarkOriginal(ddlRole, ddlRole.SelectedValue);
-            }
+            bool notesOnly = WooAttributeMapRoles.IsNotesOnly(row.MapRole);
+            if (ddlPack != null)
+                ddlPack.Enabled = !notesOnly && WooAttributeMapRoles.AppliesPackaging(row.MapRole);
             var txtQty = e.Row.FindControl("txtAttrQty") as TextBox;
             if (txtQty != null)
+            {
+                txtQty.Enabled = !notesOnly && WooAttributeMapRoles.AppliesQty(row.MapRole);
                 MarkOriginal(txtQty, txtQty.Text);
+            }
         }
 
         protected void btnSaveAttrMaps_Click(object sender, EventArgs e)
@@ -1059,7 +1234,9 @@ namespace TrackerSQL.Tools
                     saved++;
                 }
 
-                var refreshed = _manager.GetAttributeMaps();
+                var refreshed = (_manager.GetAttributeMaps() ?? new List<WooAttributeMap>())
+                    .Where(m => m != null && m.ItemServiceTypeID == 0)
+                    .ToList();
                 Session[SessionAttrPull] = refreshed;
                 gvAttr.DataSource = refreshed;
                 gvAttr.DataBind();
@@ -1080,9 +1257,11 @@ namespace TrackerSQL.Tools
                 Session[SessionPull] = result.MappingRows;
                 Session[SessionMissingSku] = result.MissingSkuRows;
                 Session[SessionPullFind] = null;
+                Session[SessionPullNewOnly] = null;
                 Session[SessionPullVer] = PullRowsVersion;
                 ClearPullDirty();
                 txtFindSku.Text = string.Empty;
+                chkNewSinceSync.Checked = false;
                 gvPull.PageIndex = 0;
                 gvMissingSku.PageIndex = 0;
                 RebindPull();
@@ -1091,6 +1270,9 @@ namespace TrackerSQL.Tools
                 SyncWriteMissingButton();
                 SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.MapPullProductsOk,
                     result.MappingRows.Count, result.MissingSkuRows.Count, result.ParentsScanned)
+                    + (result.NewSinceLastSyncCount > 0
+                        ? " " + result.NewSinceLastSyncCount + " new since previous pull."
+                        : string.Empty)
                     + (result.HitCatalogCap
                         ? " " + MessageProvider.Get(MessageKeys.WooCommerce.MapPullProductsCapWarn)
                         : string.Empty), false);
@@ -1159,7 +1341,28 @@ namespace TrackerSQL.Tools
         private List<WooProductMapRow> GetMissingSkuRows()
         {
             EnsurePullRowsLoaded();
-            return Session[SessionMissingSku] as List<WooProductMapRow> ?? new List<WooProductMapRow>();
+            var rows = Session[SessionMissingSku] as List<WooProductMapRow> ?? new List<WooProductMapRow>();
+            if (!IsPullNewOnlyFilter())
+                return rows;
+            return rows.Where(r => r != null && r.IsNewSinceLastSync).ToList();
+        }
+
+        private bool IsPullNewOnlyFilter()
+        {
+            object v = Session[SessionPullNewOnly];
+            return v is bool && (bool)v;
+        }
+
+        protected void chkNewSinceSync_CheckedChanged(object sender, EventArgs e)
+        {
+            MergeVisiblePullEdits();
+            Session[SessionPullNewOnly] = chkNewSinceSync.Checked;
+            gvPull.PageIndex = 0;
+            gvMissingSku.PageIndex = 0;
+            RebindPull();
+            RebindMissingSku();
+            SyncSaveSelectedButton();
+            SyncWriteMissingButton();
         }
 
         /// <summary>Session first; otherwise rebuild from the local Woo catalog cache (no API).</summary>
@@ -1172,17 +1375,51 @@ namespace TrackerSQL.Tools
             RebuildPullRowsPreservingUserModes();
         }
 
-        private static bool RowMatchesFind(WooProductMapRow r, string needle)
+        private static bool RowMatchesFind(WooProductMapRow r, string needle, HashSet<int> trackerItemIds = null)
         {
             if (r == null || string.IsNullOrEmpty(needle))
                 return true;
-            return ContainsIgnoreCase(r.Sku, needle)
+            if (ContainsIgnoreCase(r.Sku, needle)
                 || ContainsIgnoreCase(r.ParentSku, needle)
                 || ContainsIgnoreCase(r.DisplaySku, needle)
                 || ContainsIgnoreCase(r.Name, needle)
                 || ContainsIgnoreCase(r.ParentName, needle)
                 || ContainsIgnoreCase(r.DisplayName, needle)
-                || ContainsIgnoreCase(r.AttributesLabel, needle);
+                || ContainsIgnoreCase(r.AttributesLabel, needle)
+                || ContainsIgnoreCase(r.SuggestedItemDesc, needle)
+                || ContainsIgnoreCase(r.CreateSku, needle)
+                || ContainsIgnoreCase(r.NewSku, needle)
+                || ContainsIgnoreCase(r.MatchReason, needle))
+                return true;
+
+            if (trackerItemIds != null)
+            {
+                if (r.MappedItemID > 0 && trackerItemIds.Contains(r.MappedItemID))
+                    return true;
+                if (r.SuggestedItemID > 0 && trackerItemIds.Contains(r.SuggestedItemID))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private HashSet<int> FindTrackerItemIdsMatching(string needle)
+        {
+            if (string.IsNullOrWhiteSpace(needle))
+                return new HashSet<int>();
+
+            var ids = new HashSet<int>();
+            foreach (Item item in _itemsRepo.GetAll() ?? new List<Item>())
+            {
+                if (item == null || item.ItemID <= 0)
+                    continue;
+                if (ContainsIgnoreCase(item.SKU, needle)
+                    || ContainsIgnoreCase(item.ItemDesc, needle)
+                    || ContainsIgnoreCase(item.ItemShortName, needle))
+                    ids.Add(item.ItemID);
+            }
+
+            return ids;
         }
 
         private static bool ContainsIgnoreCase(string haystack, string needle)
@@ -1194,6 +1431,14 @@ namespace TrackerSQL.Tools
         private List<WooProductMapRow> GetVisiblePullRows()
         {
             var rows = GetAllPullRows();
+            if (IsPullNewOnlyFilter())
+            {
+                var newFamilies = new HashSet<long>(rows
+                    .Where(r => r != null && r.IsNewSinceLastSync)
+                    .Select(r => r.WooProductId));
+                rows = rows.Where(r => r != null && newFamilies.Contains(r.WooProductId)).ToList();
+            }
+
             string find = Session[SessionPullFind] as string;
             var parentIds = new HashSet<long>(rows.Where(r => r.IsParentGroup).Select(r => r.WooProductId));
             var expanded = new HashSet<long>(rows.Where(r => r.IsParentGroup && r.GroupExpanded).Select(r => r.WooProductId));
@@ -1201,10 +1446,11 @@ namespace TrackerSQL.Tools
             if (!string.IsNullOrWhiteSpace(find))
             {
                 string needle = find.Trim();
+                HashSet<int> trackerItemIds = FindTrackerItemIdsMatching(needle);
                 var matchedProducts = new HashSet<long>();
                 foreach (var r in rows)
                 {
-                    if (!RowMatchesFind(r, needle))
+                    if (!RowMatchesFind(r, needle, trackerItemIds))
                         continue;
                     matchedProducts.Add(r.WooProductId);
                 }
@@ -1262,6 +1508,8 @@ namespace TrackerSQL.Tools
             string find = Session[SessionPullFind] as string;
             if (!string.IsNullOrEmpty(find) && string.IsNullOrEmpty(txtFindSku.Text))
                 txtFindSku.Text = find;
+            if (chkNewSinceSync.Checked != IsPullNewOnlyFilter())
+                chkNewSinceSync.Checked = IsPullNewOnlyFilter();
         }
 
         private void UpdatePullPageInfo(int visibleCount)
@@ -1276,9 +1524,13 @@ namespace TrackerSQL.Tools
             int page = gvPull.PageIndex + 1;
             int pages = Math.Max(1, (int)Math.Ceiling(visibleCount / (double)gvPull.PageSize));
             string find = Session[SessionPullFind] as string;
-            string text = string.IsNullOrWhiteSpace(find)
-                ? MessageProvider.Format(MessageKeys.WooCommerce.MapPullPageInfo, visibleCount, page, pages)
-                : MessageProvider.Format(MessageKeys.WooCommerce.MapPullPageInfoFiltered, visibleCount, total, page, pages, find);
+            string text;
+            if (!string.IsNullOrWhiteSpace(find))
+                text = MessageProvider.Format(MessageKeys.WooCommerce.MapPullPageInfoFiltered, visibleCount, total, page, pages, find);
+            else if (IsPullNewOnlyFilter())
+                text = MessageProvider.Format(MessageKeys.WooCommerce.MapPullPageInfoNewOnly, visibleCount, total, page, pages);
+            else
+                text = MessageProvider.Format(MessageKeys.WooCommerce.MapPullPageInfo, visibleCount, page, pages);
             litPullPageInfo.Text = "<p class=\"woo-map-page-info\">" + Server.HtmlEncode(text) + "</p>";
         }
 
@@ -1340,8 +1592,15 @@ namespace TrackerSQL.Tools
         {
             if (hdnPullDirty == null)
                 return;
-            object flag = Session[SessionPullDirty];
-            hdnPullDirty.Value = (flag is bool && (bool)flag) ? "1" : "0";
+            // Client may set hdnPullDirty without Session (Qty/SKU edits). Any postback used to
+            // overwrite that with Session=false while pencils still showed IsDirtyVsSaved.
+            bool dirty = Session[SessionPullDirty] is bool && (bool)Session[SessionPullDirty];
+            if (!dirty && GetAllPullRows().Any(r => r != null && r.IsDirtyVsSaved))
+            {
+                Session[SessionPullDirty] = true;
+                dirty = true;
+            }
+            hdnPullDirty.Value = dirty ? "1" : "0";
         }
 
         private void SyncSaveSelectedButton()
@@ -1420,7 +1679,12 @@ namespace TrackerSQL.Tools
                         row.MapToNotes = dest == WooProductMapRow.DestinationNotesValue;
                         row.MappedItemID = dest;
                         if (dest == WooProductMapRow.DestinationCreateParent)
-                            SeedCreateSkuIfNeeded(row);
+                        {
+                            // Switching to Create: prefer Woo catalog SKU over mapped Tracker SKU.
+                            if (prevDest != WooProductMapRow.DestinationCreateParent)
+                                row.CreateSkuUserSet = false;
+                            SeedCreateSkuIfNeeded(row, forceWooSku: prevDest != WooProductMapRow.DestinationCreateParent);
+                        }
                         if (row.IsParentGroup)
                         {
                             if (dest == WooProductMapRow.DestinationNotesValue)
@@ -1469,23 +1733,29 @@ namespace TrackerSQL.Tools
                 }
 
                 var txtItemSku = gvRow.FindControl("txtItemSku") as TextBox;
-                if (txtItemSku != null && txtItemSku.Visible)
+                bool destChanged = prevDest != row.MappedItemID;
+                bool justSwitchedToCreate = row.MappedItemID == WooProductMapRow.DestinationCreateParent
+                    && destChanged;
+                // Textbox still shows the previous mapping's SKU until rebind. Do not copy it
+                // onto a newly selected Tracker item (or a just-seeded Create SKU).
+                if (txtItemSku != null && txtItemSku.Visible && !justSwitchedToCreate && !destChanged)
                 {
                     string typed = txtItemSku.Text ?? string.Empty;
-                    if (!string.Equals(typed, row.CreateSku ?? string.Empty, StringComparison.Ordinal))
-                    {
-                        row.CreateSku = typed;
+                    row.CreateSku = typed;
+                    if (!string.Equals(typed, prevSku, StringComparison.Ordinal))
                         row.CreateSkuUserSet = true;
-                    }
                 }
 
                 var ddlSort = gvRow.FindControl("ddlSortOrder") as DropDownList;
-                if (ddlSort != null && ddlSort.Visible)
+                if (ddlSort != null && ddlSort.Visible && !destChanged)
                 {
                     int sort;
                     if (int.TryParse(ddlSort.SelectedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out sort))
                         row.CreateSortOrder = sort;
                 }
+
+                if (destChanged)
+                    SyncItemSkuFromDestination(row);
 
                 bool edited = !string.Equals(prevMode, row.ImportMode, StringComparison.OrdinalIgnoreCase)
                     || prevDest != row.MappedItemID
@@ -1536,6 +1806,9 @@ namespace TrackerSQL.Tools
                 r.CaptureSavedSnapshot();
             }
             Session[SessionPull] = all;
+            if (editedKeys.Count > 0 || dirtyBefore.Count > 0
+                || all.Any(r => r != null && r.IsDirtyVsSaved))
+                SetPullDirty();
         }
 
         private static void MarkRowApplySelected(WooProductMapRow row)
@@ -1545,15 +1818,56 @@ namespace TrackerSQL.Tools
             row.ApplySelected = true;
         }
 
-        private static void SeedCreateSkuIfNeeded(WooProductMapRow row)
+        /// <summary>
+        /// When Tracker SKU mapping changes, Item SKU / S/O follow the selected item
+        /// (Create still seeds from the Woo catalog SKU).
+        /// </summary>
+        private void SyncItemSkuFromDestination(WooProductMapRow row)
         {
             if (row == null)
                 return;
-            if (row.CreateSkuUserSet && !string.IsNullOrWhiteSpace(row.CreateSku))
+            if (row.MapToNotes || row.MappedItemID == WooProductMapRow.DestinationNotesValue
+                || row.ImportParentAsNotes || row.ImportParentExcluded)
+                return;
+            if (row.MappedItemID == WooProductMapRow.DestinationCreateParent)
+            {
+                row.CreateSkuUserSet = false;
+                SeedCreateSkuIfNeeded(row, forceWooSku: true);
+                return;
+            }
+            if (row.MappedItemID <= 0)
+                return;
+
+            var item = _itemsRepo.GetById(row.MappedItemID);
+            if (item == null)
+                return;
+            row.CreateSku = (item.SKU ?? string.Empty).Trim();
+            if (item.SortOrder.HasValue && item.SortOrder.Value > 0)
+                row.CreateSortOrder = item.SortOrder.Value;
+            row.CreateSkuUserSet = false;
+        }
+
+        /// <summary>
+        /// Fills Item SKU from the Woo catalog SKU when creating a Tracker item.
+        /// forceWooSku: destination just switched to Create — overwrite a leftover mapped Tracker SKU.
+        /// </summary>
+        private static void SeedCreateSkuIfNeeded(WooProductMapRow row, bool forceWooSku = false)
+        {
+            if (row == null)
+                return;
+            if (!forceWooSku && row.CreateSkuUserSet && !string.IsNullOrWhiteSpace(row.CreateSku))
                 return;
             string def = row.WooCreateSkuDefault;
-            if (!string.IsNullOrWhiteSpace(def))
+            if (string.IsNullOrWhiteSpace(def))
+                return;
+            if (forceWooSku
+                || string.IsNullOrWhiteSpace(row.CreateSku)
+                || !row.CreateSkuUserSet)
+            {
                 row.CreateSku = def;
+                if (forceWooSku)
+                    row.CreateSkuUserSet = false;
+            }
         }
 
         protected void ddlPack_SelectedIndexChanged(object sender, EventArgs e)
@@ -1621,6 +1935,8 @@ namespace TrackerSQL.Tools
             if (!int.TryParse(ddl.SelectedValue, out dest))
                 return;
 
+            int prevDest = row.MappedItemID;
+
             if (row.IsParentGroup)
             {
                 if (dest == WooProductMapRow.DestinationNotesValue)
@@ -1645,9 +1961,13 @@ namespace TrackerSQL.Tools
             }
 
             if (dest == WooProductMapRow.DestinationCreateParent)
-                SeedCreateSkuIfNeeded(row);
-            else if (row.IsVariation || !row.IsParentGroup)
-                row.CreateSkuUserSet = false;
+            {
+                if (prevDest != WooProductMapRow.DestinationCreateParent)
+                    row.CreateSkuUserSet = false;
+                SeedCreateSkuIfNeeded(row, forceWooSku: prevDest != WooProductMapRow.DestinationCreateParent);
+            }
+            else
+                SyncItemSkuFromDestination(row);
 
             MarkRowApplySelected(row);
             WooCommerceMappingManager.ApplyParentImportModes(rows);
@@ -1676,6 +1996,8 @@ namespace TrackerSQL.Tools
             parent.UsesCategoryImportDefault = false;
             MarkRowApplySelected(parent);
             WooCommerceMappingManager.ApplyParentImportModes(rows);
+            if (parent.ImportParentAsItem == false && parent.ImportParentAsNotes == false && parent.ImportParentExcluded == false)
+                _manager.RematchUnmappedChildren(rows, parent.WooProductId);
             MarkRowApplySelected(parent);
             Session[SessionPull] = rows;
             SetPullDirty();
@@ -1764,8 +2086,8 @@ namespace TrackerSQL.Tools
             var ddlSortOrder = e.Row.FindControl("ddlSortOrder") as DropDownList;
             if (ddlSortOrder != null && ddlSortOrder.Visible)
             {
-                _sortOrdersRepo.FillDropDown(ddlSortOrder, row.CreateSortOrder);
-                ddlSortOrder.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapColSortTip);
+                _sortOrdersRepo.FillDropDownCompact(ddlSortOrder, row.CreateSortOrder);
+                SyncCompactSortOrderTooltip(ddlSortOrder);
             }
 
             var chkImport = e.Row.FindControl("chkImport") as CheckBox;
@@ -1807,7 +2129,7 @@ namespace TrackerSQL.Tools
             {
                 ddl.AutoPostBack = true;
                 ddl.Items.Clear();
-                foreach (ListItem li in ddlItemLookup.Items)
+                foreach (ListItem li in GetItemDropdownTemplate())
                     ddl.Items.Add(new ListItem(li.Text, li.Value));
 
                 if (row.IsParentGroup)
@@ -1824,34 +2146,37 @@ namespace TrackerSQL.Tools
                     : (row.MappedItemID == WooProductMapRow.DestinationCreateParent
                         ? WooProductMapRow.DestinationCreateParent
                         : (row.MappedItemID > 0 ? row.MappedItemID : row.SuggestedItemID));
-                if (row.ImportParentAsItem && selected <= 0)
+                if (row.ImportParentAsItem && selected == 0)
                     selected = WooProductMapRow.DestinationCreateParent;
+                // Notes is -1; do not treat it as unmapped or it snaps back to Create.
                 if (!row.IsParentGroup
-                    && selected <= 0
+                    && selected == 0
                     && row.HasOwnSku
                     && row.SuggestedItemID <= 0
                     && row.ExistingMappingID <= 0
+                    && !row.MapToNotes
                     && !row.ImportParentAsItem
                     && !row.ImportParentAsNotes
                     && !row.ImportParentExcluded)
                     selected = WooProductMapRow.DestinationCreateParent;
                 if (row.IsParentGroup && !row.ParentMapsAsDestination && !row.ImportParentExcluded)
+                {
                     selected = 0;
+                    // Keep session MappedItemID aligned with the "(variants)" destination control.
+                    if (row.MappedItemID != 0)
+                        row.MappedItemID = 0;
+                }
                 if (ddl.Items.FindByValue(selected.ToString()) != null)
                     ddl.SelectedValue = selected.ToString();
 
                 if (selected == WooProductMapRow.DestinationCreateParent)
-                {
                     SeedCreateSkuIfNeeded(row);
-                    var txtCreate = e.Row.FindControl("txtItemSku") as TextBox;
-                    if (txtCreate != null)
-                        txtCreate.Text = row.CreateSku ?? string.Empty;
-                }
-                else if (row.MappedItemID > 0 && !row.CreateSkuUserSet
-                    && string.IsNullOrWhiteSpace(row.CreateSku))
-                {
-                    // Mapped row: Item SKU box can show Tracker SKU for rename once known.
-                }
+                else if (selected > 0 && !row.CreateSkuUserSet)
+                    SyncItemSkuFromDestination(row);
+
+                var txtCreate = e.Row.FindControl("txtItemSku") as TextBox;
+                if (txtCreate != null && txtCreate.Visible)
+                    txtCreate.Text = row.CreateSku ?? string.Empty;
 
                 bool notes = selected == WooProductMapRow.DestinationNotesValue;
                 int? serviceTypeId = null;
@@ -1863,9 +2188,9 @@ namespace TrackerSQL.Tools
                 }
                 if (ddlPack != null)
                 {
-                    FillPackagingDropdown(ddlPack, notes ? null : (row.PackagingID ?? row.SuggestedPackagingID), serviceTypeId);
+                    FillPackagingDropdown(ddlPack, notes ? null : (row.PackagingID ?? row.SuggestedPackagingID), serviceTypeId, compact: true);
                     ddlPack.Enabled = !notes;
-                    ddlPack.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapColPackTip);
+                    SyncCompactPackTooltip(ddlPack);
                 }
                 var txtQty = e.Row.FindControl("txtQty") as TextBox;
                 if (txtQty != null)
@@ -1956,7 +2281,12 @@ namespace TrackerSQL.Tools
                 if (chk != null)
                     row.ApplySelected = chk.Checked;
                 if (txt != null)
+                {
                     row.NewSku = txt.Text;
+                    // Typing a SKU is enough intent to write (Apply may have been left unticked).
+                    if (!string.IsNullOrWhiteSpace(txt.Text))
+                        row.ApplySelected = true;
+                }
             }
             Session[SessionMissingSku] = all;
         }
@@ -1992,6 +2322,7 @@ namespace TrackerSQL.Tools
 
             int saved = 0;
             int created = 0;
+            int linkedExisting = 0;
             var errors = new List<string>();
 
             try
@@ -2019,12 +2350,18 @@ namespace TrackerSQL.Tools
 
                     try
                     {
-                        var item = _manager.CreateTrackerItemForWooRow(src, UserName());
-                        created++;
+                        bool wasCreated;
+                        var item = _manager.CreateTrackerItemForWooRow(src, UserName(), out wasCreated);
+                        if (wasCreated)
+                            created++;
+                        else
+                            linkedExisting++;
                         src.SuggestedItemID = item.ItemID;
                         src.SuggestedItemDesc = item.ItemDesc;
                         src.MappedItemID = item.ItemID;
-                        src.MatchReason = "Created Tracker item";
+                        src.MatchReason = wasCreated
+                            ? "Created Tracker item"
+                            : "Linked existing Tracker item (same SKU)";
                         if (!src.IsParentGroup)
                             continue;
                         foreach (var r in rows)
@@ -2044,7 +2381,7 @@ namespace TrackerSQL.Tools
                             r.SuggestedItemID = item.ItemID;
                             r.SuggestedItemDesc = item.ItemDesc;
                             r.MappedItemID = item.ItemID;
-                            r.MatchReason = "Created Tracker item";
+                            r.MatchReason = src.MatchReason;
                         }
                     }
                     catch (Exception createEx)
@@ -2053,7 +2390,7 @@ namespace TrackerSQL.Tools
                     }
                 }
 
-                if (created > 0)
+                if (created > 0 || linkedExisting > 0)
                     BindItemDropdowns();
 
                 foreach (var src in selected)
@@ -2061,7 +2398,13 @@ namespace TrackerSQL.Tools
                     try
                     {
                         if (src.IsParentGroup && !src.ParentUsesApply && !src.ImportModeUserSet)
+                        {
+                            // Variants parent dirty only from UI/session drift — nothing to write.
+                            if (src.IsDirtyVsSaved)
+                                src.CaptureSavedSnapshot();
+                            src.ApplySelected = false;
                             continue;
+                        }
                         if (!src.IsParentGroup && (src.ImportParentAsNotes || src.ImportParentAsItem || src.ImportParentExcluded))
                             continue;
 
@@ -2093,30 +2436,42 @@ namespace TrackerSQL.Tools
 
                         if (src.IsParentGroup && !src.ParentMapsAsDestination)
                         {
-                            if (src.ExistingMappingID > 0)
-                            {
-                                _manager.ClearParentProductMapping(src.WooProductId);
-                                src.ExistingMappingID = 0;
-                                saved++;
-                                src.ApplySelected = false;
-                                src.SavedSnapshot = null;
-                                src.ImportModeUserSet = false;
-                                src.MatchReason = "Import variants";
-                            }
-                            else
-                            {
-                                // Apply was ticked but Variants mode has nothing to write on the group row.
-                                errors.Add((src.DisplaySku ?? src.Sku)
-                                    + ": Import variants — nothing to save on the group. Set Mode to Parent → notes or Parent SKU, or expand and map variants.");
-                            }
+                            // Persist Variants so a category default (e.g. Parent → notes) cannot restore on reload.
+                            int variantsId = _manager.SaveMapping(
+                                src.WooProductId,
+                                null,
+                                0,
+                                false,
+                                false,
+                                1,
+                                null,
+                                TruncateSkuPattern(src.DisplaySku),
+                                UserName(),
+                                variantsParent: true);
+                            src.ExistingMappingID = variantsId;
+                            src.ImportMode = WooProductMapRow.ImportModeVariants;
+                            src.ImportModeUserSet = false;
+                            src.UsesCategoryImportDefault = false;
+                            src.ApplySelected = false;
+                            src.MappedItemID = 0;
+                            src.MapToNotes = false;
+                            src.IncludeInImport = false;
+                            src.MatchReason = "Import variants";
+                            src.CaptureSavedSnapshot();
+                            saved++;
                             continue;
                         }
 
-                        bool mapToNotes = src.ImportParentAsNotes
-                            || src.MapToNotes
-                            || src.MappedItemID == WooProductMapRow.DestinationNotesValue;
-                        if (src.IsParentGroup && src.ImportParentAsItem)
+                        // Destination / Mode from Merge are authoritative. Do not infer Notes from a
+                        // stale MappedItemID==-1 while MapToNotes is false (that skipped SKU/S/O writes).
+                        bool mapToNotes;
+                        if (src.IsParentGroup)
+                            mapToNotes = src.ImportParentAsNotes;
+                        else if (src.MappedItemID > 0 || src.IsCreateParentDestination)
                             mapToNotes = false;
+                        else
+                            mapToNotes = src.MapToNotes
+                                || src.MappedItemID == WooProductMapRow.DestinationNotesValue;
                         if (mapToNotes && src.IsParentGroup)
                             src.IncludeInImport = true;
 
@@ -2125,11 +2480,18 @@ namespace TrackerSQL.Tools
                         {
                             try
                             {
-                                var item = _manager.CreateTrackerItemForWooRow(src, UserName());
-                                created++;
+                                bool wasCreated;
+                                var item = _manager.CreateTrackerItemForWooRow(src, UserName(), out wasCreated);
+                                if (wasCreated)
+                                    created++;
+                                else
+                                    linkedExisting++;
                                 src.SuggestedItemID = item.ItemID;
                                 src.SuggestedItemDesc = item.ItemDesc;
                                 src.MappedItemID = item.ItemID;
+                                src.MatchReason = wasCreated
+                                    ? "Created Tracker item"
+                                    : "Linked existing Tracker item (same SKU)";
                             }
                             catch (Exception createEx)
                             {
@@ -2182,12 +2544,15 @@ namespace TrackerSQL.Tools
                             try
                             {
                                 _manager.ApplySkuAndSort(itemId, src.CreateSku, src.CreateSortOrder, UserName());
+                                src.CreateSkuUserSet = false;
                             }
                             catch (Exception skuEx)
                             {
                                 errors.Add((src.DisplaySku ?? src.Sku) + ": " + skuEx.Message);
                             }
                         }
+                        else
+                            src.CreateSkuUserSet = false;
                         src.CaptureSavedSnapshot();
                     }
                     catch (Exception mapEx)
@@ -2197,6 +2562,8 @@ namespace TrackerSQL.Tools
                 }
 
                 Session[SessionPull] = rows;
+                if (!rows.Any(r => r != null && (r.IsDirtyVsSaved || r.ImportModeUserSet)))
+                    ClearPullDirty();
                 bool ok = saved > 0 || created > 0;
                 if (ok)
                 {
@@ -2207,12 +2574,31 @@ namespace TrackerSQL.Tools
                     Session[SessionMissingSku] = null;
                     RebuildPullRowsPreservingUserModes();
                 }
+                else if (errors.Count == 0
+                    && !rows.Any(r => r != null && (r.IsDirtyVsSaved || r.ImportModeUserSet)))
+                {
+                    // Pencils cleared with nothing to write (e.g. Variants parent drift).
+                    ok = true;
+                    if (hdnPullSaveOk != null)
+                        hdnPullSaveOk.Value = "1";
+                    ClearUnsavedFlag(hdnUnsavedPull);
+                }
                 RebindPull();
                 BindExistingMaps();
-                string msg = MessageProvider.Format(MessageKeys.WooCommerce.MapSaveSelectedOk, saved, created);
+                string msg = ok && saved == 0 && created == 0 && linkedExisting == 0 && errors.Count == 0
+                    ? "Saved — mapping grid is up to date."
+                    : MessageProvider.Format(MessageKeys.WooCommerce.MapSaveSelectedOk, saved, created);
+                if (linkedExisting > 0)
+                    msg += " Linked " + linkedExisting + " existing Tracker item(s) by SKU.";
                 if (errors.Count > 0)
                     msg += " " + string.Join("; ", errors.Take(5));
                 SetStatus(msg, errors.Count > 0 || !ok);
+                WooCommerceUserLog.Write(
+                    "Mapping save selected",
+                    string.Format(CultureInfo.InvariantCulture,
+                        "saved={0}, created={1}, linked={2}, errors={3}",
+                        saved, created, linkedExisting, errors.Count),
+                    UserName());
             }
             catch (Exception ex)
             {
@@ -2233,10 +2619,33 @@ namespace TrackerSQL.Tools
         {
             MergeVisibleMissingSkuEdits();
             var rows = GetMissingSkuRows();
+            // Keep typed NewSku values so a failed write does not wipe the grid.
+            var pendingSkus = rows
+                .Where(r => r != null && !string.IsNullOrWhiteSpace(r.NewSku))
+                .ToDictionary(r => r.RowKey, r => new { r.NewSku, r.ApplySelected }, StringComparer.Ordinal);
+
             var result = _manager.WriteMissingSkusToWoo(rows, UserName());
             Session[SessionPull] = null;
             Session[SessionMissingSku] = null;
             EnsurePullRowsLoaded();
+
+            // Re-apply typed SKUs onto rebuilt missing list when write failed or partial.
+            if (!result.Succeeded || result.Count == 0)
+            {
+                var missing = GetMissingSkuRows();
+                foreach (var row in missing)
+                {
+                    if (row == null || string.IsNullOrEmpty(row.RowKey))
+                        continue;
+                    if (!pendingSkus.ContainsKey(row.RowKey))
+                        continue;
+                    var keep = pendingSkus[row.RowKey];
+                    row.NewSku = keep.NewSku;
+                    row.ApplySelected = keep.ApplySelected;
+                }
+                Session[SessionMissingSku] = missing;
+            }
+
             gvPull.PageIndex = 0;
             gvMissingSku.PageIndex = 0;
             RebindMissingSku();
@@ -2245,7 +2654,15 @@ namespace TrackerSQL.Tools
             SyncWriteMissingButton();
             if (result.Succeeded)
                 ClearUnsavedFlag(hdnUnsavedMissing);
-            SetStatus(result.Message, !result.Succeeded);
+            SetStatus(result.Message, result.Succeeded ? StatusKind.Success
+                : (result.Count > 0 ? StatusKind.Warn : StatusKind.Error));
+            if (!result.Succeeded && !string.IsNullOrWhiteSpace(result.Message))
+            {
+                string js = "window.setTimeout(function(){ window.alert("
+                    + HttpUtility.JavaScriptStringEncode(result.Message, addDoubleQuotes: true)
+                    + "); }, 50);";
+                ScriptManager.RegisterStartupScript(this, GetType(), "wooMapSkuWriteErr", js, true);
+            }
         }
 
         private void BindExistingMaps()
@@ -2254,19 +2671,42 @@ namespace TrackerSQL.Tools
             string notesLabel = MessageProvider.Get(MessageKeys.WooCommerce.MapDestNotes);
             foreach (var m in maps)
             {
+                if (m.IsVariantsMap)
+                {
+                    if (string.IsNullOrWhiteSpace(m.ItemSku))
+                        m.ItemSku = "-";
+                    m.ItemDesc = MessageProvider.Get(MessageKeys.WooCommerce.MapImportModeVariants);
+                    continue;
+                }
                 if (m.IsExcludeMap)
                 {
                     if (string.IsNullOrWhiteSpace(m.ItemSku))
-                        m.ItemSku = "—";
+                        m.ItemSku = "-";
                     m.ItemDesc = MessageProvider.Get(MessageKeys.WooCommerce.MapImportModeExclude);
                     continue;
                 }
                 if (!m.IsNotesMap)
                     continue;
                 if (string.IsNullOrWhiteSpace(m.ItemSku))
-                    m.ItemSku = "—";
+                    m.ItemSku = "-";
                 m.ItemDesc = notesLabel;
             }
+
+            int total = maps.Count;
+            string find = Session[SessionSavedMapsFind] as string;
+            if (!string.IsNullOrEmpty(find) && string.IsNullOrEmpty(txtFindSavedMap.Text))
+                txtFindSavedMap.Text = find;
+            find = (txtFindSavedMap.Text ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(find))
+            {
+                Session[SessionSavedMapsFind] = find;
+                maps = FilterSavedMaps(maps, find);
+            }
+            else
+                Session[SessionSavedMapsFind] = null;
+
+            maps = SortSavedMaps(maps);
+
             if (gvMaps.PageIndex > 0 && maps.Count <= gvMaps.PageIndex * gvMaps.PageSize)
                 gvMaps.PageIndex = 0;
             gvMaps.DataSource = maps;
@@ -2276,9 +2716,146 @@ namespace TrackerSQL.Tools
                 int pageSize = gvMaps.PageSize > 0 ? gvMaps.PageSize : 40;
                 int page = gvMaps.PageIndex + 1;
                 int pages = maps.Count == 0 ? 1 : (int)Math.Ceiling(maps.Count / (double)pageSize);
-                litSavedMapsPageInfo.Text = MessageProvider.Format(
-                    MessageKeys.WooCommerce.MapSavedMapsPageInfo, maps.Count, page, pages);
+                if (!string.IsNullOrEmpty(find))
+                {
+                    litSavedMapsPageInfo.Text = MessageProvider.Format(
+                        MessageKeys.WooCommerce.MapSavedMapsFilteredInfo,
+                        maps.Count, total, find, page, pages);
+                }
+                else
+                {
+                    litSavedMapsPageInfo.Text = MessageProvider.Format(
+                        MessageKeys.WooCommerce.MapSavedMapsPageInfo, maps.Count, page, pages);
+                }
             }
+        }
+
+        private static List<WooItemMapping> FilterSavedMaps(List<WooItemMapping> maps, string find)
+        {
+            if (maps == null || maps.Count == 0 || string.IsNullOrWhiteSpace(find))
+                return maps ?? new List<WooItemMapping>();
+            string needle = find.Trim();
+            return maps.Where(m =>
+            {
+                if (m == null) return false;
+                if (m.MappingID.ToString(CultureInfo.InvariantCulture).IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.MapType) && m.MapType.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.ItemSku) && m.ItemSku.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.ItemDesc) && m.ItemDesc.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.SkuPattern) && m.SkuPattern.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.WooProductLabel) && m.WooProductLabel.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (!string.IsNullOrEmpty(m.WooVariationLabel) && m.WooVariationLabel.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (m.WooProductId.HasValue
+                    && m.WooProductId.Value.ToString(CultureInfo.InvariantCulture).IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                if (m.WooVariationId.HasValue
+                    && m.WooVariationId.Value.ToString(CultureInfo.InvariantCulture).IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+                return false;
+            }).ToList();
+        }
+
+        private List<WooItemMapping> SortSavedMaps(List<WooItemMapping> maps)
+        {
+            if (maps == null || maps.Count == 0)
+                return maps ?? new List<WooItemMapping>();
+            string expr = Session[SessionSavedMapsSort] as string;
+            if (string.IsNullOrEmpty(expr))
+                expr = "MappingID";
+            bool desc = string.Equals(Session[SessionSavedMapsSortDir] as string, "DESC", StringComparison.OrdinalIgnoreCase);
+            Func<WooItemMapping, object> key;
+            switch (expr)
+            {
+                case "MapType":
+                    key = m => m.MapType ?? string.Empty;
+                    break;
+                case "IncludeInImport":
+                    key = m => m.IncludeInImport ? 1 : 0;
+                    break;
+                case "ItemSku":
+                    key = m => m.ItemSku ?? string.Empty;
+                    break;
+                case "ItemDesc":
+                    key = m => m.ItemDesc ?? string.Empty;
+                    break;
+                case "SkuPattern":
+                    key = m => m.SkuPattern ?? string.Empty;
+                    break;
+                case "WooProductId":
+                case "WooProductLabel":
+                    key = m => m.WooProductLabel
+                        ?? (m.WooProductId.HasValue ? m.WooProductId.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+                    break;
+                case "WooVariationId":
+                case "WooVariationLabel":
+                    key = m => m.WooVariationLabel
+                        ?? (m.WooVariationId.HasValue && m.WooVariationId.Value > 0
+                            ? m.WooVariationId.Value.ToString(CultureInfo.InvariantCulture)
+                            : string.Empty);
+                    break;
+                case "QtyFactor":
+                    key = m => m.QtyFactor;
+                    break;
+                case "PackagingDesc":
+                case "PackagingID":
+                    key = m => m.PackagingDesc ?? (m.PackagingID.HasValue ? m.PackagingID.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+                    break;
+                case "LastWooStatus":
+                    key = m => m.LastWooStatus ?? string.Empty;
+                    break;
+                default:
+                    key = m => m.MappingID;
+                    break;
+            }
+            return desc
+                ? maps.OrderByDescending(key).ToList()
+                : maps.OrderBy(key).ToList();
+        }
+
+        protected static string FormatWooProductCell(object dataItem)
+        {
+            var m = dataItem as WooItemMapping;
+            if (m == null)
+                return "-";
+            if (!string.IsNullOrWhiteSpace(m.WooProductLabel))
+                return m.WooProductLabel.Trim();
+            if (m.WooProductId.HasValue && m.WooProductId.Value > 0)
+                return "#" + m.WooProductId.Value.ToString(CultureInfo.InvariantCulture);
+            return "-";
+        }
+
+        protected static string FormatWooVariationCell(object dataItem)
+        {
+            var m = dataItem as WooItemMapping;
+            if (m == null)
+                return "-";
+            if (!m.WooVariationId.HasValue || m.WooVariationId.Value <= 0)
+                return "-";
+            if (!string.IsNullOrWhiteSpace(m.WooVariationLabel))
+                return m.WooVariationLabel.Trim();
+            return "#" + m.WooVariationId.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        protected void btnFindSavedMap_Click(object sender, EventArgs e)
+        {
+            Session[SessionSavedMapsFind] = (txtFindSavedMap.Text ?? string.Empty).Trim();
+            gvMaps.PageIndex = 0;
+            BindExistingMaps();
+        }
+
+        protected void btnClearFindSavedMap_Click(object sender, EventArgs e)
+        {
+            txtFindSavedMap.Text = string.Empty;
+            Session[SessionSavedMapsFind] = null;
+            gvMaps.PageIndex = 0;
+            BindExistingMaps();
         }
 
         protected void gvMaps_RowCreated(object sender, GridViewRowEventArgs e)
@@ -2289,6 +2866,20 @@ namespace TrackerSQL.Tools
         protected void gvMaps_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
             gvMaps.PageIndex = e.NewPageIndex;
+            BindExistingMaps();
+        }
+
+        protected void gvMaps_Sorting(object sender, GridViewSortEventArgs e)
+        {
+            string current = Session[SessionSavedMapsSort] as string;
+            string dir = Session[SessionSavedMapsSortDir] as string;
+            if (string.Equals(current, e.SortExpression, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(dir, "DESC", StringComparison.OrdinalIgnoreCase))
+                Session[SessionSavedMapsSortDir] = "DESC";
+            else
+                Session[SessionSavedMapsSortDir] = "ASC";
+            Session[SessionSavedMapsSort] = e.SortExpression;
+            gvMaps.PageIndex = 0;
             BindExistingMaps();
         }
 
@@ -2309,14 +2900,71 @@ namespace TrackerSQL.Tools
         protected void btnDryPush_Click(object sender, EventArgs e)
         {
             var result = _manager.PushEnabledState(UserName(), dryRun: true);
+            Session[SessionEnabledPush] = result.Rows;
+            BindEnabledPushGrid();
             SetStatus(result.Message, !result.Succeeded);
         }
 
         protected void btnPushEnabled_Click(object sender, EventArgs e)
         {
             var result = _manager.PushEnabledState(UserName(), dryRun: false);
-            SetStatus(result.Message, !result.Succeeded);
+            Session[SessionEnabledPush] = result.Rows;
+            BindEnabledPushGrid();
+            SetStatus(result.Message, result.FailCount > 0);
             BindExistingMaps();
+        }
+
+        private void BindEnabledPushGrid()
+        {
+            var rows = Session[SessionEnabledPush] as List<WooEnabledPushPreviewRow>
+                ?? new List<WooEnabledPushPreviewRow>();
+            if (gvEnabledPush.PageIndex > 0)
+            {
+                int pages = rows.Count == 0 ? 1 : (int)Math.Ceiling(rows.Count / (double)gvEnabledPush.PageSize);
+                if (gvEnabledPush.PageIndex >= pages)
+                    gvEnabledPush.PageIndex = Math.Max(0, pages - 1);
+            }
+            gvEnabledPush.DataSource = rows;
+            gvEnabledPush.DataBind();
+            if (litEnabledPushSummary != null)
+            {
+                if (rows.Count == 0)
+                    litEnabledPushSummary.Text = "<p class=\"woo-map-page-info\">Run dry-run to list mapped products and what Woo status would be set from Lookups → Items Enbld.</p>";
+                else
+                {
+                    int willChange = rows.Count(r => r != null && r.NeedsChange);
+                    int unchanged = rows.Count - willChange;
+                    litEnabledPushSummary.Text = "<p class=\"woo-map-page-info\">"
+                        + Server.HtmlEncode(rows.Count + " mapped row(s): "
+                            + willChange + " would change Woo, "
+                            + unchanged + " already match.")
+                        + "</p>";
+                }
+            }
+        }
+
+        protected void gvEnabledPush_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvEnabledPush.PageIndex = e.NewPageIndex;
+            BindEnabledPushGrid();
+        }
+
+        protected void gvEnabledPush_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvEnabledPush, e.Row);
+        }
+
+        protected void gvEnabledPush_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow)
+                return;
+            var row = e.Row.DataItem as WooEnabledPushPreviewRow;
+            if (row == null)
+                return;
+            if (row.NeedsChange)
+                e.Row.CssClass = (e.Row.CssClass + " woo-map-row-dirty").Trim();
+            else if (!row.TrackerEnabled)
+                e.Row.CssClass = (e.Row.CssClass + " woo-map-row-disabled").Trim();
         }
 
         protected void btnBack_Click(object sender, ImageClickEventArgs e)
@@ -2324,23 +2972,80 @@ namespace TrackerSQL.Tools
             Response.Redirect("~/Tools/SystemPreferences.aspx");
         }
 
-        private void FillPackagingDropdown(DropDownList ddl, int? selectedId, int? itemServiceTypeId)
+        private void FillPackagingDropdown(DropDownList ddl, int? selectedId, int? itemServiceTypeId, bool compact = false)
         {
             ddl.Items.Clear();
-            ddl.Items.Add(new ListItem("(none)", "0"));
-            var packs = _manager.GetPackagingsForServiceType(itemServiceTypeId);
+            var none = new ListItem(compact ? "-" : "(none)", "0");
+            if (compact)
+            {
+                none.Attributes["data-compact"] = "-";
+                none.Attributes["data-full"] = "(none)";
+            }
+            ddl.Items.Add(none);
+            var packs = GetPackagingsForServiceTypeCached(itemServiceTypeId);
             foreach (var p in packs)
             {
-                string text = string.IsNullOrWhiteSpace(p.Symbol)
+                string full = string.IsNullOrWhiteSpace(p.Symbol)
                     ? (p.ItemPackagingDesc ?? p.ItemPackagingID.ToString())
                     : (p.ItemPackagingDesc + " [" + p.Symbol + "]");
-                ddl.Items.Add(new ListItem(text, p.ItemPackagingID.ToString()));
+                string text = compact ? CompactPackagingLabel(p) : full;
+                var item = new ListItem(text, p.ItemPackagingID.ToString());
+                if (compact)
+                {
+                    item.Attributes["data-compact"] = text;
+                    item.Attributes["data-full"] = full;
+                }
+                ddl.Items.Add(item);
             }
             if (selectedId.HasValue && selectedId.Value > 0
                 && ddl.Items.FindByValue(selectedId.Value.ToString()) != null)
             {
                 ddl.SelectedValue = selectedId.Value.ToString();
             }
+        }
+
+        private static string CompactPackagingLabel(ItemPackaging p)
+        {
+            if (p == null)
+                return "-";
+            if (!string.IsNullOrWhiteSpace(p.Symbol))
+                return p.Symbol.Trim();
+            string desc = (p.ItemPackagingDesc ?? string.Empty).Trim();
+            if (desc.Length <= 6)
+                return desc;
+            return desc.Substring(0, 5) + "…";
+        }
+
+        private static void SyncCompactSortOrderTooltip(DropDownList ddl)
+        {
+            if (ddl?.SelectedItem == null)
+                return;
+            string title = ddl.SelectedItem.Attributes["data-full"];
+            if (string.IsNullOrWhiteSpace(title))
+                title = ddl.SelectedItem.Attributes["title"];
+            ddl.ToolTip = string.IsNullOrWhiteSpace(title) ? ddl.SelectedItem.Text : title;
+        }
+
+        private static void SyncCompactPackTooltip(DropDownList ddl)
+        {
+            if (ddl?.SelectedItem == null)
+                return;
+            string title = ddl.SelectedItem.Attributes["data-full"];
+            if (string.IsNullOrWhiteSpace(title))
+                title = ddl.SelectedItem.Attributes["title"];
+            ddl.ToolTip = string.IsNullOrWhiteSpace(title) ? ddl.SelectedItem.Text : title;
+        }
+
+        private List<ItemPackaging> GetPackagingsForServiceTypeCached(int? itemServiceTypeId)
+        {
+            int key = itemServiceTypeId.HasValue && itemServiceTypeId.Value > 0 ? itemServiceTypeId.Value : 0;
+            List<ItemPackaging> cached;
+            if (_packagingsByServiceType.TryGetValue(key, out cached))
+                return cached;
+
+            cached = _manager.GetPackagingsForServiceType(key > 0 ? (int?)key : null);
+            _packagingsByServiceType[key] = cached;
+            return cached;
         }
 
         private void FillServiceTypeDropdown(DropDownList ddl, int selectedId)
@@ -2386,12 +3091,674 @@ namespace TrackerSQL.Tools
                 txt.Attributes["data-original"] = value ?? string.Empty;
         }
 
+        #region Areas / Shipping tabs
+
+        private const string VsWooAreaRows = "WooMap.AreaRows";
+        private const string VsWooAreaFilter = "WooMap.AreaFilter";
+
+        private void BindAreasTab()
+        {
+            _personDropdownTemplate = null;
+            BindDefaultImportAreaDropdown();
+            BindAddressConfigPanel();
+            ReloadAreaWorkingRows();
+            BindAreaDefaultsGrid();
+            BindSystemDefaultPersonHint();
+            litTestResolveResult.Text = string.Empty;
+        }
+
+        private void BindShippingTab()
+        {
+            _personDropdownTemplate = null;
+            var maps = _areaManager.GetShippingMethodMaps() ?? new List<WooShippingMethodMap>();
+            bool empty = maps.Count == 0;
+            if (pnlShippingEmptyHint != null)
+                pnlShippingEmptyHint.Visible = empty;
+            // GridView hides the footer when there are no rows — seed a blank draft so the user can add the first map.
+            if (empty)
+            {
+                maps.Add(new WooShippingMethodMap
+                {
+                    MapID = 0,
+                    MethodMatch = string.Empty,
+                    IsActive = true
+                });
+            }
+            gvShippingMaps.DataSource = maps;
+            gvShippingMaps.DataBind();
+            BindDispatchWaybillPanel();
+        }
+
+        private const string VsDispatchSelected = "WooMap.DispatchSelectedIds";
+
+        private void BindDispatchWaybillPanel()
+        {
+            var settings = _settings.GetSettings() ?? new WooCommerceSettings();
+            EnsureDispatchSelectedLoaded(settings);
+
+            var selected = GetDispatchSelectedIds();
+            var rows = new List<DispatchPersonRow>();
+            foreach (var person in _orderManager.GetDeliveryPersons() ?? new List<Person>())
+            {
+                string abbr = (person.Abbreviation ?? string.Empty).Trim();
+                string name = (person.PersonName ?? string.Empty).Trim();
+                string label;
+                if (!string.IsNullOrEmpty(abbr) && !string.IsNullOrEmpty(name)
+                    && !string.Equals(abbr, name, StringComparison.OrdinalIgnoreCase))
+                    label = abbr + " — " + name;
+                else if (!string.IsNullOrEmpty(abbr))
+                    label = abbr;
+                else if (!string.IsNullOrEmpty(name))
+                    label = name;
+                else
+                    label = "#" + person.PersonID.ToString(CultureInfo.InvariantCulture);
+
+                rows.Add(new DispatchPersonRow
+                {
+                    PersonID = person.PersonID,
+                    DisplayName = label,
+                    UseWaybill = selected.Contains(person.PersonID)
+                });
+            }
+
+            gvDispatchPeople.DataSource = rows;
+            gvDispatchPeople.DataBind();
+            chkTrackingNumberRequired.Checked = settings.TrackingNumberRequired;
+        }
+
+        private void EnsureDispatchSelectedLoaded(WooCommerceSettings settings)
+        {
+            if (ViewState[VsDispatchSelected] != null)
+                return;
+
+            var selected = new List<int>();
+            string ids = settings?.DispatchDeliveryPersonIds ?? string.Empty;
+            foreach (string part in ids.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                int id;
+                if (int.TryParse(part.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out id) && id > 0)
+                    selected.Add(id);
+            }
+            ViewState[VsDispatchSelected] = selected;
+        }
+
+        private List<int> GetDispatchSelectedIds()
+        {
+            return ViewState[VsDispatchSelected] as List<int> ?? new List<int>();
+        }
+
+        private void MergeDispatchGridChecks()
+        {
+            var selected = new HashSet<int>(GetDispatchSelectedIds());
+            foreach (GridViewRow row in gvDispatchPeople.Rows)
+            {
+                if (row.RowType != DataControlRowType.DataRow)
+                    continue;
+                int id = Convert.ToInt32(gvDispatchPeople.DataKeys[row.RowIndex].Value, CultureInfo.InvariantCulture);
+                var chk = row.FindControl("chkUseWaybill") as CheckBox;
+                if (chk != null && chk.Checked)
+                    selected.Add(id);
+                else
+                    selected.Remove(id);
+            }
+            ViewState[VsDispatchSelected] = selected.OrderBy(x => x).ToList();
+        }
+
+        protected void gvDispatchPeople_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            MergeDispatchGridChecks();
+            gvDispatchPeople.PageIndex = e.NewPageIndex;
+            BindDispatchWaybillPanel();
+        }
+
+        protected void gvDispatchPeople_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvDispatchPeople, e.Row);
+        }
+
+        protected void btnSaveDispatchWaybill_Click(object sender, EventArgs e)
+        {
+            MergeDispatchGridChecks();
+            string joined = string.Join(",", GetDispatchSelectedIds());
+            _settings.SaveDispatchWaybillSettings(joined, chkTrackingNumberRequired.Checked, UserName());
+            ViewState[VsDispatchSelected] = null;
+            BindDispatchWaybillPanel();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapDispatchWaybillSaved), false);
+            WooCommerceUserLog.Write("Mapping dispatch/waybill",
+                "people=" + (joined.Length > 0 ? joined : "(none)")
+                + "; trackingRequired=" + chkTrackingNumberRequired.Checked,
+                UserName());
+        }
+
+        private void BindPaymentTab()
+        {
+            gvPaymentMaps.DataSource = _orderImportManager.GetPaymentMethodMaps() ?? new List<WooPaymentMethodMap>();
+            gvPaymentMaps.DataBind();
+        }
+
+        private void ReloadAreaWorkingRows()
+        {
+            ViewState[VsWooAreaRows] = _areaManager.GetAreaDeliveryDefaults() ?? new List<WooAreaDeliveryDefault>();
+        }
+
+        private List<WooAreaDeliveryDefault> GetAreaWorkingRows()
+        {
+            return ViewState[VsWooAreaRows] as List<WooAreaDeliveryDefault>
+                ?? new List<WooAreaDeliveryDefault>();
+        }
+
+        private void MergeAreaGridEdits()
+        {
+            var working = GetAreaWorkingRows();
+            var byId = working.ToDictionary(r => r.AreaID);
+            foreach (GridViewRow row in gvAreaDefaults.Rows)
+            {
+                if (row.RowType != DataControlRowType.DataRow)
+                    continue;
+                int areaId = Convert.ToInt32(gvAreaDefaults.DataKeys[row.RowIndex].Value, CultureInfo.InvariantCulture);
+                if (!byId.TryGetValue(areaId, out var target))
+                    continue;
+                var ddl = (DropDownList)row.FindControl("ddlDefaultPerson");
+                var txt = (TextBox)row.FindControl("txtPostalRanges");
+                int personId = ParseIntOrZero(ddl != null ? ddl.SelectedValue : null);
+                target.DefaultPreferredAgentID = personId > 0 ? personId : (int?)null;
+                target.PostalRanges = txt != null ? txt.Text : target.PostalRanges;
+            }
+            ViewState[VsWooAreaRows] = working;
+        }
+
+        private void BindAreaDefaultsGrid()
+        {
+            var working = GetAreaWorkingRows();
+            string filter = (ViewState[VsWooAreaFilter] as string) ?? string.Empty;
+            if (txtAreaFilter != null)
+                txtAreaFilter.Text = filter;
+            IEnumerable<WooAreaDeliveryDefault> query = working;
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                string f = filter.Trim();
+                query = working.Where(r =>
+                    !string.IsNullOrWhiteSpace(r.AreaName)
+                    && r.AreaName.IndexOf(f, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            var list = query.ToList();
+            if (gvAreaDefaults.PageIndex > 0
+                && gvAreaDefaults.PageIndex * gvAreaDefaults.PageSize >= Math.Max(list.Count, 1))
+                gvAreaDefaults.PageIndex = 0;
+            gvAreaDefaults.DataSource = list;
+            gvAreaDefaults.DataBind();
+        }
+
+        protected void gvAreaDefaults_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvAreaDefaults, e.Row);
+        }
+
+        protected void gvAreaDefaults_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            MergeAreaGridEdits();
+            gvAreaDefaults.PageIndex = e.NewPageIndex;
+            BindAreaDefaultsGrid();
+        }
+
+        protected void btnAreaFilter_Click(object sender, EventArgs e)
+        {
+            MergeAreaGridEdits();
+            ViewState[VsWooAreaFilter] = (txtAreaFilter.Text ?? string.Empty).Trim();
+            gvAreaDefaults.PageIndex = 0;
+            BindAreaDefaultsGrid();
+        }
+
+        protected void btnAreaFilterClear_Click(object sender, EventArgs e)
+        {
+            MergeAreaGridEdits();
+            ViewState[VsWooAreaFilter] = string.Empty;
+            txtAreaFilter.Text = string.Empty;
+            gvAreaDefaults.PageIndex = 0;
+            BindAreaDefaultsGrid();
+        }
+
+        private void BindSystemDefaultPersonHint()
+        {
+            int id = WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
+            var person = _personsRepo.GetById(id);
+            string label = !string.IsNullOrWhiteSpace(person?.Abbreviation)
+                ? person.Abbreviation
+                : (!string.IsNullOrWhiteSpace(person?.PersonName) ? person.PersonName : id.ToString(CultureInfo.InvariantCulture));
+            litSystemDefaultPersonHint.Text = MessageProvider.Format(
+                MessageKeys.WooCommerce.MapSystemDefaultPersonHint,
+                label,
+                id);
+        }
+
+        private int GetSystemDefaultDeliveryPersonId()
+        {
+            return WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
+        }
+
+        private void BindDefaultImportAreaDropdown()
+        {
+            ddlDefaultImportArea.Items.Clear();
+            ddlDefaultImportArea.Items.Add(new ListItem("(none)", "0"));
+            foreach (var area in (_areasRepo.GetAll("AreaName") ?? new List<Area>()))
+            {
+                ddlDefaultImportArea.Items.Add(new ListItem(
+                    area.AreaName ?? area.AreaID.ToString(CultureInfo.InvariantCulture),
+                    area.AreaID.ToString(CultureInfo.InvariantCulture)));
+            }
+            int? def = _areaManager.GetDefaultImportAreaId();
+            ddlDefaultImportArea.SelectedValue = def.HasValue && def.Value > 0
+                ? def.Value.ToString(CultureInfo.InvariantCulture)
+                : "0";
+            MarkOriginal(ddlDefaultImportArea);
+        }
+
+        private void BindImportNotesItemDropdown()
+        {
+            var settings = _settings.GetSettings();
+            int? selected = settings.ImportNotesItemID;
+            if (!selected.HasValue || selected.Value <= 0)
+            {
+                var byLegacy = _itemsRepo.GetById(SystemConstants.ItemConstants.NoteItemTimeID);
+                if (byLegacy != null)
+                    selected = byLegacy.ItemID;
+                else
+                {
+                    var byName = _itemsRepo.FindFirstByDescription("Notes");
+                    if (byName != null && byName.ItemID > 0)
+                        selected = byName.ItemID;
+                }
+            }
+
+            ddlImportNotesItem.Items.Clear();
+            ddlImportNotesItem.Items.Add(new ListItem("(none)", "0"));
+            foreach (var item in _itemsRepo.GetNotesItemChoices(selected) ?? new List<OrderItemLookup>())
+            {
+                string idText = item.ItemTypeID.ToString(CultureInfo.InvariantCulture);
+                string label = (item.ItemDesc ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(label))
+                    label = "Item #" + idText;
+                else
+                    label = label + " (#" + idText + ")";
+                ddlImportNotesItem.Items.Add(new ListItem(label, idText));
+            }
+
+            string sel = selected.HasValue && selected.Value > 0
+                ? selected.Value.ToString(CultureInfo.InvariantCulture)
+                : "0";
+            if (ddlImportNotesItem.Items.FindByValue(sel) != null)
+                ddlImportNotesItem.SelectedValue = sel;
+            else
+                ddlImportNotesItem.SelectedValue = "0";
+            MarkOriginal(ddlImportNotesItem);
+        }
+
+        protected void btnSaveImportNotesItem_Click(object sender, EventArgs e)
+        {
+            int itemId = ParseIntOrZero(ddlImportNotesItem.SelectedValue);
+            _settings.SaveImportNotesItemId(itemId > 0 ? itemId : (int?)null, UserName());
+            BindImportNotesItemDropdown();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapImportNotesItemSaved), false);
+            WooCommerceUserLog.Write("Mapping import Notes item",
+                itemId > 0 ? "itemId=" + itemId : "cleared", UserName());
+        }
+
+        private List<ListItem> GetPersonDropdownItems()
+        {
+            if (_personDropdownTemplate == null)
+            {
+                _personDropdownTemplate = new List<ListItem>();
+                foreach (var person in _orderManager.GetDeliveryPersons() ?? new List<Person>())
+                {
+                    string label = !string.IsNullOrWhiteSpace(person.Abbreviation)
+                        ? person.Abbreviation
+                        : person.PersonName;
+                    if (string.IsNullOrWhiteSpace(label))
+                        label = person.PersonID.ToString(CultureInfo.InvariantCulture);
+                    _personDropdownTemplate.Add(new ListItem(
+                        label,
+                        person.PersonID.ToString(CultureInfo.InvariantCulture)));
+                }
+            }
+            return _personDropdownTemplate;
+        }
+
+        private void PopulatePersonDropdown(DropDownList ddl, int? selectedId, bool includeNone = true)
+        {
+            if (ddl == null)
+                return;
+            ddl.Items.Clear();
+            if (includeNone)
+                ddl.Items.Add(new ListItem("(none)", "0"));
+            foreach (var li in GetPersonDropdownItems())
+                ddl.Items.Add(new ListItem(li.Text, li.Value));
+            if (selectedId.HasValue && selectedId.Value > 0)
+            {
+                var item = ddl.Items.FindByValue(selectedId.Value.ToString(CultureInfo.InvariantCulture));
+                if (item != null)
+                    item.Selected = true;
+            }
+            else if (includeNone)
+                ddl.SelectedValue = "0";
+        }
+
+        protected void btnSaveDefaultArea_Click(object sender, EventArgs e)
+        {
+            int areaId = ParseIntOrZero(ddlDefaultImportArea.SelectedValue);
+            _areaManager.SaveDefaultImportArea(areaId > 0 ? areaId : (int?)null, UserName());
+            BindDefaultImportAreaDropdown();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapDefaultAreaSaved), false);
+            WooCommerceUserLog.Write("Mapping default import area",
+                areaId > 0 ? "areaId=" + areaId : "cleared", UserName());
+        }
+
+        private void BindAddressConfigPanel()
+        {
+            var settings = _settings.GetSettings();
+            chkImportAddressIncludeProvince.Checked = settings.ImportAddressIncludeProvince;
+            chkImportAddressIncludeCountry.Checked = settings.ImportAddressIncludeCountry;
+            chkImportPhoneReplacePlus27.Checked = settings.ImportPhoneReplacePlus27;
+            chkImportPhoneFormatSa.Checked = settings.ImportPhoneFormatSa;
+        }
+
+        protected void btnSaveAddressConfig_Click(object sender, EventArgs e)
+        {
+            bool includeProvince = chkImportAddressIncludeProvince.Checked;
+            bool includeCountry = chkImportAddressIncludeCountry.Checked;
+            bool replacePlus27 = chkImportPhoneReplacePlus27.Checked;
+            bool formatSa = chkImportPhoneFormatSa.Checked;
+            _settings.SaveImportAddressSettings(
+                includeProvince,
+                includeCountry,
+                replacePlus27,
+                formatSa,
+                UserName());
+            BindAddressConfigPanel();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapAddressConfigSaved), false);
+            WooCommerceUserLog.Write("Mapping address config saved",
+                string.Format(CultureInfo.InvariantCulture,
+                    "province={0}, country={1}, phone27={2}, phoneFmt={3}",
+                    includeProvince, includeCountry, replacePlus27, formatSa),
+                UserName());
+        }
+
+        protected void btnSaveAreaDefaults_Click(object sender, EventArgs e)
+        {
+            MergeAreaGridEdits();
+            int saved = _areaManager.SaveAreaDeliveryDefaults(GetAreaWorkingRows(), UserName());
+            BindAreasTab();
+            SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.MapAreaDefaultsSaved, saved), false);
+            WooCommerceUserLog.Write("Mapping area defaults saved", "rows=" + saved, UserName());
+        }
+
+        protected void btnSaveShippingMaps_Click(object sender, EventArgs e)
+        {
+            var rows = CollectShippingMapsFromGrid(includeFooter: true);
+            int saved = _areaManager.SaveShippingMethodMaps(rows, UserName());
+            BindShippingTab();
+            SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.MapShippingMapsSaved, saved), false);
+            WooCommerceUserLog.Write("Mapping shipping maps saved", "rows=" + saved, UserName());
+        }
+
+        protected void btnTestResolve_Click(object sender, EventArgs e)
+        {
+            var result = _areaManager.ResolveArea(txtTestPostal.Text, txtTestSuburb.Text);
+            if (result.IsAmbiguous)
+            {
+                litTestResolveResult.Text = MessageProvider.Format(
+                    MessageKeys.WooCommerce.MapTestResolveAmbiguous,
+                    result.Reason ?? string.Empty);
+            }
+            else if (!result.AreaID.HasValue)
+            {
+                litTestResolveResult.Text = MessageProvider.Format(
+                    MessageKeys.WooCommerce.MapTestResolveFailed,
+                    result.Reason ?? string.Empty);
+            }
+            else
+            {
+                string defFlag = result.UsedDefaultArea ? " (default area)" : string.Empty;
+                string person = result.DefaultPreferredAgentID.HasValue
+                    ? result.DefaultPreferredAgentID.Value.ToString(CultureInfo.InvariantCulture)
+                    : "(none)";
+                litTestResolveResult.Text = MessageProvider.Format(
+                    MessageKeys.WooCommerce.MapTestResolveResult,
+                    result.AreaName ?? "?",
+                    result.AreaID.Value,
+                    defFlag,
+                    person,
+                    result.Reason ?? string.Empty);
+            }
+        }
+
+        protected void gvAreaDefaults_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow)
+                return;
+            var row = e.Row.DataItem as WooAreaDeliveryDefault;
+            if (row == null)
+                return;
+            int personId = row.DefaultPreferredAgentID.HasValue && row.DefaultPreferredAgentID.Value > 0
+                ? row.DefaultPreferredAgentID.Value
+                : GetSystemDefaultDeliveryPersonId();
+            PopulatePersonDropdown((DropDownList)e.Row.FindControl("ddlDefaultPerson"), personId, includeNone: false);
+            MarkOriginal((DropDownList)e.Row.FindControl("ddlDefaultPerson"));
+            MarkOriginal((TextBox)e.Row.FindControl("txtPostalRanges"));
+        }
+
+        protected void gvShippingMaps_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                var map = e.Row.DataItem as WooShippingMethodMap;
+                if (map != null)
+                    PopulatePersonDropdown((DropDownList)e.Row.FindControl("ddlShipPerson"), map.ToBeDeliveredByID, includeNone: false);
+                MarkOriginal((DropDownList)e.Row.FindControl("ddlShipPerson"));
+                MarkOriginal((TextBox)e.Row.FindControl("txtMethodMatch"));
+                MarkOriginal((TextBox)e.Row.FindControl("txtShipNotes"));
+                var chk = (CheckBox)e.Row.FindControl("chkShipActive");
+                if (chk != null)
+                    MarkOriginal(chk, chk.Checked);
+                var btn = (LinkButton)e.Row.FindControl("btnDeleteShipping");
+                if (btn != null)
+                {
+                    btn.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDeleteRow);
+                    btn.Visible = map != null && map.MapID > 0;
+                }
+            }
+            else if (e.Row.RowType == DataControlRowType.Footer)
+            {
+                PopulatePersonDropdown((DropDownList)e.Row.FindControl("ddlNewShipPerson"), null, includeNone: false);
+                MarkOriginal((TextBox)e.Row.FindControl("txtNewMethodMatch"));
+                MarkOriginal((TextBox)e.Row.FindControl("txtNewShipNotes"));
+                MarkOriginal((DropDownList)e.Row.FindControl("ddlNewShipPerson"));
+            }
+        }
+
+        protected void gvShippingMaps_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "DeleteShipping", StringComparison.OrdinalIgnoreCase))
+                return;
+            int mapId = ParseIntOrZero(e.CommandArgument?.ToString());
+            if (mapId <= 0)
+                return;
+            _areaManager.DeleteShippingMethodMap(mapId, UserName());
+            BindShippingTab();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapDeleted), false);
+        }
+
+        protected void btnSavePaymentMaps_Click(object sender, EventArgs e)
+        {
+            var rows = CollectPaymentMapsFromGrid(includeFooter: true);
+            _orderImportManager.SavePaymentMethodMaps(rows, UserName());
+            BindPaymentTab();
+            SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.MapPaymentMapsSaved, rows.Count), false);
+            WooCommerceUserLog.Write("Mapping payment maps saved", "rows=" + rows.Count, UserName());
+        }
+
+        protected void gvPaymentMaps_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                MarkOriginal((TextBox)e.Row.FindControl("txtPayMethodMatch"));
+                MarkOriginal((TextBox)e.Row.FindControl("txtPayAbbrev"));
+                var chk = (CheckBox)e.Row.FindControl("chkPayActive");
+                if (chk != null)
+                    MarkOriginal(chk, chk.Checked);
+                var btn = (LinkButton)e.Row.FindControl("btnDeletePayment");
+                if (btn != null)
+                    btn.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDeleteRow);
+            }
+            else if (e.Row.RowType == DataControlRowType.Footer)
+            {
+                MarkOriginal((TextBox)e.Row.FindControl("txtNewPayMethodMatch"));
+                MarkOriginal((TextBox)e.Row.FindControl("txtNewPayAbbrev"));
+            }
+        }
+
+        protected void gvPaymentMaps_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "DeletePayment", StringComparison.OrdinalIgnoreCase))
+                return;
+            int mapId = ParseIntOrZero(e.CommandArgument?.ToString());
+            if (mapId <= 0)
+                return;
+            _orderImportManager.DeletePaymentMethodMap(mapId, UserName());
+            BindPaymentTab();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapDeleted), false);
+        }
+
+        private List<WooPaymentMethodMap> CollectPaymentMapsFromGrid(bool includeFooter)
+        {
+            var list = new List<WooPaymentMethodMap>();
+            foreach (GridViewRow row in gvPaymentMaps.Rows)
+            {
+                if (row.RowType != DataControlRowType.DataRow)
+                    continue;
+                int mapId = Convert.ToInt32(gvPaymentMaps.DataKeys[row.RowIndex].Value, CultureInfo.InvariantCulture);
+                list.Add(ReadPaymentMapRow(row, mapId));
+            }
+            if (includeFooter && gvPaymentMaps.FooterRow != null)
+            {
+                var footer = ReadPaymentFooterRow(gvPaymentMaps.FooterRow);
+                if (footer != null)
+                    list.Add(footer);
+            }
+            return list;
+        }
+
+        private static WooPaymentMethodMap ReadPaymentMapRow(GridViewRow row, int mapId)
+        {
+            var txtMatch = (TextBox)row.FindControl("txtPayMethodMatch");
+            var txtAbbrev = (TextBox)row.FindControl("txtPayAbbrev");
+            var chk = (CheckBox)row.FindControl("chkPayActive");
+            return new WooPaymentMethodMap
+            {
+                MapID = mapId,
+                MethodMatch = txtMatch?.Text,
+                PaymentAbbrev = txtAbbrev?.Text,
+                IsActive = chk == null || chk.Checked
+            };
+        }
+
+        private static WooPaymentMethodMap ReadPaymentFooterRow(GridViewRow row)
+        {
+            var txtMatch = (TextBox)row.FindControl("txtNewPayMethodMatch");
+            var txtAbbrev = (TextBox)row.FindControl("txtNewPayAbbrev");
+            if (string.IsNullOrWhiteSpace(txtMatch?.Text) || string.IsNullOrWhiteSpace(txtAbbrev?.Text))
+                return null;
+            var chk = (CheckBox)row.FindControl("chkNewPayActive");
+            return new WooPaymentMethodMap
+            {
+                MapID = 0,
+                MethodMatch = txtMatch.Text.Trim(),
+                PaymentAbbrev = txtAbbrev.Text.Trim(),
+                IsActive = chk == null || chk.Checked
+            };
+        }
+
+        private List<WooShippingMethodMap> CollectShippingMapsFromGrid(bool includeFooter)
+        {
+            var list = new List<WooShippingMethodMap>();
+            foreach (GridViewRow row in gvShippingMaps.Rows)
+            {
+                if (row.RowType != DataControlRowType.DataRow)
+                    continue;
+                int mapId = Convert.ToInt32(gvShippingMaps.DataKeys[row.RowIndex].Value, CultureInfo.InvariantCulture);
+                list.Add(ReadShippingMapRow(row, mapId));
+            }
+            if (includeFooter && gvShippingMaps.FooterRow != null)
+            {
+                var footer = ReadShippingFooterRow(gvShippingMaps.FooterRow);
+                if (footer != null)
+                    list.Add(footer);
+            }
+            return list;
+        }
+
+        private WooShippingMethodMap ReadShippingMapRow(GridViewRow row, int mapId)
+        {
+            var txtMethod = (TextBox)row.FindControl("txtMethodMatch");
+            var ddlPerson = (DropDownList)row.FindControl("ddlShipPerson");
+            var chkActive = (CheckBox)row.FindControl("chkShipActive");
+            var txtNotes = (TextBox)row.FindControl("txtShipNotes");
+            return new WooShippingMethodMap
+            {
+                MapID = mapId,
+                MethodMatch = txtMethod?.Text,
+                ToBeDeliveredByID = ParseIntOrZero(ddlPerson?.SelectedValue),
+                IsActive = chkActive == null || chkActive.Checked,
+                Notes = txtNotes?.Text
+            };
+        }
+
+        private WooShippingMethodMap ReadShippingFooterRow(GridViewRow row)
+        {
+            var txtMethod = (TextBox)row.FindControl("txtNewMethodMatch");
+            var ddlPerson = (DropDownList)row.FindControl("ddlNewShipPerson");
+            int personId = ParseIntOrZero(ddlPerson?.SelectedValue);
+            if (string.IsNullOrWhiteSpace(txtMethod?.Text) || personId <= 0)
+                return null;
+            var chkActive = (CheckBox)row.FindControl("chkNewShipActive");
+            var txtNotes = (TextBox)row.FindControl("txtNewShipNotes");
+            return new WooShippingMethodMap
+            {
+                MapID = 0,
+                MethodMatch = txtMethod.Text.Trim(),
+                ToBeDeliveredByID = personId,
+                IsActive = chkActive == null || chkActive.Checked,
+                Notes = txtNotes?.Text
+            };
+        }
+
+        private static int ParseIntOrZero(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return 0;
+            int n;
+            return int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) ? n : 0;
+        }
+
+        #endregion
+
         private string UserName()
         {
             return Context?.User?.Identity?.Name ?? "system";
         }
 
+        private enum StatusKind
+        {
+            Success,
+            Warn,
+            Error
+        }
+
         private void SetStatus(string message, bool isError)
+        {
+            SetStatus(message, isError ? StatusKind.Error : StatusKind.Success);
+        }
+
+        private void SetStatus(string message, StatusKind kind)
         {
             if (string.IsNullOrWhiteSpace(message))
             {
@@ -2400,7 +3767,10 @@ namespace TrackerSQL.Tools
             }
             lblMessage.Visible = true;
             lblMessage.Text = message;
-            lblMessage.CssClass = isError ? "status-message status-error" : "status-message status-success";
+            string tone = kind == StatusKind.Error
+                ? "status-error"
+                : (kind == StatusKind.Warn ? "status-warn" : "status-success");
+            lblMessage.CssClass = "status-message " + tone;
         }
     }
 }

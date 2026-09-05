@@ -1,0 +1,35 @@
+/* Go-live: upsert WooCommerceSettingsTbl behaviour/config from local OtterDb.
+   Does NOT copy API consumer key/secret — enter those on live after deploy.
+*/
+SET NOCOUNT ON;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.WooCommerceSettingsTbl WHERE SettingsID = 1)
+BEGIN
+  INSERT INTO dbo.WooCommerceSettingsTbl (SettingsID, IntegrationEnabled, WizardCompleted, UpdatedAt, UpdatedBy)
+  VALUES (1, 0, 0, SYSUTCDATETIME(), N'golive-import');
+END
+
+UPDATE dbo.WooCommerceSettingsTbl SET
+  StoreBaseUrl = N'https://quaffee.co.za',
+  AdminBaseUrl = N'https://quaffee.co.za/wp-admin',
+  IntegrationEnabled = 1,
+  WizardCompleted = 1,
+  PushEnabledStateToWoo = 1,
+  DisableScopeDefault = N'MappedOnly',
+  PullStockQtyEnabled = 0,
+  CategoryFilterMode = N'IncludeList',
+  GuestCheckoutContactMode = N'ZZName',
+  DispatchDeliveryPersonIds = N'5,7',
+  TrackingNumberRequired = 1,
+  DispatchedWooStatus = N'processing',
+  AutoCompleteOnWooCompleted = 0,
+  DefaultImportAreaID = 5,
+  ImportAddressIncludeProvince = 0,
+  ImportAddressIncludeCountry = 0,
+  ImportPhoneReplacePlus27 = 1,
+  ImportPhoneFormatSa = 1,
+  ImportNotesItemID = NULL,
+  UpdatedAt = SYSUTCDATETIME(),
+  UpdatedBy = N'golive-import'
+WHERE SettingsID = 1;
+GO

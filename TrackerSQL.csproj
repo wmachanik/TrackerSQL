@@ -153,8 +153,11 @@
     <Content Include="images\Bullets\GreenCircle.gif" />
     <Content Include="images\bullet_ball_glass_green.ico" />
     <Content Include="images\icon\QonTIcon.ico" />
+    <Content Include="images\imgButtons\Add-Contact-Card.png" />
+    <Content Include="images\imgButtons\Add-Order.png" />
     <Content Include="images\imgButtons\AddButtonCaps.gif" />
     <Content Include="images\imgButtons\AddItem.gif" />
+    <Content Include="images\imgButtons\Update-Contact-Card.png" />
     <Content Include="images\imgButtons\ArrowUpDown.gif" />
     <Content Include="images\imgButtons\arrow_down.gif" />
     <Content Include="images\imgButtons\arrow_up.gif" />
@@ -207,6 +210,9 @@
     <Content Include="Pages\ViewMyOrder.aspx" />
     <Content Include="Tools\HolidayClosureDetail.aspx" />
     <Content Include="Tools\HolidayClosures.aspx" />
+    <Content Include="Tools\PostalAreaSetup.aspx" />
+    <Content Include="Tools\ContactPostalFill.aspx" />
+    <Content Include="Tools\WooOrderImport.aspx" />
     <Content Include="Pages\ItemGroups.aspx" />
     <Content Include="Pages\LeaveApp.aspx" />
     <Content Include="Pages\Lookups.aspx" />
@@ -249,6 +255,11 @@
     <Content Include="Tools\SystemPreferences.aspx" />
     <Content Include="Tools\WooCommerceMapping.aspx" />
     <Content Include="App_Data\SQLCommands-WooCommerce-01.xml" />
+    <Content Include="App_Data\SQLCommands-WooCommerce-02.xml" />
+    <Content Include="App_Data\SQLCommands-WooCommerce-03.xml" />
+    <Content Include="App_Data\SQLCommands-Postal-01.xml" />
+    <Content Include="Data\geo-south-africa-postal_EN.csv" />
+    <Content Include="Data\area-place-presets.json" />
     <Content Include="Tools\SystemTools.aspx" />
     <Content Include="Tools\XMLtoSQL.aspx" />
     <Content Include="Web.config" />
@@ -462,6 +473,7 @@
     <Compile Include="Repositories\UsedItemGroupRepository.cs" />
     <Compile Include="Classes\GridPager.cs" />
     <Compile Include="Classes\SystemConstants.cs" />
+    <Compile Include="Classes\PersonDefaults.cs" />
     <Compile Include="Classes\TrackerSQLDb.cs" />
     <Compile Include="Classes\UrlTextDecoder.cs" />
     <Compile Include="Managers\ContactTypeDataSource.cs" />
@@ -487,6 +499,7 @@
     <Compile Include="Managers\OrderLookupDataSource.cs" />
     <Compile Include="Managers\TempOrderSession.cs" />
     <Compile Include="Classes\AppLogger.cs" />
+    <Compile Include="Classes\WooCommerceUserLog.cs" />
     <Compile Include="Classes\RequestTiming.cs" />
     <Compile Include="Classes\CheckBrowser.cs" />
     <Compile Include="Classes\DBParameter.cs" />
@@ -787,21 +800,72 @@
     <Compile Include="Managers\WooCommerceSchemaInstaller.cs" />
     <Compile Include="Managers\WooCommerceApiClient.cs" />
     <Compile Include="Managers\WooCommerceApiClient.Catalog.cs" />
+    <Compile Include="Managers\WooCommerceApiClient.Orders.cs" />
+    <Compile Include="Managers\WooCommerceOrderImportManager.cs" />
+    <Compile Include="Managers\WooImportAddressHelper.cs" />
+    <Compile Include="Managers\WooContactBootstrap.cs" />
     <Compile Include="Managers\WooCommerceSettingsManager.cs" />
     <Compile Include="Managers\WooCommerceMappingManager.cs" />
+    <Compile Include="Managers\WooCommerceAreaMappingManager.cs" />
+    <Compile Include="Managers\PostalSchemaInstaller.cs" />
+    <Compile Include="Managers\SaPostalCodeManager.cs" />
+    <Compile Include="Managers\PostalAreaSetupManager.cs" />
+    <Compile Include="Managers\ContactPostalFillManager.cs" />
     <Compile Include="Models\WooCategoryFilter.cs" />
+    <Compile Include="Models\WooEnabledPushPreviewRow.cs" />
     <Compile Include="Models\WooItemMapping.cs" />
     <Compile Include="Models\WooAttributeMap.cs" />
     <Compile Include="Models\WooAttributeParent.cs" />
     <Compile Include="Models\WooPackagingServiceType.cs" />
+    <Compile Include="Models\WooOrderDtos.cs" />
+    <Compile Include="Models\DispatchPersonRow.cs" />
+    <Compile Include="Models\OrderWaybill.cs" />
+    <Compile Include="Models\WooOrderInfo.cs" />
+    <Compile Include="Models\WooOrderImportPreview.cs" />
+    <Compile Include="Models\WooOrderImportUiState.cs" />
+    <Compile Include="Models\WooPaymentMethodMap.cs" />
     <Compile Include="Models\WooCatalogDtos.cs" />
     <Compile Include="Models\WooCatalogCacheRow.cs" />
+    <Compile Include="Models\WooPostalAreaMap.cs" />
+    <Compile Include="Models\WooAreaDeliveryDefault.cs" />
+    <Compile Include="Models\WooAreaResolveResult.cs" />
+    <Compile Include="Models\WooShippingMethodMap.cs" />
+    <Compile Include="Models\SaPostalCode.cs" />
+    <Compile Include="Models\PostalAreaSetupRow.cs" />
     <Compile Include="Repositories\WooCategoryFilterRepository.cs" />
     <Compile Include="Repositories\WooCatalogCacheRepository.cs" />
+    <Compile Include="Repositories\WooPaymentMethodMapRepository.cs" />
+    <Compile Include="Repositories\OrderWaybillRepository.cs" />
+    <Compile Include="Repositories\WooOrderInfoRepository.cs" />
     <Compile Include="Repositories\WooItemMappingRepository.cs" />
     <Compile Include="Repositories\WooAttributeMapRepository.cs" />
     <Compile Include="Repositories\WooAttributeParentRepository.cs" />
     <Compile Include="Repositories\WooPackagingServiceTypeRepository.cs" />
+    <Compile Include="Repositories\WooPostalAreaMapRepository.cs" />
+    <Compile Include="Repositories\WooAreaDeliveryDefaultRepository.cs" />
+    <Compile Include="Repositories\WooShippingMethodMapRepository.cs" />
+    <Compile Include="Repositories\SaPostalCodeRepository.cs" />
+    <Compile Include="Tools\PostalAreaSetup.aspx.cs">
+      <DependentUpon>PostalAreaSetup.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\PostalAreaSetup.aspx.designer.cs">
+      <DependentUpon>PostalAreaSetup.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\ContactPostalFill.aspx.cs">
+      <DependentUpon>ContactPostalFill.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\ContactPostalFill.aspx.designer.cs">
+      <DependentUpon>ContactPostalFill.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\WooOrderImport.aspx.cs">
+      <DependentUpon>WooOrderImport.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\WooOrderImport.aspx.designer.cs">
+      <DependentUpon>WooOrderImport.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Tools\WooCommerceMapping.aspx.cs">
       <DependentUpon>WooCommerceMapping.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

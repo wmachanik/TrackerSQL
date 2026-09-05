@@ -89,6 +89,18 @@
                             <div class="dashboard-link tool-tone-lastorder">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/icons8-order-completed-16.png" alt="" />
+                                        <h4>Recalc Total Cups</h4>
+                                    </div>
+                                    <p>Refresh home-page total from contact last cup counts</p>
+                                    <asp:Button ID="btnRecalcTotalCups" runat="server" Text="Run"
+                                        OnClick="btnRecalcTotalCups_Click"
+                                        ToolTip="Sum LastCupCount across contacts and write TotalCountTrackerTbl" />
+                                </div>
+                            </div>
+                            <div class="dashboard-link tool-tone-lastorder">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
                                         <img class="tool-card-icon" src="../images/imgButtons/icons8-set-min-date-30.png" alt="" />
                                         <h4>Set Last Recurring Order Date</h4>
                                     </div>
@@ -106,6 +118,34 @@
                                     <asp:Button ID="btnDisableInactiveClients" runat="server" Text="Run"
                                         OnClick="btnDisableInactiveClients_Click"
                                         ToolTip="Disables enabled customers whose last usage/order is older than 3 years" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="complex-form-section">
+                        <h3>Areas &amp; postcodes</h3>
+                        <div class="dashboard-links tools-dashboard">
+                            <div class="dashboard-link tool-tone-reset">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <h4>Postal Area Setup</h4>
+                                    </div>
+                                    <p>Import SA postcode reference and build Tracker area ranges</p>
+                                    <asp:Button ID="btnPostalAreaSetup" runat="server" Text="Open"
+                                        PostBackUrl="~/Tools/PostalAreaSetup.aspx" />
+                                </div>
+                            </div>
+                            <div class="dashboard-link tool-tone-reset">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <h4>Contact postal fill</h4>
+                                    </div>
+                                    <p>Suggest / assign postcodes for contacts missing one</p>
+                                    <asp:Button ID="btnContactPostalFill" runat="server" Text="Open"
+                                        PostBackUrl="~/Tools/ContactPostalFill.aspx" />
                                 </div>
                             </div>
                         </div>
@@ -245,6 +285,7 @@
                 <asp:AsyncPostBackTrigger ControlID="btnResetPrepDates" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnSetLastOrderDate" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnRecalcPredictions" EventName="Click" />
+                <asp:AsyncPostBackTrigger ControlID="btnRecalcTotalCups" EventName="Click" />
                 <asp:AsyncPostBackTrigger ControlID="btnDisableInactiveClients" EventName="Click" />
             </Triggers>
         </asp:UpdatePanel>

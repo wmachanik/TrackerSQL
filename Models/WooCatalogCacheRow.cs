@@ -23,5 +23,7 @@ namespace TrackerSQL.Models
         public int VariationTotalCount { get; set; }
         public int VariationInStockCount { get; set; }
         public DateTime PulledUtc { get; set; }
+        /// <summary>When this Woo product/variation first appeared in a catalog pull.</summary>
+        public DateTime? FirstSeenUtc { get; set; }
     }
 }

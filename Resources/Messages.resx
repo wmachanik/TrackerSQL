@@ -600,6 +600,12 @@ Disabled recurring orders:
   <data name="Order.StatusFooter" xml:space="preserve">
     <value>Thank you for your business!</value>
   </data>
+  <data name="Order.StatusTrackingLine" xml:space="preserve">
+    <value>Tracking / waybill number: {0}.&lt;br /&gt;&lt;br /&gt;</value>
+  </data>
+  <data name="Order.TrackingRequired" xml:space="preserve">
+    <value>Enter the courier / Pargo tracking (waybill) number. This is required before the order can be marked done.</value>
+  </data>
   <data name="Order.StatusPendingDelivery" xml:space="preserve">
     <value>delivered</value>
   </data>
@@ -802,10 +808,25 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Category sync mode</value>
   </data>
   <data name="WooCommerce.LabelDispatchIds" xml:space="preserve">
-    <value>Dispatch delivery-person IDs (comma-separated)</value>
+    <value>Dispatch delivery people (waybill / leave Woo open)</value>
   </data>
   <data name="WooCommerce.LabelTrackingRequired" xml:space="preserve">
-    <value>Require tracking number when dispatching</value>
+    <value>Require waybill / tracking number for those carriers on Order Done</value>
+  </data>
+  <data name="WooCommerce.MapDispatchWaybillTitle" xml:space="preserve">
+    <value>Dispatch / waybill (do not complete Woo)</value>
+  </data>
+  <data name="WooCommerce.MapDispatchWaybillNote" xml:space="preserve">
+    <value>These are the same “Delivered by” values used on Tracker orders (PeopleTbl abbreviations such as Prgo / Cour). Tick carriers that leave via Pargo or courier: Order Done asks for a waybill, emails the customer, and — for Woo-linked orders — posts a Woo customer note without completing the Woo order. Local delivery and collection stay as normal Done.</value>
+  </data>
+  <data name="WooCommerce.MapDispatchPeopleLbl" xml:space="preserve">
+    <value>Use waybill when Delivered by is:</value>
+  </data>
+  <data name="WooCommerce.MapSaveDispatchWaybill" xml:space="preserve">
+    <value>Save dispatch / waybill settings</value>
+  </data>
+  <data name="WooCommerce.MapDispatchWaybillSaved" xml:space="preserve">
+    <value>Dispatch / waybill settings saved.</value>
   </data>
   <data name="WooCommerce.SecretSavedPlaceholder" xml:space="preserve">
     <value>(saved — enter a new value to replace)</value>
@@ -936,6 +957,15 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapTabMappings" xml:space="preserve">
     <value>Mappings</value>
   </data>
+  <data name="WooCommerce.MapTabAreas" xml:space="preserve">
+    <value>Areas</value>
+  </data>
+  <data name="WooCommerce.MapTabShipping" xml:space="preserve">
+    <value>Shipping</value>
+  </data>
+  <data name="WooCommerce.MapTabPayment" xml:space="preserve">
+    <value>Payment</value>
+  </data>
   <data name="WooCommerce.MapTabSavedMaps" xml:space="preserve">
     <value>Saved maps</value>
   </data>
@@ -949,10 +979,10 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Pull categories from Woo, tick Include as needed, set All vs Included only, then Save includes. Unticked categories (e.g. Referral) are excluded from Mappings and Missing SKUs — even if mode is still All. Child categories are indented. S/O and Import defaults apply to unmapped products. Import "(inherit)" uses the parent category's Import setting — it is not the same as "Parent → order notes". Set the root (e.g. Gear) to Parent → order notes so children on (inherit) pick that up. Uncategorized is off by default when other categories exist.</value>
   </data>
   <data name="WooCommerce.MapAttrParentsHelp" xml:space="preserve">
-    <value>Pull attribute parents from Woo. Set Priority (Highest wins when several attributes match — e.g. Size=Highest, Grind=Average). Tick Use for variants for attributes that drive variations. Save selection is enabled when you change a tick or priority. Next: Variant attributes to map options with a Role (Both / Qty only / Packaging only).</value>
+    <value>Each Woo attribute can feed Tracker order lines. Item (SKU) comes from product mapping. Here set cascades: Qty source / Pack source / Notes (1 = try first, 2 = if that is missing/Any). Coffee example: Packaging = Qty 1 + Pack 2; Prep Type = Pack 1. Save → Variant attributes → map option values → refresh Mappings. Order import will use the same resolve rules.</value>
   </data>
   <data name="WooCommerce.MapAttrOptionsHelp" xml:space="preserve">
-    <value>Pull options for attributes marked Use for variants. Weight/size options (1kg Packet, 250g Box) should be Qty only; Prep Type / grind options should be Packaging only (matched to Tracker rows like GrndPlnger). Priority on the parent decides which map wins each channel. Re-pull and Save after changing roles.</value>
+    <value>Map each Woo option to Tracker values. Sets is fixed by Attribute parents ranks. Packaging options: qty (and pack if Pack source is set). Prep options: Tracker packaging (grind codes like GrndPlng — Tracker still stores grind on packaging). Prefer (all types) only; re-pull after changing ranks.</value>
   </data>
   <data name="WooCommerce.MapAttrVariantsLocked" xml:space="preserve">
     <value>Pull attribute parents first, then return here to map options for the attributes you marked Use for variants.</value>
@@ -975,17 +1005,23 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapAttrNeedParents" xml:space="preserve">
     <value>Mark at least one attribute as Use for variants and click Save selection before pulling options.</value>
   </data>
+  <data name="WooCommerce.MapAttrNeedLineParents" xml:space="preserve">
+    <value>Tick Use on variants and set at least one Qty source or Pack source (e.g. Packaging Qty=1 Pack=2, Prep Type Pack=1). Save selection, then pull options.</value>
+  </data>
   <data name="WooCommerce.MapMapHelp" xml:space="preserve">
-    <value>Applied shows ✓ when the Mode/Destination rule is stored in Tracker, ✎ if you changed it since last save, and — if not saved yet. Edit Mode, Destination, Item SKU, Qty, or Pack, then Save changes. Import controls whether the line is used on order import. Use the Saved maps tab to browse or delete stored maps.</value>
+    <value>Applied shows check when stored, pencil if dirty, dash if not saved. Item/SKU is chosen here. Qty/Pack on pack-size SKUs come from Packaging. Prep Type often shows as (at checkout) under Pack cascade / notes - it still sets Tracker packaging when the order has a grind. Override Qty/Pack if needed, then Save changes.</value>
   </data>
   <data name="WooCommerce.MapSavedMapsHelp" xml:space="preserve">
-    <value>Every mapping already stored in Tracker (Exact, Notes, Exclude). Delete here to clear a map — the Mappings tab Applied column updates after refresh. Configure new maps on the Mappings tab, then Save changes.</value>
+    <value>Every mapping already stored in Tracker (Exact, Notes, Exclude, Variants). Search or click a column header to sort. Delete here to clear a map - the Mappings tab Applied column updates after refresh. Configure new maps on the Mappings tab, then Save changes.</value>
   </data>
   <data name="WooCommerce.MapSavedMapsPageInfo" xml:space="preserve">
-    <value>{0} saved mapping(s) — page {1} of {2}</value>
+    <value>{0} saved mapping(s) - page {1} of {2}</value>
+  </data>
+  <data name="WooCommerce.MapSavedMapsFilteredInfo" xml:space="preserve">
+    <value>{0} of {1} saved mapping(s) matching "{2}" - page {3} of {4}</value>
   </data>
   <data name="WooCommerce.MapMissingSkuHelp" xml:space="preserve">
-    <value>These published products/variations have no Woo SKU — including parent products whose variants exist but the parent SKU is blank. Enter a New SKU, tick Apply, then Write SKUs to Woo. After a successful write, the local catalog is updated; you do not need to re-download from Woo unless you click Sync products.</value>
+    <value>These published products/variations have no Woo SKU — including parent products whose variants exist but the parent SKU is blank. Enter a New SKU (e.g. matching Tracker 8IMSCompX), tick Apply if needed, then Write SKUs to Woo. Matching an existing Tracker SKU is fine. After a successful write, the local catalog is updated.</value>
   </data>
   <data name="WooCommerce.MapFindSku" xml:space="preserve">
     <value>Search:</value>
@@ -996,11 +1032,17 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapClearFindSku" xml:space="preserve">
     <value>Reset</value>
   </data>
+  <data name="WooCommerce.MapNewSinceSync" xml:space="preserve">
+    <value>New since last pull</value>
+  </data>
   <data name="WooCommerce.MapPullPageInfo" xml:space="preserve">
     <value>{0} products — page {1} of {2}</value>
   </data>
   <data name="WooCommerce.MapPullPageInfoFiltered" xml:space="preserve">
     <value>{0} of {1} products matching "{4}" — page {2} of {3}</value>
+  </data>
+  <data name="WooCommerce.MapPullPageInfoNewOnly" xml:space="preserve">
+    <value>{0} of {1} new since last pull — page {2} of {3}</value>
   </data>
   <data name="WooCommerce.MapMissingSkuPageInfo" xml:space="preserve">
     <value>{0} without SKU — page {1} of {2}</value>
@@ -1015,10 +1057,10 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Create Tracker item ({0})</value>
   </data>
   <data name="WooCommerce.MapDestNotes" xml:space="preserve">
-    <value>→ order notes</value>
+    <value>-&gt; order notes</value>
   </data>
   <data name="WooCommerce.MapNeedDestination" xml:space="preserve">
-    <value>Choose a Tracker item or → order notes before saving.</value>
+    <value>Choose a Tracker item or -&gt; order notes before saving.</value>
   </data>
   <data name="WooCommerce.MapSaveSelected" xml:space="preserve">
     <value>Save changes</value>
@@ -1042,13 +1084,16 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>How this Woo product maps: Import variants, Parent SKU only, Parent → order notes, or Do not import. Category defaults apply until you change Mode and Save changes.</value>
   </data>
   <data name="WooCommerce.MapColDestinationTip" xml:space="preserve">
-    <value>Tracker item, Create Tracker item, or order notes. For groups in Import variants, Destination stays on each variant row.</value>
+    <value>Tracker SKU to map this Woo line to (same underscore prefix as item lookups when disabled). Create Tracker item or order notes are also here. For Import variants, pick the SKU on each variant row.</value>
   </data>
   <data name="WooCommerce.MapColMatchTip" xml:space="preserve">
     <value>Why this row looks the way it does (saved map, category default, suggested SKU match, etc.).</value>
   </data>
   <data name="WooCommerce.MapColVariantTip" xml:space="preserve">
-    <value>Variation options from Woo (size, grind, colour, …).</value>
+    <value>Woo packaging (or other On the line) options for this SKU.</value>
+  </data>
+  <data name="WooCommerce.MapColNotesAttrTip" xml:space="preserve">
+    <value>Pack-source attributes (e.g. Prep Type → pack #1) and note-source attributes. (at checkout) means Woo left that attribute as Any on this variation - the customer picks it on the order; resolve still applies then. Qty/Pack columns show the size map for this SKU.</value>
   </data>
   <data name="WooCommerce.MapColSkuTip" xml:space="preserve">
     <value>Woo SKU. + expands a variable product’s variants. group = parent row; var = variation.</value>
@@ -1059,8 +1104,11 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapColPackTip" xml:space="preserve">
     <value>Tracker packaging for this mapped line.</value>
   </data>
+  <data name="WooCommerce.MapColPrepTip" xml:space="preserve">
+    <value>Tracker prep type for this mapped line (grind / preparation). Separate from packaging.</value>
+  </data>
   <data name="WooCommerce.MapColItemSkuTip" xml:space="preserve">
-    <value>Tracker SKU to create or rename when Destination is Create / an existing item.</value>
+    <value>Type a Tracker SKU only when creating a new item or renaming the selected one. The Tracker SKU column is the mapping.</value>
   </data>
   <data name="WooCommerce.MapColSortTip" xml:space="preserve">
     <value>Tracker item sort order (major category) when creating or renaming.</value>
@@ -1072,7 +1120,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Mapping rule for this whole Woo product. Save changes after editing.</value>
   </data>
   <data name="WooCommerce.MapDestCellTip" xml:space="preserve">
-    <value>Where this line goes in Tracker. Save changes after editing.</value>
+    <value>Tracker SKU for this Woo line. Save changes after editing.</value>
   </data>
   <data name="WooCommerce.MapWriteMissingSkus" xml:space="preserve">
     <value>Write SKUs to Woo</value>
@@ -1083,8 +1131,11 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapMissingSkuWritePartial" xml:space="preserve">
     <value>Wrote {0} SKU(s); {1} failed.</value>
   </data>
+  <data name="WooCommerce.MapMissingSkuNothingToWrite" xml:space="preserve">
+    <value>Nothing to write. Enter a New SKU on one or more rows (Apply is ticked automatically when you type), then click Write SKUs to Woo.</value>
+  </data>
   <data name="WooCommerce.MapSyncHelp" xml:space="preserve">
-    <value>Push Tracker ItemEnabled to Woo product/variation status (publish vs private). Use dry-run first. No stock quantities are written. Notes mappings are skipped.</value>
+    <value>Set Woo visibility from Tracker Enbld (Lookups → Items): enabled → publish, disabled → private. Dry-run compares against Woo status from your last Pull products (Mappings tab). "(unknown)" means pull products first. Push only updates rows that differ. Stock and product details are not changed.</value>
   </data>
   <data name="WooCommerce.MapPullCategories" xml:space="preserve">
     <value>Pull categories from Woo</value>
@@ -1199,5 +1250,110 @@ When you continue, Tracker will create companion database tables (orders and ite
   </data>
   <data name="WooCommerce.MapPushEnabled" xml:space="preserve">
     <value>Push enabled/disabled to Woo</value>
+  </data>
+  <data name="WooCommerce.MapAreasHelp" xml:space="preserve">
+    <value>Each Tracker area can list postcodes and a default delivery person (edit ranges on Postal Area Setup). Shared codes such as 7806 (Hout Bay and Constantia) need a suburb. If a postcode is not listed, the default/catch-all area above is used.</value>
+  </data>
+  <data name="WooCommerce.MapAreaSectionTitle" xml:space="preserve">
+    <value>Areas — postcodes &amp; delivery person</value>
+  </data>
+  <data name="WooCommerce.MapDefaultImportAreaLbl" xml:space="preserve">
+    <value>Default area (fallback):</value>
+  </data>
+  <data name="WooCommerce.MapSaveDefaultArea" xml:space="preserve">
+    <value>Save default area</value>
+  </data>
+  <data name="WooCommerce.MapImportNotesItemLbl" xml:space="preserve">
+    <value>Notes item (for SKUs → order notes):</value>
+  </data>
+  <data name="WooCommerce.MapSaveImportNotesItem" xml:space="preserve">
+    <value>Save Notes item</value>
+  </data>
+  <data name="WooCommerce.MapImportNotesItemSaved" xml:space="preserve">
+    <value>Import Notes item saved. When a Woo SKU is added to order notes, this Tracker item is also added to the order.</value>
+  </data>
+  <data name="WooCommerce.MapAddressConfigTitle" xml:space="preserve">
+    <value>Address config</value>
+  </data>
+  <data name="WooCommerce.MapAddressConfigNote" xml:space="preserve">
+    <value>Controls how Woo shipping address and phone are stored on contacts during order import. Postcode is always stored separately. Province and country are optional in the semicolon address.</value>
+  </data>
+  <data name="WooCommerce.MapSaveAddressConfig" xml:space="preserve">
+    <value>Save address config</value>
+  </data>
+  <data name="WooCommerce.MapAddressConfigSaved" xml:space="preserve">
+    <value>Address import settings saved.</value>
+  </data>
+  <data name="WooCommerce.MapDefaultAreaSaved" xml:space="preserve">
+    <value>Default import area saved.</value>
+  </data>
+  <data name="WooCommerce.MapPostalMapsNote" xml:space="preserve">
+    <value>Each Woo order has a shipping postcode (and suburb). Add rows to map postcode ranges to a Tracker area — e.g. 7800–7806 with suburb Hout Bay → Atlantic Seaboard. If no row matches, the default area above is used. When the table has no rows yet, use the blank row at the bottom (From / To / Area), then Save postcode maps.</value>
+  </data>
+  <data name="WooCommerce.MapSavePostalMaps" xml:space="preserve">
+    <value>Save postcode maps</value>
+  </data>
+  <data name="WooCommerce.MapPostalMapsSaved" xml:space="preserve">
+    <value>Saved {0} postcode map row(s).</value>
+  </data>
+  <data name="WooCommerce.MapAreaDefaultsNote" xml:space="preserve">
+    <value>Postcodes: 7806 or 7800...7806, separate with ;. Shared codes are OK when suburb differs. Test resolve below with postcode + suburb (e.g. 7806 + Hout Bay). Default person is used when the order resolves to this area.</value>
+  </data>
+  <data name="WooCommerce.MapSystemDefaultPersonHint" xml:space="preserve">
+    <value>System default delivery person: {0} (ID {1}, SystemConstants). Areas not yet saved show this person — change per area if needed, then Save areas.</value>
+  </data>
+  <data name="WooCommerce.MapSaveAreaDefaults" xml:space="preserve">
+    <value>Save areas</value>
+  </data>
+  <data name="WooCommerce.MapAreaDefaultsSaved" xml:space="preserve">
+    <value>Saved {0} area(s).</value>
+  </data>
+  <data name="WooCommerce.MapShippingMapsNote" xml:space="preserve">
+    <value>Enter text that appears in the Woo shipping method title (match is contains, case-insensitive). Example: “pargo” → Prgo, “pickup” → Cllct. Add or edit rows in the table, then Save.</value>
+  </data>
+  <data name="WooCommerce.MapShippingHelp" xml:space="preserve">
+    <value>Map each Woo shipping method to a Tracker “Delivered by” person. Below that, tick which Delivered-by carriers need a waybill on Order Done (Woo stays open).</value>
+  </data>
+  <data name="WooCommerce.MapShippingEmptyHint" xml:space="preserve">
+    <value>No shipping maps yet — fill the blank row below and Save to add the first one.</value>
+  </data>
+  <data name="WooCommerce.MapSaveShippingMaps" xml:space="preserve">
+    <value>Save shipping maps</value>
+  </data>
+  <data name="WooCommerce.MapShippingMapsSaved" xml:space="preserve">
+    <value>Saved {0} shipping method map row(s).</value>
+  </data>
+  <data name="WooCommerce.MapPaymentMapsNote" xml:space="preserve">
+    <value>Matched case-insensitively against Woo payment method id + title. Abbrev appears as [PF] etc. at the start of imported order Notes (max 4 characters).</value>
+  </data>
+  <data name="WooCommerce.MapPaymentHelp" xml:space="preserve">
+    <value>Order import payment abbreviations — used when pulling Woo orders into Tracker.</value>
+  </data>
+  <data name="WooCommerce.MapSavePaymentMaps" xml:space="preserve">
+    <value>Save payment maps</value>
+  </data>
+  <data name="WooCommerce.MapPaymentMapsSaved" xml:space="preserve">
+    <value>Saved {0} payment map row(s).</value>
+  </data>
+  <data name="WooCommerce.MapDeleteRow" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="WooCommerce.MapTestPostalLbl" xml:space="preserve">
+    <value>Postcode:</value>
+  </data>
+  <data name="WooCommerce.MapTestSuburbLbl" xml:space="preserve">
+    <value>Suburb:</value>
+  </data>
+  <data name="WooCommerce.MapTestResolveBtn" xml:space="preserve">
+    <value>Test resolve</value>
+  </data>
+  <data name="WooCommerce.MapTestResolveResult" xml:space="preserve">
+    <value>Area: {0} (ID {1}){2}. Person ID: {3}. {4}</value>
+  </data>
+  <data name="WooCommerce.MapTestResolveAmbiguous" xml:space="preserve">
+    <value>Ambiguous: {0}</value>
+  </data>
+  <data name="WooCommerce.MapTestResolveFailed" xml:space="preserve">
+    <value>Could not resolve: {0}</value>
   </data>
 </root>

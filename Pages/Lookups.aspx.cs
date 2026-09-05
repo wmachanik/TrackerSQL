@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -1490,10 +1491,8 @@ namespace TrackerSQL.Pages
 
                 if (!string.IsNullOrEmpty(searchFilter))
                 {
-                    string normalizedFilter = searchFilter.Replace("%", "");
-                    items = items.Where(i => i.ItemDesc != null
-                        && i.ItemDesc.IndexOf(normalizedFilter,
-                            StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                    string normalizedFilter = searchFilter.Replace("%", "").Trim();
+                    items = items.Where(i => ItemMatchesSearch(i, normalizedFilter)).ToList();
                 }
 
                 // Reset dropdown caches so each bind gets fresh lookup lists
@@ -1508,6 +1507,29 @@ namespace TrackerSQL.Pages
             {
                 lblStatus.Text = "Error loading items: " + ex.Message;
             }
+        }
+
+        /// <summary>Match item name, SKU, short name, or ItemID (e.g. 634 / #634).</summary>
+        private static bool ItemMatchesSearch(Item item, string filter)
+        {
+            if (item == null || string.IsNullOrEmpty(filter))
+                return true;
+            if (!string.IsNullOrEmpty(item.ItemDesc)
+                && item.ItemDesc.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (!string.IsNullOrEmpty(item.SKU)
+                && item.SKU.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (!string.IsNullOrEmpty(item.ItemShortName)
+                && item.ItemShortName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            string idText = item.ItemID.ToString(CultureInfo.InvariantCulture);
+            if (idText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (filter.StartsWith("#", StringComparison.Ordinal)
+                && idText.Equals(filter.Substring(1).Trim(), StringComparison.OrdinalIgnoreCase))
+                return true;
+            return false;
         }
 
         /// <summary>

@@ -33,6 +33,53 @@ namespace TrackerSQL.Repositories
             return list;
         }
 
+        /// <summary>Enabled contacts with blank/null PostalCode (for backfill tool).</summary>
+        public List<Contact> GetMissingPostalCodes(bool enabledOnly = true)
+        {
+            var list = new List<Contact>();
+            string sql = @"
+SELECT *
+FROM ContactsTbl
+WHERE (PostalCode IS NULL OR LTRIM(RTRIM(PostalCode)) = N'')
+  AND (@EnabledOnly = 0 OR ISNULL(Enabled, 1) = 1)
+ORDER BY CompanyName, ContactID";
+            var p = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@EnabledOnly", DataValue = enabledOnly ? 1 : 0, DataDbType = DbType.Int32 }
+            };
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, p))
+            {
+                while (rdr != null && rdr.Read())
+                    list.Add(Map(rdr));
+            }
+            return list;
+        }
+
+        public bool UpdatePostalCode(int contactId, string postalCode, string noteMessage = null)
+        {
+            if (contactId <= 0)
+                return false;
+            string date = TimeZoneUtils.Now().ToString("yyyy-MM-dd");
+            string noteLine = date + ": "
+                + (string.IsNullOrWhiteSpace(noteMessage)
+                    ? "Postal code " + postalCode + " assigned from Contact postal fill"
+                    : noteMessage.Trim())
+                + "\n";
+            const string sql = @"
+UPDATE ContactsTbl
+SET PostalCode = @PostalCode,
+    Notes = @Notes + ISNULL(Notes, '')
+WHERE ContactID = @ContactID";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PostalCode", DataValue = (object)postalCode ?? DBNull.Value, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Notes", DataValue = noteLine, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+            return ExecNonQuery(sql, parameters) > 0;
+        }
+
         private static T GetValue<T>(IDataRecord r, string name)
         {
             if (!HasColumn(r, name)) return default(T);
@@ -656,6 +703,34 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@Pattern", DataValue = emailPattern, DataDbType = DbType.String });
         }
 
+        /// <summary>Exact match on primary or alternate email (case-insensitive, trimmed).</summary>
+        public List<Contact> FindByEmailExact(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return new List<Contact>();
+
+            return SearchContacts(
+                "LTRIM(RTRIM(EmailAddress)) = @Email OR LTRIM(RTRIM(AltEmailAddress)) = @Email",
+                new DBParameter { ParamName = "@Email", DataValue = email.Trim(), DataDbType = DbType.String });
+        }
+
+        /// <summary>Find contacts by last name (primary, alternate, or company name contains).</summary>
+        public List<Contact> SearchByLastName(string lastName)
+        {
+            if (string.IsNullOrWhiteSpace(lastName))
+                return new List<Contact>();
+
+            string trimmed = lastName.Trim();
+            string likePattern = $"%{trimmed}%";
+            return SearchContacts(
+                "ContactLastName = @Last OR ContactAltLastName = @Last OR CompanyName LIKE @Like",
+                new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@Last", DataValue = trimmed, DataDbType = DbType.String },
+                    new DBParameter { ParamName = "@Like", DataValue = likePattern, DataDbType = DbType.String }
+                });
+        }
+
         public string GetContactNameById(int contactId)
         {
             return ExecuteScalar<string>(
@@ -699,11 +774,16 @@ namespace TrackerSQL.Repositories
 
         private List<Contact> SearchContacts(string whereClause, DBParameter parameter)
         {
+            return SearchContacts(whereClause, new List<DBParameter> { parameter });
+        }
+
+        private List<Contact> SearchContacts(string whereClause, IList<DBParameter> parameters)
+        {
             var list = new List<Contact>();
             string sql = $"SELECT * FROM ContactsTbl WHERE {whereClause}";
 
             using (var db = new TrackerSQLDb())
-            using (var rdr = db.ExecuteReader(sql, new List<DBParameter> { parameter }))
+            using (var rdr = db.ExecuteReader(sql, parameters == null ? new List<DBParameter>() : new List<DBParameter>(parameters)))
             {
                 while (rdr != null && rdr.Read())
                 {

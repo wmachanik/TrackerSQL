@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Go-live data pack for XMLtoSQL (shared hosting — no SSMS).
+  Source: 09-WooPaymentMethodMapTbl.sql
+  Uses SET IDENTITY_INSERT for tables with identity PKs.
+  Run in order: SQLCommands-GoLive-00 … 09 via Tools → XMLtoSQL.
+-->
+<root>
+<command type="exec"><![CDATA[
+/* Config export: dbo.WooPaymentMethodMapTbl (5 rows) */
+SET NOCOUNT ON;
+DELETE FROM dbo.[WooPaymentMethodMapTbl];
+]]></command>
+
+<command type="insert"><![CDATA[
+SET NOCOUNT ON;
+SET IDENTITY_INSERT dbo.[WooPaymentMethodMapTbl] ON;
+INSERT INTO dbo.[WooPaymentMethodMapTbl] ([MapID], [MethodMatch], [PaymentAbbrev], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (1, N'payfast', N'PF', 1, N'Default seed', N'2026-08-31T09:42:57.627', N'seed');
+INSERT INTO dbo.[WooPaymentMethodMapTbl] ([MapID], [MethodMatch], [PaymentAbbrev], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (2, N'yoco', N'Yoco', 1, N'Default seed', N'2026-08-31T09:42:57.627', N'seed');
+INSERT INTO dbo.[WooPaymentMethodMapTbl] ([MapID], [MethodMatch], [PaymentAbbrev], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (3, N'snapscan', N'SS', 1, N'Default seed', N'2026-08-31T09:42:57.627', N'seed');
+INSERT INTO dbo.[WooPaymentMethodMapTbl] ([MapID], [MethodMatch], [PaymentAbbrev], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (4, N'bacs', N'EFT', 1, N'Direct bank / EFT', N'2026-08-31T09:42:57.627', N'seed');
+INSERT INTO dbo.[WooPaymentMethodMapTbl] ([MapID], [MethodMatch], [PaymentAbbrev], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (5, N'eft', N'EFT', 1, N'Direct bank / EFT', N'2026-08-31T09:42:57.627', N'seed');
+SET IDENTITY_INSERT dbo.[WooPaymentMethodMapTbl] OFF;
+]]></command>
+</root>

@@ -457,6 +457,8 @@ namespace TrackerSQL.Pages
             cbxInvoiceDone.Checked = header.InvoiceDone;
             cbxDone.Checked = header.Done;
 
+            BindWaybillRow();
+
             BindDeliveryPersonDropdown(forceRebind: false);
             if (header.ToBeDeliveredBy > 0)
             {
@@ -466,6 +468,22 @@ namespace TrackerSQL.Pages
             }
 
             UpdateContactLink(header.CustomerID);
+        }
+
+        private void BindWaybillRow()
+        {
+            if (trWaybill == null)
+                return;
+            var wb = OrderId > 0 ? new OrderWaybillRepository().GetByOrderId(OrderId) : null;
+            bool has = wb != null && !string.IsNullOrWhiteSpace(wb.WaybillNumber);
+            trWaybill.Visible = has;
+            if (!has)
+                return;
+            string status = string.IsNullOrWhiteSpace(wb.DispatchStatus) ? "Dispatched" : wb.DispatchStatus;
+            if (!string.IsNullOrWhiteSpace(wb.Carrier))
+                status += " · " + wb.Carrier;
+            lblDispatchStatus.Text = status;
+            lblWaybill.Text = wb.WaybillNumber;
         }
 
         /// <summary>
@@ -511,10 +529,32 @@ namespace TrackerSQL.Pages
 
         private void CaptureReturnUrlIfNeeded()
         {
+            // Prefer explicit ReturnUrl (e.g. Woo Order Import ?restore=1) over referrer.
+            string qsReturn = Request.QueryString["ReturnUrl"];
+            if (!string.IsNullOrWhiteSpace(qsReturn))
+            {
+                string candidate = qsReturn.Trim();
+                try
+                {
+                    candidate = HttpUtility.UrlDecode(candidate) ?? candidate;
+                }
+                catch
+                {
+                    // keep raw
+                }
+
+                if (TryNormalizeLocalReturnUrl(candidate, out string fromQuery))
+                {
+                    Session[SESSION_RETURN_URL] = fromQuery;
+                    return;
+                }
+            }
+
             if (Request.UrlReferrer != null)
             {
                 string referrer = Request.UrlReferrer.ToString();
-                if (referrer.IndexOf("OrderDetail.aspx", StringComparison.OrdinalIgnoreCase) < 0)
+                if (referrer.IndexOf("OrderDetail.aspx", StringComparison.OrdinalIgnoreCase) < 0
+                    && IsSafeReturnUrl(referrer))
                 {
                     Session[SESSION_RETURN_URL] = referrer;
                     return;
@@ -525,10 +565,47 @@ namespace TrackerSQL.Pages
                 Session[SESSION_RETURN_URL] = ResolveUrl(DEFAULT_RETURN_URL);
         }
 
+        private bool TryNormalizeLocalReturnUrl(string candidate, out string normalized)
+        {
+            normalized = null;
+            if (string.IsNullOrWhiteSpace(candidate))
+                return false;
+
+            candidate = candidate.Trim();
+            if (candidate.StartsWith("~/") || (candidate.StartsWith("/") && !candidate.StartsWith("//")))
+            {
+                normalized = ResolveUrl(candidate.StartsWith("~/") ? candidate : "~" + candidate);
+                return IsSafeReturnUrl(normalized);
+            }
+
+            if (IsSafeReturnUrl(candidate))
+            {
+                normalized = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsSafeReturnUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
+                return url.IndexOf("://", StringComparison.Ordinal) < 0;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
+                return false;
+
+            return Request.Url != null
+                && string.Equals(absolute.Host, Request.Url.Host, StringComparison.OrdinalIgnoreCase);
+        }
+
         private string GetReturnUrl()
         {
             string url = Session[SESSION_RETURN_URL] as string;
-            if (string.IsNullOrWhiteSpace(url))
+            if (string.IsNullOrWhiteSpace(url) || !IsSafeReturnUrl(url))
                 url = ResolveUrl(DEFAULT_RETURN_URL);
 
             return url;

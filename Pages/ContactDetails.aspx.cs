@@ -91,6 +91,7 @@ namespace TrackerSQL.Pages
                 {
                     SetButtonStatus(false);
                     enabledCheckBox.Checked = true;
+                    ApplyNewContactDefaults();
                 }
             }
         }
@@ -391,6 +392,7 @@ namespace TrackerSQL.Pages
             try
             {
                 BindContactOrdersGrid(contactId);
+                BindContactWaybillsGrid(contactId);
 
                 var recurring = new RecurringOrdersRepository().GetSummariesByContactId(contactId);
                 tabpnlRecurring.Visible = recurring.Count > 0;
@@ -408,6 +410,8 @@ namespace TrackerSQL.Pages
                     "ContactDetails.BindHistoryTabs error for ContactID=" + contactId + ": " + ex.Message);
                 tabpnlRecurring.Visible = false;
                 tabpnlRepairs.Visible = false;
+                if (tabpnlWaybills != null)
+                    tabpnlWaybills.Visible = false;
             }
         }
 
@@ -428,6 +432,20 @@ namespace TrackerSQL.Pages
 
             if (upnlContactOrders != null)
                 upnlContactOrders.Update();
+        }
+
+        private void BindContactWaybillsGrid(int contactId)
+        {
+            if (gvContactWaybills == null || tabpnlWaybills == null)
+                return;
+
+            var rows = new OrderWaybillRepository().GetByContactId(contactId) ?? new List<OrderWaybill>();
+            tabpnlWaybills.Visible = rows.Count > 0;
+            if (!tabpnlWaybills.Visible)
+                return;
+
+            gvContactWaybills.DataSource = rows;
+            gvContactWaybills.DataBind();
         }
 
         protected void gvContactOrders_PageIndexChanging(object sender, GridViewPageEventArgs e)
@@ -610,6 +628,13 @@ namespace TrackerSQL.Pages
             btnInsert.Enabled = !editMode;
             accAddDetailsButton.Enabled = !editMode;
             accUpdateButton.Enabled = editMode;
+        }
+
+        private void ApplyNewContactDefaults()
+        {
+            int salesAgentId = PersonDefaults.GetDefaultSalesAgentId();
+            if (salesAgentId > 0)
+                TrySelectDropDownByValue(ddlAgent, salesAgentId);
         }
 
         private int? ParseNullableInt(string value)
@@ -1025,6 +1050,48 @@ namespace TrackerSQL.Pages
         }
 
         // EVENT HANDLERS (legacy names preserved; button captions use Save / Save & Return / Back)
+        protected void btnSuggestPostal_Click(object sender, EventArgs e)
+        {
+            string address = BillingAddressTextBox.Text;
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                SetStatus("Add a billing address first — suburb/place is used to suggest a postcode.", true);
+                return;
+            }
+
+            int? areaId = ParseNullableInt(ddlAreas.SelectedValue);
+            var contact = new Contact
+            {
+                BillingAddress = address,
+                AreaID = areaId
+            };
+
+            string areaName = ddlAreas.SelectedItem != null ? ddlAreas.SelectedItem.Text : null;
+            if (ContactPostalFillManager.IsCollectArea(areaName))
+            {
+                SetStatus("Collect areas are skipped for postcode suggestion.", true);
+                return;
+            }
+
+            var fill = new ContactPostalFillManager();
+            var suggestion = fill.SuggestOne(contact);
+            if (suggestion == null || string.IsNullOrWhiteSpace(suggestion.SuggestedPostalCode))
+            {
+                SetStatus(suggestion != null ? suggestion.Reason : "No postcode match from this address.", true);
+                return;
+            }
+
+            PostalCodeTextBox.Text = suggestion.SuggestedPostalCode;
+            var resolved = new WooCommerceAreaMappingManager().ResolveArea(
+                suggestion.SuggestedPostalCode, address);
+            if (resolved != null && resolved.AreaID.HasValue && !resolved.IsAmbiguous)
+                TrySelectDropDownByValue(ddlAreas, resolved.AreaID);
+
+            MarkDirtyFromServer();
+            SetStatus("Suggested " + suggestion.SuggestedPostalCode
+                + (string.IsNullOrWhiteSpace(suggestion.Reason) ? "." : " — " + suggestion.Reason), false);
+        }
+
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
             if (!EnsureValidForSave())

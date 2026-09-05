@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- SA postal reference (geo dataset). Import from Data/geo-south-africa-postal_EN.csv via Postal Area Setup tool. -->
+
+<root>
+
+  <command type="create">
+
+    <![CDATA[
+
+      IF OBJECT_ID(N'dbo.SaPostalCodeTbl', N'U') IS NULL
+
+      BEGIN
+
+          CREATE TABLE dbo.SaPostalCodeTbl
+
+          (
+
+              PostalCodeID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SaPostalCodeTbl PRIMARY KEY,
+
+              PostalCode INT NOT NULL,
+
+              PlaceName NVARCHAR(120) NOT NULL,
+
+              Province NVARCHAR(80) NULL,
+
+              Municipality NVARCHAR(120) NULL,
+
+              Latitude DECIMAL(9,6) NULL,
+
+              Longitude DECIMAL(9,6) NULL
+
+          );
+
+          CREATE INDEX IX_SaPostalCode_Code ON dbo.SaPostalCodeTbl (PostalCode);
+
+          CREATE INDEX IX_SaPostalCode_Place ON dbo.SaPostalCodeTbl (PlaceName);
+
+      END
+
+    ]]>
+
+  </command>
+
+</root>
+

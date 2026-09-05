@@ -1,4 +1,4 @@
-/* Rev: 20260816-3
+/* Rev: 20260902-1
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -6425,15 +6425,27 @@ table.results-table .pager-nav a.pager-btn:hover {
     }
 
     .status-message.status-warn {
-        background: #fffbeb;
-        border-color: #fde68a;
-        color: #92400e;
+        background: #fff7ed;
+        border-color: #fdba74;
+        color: #9a3412;
+        font-weight: 600;
     }
 
     .status-message.status-error {
         background: #fef2f2;
-        border-color: #fecaca;
+        border-color: #f87171;
         color: #991b1b;
+        font-weight: 600;
+        box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.12);
+    }
+
+    /* Woo mapping: status sits under tabs — keep tones obvious */
+    .page-tone-sysdata > .status-message.status-error,
+    .page-tone-sysdata > .status-message.status-warn,
+    .page-tone-sysdata > .status-message.status-success {
+        display: block;
+        margin: 0.75rem 0 1rem;
+        font-size: 1.02em;
     }
 
     .status-message a {
@@ -6802,6 +6814,20 @@ table.results-table .pager-nav a.pager-btn:hover {
 
 .page-tone-contacts .page-tone-title {
     color: #3f6b4f;
+}
+
+.page-tone-contacts input.contact-postal-suggest.filter-panel-btn,
+.page-tone-contacts .contact-postal-suggest.filter-panel-btn {
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+    padding: 0 6px !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 22px !important;
+    min-height: 0 !important;
+    margin-left: 4px;
+    vertical-align: middle;
+    border-radius: 3px !important;
 }
 
 .page-tone-repairs {
@@ -7368,6 +7394,10 @@ a.sys-prefs-mapping-link:visited {
     padding-bottom: 0.35rem;
 }
 
+.woo-map-pull-toolbar-bottom {
+    margin-top: 0.75rem;
+}
+
 .woo-map-page-info {
     margin: 0 0 0.5rem 0;
     font-size: 0.9rem;
@@ -7398,14 +7428,110 @@ a.sys-prefs-mapping-link:visited {
 .woo-map-cat-grid .woo-cat-depth-5,
 .woo-map-cat-grid .woo-cat-depth-6 { padding-left: 4.4rem; }
 
-.woo-map-pull-grid select.woo-map-so,
 .woo-map-cat-grid select.woo-map-so {
-    min-width: 8.5em !important;
-    width: 9.5em !important;
-    max-width: 10em !important;
+    min-width: 5.5em !important;
+    width: 6em !important;
+    max-width: 6.5em !important;
     font-size: smaller !important;
-    padding: 1px 4px !important;
+    padding: 1px 2px !important;
     line-height: 1.2 !important;
+}
+
+.woo-map-pull-grid td.woo-map-flag-col,
+.woo-map-pull-grid th.woo-map-flag-col {
+    width: 2.25em;
+    max-width: 2.5em;
+    padding-left: 1px;
+    padding-right: 1px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.woo-map-pull-grid select.woo-map-so,
+.results-table.woo-map-pull-grid select.woo-map-so {
+    min-width: 4.5em !important;
+    width: 4.5em !important;
+    max-width: 6em !important;
+    font-size: 0.72rem !important;
+    padding: 1px 16px 1px 3px !important;
+    line-height: 1.15 !important;
+    text-align: left !important;
+    text-align-last: left !important;
+    direction: ltr;
+    box-sizing: border-box;
+}
+
+.woo-map-pull-grid td:has(> select.woo-map-so),
+.woo-map-pull-grid th.woo-map-so-col {
+    width: auto !important;
+    min-width: max-content !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.woo-map-pull-grid td.woo-map-so-col,
+.woo-map-pull-grid th.woo-map-so-col {
+    min-width: 4.75em !important;
+    max-width: none !important;
+    padding-left: 2px !important;
+    padding-right: 1px !important;
+    text-align: left !important;
+    overflow: visible !important;
+    font-size: 0.72rem;
+}
+
+.woo-map-pull-grid td.woo-map-qty-col,
+.woo-map-pull-grid th.woo-map-qty-col {
+    width: 3em;
+    max-width: 3.25em;
+    padding-left: 2px !important;
+    padding-right: 1px !important;
+    font-size: 0.72rem;
+}
+
+.woo-map-pull-grid input.woo-map-qty,
+.results-table.woo-map-pull-grid input.woo-map-qty {
+    width: 2.85em !important;
+    min-width: 2.75em !important;
+    max-width: 3.1em !important;
+    padding: 1px 2px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+    text-align: left !important;
+}
+
+.woo-map-pull-grid select.woo-map-pack,
+.results-table.woo-map-pull-grid select.woo-map-pack {
+    min-width: 4em !important;
+    width: 4.5em !important;
+    max-width: 5em !important;
+    font-size: 0.72rem !important;
+    padding: 1px 1.1em 1px 2px !important;
+    line-height: 1.15 !important;
+    text-align: left !important;
+    text-align-last: left !important;
+}
+
+.woo-map-pull-grid td.woo-map-pack-col,
+.woo-map-pull-grid th.woo-map-pack-col {
+    width: 4.75em;
+    max-width: 5.25em;
+    padding-left: 2px !important;
+    padding-right: 1px !important;
+    font-size: 0.72rem;
+}
+
+.woo-map-pull-grid td.woo-map-sku-col,
+.woo-map-pull-grid th.woo-map-sku-col {
+    min-width: 11rem;
+    width: auto;
+    max-width: 16rem;
+    white-space: nowrap;
+}
+
+.woo-map-pull-grid .woo-map-sku {
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .woo-map-cat-grid select.woo-map-cat-import {
@@ -7414,12 +7540,6 @@ a.sys-prefs-mapping-link:visited {
     font-size: smaller;
     padding: 1px 4px;
     line-height: 1.2;
-}
-
-.woo-map-pull-grid td.woo-map-so-col,
-.woo-map-pull-grid th.woo-map-so-col {
-    width: 10em;
-    max-width: 10.5em;
 }
 
 .woo-map-cat-grid .woo-cat-depth-1::before,
@@ -7529,6 +7649,43 @@ body.woo-map-quiet-postback [id$="upgWooMap"] {
     border-left: 3px solid rgba(78, 102, 77, 0.45);
 }
 
+/* Saved maps: stay inside panel; wrap long Woo SKUs instead of blowing out layout */
+.woo-map-saved-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+.woo-map-saved-grid {
+    table-layout: fixed;
+    width: 100%;
+    max-width: 100%;
+}
+.woo-map-saved-grid th,
+.woo-map-saved-grid td {
+    vertical-align: top;
+}
+.woo-map-saved-grid .woo-map-saved-sku,
+.woo-map-saved-grid .woo-map-saved-item {
+    max-width: 12rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    font-size: 0.92em;
+}
+.woo-map-saved-grid .woo-map-saved-sku-text {
+    display: block;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.woo-map-saved-grid th a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .woo-map-pull-grid .woo-map-saved-col {
     white-space: nowrap;
     font-size: 0.9em;
@@ -7606,6 +7763,321 @@ body.woo-map-quiet-postback [id$="upgWooMap"] {
     margin-top: 0.45rem;
     font-size: 0.92em;
     opacity: 0.9;
+}
+
+.woo-map-section-title {
+    margin: 1.25rem 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.woo-map-section-note {
+    margin: 0 0 0.5rem;
+    font-size: 0.92em;
+    color: #5a6a52;
+}
+
+.woo-map-shipping-grid-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin: 0 0 0.75rem;
+}
+
+@media (max-width: 600px) {
+    .woo-map-shipping-grid .sys-prefs-input {
+        max-width: 100%;
+    }
+}
+
+.woo-map-section-subtitle {
+    margin: 0.75rem 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #3d4a38;
+}
+
+.woo-map-dispatch-grid-wrap {
+    width: 100%;
+    max-width: 32rem;
+    margin: 0 0 0.75rem;
+    overflow-x: auto;
+}
+
+.woo-map-dispatch-grid {
+    width: 100%;
+}
+
+.woo-map-dispatch-check-col {
+    width: 2.5rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.woo-map-dispatch-person-col {
+    word-break: break-word;
+}
+
+.woo-map-dispatch-options {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    max-width: 36rem;
+}
+
+.woo-map-dispatch-msg-hint {
+    margin: 0;
+}
+
+.woo-map-btn-wide {
+    min-width: 14rem !important;
+    max-width: none !important;
+    width: auto !important;
+    height: auto !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+    padding: 0.45rem 0.9rem !important;
+}
+
+@media (max-width: 600px) {
+    .woo-map-dispatch-grid-wrap {
+        max-width: none;
+    }
+
+    .woo-map-btn-wide {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+}
+
+.woo-map-areas-default {
+    margin-bottom: 0.75rem;
+}
+
+.woo-map-footer-hint {
+    font-size: 0.85em;
+    color: #7a8a6e;
+    font-style: italic;
+}
+
+.woo-map-area-defaults-grid .woo-map-area-name-col {
+    min-width: 10rem;
+    white-space: nowrap;
+}
+
+.woo-map-postal-ranges {
+    min-width: 14rem;
+    width: 100%;
+    max-width: 36rem;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.92em;
+    box-sizing: border-box;
+}
+
+.postal-ranges-cell {
+    min-width: 16rem;
+    width: 28%;
+}
+
+@media (min-width: 1200px) {
+    .woo-map-postal-ranges {
+        min-width: 22rem;
+        max-width: 48rem;
+    }
+
+    .postal-ranges-cell {
+        min-width: 24rem;
+        width: 36%;
+    }
+
+    .postal-area-setup-grid .woo-map-postal-ranges {
+        min-height: 4.5rem;
+    }
+}
+
+.postal-area-setup-grid td {
+    vertical-align: top;
+}
+
+.woo-map-notes-wide {
+    min-width: 12rem;
+    width: 100%;
+    max-width: 36rem;
+    box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+    .woo-map-notes-wide {
+        min-width: 22rem;
+        max-width: 48rem;
+        min-height: 4.5rem;
+    }
+}
+
+.woo-map-system-default {
+    font-weight: 500;
+    color: #3d4a36;
+}
+
+.woo-import-tag {
+    display: inline-block;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #5a4a2a;
+    background: #f5eed8;
+    border-radius: 3px;
+    padding: 0 0.35rem;
+}
+
+.woo-import-status {
+    text-transform: lowercase;
+}
+
+.status-badge.woo-import-status.is-cancelled {
+    color: #8b1a1a;
+    background: #fde8e8;
+    border-color: #e8a0a0;
+}
+
+.status-badge.woo-import-status.is-completed {
+    color: #1a4a8b;
+    background: #e8f0fd;
+    border-color: #a0c0e8;
+}
+
+.woo-import-results {
+    margin: 0.5rem 0 0 1.2rem;
+}
+
+/* Woo order import — wide preview grid stays inside panel (horizontal scroll). */
+.woo-order-import-preview-scroll {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid {
+    min-width: 920px;
+    width: max-content !important;
+    max-width: none !important;
+    table-layout: auto !important;
+    white-space: normal;
+    font-size: 0.92em;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid th,
+.woo-order-import-preview-scroll .woo-order-import-preview-grid td {
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    vertical-align: top;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .col-tight {
+    width: 1% !important;
+    white-space: nowrap !important;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-contact-col,
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-lines-col,
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-col {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-contact-col {
+    min-width: 11rem;
+    white-space: normal;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-contact-col a {
+    display: inline !important;
+    padding: 0 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-lines-col {
+    min-width: 12rem;
+    font-size: 0.88em;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-col {
+    min-width: 11rem;
+    font-size: 0.88em;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-early {
+    min-width: 10rem;
+    font-weight: 500;
+}
+
+.woo-order-import-preview-scroll .woo-import-row-actions {
+    display: inline-flex !important;
+    white-space: nowrap;
+    gap: 4px;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    width: max-content !important;
+}
+
+.woo-order-import-preview-scroll .woo-import-row-actions input.woo-import-action-btn {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    line-height: 0 !important;
+    vertical-align: middle;
+    box-shadow: none !important;
+}
+
+.woo-order-import-preview-scroll .woo-import-row-actions a.woo-import-action-link {
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+    vertical-align: middle;
+    text-decoration: none;
+}
+
+.woo-order-import-preview-scroll .woo-import-row-actions a.woo-import-action-link img {
+    display: block;
+    vertical-align: middle;
+}
+
+.woo-order-import-preview-scroll .woo-import-row-actions input.woo-import-action-btn:hover,
+.woo-order-import-preview-scroll .woo-import-row-actions a.woo-import-action-link:hover {
+    background: transparent !important;
+    border: none !important;
+    opacity: 0.85;
+}
+
+.woo-order-import-preview-scroll .woo-order-import-preview-grid td.woo-import-actions-col:first-child:has(input[type="image"]),
+.woo-order-import-preview-scroll .woo-order-import-preview-grid td.woo-import-actions-col:first-child:has(a.woo-import-action-link),
+.woo-order-import-preview-scroll .woo-order-import-preview-grid th.woo-import-actions-col:first-child {
+    text-align: left !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+}
+
+.woo-order-import-preview-scroll .woo-import-actions-col,
+.woo-order-import-preview-scroll .woo-order-import-preview-grid td.woo-import-actions-col,
+.woo-order-import-preview-scroll .woo-order-import-preview-grid th.woo-import-actions-col {
+    width: 1% !important;
+    min-width: 3.25rem;
+    max-width: none;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    text-align: left !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
 }
 
 .page-tone-logs {

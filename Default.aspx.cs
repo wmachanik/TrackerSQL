@@ -32,12 +32,9 @@ namespace TrackerSQL
                 litCurrentDate.Text = $"Date: {now:dddd, dd MMM yyyy HH:mm} {TimeZoneUtils.GetZoneAbbreviation()}";
                 try
                 {
-                    var repo = new TotalCountTrackerRepository();
-                    var latest = repo.GetLatest();
-                    if (latest != null && latest.TotalCount.HasValue)
-                        lblTotalCupCount.Text = latest.TotalCount.Value.ToString("n0");
-                    else
-                        lblTotalCupCount.Text = "0";
+                    // Live total across contacts (legacy: SUM(LastCupCount) FROM ClientUsageTbl).
+                    long totalCups = new ContactsUsageRepository().GetSumOfLastCupCounts();
+                    lblTotalCupCount.Text = totalCups.ToString("n0");
                 }
                 catch (Exception ex)
                 {

@@ -1,4 +1,6 @@
 using System;
+using System.Web;
+using System.Web.Caching;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
@@ -23,6 +25,36 @@ namespace TrackerSQL.Managers
         public WooCommerceSchemaInstaller.EnsureResult EnsureSchema()
         {
             return _schema.EnsureSchema();
+        }
+
+        /// <summary>Run idempotent create/alter once per app domain (not every postback).</summary>
+        public WooCommerceSchemaInstaller.EnsureResult EnsureSchemaOnce()
+        {
+            const string cacheKey = "WooCommerce.SchemaEnsured.v5";
+            if (HttpRuntime.Cache[cacheKey] != null)
+                return new WooCommerceSchemaInstaller.EnsureResult { Succeeded = true, Message = "Schema already ensured." };
+
+            var result = EnsureSchema();
+            if (result.Succeeded)
+            {
+                HttpRuntime.Cache.Insert(
+                    cacheKey,
+                    true,
+                    null,
+                    Cache.NoAbsoluteExpiration,
+                    Cache.NoSlidingExpiration);
+            }
+            return result;
+        }
+
+        /// <summary>Force schema ensure on next page load (e.g. after XMLtoSQL or wizard).</summary>
+        public static void InvalidateSchemaCache()
+        {
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v2");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v3");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v4");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v5");
         }
 
         public SystemPreferencesHdr GetPreferencesHeader()
@@ -96,6 +128,25 @@ namespace TrackerSQL.Managers
             _settingsRepo.SaveSettings(settings, updatedBy);
             AppLogger.WriteLog("woo",
                 "Connection settings saved (key replaced=" + replaceKey + ", secret replaced=" + replaceSecret + ")",
+                updatedBy);
+        }
+
+        public void SaveDispatchWaybillSettings(
+            string dispatchDeliveryPersonIds,
+            bool trackingNumberRequired,
+            string updatedBy)
+        {
+            EnsureSchema();
+            var settings = _settingsRepo.GetSettings();
+            settings.DispatchDeliveryPersonIds = (dispatchDeliveryPersonIds ?? string.Empty).Trim();
+            settings.TrackingNumberRequired = trackingNumberRequired;
+            _settingsRepo.SaveSettings(settings, updatedBy);
+            AppLogger.WriteLog("woo",
+                "Dispatch/waybill settings saved: people="
+                + (string.IsNullOrWhiteSpace(settings.DispatchDeliveryPersonIds)
+                    ? "(none)"
+                    : settings.DispatchDeliveryPersonIds)
+                + "; trackingRequired=" + trackingNumberRequired,
                 updatedBy);
         }
 
@@ -212,6 +263,42 @@ namespace TrackerSQL.Managers
             settings.CategoryFilterMode = string.IsNullOrWhiteSpace(mode) ? "All" : mode.Trim();
             _settingsRepo.SaveSettings(settings, updatedBy);
             AppLogger.WriteLog("woo", "CategoryFilterMode=" + settings.CategoryFilterMode, updatedBy);
+        }
+
+        public void SaveImportAddressSettings(
+            bool includeProvince,
+            bool includeCountry,
+            bool replacePlus27,
+            bool formatSaPhone,
+            string updatedBy)
+        {
+            EnsureSchema();
+            var settings = _settingsRepo.GetSettings();
+            settings.ImportAddressIncludeProvince = includeProvince;
+            settings.ImportAddressIncludeCountry = includeCountry;
+            settings.ImportPhoneReplacePlus27 = replacePlus27;
+            settings.ImportPhoneFormatSa = formatSaPhone;
+            _settingsRepo.SaveSettings(settings, updatedBy);
+            AppLogger.WriteLog("woo",
+                string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "Import address settings: province={0}, country={1}, phone27={2}, phoneFmt={3}",
+                    includeProvince, includeCountry, replacePlus27, formatSaPhone),
+                updatedBy);
+        }
+
+        public void SaveImportNotesItemId(int? notesItemId, string updatedBy)
+        {
+            EnsureSchema();
+            var settings = _settingsRepo.GetSettings();
+            settings.ImportNotesItemID = notesItemId.HasValue && notesItemId.Value > 0
+                ? notesItemId
+                : null;
+            _settingsRepo.SaveSettings(settings, updatedBy);
+            AppLogger.WriteLog("woo",
+                "ImportNotesItemID=" + (settings.ImportNotesItemID.HasValue
+                    ? settings.ImportNotesItemID.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "cleared"),
+                updatedBy);
         }
 
         public void CompleteWizard(string updatedBy)

@@ -21,6 +21,7 @@
     <asp:UpdatePanel ID="updtpnlOrderDone" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
         <Triggers>
             <asp:AsyncPostBackTrigger ControlID="btnDone" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="rbtnSendConfirm" EventName="SelectedIndexChanged" />
             <asp:PostBackTrigger ControlID="btnCancel" />
             <asp:PostBackTrigger ControlID="btnReturnToDeliveres" />
         </Triggers>
@@ -111,8 +112,9 @@
                             <td style="width: 8em;">
                                 <asp:TextBox ID="tbxStock" runat="server" Width="5em" CssClass="small" />
                             </td>
-                            <td rowspan="3" style="vertical-align: top; padding-left: 16px;">
-                                <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="small">
+                            <td rowspan="4" style="vertical-align: top; padding-left: 16px;">
+                                <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="small"
+                                    AutoPostBack="true" OnSelectedIndexChanged="rbtnSendConfirm_SelectedIndexChanged">
                                     <asp:ListItem Text="No confirmation email" Value="none" />
                                     <asp:ListItem Text="Send 'in the post box' message" Value="postbox" />
                                     <asp:ListItem Text="Send 'order dispatch' message" Value="dispatched" />
@@ -125,6 +127,23 @@
                             <td>Cup count</td>
                             <td>
                                 <asp:TextBox ID="tbxCount" runat="server" Width="5em" CssClass="small" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <asp:Panel ID="pnlTracking" runat="server" Visible="false" CssClass="page-tone-subtitle" style="margin-top: 8px;">
+                                    <asp:Label ID="lblTracking" runat="server" AssociatedControlID="tbxTrackingNumber"
+                                        Text="Tracking / waybill" />
+                                    <asp:TextBox ID="tbxTrackingNumber" runat="server" Width="16em" MaxLength="100"
+                                        CssClass="small" style="display: block; margin-top: 4px;" />
+                                    <asp:RequiredFieldValidator ID="rfvTracking" runat="server" ControlToValidate="tbxTrackingNumber"
+                                        Enabled="false" Display="Dynamic" CssClass="status-error"
+                                        ErrorMessage="Tracking / waybill number is required for Pargo and courier." />
+                                    <p class="page-tone-subtitle" style="margin: 6px 0 0; font-size: 0.9em;">
+                                        Required for Pargo / courier. Tracker emails this number. If the order came from WooCommerce,
+                                        a customer note is added in Woo — the Woo order is <strong>not</strong> completed.
+                                    </p>
+                                </asp:Panel>
                             </td>
                         </tr>
                     </table>

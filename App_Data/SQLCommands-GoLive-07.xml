@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Go-live data pack for XMLtoSQL (shared hosting — no SSMS).
+  Source: 07-WooAreaDeliveryDefaultTbl.sql
+  Uses SET IDENTITY_INSERT for tables with identity PKs.
+  Run in order: SQLCommands-GoLive-00 … 09 via Tools → XMLtoSQL.
+-->
+<root>
+<command type="exec"><![CDATA[
+/* Config export: dbo.WooAreaDeliveryDefaultTbl (32 rows) */
+SET NOCOUNT ON;
+DELETE FROM dbo.[WooAreaDeliveryDefaultTbl];
+]]></command>
+
+<command type="insert"><![CDATA[
+SET NOCOUNT ON;
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (1, 3, N'2026-09-05T11:45:08.700', N'warren', N'7455...7456;7460;7463;7489...7490;7499;7525;7551;7561;7808;7824;7848;7864;7872;7880;7888;7915;7925;7935...7937;7941;8000...8003;8007...8040;8050...8160');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (2, 7, N'2026-09-05T11:45:09.651', N'warren', N'0002...0299;1401...1995;2000...2198');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (3, 7, N'2026-09-05T11:45:10.734', N'warren', N'7600...7630;7646;7655;7670;7680...7691');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (4, 7, N'2026-09-05T11:45:10.596', N'warren', N'7100...7144;7151;');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (5, 7, N'2026-09-05T11:45:10.134', N'warren', N'0301...1397;2200...3599;7200');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (6, 3, N'2026-09-05T11:45:09.596', N'warren', N'7975...7979');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (7, 3, N'2026-09-05T11:45:11.017', N'warren', N'6802');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (8, 3, N'2026-09-05T11:45:10.802', N'warren', N'7700...7763;7765...7805');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (9, 3, N'2026-09-05T11:45:08.542', N'warren', N'8005');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (10, 3, N'2026-09-05T11:45:10.004', N'warren', N'7400...7404;7431...7434');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (11, 3, N'2026-09-05T11:45:08.811', N'warren', N'7806');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (12, 3, N'2026-09-05T11:45:08.740', N'warren', N'7406...7409');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (13, 7, N'2026-09-05T11:45:09.381', N'warren', N'5201...5292;5688');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (14, 3, N'2026-09-05T11:45:08.872', N'warren', N'3600...4407');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (15, 3, N'2026-09-05T11:45:08.676', N'warren', N'7500......7507;7530...7540');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (16, 3, N'2026-09-05T11:45:08.893', N'warren', N'7550');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (17, 3, N'2026-09-05T11:45:09.951', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (18, 3, N'2026-09-05T11:45:11.035', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (19, 7, N'2026-09-05T11:45:09.827', N'warren', N'6571...6580');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (20, 3, N'2026-09-05T11:45:09.739', N'warren', N'7806');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (21, 3, N'2026-09-05T11:45:11.123', N'warren', N'7945...7976');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (22, 3, N'2026-09-05T11:45:10.074', N'warren', N'7405');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (24, 3, N'2026-09-05T11:45:09.875', N'warren', N'7435...7449');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (26, 3, N'2026-09-05T11:45:09.961', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (27, 3, N'2026-09-05T11:45:08.461', N'warren', N'7764');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (28, 7, N'2026-09-05T11:45:10.096', N'warren', N'6000...6390');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (29, 7, N'2026-09-05T11:45:09.572', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (30, 7, N'2026-09-05T11:45:08.867', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (31, 3, N'2026-09-05T11:45:10.275', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (32, 3, N'2026-09-05T11:45:10.895', N'warren', NULL);
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (33, 3, N'2026-09-05T11:45:09.837', N'warren', N'7410...7434');
+INSERT INTO dbo.[WooAreaDeliveryDefaultTbl] ([AreaID], [DefaultPreferredAgentID], [UpdatedAt], [UpdatedBy], [PostalRanges]) VALUES (34, 3, N'2026-09-05T11:45:10.361', N'warren', N'7975');
+]]></command>
+</root>

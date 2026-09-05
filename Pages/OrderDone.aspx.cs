@@ -39,6 +39,7 @@ namespace TrackerSQL.Pages
                 fvOrderDone.DataBind();
                 gvOrderDoeLines.DataBind();
                 SetDefaultRadioButtonFromDeliveryType();
+                UpdateTrackingUi();
                 SetStatus("Ready to confirm delivery.", isError: null);
             }
         }
@@ -50,6 +51,7 @@ namespace TrackerSQL.Pages
                 return;
 
             scriptManager.RegisterAsyncPostBackControl(btnDone);
+            scriptManager.RegisterAsyncPostBackControl(rbtnSendConfirm);
             scriptManager.RegisterPostBackControl(btnCancel);
             scriptManager.RegisterPostBackControl(btnReturnToDeliveres);
         }
@@ -91,6 +93,29 @@ namespace TrackerSQL.Pages
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"OrderDone: Error setting delivery method: {ex.Message}");
                 rbtnSendConfirm.SelectedValue = "done";
             }
+        }
+
+        protected void rbtnSendConfirm_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateTrackingUi();
+            updtpnlOrderDone.Update();
+        }
+
+        private int? GetDeliveryPersonId()
+        {
+            int? headerId = TempOrderSession.GetHeaderId();
+            if (!headerId.HasValue && TempOrderSession.TryResolve(out int resolvedHeaderId, out _))
+                headerId = resolvedHeaderId;
+            if (!headerId.HasValue)
+                return null;
+            return new TempOrdersHeaderRepository().GetById(headerId.Value)?.ToBeDeliveredByID;
+        }
+
+        private void UpdateTrackingUi()
+        {
+            bool need = OrderDoneManager.RequiresTrackingNumber(GetDeliveryPersonId(), rbtnSendConfirm.SelectedValue);
+            pnlTracking.Visible = need;
+            rfvTracking.Enabled = need;
         }
 
         private void SetStatus(string message, bool? isError)
@@ -158,6 +183,15 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
+                UpdateTrackingUi();
+                string trackingNumber = (tbxTrackingNumber.Text ?? string.Empty).Trim();
+                if (pnlTracking.Visible && string.IsNullOrWhiteSpace(trackingNumber))
+                {
+                    SetStatus(MessageProvider.Get(MessageKeys.Order.TrackingRequired), isError: true);
+                    updtpnlOrderDone.Update();
+                    return;
+                }
+
                 string statusKey = null;
                 switch (rbtnSendConfirm.SelectedValue)
                 {
@@ -183,7 +217,8 @@ namespace TrackerSQL.Pages
                     deliveryDate,
                     tbxStock.Text,
                     tbxCount.Text,
-                    statusKey);
+                    statusKey,
+                    trackingNumber);
 
                 bool emailWarn = !string.IsNullOrEmpty(result.Message)
                     && result.Message.IndexOf("email failed", StringComparison.OrdinalIgnoreCase) >= 0;

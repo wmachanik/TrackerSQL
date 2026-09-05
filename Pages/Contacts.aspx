@@ -65,7 +65,7 @@
                         <div class="filter-section action-buttons toolbar-icon-row">
                             <asp:HyperLink ImageUrl="~/images/imgButtons/CalendarClock.gif" ToolTip="Contacts Away Times"
                                 NavigateUrl="~/Pages/ContactsAway.aspx" runat="server" />
-                            <asp:HyperLink ImageUrl="~/images/imgButtons/AddItem.gif" ToolTip="New Contact"
+                            <asp:HyperLink ImageUrl="~/images/imgButtons/Add-Contact-Card.png" ToolTip="New contact"
                                 NavigateUrl="~/Pages/ContactDetails.aspx" runat="server" />
                             <span class="image-button" title="Return to home">
                                 <asp:ImageButton ID="btnBack" runat="server"

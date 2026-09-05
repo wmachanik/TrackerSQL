@@ -81,7 +81,13 @@
                 </tr>
                 <tr>
                     <td>Post Code</td>
-                    <td><asp:TextBox ID="PostalCodeTextBox" runat="server" /></td>
+                    <td>
+                        <asp:TextBox ID="PostalCodeTextBox" runat="server" />
+                        <asp:Button ID="btnSuggestPostal" runat="server" Text="Suggest"
+                            CssClass="filter-panel-btn contact-postal-suggest" CausesValidation="false"
+                            OnClick="btnSuggestPostal_Click"
+                            ToolTip="Fill postcode from address / suburb; set area if shared postcode can be resolved" />
+                    </td>
                     <td>Delivery Area</td>
                     <td>
                         <asp:DropDownList ID="ddlAreas" runat="server" AppendDataBoundItems="True" DataSourceID="odsAreas" DataTextField="AreaName" DataValueField="AreaID">
@@ -484,6 +490,8 @@
                                             <asp:BoundField DataField="PrepDate" HeaderText="Prep" DataFormatString="{0:yyyy-MM-dd}" />
                                             <asp:BoundField DataField="RequiredByDate" HeaderText="Required By" DataFormatString="{0:yyyy-MM-dd}" />
                                             <asp:BoundField DataField="ItemsDisplay" HeaderText="Item(s)" />
+                                            <asp:BoundField DataField="StatusDisplay" HeaderText="Status" />
+                                            <asp:BoundField DataField="WaybillNumber" HeaderText="Waybill" />
                                             <asp:TemplateField HeaderText="Confirmed">
                                                 <ItemTemplate>
                                                     <asp:Label ID="lblOrderConfirmed" runat="server"
@@ -501,6 +509,34 @@
                                 </div>
                             </ContentTemplate>
                         </asp:UpdatePanel>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Waybills" ID="tabpnlWaybills" Visible="false">
+                    <HeaderTemplate>Waybills</HeaderTemplate>
+                    <ContentTemplate>
+                        <div style="padding:4px">
+                            <asp:GridView ID="gvContactWaybills" runat="server" CssClass="TblWhite small"
+                                AutoGenerateColumns="False" EmptyDataText="no dispatched waybills">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlWaybillOrder" runat="server"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif"
+                                                ToolTip="Open this order"
+                                                NavigateUrl='<%# Eval("OrderNavigateUrl") %>' />
+                                        </ItemTemplate>
+                                        <ItemStyle HorizontalAlign="Center" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="OrderID" HeaderText="Order #" />
+                                    <asp:BoundField DataField="DispatchedAt" HeaderText="Dispatched" DataFormatString="{0:yyyy-MM-dd}" />
+                                    <asp:BoundField DataField="Carrier" HeaderText="Carrier" />
+                                    <asp:BoundField DataField="WaybillNumber" HeaderText="Waybill" />
+                                    <asp:BoundField DataField="DispatchStatus" HeaderText="Status" />
+                                    <asp:BoundField DataField="WooNoteDisplay" HeaderText="Woo note" ItemStyle-HorizontalAlign="Center" />
+                                    <asp:BoundField DataField="EmailSentDisplay" HeaderText="Email" ItemStyle-HorizontalAlign="Center" />
+                                </Columns>
+                            </asp:GridView>
+                        </div>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
                 <%-- Only visible when the contact has recurring orders (enabled or disabled) --%>

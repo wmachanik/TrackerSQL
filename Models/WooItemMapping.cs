@@ -23,6 +23,12 @@ namespace TrackerSQL.Models
         public string ItemDesc { get; set; }
         public string ItemSku { get; set; }
         public bool? ItemEnabled { get; set; }
+        /// <summary>Display label for PackagingID (Symbol or short desc).</summary>
+        public string PackagingDesc { get; set; }
+        /// <summary>Woo product name from catalog cache (UI).</summary>
+        public string WooProductLabel { get; set; }
+        /// <summary>Woo variation name/attrs from catalog cache (UI).</summary>
+        public string WooVariationLabel { get; set; }
 
         public bool IsNotesMap
         {
@@ -32,6 +38,12 @@ namespace TrackerSQL.Models
         public bool IsExcludeMap
         {
             get { return string.Equals(MapType, "Exclude", StringComparison.OrdinalIgnoreCase); }
+        }
+
+        /// <summary>Parent map that forces Import variants (overrides category default).</summary>
+        public bool IsVariantsMap
+        {
+            get { return string.Equals(MapType, "Variants", StringComparison.OrdinalIgnoreCase); }
         }
     }
 }

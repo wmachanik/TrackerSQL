@@ -1,0 +1,115 @@
+{
+  "presets": [
+    {
+      "areaNames": [ "Cape Town", "Cape Town CBD", "CBD" ],
+      "dispatch": "Vehicle",
+      "places": [ "Cape Town", "Kaapstad", "Woodstock", "Gardens", "Mowbray", "Paarden Eiland", "Paarden", "Green Point" ]
+    },
+    {
+      "areaNames": [ "Atlantic Seaboard" ],
+      "dispatch": "Vehicle",
+      "places": [ "Sea Point", "Seapoint", "Camps Bay", "Bantry Bay", "Clifton", "Mouille Point", "Fresnaye" ]
+    },
+    {
+      "areaNames": [ "Northern Suburbs" ],
+      "dispatch": "Vehicle",
+      "places": [ "Bellville", "Belville", "Parow", "Brackenfell", "Kuils River", "Kuilsrivier", "Epping", "Goodwood", "Kraaifontein", "Panorama" ]
+    },
+    {
+      "areaNames": [ "Southern Suburbs" ],
+      "dispatch": "Vehicle",
+      "places": [ "Claremont", "Rondebosch", "Newlands", "Kenilworth", "Plumstead", "Pinelands", "Bishopscourt", "Bishop's Court", "Diep River", "Ottery" ]
+    },
+    {
+      "areaNames": [ "Southern Peninsula", "Peninsula", "South Peninsula" ],
+      "dispatch": "Vehicle",
+      "places": [ "Fish Hoek", "Fishhoek", "Vishoek", "Muizenberg", "Simon's Town", "Simonstown", "Noordhoek", "Tokai", "Westlake", "Kommetjie", "Wynberg", "Steenberg", "Lakeside", "Bergvliet" ]
+    },
+    {
+      "areaNames": [ "Hout Bay" ],
+      "dispatch": "Vehicle",
+      "places": [ "Hout Bay", "Houtbaai" ]
+    },
+    {
+      "areaNames": [ "Constantia" ],
+      "dispatch": "Vehicle",
+      "places": [ "Constantia" ]
+    },
+    {
+      "areaNames": [ "Fish Hoek", "Fishhoek" ],
+      "dispatch": "Vehicle",
+      "places": [ "Fish Hoek", "Fishhoek", "Vishoek" ]
+    },
+    {
+      "areaNames": [ "Simonstown", "Simon's Town", "Simonstad" ],
+      "dispatch": "Vehicle",
+      "places": [ "Simon's Town", "Simonstown", "Simonstad", "Simon'S Town" ]
+    },
+    {
+      "areaNames": [ "Stellenbosch" ],
+      "dispatch": "Vehicle",
+      "places": [ "Stellenbosch", "Paarl", "Franschhoek" ]
+    },
+    {
+      "areaNames": [ "Somerset West", "Somerset" ],
+      "dispatch": "Vehicle",
+      "places": [ "Somerset West", "Strand", "Gordon's Bay", "Gordons Bay", "GordonsBay" ]
+    },
+    {
+      "areaNames": [ "Belville", "Bellville" ],
+      "dispatch": "Vehicle",
+      "places": [ "Bellville", "Belville", "Parow" ]
+    },
+    {
+      "areaNames": [ "Durbanville" ],
+      "dispatch": "Vehicle",
+      "places": [ "Durbanville" ]
+    },
+    {
+      "areaNames": [ "Milnerton" ],
+      "dispatch": "Vehicle",
+      "places": [ "Milnerton" ]
+    },
+    {
+      "areaNames": [ "Century City", "Montague Gardens" ],
+      "dispatch": "Vehicle",
+      "places": [ "Century City", "Montague Gardens" ]
+    },
+    {
+      "areaNames": [ "Melkbos" ],
+      "dispatch": "Vehicle",
+      "places": [ "Melkbos", "Melkbosstrand" ]
+    },
+    {
+      "areaNames": [ "Gauteng", "Johannesburg" ],
+      "dispatch": "Courier",
+      "places": [ "Johannesburg", "Pretoria", "Sandton", "Centurion", "Randburg", "Midrand", "Kempton Park", "Benoni", "Soweto", "Roodepoort", "Edenvale", "Alberton", "Krugersdorp", "Sandown", "Rosebank" ]
+    },
+    {
+      "areaNames": [ "Durban" ],
+      "dispatch": "Courier",
+      "places": [ "Durban", "Pinetown", "Umhlanga", "Westville" ]
+    },
+    {
+      "areaNames": [ "East London" ],
+      "dispatch": "Courier",
+      "places": [ "East London" ]
+    },
+    {
+      "areaNames": [ "George" ],
+      "dispatch": "Courier",
+      "places": [ "George", "Knysna", "Plettenberg Bay" ]
+    },
+    {
+      "areaNames": [ "PE", "Port Elizabeth", "Gqeberha" ],
+      "dispatch": "Courier",
+      "places": [ "Port Elizabeth", "Gqeberha", "Uitenhage" ]
+    },
+    {
+      "areaNames": [ "Regional", "RegionalSA" ],
+      "dispatch": "Courier",
+      "places": [],
+      "fillUnmapped": true
+    }
+  ]
+}

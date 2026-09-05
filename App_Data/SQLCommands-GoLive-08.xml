@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Go-live data pack for XMLtoSQL (shared hosting — no SSMS).
+  Source: 08-WooShippingMethodMapTbl.sql
+  Uses SET IDENTITY_INSERT for tables with identity PKs.
+  Run in order: SQLCommands-GoLive-00 … 09 via Tools → XMLtoSQL.
+-->
+<root>
+<command type="exec"><![CDATA[
+/* Config export: dbo.WooShippingMethodMapTbl (1 rows) */
+SET NOCOUNT ON;
+DELETE FROM dbo.[WooShippingMethodMapTbl];
+]]></command>
+
+<command type="insert"><![CDATA[
+SET NOCOUNT ON;
+SET IDENTITY_INSERT dbo.[WooShippingMethodMapTbl] ON;
+INSERT INTO dbo.[WooShippingMethodMapTbl] ([MapID], [MethodMatch], [ToBeDeliveredByID], [IsActive], [Notes], [UpdatedAt], [UpdatedBy]) VALUES (1, N'Collect', 10, 1, NULL, N'2026-09-05T11:43:32.155', N'warren');
+SET IDENTITY_INSERT dbo.[WooShippingMethodMapTbl] OFF;
+]]></command>
+</root>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
@@ -25,6 +26,9 @@ namespace TrackerSQL.Managers
             public bool Succeeded { get; set; }
             public string Message { get; set; }
             public int Count { get; set; }
+            public int FailCount { get; set; }
+            public int UnchangedCount { get; set; }
+            public List<WooEnabledPushPreviewRow> Rows { get; set; } = new List<WooEnabledPushPreviewRow>();
         }
 
         public List<WooCategoryFilter> GetCategoryFilters()
@@ -143,9 +147,12 @@ namespace TrackerSQL.Managers
             int parentsScanned;
             bool hitCap;
             var products = _api.GetProductsAndVariations(creds, out parentsScanned, out hitCap);
-            _catalogCache.ReplaceAll(products);
+            DateTime pullStarted = DateTime.UtcNow;
+            _catalogCache.UpsertAll(products, pullStarted);
+            products = _catalogCache.GetAllAsDtos();
             products = ApplyCategoryFilter(products, settings.CategoryFilterMode, filters);
-            return BuildPullResult(products, parentsScanned, hitCap, updatedBy, touchLastSync: true, categoryFilters: filters);
+            return BuildPullResult(products, parentsScanned, hitCap, updatedBy, touchLastSync: true,
+                categoryFilters: filters, catalogSyncCutoff: pullStarted);
         }
 
         private WooProductPullResult BuildPullResult(
@@ -154,35 +161,47 @@ namespace TrackerSQL.Managers
             bool hitCap,
             string updatedBy,
             bool touchLastSync,
-            IList<WooCategoryFilter> categoryFilters = null)
+            IList<WooCategoryFilter> categoryFilters = null,
+            DateTime? catalogSyncCutoff = null)
         {
             if (products == null)
                 products = new List<WooProductDto>();
 
+            var settings = _settings.GetSettings();
+            DateTime? newSinceCutoff = catalogSyncCutoff ?? settings.LastItemsSyncUtc;
+
             var items = _itemsRepo.GetAll("SKU") ?? new List<Item>();
             var byId = items.ToDictionary(i => i.ItemID);
-            var enabledItems = items.Where(i => i.ItemEnabled != false && !string.IsNullOrWhiteSpace(i.SKU)).ToList();
-            var enabledBySku = enabledItems
+            var bySku = items
+                .Where(i => !string.IsNullOrWhiteSpace(i.SKU))
                 .GroupBy(i => i.SKU.Trim(), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-            // Longest SKU first for prefix matching (9QRCcoFinc before 9QRC).
-            var enabledSkusLongestFirst = enabledBySku.Keys
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(x => x.ItemEnabled != false).First(),
+                    StringComparer.OrdinalIgnoreCase);
+            var enabledSkusLongestFirst = bySku.Keys
                 .OrderByDescending(s => s.Length)
                 .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             var attrMaps = _attrRepo.GetActive();
             var variantNames = _attrParentRepo.GetVariantAttributeNames();
-            var priorities = _attrParentRepo.GetPriorityByAttributeName();
-            if (variantNames.Count > 0)
+            var lineNames = _attrParentRepo.GetLineAttributeNames();
+            var notesNames = _attrParentRepo.GetNotesAttributeNames();
+            var parentByName = _attrParentRepo.GetUsedByAttributeName();
+            var priorities = _attrParentRepo.GetDisplaySortByAttributeName();
+            var packSourceNames = parentByName.Values
+                .Where(p => p != null && p.ContributesPack)
+                .OrderBy(p => p.PackRank)
+                .ThenBy(p => p.AttributeName, StringComparer.OrdinalIgnoreCase)
+                .Select(p => (p.AttributeName ?? string.Empty).Trim())
+                .Where(n => n.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (lineNames.Count > 0)
             {
-                attrMaps = attrMaps.FindAll(m => variantNames.Contains(m.AttributeName ?? string.Empty));
-                foreach (var m in attrMaps)
-                {
-                    int pri;
-                    if (priorities.TryGetValue(m.AttributeName ?? string.Empty, out pri))
-                        m.ResolvePriority = pri;
-                }
+                attrMaps = attrMaps.FindAll(m => lineNames.Contains(m.AttributeName ?? string.Empty));
+                StampParentRanks(attrMaps, parentByName);
             }
             else
                 attrMaps = new List<WooAttributeMap>();
@@ -237,6 +256,12 @@ namespace TrackerSQL.Managers
                         includeInImport = false;
                         reason = "Do not import";
                     }
+                    else if (existing != null && existing.IsVariantsMap)
+                    {
+                        importMode = WooProductMapRow.ImportModeVariants;
+                        includeInImport = false;
+                        reason = "Import variants";
+                    }
                     else if (existing != null && existing.ItemID > 0)
                     {
                         importMode = WooProductMapRow.ImportModeParentItem;
@@ -277,7 +302,7 @@ namespace TrackerSQL.Managers
                         }
                         Item parentMatch;
                         string parentMatchReason;
-                        if (TryMatchEnabledItem(p, enabledBySku, enabledSkusLongestFirst, parentItemByProduct, byId,
+                        if (TryMatchEnabledItem(p, bySku, enabledSkusLongestFirst, parentItemByProduct, byId,
                             out parentMatch, out parentMatchReason))
                         {
                             suggested = parentMatch.ItemID;
@@ -311,7 +336,7 @@ namespace TrackerSQL.Managers
                 {
                     Item match;
                     string matchReason;
-                    if (TryMatchEnabledItem(p, enabledBySku, enabledSkusLongestFirst, parentItemByProduct, byId,
+                    if (TryMatchEnabledItem(p, bySku, enabledSkusLongestFirst, parentItemByProduct, byId,
                         out match, out matchReason))
                     {
                         suggested = match.ItemID;
@@ -376,7 +401,13 @@ namespace TrackerSQL.Managers
                     CategoriesLabel = p.CategoriesLabel,
                     AttributesLabel = isParentGroup
                         ? BuildParentGroupAttributesLabel(p.Attributes, variantNames, priorities)
-                        : BuildVariantAttributesLabel(p.Attributes, priorities, isVariation, p.Name),
+                        : BuildVariantAttributesLabel(p.Attributes, priorities, isVariation, p.Name, notesNames),
+                    NotesAttributeSummary = BuildCheckoutExtrasSummary(
+                        MergeAttributesFromProductName(p.Attributes, p.Name, isVariation),
+                        notesNames,
+                        packSourceNames,
+                        parentByName,
+                        isParentGroup),
                     MatchReason = reason,
                     SuggestedItemID = suggested,
                     SuggestedItemDesc = suggestedDesc,
@@ -397,7 +428,8 @@ namespace TrackerSQL.Managers
                     VariationTotalCount = p.VariationTotalCount,
                     VariationInStockCount = p.VariationInStockCount,
                     CreateSku = createSku,
-                    CreateSortOrder = createSort
+                    CreateSortOrder = createSort,
+                    IsNewSinceLastSync = IsNewSinceSync(p.FirstSeenUtc, newSinceCutoff)
                 };
 
                 allRows.Add(row);
@@ -435,14 +467,25 @@ namespace TrackerSQL.Managers
 
             if (touchLastSync)
             {
-                var settings = _settings.GetSettings();
-                settings.LastItemsSyncUtc = DateTime.UtcNow;
+                settings.LastItemsSyncUtc = catalogSyncCutoff ?? DateTime.UtcNow;
                 new WooCommerceSettingsRepository().SaveSettings(settings, updatedBy);
+                int newCount = allRows.Count(r => r != null && r.IsNewSinceLastSync);
                 AppLogger.WriteLog("woo",
                     "Pulled " + mappingRows.Count + " mappable / " + missingSkuRows.Count
                     + " missing-SKU (scanned " + parentsScanned + " parents"
-                    + (hitCap ? ", HIT CAP" : "") + ")",
+                    + (hitCap ? ", HIT CAP" : "")
+                    + (newCount > 0 ? ", " + newCount + " new since previous pull" : "")
+                    + ")",
                     updatedBy);
+
+                return new WooProductPullResult
+                {
+                    MappingRows = mappingRows,
+                    MissingSkuRows = missingSkuRows,
+                    ParentsScanned = parentsScanned,
+                    HitCatalogCap = hitCap,
+                    NewSinceLastSyncCount = newCount
+                };
             }
 
             return new WooProductPullResult
@@ -450,8 +493,16 @@ namespace TrackerSQL.Managers
                 MappingRows = mappingRows,
                 MissingSkuRows = missingSkuRows,
                 ParentsScanned = parentsScanned,
-                HitCatalogCap = hitCap
+                HitCatalogCap = hitCap,
+                NewSinceLastSyncCount = allRows.Count(r => r != null && r.IsNewSinceLastSync)
             };
+        }
+
+        private static bool IsNewSinceSync(DateTime? firstSeenUtc, DateTime? syncCutoffUtc)
+        {
+            if (!firstSeenUtc.HasValue || !syncCutoffUtc.HasValue)
+                return false;
+            return firstSeenUtc.Value >= syncCutoffUtc.Value;
         }
 
         /// <summary>
@@ -696,9 +747,9 @@ namespace TrackerSQL.Managers
                 else
                 {
                     parent.MapToNotes = false;
-                    if (parent.MappedItemID == WooProductMapRow.DestinationNotesValue
-                        || parent.MappedItemID == WooProductMapRow.DestinationCreateParent)
-                        parent.MappedItemID = 0;
+                    // UI forces Destination "(variants)" (value 0). Keep MappedItemID in sync or every
+                    // parent with a SuggestedItemID looks dirty forever and Save skips it.
+                    parent.MappedItemID = 0;
                     parent.IncludeInImport = false;
                     // Do not clear Apply when the user explicitly chose Variants after editing Mode.
                     if (!parent.ImportModeUserSet)
@@ -709,16 +760,68 @@ namespace TrackerSQL.Managers
                     foreach (var child in children)
                     {
                         child.ImportMode = WooProductMapRow.ImportModeVariants;
-                        child.MapToNotes = false;
+                        // Do not leave Notes destination id with MapToNotes=false — Save used to
+                        // treat MappedItemID==-1 as Notes and rewrite Exact rows incorrectly.
+                        if (child.MappedItemID == WooProductMapRow.DestinationNotesValue && !child.MapToNotes)
+                        {
+                            if (child.ExistingMappingID > 0 && child.SuggestedItemID > 0)
+                                child.MappedItemID = child.SuggestedItemID;
+                            else if (child.SuggestedItemID > 0)
+                                child.MappedItemID = child.SuggestedItemID;
+                            else
+                                child.MappedItemID = 0;
+                        }
+                        child.MapToNotes = child.MappedItemID == WooProductMapRow.DestinationNotesValue;
                         if (string.Equals(child.MatchReason, "Excluded with parent", StringComparison.Ordinal))
                             child.IncludeInImport = WooProductMapRow.IsWooEnabledStatus(child.Status);
                         if (string.Equals(child.MatchReason, "Skipped (parent → notes)", StringComparison.Ordinal)
                             || string.Equals(child.MatchReason, "Variant → order notes", StringComparison.Ordinal)
                             || string.Equals(child.MatchReason, "Excluded (variant → order notes)", StringComparison.Ordinal)
                             || string.Equals(child.MatchReason, "Excluded with parent", StringComparison.Ordinal))
-                            child.MatchReason = child.SuggestedItemID > 0 ? "Unmapped" : child.MatchReason;
+                        {
+                            child.MatchReason = child.SuggestedItemID > 0 ? "Matched SKU" : "Unmapped";
+                            if (child.SuggestedItemID > 0 && child.MappedItemID <= 0)
+                                child.MappedItemID = child.SuggestedItemID;
+                        }
                     }
                 }
+            }
+        }
+
+        /// <summary>Re-match Tracker items for variant rows after switching a parent to Import variants.</summary>
+        public void RematchUnmappedChildren(IList<WooProductMapRow> rows, long productId)
+        {
+            if (rows == null || rows.Count == 0)
+                return;
+            var items = _itemsRepo.GetAll("SKU") ?? new List<Item>();
+            var bySku = items
+                .Where(i => !string.IsNullOrWhiteSpace(i.SKU))
+                .GroupBy(i => i.SKU.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(x => x.ItemEnabled != false).First(),
+                    StringComparer.OrdinalIgnoreCase);
+            var skusLongestFirst = bySku.Keys
+                .OrderByDescending(s => s.Length)
+                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var child in rows.Where(r => r != null && !r.IsParentGroup && r.WooProductId == productId))
+            {
+                if (child.ExistingMappingID > 0 && child.MappedItemID > 0)
+                    continue;
+                if (child.MapToNotes)
+                    continue;
+                Item match;
+                string reason;
+                if (!TryMatchSku(child.Sku, child.ParentSku, bySku, skusLongestFirst, out match, out reason))
+                    continue;
+                child.SuggestedItemID = match.ItemID;
+                child.SuggestedItemDesc = match.ItemDesc;
+                if (child.MappedItemID <= 0 || child.MappedItemID == WooProductMapRow.DestinationNotesValue)
+                    child.MappedItemID = match.ItemID;
+                child.MatchReason = reason;
+                child.MapToNotes = false;
             }
         }
 
@@ -731,7 +834,7 @@ namespace TrackerSQL.Managers
                 return string.Empty;
 
             IEnumerable<WooAttributeValue> filtered = attributes
-                .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Option));
+                .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Option) && !a.IsAnyOption);
             if (variantNames != null && variantNames.Count > 0)
             {
                 filtered = filtered.Where(a =>
@@ -749,30 +852,33 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Show every attribute on the variation as "Name: Option" so Prep Type vs Packaging
-        /// (and other multi-attribute products) are obviously different between rows.
-        /// Order by parent ResolvePriority (then name).
+        /// Show every attribute on the variation as "Name: Option".
+        /// Order by parent display sort (qty/pack/note ranks).
         /// </summary>
         private static string BuildVariantAttributesLabel(
             List<WooAttributeValue> attributes,
             Dictionary<string, int> priorities,
             bool isVariation,
-            string productName)
+            string productName,
+            HashSet<string> notesNames)
         {
             var merged = MergeAttributesFromProductName(attributes, productName, isVariation);
             if (merged.Count == 0)
                 return isVariation ? "—" : string.Empty;
 
             var parts = OrderAttributes(
-                    merged.Where(a => a != null && !string.IsNullOrWhiteSpace(a.Option)),
+                    merged.Where(a => a != null && (!string.IsNullOrWhiteSpace(a.Option) || a.IsAnyOption)),
                     priorities)
                 .Select(a =>
                 {
-                    string opt = a.Option.Trim();
+                    string opt = a.IsAnyOption ? "(at checkout)" : a.DisplayOption;
                     string name = (a.Name ?? string.Empty).Trim();
                     if (name.Length == 0)
                         return opt;
-                    return name + ": " + opt;
+                    string label = name + ": " + opt;
+                    if (notesNames != null && notesNames.Contains(name))
+                        label += " → notes";
+                    return label;
                 })
                 .Where(s => s.Length > 0)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -816,6 +922,105 @@ namespace TrackerSQL.Managers
             return list;
         }
 
+        /// <summary>Prep Type (and other Notes-channel attributes) for the Tracker order note.</summary>
+        public static string FormatNotesAttributes(List<WooAttributeValue> attributes, HashSet<string> notesNames)
+        {
+            if (attributes == null || attributes.Count == 0 || notesNames == null || notesNames.Count == 0)
+                return string.Empty;
+            var parts = new List<string>();
+            foreach (var a in attributes)
+            {
+                if (a == null || string.IsNullOrWhiteSpace(a.Name) || !notesNames.Contains(a.Name.Trim()))
+                    continue;
+                if (a.IsAnyOption)
+                    continue;
+                string opt = a.DisplayOption;
+                if (string.IsNullOrWhiteSpace(opt) || opt == "(any)")
+                    continue;
+                parts.Add(a.Name.Trim() + ": " + opt);
+            }
+            return parts.Count == 0 ? string.Empty : string.Join("; ", parts);
+        }
+
+        /// <summary>
+        /// Shows pack-cascade attrs (e.g. Prep Type at checkout → pack #1) and note-cascade attrs
+        /// so Mappings makes clear grind/pack still applies even when the Woo variation is Any.
+        /// </summary>
+        private static string BuildCheckoutExtrasSummary(
+            List<WooAttributeValue> attributes,
+            HashSet<string> notesNames,
+            List<string> packSourceNames,
+            Dictionary<string, WooAttributeParent> parentByName,
+            bool isParentGroup)
+        {
+            var parts = new List<string>();
+            var attrs = attributes ?? new List<WooAttributeValue>();
+
+            if (packSourceNames != null)
+            {
+                foreach (string packName in packSourceNames)
+                {
+                    if (string.IsNullOrWhiteSpace(packName))
+                        continue;
+                    int rank = 1;
+                    WooAttributeParent parent;
+                    if (parentByName != null && parentByName.TryGetValue(packName, out parent) && parent != null)
+                        rank = parent.PackRank;
+
+                    var match = attrs.FirstOrDefault(a =>
+                        a != null
+                        && string.Equals((a.Name ?? string.Empty).Trim(), packName, StringComparison.OrdinalIgnoreCase));
+
+                    if (match != null && !match.IsAnyOption
+                        && !string.IsNullOrWhiteSpace(match.DisplayOption)
+                        && match.DisplayOption != "(any)")
+                    {
+                        parts.Add(packName + ": " + match.DisplayOption.Trim() + " → pack #" + rank);
+                    }
+                    else if (isParentGroup)
+                    {
+                        parts.Add(packName + " → pack #" + rank + " (customer choice)");
+                    }
+                    else
+                    {
+                        parts.Add(packName + ": (at checkout) → pack #" + rank);
+                    }
+                }
+            }
+
+            string notesConcrete = FormatNotesAttributes(attrs, notesNames);
+            if (!string.IsNullOrWhiteSpace(notesConcrete))
+            {
+                parts.Add(notesConcrete + " → notes");
+            }
+            else if (notesNames != null && notesNames.Count > 0)
+            {
+                // Avoid duplicating names already listed as pack sources.
+                var noteOnly = notesNames
+                    .Where(n => packSourceNames == null
+                        || !packSourceNames.Any(p => string.Equals(p, n, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+                if (noteOnly.Count > 0)
+                {
+                    if (isParentGroup)
+                        parts.Add(string.Join(" · ", noteOnly) + " → notes (customer choice)");
+                    else
+                        parts.Add(string.Join(" · ", noteOnly) + ": (at checkout) → notes");
+                }
+            }
+
+            return parts.Count == 0 ? string.Empty : string.Join(" · ", parts);
+        }
+
+        private static string BuildNotesAttributeSummary(
+            List<WooAttributeValue> attributes,
+            HashSet<string> notesNames,
+            bool isParentGroup)
+        {
+            return BuildCheckoutExtrasSummary(
+                attributes, notesNames, null, null, isParentGroup);
+        }
+
         private static IEnumerable<WooAttributeValue> OrderAttributes(
             IEnumerable<WooAttributeValue> attributes,
             Dictionary<string, int> priorities)
@@ -833,11 +1038,23 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Creates an enabled Tracker item from this row's Woo SKU (variant SKU, or parent SKU on a group row).
-        /// Does not write Woo mappings — caller still Saves maps.
+        /// Creates an enabled Tracker item from this row's Woo SKU, or returns the existing
+        /// item when that SKU is already in Tracker (so Save can map instead of failing).
         /// </summary>
         public Item CreateTrackerItemForWooRow(WooProductMapRow row, string updatedBy)
         {
+            bool created;
+            return CreateTrackerItemForWooRow(row, updatedBy, out created);
+        }
+
+        /// <summary>
+        /// Creates an enabled Tracker item from this row's Woo SKU (variant SKU, or parent SKU on a group row).
+        /// If the SKU already exists, returns that item (re-enables if disabled) instead of throwing.
+        /// Does not write Woo mappings — caller still Saves maps.
+        /// </summary>
+        public Item CreateTrackerItemForWooRow(WooProductMapRow row, string updatedBy, out bool created)
+        {
+            created = false;
             if (row == null)
                 throw new ArgumentNullException(nameof(row));
 
@@ -855,37 +1072,159 @@ namespace TrackerSQL.Managers
                 if (existing.ItemEnabled == false)
                 {
                     existing.ItemEnabled = true;
-                    _itemsRepo.Update(existing);
+                    _itemsRepo.SetEnabled(existing.ItemID, true);
                     AppLogger.WriteLog("woo", "Re-enabled Tracker item #" + existing.ItemID + " SKU " + sku, updatedBy);
-                    return existing;
                 }
-                throw new InvalidOperationException(
-                    MessageProvider.Format(MessageKeys.WooCommerce.MapSkuExistsInItems, sku, existing.ItemID));
+                else
+                {
+                    AppLogger.WriteLog("woo",
+                        "Linked Woo row to existing Tracker item #" + existing.ItemID + " SKU " + sku,
+                        updatedBy);
+                }
+                return existing;
             }
 
-            string desc = !string.IsNullOrWhiteSpace(row.Name)
-                ? row.Name.Trim()
-                : sku;
-            // Parent items: drop variation suffixes from Woo names. Variant items keep the full name.
-            if (row.IsParentGroup && desc.Contains(" - "))
-            {
-                int cut = desc.LastIndexOf(" - ", StringComparison.Ordinal);
-                if (cut > 0)
-                    desc = desc.Substring(0, cut).Trim();
-            }
+            string desc = ResolveCreateItemDesc(row, sku);
+            string abbr = BuildAbbreviationFromSku(sku);
 
             var item = new Item
             {
                 SKU = sku.Trim(),
-                ItemDesc = desc,
+                ItemDesc = Truncate(desc, 50),
+                ItemShortName = Truncate(abbr, 6),
                 ItemEnabled = true,
                 SortOrder = row.CreateSortOrder,
                 UnitsPerQty = 1
             };
             int id = _itemsRepo.InsertReturningId(item);
             item.ItemID = id;
-            AppLogger.WriteLog("woo", "Created Tracker item #" + id + " SKU " + sku + " from Woo", updatedBy);
+            created = true;
+            AppLogger.WriteLog("woo",
+                "Created Tracker item #" + id + " SKU " + sku
+                + " desc=\"" + item.ItemDesc + "\" abrv=\"" + item.ItemShortName + "\" from Woo",
+                updatedBy);
             return item;
+        }
+
+        /// <summary>
+        /// Tracker ItemDesc: variant rows use the Woo Variant column (attribute options),
+        /// not the parent product title. Parent/simple rows use the product name.
+        /// </summary>
+        private static string ResolveCreateItemDesc(WooProductMapRow row, string sku)
+        {
+            if (row == null)
+                return sku ?? string.Empty;
+
+            if (!row.IsParentGroup)
+            {
+                string fromVariant = VariantOptionsForItemDesc(row.AttributesLabel);
+                if (!string.IsNullOrWhiteSpace(fromVariant))
+                    return fromVariant;
+
+                string name = (row.Name ?? string.Empty).Trim();
+                string parent = (row.ParentName ?? string.Empty).Trim();
+                if (!string.IsNullOrEmpty(name) && name.Contains(" - "))
+                {
+                    int cut = name.LastIndexOf(" - ", StringComparison.Ordinal);
+                    string tail = name.Substring(cut + 3).Trim();
+                    if (tail.Length > 0)
+                        return tail;
+                }
+                if (!string.IsNullOrEmpty(name)
+                    && !string.Equals(name, parent, StringComparison.OrdinalIgnoreCase))
+                    return name;
+                if (!string.IsNullOrEmpty(parent))
+                    return parent;
+                return string.IsNullOrWhiteSpace(sku) ? name : sku;
+            }
+
+            string parentDesc = !string.IsNullOrWhiteSpace(row.Name)
+                ? row.Name.Trim()
+                : (!string.IsNullOrWhiteSpace(row.ParentName) ? row.ParentName.Trim() : sku);
+            if (parentDesc != null && parentDesc.Contains(" - "))
+            {
+                int cut = parentDesc.LastIndexOf(" - ", StringComparison.Ordinal);
+                if (cut > 0)
+                    parentDesc = parentDesc.Substring(0, cut).Trim();
+            }
+            return string.IsNullOrWhiteSpace(parentDesc) ? (sku ?? string.Empty) : parentDesc;
+        }
+
+        /// <summary>
+        /// AttributesLabel is "Packaging: bottle · Prep Type: (at checkout) → notes".
+        /// Item names want the concrete options only (e.g. "bottle").
+        /// </summary>
+        private static string VariantOptionsForItemDesc(string attributesLabel)
+        {
+            if (string.IsNullOrWhiteSpace(attributesLabel)
+                || string.Equals(attributesLabel.Trim(), "—", StringComparison.Ordinal))
+                return null;
+
+            var options = new List<string>();
+            foreach (string part in attributesLabel.Split(new[] { '·' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string bit = part.Trim();
+                if (bit.Length == 0)
+                    continue;
+                int arrow = bit.IndexOf(" → ", StringComparison.Ordinal);
+                if (arrow >= 0)
+                    bit = bit.Substring(0, arrow).Trim();
+                int colon = bit.IndexOf(':');
+                string opt = colon >= 0 && colon < bit.Length - 1
+                    ? bit.Substring(colon + 1).Trim()
+                    : bit;
+                if (opt.Length == 0
+                    || string.Equals(opt, "(any)", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(opt, "(at checkout)", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(opt, "—", StringComparison.Ordinal))
+                    continue;
+                if (!options.Contains(opt))
+                    options.Add(opt);
+            }
+            return options.Count == 0 ? null : string.Join(" · ", options);
+        }
+
+        /// <summary>
+        /// Abrv from SKU: drop digits and vowels, keep letters, max 6 (e.g. 8JuraDecT36 → JrDcT).
+        /// </summary>
+        internal static string BuildAbbreviationFromSku(string sku, int maxLen = 6)
+        {
+            if (string.IsNullOrWhiteSpace(sku) || maxLen <= 0)
+                return string.Empty;
+
+            var sb = new System.Text.StringBuilder(maxLen);
+            foreach (char c in sku.Trim())
+            {
+                if (!char.IsLetter(c))
+                    continue;
+                char upper = char.ToUpperInvariant(c);
+                if (upper == 'A' || upper == 'E' || upper == 'I' || upper == 'O' || upper == 'U')
+                    continue;
+                sb.Append(upper);
+                if (sb.Length >= maxLen)
+                    break;
+            }
+            if (sb.Length > 0)
+                return sb.ToString();
+
+            // Fallback when SKU is only digits/vowels: first letters, no digits.
+            foreach (char c in sku.Trim())
+            {
+                if (!char.IsLetter(c))
+                    continue;
+                sb.Append(char.ToUpperInvariant(c));
+                if (sb.Length >= maxLen)
+                    break;
+            }
+            return sb.ToString();
+        }
+
+        private static string Truncate(string value, int maxLen)
+        {
+            if (string.IsNullOrEmpty(value) || maxLen <= 0)
+                return value ?? string.Empty;
+            string t = value.Trim();
+            return t.Length <= maxLen ? t : t.Substring(0, maxLen);
         }
 
         /// <summary>Renames Tracker SKU and/or sort order when the mapping row values differ.</summary>
@@ -920,7 +1259,7 @@ namespace TrackerSQL.Managers
             if (!skuChanged && !sortChanged)
                 return;
 
-            _itemsRepo.Update(item);
+            _itemsRepo.UpdateSkuAndSort(itemId, item.SKU, nextSort);
             AppLogger.WriteLog("woo",
                 "Updated Tracker item #" + itemId
                 + (skuChanged ? " SKU=" + item.SKU : "")
@@ -944,81 +1283,13 @@ namespace TrackerSQL.Managers
             out Item match,
             out string reason)
         {
-            match = null;
-            reason = null;
-            string sku = (p.Sku ?? string.Empty).Trim();
-            string parentSku = (p.ParentSku ?? string.Empty).Trim();
-
-            Item item;
-            if (!string.IsNullOrEmpty(sku) && enabledBySku.TryGetValue(sku, out item))
-            {
-                match = item;
-                reason = "Exact SKU";
+            bool isVariation = p != null && p.VariationId.HasValue && p.VariationId.Value > 0;
+            string sku = p == null ? string.Empty : (p.Sku ?? string.Empty).Trim();
+            string parentSku = p == null ? string.Empty : (p.ParentSku ?? string.Empty).Trim();
+            if (TryMatchSku(sku, parentSku, enabledBySku, enabledSkusLongestFirst, out match, out reason))
                 return true;
-            }
 
-            if (!string.IsNullOrEmpty(parentSku) && enabledBySku.TryGetValue(parentSku, out item))
-            {
-                match = item;
-                reason = "Parent SKU";
-                return true;
-            }
-
-            // Variation SKU starts with parent Woo SKU (9QRCcoFinc250g → parent 9QRCcoFinc).
-            if (!string.IsNullOrEmpty(parentSku) && !string.IsNullOrEmpty(sku)
-                && sku.StartsWith(parentSku, StringComparison.OrdinalIgnoreCase)
-                && enabledBySku.TryGetValue(parentSku, out item))
-            {
-                match = item;
-                reason = "Parent SKU prefix";
-                return true;
-            }
-
-            // Longest enabled Tracker SKU that is a prefix of the Woo SKU.
-            string probe = !string.IsNullOrEmpty(sku) ? sku : parentSku;
-            if (!string.IsNullOrEmpty(probe))
-            {
-                foreach (string candidate in enabledSkusLongestFirst)
-                {
-                    if (candidate.Length < 4)
-                        continue;
-                    if (probe.StartsWith(candidate, StringComparison.OrdinalIgnoreCase)
-                        && enabledBySku.TryGetValue(candidate, out item))
-                    {
-                        match = item;
-                        reason = "SKU prefix";
-                        return true;
-                    }
-                }
-            }
-
-            // Fuzzy: closest enabled SKU to parent (or own) SKU within small edit distance.
-            string fuzzyTarget = !string.IsNullOrEmpty(parentSku) ? parentSku : sku;
-            if (!string.IsNullOrEmpty(fuzzyTarget) && fuzzyTarget.Length >= 5)
-            {
-                Item best = null;
-                int bestDist = int.MaxValue;
-                foreach (var kv in enabledBySku)
-                {
-                    int dist = LevenshteinDistance(fuzzyTarget, kv.Key);
-                    int maxAllowed = fuzzyTarget.Length >= 10 ? 2 : 1;
-                    if (dist > 0 && dist <= maxAllowed && dist < bestDist)
-                    {
-                        bestDist = dist;
-                        best = kv.Value;
-                    }
-                }
-                if (best != null)
-                {
-                    match = best;
-                    reason = "Fuzzy SKU (~" + bestDist + ")";
-                    return true;
-                }
-            }
-
-            // Previously saved parent product map (no variation).
-            if (p.VariationId.HasValue && p.VariationId.Value > 0
-                && parentItemByProduct.ContainsKey(p.Id))
+            if (p != null && isVariation && parentItemByProduct.ContainsKey(p.Id))
             {
                 int parentItemId = parentItemByProduct[p.Id];
                 Item parentItem;
@@ -1030,7 +1301,144 @@ namespace TrackerSQL.Managers
                 }
             }
 
+            match = null;
+            reason = null;
             return false;
+        }
+
+        private static bool TryMatchSku(
+            string sku,
+            string parentSku,
+            Dictionary<string, Item> bySku,
+            List<string> skusLongestFirst,
+            out Item match,
+            out string reason)
+        {
+            match = null;
+            reason = null;
+            sku = (sku ?? string.Empty).Trim();
+            parentSku = (parentSku ?? string.Empty).Trim();
+
+            Item item;
+            if (!string.IsNullOrEmpty(sku) && bySku.TryGetValue(sku, out item))
+            {
+                match = item;
+                reason = "Exact SKU";
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(parentSku) && bySku.TryGetValue(parentSku, out item))
+            {
+                match = item;
+                reason = "Parent SKU";
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(parentSku) && !string.IsNullOrEmpty(sku)
+                && sku.StartsWith(parentSku, StringComparison.OrdinalIgnoreCase)
+                && bySku.TryGetValue(parentSku, out item))
+            {
+                match = item;
+                reason = "Parent SKU prefix";
+                return true;
+            }
+
+            string probe = !string.IsNullOrEmpty(sku) ? sku : parentSku;
+            if (!string.IsNullOrEmpty(probe) && skusLongestFirst != null)
+            {
+                foreach (string candidate in skusLongestFirst)
+                {
+                    if (candidate.Length < 4)
+                        continue;
+                    if (probe.StartsWith(candidate, StringComparison.OrdinalIgnoreCase)
+                        && bySku.TryGetValue(candidate, out item))
+                    {
+                        match = item;
+                        reason = "SKU prefix";
+                        return true;
+                    }
+                }
+            }
+
+            // Own SKU first so 8JuraProfiF wins over parent 8JuraProfiX.
+            if (TryFuzzySku(sku, bySku, out match, out reason))
+                return true;
+            if (!string.Equals(parentSku, sku, StringComparison.OrdinalIgnoreCase)
+                && TryFuzzySku(parentSku, bySku, out match, out reason))
+                return true;
+
+            if (TryStemSku(probe, bySku, out match, out reason))
+                return true;
+
+            return false;
+        }
+
+        private static bool TryFuzzySku(string target, Dictionary<string, Item> bySku, out Item match, out string reason)
+        {
+            match = null;
+            reason = null;
+            if (string.IsNullOrEmpty(target) || target.Length < 5 || bySku == null)
+                return false;
+            Item best = null;
+            int bestDist = int.MaxValue;
+            foreach (var kv in bySku)
+            {
+                int dist = LevenshteinDistance(target, kv.Key);
+                int maxAllowed = target.Length >= 10 ? 2 : 1;
+                if (dist > 0 && dist <= maxAllowed && dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = kv.Value;
+                }
+            }
+            if (best == null)
+                return false;
+            match = best;
+            reason = "Fuzzy SKU (~" + bestDist + ")";
+            return true;
+        }
+
+        /// <summary>8JuraProfiX ↔ 8JuraProfiF: long shared stem, last character(s) differ.</summary>
+        private static bool TryStemSku(string probe, Dictionary<string, Item> bySku, out Item match, out string reason)
+        {
+            match = null;
+            reason = null;
+            if (string.IsNullOrEmpty(probe) || probe.Length < 6 || bySku == null)
+                return false;
+            Item best = null;
+            int bestPrefix = 0;
+            int bestExtra = int.MaxValue;
+            foreach (var kv in bySku)
+            {
+                int prefix = CommonPrefixLength(probe, kv.Key);
+                if (prefix < 6)
+                    continue;
+                if (prefix < probe.Length * 0.7 && prefix < kv.Key.Length * 0.7)
+                    continue;
+                int extra = Math.Abs(probe.Length - kv.Key.Length) + (probe.Length - prefix) + (kv.Key.Length - prefix);
+                if (prefix > bestPrefix || (prefix == bestPrefix && extra < bestExtra))
+                {
+                    bestPrefix = prefix;
+                    bestExtra = extra;
+                    best = kv.Value;
+                }
+            }
+            if (best == null || bestPrefix < 6)
+                return false;
+            match = best;
+            reason = "SKU stem";
+            return true;
+        }
+
+        private static int CommonPrefixLength(string a, string b)
+        {
+            if (a == null || b == null)
+                return 0;
+            int n = Math.Min(a.Length, b.Length);
+            int i = 0;
+            while (i < n && char.ToUpperInvariant(a[i]) == char.ToUpperInvariant(b[i]))
+                i++;
+            return i;
         }
 
         private static int LevenshteinDistance(string a, string b)
@@ -1064,8 +1472,118 @@ namespace TrackerSQL.Managers
             return _attrParentRepo.GetAllOrdered();
         }
 
+        /// <summary>
+        /// Resolve Qty / Packaging / Notes from Woo order-line meta using Attribute parents PackRank cascade
+        /// (e.g. Prep Type #1 primary, Packaging #2 if missing).
+        /// </summary>
+        public WooLineAttributeResolveResult ResolveOrderLineAttributes(
+            IList<WooMetaDto> meta,
+            int itemServiceTypeId,
+            double baseQtyFactor,
+            int? basePackagingId)
+        {
+            var result = new WooLineAttributeResolveResult
+            {
+                QtyFactor = baseQtyFactor > 0 ? baseQtyFactor : 1,
+                PackagingId = basePackagingId.HasValue && basePackagingId.Value > 0 ? basePackagingId : null
+            };
+
+            List<WooAttributeValue> attributes = MetaToAttributeValues(meta);
+            if (attributes.Count == 0)
+                return result;
+
+            var attrMaps = _attrRepo.GetActive() ?? new List<WooAttributeMap>();
+            var parentByName = new Dictionary<string, WooAttributeParent>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in _attrParentRepo.GetAllOrdered() ?? new List<WooAttributeParent>())
+            {
+                if (p == null || !p.ContributesAnything)
+                    continue;
+                string name = (p.AttributeName ?? string.Empty).Trim();
+                if (name.Length == 0 || parentByName.ContainsKey(name))
+                    continue;
+                parentByName[name] = p;
+            }
+            StampParentRanks(attrMaps, parentByName);
+
+            attrMaps = attrMaps
+                .Where(m => m != null && (m.QtyRank > 0 || m.PackRank > 0 || m.NoteRank > 0))
+                .ToList();
+            if (attrMaps.Count == 0)
+                return result;
+
+            var packagings = GetPackagingsForServiceType(
+                itemServiceTypeId > 0 ? (int?)itemServiceTypeId : null);
+            double qty = result.QtyFactor;
+            int? packagingId = result.PackagingId;
+            string reason = string.Empty;
+            ApplyAttributeMaps(attributes, attrMaps, packagings, itemServiceTypeId, ref qty, ref packagingId, ref reason);
+
+            result.QtyFactor = qty > 0 ? qty : result.QtyFactor;
+            result.PackagingId = packagingId;
+            result.Reason = reason;
+            result.Applied = !string.IsNullOrWhiteSpace(reason)
+                || (packagingId.HasValue && packagingId.Value > 0 && packagingId != basePackagingId)
+                || Math.Abs(qty - (baseQtyFactor > 0 ? baseQtyFactor : 1)) > 0.0001;
+
+            var notesNames = new HashSet<string>(
+                parentByName.Values
+                    .Where(p => p != null && p.ContributesNote)
+                    .Select(p => (p.AttributeName ?? string.Empty).Trim())
+                    .Where(n => n.Length > 0),
+                StringComparer.OrdinalIgnoreCase);
+            string notesSummary = FormatNotesAttributes(attributes, notesNames);
+            if (!string.IsNullOrWhiteSpace(notesSummary))
+            {
+                foreach (string part in notesSummary.Split(new[] { "; " }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (!string.IsNullOrWhiteSpace(part))
+                        result.NoteParts.Add(part.Trim());
+                }
+            }
+
+            return result;
+        }
+
+        private static List<WooAttributeValue> MetaToAttributeValues(IList<WooMetaDto> meta)
+        {
+            var list = new List<WooAttributeValue>();
+            if (meta == null)
+                return list;
+
+            foreach (WooMetaDto m in meta)
+            {
+                if (m == null)
+                    continue;
+                string key = (m.DisplayKey ?? m.Key ?? string.Empty).Trim();
+                if (key.Length == 0)
+                    continue;
+                if (string.IsNullOrWhiteSpace(m.DisplayKey)
+                    && key.StartsWith("_", StringComparison.Ordinal))
+                    continue;
+
+                string option = !string.IsNullOrWhiteSpace(m.DisplayValue)
+                    ? m.DisplayValue.Trim()
+                    : (m.Value ?? string.Empty).Trim();
+                if (option.Length == 0)
+                    continue;
+
+                string name = key;
+                if (name.StartsWith("pa_", StringComparison.OrdinalIgnoreCase))
+                    name = name.Substring(3).Replace('-', ' ');
+
+                list.Add(new WooAttributeValue
+                {
+                    Name = name,
+                    Option = option
+                });
+            }
+
+            return list;
+        }
+
         public SyncResult PullAttributeParents(string updatedBy)
         {
+            _settings.EnsureSchema();
             WooCommerceApiClient.ApiCredentials creds;
             string error;
             if (!_settings.TryGetApiCredentials(out creds, out error))
@@ -1101,6 +1619,7 @@ namespace TrackerSQL.Managers
 
         public int SaveAttributeParentVariants(IEnumerable<WooAttributeParent> selections, string updatedBy)
         {
+            _settings.EnsureSchema();
             int saved = 0;
             if (selections == null)
                 return 0;
@@ -1108,8 +1627,12 @@ namespace TrackerSQL.Managers
             {
                 if (sel == null || sel.ParentID <= 0)
                     continue;
-                int pri = sel.ResolvePriority <= 0 ? 100 : sel.ResolvePriority;
-                _attrParentRepo.UpdateSelection(sel.ParentID, sel.UseForVariants, pri);
+                _attrParentRepo.UpdateSelection(
+                    sel.ParentID,
+                    sel.UseForVariants,
+                    sel.QtyRank,
+                    sel.PackRank,
+                    sel.NoteRank);
                 saved++;
             }
             AppLogger.WriteLog("woo", "Saved selection on " + saved + " attribute parents", updatedBy);
@@ -1126,36 +1649,55 @@ namespace TrackerSQL.Managers
             if (!_settings.TryGetApiCredentials(out creds, out error))
                 throw new InvalidOperationException(error);
 
-            var selected = _attrParentRepo.GetUsedForVariants();
-            if (selected.Count == 0)
+            var used = _attrParentRepo.GetUsedForVariants() ?? new List<WooAttributeParent>();
+            if (used.Count == 0)
                 throw new InvalidOperationException(MessageProvider.Get(MessageKeys.WooCommerce.MapAttrNeedParents));
+            var lineParents = used.Where(p => p != null && p.ContributesLine).ToList();
+            if (lineParents.Count == 0)
+                throw new InvalidOperationException(MessageProvider.Get(MessageKeys.WooCommerce.MapAttrNeedLineParents));
+
+            var parentByName = used
+                .Where(p => p != null && !string.IsNullOrWhiteSpace(p.AttributeName))
+                .GroupBy(p => p.AttributeName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             var options = new List<WooAttributeValue>();
-            foreach (var parent in selected)
+            foreach (var parent in used)
             {
                 options.AddRange(_api.GetAttributeTerms(creds, parent.WooAttributeId, parent.AttributeName));
             }
 
             var packagings = _packRepo.GetAll("ItemPackagingDesc") ?? new List<ItemPackaging>();
+            // Prefer (all types) saved maps; ignore Coffee twin rows when suggesting.
             var saved = _attrRepo.GetAllWithLookups()
-                .ToDictionary(m => NormalizeKey(m.AttributeName, m.AttributeOption, m.ItemServiceTypeID), StringComparer.OrdinalIgnoreCase);
+                .Where(m => m != null && m.ItemServiceTypeID == 0)
+                .GroupBy(m => NormalizeKey(m.AttributeName, m.AttributeOption, 0), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             var counts = new Dictionary<string, WooAttributeMap>(StringComparer.OrdinalIgnoreCase);
             foreach (var a in options)
             {
                 if (a == null || string.IsNullOrWhiteSpace(a.Name) || string.IsNullOrWhiteSpace(a.Option))
                     continue;
-                string key = NormalizeKey(a.Name, a.Option, 0);
+                string attrName = a.Name.Trim();
+                WooAttributeParent parent;
+                if (!parentByName.TryGetValue(attrName, out parent) || parent == null || !parent.ContributesAnything)
+                    continue;
+
+                string key = NormalizeKey(attrName, a.Option, 0);
                 WooAttributeMap row;
                 if (!counts.TryGetValue(key, out row))
                 {
                     row = new WooAttributeMap
                     {
-                        AttributeName = a.Name.Trim(),
+                        AttributeName = attrName,
                         AttributeOption = a.Option.Trim(),
                         ItemServiceTypeID = 0,
                         QtyFactor = 1,
-                        MapRole = WooAttributeMapRoles.PackagingOnly,
+                        MapRole = parent.DefaultMapRole(),
+                        QtyRank = parent.QtyRank,
+                        PackRank = parent.PackRank,
+                        NoteRank = parent.NoteRank,
                         IsActive = true,
                         SampleCount = 0
                     };
@@ -1168,59 +1710,50 @@ namespace TrackerSQL.Managers
             var result = new List<WooAttributeMap>();
             foreach (var row in counts.Values.OrderBy(r => r.AttributeName).ThenBy(r => r.AttributeOption))
             {
+                WooAttributeParent parent;
+                parentByName.TryGetValue(row.AttributeName ?? string.Empty, out parent);
+                string role = parent != null ? parent.DefaultMapRole() : WooAttributeMapRoles.Both;
+                row.MapRole = role;
+                if (parent != null)
+                {
+                    row.QtyRank = parent.QtyRank;
+                    row.PackRank = parent.PackRank;
+                    row.NoteRank = parent.NoteRank;
+                }
+
                 WooAttributeMap existing;
                 if (saved.TryGetValue(NormalizeKey(row.AttributeName, row.AttributeOption, 0), out existing))
                 {
                     row.MapID = existing.MapID;
                     row.QtyFactor = existing.QtyFactor;
                     row.PackagingID = existing.PackagingID;
-                    row.MapRole = WooAttributeMapRoles.Normalize(existing.MapRole);
-                    row.ItemServiceTypeID = existing.ItemServiceTypeID;
                     row.Notes = existing.Notes;
                     row.IsActive = existing.IsActive;
                     row.PackagingDesc = existing.PackagingDesc;
                     row.ItemServiceTypeName = existing.ItemServiceTypeName;
+                    row.ItemServiceTypeID = 0;
+                }
 
-                    // Upgrade legacy Both-on-weight maps so Prep Type can own packaging.
-                    double? weightQty = PackagingWeightParser.TryParseQtyFactorFromOption(row.AttributeOption);
-                    if (weightQty.HasValue)
-                    {
-                        row.SuggestedQtyFactor = weightQty;
-                        if (row.QtyFactor <= 0)
-                            row.QtyFactor = weightQty.Value;
-                        if (row.MapRole == WooAttributeMapRoles.Both
-                            || row.MapRole == WooAttributeMapRoles.PackagingOnly)
-                        {
-                            row.MapRole = WooAttributeMapRoles.QtyOnly;
-                            row.PackagingID = null;
-                            row.PackagingDesc = null;
-                        }
-                    }
-                    else if (!row.PackagingID.HasValue || row.PackagingID.Value <= 0)
-                    {
-                        int? packId = SuggestPackaging(row.AttributeOption, packagings);
-                        if (packId.HasValue)
-                        {
-                            row.SuggestedPackagingID = packId;
-                            row.PackagingID = packId;
-                            if (row.MapRole == WooAttributeMapRoles.Both)
-                                row.MapRole = WooAttributeMapRoles.PackagingOnly;
-                        }
-                    }
+                if (WooAttributeMapRoles.IsNotesOnly(role))
+                {
+                    row.PackagingID = null;
+                    row.PackagingDesc = null;
                 }
                 else
                 {
-                    double? suggestedQty = PackagingWeightParser.TryParseQtyFactorFromOption(row.AttributeOption);
-                    if (suggestedQty.HasValue)
+                    if (WooAttributeMapRoles.AppliesQty(role))
                     {
-                        row.SuggestedQtyFactor = suggestedQty;
-                        row.QtyFactor = suggestedQty.Value;
-                        // Weight/size drives qty only — prep/grind owns packaging (e.g. GrndPlnger).
-                        row.MapRole = WooAttributeMapRoles.QtyOnly;
+                        double? weightQty = PackagingWeightParser.TryParseQtyFactorFromOption(row.AttributeOption);
+                        if (weightQty.HasValue)
+                        {
+                            row.SuggestedQtyFactor = weightQty;
+                            if (row.MapID <= 0 || row.QtyFactor <= 0 || Math.Abs(row.QtyFactor - 1.0) < 0.000001)
+                                row.QtyFactor = weightQty.Value;
+                        }
                     }
-                    else
+                    if (WooAttributeMapRoles.AppliesPackaging(role)
+                        && (!row.PackagingID.HasValue || row.PackagingID.Value <= 0))
                     {
-                        row.MapRole = WooAttributeMapRoles.PackagingOnly;
                         int? packId = SuggestPackaging(row.AttributeOption, packagings);
                         if (packId.HasValue)
                         {
@@ -1228,7 +1761,13 @@ namespace TrackerSQL.Managers
                             row.PackagingID = packId;
                         }
                     }
+                    if (!WooAttributeMapRoles.AppliesPackaging(role))
+                    {
+                        row.PackagingID = null;
+                        row.PackagingDesc = null;
+                    }
                 }
+
                 result.Add(row);
             }
 
@@ -1264,6 +1803,8 @@ namespace TrackerSQL.Managers
             map.AttributeName = map.AttributeName.Trim();
             map.AttributeOption = map.AttributeOption.Trim();
             map.MapRole = WooAttributeMapRoles.Normalize(map.MapRole);
+            if (WooAttributeMapRoles.IsNotesOnly(map.MapRole))
+                map.PackagingID = null;
             if (map.ItemServiceTypeID < 0)
                 map.ItemServiceTypeID = 0;
             if (map.QtyFactor <= 0)
@@ -1319,9 +1860,17 @@ namespace TrackerSQL.Managers
         }
 
         public int SaveMapping(long productId, long? variationId, int itemId, bool mapToNotes, bool includeInImport,
-            double qtyFactor, int? packagingId, string sku, string updatedBy, bool exclude = false)
+            double qtyFactor, int? packagingId, string sku, string updatedBy, bool exclude = false,
+            bool variantsParent = false)
         {
-            if (exclude)
+            if (variantsParent)
+            {
+                mapToNotes = false;
+                itemId = 0;
+                includeInImport = false;
+                exclude = false;
+            }
+            else if (exclude)
             {
                 mapToNotes = false;
                 itemId = 0;
@@ -1333,9 +1882,9 @@ namespace TrackerSQL.Managers
             var existing = _mapRepo.FindExact(productId, variationId);
             var settings = _settings.GetSettings();
             string scope = settings.DisableScopeDefault ?? "MappedOnly";
-            string mapType = exclude ? "Exclude" : (mapToNotes ? "Notes" : "Exact");
-            int persistItemId = (mapToNotes || exclude) ? 0 : itemId;
-            int? persistPack = (mapToNotes || exclude) ? null : packagingId;
+            string mapType = variantsParent ? "Variants" : (exclude ? "Exclude" : (mapToNotes ? "Notes" : "Exact"));
+            int persistItemId = (mapToNotes || exclude || variantsParent) ? 0 : itemId;
+            int? persistPack = (mapToNotes || exclude || variantsParent) ? null : packagingId;
             double persistQty = qtyFactor <= 0 ? 1 : qtyFactor;
 
             if (existing == null)
@@ -1381,9 +1930,11 @@ namespace TrackerSQL.Managers
             if (existing == null)
                 return;
             bool wasExclude = existing.IsExcludeMap;
+            int id = existing.MappingID;
             _mapRepo.DeleteMapping(existing.MappingID);
             if (wasExclude)
                 _mapRepo.SetIncludeInImportForProduct(productId, true);
+            AppLogger.WriteLog("woo", "Parent mapping cleared #" + id + " product=" + productId, "system");
         }
 
         public List<WooItemMapping> GetMappings()
@@ -1411,10 +1962,22 @@ namespace TrackerSQL.Managers
             if (rows == null)
                 return new SyncResult { Succeeded = true, Count = 0, Message = "No SKUs to write." };
 
-            foreach (var row in rows)
+            var candidates = rows
+                .Where(r => r != null
+                    && (r.ApplySelected || !string.IsNullOrWhiteSpace(r.NewSku)))
+                .ToList();
+            if (candidates.Count == 0)
             {
-                if (row == null || !row.ApplySelected)
-                    continue;
+                return new SyncResult
+                {
+                    Succeeded = false,
+                    Count = 0,
+                    Message = MessageProvider.Get(MessageKeys.WooCommerce.MapMissingSkuNothingToWrite)
+                };
+            }
+
+            foreach (var row in candidates)
+            {
                 string sku = (row.NewSku ?? string.Empty).Trim();
                 if (string.IsNullOrEmpty(sku))
                 {
@@ -1423,13 +1986,8 @@ namespace TrackerSQL.Managers
                     continue;
                 }
 
-                var clash = _itemsRepo.GetBySku(sku);
-                if (clash != null)
-                {
-                    fail++;
-                    notes.Add(MessageProvider.Format(MessageKeys.WooCommerce.MapSkuExistsInItems, sku, clash.ItemID));
-                    continue;
-                }
+                // Matching an existing Tracker item SKU is expected (link Woo blank SKU to Tracker).
+                // Only reject if Woo already has a different product using this SKU (API will say so).
 
                 string detail;
                 if (_api.UpdateCatalogSku(creds, row.WooProductId, row.WooVariationId, sku, out detail))
@@ -1459,7 +2017,7 @@ namespace TrackerSQL.Managers
 
             return new SyncResult
             {
-                Succeeded = fail == 0,
+                Succeeded = fail == 0 && ok > 0,
                 Count = ok,
                 Message = fail == 0
                     ? MessageProvider.Format(MessageKeys.WooCommerce.MapMissingSkuWriteOk, ok)
@@ -1517,47 +2075,163 @@ namespace TrackerSQL.Managers
                 return Fail("Push enabled state is turned off in settings.");
 
             var maps = _mapRepo.GetAllWithItems()
-                .Where(m => m.IsActive && m.WooProductId.HasValue && !m.IsNotesMap && !m.IsExcludeMap && m.ItemID > 0)
+                .Where(m => m.IsActive && m.WooProductId.HasValue && !m.IsNotesMap && !m.IsExcludeMap
+                    && !m.IsVariantsMap && m.ItemID > 0)
                 .ToList();
+            var mapById = maps.ToDictionary(m => m.MappingID);
+            var catalogStatus = BuildCatalogStatusLookup();
+            var preview = BuildEnabledPushPreviewFromMaps(maps, catalogStatus);
             int ok = 0;
             int fail = 0;
-            var notes = new List<string>();
+            int unchanged = preview.Count(r => !r.NeedsChange);
 
-            foreach (var map in maps)
+            foreach (var row in preview)
             {
-                bool enabled = map.ItemEnabled ?? true;
-                string detail;
                 if (dryRun)
                 {
-                    notes.Add((enabled ? "ENABLE" : "DISABLE") + " product " + map.WooProductId + " var " + map.WooVariationId);
-                    ok++;
+                    if (!row.NeedsChange && row.CurrentWooStatus.StartsWith("(unknown", StringComparison.Ordinal))
+                        row.Result = "Pull products to compare";
+                    else
+                        row.Result = row.NeedsChange ? "Will update" : "Already matches";
+                    if (row.NeedsChange)
+                        ok++;
                     continue;
                 }
 
-                if (_api.SetCatalogStatus(creds, map.WooProductId.Value, map.WooVariationId, enabled, out detail))
+                if (!row.NeedsChange)
                 {
-                    map.LastSyncedUtc = DateTime.UtcNow;
-                    map.LastWooStatus = detail;
-                    _mapRepo.Update(map);
+                    row.Result = row.CurrentWooStatus.StartsWith("(unknown", StringComparison.Ordinal)
+                        ? "Skipped (unknown Woo status)"
+                        : "Already matches";
+                    continue;
+                }
+
+                string detail;
+                if (_api.SetCatalogStatus(creds, row.WooProductId, row.WooVariationId, row.TrackerEnabled, out detail))
+                {
+                    WooItemMapping map;
+                    if (mapById.TryGetValue(row.MappingID, out map))
+                    {
+                        map.LastSyncedUtc = DateTime.UtcNow;
+                        map.LastWooStatus = detail;
+                        _mapRepo.Update(map);
+                    }
+                    row.LastWooStatus = detail;
+                    row.CurrentWooStatus = detail;
+                    row.NeedsChange = false;
+                    row.Result = "OK";
                     ok++;
                 }
                 else
                 {
+                    row.Result = "Failed: " + (detail ?? "unknown");
                     fail++;
-                    notes.Add("Failed " + map.WooProductId + ": " + detail);
                 }
             }
 
             AppLogger.WriteLog("woo",
-                (dryRun ? "Dry-run " : "") + "Push enabled: ok=" + ok + " fail=" + fail, updatedBy);
+                (dryRun ? "Dry-run " : "") + "Push enabled: ok=" + ok + " fail=" + fail + " unchanged=" + unchanged,
+                updatedBy);
+
+            string prefix = dryRun ? "Dry-run: " : string.Empty;
+            string msg = prefix + preview.Count + " mapped product(s). ";
+            if (dryRun)
+            {
+                int willPublish = preview.Count(r => r.NeedsChange && r.TrackerEnabled);
+                int willPrivate = preview.Count(r => r.NeedsChange && !r.TrackerEnabled);
+                msg += willPublish + " → publish, " + willPrivate + " → private";
+                if (unchanged > 0)
+                    msg += ", " + unchanged + " already match Woo";
+            }
+            else
+            {
+                msg += ok + " updated";
+                if (fail > 0)
+                    msg += ", " + fail + " failed";
+                if (unchanged > 0)
+                    msg += ", " + unchanged + " unchanged";
+            }
 
             return new SyncResult
             {
                 Succeeded = fail == 0,
-                Count = ok,
-                Message = (dryRun ? "Dry-run: " : "") + ok + " updated, " + fail + " failed."
-                    + (notes.Count == 0 ? string.Empty : " " + string.Join("; ", notes.Take(5)))
+                Count = dryRun ? preview.Count(r => r.NeedsChange) : ok,
+                FailCount = fail,
+                UnchangedCount = unchanged,
+                Rows = preview,
+                Message = msg
             };
+        }
+
+        private Dictionary<string, string> BuildCatalogStatusLookup()
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in _catalogCache.GetAllAsDtos())
+            {
+                if (p == null || string.IsNullOrWhiteSpace(p.Status))
+                    continue;
+                dict[CatalogStatusKey(p.Id, p.VariationId)] = p.Status.Trim();
+            }
+            return dict;
+        }
+
+        private static string CatalogStatusKey(long productId, long? variationId)
+        {
+            long varId = variationId.HasValue && variationId.Value > 0 ? variationId.Value : 0;
+            return productId.ToString(CultureInfo.InvariantCulture) + ":" + varId.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static List<WooEnabledPushPreviewRow> BuildEnabledPushPreviewFromMaps(
+            List<WooItemMapping> maps,
+            Dictionary<string, string> catalogStatus)
+        {
+            if (maps == null || maps.Count == 0)
+                return new List<WooEnabledPushPreviewRow>();
+
+            if (catalogStatus == null)
+                catalogStatus = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            return maps
+                .Select(m =>
+                {
+                    bool enabled = m.ItemEnabled ?? true;
+                    string newStatus = enabled ? "publish" : "private";
+                    string lastPushed = (m.LastWooStatus ?? string.Empty).Trim();
+
+                    string cacheStatus;
+                    catalogStatus.TryGetValue(
+                        CatalogStatusKey(m.WooProductId.Value, m.WooVariationId),
+                        out cacheStatus);
+                    cacheStatus = (cacheStatus ?? string.Empty).Trim();
+
+                    string currentWoo = !string.IsNullOrEmpty(cacheStatus)
+                        ? cacheStatus
+                        : lastPushed;
+                    bool canCompare = !string.IsNullOrEmpty(currentWoo);
+                    bool needsChange = canCompare
+                        && !string.Equals(currentWoo, newStatus, StringComparison.OrdinalIgnoreCase);
+
+                    return new WooEnabledPushPreviewRow
+                    {
+                        MappingID = m.MappingID,
+                        ItemID = m.ItemID,
+                        ItemDesc = m.ItemDesc ?? string.Empty,
+                        ItemSku = m.ItemSku ?? string.Empty,
+                        TrackerEnabled = enabled,
+                        WooProductId = m.WooProductId.Value,
+                        WooVariationId = m.WooVariationId,
+                        LastWooStatus = string.IsNullOrEmpty(lastPushed) ? string.Empty : lastPushed,
+                        CurrentWooStatus = canCompare
+                            ? currentWoo
+                            : "(unknown — pull products on Mappings tab)",
+                        NewWooStatus = newStatus,
+                        NeedsChange = needsChange
+                    };
+                })
+                .OrderBy(r => r.ItemDesc, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => r.WooProductId)
+                .ThenBy(r => r.WooVariationId ?? 0)
+                .ToList();
         }
 
         private Dictionary<long, int> BuildParentItemLookup()
@@ -1567,13 +2241,33 @@ namespace TrackerSQL.Managers
             {
                 if (!map.IsActive || !map.WooProductId.HasValue)
                     continue;
-                if (map.IsExcludeMap || map.IsNotesMap || map.ItemID <= 0)
+                if (map.IsExcludeMap || map.IsNotesMap || map.IsVariantsMap || map.ItemID <= 0)
                     continue;
                 if (map.WooVariationId.HasValue && map.WooVariationId.Value > 0)
                     continue;
                 dict[map.WooProductId.Value] = map.ItemID;
             }
             return dict;
+        }
+
+        private static void StampParentRanks(
+            List<WooAttributeMap> maps,
+            Dictionary<string, WooAttributeParent> parentByName)
+        {
+            if (maps == null || parentByName == null)
+                return;
+            foreach (var m in maps)
+            {
+                if (m == null)
+                    continue;
+                WooAttributeParent parent;
+                if (!parentByName.TryGetValue(m.AttributeName ?? string.Empty, out parent) || parent == null)
+                    continue;
+                m.QtyRank = parent.QtyRank;
+                m.PackRank = parent.PackRank;
+                m.NoteRank = parent.NoteRank;
+                m.MapRole = parent.DefaultMapRole();
+            }
         }
 
         private static void ApplyAttributeMaps(
@@ -1591,7 +2285,7 @@ namespace TrackerSQL.Managers
             var matches = new List<WooAttributeMap>();
             foreach (var attr in attributes)
             {
-                if (attr == null || string.IsNullOrWhiteSpace(attr.Name) || string.IsNullOrWhiteSpace(attr.Option))
+                if (attr == null || string.IsNullOrWhiteSpace(attr.Name) || attr.IsAnyOption)
                     continue;
                 WooAttributeMap match = FindAttributeMap(maps, attr.Name, attr.Option, itemServiceTypeId);
                 if (match != null)
@@ -1603,21 +2297,18 @@ namespace TrackerSQL.Managers
             var parts = new List<string>();
 
             WooAttributeMap qtyWinner = matches
-                .Where(m => WooAttributeMapRoles.AppliesQty(m.MapRole))
-                .OrderBy(m => m.ResolvePriority)
-                .ThenBy(m => QtyRoleRank(m.MapRole))
+                .Where(m => m.QtyRank > 0
+                    && WooAttributeMapRoles.AppliesQty(m.MapRole)
+                    && m.QtyFactor > 0)
+                .OrderBy(m => m.QtyRank)
                 .ThenBy(m => m.AttributeName, StringComparer.OrdinalIgnoreCase)
                 .FirstOrDefault();
-            if (qtyWinner != null && qtyWinner.QtyFactor > 0)
+            if (qtyWinner != null)
             {
                 qty = qtyWinner.QtyFactor;
-                parts.Add(qtyWinner.AttributeName + "=" + qtyWinner.AttributeOption + "→qty " + qtyWinner.QtyFactor);
+                parts.Add(qtyWinner.AttributeName + "=" + qtyWinner.AttributeOption
+                    + "→qty " + qtyWinner.QtyFactor + " [#" + qtyWinner.QtyRank + "]");
             }
-
-            var packCandidates = matches
-                .Where(m => WooAttributeMapRoles.AppliesPackaging(m.MapRole)
-                    && m.PackagingID.HasValue && m.PackagingID.Value > 0)
-                .ToList();
 
             int? comboPack = TryFindComboPackaging(matches, packagings);
             if (comboPack.HasValue)
@@ -1627,20 +2318,39 @@ namespace TrackerSQL.Managers
             }
             else
             {
-                // Prefer Prep Type / PackagingOnly over size options that also carry a pack
-                // (e.g. "250g Box" Both). Explicit PackagingID on weight options is still applied
-                // when nothing higher-ranked matches — those used to be filtered out entirely.
-                WooAttributeMap packWinner = packCandidates
-                    .OrderBy(m => m.ResolvePriority)
-                    .ThenBy(m => PackRoleRank(m.MapRole))
-                    .ThenBy(m => PackagingWeightParser.TryParseQtyFactorFromOption(m.AttributeOption).HasValue ? 1 : 0)
-                    .ThenBy(m => m.AttributeName, StringComparer.OrdinalIgnoreCase)
-                    .FirstOrDefault();
-                if (packWinner != null)
+                // PackRank cascade: #1 primary, #2 only if primary missing, etc.
+                bool packSet = false;
+                foreach (var packWinner in matches
+                    .Where(m => m.PackRank > 0 && WooAttributeMapRoles.AppliesPackaging(m.MapRole))
+                    .OrderBy(m => m.PackRank)
+                    .ThenBy(m => m.AttributeName, StringComparer.OrdinalIgnoreCase))
                 {
-                    packagingId = packWinner.PackagingID;
+                    int? resolved = packWinner.PackagingID.HasValue && packWinner.PackagingID.Value > 0
+                        ? packWinner.PackagingID
+                        : SuggestPackaging(packWinner.AttributeOption, packagings);
+                    if (!resolved.HasValue || resolved.Value <= 0)
+                        continue;
+
+                    packagingId = resolved;
                     parts.Add(packWinner.AttributeName + "=" + packWinner.AttributeOption
-                        + "→pack " + packWinner.PackagingID);
+                        + "→pack " + resolved.Value + " [#" + packWinner.PackRank + "]");
+                    packSet = true;
+                    break;
+                }
+
+                if (!packSet)
+                {
+                    // No ranked pack map hit — still try option text against packaging lookup.
+                    foreach (var m in matches.Where(x => WooAttributeMapRoles.AppliesPackaging(x.MapRole)))
+                    {
+                        int? suggested = SuggestPackaging(m.AttributeOption, packagings);
+                        if (!suggested.HasValue || suggested.Value <= 0)
+                            continue;
+                        packagingId = suggested;
+                        parts.Add(m.AttributeName + "=" + m.AttributeOption
+                            + "→pack " + suggested.Value + " (suggested)");
+                        break;
+                    }
                 }
             }
 
@@ -1651,24 +2361,6 @@ namespace TrackerSQL.Managers
                     ? attrReason
                     : reason + " + " + attrReason;
             }
-        }
-
-        /// <summary>Prefer QtyOnly over Both when priorities tie.</summary>
-        private static int QtyRoleRank(string role)
-        {
-            string n = WooAttributeMapRoles.Normalize(role);
-            if (n == WooAttributeMapRoles.QtyOnly) return 0;
-            if (n == WooAttributeMapRoles.Both) return 1;
-            return 2;
-        }
-
-        /// <summary>Prefer PackagingOnly over Both when priorities tie.</summary>
-        private static int PackRoleRank(string role)
-        {
-            string n = WooAttributeMapRoles.Normalize(role);
-            if (n == WooAttributeMapRoles.PackagingOnly) return 0;
-            if (n == WooAttributeMapRoles.Both) return 1;
-            return 2;
         }
 
         /// <summary>
@@ -1764,16 +2456,48 @@ namespace TrackerSQL.Managers
                 m.IsActive
                 && m.ItemServiceTypeID == itemServiceTypeId
                 && itemServiceTypeId > 0
-                && string.Equals(m.AttributeName, name, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(m.AttributeOption, option, StringComparison.OrdinalIgnoreCase));
+                && AttributeNameMatches(m.AttributeName, name)
+                && AttributeOptionMatches(m.AttributeOption, option));
             if (typed != null)
                 return typed;
 
             return maps.FirstOrDefault(m =>
                 m.IsActive
                 && m.ItemServiceTypeID == 0
-                && string.Equals(m.AttributeName, name, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(m.AttributeOption, option, StringComparison.OrdinalIgnoreCase));
+                && AttributeNameMatches(m.AttributeName, name)
+                && AttributeOptionMatches(m.AttributeOption, option));
+        }
+
+        private static bool AttributeNameMatches(string stored, string probe)
+        {
+            if (string.IsNullOrWhiteSpace(stored) || string.IsNullOrWhiteSpace(probe))
+                return false;
+            if (string.Equals(stored.Trim(), probe.Trim(), StringComparison.OrdinalIgnoreCase))
+                return true;
+            string a = NormalizeAttrToken(stored);
+            string b = NormalizeAttrToken(probe);
+            return a.Length > 0 && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool AttributeOptionMatches(string stored, string probe)
+        {
+            if (string.IsNullOrWhiteSpace(stored) || string.IsNullOrWhiteSpace(probe))
+                return false;
+            if (string.Equals(stored.Trim(), probe.Trim(), StringComparison.OrdinalIgnoreCase))
+                return true;
+            string a = NormalizeAttrToken(stored);
+            string b = NormalizeAttrToken(probe);
+            return a.Length > 0 && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeAttrToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+            var chars = value.Trim().ToLowerInvariant()
+                .Where(c => char.IsLetterOrDigit(c))
+                .ToArray();
+            return new string(chars);
         }
 
         private static int? SuggestPackaging(string option, List<ItemPackaging> packagings)

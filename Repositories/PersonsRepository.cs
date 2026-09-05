@@ -119,12 +119,41 @@ namespace TrackerSQL.Repositories
 
         public int? GetPersonIdByAbbreviation(string abbreviation)
         {
+            if (string.IsNullOrWhiteSpace(abbreviation))
+                return null;
+
             return ExecuteScalar<int?>(
-                "SELECT PersonID FROM PeopleTbl WHERE Abbreviation LIKE @Abbreviation",
+                "SELECT PersonID FROM PeopleTbl WHERE UPPER(LTRIM(RTRIM(Abbreviation))) = UPPER(LTRIM(RTRIM(@Abbreviation)))",
                 new List<DBParameter>
                 {
-                    new DBParameter { ParamName = "@Abbreviation", DataValue = abbreviation, DataDbType = DbType.String }
+                    new DBParameter { ParamName = "@Abbreviation", DataValue = abbreviation.Trim(), DataDbType = DbType.String }
                 });
+        }
+
+        /// <summary>Default sales agent (abbreviation Q). Creates the PeopleTbl row if missing.</summary>
+        public int GetOrEnsureDefaultSalesAgentId()
+        {
+            string abbr = SystemConstants.PersonConstants.DefaultSalesAgentAbbr;
+            int? existing = GetPersonIdByAbbreviation(abbr);
+            if (existing.HasValue && existing.Value > 0)
+                return existing.Value;
+
+            var person = new Person
+            {
+                PersonName = SystemConstants.PersonConstants.DefaultSalesAgentName,
+                Abbreviation = abbr,
+                Enabled = true,
+                NormalDeliveryDoW = 0
+            };
+
+            int newId = Insert(person);
+            if (newId > 0)
+            {
+                AppLogger.WriteLog("system",
+                    "Created default sales agent '" + abbr + "' (PersonID=" + newId + ").");
+            }
+
+            return newId;
         }
 
         public int? GetPersonIdBySecurityUsername(string securityUsername)

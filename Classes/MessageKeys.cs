@@ -146,6 +146,8 @@ namespace TrackerSQL.Classes
             public const string StatusDispatched = "Order.StatusDispatched";
             public const string StatusCollected = "Order.StatusCollected";
             public const string StatusDelivered = "Order.StatusDelivered";
+            public const string StatusTrackingLine = "Order.StatusTrackingLine";
+            public const string TrackingRequired = "Order.TrackingRequired";
 
             public const string StatusBody = "Order.StatusBody";
             public const string ConfirmationHeader = "Order.ConfirmationHeader";
@@ -358,6 +360,9 @@ namespace TrackerSQL.Classes
             public const string MapTabAttrParents = "WooCommerce.MapTabAttrParents";
             public const string MapTabAttrVariants = "WooCommerce.MapTabAttrVariants";
             public const string MapTabMappings = "WooCommerce.MapTabMappings";
+            public const string MapTabAreas = "WooCommerce.MapTabAreas";
+            public const string MapTabShipping = "WooCommerce.MapTabShipping";
+            public const string MapTabPayment = "WooCommerce.MapTabPayment";
             public const string MapTabSavedMaps = "WooCommerce.MapTabSavedMaps";
             public const string MapTabMissingSku = "WooCommerce.MapTabMissingSku";
             public const string MapTabSync = "WooCommerce.MapTabSync";
@@ -371,15 +376,19 @@ namespace TrackerSQL.Classes
             public const string MapSaveAttrParents = "WooCommerce.MapSaveAttrParents";
             public const string MapAttrParentsSaved = "WooCommerce.MapAttrParentsSaved";
             public const string MapAttrNeedParents = "WooCommerce.MapAttrNeedParents";
+            public const string MapAttrNeedLineParents = "WooCommerce.MapAttrNeedLineParents";
             public const string MapMapHelp = "WooCommerce.MapMapHelp";
             public const string MapSavedMapsHelp = "WooCommerce.MapSavedMapsHelp";
             public const string MapSavedMapsPageInfo = "WooCommerce.MapSavedMapsPageInfo";
+            public const string MapSavedMapsFilteredInfo = "WooCommerce.MapSavedMapsFilteredInfo";
             public const string MapMissingSkuHelp = "WooCommerce.MapMissingSkuHelp";
             public const string MapFindSku = "WooCommerce.MapFindSku";
             public const string MapFindSkuBtn = "WooCommerce.MapFindSkuBtn";
             public const string MapClearFindSku = "WooCommerce.MapClearFindSku";
+            public const string MapNewSinceSync = "WooCommerce.MapNewSinceSync";
             public const string MapPullPageInfo = "WooCommerce.MapPullPageInfo";
             public const string MapPullPageInfoFiltered = "WooCommerce.MapPullPageInfoFiltered";
+            public const string MapPullPageInfoNewOnly = "WooCommerce.MapPullPageInfoNewOnly";
             public const string MapMissingSkuPageInfo = "WooCommerce.MapMissingSkuPageInfo";
             public const string MapDestNotMapped = "WooCommerce.MapDestNotMapped";
             public const string MapDestCreateParent = "WooCommerce.MapDestCreateParent";
@@ -396,6 +405,7 @@ namespace TrackerSQL.Classes
             public const string MapColDestinationTip = "WooCommerce.MapColDestinationTip";
             public const string MapColMatchTip = "WooCommerce.MapColMatchTip";
             public const string MapColVariantTip = "WooCommerce.MapColVariantTip";
+            public const string MapColNotesAttrTip = "WooCommerce.MapColNotesAttrTip";
             public const string MapColSkuTip = "WooCommerce.MapColSkuTip";
             public const string MapColQtyTip = "WooCommerce.MapColQtyTip";
             public const string MapColPackTip = "WooCommerce.MapColPackTip";
@@ -407,6 +417,7 @@ namespace TrackerSQL.Classes
             public const string MapWriteMissingSkus = "WooCommerce.MapWriteMissingSkus";
             public const string MapMissingSkuWriteOk = "WooCommerce.MapMissingSkuWriteOk";
             public const string MapMissingSkuWritePartial = "WooCommerce.MapMissingSkuWritePartial";
+            public const string MapMissingSkuNothingToWrite = "WooCommerce.MapMissingSkuNothingToWrite";
             public const string MapSyncHelp = "WooCommerce.MapSyncHelp";
             public const string MapPullCategories = "WooCommerce.MapPullCategories";
             public const string MapSyncCategories = "WooCommerce.MapSyncCategories";
@@ -446,6 +457,46 @@ namespace TrackerSQL.Classes
             public const string MapDeleted = "WooCommerce.MapDeleted";
             public const string MapDryPush = "WooCommerce.MapDryPush";
             public const string MapPushEnabled = "WooCommerce.MapPushEnabled";
+            public const string MapAreasHelp = "WooCommerce.MapAreasHelp";
+            public const string MapAreaSectionTitle = "WooCommerce.MapAreaSectionTitle";
+            public const string MapSystemDefaultPersonHint = "WooCommerce.MapSystemDefaultPersonHint";
+            public const string MapDefaultImportAreaLbl = "WooCommerce.MapDefaultImportAreaLbl";
+            public const string MapSaveDefaultArea = "WooCommerce.MapSaveDefaultArea";
+            public const string MapImportNotesItemLbl = "WooCommerce.MapImportNotesItemLbl";
+            public const string MapSaveImportNotesItem = "WooCommerce.MapSaveImportNotesItem";
+            public const string MapImportNotesItemSaved = "WooCommerce.MapImportNotesItemSaved";
+            public const string MapAddressConfigTitle = "WooCommerce.MapAddressConfigTitle";
+            public const string MapAddressConfigNote = "WooCommerce.MapAddressConfigNote";
+            public const string MapSaveAddressConfig = "WooCommerce.MapSaveAddressConfig";
+            public const string MapAddressConfigSaved = "WooCommerce.MapAddressConfigSaved";
+            public const string MapDefaultAreaSaved = "WooCommerce.MapDefaultAreaSaved";
+            public const string MapPostalMapsNote = "WooCommerce.MapPostalMapsNote";
+            public const string MapSavePostalMaps = "WooCommerce.MapSavePostalMaps";
+            public const string MapPostalMapsSaved = "WooCommerce.MapPostalMapsSaved";
+            public const string MapAreaDefaultsNote = "WooCommerce.MapAreaDefaultsNote";
+            public const string MapSaveAreaDefaults = "WooCommerce.MapSaveAreaDefaults";
+            public const string MapAreaDefaultsSaved = "WooCommerce.MapAreaDefaultsSaved";
+            public const string MapShippingMapsNote = "WooCommerce.MapShippingMapsNote";
+            public const string MapShippingHelp = "WooCommerce.MapShippingHelp";
+            public const string MapShippingEmptyHint = "WooCommerce.MapShippingEmptyHint";
+            public const string MapSaveShippingMaps = "WooCommerce.MapSaveShippingMaps";
+            public const string MapDispatchWaybillTitle = "WooCommerce.MapDispatchWaybillTitle";
+            public const string MapDispatchWaybillNote = "WooCommerce.MapDispatchWaybillNote";
+            public const string MapDispatchPeopleLbl = "WooCommerce.MapDispatchPeopleLbl";
+            public const string MapSaveDispatchWaybill = "WooCommerce.MapSaveDispatchWaybill";
+            public const string MapDispatchWaybillSaved = "WooCommerce.MapDispatchWaybillSaved";
+            public const string MapShippingMapsSaved = "WooCommerce.MapShippingMapsSaved";
+            public const string MapPaymentMapsNote = "WooCommerce.MapPaymentMapsNote";
+            public const string MapPaymentHelp = "WooCommerce.MapPaymentHelp";
+            public const string MapSavePaymentMaps = "WooCommerce.MapSavePaymentMaps";
+            public const string MapPaymentMapsSaved = "WooCommerce.MapPaymentMapsSaved";
+            public const string MapDeleteRow = "WooCommerce.MapDeleteRow";
+            public const string MapTestPostalLbl = "WooCommerce.MapTestPostalLbl";
+            public const string MapTestSuburbLbl = "WooCommerce.MapTestSuburbLbl";
+            public const string MapTestResolveBtn = "WooCommerce.MapTestResolveBtn";
+            public const string MapTestResolveResult = "WooCommerce.MapTestResolveResult";
+            public const string MapTestResolveAmbiguous = "WooCommerce.MapTestResolveAmbiguous";
+            public const string MapTestResolveFailed = "WooCommerce.MapTestResolveFailed";
         }
     }
 }

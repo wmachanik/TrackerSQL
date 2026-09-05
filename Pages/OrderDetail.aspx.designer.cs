@@ -45,6 +45,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.CheckBox cbxConfirmed;
         protected global::System.Web.UI.WebControls.CheckBox cbxInvoiceDone;
         protected global::System.Web.UI.WebControls.CheckBox cbxDone;
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trWaybill;
+        protected global::System.Web.UI.WebControls.Label lblDispatchStatus;
+        protected global::System.Web.UI.WebControls.Label lblWaybill;
         protected global::System.Web.UI.WebControls.TextBox tbxNotes;
         protected global::System.Web.UI.WebControls.HiddenField hdnHeaderDirty;
         protected global::System.Web.UI.WebControls.Button btnSaveHeader;

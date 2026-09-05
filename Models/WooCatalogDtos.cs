@@ -19,6 +19,33 @@ namespace TrackerSQL.Models
         public string Option { get; set; }
         /// <summary>Woo term usage count when loaded from attributes/terms API; otherwise 0.</summary>
         public int SampleCount { get; set; }
+
+        /// <summary>
+        /// Woo "Any …" variation attributes (option empty or "Any Prep Type…").
+        /// These do not pick a concrete term and must not drive qty/pack maps.
+        /// </summary>
+        public bool IsAnyOption
+        {
+            get { return IsAnyOptionText(Option); }
+        }
+
+        public static bool IsAnyOptionText(string option)
+        {
+            if (string.IsNullOrWhiteSpace(option))
+                return true;
+            string o = option.Trim();
+            if (string.Equals(o, "(any)", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(o, "any", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return o.StartsWith("any ", StringComparison.OrdinalIgnoreCase)
+                || o.StartsWith("any…", StringComparison.OrdinalIgnoreCase)
+                || o.StartsWith("any...", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public string DisplayOption
+        {
+            get { return IsAnyOption ? "(any)" : (Option ?? string.Empty).Trim(); }
+        }
     }
 
     /// <summary>Global Woo product attribute (parent) from /products/attributes.</summary>
@@ -54,6 +81,8 @@ namespace TrackerSQL.Models
         public List<long> CategoryIds { get; set; } = new List<long>();
         public string CategoriesLabel { get; set; }
         public List<WooAttributeValue> Attributes { get; set; } = new List<WooAttributeValue>();
+        /// <summary>First catalog pull that included this product (from cache).</summary>
+        public DateTime? FirstSeenUtc { get; set; }
 
         public string AttributesLabel
         {
@@ -82,6 +111,8 @@ namespace TrackerSQL.Models
         /// <summary>Parent/simple products scanned from Woo (before variation expand).</summary>
         public int ParentsScanned { get; set; }
         public bool HitCatalogCap { get; set; }
+        /// <summary>Catalog rows first seen on the most recent product pull.</summary>
+        public int NewSinceLastSyncCount { get; set; }
     }
 
     /// <summary>Row for the mapping pull grid (session-backed).</summary>
@@ -108,6 +139,8 @@ namespace TrackerSQL.Models
         public string CategoriesLabel { get; set; }
         /// <summary>Short variant options only (e.g. "250g Packet · Fine").</summary>
         public string AttributesLabel { get; set; }
+        /// <summary>Prep Type etc. marked Import as order notes (for order import).</summary>
+        public string NotesAttributeSummary { get; set; }
         public string MatchReason { get; set; }
         public int SuggestedItemID { get; set; }
         public string SuggestedItemDesc { get; set; }
@@ -140,6 +173,8 @@ namespace TrackerSQL.Models
         public bool ApplySelected { get; set; }
         /// <summary>New SKU entered on the Missing SKUs tab (before write-back).</summary>
         public string NewSku { get; set; }
+        /// <summary>First seen in Woo catalog since the previous product pull.</summary>
+        public bool IsNewSinceLastSync { get; set; }
         /// <summary>Tracker SKU to create or rename to (defaults to Woo SKU).</summary>
         public string CreateSku { get; set; }
         /// <summary>ItemsTbl.SortOrder when creating or updating the Tracker item.</summary>
@@ -193,14 +228,15 @@ namespace TrackerSQL.Models
             }
         }
 
-        /// <summary>✓ saved · ✎ saved but edited · — not saved.</summary>
+        /// <summary>Saved · dirty · not saved (ASCII-safe markers; avoid encoding mojibake).</summary>
         public string SavedFlagLabel
         {
             get
             {
                 if (!HasSavedMapping)
-                    return "—";
-                return IsDirtyVsSaved ? "✎" : "✓";
+                    return "-";
+                // U+270E lower right pencil · U+2713 check mark
+                return IsDirtyVsSaved ? "\u270E" : "\u2713";
             }
         }
 
@@ -443,6 +479,10 @@ namespace TrackerSQL.Models
             {
                 string name = DisplayName;
                 string attrs = AttributesLabel;
+                string extra = NotesAttributeSummary;
+                if (!string.IsNullOrWhiteSpace(extra)
+                    && (string.IsNullOrWhiteSpace(attrs) || attrs.IndexOf(extra, StringComparison.OrdinalIgnoreCase) < 0))
+                    attrs = string.IsNullOrWhiteSpace(attrs) || attrs == "—" ? extra : attrs + "; " + extra;
                 if (string.IsNullOrWhiteSpace(attrs) || attrs == "—")
                     return name;
                 if (string.IsNullOrWhiteSpace(name))

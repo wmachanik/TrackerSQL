@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WooCommerce area / postal / shipping mapping (TrackerSQL 3.0.1.0).
+  Order import resolves AreaID from postcode ranges (+ optional suburb), then delivery person defaults.
+  Idempotent — safe to re-run via Ensure schema or XMLtoSQL.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooPostalAreaMapTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooPostalAreaMapTbl
+          (
+              MapID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooPostalAreaMapTbl PRIMARY KEY,
+              PostalFrom INT NOT NULL,
+              PostalTo INT NOT NULL,
+              SuburbMatch NVARCHAR(100) NULL,
+              AreaID INT NOT NULL,
+              Priority INT NOT NULL CONSTRAINT DF_WooPostalArea_Priority DEFAULT (100),
+              Source NVARCHAR(20) NOT NULL CONSTRAINT DF_WooPostalArea_Source DEFAULT (N'Manual'),
+              IsActive BIT NOT NULL CONSTRAINT DF_WooPostalArea_Active DEFAULT (1),
+              Notes NVARCHAR(255) NULL,
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+          CREATE INDEX IX_WooPostalArea_Range ON dbo.WooPostalAreaMapTbl (PostalFrom, PostalTo, IsActive);
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooAreaDeliveryDefaultTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooAreaDeliveryDefaultTbl
+          (
+              AreaID INT NOT NULL CONSTRAINT PK_WooAreaDeliveryDefaultTbl PRIMARY KEY,
+              DefaultPreferredAgentID INT NULL,
+              PostalRanges NVARCHAR(MAX) NULL,
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooAreaDeliveryDefaultTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooAreaDeliveryDefaultTbl', N'PostalRanges') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooAreaDeliveryDefaultTbl ADD PostalRanges NVARCHAR(MAX) NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooShippingMethodMapTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooShippingMethodMapTbl
+          (
+              MapID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooShippingMethodMapTbl PRIMARY KEY,
+              MethodMatch NVARCHAR(100) NOT NULL,
+              ToBeDeliveredByID INT NOT NULL,
+              IsActive BIT NOT NULL CONSTRAINT DF_WooShipMethod_Active DEFAULT (1),
+              Notes NVARCHAR(255) NULL,
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'DefaultImportAreaID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD DefaultImportAreaID INT NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooPaymentMethodMapTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.WooPaymentMethodMapTbl
+          (
+              MapID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WooPaymentMethodMapTbl PRIMARY KEY,
+              MethodMatch NVARCHAR(100) NOT NULL,
+              PaymentAbbrev NVARCHAR(4) NOT NULL,
+              IsActive BIT NOT NULL CONSTRAINT DF_WooPayMethod_Active DEFAULT (1),
+              Notes NVARCHAR(255) NULL,
+              UpdatedAt DATETIME2 NULL,
+              UpdatedBy NVARCHAR(100) NULL
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooOrderInfoTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooOrderInfoTbl', N'ImportConflicts') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooOrderInfoTbl ADD ImportConflicts NVARCHAR(MAX) NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooPaymentMethodMapTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.WooPaymentMethodMapTbl)
+      BEGIN
+          INSERT INTO dbo.WooPaymentMethodMapTbl (MethodMatch, PaymentAbbrev, IsActive, Notes, UpdatedAt, UpdatedBy)
+          VALUES
+          (N'payfast', N'PF', 1, N'Default seed', SYSUTCDATETIME(), N'seed'),
+          (N'yoco', N'Yoco', 1, N'Default seed', SYSUTCDATETIME(), N'seed'),
+          (N'snapscan', N'SS', 1, N'Default seed', SYSUTCDATETIME(), N'seed'),
+          (N'bacs', N'EFT', 1, N'Direct bank / EFT', SYSUTCDATETIME(), N'seed'),
+          (N'eft', N'EFT', 1, N'Direct bank / EFT', SYSUTCDATETIME(), N'seed');
+      END
+    ]]>
+  </command>
+</root>

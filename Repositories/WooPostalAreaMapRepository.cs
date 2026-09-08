@@ -116,20 +116,10 @@ WHERE MapID = @MapID";
                 Source = rdr["Source"] == DBNull.Value ? "Manual" : rdr["Source"].ToString(),
                 IsActive = rdr["IsActive"] != DBNull.Value && Convert.ToBoolean(rdr["IsActive"]),
                 Notes = rdr["Notes"] == DBNull.Value ? null : rdr["Notes"].ToString(),
-                AreaName = HasColumn(rdr, "AreaName") && rdr["AreaName"] != DBNull.Value
+                AreaName = DbMapper.HasColumn(rdr, "AreaName") && rdr["AreaName"] != DBNull.Value
                     ? rdr["AreaName"].ToString()
                     : null
             };
         }
-
-        private static bool HasColumn(IDataRecord rdr, string name)
-        {
-            for (int i = 0; i < rdr.FieldCount; i++)
-            {
-                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-    }
+}
 }

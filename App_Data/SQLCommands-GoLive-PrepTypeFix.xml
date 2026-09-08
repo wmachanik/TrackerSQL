@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Whole beans → packaging "beans" (same pattern as Plunger → GrndPlng).
+  Creates ItemPackagingsTbl beans row if missing, then links the Prep Type map.
+  Safe if you already added "beans" on live — uses that row by description.
+-->
+<root>
+  <command type="exec"><![CDATA[
+SET NOCOUNT ON;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.ItemPackagingsTbl WHERE ItemPrepDescription = N'beans')
+BEGIN
+    INSERT INTO dbo.ItemPackagingsTbl (ItemPrepDescription, AdditionalNotes, Symbol, Colour, BGColour)
+    VALUES (N'beans', N'Whole beans (no grind)', NULL, NULL, N'#C8E6C9');
+END
+
+DECLARE @BeansId INT =
+    (SELECT TOP 1 ItemPackagingID FROM dbo.ItemPackagingsTbl
+     WHERE ItemPrepDescription = N'beans'
+     ORDER BY ItemPackagingID);
+
+UPDATE dbo.WooAttributeMapTbl
+SET PackagingID = @BeansId,
+    PrepTypeID = NULL
+WHERE AttributeName = N'Prep Type'
+  AND AttributeOption = N'Whole beans';
+
+-- Keep 1kg Packet → kg bags for qty/bag when Prep Type does not apply
+UPDATE dbo.WooAttributeMapTbl
+SET PackagingID = 1
+WHERE AttributeName = N'Packaging'
+  AND AttributeOption = N'1kg Packet'
+  AND (PackagingID IS NULL OR PackagingID = 0);
+]]></command>
+</root>

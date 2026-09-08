@@ -21,7 +21,7 @@ namespace TrackerSQL.Classes
             {
                 string raw = ConfigurationManager.AppSettings["EnableRequestTiming"];
                 if (string.IsNullOrWhiteSpace(raw))
-                    return true; // default on while diagnosing
+                    return false; // off unless explicitly enabled
                 return string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
                     || raw == "1";
             }

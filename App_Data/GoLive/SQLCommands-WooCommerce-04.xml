@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WooCommerce general import behaviour settings (company name, note line format, tracking notes).
+  Idempotent — safe to re-run via Ensure schema or XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportCompanyNameMode') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportCompanyNameMode NVARCHAR(32) NOT NULL
+              CONSTRAINT DF_WooSet_CoNameMode DEFAULT (N'CareOfPrefix');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportNoteLineFormat') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportNoteLineFormat NVARCHAR(32) NOT NULL
+              CONSTRAINT DF_WooSet_NoteFmt DEFAULT (N'SkuAndName');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'AppendTrackingToOrderNotes') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD AppendTrackingToOrderNotes BIT NOT NULL
+              CONSTRAINT DF_WooSet_TrackNotes DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAutoPullMode') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAutoPullMode NVARCHAR(32) NOT NULL
+              CONSTRAINT DF_WooSet_AutoPull DEFAULT (N'Today');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportZzNameNoteLayout') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportZzNameNoteLayout NVARCHAR(32) NOT NULL
+              CONSTRAINT DF_WooSet_ZzNoteLay DEFAULT (N'NameGearAddressMeta');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportNotePartOrder') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportNotePartOrder NVARCHAR(256) NOT NULL
+              CONSTRAINT DF_WooSet_NotePartOrd DEFAULT (N'Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAddressDeduplicateSuburb') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressDeduplicateSuburb BIT NOT NULL
+              CONSTRAINT DF_WooSet_AddrDedupe DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAddressStripCapeTown') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressStripCapeTown BIT NOT NULL
+              CONSTRAINT DF_WooSet_AddrCape DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAddressTitleCase') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressTitleCase BIT NOT NULL
+              CONSTRAINT DF_WooSet_AddrCase DEFAULT (1);
+      END
+    ]]>
+  </command>
+</root>

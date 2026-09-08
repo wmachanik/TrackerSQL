@@ -86,8 +86,7 @@ namespace TrackerSQL.Tools
                 if (!TryShowInitialTabFromQuery())
                 {
                     ShowTab(0);
-                    BindCategories();
-                    LoadCatMode();
+                    BindGeneralTab();
                 }
                 SyncAttrVariantTabAvailability();
             }
@@ -124,6 +123,7 @@ namespace TrackerSQL.Tools
             btnTabSavedMaps.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabSavedMaps);
             btnTabMissingSku.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabMissingSku);
             btnTabSync.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabSync);
+            btnTabGeneral.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapTabGeneral);
             litCatHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapCatHelp);
             litAttrParentsHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAttrParentsHelp);
             litAttrOptionsHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapAttrOptionsHelp);
@@ -173,6 +173,18 @@ namespace TrackerSQL.Tools
             btnCollapseAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapCollapseAll);
             btnWriteMissingSkus.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapWriteMissingSkus);
             litSyncHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSyncHelp);
+            litGeneralHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralHelp);
+            litGeneralCompanyModeNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeNote);
+            lblGeneralCompanyMode.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeLbl);
+            litGeneralNoteLineFormatNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineFormatNote);
+            lblGeneralNoteLineFormat.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineFormatLbl);
+            litGeneralNotePartOrderNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderNote);
+            lblGeneralNotePartOrder.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderLbl);
+            litGeneralAppendTrackingNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingNote);
+            chkGeneralAppendTracking.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingLbl);
+            litGeneralAutoPullNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullNote);
+            lblGeneralAutoPull.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullLbl);
+            btnSaveGeneralSettings.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveGeneralSettings);
             litCatModeLbl.Text = MessageProvider.Get(MessageKeys.WooCommerce.LabelCategoryMode) + " ";
             btnSaveCatIncludes.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveIncludes);
             btnSaveAttrParents.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveAttrParents);
@@ -278,10 +290,23 @@ namespace TrackerSQL.Tools
             return v == null ? 0 : (int)v;
         }
 
+        /// <summary>
+        /// UI tab order (General first) maps to MultiView view indices
+        /// (General remains the last view in markup).
+        /// </summary>
+        private static int TabToViewIndex(int tabUiIndex)
+        {
+            if (tabUiIndex <= 0)
+                return 10; // General
+            if (tabUiIndex >= 1 && tabUiIndex <= 10)
+                return tabUiIndex - 1; // Cat..Sync
+            return 10;
+        }
+
         private void ShowTab(int index)
         {
             ViewState[VsTab] = index;
-            mvTabs.ActiveViewIndex = index;
+            mvTabs.ActiveViewIndex = TabToViewIndex(index);
             ApplyTabHighlight(index);
             SyncAttrVariantTabAvailability();
         }
@@ -295,21 +320,25 @@ namespace TrackerSQL.Tools
 
             switch (tab.Trim().ToLowerInvariant())
             {
+                case "general":
+                    ShowTab(0);
+                    BindGeneralTab();
+                    return true;
                 case "payment":
-                    ShowTab(6);
+                    ShowTab(7);
                     BindPaymentTab();
                     return true;
                 case "shipping":
-                    ShowTab(5);
+                    ShowTab(6);
                     BindShippingTab();
                     return true;
                 case "areas":
-                    ShowTab(4);
+                    ShowTab(5);
                     BindAreasTab();
                     return true;
                 case "mappings":
                 case "map":
-                    ShowTab(3);
+                    ShowTab(4);
                     BindImportNotesItemDropdown();
                     EnsurePullRowsLoaded();
                     RebindPull();
@@ -322,25 +351,32 @@ namespace TrackerSQL.Tools
 
         private void ApplyTabHighlight(int index)
         {
-            btnTabCat.CssClass = index == 0 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabAttrParents.CssClass = index == 1 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabAttrVariants.CssClass = index == 2 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabMap.CssClass = index == 3 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabAreas.CssClass = index == 4 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabShipping.CssClass = index == 5 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabPayment.CssClass = index == 6 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabSavedMaps.CssClass = index == 7 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabMissingSku.CssClass = index == 8 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
-            btnTabSync.CssClass = index == 9 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabGeneral.CssClass = index == 0 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabCat.CssClass = index == 1 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabAttrParents.CssClass = index == 2 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabAttrVariants.CssClass = index == 3 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabMap.CssClass = index == 4 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabAreas.CssClass = index == 5 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabShipping.CssClass = index == 6 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabPayment.CssClass = index == 7 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabSavedMaps.CssClass = index == 8 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabMissingSku.CssClass = index == 9 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnTabSync.CssClass = index == 10 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
         }
 
-        protected void btnTabCat_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(0); BindCategories(); LoadCatMode(); }
-        protected void btnTabAttrParents_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(1); BindAttrParents(); }
-        protected void btnTabAttrVariants_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(2); SyncAttrVariantsPanels(); RebindAttributes(); }
+        protected void btnTabGeneral_Click(object sender, EventArgs e)
+        {
+            PersistActiveTabEdits();
+            ShowTab(0);
+            BindGeneralTab();
+        }
+        protected void btnTabCat_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(1); BindCategories(); LoadCatMode(); }
+        protected void btnTabAttrParents_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(2); BindAttrParents(); }
+        protected void btnTabAttrVariants_Click(object sender, EventArgs e) { PersistActiveTabEdits(); ShowTab(3); SyncAttrVariantsPanels(); RebindAttributes(); }
         protected void btnTabMap_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(3);
+            ShowTab(4);
             BindImportNotesItemDropdown();
             EnsurePullRowsLoaded();
             RebindPull();
@@ -349,31 +385,31 @@ namespace TrackerSQL.Tools
         protected void btnTabAreas_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(4);
+            ShowTab(5);
             BindAreasTab();
         }
         protected void btnTabShipping_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(5);
+            ShowTab(6);
             BindShippingTab();
         }
         protected void btnTabPayment_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(6);
+            ShowTab(7);
             BindPaymentTab();
         }
         protected void btnTabSavedMaps_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(7);
+            ShowTab(8);
             BindExistingMaps();
         }
         protected void btnTabMissingSku_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(8);
+            ShowTab(9);
             EnsurePullRowsLoaded();
             RebindMissingSku();
             SyncWriteMissingButton();
@@ -381,7 +417,7 @@ namespace TrackerSQL.Tools
         protected void btnTabSync_Click(object sender, EventArgs e)
         {
             PersistActiveTabEdits();
-            ShowTab(9);
+            ShowTab(10);
             BindEnabledPushGrid();
         }
 
@@ -400,13 +436,13 @@ namespace TrackerSQL.Tools
             }
 
             int tab = GetTab();
-            if (tab == 0)
+            if (tab == 1)
                 MergeVisibleIncludesToPending();
-            else if (tab == 2)
-                MergeAttrGridEditsIntoSession();
             else if (tab == 3)
+                MergeAttrGridEditsIntoSession();
+            else if (tab == 4)
                 MergeVisiblePullEdits();
-            else if (tab == 7)
+            else if (tab == 8)
                 MergeVisibleMissingSkuEdits();
         }
 
@@ -983,7 +1019,7 @@ namespace TrackerSQL.Tools
         private void SyncAttrVariantTabAvailability()
         {
             bool ready = HasPulledAttributeParents();
-            bool active = GetTab() == 2;
+            bool active = GetTab() == 3;
             string css = active ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             if (!ready)
                 css += " is-disabled";
@@ -3457,19 +3493,148 @@ namespace TrackerSQL.Tools
             var settings = _settings.GetSettings();
             chkImportAddressIncludeProvince.Checked = settings.ImportAddressIncludeProvince;
             chkImportAddressIncludeCountry.Checked = settings.ImportAddressIncludeCountry;
+            chkImportAddressDeduplicateSuburb.Checked = settings.ImportAddressDeduplicateSuburb;
+            chkImportAddressStripCapeTown.Checked = settings.ImportAddressStripCapeTown;
+            chkImportAddressTitleCase.Checked = settings.ImportAddressTitleCase;
             chkImportPhoneReplacePlus27.Checked = settings.ImportPhoneReplacePlus27;
             chkImportPhoneFormatSa.Checked = settings.ImportPhoneFormatSa;
+        }
+
+        private void BindGeneralTab()
+        {
+            var settings = _settings.GetSettings();
+            string companyMode = WooCommerceSettingsManager.NormalizeCompanyNameMode(settings.ImportCompanyNameMode);
+            string noteFmt = WooCommerceSettingsManager.NormalizeNoteLineFormat(settings.ImportNoteLineFormat);
+
+            ddlGeneralCompanyMode.Items.Clear();
+            ddlGeneralCompanyMode.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeCareOf), "CareOfPrefix"));
+            ddlGeneralCompanyMode.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeUpdate), "UpdateName"));
+            var coItem = ddlGeneralCompanyMode.Items.FindByValue(companyMode);
+            if (coItem != null)
+                coItem.Selected = true;
+
+            ddlGeneralNoteLineFormat.Items.Clear();
+            ddlGeneralNoteLineFormat.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineSkuAndName), "SkuAndName"));
+            ddlGeneralNoteLineFormat.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineSkuOnly), "SkuOnly"));
+            var fmtItem = ddlGeneralNoteLineFormat.Items.FindByValue(noteFmt);
+            if (fmtItem != null)
+                fmtItem.Selected = true;
+
+            BindNotePartOrderList(settings.ImportNotePartOrder);
+
+            chkGeneralAppendTracking.Checked = settings.AppendTrackingToOrderNotes;
+
+            string autoPull = WooCommerceSettingsManager.NormalizeAutoPullMode(settings.ImportAutoPullMode);
+            ddlGeneralAutoPull.Items.Clear();
+            ddlGeneralAutoPull.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullToday), "Today"));
+            ddlGeneralAutoPull.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullSinceSync), "SinceLastSync"));
+            ddlGeneralAutoPull.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullThisWeek), "ThisWeek"));
+            ddlGeneralAutoPull.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullNone), "None"));
+            var autoItem = ddlGeneralAutoPull.Items.FindByValue(autoPull);
+            if (autoItem != null)
+                autoItem.Selected = true;
+        }
+
+        protected void btnSaveGeneralSettings_Click(object sender, EventArgs e)
+        {
+            string companyMode = ddlGeneralCompanyMode.SelectedValue;
+            string noteFmt = ddlGeneralNoteLineFormat.SelectedValue;
+            bool appendTracking = chkGeneralAppendTracking.Checked;
+            string autoPull = ddlGeneralAutoPull.SelectedValue;
+            string noteOrder = GetNotePartOrderFromList();
+            _settings.SaveGeneralImportSettings(companyMode, noteFmt, appendTracking, autoPull, noteOrder, UserName());
+            BindGeneralTab();
+            SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralSettingsSaved), false);
+            WooCommerceUserLog.Write("Mapping general settings saved",
+                string.Format(CultureInfo.InvariantCulture,
+                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}",
+                    companyMode, noteFmt, appendTracking, autoPull, noteOrder),
+                UserName());
+        }
+
+        private void BindNotePartOrderList(string orderCsv)
+        {
+            var keys = WooCommerceSettingsManager.ParseNotePartOrder(orderCsv);
+            lstGeneralNotePartOrder.Items.Clear();
+            int i = 1;
+            foreach (string key in keys)
+            {
+                lstGeneralNotePartOrder.Items.Add(new ListItem(
+                    i.ToString(CultureInfo.InvariantCulture) + ". "
+                    + WooCommerceSettingsManager.NotePartDisplayLabel(key),
+                    key));
+                i++;
+            }
+        }
+
+        private string GetNotePartOrderFromList()
+        {
+            var keys = new List<string>();
+            foreach (ListItem item in lstGeneralNotePartOrder.Items)
+            {
+                if (item != null && !string.IsNullOrWhiteSpace(item.Value))
+                    keys.Add(item.Value.Trim());
+            }
+            return WooCommerceSettingsManager.NormalizeNotePartOrder(string.Join(",", keys));
+        }
+
+        protected void btnNotePartMoveUp_Click(object sender, EventArgs e)
+        {
+            MoveSelectedNotePart(-1);
+        }
+
+        protected void btnNotePartMoveDown_Click(object sender, EventArgs e)
+        {
+            MoveSelectedNotePart(1);
+        }
+
+        private void MoveSelectedNotePart(int delta)
+        {
+            int idx = lstGeneralNotePartOrder.SelectedIndex;
+            if (idx < 0)
+            {
+                SetStatus("Select a note part, then Move up or Move down.", true);
+                return;
+            }
+
+            int newIdx = idx + delta;
+            if (newIdx < 0 || newIdx >= lstGeneralNotePartOrder.Items.Count)
+                return;
+
+            ListItem item = lstGeneralNotePartOrder.Items[idx];
+            lstGeneralNotePartOrder.Items.RemoveAt(idx);
+            lstGeneralNotePartOrder.Items.Insert(newIdx, item);
+            lstGeneralNotePartOrder.SelectedIndex = newIdx;
+
+            // Re-number display labels while keeping values.
+            BindNotePartOrderList(GetNotePartOrderFromList());
+            if (newIdx >= 0 && newIdx < lstGeneralNotePartOrder.Items.Count)
+                lstGeneralNotePartOrder.SelectedIndex = newIdx;
         }
 
         protected void btnSaveAddressConfig_Click(object sender, EventArgs e)
         {
             bool includeProvince = chkImportAddressIncludeProvince.Checked;
             bool includeCountry = chkImportAddressIncludeCountry.Checked;
+            bool dedupeSuburb = chkImportAddressDeduplicateSuburb.Checked;
+            bool stripCapeTown = chkImportAddressStripCapeTown.Checked;
+            bool titleCase = chkImportAddressTitleCase.Checked;
             bool replacePlus27 = chkImportPhoneReplacePlus27.Checked;
             bool formatSa = chkImportPhoneFormatSa.Checked;
             _settings.SaveImportAddressSettings(
                 includeProvince,
                 includeCountry,
+                dedupeSuburb,
+                stripCapeTown,
+                titleCase,
                 replacePlus27,
                 formatSa,
                 UserName());
@@ -3477,8 +3642,8 @@ namespace TrackerSQL.Tools
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapAddressConfigSaved), false);
             WooCommerceUserLog.Write("Mapping address config saved",
                 string.Format(CultureInfo.InvariantCulture,
-                    "province={0}, country={1}, phone27={2}, phoneFmt={3}",
-                    includeProvince, includeCountry, replacePlus27, formatSa),
+                    "province={0}, country={1}, dedupe={2}, stripCape={3}, titleCase={4}, phone27={5}, phoneFmt={6}",
+                    includeProvince, includeCountry, dedupeSuburb, stripCapeTown, titleCase, replacePlus27, formatSa),
                 UserName());
         }
 

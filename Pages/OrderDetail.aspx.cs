@@ -56,6 +56,18 @@ namespace TrackerSQL.Pages
 
         private readonly OrderManager _orderManager = new OrderManager();
         private readonly PersonsRepository _personsRepository = new PersonsRepository();
+        private PageStatePersister _sessionPageStatePersister;
+
+        /// <summary>Keep large ComboBox ViewState off the wire (same pattern as Recurring Order Details).</summary>
+        protected override PageStatePersister PageStatePersister
+        {
+            get
+            {
+                if (_sessionPageStatePersister == null)
+                    _sessionPageStatePersister = new SessionPageStatePersister(this);
+                return _sessionPageStatePersister;
+            }
+        }
 
         private int PersistedOrderId
         {
@@ -529,86 +541,12 @@ namespace TrackerSQL.Pages
 
         private void CaptureReturnUrlIfNeeded()
         {
-            // Prefer explicit ReturnUrl (e.g. Woo Order Import ?restore=1) over referrer.
-            string qsReturn = Request.QueryString["ReturnUrl"];
-            if (!string.IsNullOrWhiteSpace(qsReturn))
-            {
-                string candidate = qsReturn.Trim();
-                try
-                {
-                    candidate = HttpUtility.UrlDecode(candidate) ?? candidate;
-                }
-                catch
-                {
-                    // keep raw
-                }
-
-                if (TryNormalizeLocalReturnUrl(candidate, out string fromQuery))
-                {
-                    Session[SESSION_RETURN_URL] = fromQuery;
-                    return;
-                }
-            }
-
-            if (Request.UrlReferrer != null)
-            {
-                string referrer = Request.UrlReferrer.ToString();
-                if (referrer.IndexOf("OrderDetail.aspx", StringComparison.OrdinalIgnoreCase) < 0
-                    && IsSafeReturnUrl(referrer))
-                {
-                    Session[SESSION_RETURN_URL] = referrer;
-                    return;
-                }
-            }
-
-            if (Session[SESSION_RETURN_URL] == null)
-                Session[SESSION_RETURN_URL] = ResolveUrl(DEFAULT_RETURN_URL);
-        }
-
-        private bool TryNormalizeLocalReturnUrl(string candidate, out string normalized)
-        {
-            normalized = null;
-            if (string.IsNullOrWhiteSpace(candidate))
-                return false;
-
-            candidate = candidate.Trim();
-            if (candidate.StartsWith("~/") || (candidate.StartsWith("/") && !candidate.StartsWith("//")))
-            {
-                normalized = ResolveUrl(candidate.StartsWith("~/") ? candidate : "~" + candidate);
-                return IsSafeReturnUrl(normalized);
-            }
-
-            if (IsSafeReturnUrl(candidate))
-            {
-                normalized = candidate;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsSafeReturnUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-
-            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
-                return url.IndexOf("://", StringComparison.Ordinal) < 0;
-
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
-                return false;
-
-            return Request.Url != null
-                && string.Equals(absolute.Host, Request.Url.Host, StringComparison.OrdinalIgnoreCase);
+            ReturnUrlHelper.CaptureIfNeeded(this, SESSION_RETURN_URL, DEFAULT_RETURN_URL, "OrderDetail.aspx");
         }
 
         private string GetReturnUrl()
         {
-            string url = Session[SESSION_RETURN_URL] as string;
-            if (string.IsNullOrWhiteSpace(url) || !IsSafeReturnUrl(url))
-                url = ResolveUrl(DEFAULT_RETURN_URL);
-
-            return url;
+            return ReturnUrlHelper.Get(this, SESSION_RETURN_URL, DEFAULT_RETURN_URL);
         }
 
         private void ReturnToPreviousPage()

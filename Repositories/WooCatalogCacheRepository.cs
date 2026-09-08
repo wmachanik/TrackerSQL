@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
@@ -14,21 +16,39 @@ namespace TrackerSQL.Repositories
         protected override string TableName => "WooCatalogCacheTbl";
         protected override string KeyColumn => "CacheID";
 
+        private static readonly object TableExistsLock = new object();
+        private static bool? _tableExistsCached;
+
         public bool TableExists()
         {
-            try
+            if (_tableExistsCached.HasValue)
+                return _tableExistsCached.Value;
+
+            lock (TableExistsLock)
             {
-                using (var db = CreateDb())
+                if (_tableExistsCached.HasValue)
+                    return _tableExistsCached.Value;
+                try
                 {
-                    int n = db.ExecuteScalar<int>(
-                        "SELECT COUNT(*) FROM sys.tables WHERE name = N'WooCatalogCacheTbl'");
-                    return n > 0;
+                    using (var db = CreateDb())
+                    {
+                        int n = db.ExecuteScalar<int>(
+                            "SELECT COUNT(*) FROM sys.tables WHERE name = N'WooCatalogCacheTbl'");
+                        _tableExistsCached = n > 0;
+                    }
                 }
+                catch
+                {
+                    _tableExistsCached = false;
+                }
+                return _tableExistsCached.Value;
             }
-            catch
-            {
-                return false;
-            }
+        }
+
+        public static void InvalidateTableExistsCache()
+        {
+            lock (TableExistsLock)
+                _tableExistsCached = null;
         }
 
         public int CountRows()
@@ -65,34 +85,181 @@ ORDER BY WooProductId, CASE WHEN IsParentGroup = 1 THEN 0 ELSE 1 END, WooVariati
             UpsertAll(products, DateTime.UtcNow);
         }
 
-        /// <summary>Merge Woo catalog into cache; new rows get FirstSeenUtc = pullStartedUtc.</summary>
+        /// <summary>Merge Woo catalog into cache via temp table + MERGE (bulk); preserve FirstSeenUtc on match.</summary>
         public int UpsertAll(IList<WooProductDto> products, DateTime pullStartedUtc)
         {
             EnsureFirstSeenColumn();
+            if (!TableExists())
+                return 0;
+
             if (products == null)
                 products = new List<WooProductDto>();
 
-            var existingFirstSeen = LoadFirstSeenByKey();
-            var incomingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var table = BuildPullDataTable(products, pullStartedUtc);
+            string cs = GetSqlConnectionString();
             int inserted = 0;
 
+            using (var conn = new SqlConnection(cs))
+            {
+                conn.Open();
+                using (var tx = conn.BeginTransaction())
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+IF OBJECT_ID('tempdb..#WooCatPull') IS NOT NULL DROP TABLE #WooCatPull;
+CREATE TABLE #WooCatPull (
+  WooProductId BIGINT NOT NULL,
+  WooVariationId BIGINT NOT NULL,
+  IsParentGroup BIT NOT NULL,
+  IsVariation BIT NOT NULL,
+  Name NVARCHAR(500) NULL,
+  Sku NVARCHAR(200) NULL,
+  ParentSku NVARCHAR(200) NULL,
+  ParentName NVARCHAR(500) NULL,
+  Status NVARCHAR(50) NULL,
+  StockStatus NVARCHAR(50) NULL,
+  ProductType NVARCHAR(50) NULL,
+  CategoriesLabel NVARCHAR(1000) NULL,
+  CategoryIds NVARCHAR(500) NULL,
+  AttributesJson NVARCHAR(MAX) NULL,
+  PulledUtc DATETIME2 NOT NULL,
+  FirstSeenUtc DATETIME2 NOT NULL,
+  VariationTotalCount INT NOT NULL,
+  VariationInStockCount INT NOT NULL,
+  PRIMARY KEY (WooProductId, WooVariationId)
+);";
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    using (var bulk = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, tx))
+                    {
+                        bulk.DestinationTableName = "#WooCatPull";
+                        bulk.BatchSize = 500;
+                        bulk.BulkCopyTimeout = 120;
+                        foreach (DataColumn col in table.Columns)
+                            bulk.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                        bulk.WriteToServer(table);
+                    }
+
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandTimeout = 120;
+                        cmd.CommandText = @"
+MERGE WooCatalogCacheTbl AS t
+USING #WooCatPull AS s
+ON t.WooProductId = s.WooProductId AND t.WooVariationId = s.WooVariationId
+WHEN MATCHED THEN UPDATE SET
+  IsParentGroup = s.IsParentGroup,
+  IsVariation = s.IsVariation,
+  Name = s.Name,
+  Sku = s.Sku,
+  ParentSku = s.ParentSku,
+  ParentName = s.ParentName,
+  Status = s.Status,
+  StockStatus = s.StockStatus,
+  ProductType = s.ProductType,
+  CategoriesLabel = s.CategoriesLabel,
+  CategoryIds = s.CategoryIds,
+  AttributesJson = s.AttributesJson,
+  PulledUtc = s.PulledUtc,
+  VariationTotalCount = s.VariationTotalCount,
+  VariationInStockCount = s.VariationInStockCount
+WHEN NOT MATCHED BY TARGET THEN INSERT
+(WooProductId, WooVariationId, IsParentGroup, IsVariation, Name, Sku, ParentSku, ParentName,
+ Status, StockStatus, ProductType, CategoriesLabel, CategoryIds, AttributesJson, PulledUtc, FirstSeenUtc,
+ VariationTotalCount, VariationInStockCount)
+VALUES
+(s.WooProductId, s.WooVariationId, s.IsParentGroup, s.IsVariation, s.Name, s.Sku, s.ParentSku, s.ParentName,
+ s.Status, s.StockStatus, s.ProductType, s.CategoriesLabel, s.CategoryIds, s.AttributesJson, s.PulledUtc, s.FirstSeenUtc,
+ s.VariationTotalCount, s.VariationInStockCount)
+WHEN NOT MATCHED BY SOURCE THEN DELETE
+OUTPUT $action;";
+
+                        using (var rdr = cmd.ExecuteReader())
+                        {
+                            while (rdr.Read())
+                            {
+                                string action = Convert.ToString(rdr[0]);
+                                if (string.Equals(action, "INSERT", StringComparison.OrdinalIgnoreCase))
+                                    inserted++;
+                            }
+                        }
+                    }
+
+                    tx.Commit();
+                }
+            }
+
+            return inserted;
+        }
+
+        private static string GetSqlConnectionString()
+        {
+            string cs = ConfigurationManager.ConnectionStrings["TrackerDataSQL"]?.ConnectionString;
+            if (string.IsNullOrWhiteSpace(cs))
+                cs = ConfigurationManager.ConnectionStrings[SystemConstants.DatabaseConstants.ConnectionStringName]?.ConnectionString;
+            if (string.IsNullOrWhiteSpace(cs))
+                throw new ConfigurationErrorsException("No SQL connection string found.");
+            return cs;
+        }
+
+        private static DataTable BuildPullDataTable(IList<WooProductDto> products, DateTime pullStartedUtc)
+        {
+            var table = new DataTable();
+            table.Columns.Add("WooProductId", typeof(long));
+            table.Columns.Add("WooVariationId", typeof(long));
+            table.Columns.Add("IsParentGroup", typeof(bool));
+            table.Columns.Add("IsVariation", typeof(bool));
+            table.Columns.Add("Name", typeof(string));
+            table.Columns.Add("Sku", typeof(string));
+            table.Columns.Add("ParentSku", typeof(string));
+            table.Columns.Add("ParentName", typeof(string));
+            table.Columns.Add("Status", typeof(string));
+            table.Columns.Add("StockStatus", typeof(string));
+            table.Columns.Add("ProductType", typeof(string));
+            table.Columns.Add("CategoriesLabel", typeof(string));
+            table.Columns.Add("CategoryIds", typeof(string));
+            table.Columns.Add("AttributesJson", typeof(string));
+            table.Columns.Add("PulledUtc", typeof(DateTime));
+            table.Columns.Add("FirstSeenUtc", typeof(DateTime));
+            table.Columns.Add("VariationTotalCount", typeof(int));
+            table.Columns.Add("VariationInStockCount", typeof(int));
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in products)
             {
                 if (p == null)
                     continue;
-                string key = CacheKey(p.Id, ResolveVariationId(p));
-                incomingKeys.Add(key);
-                if (existingFirstSeen.ContainsKey(key))
-                    UpdateRow(p, pullStartedUtc, existingFirstSeen[key]);
-                else
-                {
-                    InsertRow(p, pullStartedUtc, pullStartedUtc);
-                    inserted++;
-                }
+                long varId = ResolveVariationId(p);
+                string key = CacheKey(p.Id, varId);
+                if (!seen.Add(key))
+                    continue;
+
+                table.Rows.Add(
+                    p.Id,
+                    varId,
+                    p.IsParentGroup,
+                    varId > 0,
+                    (object)p.Name ?? DBNull.Value,
+                    (object)p.Sku ?? DBNull.Value,
+                    (object)p.ParentSku ?? DBNull.Value,
+                    (object)p.ParentName ?? DBNull.Value,
+                    (object)p.Status ?? DBNull.Value,
+                    (object)p.StockStatus ?? DBNull.Value,
+                    (object)p.Type ?? DBNull.Value,
+                    (object)p.CategoriesLabel ?? DBNull.Value,
+                    JoinIds(p.CategoryIds),
+                    SerializeAttributes(p.Attributes),
+                    pullStartedUtc,
+                    pullStartedUtc,
+                    p.VariationTotalCount,
+                    p.VariationInStockCount);
             }
 
-            DeleteExcept(incomingKeys);
-            return inserted;
+            return table;
         }
 
         public void ClearAll()
@@ -119,7 +286,6 @@ WHERE WooProductId = @P AND WooVariationId = @V";
             };
             ExecNonQuery(sql, p);
 
-            // Parent group rows use variation 0; also stamp ParentSku on children when writing the parent SKU.
             if (varId == 0 && !string.IsNullOrWhiteSpace(sku))
             {
                 const string childSql = @"
@@ -132,108 +298,6 @@ WHERE WooProductId = @P AND WooVariationId <> 0";
                     new DBParameter { ParamName = "@P", DataValue = productId, DataDbType = DbType.Int64 }
                 });
             }
-        }
-
-        private void InsertRow(WooProductDto p, DateTime pulledUtc, DateTime firstSeenUtc)
-        {
-            long varId = ResolveVariationId(p);
-            const string sql = @"
-INSERT INTO WooCatalogCacheTbl
-(WooProductId, WooVariationId, IsParentGroup, IsVariation, Name, Sku, ParentSku, ParentName,
- Status, StockStatus, ProductType, CategoriesLabel, CategoryIds, AttributesJson, PulledUtc, FirstSeenUtc,
- VariationTotalCount, VariationInStockCount)
-VALUES
-(@WooProductId, @WooVariationId, @IsParentGroup, @IsVariation, @Name, @Sku, @ParentSku, @ParentName,
- @Status, @StockStatus, @ProductType, @CategoriesLabel, @CategoryIds, @AttributesJson, @PulledUtc, @FirstSeenUtc,
- @VariationTotalCount, @VariationInStockCount)";
-            ExecNonQuery(sql, BuildRowParams(p, varId, pulledUtc, firstSeenUtc));
-        }
-
-        private void UpdateRow(WooProductDto p, DateTime pulledUtc, DateTime firstSeenUtc)
-        {
-            long varId = ResolveVariationId(p);
-            const string sql = @"
-UPDATE WooCatalogCacheTbl SET
- IsParentGroup = @IsParentGroup,
- IsVariation = @IsVariation,
- Name = @Name,
- Sku = @Sku,
- ParentSku = @ParentSku,
- ParentName = @ParentName,
- Status = @Status,
- StockStatus = @StockStatus,
- ProductType = @ProductType,
- CategoriesLabel = @CategoriesLabel,
- CategoryIds = @CategoryIds,
- AttributesJson = @AttributesJson,
- PulledUtc = @PulledUtc,
- VariationTotalCount = @VariationTotalCount,
- VariationInStockCount = @VariationInStockCount
-WHERE WooProductId = @WooProductId AND WooVariationId = @WooVariationId";
-            ExecNonQuery(sql, BuildRowParams(p, varId, pulledUtc, firstSeenUtc, includeFirstSeen: false));
-        }
-
-        private void DeleteExcept(HashSet<string> keepKeys)
-        {
-            if (!TableExists())
-                return;
-            var allKeys = LoadAllKeys();
-            foreach (string key in allKeys)
-            {
-                if (keepKeys.Contains(key))
-                    continue;
-                ParseCacheKey(key, out long productId, out long variationId);
-                ExecNonQuery(
-                    "DELETE FROM WooCatalogCacheTbl WHERE WooProductId = @P AND WooVariationId = @V",
-                    new List<DBParameter>
-                    {
-                        new DBParameter { ParamName = "@P", DataValue = productId, DataDbType = DbType.Int64 },
-                        new DBParameter { ParamName = "@V", DataValue = variationId, DataDbType = DbType.Int64 }
-                    });
-            }
-        }
-
-        private Dictionary<string, DateTime> LoadFirstSeenByKey()
-        {
-            var map = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
-            if (!TableExists())
-                return map;
-
-            EnsureFirstSeenColumn();
-            const string sql = "SELECT WooProductId, WooVariationId, FirstSeenUtc, PulledUtc FROM WooCatalogCacheTbl";
-            using (var db = CreateDb())
-            using (var rdr = db.ExecuteReader(sql))
-            {
-                while (rdr != null && rdr.Read())
-                {
-                    long productId = Convert.ToInt64(rdr["WooProductId"]);
-                    long variationId = Convert.ToInt64(rdr["WooVariationId"]);
-                    DateTime firstSeen = rdr["FirstSeenUtc"] != DBNull.Value
-                        ? Convert.ToDateTime(rdr["FirstSeenUtc"])
-                        : Convert.ToDateTime(rdr["PulledUtc"]);
-                    map[CacheKey(productId, variationId)] = firstSeen;
-                }
-            }
-            return map;
-        }
-
-        private List<string> LoadAllKeys()
-        {
-            var keys = new List<string>();
-            if (!TableExists())
-                return keys;
-            const string sql = "SELECT WooProductId, WooVariationId FROM WooCatalogCacheTbl";
-            using (var db = CreateDb())
-            using (var rdr = db.ExecuteReader(sql))
-            {
-                while (rdr != null && rdr.Read())
-                {
-                    keys.Add(CacheKey(
-                        Convert.ToInt64(rdr["WooProductId"]),
-                        Convert.ToInt64(rdr["WooVariationId"])));
-                }
-            }
-            return keys;
         }
 
         private void EnsureFirstSeenColumn()
@@ -270,51 +334,6 @@ WHERE object_id = OBJECT_ID(N'dbo.WooCatalogCacheTbl') AND name = N'FirstSeenUtc
         private static string CacheKey(long productId, long variationId)
         {
             return productId.ToString(CultureInfo.InvariantCulture) + ":" + variationId.ToString(CultureInfo.InvariantCulture);
-        }
-
-        private static void ParseCacheKey(string key, out long productId, out long variationId)
-        {
-            productId = 0;
-            variationId = 0;
-            if (string.IsNullOrWhiteSpace(key))
-                return;
-            string[] parts = key.Split(':');
-            if (parts.Length != 2)
-                return;
-            long.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out productId);
-            long.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out variationId);
-        }
-
-        private static List<DBParameter> BuildRowParams(
-            WooProductDto p,
-            long varId,
-            DateTime pulledUtc,
-            DateTime firstSeenUtc,
-            bool includeFirstSeen = true)
-        {
-            var parameters = new List<DBParameter>
-            {
-                new DBParameter { ParamName = "@WooProductId", DataValue = p.Id, DataDbType = DbType.Int64 },
-                new DBParameter { ParamName = "@WooVariationId", DataValue = varId, DataDbType = DbType.Int64 },
-                new DBParameter { ParamName = "@IsParentGroup", DataValue = p.IsParentGroup, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@IsVariation", DataValue = varId > 0, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@Name", DataValue = (object)p.Name ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@Sku", DataValue = (object)p.Sku ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ParentSku", DataValue = (object)p.ParentSku ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ParentName", DataValue = (object)p.ParentName ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@Status", DataValue = (object)p.Status ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@StockStatus", DataValue = (object)p.StockStatus ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@ProductType", DataValue = (object)p.Type ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@CategoriesLabel", DataValue = (object)p.CategoriesLabel ?? DBNull.Value, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@CategoryIds", DataValue = JoinIds(p.CategoryIds), DataDbType = DbType.String },
-                new DBParameter { ParamName = "@AttributesJson", DataValue = SerializeAttributes(p.Attributes), DataDbType = DbType.String },
-                new DBParameter { ParamName = "@PulledUtc", DataValue = pulledUtc, DataDbType = DbType.DateTime2 },
-                new DBParameter { ParamName = "@VariationTotalCount", DataValue = p.VariationTotalCount, DataDbType = DbType.Int32 },
-                new DBParameter { ParamName = "@VariationInStockCount", DataValue = p.VariationInStockCount, DataDbType = DbType.Int32 }
-            };
-            if (includeFirstSeen)
-                parameters.Add(new DBParameter { ParamName = "@FirstSeenUtc", DataValue = firstSeenUtc, DataDbType = DbType.DateTime2 });
-            return parameters;
         }
 
         private static WooProductDto ToDto(WooCatalogCacheRow row)

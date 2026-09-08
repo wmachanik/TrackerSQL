@@ -30,9 +30,9 @@ ORDER BY m.AttributeName, m.AttributeOption, m.ItemServiceTypeID";
                 {
                     var row = DbMapper.Map<WooAttributeMap>(rdr);
                     row.MapRole = WooAttributeMapRoles.Normalize(row.MapRole);
-                    if (HasColumn(rdr, "PackagingDesc"))
+                    if (DbMapper.HasColumn(rdr, "PackagingDesc"))
                         row.PackagingDesc = rdr["PackagingDesc"] as string;
-                    if (HasColumn(rdr, "ItemServiceTypeName"))
+                    if (DbMapper.HasColumn(rdr, "ItemServiceTypeName"))
                         row.ItemServiceTypeName = rdr["ItemServiceTypeName"] as string;
                     list.Add(row);
                 }
@@ -50,9 +50,9 @@ ORDER BY m.AttributeName, m.AttributeOption, m.ItemServiceTypeID";
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             const string sql = @"
 INSERT INTO WooAttributeMapTbl
-(AttributeName, AttributeOption, QtyFactor, PackagingID, MapRole, ItemServiceTypeID, IsActive, Notes)
+(AttributeName, AttributeOption, QtyFactor, PackagingID, PrepTypeID, MapRole, ItemServiceTypeID, IsActive, Notes)
 VALUES
-(@AttributeName, @AttributeOption, @QtyFactor, @PackagingID, @MapRole, @ItemServiceTypeID, @IsActive, @Notes);
+(@AttributeName, @AttributeOption, @QtyFactor, @PackagingID, @PrepTypeID, @MapRole, @ItemServiceTypeID, @IsActive, @Notes);
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
             return ExecuteScalar<int>(sql, BuildParams(entity, includeKey: false));
         }
@@ -66,6 +66,7 @@ UPDATE WooAttributeMapTbl SET
  AttributeOption = @AttributeOption,
  QtyFactor = @QtyFactor,
  PackagingID = @PackagingID,
+ PrepTypeID = @PrepTypeID,
  MapRole = @MapRole,
  ItemServiceTypeID = @ItemServiceTypeID,
  IsActive = @IsActive,
@@ -117,6 +118,7 @@ WHERE AttributeName = @AttributeName
                 new DBParameter { ParamName = "@AttributeOption", DataValue = (e.AttributeOption ?? string.Empty).Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@QtyFactor", DataValue = e.QtyFactor <= 0 ? 1.0 : e.QtyFactor, DataDbType = DbType.Double },
                 new DBParameter { ParamName = "@PackagingID", DataValue = DbParamHelpers.FkOrDbNull(e.PackagingID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PrepTypeID", DataValue = DbParamHelpers.FkOrDbNull(e.PrepTypeID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@MapRole", DataValue = WooAttributeMapRoles.Normalize(e.MapRole), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ItemServiceTypeID", DataValue = e.ItemServiceTypeID < 0 ? 0 : e.ItemServiceTypeID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@IsActive", DataValue = e.IsActive, DataDbType = DbType.Boolean },
@@ -126,15 +128,5 @@ WHERE AttributeName = @AttributeName
                 parameters.Add(new DBParameter { ParamName = "@MapID", DataValue = e.MapID, DataDbType = DbType.Int32 });
             return parameters;
         }
-
-        private static bool HasColumn(IDataRecord rdr, string name)
-        {
-            for (int i = 0; i < rdr.FieldCount; i++)
-            {
-                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-    }
+}
 }

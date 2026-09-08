@@ -217,12 +217,11 @@
                 </tr>
             </table>
 
-            <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+            <div class="status-message mt-12" id="pnlStatus" runat="server">
                 <asp:Literal ID="ltrlStatus" Text="" runat="server" />
             </div>
-            <asp:ValidationSummary ID="valContactSave" runat="server" CssClass="status-message status-error"
-                HeaderText="Please fix the following:" DisplayMode="BulletList" ShowSummary="true"
-                style="margin-top: 8px;" />
+            <asp:ValidationSummary ID="valContactSave" runat="server" CssClass="status-message status-error mt-8"
+                HeaderText="Please fix the following:" DisplayMode="BulletList" ShowSummary="true" />
         </ContentTemplate>
     </asp:UpdatePanel>
 
@@ -339,7 +338,7 @@
                     <ContentTemplate>
                         <asp:UpdatePanel ID="upnlNextItems" runat="server" UpdateMode="Conditional">
                             <ContentTemplate>
-                                <div style="padding:4px">
+                                <div class="pad-4">
                                     <asp:GridView ID="gvPrediction" runat="server" CssClass="TblWhite small" AutoGenerateColumns="False">
                                         <Columns>
                                             <asp:BoundField DataField="LastCupCount" HeaderText="Last Cups" />
@@ -361,7 +360,7 @@
                     <ContentTemplate>
                         <asp:UpdatePanel ID="upnlItems" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                             <ContentTemplate>
-                                <div style="padding:4px">
+                                <div class="pad-4">
                                     <asp:GridView ID="gvContactItems" runat="server" AllowSorting="False" CssClass="TblWhite small"
                                         EmptyDataText="no data yet" AutoGenerateColumns="False" AllowPaging="True" PageSize="15"
                                         DataKeyNames="ContactItemUsageLineNo">
@@ -464,7 +463,7 @@
                     <ContentTemplate>
                         <asp:UpdatePanel ID="upnlContactOrders" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                             <ContentTemplate>
-                                <div style="padding:4px">
+                                <div class="pad-4">
                                     <asp:GridView ID="gvContactOrders" runat="server" CssClass="TblWhite small"
                                         AutoGenerateColumns="False" EmptyDataText="no orders yet"
                                         AllowPaging="True" PageSize="15"
@@ -514,7 +513,7 @@
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Waybills" ID="tabpnlWaybills" Visible="false">
                     <HeaderTemplate>Waybills</HeaderTemplate>
                     <ContentTemplate>
-                        <div style="padding:4px">
+                        <div class="pad-4">
                             <asp:GridView ID="gvContactWaybills" runat="server" CssClass="TblWhite small"
                                 AutoGenerateColumns="False" EmptyDataText="no dispatched waybills">
                                 <Columns>
@@ -543,7 +542,7 @@
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Recurring Orders" ID="tabpnlRecurring" Visible="false">
                     <HeaderTemplate>Recurring Orders</HeaderTemplate>
                     <ContentTemplate>
-                        <div style="padding:4px">
+                        <div class="pad-4">
                             <asp:GridView ID="gvContactRecurring" runat="server" CssClass="TblWhite small"
                                 AutoGenerateColumns="False" EmptyDataText="no enabled recurring orders">
                                 <Columns>
@@ -572,7 +571,7 @@
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Repairs" ID="tabpnlRepairs" Visible="false">
                     <HeaderTemplate>Repairs</HeaderTemplate>
                     <ContentTemplate>
-                        <div style="padding:4px">
+                        <div class="pad-4">
                             <asp:GridView ID="gvContactRepairs" runat="server" CssClass="TblWhite small"
                                 AutoGenerateColumns="False" EmptyDataText="no repairs"
                                 AllowPaging="True" PageSize="10">

@@ -102,79 +102,18 @@ namespace TrackerSQL.Pages
         /// </summary>
         private void CaptureReturnUrlIfNeeded()
         {
-            string qsReturn = Request.QueryString["ReturnUrl"];
-            if (!string.IsNullOrWhiteSpace(qsReturn) && TryNormalizeLocalReturnUrl(qsReturn, out string fromQuery))
-            {
-                Session[SESSION_RETURN_URL] = fromQuery;
-                return;
-            }
-
-            if (Request.UrlReferrer != null)
-            {
-                string referrer = Request.UrlReferrer.ToString();
-                if (referrer.IndexOf("ContactDetails.aspx", StringComparison.OrdinalIgnoreCase) < 0
-                    && IsSafeReturnUrl(referrer))
-                {
-                    Session[SESSION_RETURN_URL] = referrer;
-                    return;
-                }
-            }
-
-            if (Session[SESSION_RETURN_URL] == null)
-                Session[SESSION_RETURN_URL] = ResolveUrl(DefaultReturnUrl);
+            ReturnUrlHelper.CaptureIfNeeded(this, SESSION_RETURN_URL, DefaultReturnUrl, "ContactDetails.aspx");
         }
 
         private string GetReturnUrl()
         {
-            string url = Session[SESSION_RETURN_URL] as string;
-            if (string.IsNullOrWhiteSpace(url) || !IsSafeReturnUrl(url))
-                url = ResolveUrl(DefaultReturnUrl);
-            return url;
+            return ReturnUrlHelper.Get(this, SESSION_RETURN_URL, DefaultReturnUrl);
         }
 
         private void ReturnToCaller()
         {
             Response.Redirect(GetReturnUrl(), false);
             Context.ApplicationInstance.CompleteRequest();
-        }
-
-        private bool TryNormalizeLocalReturnUrl(string candidate, out string normalized)
-        {
-            normalized = null;
-            if (string.IsNullOrWhiteSpace(candidate))
-                return false;
-
-            candidate = candidate.Trim();
-            if (candidate.StartsWith("~/") || (candidate.StartsWith("/") && !candidate.StartsWith("//")))
-            {
-                normalized = ResolveUrl(candidate.StartsWith("~/") ? candidate : "~" + candidate);
-                return IsSafeReturnUrl(normalized);
-            }
-
-            if (IsSafeReturnUrl(candidate))
-            {
-                normalized = candidate;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsSafeReturnUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-
-            // Relative app paths
-            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
-                return url.IndexOf("://", StringComparison.Ordinal) < 0;
-
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
-                return false;
-
-            // Same host only (block open redirects)
-            return Request.Url != null
-                && string.Equals(absolute.Host, Request.Url.Host, StringComparison.OrdinalIgnoreCase);
         }
 
         private void DataBindLookups()
@@ -200,23 +139,9 @@ namespace TrackerSQL.Pages
 
         private void SetStatus(string message, bool? isError)
         {
-            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
-
-            if (pnlStatus == null)
-                return;
-
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                pnlStatus.Attributes["class"] = "status-message";
-                return;
-            }
-
-            if (isError == true)
-                pnlStatus.Attributes["class"] = "status-message status-error";
-            else if (isError == false)
-                pnlStatus.Attributes["class"] = "status-message status-success";
-            else
-                pnlStatus.Attributes["class"] = "status-message status-info";
+            StatusMessageHelper.Set(pnlStatus, ltrlStatus, HttpUtility.HtmlEncode(message ?? string.Empty), isError);
+            if (pnlStatus != null && !string.IsNullOrWhiteSpace(message))
+                pnlStatus.Visible = true;
         }
 
         /// <summary>

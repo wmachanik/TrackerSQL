@@ -58,6 +58,59 @@ namespace TrackerSQL.Repositories
                 });
         }
 
+        /// <summary>Prefetch invoice types for many contacts (Delivery Sheet) — one query instead of N.</summary>
+        public Dictionary<int, int> GetInvoiceTypeIdsByContactIds(IEnumerable<int> contactIds)
+        {
+            var map = new Dictionary<int, int>();
+            if (contactIds == null)
+                return map;
+
+            var ids = new List<int>();
+            var seen = new HashSet<int>();
+            foreach (int id in contactIds)
+            {
+                if (id <= 0 || !seen.Add(id))
+                    continue;
+                ids.Add(id);
+            }
+            if (ids.Count == 0)
+                return map;
+
+            // Batched IN clauses (SQL Server parameter limit safety).
+            const int batchSize = 200;
+            for (int offset = 0; offset < ids.Count; offset += batchSize)
+            {
+                int count = Math.Min(batchSize, ids.Count - offset);
+                var parameters = new List<DBParameter>();
+                var names = new List<string>();
+                for (int i = 0; i < count; i++)
+                {
+                    string name = "@C" + i;
+                    names.Add(name);
+                    parameters.Add(new DBParameter
+                    {
+                        ParamName = name,
+                        DataValue = ids[offset + i],
+                        DataDbType = DbType.Int32
+                    });
+                }
+
+                string sql = "SELECT ContactID, InvoiceTypeID FROM ContactsAccInfoTbl WHERE ContactID IN ("
+                    + string.Join(",", names) + ")";
+                using (var rdr = ExecReader(sql, parameters))
+                {
+                    while (rdr != null && rdr.Read())
+                    {
+                        int contactId = Convert.ToInt32(rdr["ContactID"]);
+                        int typeId = rdr["InvoiceTypeID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["InvoiceTypeID"]);
+                        map[contactId] = typeId;
+                    }
+                }
+            }
+
+            return map;
+        }
+
         /// <summary>
         /// Sets only the InvoiceTypeID for a contact. Creates a minimal acc-info row when the
         /// contact does not have one yet, so the change is never silently lost.

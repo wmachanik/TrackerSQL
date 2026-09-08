@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Caching;
 using TrackerSQL.Classes;
@@ -30,7 +32,7 @@ namespace TrackerSQL.Managers
         /// <summary>Run idempotent create/alter once per app domain (not every postback).</summary>
         public WooCommerceSchemaInstaller.EnsureResult EnsureSchemaOnce()
         {
-            const string cacheKey = "WooCommerce.SchemaEnsured.v5";
+            const string cacheKey = "WooCommerce.SchemaEnsured.v10";
             if (HttpRuntime.Cache[cacheKey] != null)
                 return new WooCommerceSchemaInstaller.EnsureResult { Succeeded = true, Message = "Schema already ensured." };
 
@@ -55,6 +57,11 @@ namespace TrackerSQL.Managers
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v3");
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v4");
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v5");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v6");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v7");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v8");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v10");
+            InvalidateIntegrationEnabledCache();
         }
 
         public SystemPreferencesHdr GetPreferencesHeader()
@@ -67,14 +74,31 @@ namespace TrackerSQL.Managers
         /// <summary>True when schema exists and WooCommerce integration is enabled.</summary>
         public bool IsIntegrationEnabled()
         {
+            const string cacheKey = "WooCommerce.IntegrationEnabled";
             try
             {
-                return IsSchemaReady() && GetPreferencesHeader().WooCommerceEnabled;
+                object cached = HttpRuntime.Cache[cacheKey];
+                if (cached is bool)
+                    return (bool)cached;
+
+                bool enabled = IsSchemaReady() && GetPreferencesHeader().WooCommerceEnabled;
+                HttpRuntime.Cache.Insert(
+                    cacheKey,
+                    enabled,
+                    null,
+                    DateTime.UtcNow.AddSeconds(60),
+                    Cache.NoSlidingExpiration);
+                return enabled;
             }
             catch
             {
                 return false;
             }
+        }
+
+        public static void InvalidateIntegrationEnabledCache()
+        {
+            HttpRuntime.Cache.Remove("WooCommerce.IntegrationEnabled");
         }
 
         public WooCommerceSettings GetSettings()
@@ -268,6 +292,9 @@ namespace TrackerSQL.Managers
         public void SaveImportAddressSettings(
             bool includeProvince,
             bool includeCountry,
+            bool deduplicateSuburb,
+            bool stripCapeTown,
+            bool titleCase,
             bool replacePlus27,
             bool formatSaPhone,
             string updatedBy)
@@ -276,13 +303,16 @@ namespace TrackerSQL.Managers
             var settings = _settingsRepo.GetSettings();
             settings.ImportAddressIncludeProvince = includeProvince;
             settings.ImportAddressIncludeCountry = includeCountry;
+            settings.ImportAddressDeduplicateSuburb = deduplicateSuburb;
+            settings.ImportAddressStripCapeTown = stripCapeTown;
+            settings.ImportAddressTitleCase = titleCase;
             settings.ImportPhoneReplacePlus27 = replacePlus27;
             settings.ImportPhoneFormatSa = formatSaPhone;
             _settingsRepo.SaveSettings(settings, updatedBy);
             AppLogger.WriteLog("woo",
                 string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                    "Import address settings: province={0}, country={1}, phone27={2}, phoneFmt={3}",
-                    includeProvince, includeCountry, replacePlus27, formatSaPhone),
+                    "Import address settings: province={0}, country={1}, dedupe={2}, stripCape={3}, titleCase={4}, phone27={5}, phoneFmt={6}",
+                    includeProvince, includeCountry, deduplicateSuburb, stripCapeTown, titleCase, replacePlus27, formatSaPhone),
                 updatedBy);
         }
 
@@ -301,6 +331,113 @@ namespace TrackerSQL.Managers
                 updatedBy);
         }
 
+        public const string DefaultNotePartOrder =
+            "Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated";
+
+        public static readonly string[] NotePartKeys =
+        {
+            "Name", "Gear", "Address", "WooPay", "Email", "CustomerNote", "ContactCreated"
+        };
+
+        public void SaveGeneralImportSettings(
+            string companyNameMode,
+            string noteLineFormat,
+            bool appendTrackingToOrderNotes,
+            string autoPullMode,
+            string notePartOrder,
+            string updatedBy)
+        {
+            EnsureSchema();
+            var settings = _settingsRepo.GetSettings();
+            settings.ImportCompanyNameMode = NormalizeCompanyNameMode(companyNameMode);
+            settings.ImportNoteLineFormat = NormalizeNoteLineFormat(noteLineFormat);
+            settings.AppendTrackingToOrderNotes = appendTrackingToOrderNotes;
+            settings.ImportAutoPullMode = NormalizeAutoPullMode(autoPullMode);
+            settings.ImportNotePartOrder = NormalizeNotePartOrder(notePartOrder);
+            _settingsRepo.SaveSettings(settings, updatedBy);
+            AppLogger.WriteLog("woo",
+                string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "General import settings: companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}",
+                    settings.ImportCompanyNameMode, settings.ImportNoteLineFormat,
+                    appendTrackingToOrderNotes, settings.ImportAutoPullMode, settings.ImportNotePartOrder),
+                updatedBy);
+        }
+
+        public static string NormalizeCompanyNameMode(string mode)
+        {
+            if (string.Equals(mode, "UpdateName", StringComparison.OrdinalIgnoreCase))
+                return "UpdateName";
+            return "CareOfPrefix";
+        }
+
+        public static string NormalizeNoteLineFormat(string format)
+        {
+            if (string.Equals(format, "SkuOnly", StringComparison.OrdinalIgnoreCase))
+                return "SkuOnly";
+            return "SkuAndName";
+        }
+
+        public static string NormalizeAutoPullMode(string mode)
+        {
+            if (string.Equals(mode, "None", StringComparison.OrdinalIgnoreCase))
+                return "None";
+            if (string.Equals(mode, "SinceLastSync", StringComparison.OrdinalIgnoreCase))
+                return "SinceLastSync";
+            if (string.Equals(mode, "ThisWeek", StringComparison.OrdinalIgnoreCase))
+                return "ThisWeek";
+            return "Today";
+        }
+
+        /// <summary>Returns a validated comma-separated note-part order (all known keys, no duplicates).</summary>
+        public static string NormalizeNotePartOrder(string order)
+        {
+            var known = new HashSet<string>(NotePartKeys, StringComparer.OrdinalIgnoreCase);
+            var result = new List<string>();
+            if (!string.IsNullOrWhiteSpace(order))
+            {
+                foreach (string raw in order.Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string key = raw.Trim();
+                    string match = NotePartKeys.FirstOrDefault(k =>
+                        string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+                    if (match != null && !result.Contains(match))
+                        result.Add(match);
+                }
+            }
+
+            foreach (string key in NotePartKeys)
+            {
+                if (!result.Contains(key))
+                    result.Add(key);
+            }
+
+            return string.Join(",", result);
+        }
+
+        public static List<string> ParseNotePartOrder(string order)
+        {
+            return NormalizeNotePartOrder(order)
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => s.Length > 0)
+                .ToList();
+        }
+
+        public static string NotePartDisplayLabel(string key)
+        {
+            switch ((key ?? string.Empty).Trim())
+            {
+                case "Name": return "Name (if available — keep first for ZZName / delivery sheet)";
+                case "Gear": return "Gear / notes-mapped lines (if any)";
+                case "Address": return "Shipping address (if available)";
+                case "WooPay": return "Woo order + payment [#Woo#: pay] (if available)";
+                case "Email": return "Email [#email#] (if available)";
+                case "CustomerNote": return "Woo customer note (if available)";
+                case "ContactCreated": return "Contact created (if a new contact was added)";
+                default: return key;
+            }
+        }
+
         public void CompleteWizard(string updatedBy)
         {
             EnsureSchema();
@@ -316,6 +453,7 @@ namespace TrackerSQL.Managers
             hdr.WooCommerceEnabled = true;
             hdr.WooWizardCompleted = true;
             _prefsRepo.SaveHeader(hdr, updatedBy);
+            InvalidateIntegrationEnabledCache();
             AppLogger.WriteLog("woo", "Setup wizard completed; integration enabled", updatedBy);
         }
 
@@ -329,6 +467,7 @@ namespace TrackerSQL.Managers
             var settings = _settingsRepo.GetSettings();
             settings.IntegrationEnabled = enabled;
             _settingsRepo.SaveSettings(settings, updatedBy);
+            InvalidateIntegrationEnabledCache();
             AppLogger.WriteLog("woo", "Integration enabled=" + enabled, updatedBy);
         }
 

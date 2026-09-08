@@ -13,13 +13,6 @@ namespace TrackerSQL.Managers
 {
     public partial class WooCommerceApiClient
     {
-        public class ApiCredentials
-        {
-            public string StoreBaseUrl { get; set; }
-            public string ConsumerKey { get; set; }
-            public string ConsumerSecret { get; set; }
-        }
-
         public class CategoryPullResult
         {
             public List<WooCategoryDto> Categories { get; set; } = new List<WooCategoryDto>();
@@ -179,6 +172,7 @@ namespace TrackerSQL.Managers
             var results = new List<WooProductDto>();
             parentsScanned = 0;
             hitCatalogCap = false;
+            var variableParents = new List<WooProductDto>();
             int page = 1;
             while (page <= 100 && parentsScanned < maxProducts)
             {
@@ -200,34 +194,9 @@ namespace TrackerSQL.Managers
                     parentsScanned++;
 
                     if (string.Equals(product.Type, "variable", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var variations = GetVariations(creds, product.Id);
-                        var keep = variations.Where(IsCatalogEligible).ToList();
-                        // No in-stock publish variations → skip (do not treat parent as a simple product).
-                        if (keep.Count == 0)
-                            continue;
-
-                        // Parent header so UI can nest variants and choose parent→notes vs variants.
-                        product.IsParentGroup = true;
-                        product.VariationTotalCount = variations.Count;
-                        product.VariationInStockCount = keep.Count;
-                        results.Add(product);
-                        foreach (var v in keep)
-                        {
-                            v.CategoryIds = product.CategoryIds;
-                            v.CategoriesLabel = product.CategoriesLabel;
-                            v.ParentId = product.Id;
-                            v.ParentSku = product.Sku;
-                            v.ParentName = product.Name;
-                            if (string.IsNullOrWhiteSpace(v.Name))
-                                v.Name = product.Name;
-                            results.Add(v);
-                        }
-                    }
+                        variableParents.Add(product);
                     else if (IsCatalogEligible(product))
-                    {
                         results.Add(product);
-                    }
                 }
 
                 if (parentsScanned >= maxProducts)
@@ -239,7 +208,77 @@ namespace TrackerSQL.Managers
                     break;
                 page++;
             }
+
+            AppendVariableProductsParallel(creds, variableParents, results);
             return results;
+        }
+
+        /// <summary>Fetch variations for variable parents with bounded concurrency (shared HttpClient).</summary>
+        private void AppendVariableProductsParallel(
+            ApiCredentials creds,
+            List<WooProductDto> variableParents,
+            List<WooProductDto> results)
+        {
+            if (variableParents == null || variableParents.Count == 0)
+                return;
+
+            const int maxDegree = 6;
+            var bag = new System.Collections.Concurrent.ConcurrentBag<VariablePullResult>();
+            var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+
+            System.Threading.Tasks.Parallel.ForEach(
+                variableParents,
+                new System.Threading.Tasks.ParallelOptions { MaxDegreeOfParallelism = maxDegree },
+                parent =>
+                {
+                    try
+                    {
+                        var variations = GetVariations(creds, parent.Id);
+                        bag.Add(new VariablePullResult
+                        {
+                            Parent = parent,
+                            Keep = variations.Where(IsCatalogEligible).ToList(),
+                            Total = variations.Count
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(ex);
+                    }
+                });
+
+            if (!errors.IsEmpty)
+                throw errors.First();
+
+            foreach (var entry in bag.OrderBy(e => e.Parent.Id))
+            {
+                if (entry.Keep.Count == 0)
+                    continue;
+
+                var product = entry.Parent;
+                product.IsParentGroup = true;
+                product.VariationTotalCount = entry.Total;
+                product.VariationInStockCount = entry.Keep.Count;
+                results.Add(product);
+                foreach (var v in entry.Keep)
+                {
+                    v.CategoryIds = product.CategoryIds;
+                    v.CategoriesLabel = product.CategoriesLabel;
+                    v.ParentId = product.Id;
+                    v.ParentSku = product.Sku;
+                    v.ParentName = product.Name;
+                    if (string.IsNullOrWhiteSpace(v.Name))
+                        v.Name = product.Name;
+                    results.Add(v);
+                }
+            }
+        }
+
+        private sealed class VariablePullResult
+        {
+            public WooProductDto Parent { get; set; }
+            public List<WooProductDto> Keep { get; set; }
+            public int Total { get; set; }
         }
 
         /// <summary>
@@ -520,8 +559,17 @@ namespace TrackerSQL.Managers
 
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
-            // Prefer query auth first for catalog (many hosts strip Authorization).
-            var modes = new[] { "query", "basic" };
+            // Sticky auth: try remembered mode first; default query then basic (many hosts strip Authorization).
+            string preferred = GetPreferredAuthMode(baseUrl);
+            string[] modes;
+            if (string.Equals(preferred, "basic", StringComparison.OrdinalIgnoreCase))
+                modes = new[] { "basic", "query" };
+            else if (string.Equals(preferred, "query", StringComparison.OrdinalIgnoreCase))
+                modes = new[] { "query", "basic" };
+            else
+                modes = new[] { "query", "basic" };
+
+            HttpClient client = SharedClient;
             Exception last = null;
             foreach (string mode in modes)
             {
@@ -536,12 +584,8 @@ namespace TrackerSQL.Managers
                             + "&consumer_secret=" + Uri.EscapeDataString(creds.ConsumerSecret);
                     }
 
-                    using (var handler = new HttpClientHandler { AllowAutoRedirect = true })
-                    using (var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) })
                     using (var request = new HttpRequestMessage(method, url))
                     {
-                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        client.DefaultRequestHeaders.UserAgent.ParseAdd("TrackerSQL-WooClient/3.0");
                         if (mode == "basic")
                         {
                             var authBytes = Encoding.ASCII.GetBytes(creds.ConsumerKey + ":" + creds.ConsumerSecret);
@@ -551,23 +595,27 @@ namespace TrackerSQL.Managers
                         if (jsonBody != null)
                             request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
-                        HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult();
-                        string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                        if (!response.IsSuccessStatusCode)
-                            throw new InvalidOperationException(
-                                "HTTP " + (int)response.StatusCode + " — " + FormatErrorBody(body));
-
-                        IEnumerable<string> totalVals;
-                        if (response.Headers.TryGetValues("X-WP-Total", out totalVals))
+                        using (HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult())
                         {
-                            int parsed;
-                            if (int.TryParse(totalVals.FirstOrDefault(), out parsed))
-                                wpTotal = parsed;
-                        }
+                            string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                            if (!response.IsSuccessStatusCode)
+                                throw new InvalidOperationException(
+                                    "HTTP " + (int)response.StatusCode + " — " + FormatErrorBody(body));
 
-                        if (string.IsNullOrWhiteSpace(body))
-                            return new JObject();
-                        return JToken.Parse(body);
+                            IEnumerable<string> totalVals;
+                            if (response.Headers.TryGetValues("X-WP-Total", out totalVals))
+                            {
+                                int parsed;
+                                if (int.TryParse(totalVals.FirstOrDefault(), out parsed))
+                                    wpTotal = parsed;
+                            }
+
+                            RememberAuthMode(baseUrl, mode);
+
+                            if (string.IsNullOrWhiteSpace(body))
+                                return new JObject();
+                            return JToken.Parse(body);
+                        }
                     }
                 }
                 catch (Exception ex)

@@ -74,6 +74,7 @@ namespace TrackerSQL.Models
     {
         public double QtyFactor { get; set; } = 1;
         public int? PackagingId { get; set; }
+        public int? PrepTypeId { get; set; }
         public string Reason { get; set; }
         public List<string> NoteParts { get; set; } = new List<string>();
         public bool Applied { get; set; }

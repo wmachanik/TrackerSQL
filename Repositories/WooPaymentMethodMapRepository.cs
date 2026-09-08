@@ -47,13 +47,22 @@ namespace TrackerSQL.Repositories
         /// <summary>Match Woo payment method id/title; fallback abbrev max 4 chars from title.</summary>
         public string ResolveAbbrev(string paymentMethod, string paymentMethodTitle)
         {
+            return ResolveAbbrev(paymentMethod, paymentMethodTitle, null);
+        }
+
+        public string ResolveAbbrev(string paymentMethod, string paymentMethodTitle, IList<WooPaymentMethodMap> maps)
+        {
             string hay = ((paymentMethod ?? string.Empty) + " " + (paymentMethodTitle ?? string.Empty)).Trim();
             if (string.IsNullOrEmpty(hay))
                 return "Woo";
 
-            foreach (var map in GetAllOrdered(includeInactive: false))
+            IEnumerable<WooPaymentMethodMap> list = maps
+                ?? GetAllOrdered(includeInactive: false);
+            foreach (var map in list)
             {
                 if (map == null || string.IsNullOrWhiteSpace(map.MethodMatch))
+                    continue;
+                if (!map.IsActive)
                     continue;
                 if (hay.IndexOf(map.MethodMatch.Trim(), StringComparison.OrdinalIgnoreCase) >= 0)
                     return TrimAbbrev(map.PaymentAbbrev);

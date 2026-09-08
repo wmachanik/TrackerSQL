@@ -39,7 +39,7 @@
                     <asp:FormView ID="fvOrderDone" runat="server" DataSourceID="odsOrderDoneHeader"
                         CssClass="detail-form-table" Width="100%">
                         <ItemTemplate>
-                            <table class="TblCoffee detail-form-table" style="width: 100%; margin-top: 8px;">
+                            <table class="TblCoffee detail-form-table detail-form-table-full">
                                 <tr>
                                     <td>Company</td>
                                     <td>
@@ -56,7 +56,7 @@
                         </ItemTemplate>
                     </asp:FormView>
 
-                    <div class="results-container" style="margin-top: 12px;">
+                    <div class="results-container mt-12">
                         <asp:GridView ID="gvOrderDoeLines" runat="server" AllowSorting="True" AutoGenerateColumns="False"
                             DataKeyNames="TOLineID" CssClass="results-table" DataSourceID="odsOrderDoneLines"
                             EmptyDataText="No lines on this delivery.">
@@ -106,13 +106,13 @@
                         </asp:GridView>
                     </div>
 
-                    <table class="TblCoffee detail-form-table" style="width: 100%; margin-top: 16px;">
+                    <table class="TblCoffee detail-form-table detail-form-table-spaced">
                         <tr>
-                            <td style="width: 8em;">Stock (kg)</td>
-                            <td style="width: 8em;">
+                            <td class="col-width-8em">Stock (kg)</td>
+                            <td class="col-width-8em">
                                 <asp:TextBox ID="tbxStock" runat="server" Width="5em" CssClass="small" />
                             </td>
-                            <td rowspan="4" style="vertical-align: top; padding-left: 16px;">
+                            <td rowspan="4" class="align-top-pl-16">
                                 <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="small"
                                     AutoPostBack="true" OnSelectedIndexChanged="rbtnSendConfirm_SelectedIndexChanged">
                                     <asp:ListItem Text="No confirmation email" Value="none" />
@@ -131,15 +131,15 @@
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <asp:Panel ID="pnlTracking" runat="server" Visible="false" CssClass="page-tone-subtitle" style="margin-top: 8px;">
+                                <asp:Panel ID="pnlTracking" runat="server" Visible="false" CssClass="page-tone-subtitle mt-8">
                                     <asp:Label ID="lblTracking" runat="server" AssociatedControlID="tbxTrackingNumber"
                                         Text="Tracking / waybill" />
                                     <asp:TextBox ID="tbxTrackingNumber" runat="server" Width="16em" MaxLength="100"
-                                        CssClass="small" style="display: block; margin-top: 4px;" />
+                                        CssClass="small block-mt-4" />
                                     <asp:RequiredFieldValidator ID="rfvTracking" runat="server" ControlToValidate="tbxTrackingNumber"
                                         Enabled="false" Display="Dynamic" CssClass="status-error"
                                         ErrorMessage="Tracking / waybill number is required for Pargo and courier." />
-                                    <p class="page-tone-subtitle" style="margin: 6px 0 0; font-size: 0.9em;">
+                                    <p class="page-tone-subtitle subtitle-tight">
                                         Required for Pargo / courier. Tracker emails this number. If the order came from WooCommerce,
                                         a customer note is added in Woo — the Woo order is <strong>not</strong> completed.
                                     </p>
@@ -148,7 +148,7 @@
                         </tr>
                     </table>
 
-                    <div class="button-row" style="margin-top: 16px;">
+                    <div class="button-row mt-16">
                         <asp:Button ID="btnDone" Text="Done" runat="server" AccessKey="D" CssClass="filter-panel-btn"
                             OnClick="btnDone_Click" ToolTip="Mark order delivered and update usage (Alt+D)" />
                         <span class="image-button" title="Cancel and return to delivery sheet">
@@ -163,9 +163,9 @@
                 </asp:Panel>
 
                 <asp:Panel ID="pnlCustomerDetailsUpdated" runat="server" Visible="false">
-                    <h2 class="page-tone-subtitle" style="font-size: 1.1em; margin: 12px 0 8px;">Contact updated</h2>
-                    <asp:Label ID="tbxCustomerName" Text="" runat="server" CssClass="small" style="font-weight: 600;" />
-                    <div class="results-container" style="margin-top: 12px; overflow-x: auto;">
+                    <h2 class="page-tone-subtitle section-heading-sm">Contact updated</h2>
+                    <asp:Label ID="tbxCustomerName" Text="" runat="server" CssClass="small font-semibold" />
+                    <div class="results-container mt-12 scroll-x">
                         <asp:DataGrid ID="dgCustomerUsage" runat="server" CssClass="results-table small" Width="100%">
                             <Columns>
                                 <asp:BoundColumn DataField="CustomerID" Visible="false" />
@@ -183,13 +183,13 @@
                             </Columns>
                         </asp:DataGrid>
                     </div>
-                    <div class="button-row" style="margin-top: 16px;">
+                    <div class="button-row mt-16">
                         <asp:Button ID="btnReturnToDeliveres" Text="Return to Delivery Sheet" AccessKey="D"
                             runat="server" CssClass="filter-panel-btn" OnClick="btnReturnToDeliveres_Click" />
                     </div>
                 </asp:Panel>
 
-                <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;">
+                <div class="status-message mt-12" id="pnlStatus" runat="server">
                     <asp:Literal ID="ltrlStatus" runat="server" />
                 </div>
             </asp:Panel>

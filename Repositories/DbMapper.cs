@@ -52,5 +52,17 @@ namespace TrackerSQL.Repositories
 
             return inst;
         }
+
+        public static bool HasColumn(IDataRecord rdr, string name)
+        {
+            if (rdr == null || string.IsNullOrEmpty(name))
+                return false;
+            for (int i = 0; i < rdr.FieldCount; i++)
+            {
+                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
     }
 }

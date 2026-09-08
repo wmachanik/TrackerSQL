@@ -48,10 +48,26 @@ namespace TrackerSQL.Tools
                 SyncModePanels();
                 BindLastSyncHint();
                 BindConflicts();
-                // Always restore last pull (filters + preview) from session when returning
-                // from Order Detail / Contact / menu — not only when ?restore=1 is present.
-                if (TryRestorePreviewFromSession())
+
+                // Only restore when returning from Order Detail / Contact (?restore=1).
+                // A normal visit (menu / toolbar) uses General auto-pull (default: today's orders)
+                // so the mode combo and preview stay in sync.
+                bool wantRestore = string.Equals(
+                    Request.QueryString["restore"], "1", StringComparison.OrdinalIgnoreCase);
+
+                if (wantRestore && TryRestorePreviewFromSession() && GetPreviewRows().Count > 0)
+                {
+                    SyncModePanels();
                     SetStatus("Preview restored — continue importing without re-pulling.", false);
+                }
+                else
+                {
+                    Session.Remove(SessionUiState);
+                    ViewState[VsPreview] = null;
+                    ApplyConfiguredPullModeToDropdown();
+                    SyncModePanels();
+                    TryAutoPullOnOpen();
+                }
             }
         }
 
@@ -65,7 +81,34 @@ namespace TrackerSQL.Tools
         protected void ddlMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             SyncModePanels();
-            SaveUiStateToSession(GetPreviewRows(), keepFiltersWhenEmpty: true);
+
+            string mode = ddlMode.SelectedValue ?? string.Empty;
+            // Modes that need extra fields: show panels first; pull when values are already filled.
+            if (string.Equals(mode, "Specific", StringComparison.OrdinalIgnoreCase))
+            {
+                SaveUiStateToSession(GetPreviewRows(), keepFiltersWhenEmpty: true);
+                if (ParseLong(txtOrderId.Text) > 0)
+                    PullPreviewFromUi("Mode changed — ");
+                else
+                    SetStatus("Enter a Woo order #, then Pull preview (or change mode again after entering it).", false);
+                upnlWooOrderImport.Update();
+                return;
+            }
+
+            if (string.Equals(mode, "DateRange", StringComparison.OrdinalIgnoreCase))
+            {
+                SaveUiStateToSession(GetPreviewRows(), keepFiltersWhenEmpty: true);
+                if (ParseDate(txtFromDate.Text).HasValue && ParseDate(txtToDate.Text).HasValue)
+                    PullPreviewFromUi("Mode changed — ");
+                else
+                    SetStatus("Choose From and To dates, then Pull preview.", false);
+                upnlWooOrderImport.Update();
+                return;
+            }
+
+            // Today / This week / Latest / Since last sync — pull immediately.
+            PullPreviewFromUi("Mode changed — ");
+            upnlWooOrderImport.Update();
         }
 
         protected void btnClearPreview_Click(object sender, EventArgs e)
@@ -76,6 +119,38 @@ namespace TrackerSQL.Tools
             BindPreview();
             pnlResults.Visible = false;
             SetStatus("Preview cleared.", false);
+        }
+
+        protected void btnRefreshFromWoo_Click(object sender, EventArgs e)
+        {
+            var existing = GetPreviewRows();
+            var ids = existing.Select(r => r.WooOrderId).Where(id => id > 0).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                SetStatus("Nothing to refresh — pull a preview first.", true);
+                return;
+            }
+
+            try
+            {
+                var rows = _manager.RefreshPreviewFromWoo(ids, out string error);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    SetStatus(error, true);
+                    return;
+                }
+
+                StorePreviewRows(rows);
+                gvPreview.PageIndex = 0;
+                BindPreview();
+                SaveUiStateToSession(rows);
+                SetStatus(string.Format(CultureInfo.InvariantCulture,
+                    "Refreshed {0} order(s) from Woo.", rows.Count), false);
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message, true);
+            }
         }
 
         protected void chkUpdateExisting_CheckedChanged(object sender, EventArgs e)
@@ -176,6 +251,58 @@ namespace TrackerSQL.Tools
             return string.Equals(wooStatus?.Trim(), "completed", StringComparison.OrdinalIgnoreCase);
         }
 
+        private void ApplyConfiguredPullModeToDropdown()
+        {
+            string mode = WooCommerceSettingsManager.NormalizeAutoPullMode(
+                _settings.GetSettings()?.ImportAutoPullMode);
+            if (string.Equals(mode, "None", StringComparison.OrdinalIgnoreCase))
+                mode = "Today";
+            if (ddlMode.Items.FindByValue(mode) != null)
+            {
+                ddlMode.ClearSelection();
+                ddlMode.SelectedValue = mode;
+            }
+        }
+
+        private void TryAutoPullOnOpen()
+        {
+            string autoMode = WooCommerceSettingsManager.NormalizeAutoPullMode(
+                _settings.GetSettings()?.ImportAutoPullMode);
+            if (string.Equals(autoMode, "None", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (ddlMode.Items.FindByValue(autoMode) != null)
+                ddlMode.SelectedValue = autoMode;
+            SyncModePanels();
+
+            try
+            {
+                var mode = ParseMode(ddlMode.SelectedValue);
+                var rows = _manager.PullPreview(mode, 0, null, null, out string error);
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    SetStatus(error, true);
+                    return;
+                }
+
+                StorePreviewRows(rows);
+                gvPreview.PageIndex = 0;
+                BindPreview();
+                SaveUiStateToSession(rows);
+                SetStatus(string.Format(CultureInfo.InvariantCulture,
+                    "Auto-pulled {0} order(s) ({1}).",
+                    rows.Count,
+                    ddlMode.SelectedItem != null ? ddlMode.SelectedItem.Text : autoMode), false);
+                WooCommerceUserLog.Write("Order import auto-pull on open",
+                    string.Format(CultureInfo.InvariantCulture, "mode={0}, count={1}", mode, rows.Count),
+                    UserName());
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message, true);
+            }
+        }
+
         private void SyncModePanels()
         {
             string mode = ddlMode.SelectedValue ?? string.Empty;
@@ -191,12 +318,12 @@ namespace TrackerSQL.Tools
                 if (s.LastOrdersSyncUtc.HasValue)
                 {
                     litLastSync.Text = string.Format(CultureInfo.InvariantCulture,
-                        "Last orders sync (UTC): {0:yyyy-MM-dd HH:mm}. “Since last import sync” pulls orders after this time.",
+                        "Last orders sync (UTC): {0:yyyy-MM-dd HH:mm}. Default pull is today’s orders (app local time). “Since last import sync” uses this cursor.",
                         s.LastOrdersSyncUtc.Value);
                 }
                 else
                 {
-                    litLastSync.Text = "No previous order import sync — “Since last import sync” defaults to the last 30 days.";
+                    litLastSync.Text = "No previous order import sync recorded. Default pull is today’s orders.";
                 }
             }
             catch
@@ -206,6 +333,11 @@ namespace TrackerSQL.Tools
         }
 
         protected void btnPull_Click(object sender, EventArgs e)
+        {
+            PullPreviewFromUi(null);
+        }
+
+        private void PullPreviewFromUi(string statusPrefix)
         {
             try
             {
@@ -221,11 +353,13 @@ namespace TrackerSQL.Tools
                     return;
                 }
 
-                ViewState[VsPreview] = rows;
+                StorePreviewRows(rows);
                 gvPreview.PageIndex = 0;
                 BindPreview();
                 SaveUiStateToSession(rows);
-                SetStatus(string.Format(CultureInfo.InvariantCulture, "Pulled {0} order(s) for preview.", rows.Count), false);
+                string prefix = string.IsNullOrEmpty(statusPrefix) ? string.Empty : statusPrefix;
+                SetStatus(string.Format(CultureInfo.InvariantCulture,
+                    "{0}Pulled {1} order(s) for preview.", prefix, rows.Count), false);
                 WooCommerceUserLog.Write("Order import pull preview (UI)",
                     string.Format(CultureInfo.InvariantCulture, "mode={0}, count={1}", mode, rows.Count),
                     UserName());
@@ -307,21 +441,148 @@ namespace TrackerSQL.Tools
             {
                 try
                 {
-                    int contactId = _manager.UpdateContactFromWooOrder(wooOrderId, UserName(), out string error);
-                    if (contactId <= 0)
-                    {
-                        SetStatus(error ?? "Could not update contact.", true);
-                        return;
-                    }
-
-                    RefreshPreviewAfterImport(wooOrderId);
-                    SaveUiStateToSession(GetPreviewRows());
-                    RedirectToContactDetails(contactId);
+                    ShowContactUpdatePrompt(wooOrderId);
                 }
                 catch (Exception ex)
                 {
                     SetStatus(ex.Message, true);
                 }
+            }
+        }
+
+        protected string GetUpdateContactClientClick(object dataItem)
+        {
+            return "return true;";
+        }
+
+        private void ShowContactUpdatePrompt(long wooOrderId)
+        {
+            var offer = _manager.GetContactUpdateOffer(wooOrderId, out string error);
+            if (!string.IsNullOrWhiteSpace(error) && !offer.HasAnyOffer)
+            {
+                SetStatus(error ?? "Nothing to update.", true);
+                return;
+            }
+
+            litCompanyPromptTitle.Text = "Update contact from Woo";
+            litCompanyPromptBody.Text = string.IsNullOrWhiteSpace(offer.WooOrderNumber)
+                ? "Choose which fields to update from this Woo order."
+                : "Woo #" + offer.WooOrderNumber + " — choose which fields to update.";
+
+            hdnPendingUpdateWooOrderId.Value = wooOrderId.ToString(CultureInfo.InvariantCulture);
+
+            pnlCompanyChoice.Visible = offer.ShowCompanyChoice;
+            if (offer.ShowCompanyChoice)
+            {
+                litCompanyPromptBody.Text = MessageProvider.Format(
+                    MessageKeys.WooCommerce.ImportCompanyPromptBody,
+                    string.IsNullOrWhiteSpace(offer.WooCompanyName) ? "(none)" : offer.WooCompanyName.Trim(),
+                    string.IsNullOrWhiteSpace(offer.ContactCompanyName) ? "(blank)" : offer.ContactCompanyName.Trim());
+
+                string defaultMode = WooCommerceSettingsManager.NormalizeCompanyNameMode(
+                    offer.DefaultCompanyNameMode ?? _settings.GetSettings()?.ImportCompanyNameMode);
+                rblCompanyNameMode.Items.Clear();
+                rblCompanyNameMode.Items.Add(new ListItem(
+                    MessageProvider.Get(MessageKeys.WooCommerce.ImportCompanyPromptCareOf), "CareOfPrefix"));
+                rblCompanyNameMode.Items.Add(new ListItem(
+                    MessageProvider.Get(MessageKeys.WooCommerce.ImportCompanyPromptUpdate), "UpdateName"));
+                var selected = rblCompanyNameMode.Items.FindByValue(defaultMode);
+                if (selected != null)
+                    selected.Selected = true;
+                else
+                    rblCompanyNameMode.SelectedIndex = 0;
+            }
+
+            chkUpdateAddress.Visible = offer.OfferAddress;
+            chkUpdateAddress.Checked = offer.OfferAddress;
+            chkUpdateAddress.Text = "Update billing address / postcode / area";
+            litUpdateAddressDetail.Text = offer.OfferAddress
+                ? HtmlEncodeDetail(offer.AddressFrom, offer.AddressTo)
+                : string.Empty;
+
+            chkUpdatePhone.Visible = offer.OfferPhone;
+            chkUpdatePhone.Checked = offer.OfferPhone;
+            chkUpdatePhone.Text = "Update Tel (phone) number";
+            litUpdatePhoneDetail.Text = offer.OfferPhone
+                ? HtmlEncodeDetail(offer.PhoneFrom, offer.PhoneTo)
+                : string.Empty;
+
+            pnlPhoneSkipHint.Visible = !string.IsNullOrWhiteSpace(offer.PhoneSkipReason);
+            litPhoneSkipHint.Text = offer.PhoneSkipReason ?? string.Empty;
+
+            chkUpdateAltEmail.Visible = offer.OfferAltEmail;
+            chkUpdateAltEmail.Checked = offer.OfferAltEmail;
+            chkUpdateAltEmail.Text = "Update alternative email";
+            litUpdateAltEmailDetail.Text = offer.OfferAltEmail
+                ? HtmlEncodeDetail(offer.AltEmailFrom, offer.AltEmailTo)
+                : string.Empty;
+
+            chkUpdatePersonNames.Visible = offer.OfferPersonNames;
+            chkUpdatePersonNames.Checked = offer.OfferPersonNames;
+            chkUpdatePersonNames.Text = "Update first / last name";
+            litUpdatePersonNamesDetail.Text = offer.OfferPersonNames
+                ? (offer.PersonNamesSummary ?? string.Empty)
+                : string.Empty;
+
+            btnCompanyPromptConfirm.Text = MessageProvider.Get(MessageKeys.WooCommerce.ImportCompanyPromptConfirm);
+            btnCompanyPromptCancel.Text = MessageProvider.Get(MessageKeys.WooCommerce.ImportCompanyPromptCancel);
+            pnlCompanyNamePrompt.Visible = true;
+        }
+
+        private static string HtmlEncodeDetail(string from, string to)
+        {
+            string f = string.IsNullOrWhiteSpace(from) ? "(blank)" : from.Trim();
+            string t = string.IsNullOrWhiteSpace(to) ? "(blank)" : to.Trim();
+            return System.Web.HttpUtility.HtmlEncode(f + " → " + t);
+        }
+
+        protected void btnCompanyPromptConfirm_Click(object sender, EventArgs e)
+        {
+            long wooOrderId = ParseLong(hdnPendingUpdateWooOrderId.Value);
+            var options = new WooContactUpdateOptions
+            {
+                CompanyNameMode = pnlCompanyChoice.Visible ? rblCompanyNameMode.SelectedValue : null,
+                UpdateCompany = pnlCompanyChoice.Visible,
+                UpdateAddress = chkUpdateAddress.Visible && chkUpdateAddress.Checked,
+                UpdatePhone = chkUpdatePhone.Visible && chkUpdatePhone.Checked,
+                UpdateAltEmail = chkUpdateAltEmail.Visible && chkUpdateAltEmail.Checked,
+                UpdatePersonNames = chkUpdatePersonNames.Visible && chkUpdatePersonNames.Checked
+            };
+            pnlCompanyNamePrompt.Visible = false;
+            hdnPendingUpdateWooOrderId.Value = string.Empty;
+            if (wooOrderId <= 0)
+            {
+                SetStatus("Invalid Woo order.", true);
+                return;
+            }
+            CompleteUpdateContact(wooOrderId, options);
+        }
+
+        protected void btnCompanyPromptCancel_Click(object sender, EventArgs e)
+        {
+            pnlCompanyNamePrompt.Visible = false;
+            hdnPendingUpdateWooOrderId.Value = string.Empty;
+            SetStatus("Contact update cancelled.", false);
+        }
+
+        private void CompleteUpdateContact(long wooOrderId, WooContactUpdateOptions options)
+        {
+            try
+            {
+                int contactId = _manager.UpdateContactFromWooOrder(wooOrderId, options, UserName(), out string error);
+                if (contactId <= 0)
+                {
+                    SetStatus(error ?? "Could not update contact.", true);
+                    return;
+                }
+
+                RefreshPreviewAfterImport(wooOrderId);
+                SaveUiStateToSession(GetPreviewRows());
+                RedirectToContactDetails(contactId);
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message, true);
             }
         }
 
@@ -369,6 +630,19 @@ namespace TrackerSQL.Tools
                 ?? new List<WooOrderImportPreviewRow>();
         }
 
+        private void StorePreviewRows(List<WooOrderImportPreviewRow> rows)
+        {
+            if (rows != null)
+            {
+                foreach (var r in rows)
+                {
+                    if (r != null)
+                        r.RawJson = null;
+                }
+            }
+            ViewState[VsPreview] = rows;
+        }
+
         private void RefreshPreviewAfterImport(long wooOrderId)
         {
             var rows = GetPreviewRows();
@@ -392,7 +666,7 @@ namespace TrackerSQL.Tools
                 }
             }
 
-            ViewState[VsPreview] = rows;
+            StorePreviewRows(rows);
             BindPreview();
             SaveUiStateToSession(rows);
         }
@@ -410,6 +684,7 @@ namespace TrackerSQL.Tools
                 var existing = Session[SessionUiState] as WooOrderImportUiState
                     ?? new WooOrderImportUiState();
                 existing.WooOrderIds = existing.WooOrderIds ?? new List<long>();
+                existing.PreviewRows = existing.PreviewRows ?? new List<WooOrderImportPreviewRow>();
                 existing.PageIndex = 0;
                 existing.Mode = ddlMode.SelectedValue;
                 existing.OrderId = txtOrderId.Text;
@@ -420,9 +695,16 @@ namespace TrackerSQL.Tools
                 return;
             }
 
+            foreach (var r in rows)
+            {
+                if (r != null)
+                    r.RawJson = null;
+            }
+
             Session[SessionUiState] = new WooOrderImportUiState
             {
                 WooOrderIds = rows.Select(r => r.WooOrderId).ToList(),
+                PreviewRows = rows,
                 PageIndex = gvPreview.PageIndex,
                 Mode = ddlMode.SelectedValue,
                 OrderId = txtOrderId.Text,
@@ -444,7 +726,10 @@ namespace TrackerSQL.Tools
             {
                 if (!string.IsNullOrWhiteSpace(state.Mode)
                     && ddlMode.Items.FindByValue(state.Mode) != null)
+                {
+                    ddlMode.ClearSelection();
                     ddlMode.SelectedValue = state.Mode;
+                }
             }
             catch
             {
@@ -457,21 +742,16 @@ namespace TrackerSQL.Tools
             chkUpdateExisting.Checked = state.UpdateExisting;
             SyncModePanels();
 
-            if (state.WooOrderIds == null || state.WooOrderIds.Count == 0)
-                return !string.IsNullOrWhiteSpace(state.Mode);
-
-            var rows = new List<WooOrderImportPreviewRow>();
-            foreach (long wooOrderId in state.WooOrderIds)
+            var rows = state.PreviewRows;
+            if (rows == null || rows.Count == 0)
             {
-                var row = _manager.GetPreviewForOrder(wooOrderId, out _);
-                if (row != null)
-                    rows.Add(row);
+                // Legacy session: IDs only — restore filters; user can Refresh from Woo.
+                if (state.WooOrderIds == null || state.WooOrderIds.Count == 0)
+                    return !string.IsNullOrWhiteSpace(state.Mode);
+                return true;
             }
 
-            if (rows.Count == 0)
-                return true;
-
-            ViewState[VsPreview] = rows;
+            StorePreviewRows(rows);
             int page = state.PageIndex;
             if (page < 0)
                 page = 0;
@@ -504,10 +784,10 @@ namespace TrackerSQL.Tools
         private static WooOrderImportMode ParseMode(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return WooOrderImportMode.SinceLastSync;
+                return WooOrderImportMode.Today;
             if (Enum.TryParse(value, true, out WooOrderImportMode mode))
                 return mode;
-            return WooOrderImportMode.SinceLastSync;
+            return WooOrderImportMode.Today;
         }
 
         private static long ParseLong(string text)
@@ -534,9 +814,7 @@ namespace TrackerSQL.Tools
 
         private void SetStatus(string message, bool isError)
         {
-            pnlStatus.Visible = !string.IsNullOrWhiteSpace(message);
-            litStatus.Text = message ?? string.Empty;
-            pnlStatus.CssClass = isError ? "status-message status-error" : "status-message status-info";
+            StatusMessageHelper.Set(pnlStatus, litStatus, message, isError ? true : (bool?)null);
         }
 
         protected string FormatWarnings(object conflictsObj, object warningsObj)

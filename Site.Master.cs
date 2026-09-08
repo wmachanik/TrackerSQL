@@ -38,29 +38,32 @@ namespace TrackerSQL
 
             BindAppVersionLabels();
             BindApplicationErrorBanner();
-            SyncWooMappingMenuItem();
-            SyncWooOrderImportMenuItem();
+            bool wooOn = IsWooIntegrationEnabledCached();
+            SyncWooMappingMenuItem(wooOn);
+            SyncWooOrderImportMenuItem(wooOn);
             HighlightCurrentMenuItem();
 
             sw.Stop();
             RequestTiming.Write("MASTER PAGE", sw.ElapsedMilliseconds + " ms");
         }
 
-        /// <summary>Hide Woo Mapping until WooCommerce integration is enabled.</summary>
-        private void SyncWooMappingMenuItem()
+        private static bool IsWooIntegrationEnabledCached()
         {
-            if (NavigationMenu == null)
-                return;
-
-            bool wooOn = false;
             try
             {
-                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
+                return new WooCommerceSettingsManager().IsIntegrationEnabled();
             }
             catch
             {
-                wooOn = false;
+                return false;
             }
+        }
+
+        /// <summary>Hide Woo Mapping until WooCommerce integration is enabled.</summary>
+        private void SyncWooMappingMenuItem(bool wooOn)
+        {
+            if (NavigationMenu == null)
+                return;
 
             MenuItem item = FindMenuItemByValue(NavigationMenu.Items, "WooMapping");
             if (item == null)
@@ -82,20 +85,10 @@ namespace TrackerSQL
         }
 
         /// <summary>Hide Woo Order Import under Orders until WooCommerce integration is enabled.</summary>
-        private void SyncWooOrderImportMenuItem()
+        private void SyncWooOrderImportMenuItem(bool wooOn)
         {
             if (NavigationMenu == null)
                 return;
-
-            bool wooOn = false;
-            try
-            {
-                wooOn = new WooCommerceSettingsManager().IsIntegrationEnabled();
-            }
-            catch
-            {
-                wooOn = false;
-            }
 
             MenuItem ordersMenu = FindMenuItemByValue(NavigationMenu.Items, "Orders");
             if (ordersMenu == null)

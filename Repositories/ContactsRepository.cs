@@ -82,7 +82,7 @@ WHERE ContactID = @ContactID";
 
         private static T GetValue<T>(IDataRecord r, string name)
         {
-            if (!HasColumn(r, name)) return default(T);
+            if (!DbMapper.HasColumn(r, name)) return default(T);
             object val = r[name];
             if (val == null || val == DBNull.Value) return default(T);
             try
@@ -97,15 +97,7 @@ WHERE ContactID = @ContactID";
             }
             catch { return default(T); }
         }
-
-        private static bool HasColumn(IDataRecord r, string name)
-        {
-            for (int i = 0; i < r.FieldCount; i++)
-                if (string.Equals(r.GetName(i), name, StringComparison.OrdinalIgnoreCase)) return true;
-            return false;
-        }
-
-        private Contact Map(IDataReader r)
+private Contact Map(IDataReader r)
         {
             // Align with TableMigrationReport: ContactsTbl column names
             var c = new Contact

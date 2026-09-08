@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace TrackerSQL.Models
 {
@@ -8,7 +9,11 @@ namespace TrackerSQL.Models
         Specific = 0,
         Last = 1,
         SinceLastSync = 2,
-        DateRange = 3
+        DateRange = 3,
+        /// <summary>Orders created today in app local time (SAST).</summary>
+        Today = 4,
+        /// <summary>Orders from Monday of the current week through end of Sunday (app local).</summary>
+        ThisWeek = 5
     }
 
     [Serializable]
@@ -22,6 +27,10 @@ namespace TrackerSQL.Models
         public string TrackerSku { get; set; }
         public double TrackerQty { get; set; }
         public int? PackagingId { get; set; }
+        /// <summary>Tracker ItemPrepTypesTbl id from Woo Prep Type (e.g. Whole beans → beans).</summary>
+        public int? PrepTypeId { get; set; }
+        /// <summary>When true, do not copy packaging from a prior Tracker order (Woo already chose prep/pack).</summary>
+        public bool SuppressPriorPackagingInfer { get; set; }
         /// <summary>Attribute-resolved note fragments (Prep Type, Size, etc.) for order Notes.</summary>
         public List<string> AttributeNoteParts { get; set; } = new List<string>();
         public bool IsGear { get; set; }
@@ -47,6 +56,10 @@ namespace TrackerSQL.Models
         public bool CanAddContact { get; set; }
         public bool CanUpdateContact { get; set; }
         public bool ContactHasShippingChanges { get; set; }
+        /// <summary>Woo company differs from contact — show company-name mode prompt on Update contact.</summary>
+        public bool NeedsCompanyNameDecision { get; set; }
+        public string WooCompanyName { get; set; }
+        public string ContactCompanyName { get; set; }
         /// <summary>New or Found — shown before contact name in preview.</summary>
         public string ContactStatusLabel { get; set; }
         public string ContactSummary { get; set; }
@@ -66,7 +79,41 @@ namespace TrackerSQL.Models
         /// <summary>Short summary e.g. "1× order notes (8BehBra3)".</summary>
         public string LinesSummary { get; set; }
         public List<WooOrderLinePreview> Lines { get; set; } = new List<WooOrderLinePreview>();
-        public string RawJson { get; set; }
+        /// <summary>Not stored in ViewState/Session — reload from Woo at commit if needed.</summary>
+        [NonSerialized]
+        public string RawJson;
+    }
+
+    /// <summary>
+    /// Maps / lookups loaded once per pull or import batch (avoids N+1 DB reads in BuildPreview).
+    /// </summary>
+    public class WooOrderImportPreviewContext
+    {
+        public HashSet<long> GearCategoryIds { get; set; } = new HashSet<long>();
+        public List<WooPaymentMethodMap> PaymentMaps { get; set; } = new List<WooPaymentMethodMap>();
+        public Dictionary<string, WooItemMapping> ItemMapsByKey { get; set; }
+            = new Dictionary<string, WooItemMapping>(StringComparer.Ordinal);
+        public Dictionary<int, Item> ItemsById { get; set; } = new Dictionary<int, Item>();
+        public List<WooCategoryFilter> CategoryFilters { get; set; } = new List<WooCategoryFilter>();
+        public string CategoryFilterMode { get; set; } = "All";
+        public WooAttributeResolveCache AttributeCache { get; set; }
+
+        public static string ItemMapKey(long productId, long? variationId)
+        {
+            long v = variationId.HasValue && variationId.Value > 0 ? variationId.Value : 0;
+            return productId.ToString(CultureInfo.InvariantCulture) + ":" + v.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>Attribute maps + packaging lists for ResolveOrderLineAttributes without per-line DB hits.</summary>
+    public class WooAttributeResolveCache
+    {
+        public List<WooAttributeMap> AttrMaps { get; set; } = new List<WooAttributeMap>();
+        public Dictionary<string, WooAttributeParent> ParentByName { get; set; }
+            = new Dictionary<string, WooAttributeParent>(StringComparer.OrdinalIgnoreCase);
+        public List<ItemPackaging> AllPackagings { get; set; } = new List<ItemPackaging>();
+        public Dictionary<int, HashSet<int>> AllowedPackagingByServiceType { get; set; }
+            = new Dictionary<int, HashSet<int>>();
     }
 
     public class WooOrderImportBatchResult

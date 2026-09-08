@@ -71,6 +71,8 @@ namespace TrackerSQL.Models
         public string AttributeOption { get; set; }
         public double QtyFactor { get; set; } = 1;
         public int? PackagingID { get; set; }
+        /// <summary>Tracker ItemPrepTypesTbl.ItemPrepID when this option sets grind/beans prep.</summary>
+        public int? PrepTypeID { get; set; }
         /// <summary>Both | QtyOnly | PackagingOnly | NotesOnly — derived from parent ranks on pull.</summary>
         public string MapRole { get; set; } = WooAttributeMapRoles.Both;
         public int ItemServiceTypeID { get; set; }

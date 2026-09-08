@@ -37,12 +37,57 @@ namespace TrackerSQL.Managers
         private List<WooCategoryFilter> _categoryFilters;
         private string _categoryFilterMode;
         private WooImportAddressConfig _addressConfig;
+        private WooOrderImportPreviewContext _previewContext;
 
         private const string NoteNoItemMap = "No item map";
         private const string NoteCategoryNotImported = "Category not imported";
 
         private WooImportAddressConfig AddressConfig =>
-            _addressConfig ?? (_addressConfig = WooImportAddressHelper.FromSettings(_settingsRepo.GetSettings()));
+            _addressConfig ?? (_addressConfig = WooImportAddressHelper.FromSettings(_settingsManager.GetSettings()));
+
+        private void EnsurePreviewContext()
+        {
+            if (_previewContext != null)
+                return;
+
+            var ctx = new WooOrderImportPreviewContext
+            {
+                GearCategoryIds = LoadGearCategoryIds(),
+                PaymentMaps = _paymentMapRepo.GetAllOrdered(includeInactive: false) ?? new List<WooPaymentMethodMap>(),
+                AttributeCache = _mappingManager.BuildAttributeResolveCache()
+            };
+
+            var maps = _itemMapRepo.GetAllWithItems() ?? new List<WooItemMapping>();
+            foreach (var m in maps)
+            {
+                if (m == null || !m.IsActive || !m.WooProductId.HasValue || m.WooProductId.Value <= 0)
+                    continue;
+                string key = WooOrderImportPreviewContext.ItemMapKey(m.WooProductId.Value, m.WooVariationId);
+                if (!ctx.ItemMapsByKey.ContainsKey(key))
+                    ctx.ItemMapsByKey[key] = m;
+            }
+
+            ctx.CategoryFilters = _categoryRepo.GetAllOrdered() ?? new List<WooCategoryFilter>();
+            ctx.CategoryFilterMode = _settingsManager.GetSettings()?.CategoryFilterMode ?? "All";
+
+            _previewContext = ctx;
+            _gearCategoryIds = ctx.GearCategoryIds;
+            _categoryFilters = ctx.CategoryFilters;
+            _categoryFilterMode = ctx.CategoryFilterMode;
+        }
+
+        private Item GetItemCached(int itemId)
+        {
+            if (itemId <= 0)
+                return null;
+            EnsurePreviewContext();
+            Item item;
+            if (_previewContext.ItemsById.TryGetValue(itemId, out item))
+                return item;
+            item = _itemsRepo.GetById(itemId);
+            _previewContext.ItemsById[itemId] = item;
+            return item;
+        }
 
         public List<WooOrderImportPreviewRow> PullPreview(
             WooOrderImportMode mode,
@@ -56,7 +101,7 @@ namespace TrackerSQL.Managers
                 return new List<WooOrderImportPreviewRow>();
 
             List<WooOrderDto> orders = FetchOrders(creds, mode, specificOrderId, rangeFrom, rangeTo);
-            _gearCategoryIds = LoadGearCategoryIds();
+            EnsurePreviewContext();
 
             var previews = orders
                 .Select(o => BuildPreview(o))
@@ -68,6 +113,42 @@ namespace TrackerSQL.Managers
                 string.Format(CultureInfo.InvariantCulture, "mode={0}, orders={1}", mode, previews.Count));
 
             return previews;
+        }
+
+        /// <summary>Re-fetch listed Woo orders and rebuild preview (explicit refresh from Woo).</summary>
+        public List<WooOrderImportPreviewRow> RefreshPreviewFromWoo(IList<long> wooOrderIds, out string error)
+        {
+            error = null;
+            var result = new List<WooOrderImportPreviewRow>();
+            if (wooOrderIds == null || wooOrderIds.Count == 0)
+                return result;
+
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
+                return result;
+
+            EnsurePreviewContext();
+            foreach (long id in wooOrderIds.Distinct())
+            {
+                if (id <= 0)
+                    continue;
+                try
+                {
+                    WooOrderDto order = _api.GetOrder(creds, id);
+                    if (order == null)
+                        continue;
+                    var row = BuildPreview(order);
+                    if (row != null)
+                        result.Add(row);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog("woo", "Refresh preview Woo #" + id + ": " + ex.Message);
+                }
+            }
+
+            return result
+                .OrderByDescending(r => r.OrderDate ?? DateTime.MinValue)
+                .ToList();
         }
 
         public WooOrderImportPreviewRow GetPreviewForOrder(long wooOrderId, out string error)
@@ -82,7 +163,7 @@ namespace TrackerSQL.Managers
             if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
                 return null;
 
-            _gearCategoryIds = LoadGearCategoryIds();
+            EnsurePreviewContext();
             WooOrderDto order = _api.GetOrder(creds, wooOrderId);
             if (order == null)
             {
@@ -126,7 +207,7 @@ namespace TrackerSQL.Managers
             if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
                 return 0;
 
-            _gearCategoryIds = LoadGearCategoryIds();
+            EnsurePreviewContext();
             WooOrderDto order = _api.GetOrder(creds, wooOrderId);
             if (order == null)
             {
@@ -167,10 +248,140 @@ namespace TrackerSQL.Managers
             return newId;
         }
 
-        /// <summary>Update matched contact billing address / area / phone from Woo shipping.</summary>
-        public int UpdateContactFromWooOrder(long wooOrderId, string updatedBy, out string error)
+        /// <summary>Build the Update-contact checklist offer for a Woo order.</summary>
+        public WooContactUpdateOffer GetContactUpdateOffer(long wooOrderId, out string error)
         {
             error = null;
+            var offer = new WooContactUpdateOffer { WooOrderId = wooOrderId };
+            if (wooOrderId <= 0)
+            {
+                error = "Invalid Woo order.";
+                return offer;
+            }
+
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
+                return offer;
+
+            EnsurePreviewContext();
+            WooOrderDto order = _api.GetOrder(creds, wooOrderId);
+            if (order == null)
+            {
+                error = "Woo order not found.";
+                return offer;
+            }
+
+            var preview = BuildPreview(order);
+            offer.WooOrderNumber = preview.WooOrderNumber;
+            if (preview.UseZzName)
+            {
+                error = "Gear-only (ZZName) orders do not update contacts.";
+                return offer;
+            }
+
+            if (!preview.MatchedContactId.HasValue || preview.MatchedContactId.Value <= 0)
+            {
+                error = "No matched contact — use Add contact first.";
+                return offer;
+            }
+
+            Contact contact = _contactsRepo.GetById(preview.MatchedContactId.Value);
+            if (contact == null)
+            {
+                error = "Contact not found.";
+                return offer;
+            }
+
+            WooAddressDto ship = order.Shipping ?? new WooAddressDto();
+            WooImportAddressConfig config = AddressConfig;
+            var areaForDiff = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
+            string companyMode = ResolveCompanyNameMode(null);
+
+            offer.DefaultCompanyNameMode = companyMode;
+            string wooCompany = FirstNonEmpty(ship.Company, order.Billing?.Company);
+            offer.WooCompanyName = wooCompany;
+            offer.ContactCompanyName = contact.CompanyName;
+            offer.ShowCompanyChoice = !string.IsNullOrWhiteSpace(wooCompany)
+                && !NormEquals(contact.CompanyName, wooCompany);
+
+            string areaName = GetContactAreaName(contact);
+            string wooAreaName = areaForDiff?.AreaID != null
+                ? _areasRepo.GetAreaName(areaForDiff.AreaID.Value)
+                : null;
+            string careOf = ResolveCareOfCompany(contact, order, ship, companyMode);
+            bool addressMatches = WooImportAddressHelper.BillingAddressesMatch(
+                contact.BillingAddress, ship, config, areaName, wooAreaName, careOf);
+            bool postcodeDiff = false;
+            string wooPostcode = NormalizePostcode(ship.Postcode);
+            string oldPost = (contact.PostalCode ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(oldPost) && !string.IsNullOrWhiteSpace(wooPostcode))
+                postcodeDiff = true;
+            else if (!string.IsNullOrWhiteSpace(oldPost) && !string.IsNullOrWhiteSpace(wooPostcode)
+                && !NormEquals(oldPost, wooPostcode))
+                postcodeDiff = true;
+            bool areaFill = (!contact.AreaID.HasValue || contact.AreaID.Value <= 0)
+                && areaForDiff?.AreaID != null && areaForDiff.AreaID.Value > 0;
+            bool careOfOnly = !string.IsNullOrWhiteSpace(wooCompany)
+                && !IsUpdateCompanyNameMode(companyMode)
+                && !NormEquals(contact.CompanyName, wooCompany)
+                && !BillingAlreadyHasCareOf(contact.BillingAddress, wooCompany);
+
+            offer.OfferAddress = !addressMatches || postcodeDiff || areaFill || careOfOnly;
+            if (offer.OfferAddress)
+            {
+                offer.AddressFrom = TruncateNoteValue(contact.BillingAddress, 60);
+                offer.AddressTo = TruncateNoteValue(
+                    WooImportAddressHelper.FormatBillingAddress(ship, config, wooAreaName ?? areaName, careOf),
+                    60);
+            }
+
+            string wooPhoneRaw = FirstNonEmpty(ship.Phone, order.Billing?.Phone);
+            bool matchesTel = WooImportAddressHelper.PhonesMatch(contact.PhoneNumber, wooPhoneRaw, config);
+            bool matchesCell = WooImportAddressHelper.PhonesMatch(contact.CellNumber, wooPhoneRaw, config);
+            if (!string.IsNullOrWhiteSpace(wooPhoneRaw) && !matchesTel && matchesCell)
+            {
+                offer.OfferPhone = false;
+                offer.PhoneSkipReason = "Woo phone matches contact mobile (Cell) — Tel left unchanged.";
+            }
+            else if (!string.IsNullOrWhiteSpace(wooPhoneRaw) && !matchesTel)
+            {
+                offer.OfferPhone = true;
+                offer.PhoneFrom = TruncateNoteValue(contact.PhoneNumber, 24);
+                offer.PhoneTo = TruncateNoteValue(WooImportAddressHelper.FormatPhone(wooPhoneRaw, config), 24);
+            }
+
+            string wooEmail = FirstNonEmpty(ship.Email, order.Billing?.Email);
+            if (!string.IsNullOrWhiteSpace(wooEmail)
+                && !NormEquals(contact.EmailAddress, wooEmail)
+                && !NormEquals(contact.AltEmailAddress, wooEmail))
+            {
+                offer.OfferAltEmail = true;
+                offer.AltEmailFrom = TruncateNoteValue(contact.AltEmailAddress, 40);
+                offer.AltEmailTo = TruncateNoteValue(wooEmail, 40);
+            }
+
+            var nameParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(ship.FirstName) && !NormEquals(contact.ContactFirstName, ship.FirstName))
+                nameParts.Add("first → " + TruncateNoteValue(ship.FirstName, 24));
+            if (!string.IsNullOrWhiteSpace(ship.LastName) && !NormEquals(contact.ContactLastName, ship.LastName))
+                nameParts.Add("last → " + TruncateNoteValue(ship.LastName, 24));
+            if (nameParts.Count > 0)
+            {
+                offer.OfferPersonNames = true;
+                offer.PersonNamesSummary = string.Join("; ", nameParts);
+            }
+
+            if (!offer.HasAnyOffer)
+                error = "Nothing to update — address, phone, email, and company already match.";
+
+            return offer;
+        }
+
+        /// <summary>Update matched contact using the Update-contact checklist selections.</summary>
+        public int UpdateContactFromWooOrder(long wooOrderId, WooContactUpdateOptions options, string updatedBy, out string error)
+        {
+            error = null;
+            options = options ?? new WooContactUpdateOptions();
+
             if (wooOrderId <= 0)
             {
                 error = "Invalid Woo order.";
@@ -180,7 +391,7 @@ namespace TrackerSQL.Managers
             if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
                 return 0;
 
-            _gearCategoryIds = LoadGearCategoryIds();
+            EnsurePreviewContext();
             WooOrderDto order = _api.GetOrder(creds, wooOrderId);
             if (order == null)
             {
@@ -201,13 +412,6 @@ namespace TrackerSQL.Managers
                 return 0;
             }
 
-            if (!preview.ContactHasShippingChanges)
-            {
-                error = "Shipping address, area, and phone already match the contact.";
-                return preview.MatchedContactId.Value;
-            }
-
-            WooAddressDto ship = order.Shipping ?? new WooAddressDto();
             Contact contact = _contactsRepo.GetById(preview.MatchedContactId.Value);
             if (contact == null)
             {
@@ -215,33 +419,168 @@ namespace TrackerSQL.Managers
                 return 0;
             }
 
-            var areaForDiff = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
-            var changeParts = DescribeShippingChanges(contact, order, ship, areaForDiff?.AreaID);
+            if (!options.UpdateCompany && !options.UpdateAddress && !options.UpdatePhone
+                && !options.UpdateAltEmail && !options.UpdatePersonNames)
+            {
+                error = "Select at least one item to update.";
+                return 0;
+            }
 
-            ApplyWooShippingToContact(contact, order, ship);
+            WooAddressDto ship = order.Shipping ?? new WooAddressDto();
+            string companyMode = ResolveCompanyNameMode(options.CompanyNameMode);
+            var changeParts = new List<string>();
+
+            ApplyContactUpdateSelections(contact, order, ship, options, companyMode, changeParts);
+
+            if (changeParts.Count == 0)
+            {
+                error = "No changes applied under the selected options.";
+                return preview.MatchedContactId.Value;
+            }
+
             if (!_contactsRepo.Update(contact))
             {
                 error = "Could not update contact.";
                 return 0;
             }
 
-            WooContactBootstrap.UpdateAccInfoAddresses(_accInfoRepo, contact, order, contact.ContactID);
+            if (options.UpdateAddress)
+                WooContactBootstrap.UpdateAccInfoAddresses(_accInfoRepo, contact, order, contact.ContactID);
 
-            string changeDetail = changeParts.Count > 0
-                ? string.Join("; ", changeParts)
-                : "shipping details";
+            string changeDetail = string.Join("; ", changeParts);
             _contactsRepo.AppendSystemNote(contact.ContactID,
                 string.Format(CultureInfo.InvariantCulture,
-                    "Updated from Woo order #{0}: {1}.",
+                    "Updated from Woo #{0}: {1}.",
                     preview.WooOrderNumber,
                     changeDetail));
 
             WooCommerceUserLog.Write(
                 string.Format(CultureInfo.InvariantCulture, "Updated contact from Woo #{0}", preview.WooOrderNumber),
-                FormatContactLogName(contact) + " — " + changeDetail,
+                FormatContactLogName(contact) + " — " + changeDetail + " [companyMode=" + companyMode + "]",
                 updatedBy);
 
             return contact.ContactID;
+        }
+
+        private void ApplyContactUpdateSelections(
+            Contact contact,
+            WooOrderDto order,
+            WooAddressDto ship,
+            WooContactUpdateOptions options,
+            string companyMode,
+            List<string> changeParts)
+        {
+            WooImportAddressConfig config = AddressConfig;
+
+            if (options.UpdateCompany)
+            {
+                if (IsUpdateCompanyNameMode(companyMode))
+                    ApplyCompanyNamePolicy(contact, order, ship, changeParts, companyMode);
+                else
+                {
+                    string wooCompany = FirstNonEmpty(ship?.Company, order?.Billing?.Company);
+                    if (!string.IsNullOrWhiteSpace(wooCompany)
+                        && !NormEquals(contact.CompanyName, wooCompany)
+                        && !BillingAlreadyHasCareOf(contact.BillingAddress, wooCompany))
+                    {
+                        // Care-of is applied with address; note intent if address also updating.
+                        if (!options.UpdateAddress)
+                            changeParts.Add("address c/o " + TruncateNoteValue(wooCompany, 40));
+                    }
+                }
+            }
+
+            if (options.UpdateAddress)
+            {
+                var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
+                string areaName = GetContactAreaName(contact);
+                if ((!contact.AreaID.HasValue || contact.AreaID.Value <= 0) && areaResult?.AreaID != null)
+                {
+                    contact.AreaID = areaResult.AreaID;
+                    contact.PreferredAgentID = ResolveDeliveryPersonForArea(areaResult);
+                    areaName = areaResult.AreaName;
+                    changeParts.Add("area → " + (areaName ?? ("#" + areaResult.AreaID)));
+                }
+                else if (string.IsNullOrWhiteSpace(areaName) && areaResult != null)
+                    areaName = areaResult.AreaName;
+
+                string careOf = null;
+                if (options.UpdateCompany || IsUpdateCompanyNameMode(companyMode) == false)
+                    careOf = ResolveCareOfCompany(contact, order, ship, companyMode);
+
+                string newBilling = WooImportAddressHelper.FormatBillingAddress(ship, config, areaName, careOf);
+                if (!NormEquals(contact.BillingAddress, newBilling))
+                {
+                    changeParts.Add(string.IsNullOrWhiteSpace(contact.BillingAddress)
+                        ? "address → " + TruncateNoteValue(newBilling, 40)
+                        : "address " + TruncateNoteValue(contact.BillingAddress, 40) + " → " + TruncateNoteValue(newBilling, 40));
+                    contact.BillingAddress = newBilling;
+                }
+
+                string wooPostcode = NormalizePostcode(ship.Postcode);
+                if (!string.IsNullOrWhiteSpace(wooPostcode) && !NormEquals(contact.PostalCode, wooPostcode))
+                {
+                    changeParts.Add(string.IsNullOrWhiteSpace(contact.PostalCode)
+                        ? "postcode → " + wooPostcode
+                        : "postcode " + contact.PostalCode.Trim() + " → " + wooPostcode);
+                    contact.PostalCode = wooPostcode;
+                }
+
+                contact.StateOrProvince = ship.State ?? contact.StateOrProvince;
+                if (!string.IsNullOrWhiteSpace(ship.Country))
+                    contact.CountryOrRegion = ship.Country;
+            }
+
+            if (options.UpdatePhone)
+            {
+                string wooPhoneRaw = FirstNonEmpty(ship.Phone, order.Billing?.Phone);
+                if (!string.IsNullOrWhiteSpace(wooPhoneRaw)
+                    && !WooImportAddressHelper.PhonesMatch(contact.CellNumber, wooPhoneRaw, config)
+                    && !WooImportAddressHelper.PhonesMatch(contact.PhoneNumber, wooPhoneRaw, config))
+                {
+                    string formatted = WooImportAddressHelper.FormatPhone(wooPhoneRaw, config);
+                    changeParts.Add(string.IsNullOrWhiteSpace(contact.PhoneNumber)
+                        ? "phone → " + TruncateNoteValue(formatted, 24)
+                        : "phone " + TruncateNoteValue(contact.PhoneNumber, 24) + " → " + TruncateNoteValue(formatted, 24));
+                    contact.PhoneNumber = formatted;
+                }
+            }
+
+            if (options.UpdateAltEmail)
+            {
+                string wooEmail = FirstNonEmpty(ship.Email, order.Billing?.Email);
+                if (!string.IsNullOrWhiteSpace(wooEmail)
+                    && !NormEquals(contact.EmailAddress, wooEmail)
+                    && !NormEquals(contact.AltEmailAddress, wooEmail))
+                {
+                    changeParts.Add(string.IsNullOrWhiteSpace(contact.AltEmailAddress)
+                        ? "alt email → " + TruncateNoteValue(wooEmail, 40)
+                        : "alt email " + TruncateNoteValue(contact.AltEmailAddress, 40) + " → " + TruncateNoteValue(wooEmail, 40));
+                    contact.AltEmailAddress = wooEmail.Trim();
+                }
+            }
+
+            if (options.UpdatePersonNames)
+                ApplyWooPersonNames(contact, ship, changeParts);
+        }
+
+        /// <summary>Legacy overload — applies all detected shipping changes using company mode override.</summary>
+        public int UpdateContactFromWooOrder(long wooOrderId, string companyNameModeOverride, string updatedBy, out string error)
+        {
+            var offer = GetContactUpdateOffer(wooOrderId, out error);
+            if (!string.IsNullOrWhiteSpace(error) && !offer.HasAnyOffer)
+                return 0;
+
+            var options = new WooContactUpdateOptions
+            {
+                CompanyNameMode = companyNameModeOverride,
+                UpdateCompany = offer.ShowCompanyChoice,
+                UpdateAddress = offer.OfferAddress,
+                UpdatePhone = offer.OfferPhone,
+                UpdateAltEmail = offer.OfferAltEmail,
+                UpdatePersonNames = offer.OfferPersonNames
+            };
+            return UpdateContactFromWooOrder(wooOrderId, options, updatedBy, out error);
         }
 
         public WooOrderImportBatchResult ImportSelected(
@@ -262,7 +601,7 @@ namespace TrackerSQL.Managers
                 return result;
             }
 
-            _gearCategoryIds = LoadGearCategoryIds();
+            EnsurePreviewContext();
             DateTime? maxImportedDate = null;
 
             foreach (var row in rows.Where(r => r != null && r.Selected))
@@ -372,10 +711,36 @@ namespace TrackerSQL.Managers
                     DateTime since = settings.LastOrdersSyncUtc ?? DateTime.UtcNow.AddDays(-30);
                     return _api.GetOrdersSince(creds, since);
 
+                case WooOrderImportMode.Today:
+                {
+                    DateTime todayLocal = TimeZoneUtils.Now().Date;
+                    return _api.GetOrdersInRange(
+                        creds,
+                        TimeZoneUtils.ConvertToUtc(todayLocal),
+                        TimeZoneUtils.ConvertToUtc(todayLocal.AddDays(1)));
+                }
+
+                case WooOrderImportMode.ThisWeek:
+                {
+                    DateTime todayLocal = TimeZoneUtils.Now().Date;
+                    int daysFromMonday = ((int)todayLocal.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+                    DateTime weekStart = todayLocal.AddDays(-daysFromMonday);
+                    return _api.GetOrdersInRange(
+                        creds,
+                        TimeZoneUtils.ConvertToUtc(weekStart),
+                        TimeZoneUtils.ConvertToUtc(weekStart.AddDays(7)));
+                }
+
                 case WooOrderImportMode.DateRange:
                     if (!rangeFrom.HasValue || !rangeTo.HasValue)
                         throw new InvalidOperationException("Enter both from and to dates.");
-                    return _api.GetOrdersInRange(creds, rangeFrom.Value.ToUniversalTime(), rangeTo.Value.ToUniversalTime());
+                    // Inclusive calendar days in app local time → UTC window [from, to+1day).
+                    DateTime fromLocal = rangeFrom.Value.Date;
+                    DateTime toExclusiveLocal = rangeTo.Value.Date.AddDays(1);
+                    return _api.GetOrdersInRange(
+                        creds,
+                        TimeZoneUtils.ConvertToUtc(fromLocal),
+                        TimeZoneUtils.ConvertToUtc(toExclusiveLocal));
 
                 default:
                     throw new InvalidOperationException("Unknown import mode.");
@@ -393,9 +758,12 @@ namespace TrackerSQL.Managers
                 WooOrderNumber = order.Number ?? order.Id.ToString(CultureInfo.InvariantCulture),
                 WooStatus = order.Status,
                 OrderDate = order.DateCreated,
-                PaymentAbbrev = _paymentMapRepo.ResolveAbbrev(order.PaymentMethod, order.PaymentMethodTitle),
-                ShippingMethod = order.ShippingLines.FirstOrDefault()?.MethodTitle ?? string.Empty,
-                RawJson = order.RawJson
+                PaymentAbbrev = _paymentMapRepo.ResolveAbbrev(
+                    order.PaymentMethod,
+                    order.PaymentMethodTitle,
+                    _previewContext?.PaymentMaps),
+                ShippingMethod = order.ShippingLines.FirstOrDefault()?.MethodTitle ?? string.Empty
+                // RawJson omitted from preview — reloaded from Woo at commit
             };
 
             var existing = ResolveExistingImportLink(order);
@@ -537,7 +905,7 @@ namespace TrackerSQL.Managers
                 return line;
             }
 
-            var item = _itemsRepo.GetById(map.ItemID);
+            var item = GetItemCached(map.ItemID);
             line.TrackerItemId = map.ItemID;
             line.TrackerSku = item?.SKU;
             double qtyFactor = map.QtyFactor > 0 ? map.QtyFactor : 1;
@@ -550,23 +918,53 @@ namespace TrackerSQL.Managers
                 li.MetaData,
                 serviceTypeId,
                 qtyFactor,
-                packagingId);
+                packagingId,
+                _previewContext?.AttributeCache);
             if (attr != null)
             {
                 if (attr.QtyFactor > 0)
                     qtyFactor = attr.QtyFactor;
                 if (attr.PackagingId.HasValue && attr.PackagingId.Value > 0)
                     packagingId = attr.PackagingId;
+                if (attr.PrepTypeId.HasValue && attr.PrepTypeId.Value > 0)
+                    line.PrepTypeId = attr.PrepTypeId;
                 if (attr.NoteParts != null && attr.NoteParts.Count > 0)
                     line.AttributeNoteParts = attr.NoteParts;
                 if (!string.IsNullOrWhiteSpace(attr.Reason))
                     line.Note = attr.Reason;
             }
 
+            line.SuppressPriorPackagingInfer = LineMetaHasPrepOrPackaging(li.MetaData);
             line.TrackerQty = Math.Round(qtyFactor * li.Quantity, SystemConstants.DatabaseConstants.NumDecimalPoints);
             line.PackagingId = packagingId;
             line.CanImport = true;
             return line;
+        }
+
+        private static bool LineMetaHasPrepOrPackaging(IList<WooMetaDto> meta)
+        {
+            if (meta == null || meta.Count == 0)
+                return false;
+            foreach (var m in meta)
+            {
+                string key = (m?.Key ?? string.Empty).Trim();
+                string display = (m?.DisplayKey ?? string.Empty).Trim();
+                if (IsPrepOrPackagingAttributeName(key) || IsPrepOrPackagingAttributeName(display))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsPrepOrPackagingAttributeName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+            string n = name.Trim();
+            if (n.StartsWith("pa_", StringComparison.OrdinalIgnoreCase))
+                n = n.Substring(3).Replace('-', ' ');
+            return n.IndexOf("prep", StringComparison.OrdinalIgnoreCase) >= 0
+                || string.Equals(n, "Packaging", StringComparison.OrdinalIgnoreCase)
+                || n.IndexOf("packaging", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <summary>
@@ -578,14 +976,12 @@ namespace TrackerSQL.Managers
             variantParentItemNotes = false;
             long variationId = li.VariationId > 0 ? li.VariationId : 0;
 
-            WooItemMapping map = null;
-            if (variationId > 0)
-                map = _itemMapRepo.FindExact(li.ProductId, variationId);
+            WooItemMapping map = FindItemMap(li.ProductId, variationId > 0 ? (long?)variationId : null);
 
             if (map != null)
                 return map;
 
-            WooItemMapping parentMap = _itemMapRepo.FindExact(li.ProductId, null);
+            WooItemMapping parentMap = FindItemMap(li.ProductId, null);
             if (parentMap == null)
                 return null;
 
@@ -607,6 +1003,16 @@ namespace TrackerSQL.Managers
             return null;
         }
 
+        private WooItemMapping FindItemMap(long productId, long? variationId)
+        {
+            EnsurePreviewContext();
+            string key = WooOrderImportPreviewContext.ItemMapKey(productId, variationId);
+            WooItemMapping map;
+            if (_previewContext.ItemMapsByKey.TryGetValue(key, out map))
+                return map;
+            return null;
+        }
+
         private void ResolveContactPreview(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
         {
             if (preview.UseZzName)
@@ -615,6 +1021,7 @@ namespace TrackerSQL.Managers
                 preview.CanAddContact = false;
                 preview.CanUpdateContact = false;
                 preview.ContactHasShippingChanges = false;
+                preview.NeedsCompanyNameDecision = false;
                 preview.ContactStatusLabel = string.Empty;
                 string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
                 preview.ContactDisplayName = GetWooContactName(order, ship);
@@ -633,8 +1040,13 @@ namespace TrackerSQL.Managers
                 preview.ContactStatusLabel = "Found";
                 preview.ContactDisplayName = FormatStoredContactName(matched);
                 preview.ContactHasShippingChanges = HasShippingChanges(matched, order, ship, resolvedAreaId);
+                string wooCompany = FirstNonEmpty(ship.Company, order.Billing?.Company);
+                preview.WooCompanyName = wooCompany;
+                preview.ContactCompanyName = matched.CompanyName;
+                preview.NeedsCompanyNameDecision = !string.IsNullOrWhiteSpace(wooCompany)
+                    && !NormEquals(matched.CompanyName, wooCompany);
                 preview.CanAddContact = false;
-                preview.CanUpdateContact = preview.ContactHasShippingChanges;
+                preview.CanUpdateContact = preview.ContactHasShippingChanges || preview.NeedsCompanyNameDecision;
                 preview.ContactSummary = string.Empty;
             }
             else
@@ -644,6 +1056,9 @@ namespace TrackerSQL.Managers
                 preview.ContactStatusLabel = "New";
                 preview.ContactDisplayName = GetWooContactName(order, ship);
                 preview.ContactHasShippingChanges = false;
+                preview.NeedsCompanyNameDecision = false;
+                preview.WooCompanyName = null;
+                preview.ContactCompanyName = null;
                 preview.CanAddContact = true;
                 preview.CanUpdateContact = false;
                 string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
@@ -984,7 +1399,7 @@ namespace TrackerSQL.Managers
 
         private bool HasShippingChanges(Contact contact, WooOrderDto order, WooAddressDto ship, int? wooResolvedAreaId)
         {
-            return DescribeShippingChanges(contact, order, ship, wooResolvedAreaId).Count > 0;
+            return DescribeShippingChanges(contact, order, ship, wooResolvedAreaId, null).Count > 0;
         }
 
         /// <summary>Human-readable list of contact fields that differ from Woo shipping (before apply).</summary>
@@ -992,11 +1407,15 @@ namespace TrackerSQL.Managers
             Contact contact,
             WooOrderDto order,
             WooAddressDto ship,
-            int? wooResolvedAreaId)
+            int? wooResolvedAreaId,
+            string companyNameModeOverride = null)
         {
             var parts = new List<string>();
             if (contact == null)
                 return parts;
+
+            string companyMode = ResolveCompanyNameMode(companyNameModeOverride);
+            bool updateCompany = IsUpdateCompanyNameMode(companyMode);
 
             WooImportAddressConfig config = AddressConfig;
             string areaName = GetContactAreaName(contact);
@@ -1004,15 +1423,39 @@ namespace TrackerSQL.Managers
             if (wooResolvedAreaId.HasValue && wooResolvedAreaId.Value > 0)
                 wooAreaName = _areasRepo.GetAreaName(wooResolvedAreaId.Value);
 
-            if (!WooImportAddressHelper.BillingAddressesMatch(contact.BillingAddress, ship, config, areaName, wooAreaName))
+            string careOf = ResolveCareOfCompany(contact, order, ship, companyMode);
+            bool addressMatches = WooImportAddressHelper.BillingAddressesMatch(
+                contact.BillingAddress, ship, config, areaName, wooAreaName, careOf);
+
+            if (!addressMatches)
             {
                 string from = TruncateNoteValue(contact.BillingAddress, 40);
                 string to = TruncateNoteValue(
-                    WooImportAddressHelper.FormatBillingAddress(ship, config, wooAreaName ?? areaName),
+                    WooImportAddressHelper.FormatBillingAddress(ship, config, wooAreaName ?? areaName, careOf),
                     40);
                 parts.Add(string.IsNullOrEmpty(from)
                     ? "address → " + to
                     : "address " + from + " → " + to);
+            }
+
+            string wooCompany = FirstNonEmpty(ship.Company, order.Billing?.Company);
+            if (!string.IsNullOrWhiteSpace(wooCompany)
+                && updateCompany
+                && !NormEquals(contact.CompanyName, wooCompany))
+            {
+                string fromCo = TruncateNoteValue(contact.CompanyName, 40);
+                parts.Add(string.IsNullOrEmpty(fromCo)
+                    ? "company → " + TruncateNoteValue(wooCompany, 40)
+                    : "company " + fromCo + " → " + TruncateNoteValue(wooCompany, 40));
+            }
+            else if (!string.IsNullOrWhiteSpace(wooCompany)
+                && !updateCompany
+                && !NormEquals(contact.CompanyName, wooCompany)
+                && !BillingAlreadyHasCareOf(contact.BillingAddress, wooCompany)
+                && addressMatches)
+            {
+                // Base address already matches; note only that c/o will be applied.
+                parts.Add("address c/o " + TruncateNoteValue(wooCompany, 40));
             }
 
             string wooPostcode = NormalizePostcode(ship.Postcode);
@@ -1025,13 +1468,15 @@ namespace TrackerSQL.Managers
                 parts.Add("postcode " + oldPost + " → " + wooPostcode);
 
             string wooPhoneRaw = FirstNonEmpty(ship.Phone, order.Billing?.Phone);
-            if (!WooImportAddressHelper.PhonesMatch(contact.PhoneNumber, wooPhoneRaw, config))
+            // If Woo phone already matches Cell (mobile), do not treat Tel as needing an update.
+            bool wooMatchesCell = WooImportAddressHelper.PhonesMatch(contact.CellNumber, wooPhoneRaw, config);
+            if (!string.IsNullOrWhiteSpace(wooPhoneRaw)
+                && !wooMatchesCell
+                && !WooImportAddressHelper.PhonesMatch(contact.PhoneNumber, wooPhoneRaw, config))
             {
                 string oldPhone = TruncateNoteValue(contact.PhoneNumber, 24);
                 string newPhone = TruncateNoteValue(
-                    string.IsNullOrWhiteSpace(wooPhoneRaw)
-                        ? string.Empty
-                        : WooImportAddressHelper.FormatPhone(wooPhoneRaw, config),
+                    WooImportAddressHelper.FormatPhone(wooPhoneRaw, config),
                     24);
                 parts.Add(string.IsNullOrEmpty(oldPhone)
                     ? "phone → " + newPhone
@@ -1049,6 +1494,24 @@ namespace TrackerSQL.Managers
                     : wooAreaName.Trim()));
             }
 
+            if (ship != null)
+            {
+                if (!string.IsNullOrWhiteSpace(ship.FirstName) && !NormEquals(contact.ContactFirstName, ship.FirstName))
+                {
+                    string from = TruncateNoteValue(contact.ContactFirstName, 24);
+                    parts.Add(string.IsNullOrEmpty(from)
+                        ? "first name → " + TruncateNoteValue(ship.FirstName, 24)
+                        : "first name " + from + " → " + TruncateNoteValue(ship.FirstName, 24));
+                }
+                if (!string.IsNullOrWhiteSpace(ship.LastName) && !NormEquals(contact.ContactLastName, ship.LastName))
+                {
+                    string from = TruncateNoteValue(contact.ContactLastName, 24);
+                    parts.Add(string.IsNullOrEmpty(from)
+                        ? "last name → " + TruncateNoteValue(ship.LastName, 24)
+                        : "last name " + from + " → " + TruncateNoteValue(ship.LastName, 24));
+                }
+            }
+
             return parts;
         }
 
@@ -1064,7 +1527,7 @@ namespace TrackerSQL.Managers
 
         private static bool NormEquals(string a, string b)
         {
-            return string.Equals(NormalizeCompare(a), NormalizeCompare(b), StringComparison.OrdinalIgnoreCase);
+            return WooImportAddressHelper.NormEquals(a, b);
         }
 
         private static string NormalizeCompare(string value)
@@ -1074,13 +1537,17 @@ namespace TrackerSQL.Managers
             return System.Text.RegularExpressions.Regex.Replace(value.Trim(), @"\s+", " ");
         }
 
-        private void ApplyWooShippingToContact(Contact contact, WooOrderDto order, WooAddressDto ship)
+        private void ApplyWooShippingToContact(
+            Contact contact,
+            WooOrderDto order,
+            WooAddressDto ship,
+            List<string> changeParts = null,
+            string companyNameModeOverride = null)
         {
             WooImportAddressConfig config = AddressConfig;
             var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
 
             // Prefer keeping an existing Tracker area; only fill area when missing.
-            // Format billing with the area we keep so the next preview compare is clean.
             string areaName = GetContactAreaName(contact);
             if ((!contact.AreaID.HasValue || contact.AreaID.Value <= 0) && areaResult?.AreaID != null)
             {
@@ -1091,15 +1558,116 @@ namespace TrackerSQL.Managers
             else if (string.IsNullOrWhiteSpace(areaName) && areaResult != null)
                 areaName = areaResult.AreaName;
 
-            contact.BillingAddress = WooImportAddressHelper.FormatBillingAddress(ship, config, areaName);
+            string companyMode = ResolveCompanyNameMode(companyNameModeOverride);
+            ApplyCompanyNamePolicy(contact, order, ship, changeParts, companyMode);
+
+            string careOf = ResolveCareOfCompany(contact, order, ship, companyMode);
+            contact.BillingAddress = WooImportAddressHelper.FormatBillingAddress(ship, config, areaName, careOf);
             contact.PostalCode = NormalizePostcode(ship.Postcode);
             contact.StateOrProvince = ship.State ?? contact.StateOrProvince;
             if (!string.IsNullOrWhiteSpace(ship.Country))
                 contact.CountryOrRegion = ship.Country;
 
             string phone = FirstNonEmpty(ship.Phone, order.Billing?.Phone);
-            if (!string.IsNullOrWhiteSpace(phone))
+            if (!string.IsNullOrWhiteSpace(phone)
+                && !WooImportAddressHelper.PhonesMatch(contact.CellNumber, phone, config)
+                && !WooImportAddressHelper.PhonesMatch(contact.PhoneNumber, phone, config))
+            {
                 contact.PhoneNumber = WooImportAddressHelper.FormatPhone(phone, config);
+            }
+        }
+
+        private void ApplyCompanyNamePolicy(
+            Contact contact,
+            WooOrderDto order,
+            WooAddressDto ship,
+            List<string> changeParts,
+            string companyNameMode)
+        {
+            if (contact == null || !IsUpdateCompanyNameMode(companyNameMode))
+                return;
+
+            string wooCompany = FirstNonEmpty(ship.Company, order.Billing?.Company);
+            if (string.IsNullOrWhiteSpace(wooCompany))
+                return;
+            if (NormEquals(contact.CompanyName, wooCompany))
+                return;
+
+            if (changeParts != null)
+            {
+                string fromCo = TruncateNoteValue(contact.CompanyName, 40);
+                changeParts.Add(string.IsNullOrEmpty(fromCo)
+                    ? "company → " + TruncateNoteValue(wooCompany, 40)
+                    : "company " + fromCo + " → " + TruncateNoteValue(wooCompany, 40));
+            }
+            contact.CompanyName = wooCompany.Trim();
+        }
+
+        private void ApplyWooPersonNames(Contact contact, WooAddressDto ship, List<string> changeParts)
+        {
+            if (contact == null || ship == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(ship.FirstName) && !NormEquals(contact.ContactFirstName, ship.FirstName))
+            {
+                if (changeParts != null)
+                {
+                    string from = TruncateNoteValue(contact.ContactFirstName, 24);
+                    changeParts.Add(string.IsNullOrEmpty(from)
+                        ? "first name → " + TruncateNoteValue(ship.FirstName, 24)
+                        : "first name " + from + " → " + TruncateNoteValue(ship.FirstName, 24));
+                }
+                contact.ContactFirstName = ship.FirstName.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(ship.LastName) && !NormEquals(contact.ContactLastName, ship.LastName))
+            {
+                if (changeParts != null)
+                {
+                    string from = TruncateNoteValue(contact.ContactLastName, 24);
+                    changeParts.Add(string.IsNullOrEmpty(from)
+                        ? "last name → " + TruncateNoteValue(ship.LastName, 24)
+                        : "last name " + from + " → " + TruncateNoteValue(ship.LastName, 24));
+                }
+                contact.ContactLastName = ship.LastName.Trim();
+            }
+        }
+
+        private string ResolveCompanyNameMode(string modeOverride)
+        {
+            if (!string.IsNullOrWhiteSpace(modeOverride))
+                return WooCommerceSettingsManager.NormalizeCompanyNameMode(modeOverride);
+            return WooCommerceSettingsManager.NormalizeCompanyNameMode(
+                _settingsManager.GetSettings()?.ImportCompanyNameMode);
+        }
+
+        private bool IsUpdateCompanyNameMode(string mode = null)
+        {
+            return string.Equals(
+                ResolveCompanyNameMode(mode),
+                "UpdateName",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string ResolveCareOfCompany(Contact contact, WooOrderDto order, WooAddressDto ship, string companyNameMode = null)
+        {
+            if (IsUpdateCompanyNameMode(companyNameMode))
+                return null;
+
+            string wooCompany = FirstNonEmpty(ship?.Company, order?.Billing?.Company);
+            if (string.IsNullOrWhiteSpace(wooCompany))
+                return null;
+            if (NormEquals(contact?.CompanyName, wooCompany))
+                return null;
+            return wooCompany.Trim();
+        }
+
+        private static bool BillingAlreadyHasCareOf(string billingAddress, string company)
+        {
+            if (string.IsNullOrWhiteSpace(billingAddress) || string.IsNullOrWhiteSpace(company))
+                return false;
+            string needle = "c/o " + company.Trim();
+            return billingAddress.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private string GetContactAreaName(Contact contact)
@@ -1250,7 +1818,7 @@ namespace TrackerSQL.Managers
         private int CommitOrder(WooOrderDto order, WooOrderImportPreviewRow preview, int? existingOrderId, string updatedBy)
         {
             WooAddressDto ship = order.Shipping ?? new WooAddressDto();
-            long contactId = ResolveContactId(order, preview, ship, updatedBy);
+            long contactId = ResolveContactId(order, preview, ship, updatedBy, out bool contactCreated);
             if (contactId <= 0)
                 return 0;
 
@@ -1292,7 +1860,8 @@ namespace TrackerSQL.Managers
                     || string.Equals(order.Status, "completed", StringComparison.OrdinalIgnoreCase),
                 PurchaseOrder = preview.WooOrderNumber,
                 Notes = BuildOrderNotes(order, preview, ship,
-                    existingOrderId.HasValue && existingOrderId.Value > 0)
+                    existingOrderId.HasValue && existingOrderId.Value > 0,
+                    contactCreated)
             };
 
             string conflictText = preview.Conflicts != null && preview.Conflicts.Count > 0
@@ -1337,7 +1906,9 @@ namespace TrackerSQL.Managers
                     continue;
 
                 int packagingId = line.PackagingId ?? 0;
-                if (inferPackagingFromPriorOrders && packagingId <= 0)
+                if (inferPackagingFromPriorOrders
+                    && packagingId <= 0
+                    && !line.SuppressPriorPackagingInfer)
                 {
                     string inferredNote;
                     string inferredLog;
@@ -1357,7 +1928,13 @@ namespace TrackerSQL.Managers
                     }
                 }
 
-                var add = _orderManager.AddOrderLineToOrder(orderId, line.TrackerItemId.Value, line.TrackerQty, packagingId);
+                int prepTypeId = line.PrepTypeId ?? 0;
+                var add = _orderManager.AddOrderLineToOrder(
+                    orderId,
+                    line.TrackerItemId.Value,
+                    line.TrackerQty,
+                    packagingId,
+                    prepTypeId);
                 if (!string.IsNullOrEmpty(add.Error))
                     throw new InvalidOperationException(add.Error);
             }
@@ -1437,7 +2014,7 @@ namespace TrackerSQL.Managers
 
         private int ResolveImportNotesItemId()
         {
-            var settings = _settingsRepo.GetSettings();
+            var settings = _settingsManager.GetSettings();
             int configured = settings?.ImportNotesItemID ?? 0;
             if (configured > 0 && _itemsRepo.GetById(configured) != null)
                 return configured;
@@ -1552,8 +2129,9 @@ namespace TrackerSQL.Managers
             return _packRepo.GetPackagingDescById(packagingId);
         }
 
-        private long ResolveContactId(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship, string updatedBy)
+        private long ResolveContactId(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship, string updatedBy, out bool contactCreated)
         {
+            contactCreated = false;
             if (preview.UseZzName)
                 return SystemConstants.CustomerConstants.SundryCustomerID;
 
@@ -1567,17 +2145,23 @@ namespace TrackerSQL.Managers
                     return 0;
                 contact.ContactID = newId;
                 WooContactBootstrap.EnsureAccInfo(_accInfoRepo, contact, order, newId);
+                contactCreated = true;
                 return newId;
             }
 
-            ApplyWooShippingToContact(contact, order, ship);
-            if (!string.IsNullOrWhiteSpace(ship.Company))
-                contact.CompanyName = GetWooContactName(order, ship);
-            if (!string.IsNullOrWhiteSpace(ship.FirstName))
-                contact.ContactFirstName = ship.FirstName;
-            if (!string.IsNullOrWhiteSpace(ship.LastName))
-                contact.ContactLastName = ship.LastName;
+            var areaForDiff = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
+            var changeParts = DescribeShippingChanges(contact, order, ship, areaForDiff?.AreaID);
+            ApplyWooShippingToContact(contact, order, ship, null);
+            ApplyWooPersonNames(contact, ship, null);
             _contactsRepo.Update(contact);
+            if (changeParts.Count > 0)
+            {
+                _contactsRepo.AppendSystemNote(contact.ContactID,
+                    string.Format(CultureInfo.InvariantCulture,
+                        "Updated from Woo #{0}: {1}.",
+                        preview.WooOrderNumber,
+                        string.Join("; ", changeParts)));
+            }
             return contact.ContactID;
         }
 
@@ -1607,7 +2191,7 @@ namespace TrackerSQL.Managers
                 SalesAgentID = salesAgentId > 0 ? salesAgentId : (int?)null,
                 Enabled = true,
                 Notes = string.Format(CultureInfo.InvariantCulture,
-                    "{0:yyyy-MM-dd}: Created from Woo order #{1}.\n",
+                    "{0:yyyy-MM-dd}: Created from Woo #{1}.\n",
                     TimeZoneUtils.Now(),
                     preview.WooOrderNumber)
             };
@@ -1626,56 +2210,162 @@ namespace TrackerSQL.Managers
             return WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
         }
 
-        private string BuildOrderNotes(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship, bool isUpdate)
+        private string BuildOrderNotes(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship, bool isUpdate, bool contactCreated)
         {
-            var sb = new StringBuilder();
-            sb.Append(isUpdate ? "Updated by Woo import" : "Added by Woo import");
-            if (!string.IsNullOrWhiteSpace(preview.WooOrderNumber))
-                sb.Append(" #").Append(preview.WooOrderNumber.Trim());
-            sb.Append(" — ");
-            sb.Append('[').Append(preview.PaymentAbbrev).Append("] ");
+            var orderKeys = WooCommerceSettingsManager.ParseNotePartOrder(
+                _settingsManager.GetSettings()?.ImportNotePartOrder);
+            var rendered = new List<string>();
 
-            if (preview.UseZzName)
+            foreach (string key in orderKeys)
             {
-                // Put [#email#] early so Order Done / confirm can find it even if notes are truncated.
-                string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
-                if (!string.IsNullOrWhiteSpace(email))
-                    sb.Append("[#").Append(email.Trim()).Append("#] ");
-                sb.Append(BuildZzNameNamePrefix(ship.Company, ship.FullName));
-                sb.Append(ship.FormattedAddress);
-            }
-            else if (!string.IsNullOrWhiteSpace(order.CustomerNote))
-            {
-                sb.Append(order.CustomerNote.Trim());
+                string part = RenderNotePart(key, order, preview, ship, contactCreated);
+                if (!string.IsNullOrWhiteSpace(part))
+                    rendered.Add(part.Trim());
             }
 
-            foreach (var line in preview.Lines.Where(l => l.CanImport && (
+            return JoinRenderedNoteParts(rendered);
+        }
+
+        private string RenderNotePart(
+            string key,
+            WooOrderDto order,
+            WooOrderImportPreviewRow preview,
+            WooAddressDto ship,
+            bool contactCreated)
+        {
+            switch ((key ?? string.Empty).Trim())
+            {
+                case "Name":
+                    // Walk-in / ZZName (and gear-only) — name before ':' for delivery sheet.
+                    if (preview != null && preview.UseZzName)
+                        return BuildZzNameNamePrefix(ship?.Company, ship?.FullName);
+                    return null;
+
+                case "Gear":
+                {
+                    var gear = CollectGearNoteParts(preview);
+                    return gear.Count == 0 ? null : string.Join(" ", gear);
+                }
+
+                case "Address":
+                {
+                    string address = (ship?.FormattedAddress ?? string.Empty).Trim();
+                    return string.IsNullOrWhiteSpace(address) ? null : address;
+                }
+
+                case "WooPay":
+                {
+                    string woo = (preview?.WooOrderNumber ?? string.Empty).Trim();
+                    string pay = (preview?.PaymentAbbrev ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(woo) && string.IsNullOrWhiteSpace(pay))
+                        return null;
+                    var sb = new StringBuilder("[#");
+                    if (!string.IsNullOrWhiteSpace(woo))
+                        sb.Append(woo);
+                    if (!string.IsNullOrWhiteSpace(pay))
+                    {
+                        if (!string.IsNullOrWhiteSpace(woo))
+                            sb.Append(": ");
+                        sb.Append(pay);
+                    }
+                    sb.Append(']');
+                    return sb.ToString();
+                }
+
+                case "Email":
+                {
+                    string email = FirstNonEmpty(ship?.Email, order?.Billing?.Email);
+                    return string.IsNullOrWhiteSpace(email) ? null : "[#" + email.Trim() + "#]";
+                }
+
+                case "CustomerNote":
+                    return string.IsNullOrWhiteSpace(order?.CustomerNote) ? null : order.CustomerNote.Trim();
+
+                case "ContactCreated":
+                    return contactCreated ? "Contact created" : null;
+
+                default:
+                    return null;
+            }
+        }
+
+        private static string JoinRenderedNoteParts(List<string> parts)
+        {
+            if (parts == null || parts.Count == 0)
+                return string.Empty;
+
+            // Name part ends with ": " — keep it leading without an extra pipe for delivery sheet.
+            string first = parts[0];
+            if (first.TrimEnd().EndsWith(":", StringComparison.Ordinal) || first.EndsWith(": ", StringComparison.Ordinal))
+            {
+                if (parts.Count == 1)
+                    return first.TrimEnd();
+                return first.TrimEnd() + " " + string.Join(" | ", parts.Skip(1));
+            }
+
+            return string.Join(" | ", parts);
+        }
+
+        private List<string> CollectGearNoteParts(WooOrderImportPreviewRow preview)
+        {
+            var parts = new List<string>();
+            if (preview?.Lines == null)
+                return parts;
+
+            foreach (var line in preview.Lines.Where(l => l != null && l.CanImport && (
                 l.IsUnmappedForNotes
                 || string.Equals(l.MapType, "Notes", StringComparison.OrdinalIgnoreCase))))
             {
-                if (sb.Length > 0)
-                    sb.Append(" | ");
-                sb.Append(FormatNoteLine(line));
+                string text = FormatNoteLine(line);
+                if (!string.IsNullOrWhiteSpace(text))
+                    parts.Add(text.Trim());
             }
 
-            foreach (var line in preview.Lines.Where(l => l.CanImport && l.AttributeNoteParts != null && l.AttributeNoteParts.Count > 0))
+            foreach (var line in preview.Lines.Where(l => l != null && l.CanImport
+                && l.AttributeNoteParts != null && l.AttributeNoteParts.Count > 0))
             {
                 foreach (string part in line.AttributeNoteParts)
                 {
-                    if (string.IsNullOrWhiteSpace(part))
-                        continue;
-                    if (sb.Length > 0)
-                        sb.Append(" | ");
-                    sb.Append(part.Trim());
+                    if (!string.IsNullOrWhiteSpace(part))
+                        parts.Add(part.Trim());
                 }
             }
 
-            return sb.ToString().Trim();
+            return parts;
         }
 
-        private static string FormatNoteLine(WooOrderLinePreview line)
+        private static void AppendNotePart(StringBuilder sb, string part)
         {
-            string label = !string.IsNullOrWhiteSpace(line.Sku) ? line.Sku : line.Name;
+            if (sb == null || string.IsNullOrWhiteSpace(part))
+                return;
+            if (sb.Length > 0)
+                sb.Append(" | ");
+            sb.Append(part.Trim());
+        }
+
+        private string FormatNoteLine(WooOrderLinePreview line)
+        {
+            if (line == null)
+                return string.Empty;
+
+            string sku = (line.Sku ?? string.Empty).Trim();
+            string name = (line.Name ?? string.Empty).Trim();
+            string label;
+            string format = WooCommerceSettingsManager.NormalizeNoteLineFormat(
+                _settingsManager.GetSettings()?.ImportNoteLineFormat);
+            if (string.Equals(format, "SkuOnly", StringComparison.OrdinalIgnoreCase))
+            {
+                label = !string.IsNullOrWhiteSpace(sku) ? sku : name;
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(sku) && !string.IsNullOrWhiteSpace(name)
+                    && !string.Equals(sku, name, StringComparison.OrdinalIgnoreCase))
+                    label = sku + " (" + name + ")";
+                else
+                    label = !string.IsNullOrWhiteSpace(sku) ? sku : name;
+            }
+
             if (line.IsUnmappedForNotes && line.WooQty > 0)
             {
                 return string.Format(CultureInfo.InvariantCulture, "{0}× {1}", line.WooQty, label);
@@ -1752,13 +2442,16 @@ namespace TrackerSQL.Managers
                     li.MetaData,
                     bySku.ItemServiceTypeID ?? 0,
                     qtyFactor,
-                    packagingId);
+                    packagingId,
+                    _previewContext?.AttributeCache);
                 if (attr != null)
                 {
                     if (attr.QtyFactor > 0)
                         qtyFactor = attr.QtyFactor;
                     if (attr.PackagingId.HasValue && attr.PackagingId.Value > 0)
                         packagingId = attr.PackagingId;
+                    if (attr.PrepTypeId.HasValue && attr.PrepTypeId.Value > 0)
+                        line.PrepTypeId = attr.PrepTypeId;
                     if (attr.NoteParts != null && attr.NoteParts.Count > 0)
                         line.AttributeNoteParts = attr.NoteParts;
                     if (!string.IsNullOrWhiteSpace(attr.Reason))
@@ -1769,6 +2462,7 @@ namespace TrackerSQL.Managers
                 else
                     line.Note = "Matched Tracker SKU";
 
+                line.SuppressPriorPackagingInfer = LineMetaHasPrepOrPackaging(li.MetaData);
                 line.TrackerQty = Math.Round(qtyFactor * li.Quantity, SystemConstants.DatabaseConstants.NumDecimalPoints);
                 line.PackagingId = packagingId;
                 line.CanImport = true;
@@ -1797,7 +2491,7 @@ namespace TrackerSQL.Managers
             if (_categoryFilters != null)
                 return;
             _categoryFilters = _categoryRepo.GetAllOrdered() ?? new List<WooCategoryFilter>();
-            _categoryFilterMode = _settingsRepo.GetSettings()?.CategoryFilterMode ?? "All";
+            _categoryFilterMode = _settingsManager.GetSettings()?.CategoryFilterMode ?? "All";
         }
 
         private string GetExcludedCategoryNote(long productId, long variationId)

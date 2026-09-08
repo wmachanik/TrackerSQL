@@ -225,6 +225,16 @@ namespace TrackerSQL.Managers
 
         public AddOrderLineResult AddOrderLineToOrder(int orderId, int itemTypeId, double quantity, int packagingId)
         {
+            return AddOrderLineToOrder(orderId, itemTypeId, quantity, packagingId, prepTypeId: 0);
+        }
+
+        public AddOrderLineResult AddOrderLineToOrder(
+            int orderId,
+            int itemTypeId,
+            double quantity,
+            int packagingId,
+            int prepTypeId)
+        {
             var result = new AddOrderLineResult { OrderId = orderId };
             if (orderId <= 0)
             {
@@ -243,6 +253,8 @@ namespace TrackerSQL.Managers
             line.ItemTypeID = itemTypeId;
             line.QuantityOrdered = quantity;
             line.PackagingID = packagingId;
+            if (prepTypeId > 0)
+                line.PrepTypeID = prepTypeId;
 
             line.ItemTypeID = new TrackerTools().ChangeItemIfGroupToNextItemInGroup(
                 line.CustomerID, line.ItemTypeID, line.RequiredByDate);

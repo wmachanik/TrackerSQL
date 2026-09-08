@@ -355,9 +355,12 @@ namespace TrackerSQL.Managers
                     serviceTypeId = mappedItem.ItemServiceTypeID.Value;
 
                 if (!mapToNotes && !isParentGroup)
+                {
+                    int? prepTypeId = null;
                     ApplyAttributeMaps(
                         MergeAttributesFromProductName(p.Attributes, p.Name, isVariation),
-                        attrMaps, packagings, serviceTypeId, ref qty, ref packagingId, ref reason);
+                        attrMaps, packagings, serviceTypeId, ref qty, ref packagingId, ref prepTypeId, ref reason);
+                }
 
                 bool applySelected;
                 if (isParentGroup)
@@ -1221,10 +1224,7 @@ namespace TrackerSQL.Managers
 
         private static string Truncate(string value, int maxLen)
         {
-            if (string.IsNullOrEmpty(value) || maxLen <= 0)
-                return value ?? string.Empty;
-            string t = value.Trim();
-            return t.Length <= maxLen ? t : t.Substring(0, maxLen);
+            return StringUtil.Truncate(value, maxLen, appendEllipsis: false);
         }
 
         /// <summary>Renames Tracker SKU and/or sort order when the mapping row values differ.</summary>
@@ -1482,6 +1482,17 @@ namespace TrackerSQL.Managers
             double baseQtyFactor,
             int? basePackagingId)
         {
+            return ResolveOrderLineAttributes(meta, itemServiceTypeId, baseQtyFactor, basePackagingId, null);
+        }
+
+        /// <summary>Same as ResolveOrderLineAttributes but reuses a pull-scoped cache.</summary>
+        public WooLineAttributeResolveResult ResolveOrderLineAttributes(
+            IList<WooMetaDto> meta,
+            int itemServiceTypeId,
+            double baseQtyFactor,
+            int? basePackagingId,
+            WooAttributeResolveCache cache)
+        {
             var result = new WooLineAttributeResolveResult
             {
                 QtyFactor = baseQtyFactor > 0 ? baseQtyFactor : 1,
@@ -1492,37 +1503,30 @@ namespace TrackerSQL.Managers
             if (attributes.Count == 0)
                 return result;
 
-            var attrMaps = _attrRepo.GetActive() ?? new List<WooAttributeMap>();
-            var parentByName = new Dictionary<string, WooAttributeParent>(StringComparer.OrdinalIgnoreCase);
-            foreach (var p in _attrParentRepo.GetAllOrdered() ?? new List<WooAttributeParent>())
-            {
-                if (p == null || !p.ContributesAnything)
-                    continue;
-                string name = (p.AttributeName ?? string.Empty).Trim();
-                if (name.Length == 0 || parentByName.ContainsKey(name))
-                    continue;
-                parentByName[name] = p;
-            }
-            StampParentRanks(attrMaps, parentByName);
+            if (cache == null)
+                cache = BuildAttributeResolveCache();
 
-            attrMaps = attrMaps
-                .Where(m => m != null && (m.QtyRank > 0 || m.PackRank > 0 || m.NoteRank > 0))
-                .ToList();
+            var attrMaps = cache.AttrMaps ?? new List<WooAttributeMap>();
+            var parentByName = cache.ParentByName
+                ?? new Dictionary<string, WooAttributeParent>(StringComparer.OrdinalIgnoreCase);
             if (attrMaps.Count == 0)
                 return result;
 
-            var packagings = GetPackagingsForServiceType(
-                itemServiceTypeId > 0 ? (int?)itemServiceTypeId : null);
+            var packagings = GetPackagingsForServiceType(cache, itemServiceTypeId > 0 ? (int?)itemServiceTypeId : null);
             double qty = result.QtyFactor;
             int? packagingId = result.PackagingId;
+            int? prepTypeId = null;
             string reason = string.Empty;
-            ApplyAttributeMaps(attributes, attrMaps, packagings, itemServiceTypeId, ref qty, ref packagingId, ref reason);
+            ApplyAttributeMaps(attributes, attrMaps, packagings, itemServiceTypeId,
+                ref qty, ref packagingId, ref prepTypeId, ref reason);
 
             result.QtyFactor = qty > 0 ? qty : result.QtyFactor;
             result.PackagingId = packagingId;
+            result.PrepTypeId = prepTypeId;
             result.Reason = reason;
             result.Applied = !string.IsNullOrWhiteSpace(reason)
                 || (packagingId.HasValue && packagingId.Value > 0 && packagingId != basePackagingId)
+                || (prepTypeId.HasValue && prepTypeId.Value > 0)
                 || Math.Abs(qty - (baseQtyFactor > 0 ? baseQtyFactor : 1)) > 0.0001;
 
             var notesNames = new HashSet<string>(
@@ -1542,6 +1546,52 @@ namespace TrackerSQL.Managers
             }
 
             return result;
+        }
+
+        public WooAttributeResolveCache BuildAttributeResolveCache()
+        {
+            var cache = new WooAttributeResolveCache();
+            var attrMaps = _attrRepo.GetActive() ?? new List<WooAttributeMap>();
+            foreach (var p in _attrParentRepo.GetAllOrdered() ?? new List<WooAttributeParent>())
+            {
+                if (p == null || !p.ContributesAnything)
+                    continue;
+                string name = (p.AttributeName ?? string.Empty).Trim();
+                if (name.Length == 0 || cache.ParentByName.ContainsKey(name))
+                    continue;
+                cache.ParentByName[name] = p;
+            }
+            StampParentRanks(attrMaps, cache.ParentByName);
+            cache.AttrMaps = attrMaps
+                .Where(m => m != null && (m.QtyRank > 0 || m.PackRank > 0 || m.NoteRank > 0
+                    || (m.PrepTypeID.HasValue && m.PrepTypeID.Value > 0)))
+                .ToList();
+            cache.AllPackagings = _packRepo.GetAll("ItemPackagingDesc") ?? new List<ItemPackaging>();
+            return cache;
+        }
+
+        private List<ItemPackaging> GetPackagingsForServiceType(WooAttributeResolveCache cache, int? itemServiceTypeId)
+        {
+            var all = cache?.AllPackagings ?? (_packRepo.GetAll("ItemPackagingDesc") ?? new List<ItemPackaging>());
+            if (!itemServiceTypeId.HasValue || itemServiceTypeId.Value <= 0)
+                return all;
+
+            HashSet<int> allowed;
+            if (cache != null)
+            {
+                if (!cache.AllowedPackagingByServiceType.TryGetValue(itemServiceTypeId.Value, out allowed))
+                {
+                    allowed = _packSvcRepo.GetAllowedPackagingIds(itemServiceTypeId.Value);
+                    cache.AllowedPackagingByServiceType[itemServiceTypeId.Value] = allowed ?? new HashSet<int>();
+                    allowed = cache.AllowedPackagingByServiceType[itemServiceTypeId.Value];
+                }
+            }
+            else
+                allowed = _packSvcRepo.GetAllowedPackagingIds(itemServiceTypeId.Value);
+
+            if (allowed == null || allowed.Count == 0)
+                return all;
+            return all.Where(p => allowed.Contains(p.ItemPackagingID)).ToList();
         }
 
         private static List<WooAttributeValue> MetaToAttributeValues(IList<WooMetaDto> meta)
@@ -2277,6 +2327,7 @@ namespace TrackerSQL.Managers
             int itemServiceTypeId,
             ref double qty,
             ref int? packagingId,
+            ref int? prepTypeId,
             ref string reason)
         {
             if (attributes == null || attributes.Count == 0 || maps == null || maps.Count == 0)
@@ -2295,6 +2346,18 @@ namespace TrackerSQL.Managers
                 return;
 
             var parts = new List<string>();
+
+            WooAttributeMap prepWinner = matches
+                .Where(m => m.PrepTypeID.HasValue && m.PrepTypeID.Value > 0)
+                .OrderBy(m => AttributeNameMatches(m.AttributeName, "Prep Type") ? 0 : 1)
+                .ThenBy(m => m.AttributeName, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+            if (prepWinner != null)
+            {
+                prepTypeId = prepWinner.PrepTypeID;
+                parts.Add(prepWinner.AttributeName + "=" + prepWinner.AttributeOption
+                    + "→prep " + prepWinner.PrepTypeID.Value);
+            }
 
             WooAttributeMap qtyWinner = matches
                 .Where(m => m.QtyRank > 0
@@ -2359,7 +2422,7 @@ namespace TrackerSQL.Managers
                 string attrReason = "Attributes: " + string.Join("; ", parts);
                 reason = string.Equals(reason, "Unmapped", StringComparison.OrdinalIgnoreCase)
                     ? attrReason
-                    : reason + " + " + attrReason;
+                    : (string.IsNullOrWhiteSpace(reason) ? attrReason : reason + " + " + attrReason);
             }
         }
 

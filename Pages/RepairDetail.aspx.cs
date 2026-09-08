@@ -95,34 +95,12 @@ namespace TrackerSQL.Pages
 
         private void CaptureReturnUrlIfNeeded()
         {
-            string qsReturn = Request.QueryString["ReturnUrl"];
-            if (!string.IsNullOrWhiteSpace(qsReturn) && TryNormalizeLocalReturnUrl(qsReturn, out string fromQuery))
-            {
-                Session[SESSION_RETURN_URL] = fromQuery;
-                return;
-            }
-
-            if (Request.UrlReferrer != null)
-            {
-                string referrer = Request.UrlReferrer.ToString();
-                if (referrer.IndexOf("RepairDetail.aspx", StringComparison.OrdinalIgnoreCase) < 0
-                    && IsSafeReturnUrl(referrer))
-                {
-                    Session[SESSION_RETURN_URL] = referrer;
-                    return;
-                }
-            }
-
-            if (Session[SESSION_RETURN_URL] == null)
-                Session[SESSION_RETURN_URL] = ResolveUrl(DefaultReturnUrl);
+            ReturnUrlHelper.CaptureIfNeeded(this, SESSION_RETURN_URL, DefaultReturnUrl, "RepairDetail.aspx");
         }
 
         private string GetReturnUrl()
         {
-            string url = Session[SESSION_RETURN_URL] as string;
-            if (string.IsNullOrWhiteSpace(url) || !IsSafeReturnUrl(url))
-                url = ResolveUrl(DefaultReturnUrl);
-            return url;
+            return ReturnUrlHelper.Get(this, SESSION_RETURN_URL, DefaultReturnUrl);
         }
 
         private void ReturnToCaller()
@@ -131,61 +109,11 @@ namespace TrackerSQL.Pages
             Context.ApplicationInstance.CompleteRequest();
         }
 
-        private bool TryNormalizeLocalReturnUrl(string candidate, out string normalized)
-        {
-            normalized = null;
-            if (string.IsNullOrWhiteSpace(candidate))
-                return false;
-
-            candidate = candidate.Trim();
-            if (candidate.StartsWith("~/") || (candidate.StartsWith("/") && !candidate.StartsWith("//")))
-            {
-                normalized = ResolveUrl(candidate.StartsWith("~/") ? candidate : "~" + candidate);
-                return IsSafeReturnUrl(normalized);
-            }
-
-            if (IsSafeReturnUrl(candidate))
-            {
-                normalized = candidate;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsSafeReturnUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-
-            if (url.StartsWith("~/") || (url.StartsWith("/") && !url.StartsWith("//")))
-                return url.IndexOf("://", StringComparison.Ordinal) < 0;
-
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri absolute))
-                return false;
-
-            return Request.Url != null
-                && string.Equals(absolute.Host, Request.Url.Host, StringComparison.OrdinalIgnoreCase);
-        }
-
         private void SetStatus(string message, bool? isError = null)
         {
-            ltrlStatus.Text = HttpUtility.HtmlEncode(message ?? string.Empty);
-            if (pnlStatusMessage == null)
-                return;
-
-            if (string.IsNullOrEmpty(message))
-            {
-                pnlStatusMessage.Attributes["class"] = "status-message";
-                return;
-            }
-
-            if (isError == true)
-                pnlStatusMessage.Attributes["class"] = "status-message status-error";
-            else if (isError == false)
-                pnlStatusMessage.Attributes["class"] = "status-message status-success";
-            else
-                pnlStatusMessage.Attributes["class"] = "status-message status-info";
+            StatusMessageHelper.Set(pnlStatusMessage, ltrlStatus, HttpUtility.HtmlEncode(message ?? string.Empty), isError);
+            if (pnlStatusMessage != null && !string.IsNullOrWhiteSpace(message))
+                pnlStatusMessage.Visible = true;
         }
 
         /// <summary>

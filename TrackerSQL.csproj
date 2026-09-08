@@ -257,6 +257,7 @@
     <Content Include="App_Data\SQLCommands-WooCommerce-01.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-02.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-03.xml" />
+    <Content Include="App_Data\SQLCommands-WooCommerce-04.xml" />
     <Content Include="App_Data\SQLCommands-Postal-01.xml" />
     <Content Include="Data\geo-south-africa-postal_EN.csv" />
     <Content Include="Data\area-place-presets.json" />
@@ -498,6 +499,9 @@
     <Compile Include="Managers\OrderEntryDataSource.cs" />
     <Compile Include="Managers\OrderLookupDataSource.cs" />
     <Compile Include="Managers\TempOrderSession.cs" />
+    <Compile Include="Classes\ReturnUrlHelper.cs" />
+    <Compile Include="Classes\StatusMessageHelper.cs" />
+    <Compile Include="Classes\StringUtil.cs" />
     <Compile Include="Classes\AppLogger.cs" />
     <Compile Include="Classes\WooCommerceUserLog.cs" />
     <Compile Include="Classes\RequestTiming.cs" />
@@ -797,6 +801,7 @@
     <Compile Include="Classes\WooCommerceSecretProtector.cs" />
     <Compile Include="Repositories\SystemPreferencesHdrRepository.cs" />
     <Compile Include="Repositories\WooCommerceSettingsRepository.cs" />
+    <Compile Include="Managers\XmlSchemaCommandRunner.cs" />
     <Compile Include="Managers\WooCommerceSchemaInstaller.cs" />
     <Compile Include="Managers\WooCommerceApiClient.cs" />
     <Compile Include="Managers\WooCommerceApiClient.Catalog.cs" />
@@ -822,6 +827,7 @@
     <Compile Include="Models\OrderWaybill.cs" />
     <Compile Include="Models\WooOrderInfo.cs" />
     <Compile Include="Models\WooOrderImportPreview.cs" />
+    <Compile Include="Models\WooContactUpdateOptions.cs" />
     <Compile Include="Models\WooOrderImportUiState.cs" />
     <Compile Include="Models\WooPaymentMethodMap.cs" />
     <Compile Include="Models\WooCatalogDtos.cs" />

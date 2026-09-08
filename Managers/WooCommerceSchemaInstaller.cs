@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Web;
-using System.Xml;
 using TrackerSQL.Classes;
 
 namespace TrackerSQL.Managers
@@ -16,12 +13,14 @@ namespace TrackerSQL.Managers
         public const string XmlFileName = "SQLCommands-WooCommerce-01.xml";
         public const string XmlFileNameAreas = "SQLCommands-WooCommerce-02.xml";
         public const string XmlFileNameAddress = "SQLCommands-WooCommerce-03.xml";
+        public const string XmlFileNameGeneral = "SQLCommands-WooCommerce-04.xml";
 
         public static readonly string[] XmlFileNames =
         {
             XmlFileName,
             XmlFileNameAreas,
-            XmlFileNameAddress
+            XmlFileNameAddress,
+            XmlFileNameGeneral
         };
 
         public class EnsureResult
@@ -36,26 +35,13 @@ namespace TrackerSQL.Managers
             var result = new EnsureResult();
             try
             {
-                int ran = 0;
-                using (var db = new TrackerSQLDb())
+                int ran = XmlSchemaCommandRunner.RunFiles(XmlFileNames, out string error);
+                if (!string.IsNullOrEmpty(error))
                 {
-                    foreach (string file in XmlFileNames)
-                    {
-                        string path = ResolveXmlPath(file);
-                        if (!File.Exists(path))
-                        {
-                            result.Succeeded = false;
-                            result.Message = "Schema XML not found: " + file;
-                            AppLogger.WriteLog("woo", "Schema ensure failed — file missing: " + path);
-                            return result;
-                        }
-
-                        foreach (string sql in LoadSchemaCommands(path))
-                        {
-                            db.ExecuteNonQuery(sql);
-                            ran++;
-                        }
-                    }
+                    result.Succeeded = false;
+                    result.Message = error;
+                    AppLogger.WriteLog("woo", "Schema ensure failed — " + error);
+                    return result;
                 }
 
                 result.Succeeded = true;
@@ -89,31 +75,6 @@ namespace TrackerSQL.Managers
             {
                 return false;
             }
-        }
-
-        private static string ResolveXmlPath(string fileName)
-        {
-            if (HttpContext.Current != null)
-                return HttpContext.Current.Server.MapPath("~/App_Data/" + fileName);
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "App_Data", fileName);
-        }
-
-        private static List<string> LoadSchemaCommands(string path)
-        {
-            var list = new List<string>();
-            var doc = new XmlDocument();
-            doc.Load(path);
-            XmlNodeList nodes = doc.SelectNodes("//command[@type='create' or @type='alter']");
-            if (nodes == null)
-                return list;
-
-            foreach (XmlNode node in nodes)
-            {
-                string sql = (node.InnerText ?? string.Empty).Trim();
-                if (!string.IsNullOrWhiteSpace(sql))
-                    list.Add(sql);
-            }
-            return list;
         }
     }
 }

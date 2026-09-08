@@ -369,7 +369,8 @@ namespace TrackerSQL.Managers
 
             string track = trackingNumber.Trim();
             var header = _ordersRepository.GetOrderHeaderByOrderId(orderId);
-            if (header != null)
+            var settings = new WooCommerceSettingsManager().GetSettings();
+            if (header != null && settings != null && settings.AppendTrackingToOrderNotes)
             {
                 string notes = header.Notes ?? string.Empty;
                 if (notes.IndexOf(track, StringComparison.OrdinalIgnoreCase) < 0)

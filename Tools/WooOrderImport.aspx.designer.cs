@@ -8,6 +8,9 @@ namespace TrackerSQL.Tools
 {
     public partial class WooOrderImport
     {
+        protected global::System.Web.UI.ScriptManager smWooOrderImport;
+        protected global::System.Web.UI.UpdateProgress upgWooOrderImport;
+        protected global::System.Web.UI.UpdatePanel upnlWooOrderImport;
         protected global::System.Web.UI.WebControls.Panel pnlAccessDenied;
         protected global::System.Web.UI.WebControls.Label lblAccessDenied;
         protected global::System.Web.UI.WebControls.Panel pnlWooDisabled;
@@ -29,12 +32,32 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Label lblTo;
         protected global::System.Web.UI.WebControls.TextBox txtToDate;
         protected global::System.Web.UI.WebControls.Button btnPull;
+        protected global::System.Web.UI.WebControls.Button btnRefreshFromWoo;
         protected global::System.Web.UI.WebControls.Button btnClearPreview;
         protected global::System.Web.UI.WebControls.Literal litLastSync;
         protected global::System.Web.UI.WebControls.CheckBox chkUpdateExisting;
         protected global::System.Web.UI.WebControls.GridView gvPreview;
         protected global::System.Web.UI.WebControls.Panel pnlResults;
         protected global::System.Web.UI.WebControls.BulletedList blResults;
+        protected global::System.Web.UI.WebControls.Panel pnlCompanyNamePrompt;
+        protected global::System.Web.UI.WebControls.Literal litCompanyPromptTitle;
+        protected global::System.Web.UI.WebControls.Literal litCompanyPromptBody;
+        protected global::System.Web.UI.WebControls.HiddenField hdnPendingUpdateWooOrderId;
+        protected global::System.Web.UI.WebControls.Panel pnlCompanyChoice;
+        protected global::System.Web.UI.WebControls.Label lblCompanyChoice;
+        protected global::System.Web.UI.WebControls.RadioButtonList rblCompanyNameMode;
+        protected global::System.Web.UI.WebControls.CheckBox chkUpdateAddress;
+        protected global::System.Web.UI.WebControls.Literal litUpdateAddressDetail;
+        protected global::System.Web.UI.WebControls.CheckBox chkUpdatePhone;
+        protected global::System.Web.UI.WebControls.Literal litUpdatePhoneDetail;
+        protected global::System.Web.UI.WebControls.Panel pnlPhoneSkipHint;
+        protected global::System.Web.UI.WebControls.Literal litPhoneSkipHint;
+        protected global::System.Web.UI.WebControls.CheckBox chkUpdateAltEmail;
+        protected global::System.Web.UI.WebControls.Literal litUpdateAltEmailDetail;
+        protected global::System.Web.UI.WebControls.CheckBox chkUpdatePersonNames;
+        protected global::System.Web.UI.WebControls.Literal litUpdatePersonNamesDetail;
+        protected global::System.Web.UI.WebControls.Button btnCompanyPromptConfirm;
+        protected global::System.Web.UI.WebControls.Button btnCompanyPromptCancel;
         protected global::System.Web.UI.WebControls.Button btnRefreshConflicts;
         protected global::System.Web.UI.WebControls.GridView gvConflicts;
     }

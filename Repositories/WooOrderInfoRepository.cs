@@ -332,19 +332,9 @@ IF OBJECT_ID(N'dbo.WooOrderInfoTbl', N'U') IS NOT NULL
                 LastSyncedUtc = rdr["LastSyncedUtc"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr["LastSyncedUtc"]),
                 RawSnapshotJson = rdr["RawSnapshotJson"] as string
             };
-            if (HasColumn(rdr, "ImportConflicts"))
+            if (DbMapper.HasColumn(rdr, "ImportConflicts"))
                 info.ImportConflicts = rdr["ImportConflicts"] as string;
             return info;
         }
-
-        private static bool HasColumn(IDataRecord rdr, string name)
-        {
-            for (int i = 0; i < rdr.FieldCount; i++)
-            {
-                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-    }
+}
 }

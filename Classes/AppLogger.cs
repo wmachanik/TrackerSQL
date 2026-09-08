@@ -11,6 +11,10 @@ namespace TrackerSQL.Classes
     public static class AppLogger
     {
         private const int MaxLines = 5000;
+        /// <summary>Only read/trim the file when it exceeds this size (avoids ReadAllLines every write).</summary>
+        private const long TrimThresholdBytes = 1500000;
+
+        private static readonly object TrimLock = new object();
 
         private static string GetLoggedInUsername()
         {
@@ -99,15 +103,26 @@ namespace TrackerSQL.Classes
         }
 
         /// <summary>
-        /// Trims the log file to retain only the most recent MaxLines.
+        /// Size-gated trim: skip unless file is large; then keep the newest MaxLines.
         /// </summary>
         private static void TrimLogFile(string filePath)
         {
             try
             {
-                var lines = File.ReadAllLines(filePath);
-                if (lines.Length > MaxLines)
+                var info = new FileInfo(filePath);
+                if (!info.Exists || info.Length < TrimThresholdBytes)
+                    return;
+
+                lock (TrimLock)
                 {
+                    info.Refresh();
+                    if (!info.Exists || info.Length < TrimThresholdBytes)
+                        return;
+
+                    var lines = File.ReadAllLines(filePath);
+                    if (lines.Length <= MaxLines)
+                        return;
+
                     var trimmed = lines.Skip(lines.Length - MaxLines).ToArray();
                     File.WriteAllLines(filePath, trimmed);
                 }

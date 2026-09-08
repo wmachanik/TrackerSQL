@@ -64,18 +64,18 @@ namespace TrackerSQL.Managers
 
             string billing = contact?.BillingAddress ?? string.Empty;
             string[] parts = billing.Split(new[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-            acc.BillAddr1 = parts.Length > 0 ? CapitalizeWords(parts[0].Trim()) : string.Empty;
-            acc.BillAddr2 = parts.Length > 1 ? CapitalizeWords(parts[1].Trim()) : string.Empty;
-            acc.BillAddr3 = parts.Length > 2 ? CapitalizeWords(parts[2].Trim()) : string.Empty;
+            acc.BillAddr1 = TruncateAccAddr(parts.Length > 0 ? CapitalizeWords(parts[0].Trim()) : string.Empty);
+            acc.BillAddr2 = TruncateAccAddr(parts.Length > 1 ? CapitalizeWords(parts[1].Trim()) : string.Empty);
+            acc.BillAddr3 = TruncateAccAddr(parts.Length > 2 ? CapitalizeWords(parts[2].Trim()) : string.Empty);
             if (parts.Length > 3)
             {
                 var tail = new List<string>();
                 for (int i = 3; i < parts.Length; i++)
                     tail.Add(CapitalizeWords(parts[i].Trim()));
-                acc.BillAddr4 = string.Join(", ", tail.Where(s => !string.IsNullOrWhiteSpace(s)));
+                acc.BillAddr4 = TruncateAccAddr(string.Join(", ", tail.Where(s => !string.IsNullOrWhiteSpace(s))));
             }
 
-            acc.BillAddr5 = NormalizePostcode(contact?.PostalCode);
+            acc.BillAddr5 = TruncateAccAddr(NormalizePostcode(contact?.PostalCode));
             acc.ShipAddr1 = acc.BillAddr1;
             acc.ShipAddr2 = acc.BillAddr2;
             acc.ShipAddr3 = acc.BillAddr3;
@@ -197,6 +197,14 @@ namespace TrackerSQL.Managers
             if (digits.Length >= 4)
                 return digits.Substring(0, 4);
             return digits;
+        }
+
+        /// <summary>ContactsAccInfoTbl BillAddr* columns are NVARCHAR(50).</summary>
+        private static string TruncateAccAddr(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value ?? string.Empty;
+            return value.Length <= 50 ? value : value.Substring(0, 50);
         }
     }
 }

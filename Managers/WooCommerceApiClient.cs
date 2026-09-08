@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,15 +10,70 @@ using TrackerSQL.Models;
 namespace TrackerSQL.Managers
 {
     /// <summary>
-    /// Minimal WooCommerce REST client (v3). Phase 1: Test Connection only.
+    /// Minimal WooCommerce REST client (v3). Shared HttpClient + sticky auth per store.
     /// </summary>
     public partial class WooCommerceApiClient
     {
+        private static readonly object SharedClientLock = new object();
+        private static HttpClient _sharedClient;
+
+        /// <summary>Preferred auth mode per normalized store base URL ("query" or "basic").</summary>
+        private static readonly ConcurrentDictionary<string, string> PreferredAuthByStore =
+            new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public class ApiCredentials
+        {
+            public string StoreBaseUrl { get; set; }
+            public string ConsumerKey { get; set; }
+            public string ConsumerSecret { get; set; }
+        }
+
         public class ConnectionTestResult
         {
             public bool Succeeded { get; set; }
             public string Detail { get; set; }
             public int? HttpStatus { get; set; }
+        }
+
+        private static HttpClient SharedClient
+        {
+            get
+            {
+                if (_sharedClient != null)
+                    return _sharedClient;
+                lock (SharedClientLock)
+                {
+                    if (_sharedClient != null)
+                        return _sharedClient;
+                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                    var handler = new HttpClientHandler { AllowAutoRedirect = true };
+                    var client = new HttpClient(handler)
+                    {
+                        Timeout = TimeSpan.FromSeconds(60)
+                    };
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("TrackerSQL-WooClient/3.0");
+                    _sharedClient = client;
+                    return _sharedClient;
+                }
+            }
+        }
+
+        internal static void RememberAuthMode(string storeBaseUrl, string mode)
+        {
+            string key = NormalizeStoreBaseUrl(storeBaseUrl);
+            if (string.IsNullOrEmpty(key) || string.IsNullOrWhiteSpace(mode))
+                return;
+            PreferredAuthByStore[key] = mode.Trim().ToLowerInvariant();
+        }
+
+        internal static string GetPreferredAuthMode(string storeBaseUrl)
+        {
+            string key = NormalizeStoreBaseUrl(storeBaseUrl);
+            string mode;
+            if (!string.IsNullOrEmpty(key) && PreferredAuthByStore.TryGetValue(key, out mode))
+                return mode;
+            return null;
         }
 
         public ConnectionTestResult TestConnection(WooCommerceSettings settings, string consumerKeyPlain, string consumerSecretPlain)
@@ -43,86 +99,84 @@ namespace TrackerSQL.Managers
                 }
 
                 string baseUrl = NormalizeStoreBaseUrl(settings.StoreBaseUrl);
-                // Prefer TLS 1.2 for modern Woo hosts.
                 ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
-                // 1) Basic auth + system/status
-                // 2) Basic auth + products (status often restricted)
-                // 3) Query-string auth (hosts that strip Authorization headers)
                 var attempts = new[]
                 {
-                    new { Url = baseUrl + "/wp-json/wc/v3/system/status", Mode = "basic", Label = "system/status" },
-                    new { Url = baseUrl + "/wp-json/wc/v3/products?per_page=1", Mode = "basic", Label = "products" },
-                    new
-                    {
-                        Url = baseUrl + "/wp-json/wc/v3/products?per_page=1"
-                            + "&consumer_key=" + Uri.EscapeDataString(consumerKeyPlain)
-                            + "&consumer_secret=" + Uri.EscapeDataString(consumerSecretPlain),
-                        Mode = "query",
-                        Label = "products (query auth)"
-                    }
+                    new { Path = "/wp-json/wc/v3/system/status", Mode = "basic", Label = "system/status" },
+                    new { Path = "/wp-json/wc/v3/products?per_page=1", Mode = "basic", Label = "products" },
+                    new { Path = "/wp-json/wc/v3/products?per_page=1", Mode = "query", Label = "products (query auth)" }
                 };
+
+                string preferred = GetPreferredAuthMode(baseUrl);
+                if (!string.IsNullOrEmpty(preferred))
+                {
+                    attempts = new[]
+                    {
+                        new { Path = "/wp-json/wc/v3/products?per_page=1", Mode = preferred, Label = "products (" + preferred + ")" },
+                        new { Path = "/wp-json/wc/v3/system/status", Mode = preferred == "basic" ? "basic" : "query", Label = "system/status (" + preferred + ")" },
+                        new { Path = "/wp-json/wc/v3/products?per_page=1", Mode = preferred == "basic" ? "query" : "basic", Label = "products (fallback)" }
+                    };
+                }
 
                 string lastDetail = null;
                 int? lastStatus = null;
+                HttpClient client = SharedClient;
 
-                using (var handler = new HttpClientHandler())
+                foreach (var attempt in attempts)
                 {
-                    // Follow redirects; some WP sites bounce http→https or add www.
-                    handler.AllowAutoRedirect = true;
-
-                    using (var client = new HttpClient(handler))
+                    string url = baseUrl + attempt.Path;
+                    if (attempt.Mode == "query")
                     {
-                        client.Timeout = TimeSpan.FromSeconds(30);
-                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        client.DefaultRequestHeaders.UserAgent.ParseAdd("TrackerSQL-WooClient/3.0");
+                        string sep = url.Contains("?") ? "&" : "?";
+                        url = url + sep
+                            + "consumer_key=" + Uri.EscapeDataString(consumerKeyPlain)
+                            + "&consumer_secret=" + Uri.EscapeDataString(consumerSecretPlain);
+                    }
 
-                        foreach (var attempt in attempts)
+                    using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                    {
+                        if (attempt.Mode == "basic")
                         {
-                            using (var request = new HttpRequestMessage(HttpMethod.Get, attempt.Url))
+                            var authBytes = Encoding.ASCII.GetBytes(consumerKeyPlain + ":" + consumerSecretPlain);
+                            request.Headers.Authorization =
+                                new AuthenticationHeaderValue("Basic", Convert.ToBase64String(authBytes));
+                        }
+
+                        HttpResponseMessage response;
+                        try
+                        {
+                            response = client.SendAsync(request).GetAwaiter().GetResult();
+                        }
+                        catch (Exception ex)
+                        {
+                            lastDetail = attempt.Label + ": " + ex.Message;
+                            AppLogger.WriteLog("woo", "Test attempt failed — " + lastDetail);
+                            continue;
+                        }
+
+                        using (response)
+                        {
+                            int code = (int)response.StatusCode;
+                            lastStatus = code;
+                            if (response.IsSuccessStatusCode)
                             {
-                                if (attempt.Mode == "basic")
+                                RememberAuthMode(baseUrl, attempt.Mode);
+                                string ok = "OK via " + attempt.Label + " — HTTP " + code + " @ " + baseUrl;
+                                AppLogger.WriteLog("woo", "Test connection " + ok);
+                                return new ConnectionTestResult
                                 {
-                                    var authBytes = Encoding.ASCII.GetBytes(consumerKeyPlain + ":" + consumerSecretPlain);
-                                    request.Headers.Authorization =
-                                        new AuthenticationHeaderValue("Basic", Convert.ToBase64String(authBytes));
-                                }
-
-                                HttpResponseMessage response;
-                                try
-                                {
-                                    response = client.SendAsync(request).GetAwaiter().GetResult();
-                                }
-                                catch (Exception ex)
-                                {
-                                    lastDetail = attempt.Label + ": " + ex.Message;
-                                    AppLogger.WriteLog("woo", "Test attempt failed — " + lastDetail);
-                                    continue;
-                                }
-
-                                using (response)
-                                {
-                                    int code = (int)response.StatusCode;
-                                    lastStatus = code;
-                                    if (response.IsSuccessStatusCode)
-                                    {
-                                        string ok = "OK via " + attempt.Label + " — HTTP " + code + " @ " + baseUrl;
-                                        AppLogger.WriteLog("woo", "Test connection " + ok);
-                                        return new ConnectionTestResult
-                                        {
-                                            Succeeded = true,
-                                            HttpStatus = code,
-                                            Detail = ok
-                                        };
-                                    }
-
-                                    string body = SafeReadBody(response);
-                                    lastDetail = attempt.Label + " HTTP " + code
-                                        + " @ " + baseUrl
-                                        + (string.IsNullOrEmpty(body) ? string.Empty : " — " + body);
-                                    AppLogger.WriteLog("woo", "Test attempt failed — " + lastDetail);
-                                }
+                                    Succeeded = true,
+                                    HttpStatus = code,
+                                    Detail = ok
+                                };
                             }
+
+                            string body = SafeReadBody(response);
+                            lastDetail = attempt.Label + " HTTP " + code
+                                + " @ " + baseUrl
+                                + (string.IsNullOrEmpty(body) ? string.Empty : " — " + body);
+                            AppLogger.WriteLog("woo", "Test attempt failed — " + lastDetail);
                         }
                     }
                 }
@@ -168,12 +222,10 @@ namespace TrackerSQL.Managers
             try
             {
                 string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                if (string.IsNullOrWhiteSpace(body))
+                if (string.IsNullOrEmpty(body))
                     return string.Empty;
                 body = body.Replace("\r", " ").Replace("\n", " ").Trim();
-                if (body.Length > 180)
-                    body = body.Substring(0, 180) + "…";
-                return body;
+                return body.Length > 200 ? body.Substring(0, 200) + "…" : body;
             }
             catch
             {

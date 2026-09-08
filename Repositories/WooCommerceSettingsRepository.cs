@@ -18,8 +18,11 @@ namespace TrackerSQL.Repositories
             "PushEnabledStateToWoo, DisableScopeDefault, PullStockQtyEnabled, CategoryFilterMode, " +
             "GuestCheckoutContactMode, DispatchDeliveryPersonIds, TrackingNumberRequired, " +
             "DispatchedWooStatus, AutoCompleteOnWooCompleted, DefaultImportAreaID, " +
-            "ImportAddressIncludeProvince, ImportAddressIncludeCountry, ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
-            "ImportNotesItemID, " +
+            "ImportAddressIncludeProvince, ImportAddressIncludeCountry, " +
+            "ImportAddressDeduplicateSuburb, ImportAddressStripCapeTown, ImportAddressTitleCase, " +
+            "ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
+            "ImportNotesItemID, ImportCompanyNameMode, ImportNoteLineFormat, AppendTrackingToOrderNotes, " +
+            "ImportAutoPullMode, ImportZzNameNoteLayout, ImportNotePartOrder, " +
             "UpdatedAt, UpdatedBy";
 
         public WooCommerceSettings GetSettings()
@@ -70,7 +73,16 @@ namespace TrackerSQL.Repositories
                 DispatchDeliveryPersonIds = "5,7",
                 TrackingNumberRequired = true,
                 DispatchedWooStatus = "processing",
-                ImportNotesItemID = SystemConstants.ItemConstants.NoteItemTimeID
+                ImportNotesItemID = SystemConstants.ItemConstants.NoteItemTimeID,
+                ImportCompanyNameMode = "CareOfPrefix",
+                ImportNoteLineFormat = "SkuAndName",
+                AppendTrackingToOrderNotes = false,
+                ImportAutoPullMode = "Today",
+                ImportZzNameNoteLayout = "NameGearAddressMeta",
+                ImportNotePartOrder = "Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated",
+                ImportAddressDeduplicateSuburb = true,
+                ImportAddressStripCapeTown = true,
+                ImportAddressTitleCase = true
             };
         }
     }

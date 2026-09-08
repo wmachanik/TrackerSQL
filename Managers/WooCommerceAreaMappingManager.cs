@@ -13,7 +13,7 @@ namespace TrackerSQL.Managers
     {
         private readonly WooAreaDeliveryDefaultRepository _areaDefaultRepo = new WooAreaDeliveryDefaultRepository();
         private readonly WooShippingMethodMapRepository _shipRepo = new WooShippingMethodMapRepository();
-        private readonly WooCommerceSettingsRepository _settingsRepo = new WooCommerceSettingsRepository();
+        private readonly WooCommerceSettingsManager _settingsManager = new WooCommerceSettingsManager();
         private readonly AreasRepository _areasRepo = new AreasRepository();
 
         public List<WooAreaDeliveryDefault> GetAreaDeliveryDefaults()
@@ -30,14 +30,14 @@ namespace TrackerSQL.Managers
 
         public int? GetDefaultImportAreaId()
         {
-            return _settingsRepo.GetSettings().DefaultImportAreaID;
+            return _settingsManager.GetSettings().DefaultImportAreaID;
         }
 
         public void SaveDefaultImportArea(int? areaId, string updatedBy)
         {
-            var s = _settingsRepo.GetSettings();
+            var s = _settingsManager.GetSettings();
             s.DefaultImportAreaID = areaId > 0 ? areaId : null;
-            _settingsRepo.SaveSettings(s, updatedBy);
+            new WooCommerceSettingsRepository().SaveSettings(s, updatedBy);
         }
 
         public int SaveAreaDeliveryDefaults(IList<WooAreaDeliveryDefault> rows, string updatedBy)

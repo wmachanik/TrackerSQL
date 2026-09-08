@@ -349,15 +349,16 @@
                     if (el.id.indexOf('btnPullAttributes') >= 0) return 'attrOptions';
                     if (el.id.indexOf('btnPullProducts') >= 0) return 'products';
                     if (el.id.indexOf('btnWriteMissingSkus') >= 0) return 'writeSkus';
-                    if (el.id.indexOf('btnResetCatalog') >= 0) return 'local';
                     if (el.id.indexOf('btnDryPush') >= 0) return 'dryPush';
                     if (el.id.indexOf('btnPushEnabled') >= 0) return 'push';
+                    if (el.id.indexOf('btnSave') >= 0) return 'save';
                     if (el.id.indexOf('btnTab') >= 0) return 'local';
                 }
                 return 'local';
             },
             labelFor: function (op) {
-                if (op === 'local') return 'Loading saved data...';
+                if (op === 'local') return 'Working — please wait...';
+                if (op === 'save') return 'Saving...';
                 if (op === 'products') return 'Downloading products and variations from Woo...';
                 if (op === 'writeSkus') return 'Writing SKUs to WooCommerce...';
                 if (op === 'dryPush') return 'Dry-run: checking enabled state for Woo...';
@@ -375,7 +376,12 @@
                 return 'Still talking to Woo...';
             },
             isQuiet: function (op) {
-                return !op || op === 'local' || op === 'default';
+                // Only hide the wait chrome for grid paging — every other click needs feedback.
+                if (window._wooMapPaging) {
+                    window._wooMapPaging = false;
+                    return true;
+                }
+                return false;
             },
             tick: function () {
                 var root = document.querySelector('.woo-map-busy');
@@ -537,17 +543,32 @@
                     id: el && el.id ? el.id : '',
                     savedMaps: !!(el && el.id && el.id.indexOf('btnSaveSelectedMaps') >= 0)
                 };
+                // Clear any stuck quiet flag from a prior aborted request.
+                if (document.body)
+                    document.body.className = (document.body.className || '').replace(/\bwoo-map-quiet-postback\b/g, '').replace(/\s+/g, ' ').trim();
                 if (window.wooMapBusy.isQuiet(op)) {
                     if (document.body)
                         document.body.className += (document.body.className ? ' ' : '') + 'woo-map-quiet-postback';
                     return;
                 }
+                if (document.body && document.body.className.indexOf('woo-map-working') < 0)
+                    document.body.className += (document.body.className ? ' ' : '') + 'woo-map-working';
+                if (el) {
+                    try {
+                        el.setAttribute('aria-busy', 'true');
+                        if (el.disabled !== undefined) el.disabled = true;
+                    } catch (ex) { }
+                }
                 window.wooMapBusy.start(op);
             });
             prm.add_endRequest(function () {
                 window.wooMapBusy.stop(true);
-                if (document.body)
-                    document.body.className = (document.body.className || '').replace(/\bwoo-map-quiet-postback\b/g, '').replace(/\s+/g, ' ').trim();
+                if (document.body) {
+                    document.body.className = (document.body.className || '')
+                        .replace(/\bwoo-map-quiet-postback\b/g, '')
+                        .replace(/\bwoo-map-working\b/g, '')
+                        .replace(/\s+/g, ' ').trim();
+                }
                 var r = window._wooMapRestore;
                 if (r && r.savedMaps) {
                     var ok = document.getElementById('<%= hdnPullSaveOk.ClientID %>');
@@ -599,7 +620,7 @@
 <asp:Content ID="cntWooMapBdy" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="smWooMap" runat="server" EnablePartialRendering="true" AsyncPostBackTimeout="600" />
 
-    <asp:UpdateProgress ID="upgWooMap" runat="server" AssociatedUpdatePanelID="upnlWooMap" DisplayAfter="150">
+    <asp:UpdateProgress ID="upgWooMap" runat="server" AssociatedUpdatePanelID="upnlWooMap" DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
             <div class="woo-map-busy status-message status-info page-tone-progress" role="status" aria-live="polite">
                 <div class="woo-map-busy-head">
@@ -654,6 +675,7 @@
 
                 <div class="sys-prefs-tabs-wrap">
                     <nav class="sys-prefs-tabs" aria-label="Mapping sections">
+                        <asp:LinkButton ID="btnTabGeneral" runat="server" CssClass="sys-prefs-tab" OnClick="btnTabGeneral_Click" CausesValidation="false" OnClientClick="return wooMapConfirmLeave();" />
                         <asp:LinkButton ID="btnTabCat" runat="server" CssClass="sys-prefs-tab" OnClick="btnTabCat_Click" CausesValidation="false" OnClientClick="return wooMapConfirmLeave();" />
                         <asp:LinkButton ID="btnTabAttrParents" runat="server" CssClass="sys-prefs-tab" OnClick="btnTabAttrParents_Click" CausesValidation="false" OnClientClick="return wooMapConfirmLeave();" />
                         <asp:LinkButton ID="btnTabAttrVariants" runat="server" CssClass="sys-prefs-tab" OnClick="btnTabAttrVariants_Click" CausesValidation="false" OnClientClick="return wooMapConfirmLeave();" />
@@ -1013,23 +1035,37 @@
                         <h3 class="woo-map-section-title"><asp:Literal ID="litAddressConfigTitle" runat="server" /></h3>
                         <p class="woo-map-section-note"><asp:Literal ID="litAddressConfigNote" runat="server" /></p>
                         <div class="filter-toolbar woo-map-address-config">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                            <div class="woo-map-address-config-grid">
+                                <div class="woo-map-address-config-item">
                                     <asp:CheckBox ID="chkImportAddressIncludeProvince" runat="server"
                                         Text="Include province/state in billing address" />
                                 </div>
-                                <div class="filter-control">
+                                <div class="woo-map-address-config-item">
                                     <asp:CheckBox ID="chkImportAddressIncludeCountry" runat="server"
                                         Text="Include country in billing address" />
                                 </div>
-                                <div class="filter-control">
+                                <div class="woo-map-address-config-item">
+                                    <asp:CheckBox ID="chkImportAddressDeduplicateSuburb" runat="server"
+                                        Text="Remove duplicate suburb/city tokens (e.g. Claremont; Claremont)" />
+                                </div>
+                                <div class="woo-map-address-config-item">
+                                    <asp:CheckBox ID="chkImportAddressStripCapeTown" runat="server"
+                                        Text="Remove &quot;Cape Town&quot; when delivery area is Cape Town*" />
+                                </div>
+                                <div class="woo-map-address-config-item">
+                                    <asp:CheckBox ID="chkImportAddressTitleCase" runat="server"
+                                        Text="Title-case address lines (not ALL CAPS / all lowercase)" />
+                                </div>
+                                <div class="woo-map-address-config-item">
                                     <asp:CheckBox ID="chkImportPhoneReplacePlus27" runat="server"
                                         Text="Replace +27 with 0 on phone numbers" />
                                 </div>
-                                <div class="filter-control">
+                                <div class="woo-map-address-config-item">
                                     <asp:CheckBox ID="chkImportPhoneFormatSa" runat="server"
                                         Text="Format SA phone numbers (aaa bbb-cccc)" />
                                 </div>
+                            </div>
+                            <div class="woo-map-address-config-actions">
                                 <asp:Button ID="btnSaveAddressConfig" runat="server" CssClass="filter-panel-btn"
                                     OnClick="btnSaveAddressConfig_Click" CausesValidation="false"
                                     OnClientClick="return wooMapPrepareSave(this);" data-woo-save-ready="0" />
@@ -1426,6 +1462,77 @@
                                     <asp:BoundField DataField="Result" HeaderText="Result" />
                                 </Columns>
                             </asp:GridView>
+                        </div>
+                    </asp:View>
+
+                    <asp:View ID="viewGeneral" runat="server">
+                        <p><asp:Literal ID="litGeneralHelp" runat="server" /></p>
+
+                        <h3 class="woo-map-section-title">Company name on existing contacts</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralCompanyModeNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:Label ID="lblGeneralCompanyMode" runat="server" AssociatedControlID="ddlGeneralCompanyMode" />
+                                    <asp:DropDownList ID="ddlGeneralCompanyMode" runat="server" CssClass="sys-prefs-input" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="woo-map-section-title">Order note line format</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralNoteLineFormatNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:Label ID="lblGeneralNoteLineFormat" runat="server" AssociatedControlID="ddlGeneralNoteLineFormat" />
+                                    <asp:DropDownList ID="ddlGeneralNoteLineFormat" runat="server" CssClass="sys-prefs-input" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="woo-map-section-title">Order note parts (all imports)</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralNotePartOrderNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:Label ID="lblGeneralNotePartOrder" runat="server" AssociatedControlID="lstGeneralNotePartOrder" />
+                                    <asp:ListBox ID="lstGeneralNotePartOrder" runat="server" CssClass="sys-prefs-input"
+                                        Rows="8" Width="36em" />
+                                </div>
+                                <div class="filter-control" style="display:flex; flex-direction:column; gap:6px;">
+                                    <asp:Button ID="btnNotePartMoveUp" runat="server" CssClass="filter-panel-btn"
+                                        Text="Move up" OnClick="btnNotePartMoveUp_Click" CausesValidation="false" />
+                                    <asp:Button ID="btnNotePartMoveDown" runat="server" CssClass="filter-panel-btn"
+                                        Text="Move down" OnClick="btnNotePartMoveDown_Click" CausesValidation="false" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="woo-map-section-title">Dispatch tracking</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralAppendTrackingNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:CheckBox ID="chkGeneralAppendTracking" runat="server" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="woo-map-section-title">Order Import auto-pull</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralAutoPullNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:Label ID="lblGeneralAutoPull" runat="server" AssociatedControlID="ddlGeneralAutoPull" />
+                                    <asp:DropDownList ID="ddlGeneralAutoPull" runat="server" CssClass="sys-prefs-input" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="button-row">
+                            <asp:Button ID="btnSaveGeneralSettings" runat="server" CssClass="filter-panel-btn"
+                                OnClick="btnSaveGeneralSettings_Click" CausesValidation="false"
+                                OnClientClick="return wooMapPrepareSave(this);" data-woo-save-ready="0" />
                         </div>
                     </asp:View>
                 </asp:MultiView>

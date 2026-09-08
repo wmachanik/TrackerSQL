@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -276,8 +277,14 @@ namespace TrackerSQL.Pages
                 ClearPageStatus();
 
             var accInfoRepository = new ContactsAccInfoRepository();
+            var invoiceTypes = PrefetchInvoiceTypes(accInfoRepository, queryResult.Items);
             var manager = new DeliverySheetManager(
-                contactId => accInfoRepository.GetInvoiceTypeIdByContactId((int)contactId) ?? 0);
+                contactId =>
+                {
+                    int id = (int)contactId;
+                    int typeId;
+                    return invoiceTypes.TryGetValue(id, out typeId) ? typeId : 0;
+                });
 
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
@@ -952,13 +959,33 @@ namespace TrackerSQL.Pages
                 ClearPageStatus();
 
             var accInfoRepository = new ContactsAccInfoRepository();
+            var invoiceTypes = PrefetchInvoiceTypes(accInfoRepository, queryResult.Items);
             var manager = new DeliverySheetManager(
-                contactId => accInfoRepository.GetInvoiceTypeIdByContactId((int)contactId) ?? 0);
+                contactId =>
+                {
+                    int id = (int)contactId;
+                    int typeId;
+                    return invoiceTypes.TryGetValue(id, out typeId) ? typeId : 0;
+                });
 
             // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
             var buildResult = manager.Build(queryResult.Items, false);
 
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
+        }
+
+        private static Dictionary<int, int> PrefetchInvoiceTypes(
+            ContactsAccInfoRepository accInfoRepository,
+            IList<DeliverySheetOrderRow> rows)
+        {
+            if (accInfoRepository == null || rows == null || rows.Count == 0)
+                return new Dictionary<int, int>();
+
+            var contactIds = rows
+                .Where(r => r != null && r.ContactID > 0)
+                .Select(r => (int)r.ContactID)
+                .Distinct();
+            return accInfoRepository.GetInvoiceTypeIdsByContactIds(contactIds);
         }
 
         /// <summary>

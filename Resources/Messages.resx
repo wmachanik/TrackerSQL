@@ -975,6 +975,90 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapTabSync" xml:space="preserve">
     <value>Enabled sync</value>
   </data>
+  <data name="WooCommerce.MapTabGeneral" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="WooCommerce.MapGeneralHelp" xml:space="preserve">
+    <value>Import behaviour that applies across Woo order import: company names on existing contacts, how gear/unmapped lines appear in order notes, and whether dispatch tracking is copied into Notes.</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCompanyModeLbl" xml:space="preserve">
+    <value>When Woo has a company name and the contact already exists:</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCompanyModeCareOf" xml:space="preserve">
+    <value>Keep contact name; prefix billing with c/o Company;</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCompanyModeUpdate" xml:space="preserve">
+    <value>Update the contact company name from Woo</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCompanyModeNote" xml:space="preserve">
+    <value>This is the default choice when Update contact asks what to do with a Woo company name. Contact changes from import are always written to the contact Notes. New contacts still use the Woo company (or person name) as the company name. Address comparison for “needs update” uses this same default (c/o prefix vs rename).</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptTitle" xml:space="preserve">
+    <value>Company name on contact</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptBody" xml:space="preserve">
+    <value>Woo company “{0}” differs from contact “{1}”. Choose how to update the contact (default from General settings is selected).</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptCareOf" xml:space="preserve">
+    <value>Keep contact name; prefix billing with c/o Company;</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptUpdate" xml:space="preserve">
+    <value>Update the contact company name from Woo</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptConfirm" xml:space="preserve">
+    <value>Update contact</value>
+  </data>
+  <data name="WooCommerce.ImportCompanyPromptCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNoteLineFormatLbl" xml:space="preserve">
+    <value>Gear / notes-mapped line text:</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNoteLineSkuOnly" xml:space="preserve">
+    <value>SKU only</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNoteLineSkuAndName" xml:space="preserve">
+    <value>SKU + Woo item description</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNoteLineFormatNote" xml:space="preserve">
+    <value>These lines are the gear / notes-mapped SKU text used inside the Gear part below.</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNotePartOrderLbl" xml:space="preserve">
+    <value>Note part order (all Woo imports):</value>
+  </data>
+  <data name="WooCommerce.MapGeneralNotePartOrderNote" xml:space="preserve">
+    <value>Applies to every imported order. Each part is included only when available. Use Move up / Move down to change the order. Keep Name first for ZZName / gear-only so the delivery sheet can read the walk-in name before the first colon.</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAppendTrackingLbl" xml:space="preserve">
+    <value>Also append tracking number to order Notes on dispatch</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAppendTrackingNote" xml:space="preserve">
+    <value>Off by default — tracking is already shown on the order. Turn on only if you still want Tracking: … in Notes.</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullLbl" xml:space="preserve">
+    <value>When opening Order Import:</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullNote" xml:space="preserve">
+    <value>Automatically pulls a preview if there is no restored session preview. Returning from Order Detail / Contact still restores the last preview first.</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullNone" xml:space="preserve">
+    <value>Do not auto-pull (manual Pull only)</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullToday" xml:space="preserve">
+    <value>Auto-pull today's orders</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullSinceSync" xml:space="preserve">
+    <value>Auto-pull since last import sync</value>
+  </data>
+  <data name="WooCommerce.MapGeneralAutoPullThisWeek" xml:space="preserve">
+    <value>Auto-pull this week's orders</value>
+  </data>
+  <data name="WooCommerce.MapSaveGeneralSettings" xml:space="preserve">
+    <value>Save general settings</value>
+  </data>
+  <data name="WooCommerce.MapGeneralSettingsSaved" xml:space="preserve">
+    <value>General import settings saved.</value>
+  </data>
   <data name="WooCommerce.MapCatHelp" xml:space="preserve">
     <value>Pull categories from Woo, tick Include as needed, set All vs Included only, then Save includes. Unticked categories (e.g. Referral) are excluded from Mappings and Missing SKUs — even if mode is still All. Child categories are indented. S/O and Import defaults apply to unmapped products. Import "(inherit)" uses the parent category's Import setting — it is not the same as "Parent → order notes". Set the root (e.g. Gear) to Parent → order notes so children on (inherit) pick that up. Uncategorized is off by default when other categories exist.</value>
   </data>
@@ -1276,7 +1360,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Address config</value>
   </data>
   <data name="WooCommerce.MapAddressConfigNote" xml:space="preserve">
-    <value>Controls how Woo shipping address and phone are stored on contacts during order import. Postcode is always stored separately. Province and country are optional in the semicolon address.</value>
+    <value>Controls how Woo shipping address and phone are stored on contacts during order import. Postcode is always stored separately. Optional cleanup removes duplicate suburbs, strips Cape Town for Cape Town delivery areas, and title-cases lines. Province and country remain optional in the semicolon address.</value>
   </data>
   <data name="WooCommerce.MapSaveAddressConfig" xml:space="preserve">
     <value>Save address config</value>

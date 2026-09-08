@@ -40,15 +40,15 @@ ORDER BY m.MappingID DESC";
                 while (rdr.Read())
                 {
                     var row = DbMapper.Map<WooItemMapping>(rdr);
-                    if (HasColumn(rdr, "ItemDesc")) row.ItemDesc = rdr["ItemDesc"] as string;
-                    if (HasColumn(rdr, "ItemSku")) row.ItemSku = rdr["ItemSku"] as string;
-                    if (HasColumn(rdr, "ItemEnabled") && rdr["ItemEnabled"] != DBNull.Value)
+                    if (DbMapper.HasColumn(rdr, "ItemDesc")) row.ItemDesc = rdr["ItemDesc"] as string;
+                    if (DbMapper.HasColumn(rdr, "ItemSku")) row.ItemSku = rdr["ItemSku"] as string;
+                    if (DbMapper.HasColumn(rdr, "ItemEnabled") && rdr["ItemEnabled"] != DBNull.Value)
                         row.ItemEnabled = Convert.ToBoolean(rdr["ItemEnabled"]);
-                    if (HasColumn(rdr, "PackagingDesc"))
+                    if (DbMapper.HasColumn(rdr, "PackagingDesc"))
                         row.PackagingDesc = rdr["PackagingDesc"] as string;
-                    if (HasColumn(rdr, "WooProductLabel"))
+                    if (DbMapper.HasColumn(rdr, "WooProductLabel"))
                         row.WooProductLabel = rdr["WooProductLabel"] as string;
-                    if (HasColumn(rdr, "WooVariationLabel"))
+                    if (DbMapper.HasColumn(rdr, "WooVariationLabel"))
                         row.WooVariationLabel = rdr["WooVariationLabel"] as string;
                     list.Add(row);
                 }
@@ -146,13 +146,5 @@ WHERE WooProductId = @P AND IsActive = 1";
                 p.Add(new DBParameter { ParamName = "@MappingID", DataValue = e.MappingID, DataDbType = DbType.Int32 });
             return p;
         }
-
-        private static bool HasColumn(IDataRecord rdr, string name)
-        {
-            for (int i = 0; i < rdr.FieldCount; i++)
-                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            return false;
-        }
-    }
+}
 }

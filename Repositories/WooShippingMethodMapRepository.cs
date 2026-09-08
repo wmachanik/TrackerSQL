@@ -87,20 +87,10 @@ WHERE MapID = @MapID";
                 ToBeDeliveredByID = Convert.ToInt32(rdr["ToBeDeliveredByID"]),
                 IsActive = rdr["IsActive"] != DBNull.Value && Convert.ToBoolean(rdr["IsActive"]),
                 Notes = rdr["Notes"] == DBNull.Value ? null : rdr["Notes"].ToString(),
-                PersonAbbrev = HasColumn(rdr, "PersonAbbrev") && rdr["PersonAbbrev"] != DBNull.Value
+                PersonAbbrev = DbMapper.HasColumn(rdr, "PersonAbbrev") && rdr["PersonAbbrev"] != DBNull.Value
                     ? rdr["PersonAbbrev"].ToString()
                     : null
             };
         }
-
-        private static bool HasColumn(IDataRecord rdr, string name)
-        {
-            for (int i = 0; i < rdr.FieldCount; i++)
-            {
-                if (string.Equals(rdr.GetName(i), name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-    }
+}
 }

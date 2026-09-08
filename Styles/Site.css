@@ -1,9 +1,20 @@
-/* Rev: 20260902-1
+/* Rev: 20260907-2
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
     Shells/panels use ~4px radius to match filter-panel / image-button rectangles
     (not soft 10–15px “pill” cards).
+
+    Section map (search these comments):
+      :root / body          — tokens + base
+      HEADER / NAV          — master chrome
+      .filter-toolbar       — filter rows / buttons
+      .results-table        — grids + pager
+      .TblSimple            — simple tables (single definition)
+      .page-tone-*          — page shells / tones
+      .sys-prefs-*          — System Preferences
+      .woo-*                — WooCommerce tools
+      Order detail / Ajax ComboBox
 ----------------------------------------------------------*/
 :root {
     --primary-brown: #302a20;
@@ -832,6 +843,7 @@ table.TblSimple {
     border-bottom: 1px solid #898;
     text-align: left;
     padding: 5px;
+    background-color: #9dD49c;
 }
 
 .TblSimple td {
@@ -842,7 +854,7 @@ table.TblSimple {
     display: table-cell;
 }
 
-.TblSimple th {
+.TblWhite th {
     background-color: #9dD49c;
 }
 
@@ -1970,6 +1982,21 @@ button,
     max-width: 100%;
     flex: 0 0 auto !important;
 }
+
+/* Shared spacing utilities (prefer these over one-off inline styles) */
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.pad-4 { padding: 4px; }
+.font-semibold { font-weight: 600; }
+.scroll-x { overflow-x: auto; }
+.detail-form-table-full { width: 100%; margin-top: 8px; }
+.detail-form-table-spaced { width: 100%; margin-top: 16px; }
+.col-width-8em { width: 8em; }
+.align-top-pl-16 { vertical-align: top; padding-left: 16px; }
+.block-mt-4 { display: block; margin-top: 4px; }
+.subtitle-tight { margin: 6px 0 0; font-size: 0.9em; }
+.section-heading-sm { font-size: 1.1em; margin: 12px 0 8px; }
 
 /* Individual filter controls */
 .filter-control {
@@ -3528,50 +3555,6 @@ input[type="image"],
     .TblZebra tr:hover td {
         background-color: #e8f5e8 !important;
     }
-/*Simple table*/
-
-.TblSimple {
-    border-top: 1px solid #a3a360;
-    border-left: 1px solid #a3a360;
-    padding: 0;
-    border-right: 0;
-    border-bottom: 0;
-}
-
-table.TblSimple {
-    background: #fffff9;
-    height: auto;
-    line-height: 1.5em;
-    border-radius: 4px;
-    padding: 10px 10px;
-}
-
-.TblSimple th {
-    border-right: 1px solid #898;
-    border-bottom: 1px solid #898;
-    text-align: left;
-    padding: 5px;
-}
-
-.TblSimple td {
-    border-right: 1px solid #E9E9D0;
-    border-bottom: 1px solid #E9E9D0;
-    text-align: left;
-    padding: 2px 4px 2px 2px;
-}
-
-.TblSimple th,
-.TblWhite th {
-    background-color: #9dD49c;
-}
-
-.TblSimple tr:nth-child(even) {
-    background: #fff;
-}
-
-.TblSimple tr:nth-child(odd) {
-    background: #f3f9e9;
-}
 /*-User making contact with us form-*/
 
 table.InputFrm {
@@ -7389,6 +7372,41 @@ a.sys-prefs-mapping-link:visited {
     border-radius: 4px !important;
 }
 
+.woo-map-address-config {
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.75rem;
+    min-height: 0;
+}
+
+.woo-map-address-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+    gap: 0.55rem 1.25rem;
+    width: 100%;
+}
+
+.woo-map-address-config-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.woo-map-address-config-item label {
+    display: inline;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+.woo-map-address-config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .woo-map-cat-toolbar {
     margin-bottom: 1rem;
     padding-bottom: 0.35rem;
@@ -7586,6 +7604,14 @@ body.woo-map-quiet-postback [id$="upgWooMap"] {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+}
+
+/* Force wait chrome visible as soon as an async postback starts (paired with JS class). */
+body.woo-map-working [id$="upgWooMap"] {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
 }
 .woo-map-busy-head {
     display: flex;

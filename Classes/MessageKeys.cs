@@ -152,6 +152,8 @@ namespace TrackerSQL.Classes
             public const string StatusBody = "Order.StatusBody";
             public const string ConfirmationHeader = "Order.ConfirmationHeader";
             public const string ConfirmationDeliveryDate = "Order.ConfirmationDeliveryDate";
+            public const string ConfirmationDeliveryStandard = "Order.ConfirmationDeliveryStandard";
+            public const string ConfirmationDeliverySoonerException = "Order.ConfirmationDeliverySoonerException";
             public const string ConfirmationFooter = "Order.ConfirmationFooter";
             public const string ConfirmationPORequired = "Order.ConfirmationPORequired";
             public const string ConfirmationPOReceived = "Order.ConfirmationPOReceived";
@@ -386,6 +388,8 @@ namespace TrackerSQL.Classes
             public const string MapGeneralNotePartOrderNote = "WooCommerce.MapGeneralNotePartOrderNote";
             public const string MapGeneralAppendTrackingLbl = "WooCommerce.MapGeneralAppendTrackingLbl";
             public const string MapGeneralAppendTrackingNote = "WooCommerce.MapGeneralAppendTrackingNote";
+            public const string MapGeneralWriteExpectedDeliveryLbl = "WooCommerce.MapGeneralWriteExpectedDeliveryLbl";
+            public const string MapGeneralWriteExpectedDeliveryNote = "WooCommerce.MapGeneralWriteExpectedDeliveryNote";
             public const string MapGeneralAutoPullLbl = "WooCommerce.MapGeneralAutoPullLbl";
             public const string MapGeneralAutoPullNote = "WooCommerce.MapGeneralAutoPullNote";
             public const string MapGeneralAutoPullNone = "WooCommerce.MapGeneralAutoPullNone";

@@ -41,6 +41,10 @@ namespace TrackerSQL.Models
         public bool ImportAddressStripCapeTown { get; set; } = true;
         /// <summary>Title-case imported billing address lines.</summary>
         public bool ImportAddressTitleCase { get; set; } = true;
+        /// <summary>
+        /// When true, confirmation email also writes expected delivery date as a private Woo order note.
+        /// </summary>
+        public bool WriteExpectedDeliveryToWoo { get; set; }
         /// <summary>Replace +27 with 0 on imported phone numbers.</summary>
         public bool ImportPhoneReplacePlus27 { get; set; } = true;
         /// <summary>Format SA phones as aaa bbb-cccc.</summary>
@@ -69,9 +73,9 @@ namespace TrackerSQL.Models
         /// <summary>When false (default), Order Done stores waybill on the order UI / WooOrderInfo only — not in Notes.</summary>
         public bool AppendTrackingToOrderNotes { get; set; }
         /// <summary>
-        /// On opening Woo Order Import (when no session preview): None, Today (default), or SinceLastSync.
+        /// On opening Woo Order Import (when no session preview): None, SinceLastSync (default), Today, or ThisWeek.
         /// </summary>
-        public string ImportAutoPullMode { get; set; } = "Today";
+        public string ImportAutoPullMode { get; set; } = "SinceLastSync";
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

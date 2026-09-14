@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Website-promised delivery / dispatch windows by Tracker area name.
+  Idempotent create + seed (AreaID resolved from AreasTbl.AreaName).
+  Safe to re-run via EnsureSchema or XMLtoSQL.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryPromiseRuleTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.DeliveryPromiseRuleTbl
+          (
+              RuleID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DeliveryPromiseRuleTbl PRIMARY KEY,
+              RuleGroup NVARCHAR(64) NOT NULL,
+              AreaID INT NULL,
+              AreaMatchName NVARCHAR(120) NOT NULL,
+              SortOrder INT NOT NULL CONSTRAINT DF_DPR_Sort DEFAULT (0),
+              WindowStartDow TINYINT NOT NULL,
+              WindowStartMinutes SMALLINT NOT NULL,
+              WindowEndDow TINYINT NOT NULL,
+              WindowEndMinutes SMALLINT NOT NULL,
+              PromiseKind NVARCHAR(20) NOT NULL,
+              ResultMode NVARCHAR(32) NOT NULL,
+              ResultDow TINYINT NULL,
+              NoThursdayDispatch BIT NOT NULL CONSTRAINT DF_DPR_NoThu DEFAULT (0),
+              WedAfterNoonToFriday BIT NOT NULL CONSTRAINT DF_DPR_WedFri DEFAULT (0),
+              Notes NVARCHAR(255) NULL,
+              Enabled BIT NOT NULL CONSTRAINT DF_DPR_Enabled DEFAULT (1)
+          );
+          CREATE INDEX IX_DeliveryPromise_Area ON dbo.DeliveryPromiseRuleTbl (AreaID);
+          CREATE INDEX IX_DeliveryPromise_Group ON dbo.DeliveryPromiseRuleTbl (RuleGroup);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'WriteExpectedDeliveryToWoo') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD WriteExpectedDeliveryToWoo BIT NOT NULL
+              CONSTRAINT DF_WooSet_WriteExpDel DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <!-- Seed only when empty — website schedule (DOW: 0=Sun..6=Sat). End is exclusive. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryPromiseRuleTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.DeliveryPromiseRuleTbl)
+      BEGIN
+          ;WITH Areas AS (
+              SELECT v.RuleGroup, v.AreaMatchName, v.SortOrder, v.WindowStartDow, v.WindowStartMinutes,
+                     v.WindowEndDow, v.WindowEndMinutes, v.PromiseKind, v.ResultMode, v.ResultDow,
+                     v.NoThursdayDispatch, v.WedAfterNoonToFriday, v.Notes
+              FROM (VALUES
+                  -- Cape Town general (Thurs 8am–Fri 1pm → Mon; Fri 1pm–Tue 12 → Wed; Tue 12–Wed 12 → Thu)
+                  (N'CapeTownGeneral', N'Cape Town', 10, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, N'Thu 08:00–Fri 13:00 → Mon'),
+                  (N'CapeTownGeneral', N'Cape Town', 11, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, N'Fri 13:00–Tue 12:00 → Wed'),
+                  (N'CapeTownGeneral', N'Cape Town', 12, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, N'Tue 12:00–Wed 12:00 → Thu'),
+
+                  (N'CapeTownGeneral', N'Atlantic Seaboard', 20, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Atlantic Seaboard', 21, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Atlantic Seaboard', 22, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Northern Sub', 30, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Northern Sub', 31, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Northern Sub', 32, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Suthern Sub.', 40, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Suthern Sub.', 41, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Suthern Sub.', 42, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Constantia & Surrounds', 50, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Constantia & Surrounds', 51, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Constantia & Surrounds', 52, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Hout bay', 60, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Hout bay', 61, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Hout bay', 62, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Belville', 70, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Belville', 71, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Belville', 72, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Durbanville', 80, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Durbanville', 81, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Durbanville', 82, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Milnerton', 90, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Milnerton', 91, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Milnerton', 92, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Paarden Eiland', 100, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Paarden Eiland', 101, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Paarden Eiland', 102, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Athlone', 110, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Athlone', 111, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Athlone', 112, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  (N'CapeTownGeneral', N'Maitland/Pinelands', 120, 4, 480, 5, 780, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Maitland/Pinelands', 121, 5, 780, 2, 720, N'Delivery', N'FixedDow', 3, 0, 0, NULL),
+                  (N'CapeTownGeneral', N'Maitland/Pinelands', 122, 2, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  -- Tokai to Noordhoek (Wed 12–Fri 12 → Mon; Fri 12–Wed 12 → Thu)
+                  (N'TokaiNoordhoek', N'Fish hoek & Surrounds', 200, 3, 720, 5, 720, N'Delivery', N'FixedDow', 1, 0, 0, N'Wed 12:00–Fri 12:00 → Mon'),
+                  (N'TokaiNoordhoek', N'Fish hoek & Surrounds', 201, 5, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, N'Fri 12:00–Wed 12:00 → Thu'),
+                  (N'TokaiNoordhoek', N'Westlake to Muizenberg', 210, 3, 720, 5, 720, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'TokaiNoordhoek', N'Westlake to Muizenberg', 211, 5, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+                  (N'TokaiNoordhoek', N'Simonstown', 220, 3, 720, 5, 720, N'Delivery', N'FixedDow', 1, 0, 0, NULL),
+                  (N'TokaiNoordhoek', N'Simonstown', 221, 5, 720, 3, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  -- Century City to Paarl (Thu 12–Mon 12 → Tue; Mon 12–Thu 12 → Fri)
+                  (N'CenturyPaarl', N'Century City & Surrounds', 300, 4, 720, 1, 720, N'Delivery', N'FixedDow', 2, 0, 0, N'Thu 12:00–Mon 12:00 → Tue'),
+                  (N'CenturyPaarl', N'Century City & Surrounds', 301, 1, 720, 4, 720, N'Delivery', N'FixedDow', 5, 0, 0, N'Mon 12:00–Thu 12:00 → Fri'),
+
+                  -- Stellenbosch / Somerset West
+                  (N'StellenboschSomerset', N'Stellenbosch', 400, 3, 720, 5, 780, N'Delivery', N'FixedDow', 2, 0, 0, N'Wed 12:00–Fri 13:00 → Tue'),
+                  (N'StellenboschSomerset', N'Stellenbosch', 401, 5, 780, 2, 720, N'Delivery', N'FixedDow', 4, 0, 0, N'Fri 13:00–Tue 12:00 → Thu'),
+                  (N'StellenboschSomerset', N'Somerset West', 410, 3, 720, 5, 780, N'Delivery', N'FixedDow', 2, 0, 0, NULL),
+                  (N'StellenboschSomerset', N'Somerset West', 411, 5, 780, 2, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
+
+                  -- Courier Western Cape (255 = any workday; match by time-of-day only)
+                  (N'CourierWc', N'Knysna', 500, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, N'Workday before 12 → same day; no Thu dispatch'),
+                  (N'CourierWc', N'Knysna', 501, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, N'Workday after 12 → next workday'),
+                  (N'CourierWc', N'Tulbagh', 510, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, NULL),
+                  (N'CourierWc', N'Tulbagh', 511, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, NULL),
+
+                  -- Courier rest of SA (255 = any workday)
+                  (N'CourierRsa', N'Gauteng', 600, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, N'Before 12; Thu→Fri; Wed after noon→Fri'),
+                  (N'CourierRsa', N'Gauteng', 601, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, N'After 12; Wed→Fri'),
+                  (N'CourierRsa', N'Durban', 610, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'Durban', 611, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'East London', 620, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'East London', 621, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'Port Elizabeth', 630, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'Port Elizabeth', 631, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'RegionalSA', 640, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'RegionalSA', 641, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'FastWay', 650, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierRsa', N'FastWay', 651, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL)
+              ) AS v(RuleGroup, AreaMatchName, SortOrder, WindowStartDow, WindowStartMinutes,
+                     WindowEndDow, WindowEndMinutes, PromiseKind, ResultMode, ResultDow,
+                     NoThursdayDispatch, WedAfterNoonToFriday, Notes)
+          )
+          INSERT INTO dbo.DeliveryPromiseRuleTbl
+          (
+              RuleGroup, AreaID, AreaMatchName, SortOrder,
+              WindowStartDow, WindowStartMinutes, WindowEndDow, WindowEndMinutes,
+              PromiseKind, ResultMode, ResultDow, NoThursdayDispatch, WedAfterNoonToFriday, Notes, Enabled
+          )
+          SELECT
+              a.RuleGroup,
+              ar.AreaID,
+              a.AreaMatchName,
+              a.SortOrder,
+              a.WindowStartDow, a.WindowStartMinutes, a.WindowEndDow, a.WindowEndMinutes,
+              a.PromiseKind, a.ResultMode, a.ResultDow, a.NoThursdayDispatch, a.WedAfterNoonToFriday, a.Notes, 1
+          FROM Areas a
+          LEFT JOIN dbo.AreasTbl ar ON ar.AreaName = a.AreaMatchName;
+      END
+    ]]>
+  </command>
+
+  <!-- Re-resolve AreaID for any seed rows that missed (area renamed later). -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryPromiseRuleTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.AreasTbl', N'U') IS NOT NULL
+      BEGIN
+          UPDATE r
+          SET r.AreaID = a.AreaID
+          FROM dbo.DeliveryPromiseRuleTbl r
+          INNER JOIN dbo.AreasTbl a ON a.AreaName = r.AreaMatchName
+          WHERE r.AreaID IS NULL OR r.AreaID <> a.AreaID;
+      END
+    ]]>
+  </command>
+</root>

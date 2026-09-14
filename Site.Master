@@ -8,7 +8,7 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20260908-1" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20260914-2" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -221,6 +221,7 @@
                                         <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="System Tools" Value="System Tools">
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="All Tools" Value="All Tools" />
                                             <asp:MenuItem NavigateUrl="~/Tools/MoveDeliveryDate.aspx" Text="Move Del. Dt" Value="Move Delivery Date"></asp:MenuItem>
+                                            <asp:MenuItem NavigateUrl="~/Tools/DeliveryPromiseRules.aspx" Text="Delivery Promise" Value="DeliveryPromiseRules"></asp:MenuItem>
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx" Text="System Preferences" Value="SystemPreferences"></asp:MenuItem>
                                             <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mapping" Value="WooMapping"></asp:MenuItem>
                                             <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag."></asp:MenuItem>
@@ -283,6 +284,7 @@
                 <li><a href="/Pages/ContactsAway.aspx">Contacts Away</a></li>
                 <li><a href="/Pages/SendCoffeeCheckup.aspx">Send Checkup</a></li>
                 <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">New Order</a></li>
+                <li><a href="/Tools/WooOrderImport.aspx">Woo Order Import</a></li>
                 <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">Deliveries</a></li>
                 <li><a href="/Pages/Repairs.aspx">Repairs</a></li>

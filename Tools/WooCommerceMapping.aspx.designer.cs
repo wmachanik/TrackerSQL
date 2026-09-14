@@ -153,6 +153,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnNotePartMoveDown;
         protected global::System.Web.UI.WebControls.Literal litGeneralAppendTrackingNote;
         protected global::System.Web.UI.WebControls.CheckBox chkGeneralAppendTracking;
+        protected global::System.Web.UI.WebControls.Literal litGeneralWriteExpectedDeliveryNote;
+        protected global::System.Web.UI.WebControls.CheckBox chkGeneralWriteExpectedDelivery;
         protected global::System.Web.UI.WebControls.Literal litGeneralAutoPullNote;
         protected global::System.Web.UI.WebControls.Label lblGeneralAutoPull;
         protected global::System.Web.UI.WebControls.DropDownList ddlGeneralAutoPull;

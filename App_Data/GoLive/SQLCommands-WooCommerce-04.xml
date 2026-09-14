@@ -43,7 +43,7 @@
          AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAutoPullMode') IS NULL
       BEGIN
           ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAutoPullMode NVARCHAR(32) NOT NULL
-              CONSTRAINT DF_WooSet_AutoPull DEFAULT (N'Today');
+              CONSTRAINT DF_WooSet_AutoPull DEFAULT (N'SinceLastSync');
       END
     ]]>
   </command>
@@ -99,6 +99,32 @@
       BEGIN
           ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportAddressTitleCase BIT NOT NULL
               CONSTRAINT DF_WooSet_AddrCase DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <!-- One-shot: prior default was Today; move singleton to SinceLastSync once. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportAutoPullMode') IS NOT NULL
+         AND NOT EXISTS (
+             SELECT 1
+             FROM sys.extended_properties ep
+             WHERE ep.major_id = OBJECT_ID(N'dbo.WooCommerceSettingsTbl')
+               AND ep.minor_id = 0
+               AND ep.name = N'MigrateAutoPullSinceSync_v1')
+      BEGIN
+          UPDATE dbo.WooCommerceSettingsTbl
+          SET ImportAutoPullMode = N'SinceLastSync'
+          WHERE SettingsID = 1
+            AND ImportAutoPullMode = N'Today';
+
+          EXEC sys.sp_addextendedproperty
+              @name = N'MigrateAutoPullSinceSync_v1',
+              @value = N'1',
+              @level0type = N'SCHEMA', @level0name = N'dbo',
+              @level1type = N'TABLE',  @level1name = N'WooCommerceSettingsTbl';
       END
     ]]>
   </command>

@@ -22,7 +22,7 @@ namespace TrackerSQL.Repositories
             "ImportAddressDeduplicateSuburb, ImportAddressStripCapeTown, ImportAddressTitleCase, " +
             "ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
             "ImportNotesItemID, ImportCompanyNameMode, ImportNoteLineFormat, AppendTrackingToOrderNotes, " +
-            "ImportAutoPullMode, ImportZzNameNoteLayout, ImportNotePartOrder, " +
+            "ImportAutoPullMode, ImportZzNameNoteLayout, ImportNotePartOrder, WriteExpectedDeliveryToWoo, " +
             "UpdatedAt, UpdatedBy";
 
         public WooCommerceSettings GetSettings()
@@ -77,7 +77,7 @@ namespace TrackerSQL.Repositories
                 ImportCompanyNameMode = "CareOfPrefix",
                 ImportNoteLineFormat = "SkuAndName",
                 AppendTrackingToOrderNotes = false,
-                ImportAutoPullMode = "Today",
+                ImportAutoPullMode = "SinceLastSync",
                 ImportZzNameNoteLayout = "NameGearAddressMeta",
                 ImportNotePartOrder = "Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated",
                 ImportAddressDeduplicateSuburb = true,

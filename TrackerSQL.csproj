@@ -210,6 +210,7 @@
     <Content Include="Pages\ViewMyOrder.aspx" />
     <Content Include="Tools\HolidayClosureDetail.aspx" />
     <Content Include="Tools\HolidayClosures.aspx" />
+    <Content Include="Tools\DeliveryPromiseRules.aspx" />
     <Content Include="Tools\PostalAreaSetup.aspx" />
     <Content Include="Tools\ContactPostalFill.aspx" />
     <Content Include="Tools\WooOrderImport.aspx" />
@@ -258,6 +259,8 @@
     <Content Include="App_Data\SQLCommands-WooCommerce-02.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-03.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-04.xml" />
+    <Content Include="App_Data\SQLCommands-DeliveryPromise-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\SQLCommands-Postal-01.xml" />
     <Content Include="Data\geo-south-africa-postal_EN.csv" />
     <Content Include="Data\area-place-presets.json" />
@@ -622,6 +625,10 @@
       <DependentUpon>HolidayClosures.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="Tools\DeliveryPromiseRules.aspx.cs">
+      <DependentUpon>DeliveryPromiseRules.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="Pages\ItemGroups.aspx.cs">
       <DependentUpon>ItemGroups.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -770,6 +777,9 @@
     <Compile Include="Tools\HolidayClosures.aspx.designer.cs">
       <DependentUpon>HolidayClosures.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Tools\DeliveryPromiseRules.aspx.designer.cs">
+      <DependentUpon>DeliveryPromiseRules.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Tools\LogViewer.aspx.cs">
       <DependentUpon>LogViewer.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -808,6 +818,7 @@
     <Compile Include="Managers\WooCommerceApiClient.Orders.cs" />
     <Compile Include="Managers\WooCommerceOrderImportManager.cs" />
     <Compile Include="Managers\WooImportAddressHelper.cs" />
+    <Compile Include="Managers\DeliveryPromiseManager.cs" />
     <Compile Include="Managers\WooContactBootstrap.cs" />
     <Compile Include="Managers\WooCommerceSettingsManager.cs" />
     <Compile Include="Managers\WooCommerceMappingManager.cs" />
@@ -828,6 +839,7 @@
     <Compile Include="Models\WooOrderInfo.cs" />
     <Compile Include="Models\WooOrderImportPreview.cs" />
     <Compile Include="Models\WooContactUpdateOptions.cs" />
+    <Compile Include="Models\DeliveryPromiseRule.cs" />
     <Compile Include="Models\WooOrderImportUiState.cs" />
     <Compile Include="Models\WooPaymentMethodMap.cs" />
     <Compile Include="Models\WooCatalogDtos.cs" />
@@ -849,6 +861,7 @@
     <Compile Include="Repositories\WooPackagingServiceTypeRepository.cs" />
     <Compile Include="Repositories\WooPostalAreaMapRepository.cs" />
     <Compile Include="Repositories\WooAreaDeliveryDefaultRepository.cs" />
+    <Compile Include="Repositories\DeliveryPromiseRuleRepository.cs" />
     <Compile Include="Repositories\WooShippingMethodMapRepository.cs" />
     <Compile Include="Repositories\SaPostalCodeRepository.cs" />
     <Compile Include="Tools\PostalAreaSetup.aspx.cs">

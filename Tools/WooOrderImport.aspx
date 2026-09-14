@@ -61,11 +61,11 @@
                                 <asp:DropDownList ID="ddlMode" runat="server" CssClass="sys-prefs-input"
                                     AutoPostBack="true" CausesValidation="false"
                                     OnSelectedIndexChanged="ddlMode_SelectedIndexChanged">
-                                    <asp:ListItem Value="Today" Text="Today's orders" Selected="True" />
+                                    <asp:ListItem Value="SinceLastSync" Text="Since last import sync" Selected="True" />
+                                    <asp:ListItem Value="Today" Text="Today's orders" />
                                     <asp:ListItem Value="ThisWeek" Text="This week's orders" />
                                     <asp:ListItem Value="Specific" Text="Specific order #" />
                                     <asp:ListItem Value="Last" Text="Latest order" />
-                                    <asp:ListItem Value="SinceLastSync" Text="Since last import sync" />
                                     <asp:ListItem Value="DateRange" Text="Date range" />
                                 </asp:DropDownList>
                             </div>
@@ -225,7 +225,8 @@
                                 DataNavigateUrlFormatString="~/Pages/OrderDetail.aspx?OrderID={0}" HeaderText="Order #" />
                             <asp:BoundField DataField="WooOrderNumber" HeaderText="Woo #" />
                             <asp:BoundField DataField="OrderDate" HeaderText="Date" DataFormatString="{0:yyyy-MM-dd}" />
-                            <asp:BoundField DataField="ImportConflicts" HeaderText="Conflicts" />
+                            <asp:BoundField DataField="ImportConflicts" HeaderText="Conflicts"
+                                ItemStyle-CssClass="woo-import-warn-col" HeaderStyle-CssClass="woo-import-warn-col" />
                             <asp:BoundField DataField="PurchaseOrder" HeaderText="PO" ItemStyle-CssClass="col-tight" />
                         </Columns>
                     </asp:GridView>

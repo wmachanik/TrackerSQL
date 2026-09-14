@@ -256,7 +256,7 @@ namespace TrackerSQL.Tools
             string mode = WooCommerceSettingsManager.NormalizeAutoPullMode(
                 _settings.GetSettings()?.ImportAutoPullMode);
             if (string.Equals(mode, "None", StringComparison.OrdinalIgnoreCase))
-                mode = "Today";
+                mode = "SinceLastSync";
             if (ddlMode.Items.FindByValue(mode) != null)
             {
                 ddlMode.ClearSelection();
@@ -784,10 +784,10 @@ namespace TrackerSQL.Tools
         private static WooOrderImportMode ParseMode(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return WooOrderImportMode.Today;
+                return WooOrderImportMode.SinceLastSync;
             if (Enum.TryParse(value, true, out WooOrderImportMode mode))
                 return mode;
-            return WooOrderImportMode.Today;
+            return WooOrderImportMode.SinceLastSync;
         }
 
         private static long ParseLong(string text)

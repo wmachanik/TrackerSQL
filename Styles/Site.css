@@ -1347,6 +1347,11 @@ div.simpleLightBrownForm {
     background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%);
 }
 
+.home-dashboard .home-tone-woo {
+    border-left-color: #7b4ea3;
+    background: linear-gradient(135deg, #f1e8f8 0%, #fff 70%);
+}
+
 .home-dashboard .home-tone-repairs {
     border-left-color: #7a3e2e;
     background: linear-gradient(135deg, #f3e4de 0%, #fff 70%);
@@ -3646,6 +3651,19 @@ table.InputFrm {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+}
+
+textarea.order-detail-notes,
+.order-detail-notes {
+    display: block;
+    width: 98%;
+    min-height: 4.5em;
+    max-height: 18em;
+    overflow-y: auto;
+    resize: vertical;
+    box-sizing: border-box;
+    line-height: 1.35;
+    padding: 0.35rem 0.45rem;
 }
 
 /* Keep order detail content inside the page-tone shell.
@@ -8033,14 +8051,65 @@ body.woo-map-working [id$="upgWooMap"] {
     font-size: 0.88em;
 }
 
-.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-col {
-    min-width: 11rem;
+.woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-col,
+.results-table .woo-import-warn-col {
+    max-width: min(400px, 30%);
+    width: 30%;
+    min-width: 8rem;
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     font-size: 0.88em;
+    vertical-align: top;
 }
 
 .woo-order-import-preview-scroll .woo-order-import-preview-grid .woo-import-warn-early {
-    min-width: 10rem;
+    min-width: 8rem;
     font-weight: 500;
+}
+
+.delivery-promise-grid .delivery-promise-notes {
+    max-width: 14rem;
+}
+
+.delivery-promise-grid .delivery-promise-window,
+.delivery-promise-grid .delivery-promise-result {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.delivery-promise-grid .delivery-promise-area {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.delivery-promise-grid .delivery-promise-sep {
+    margin: 0 0.2rem;
+    color: #666;
+}
+
+.delivery-promise-grid .delivery-promise-edit-meta {
+    margin-top: 0.25rem;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.delivery-promise-grid .col-tight,
+.delivery-promise-add .col-tight {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.delivery-promise-add .filter-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: flex-end;
+}
+
+.delivery-promise-add fieldset {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem 0.75rem;
 }
 
 .woo-order-import-preview-scroll .woo-import-row-actions {

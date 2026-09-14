@@ -16,6 +16,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnResetPrepDates;
         protected global::System.Web.UI.WebControls.Button btnMoveDlvryDate;
         protected global::System.Web.UI.WebControls.Button btnHolidayClosures;
+        protected global::System.Web.UI.WebControls.Button btnDeliveryPromiseRules;
         protected global::System.Web.UI.WebControls.Button btnEditSystemData;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlWooMappingTool;
         protected global::System.Web.UI.WebControls.Literal litWooMappingToolBlurb;

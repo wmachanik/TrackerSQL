@@ -178,7 +178,8 @@
                         <tr>
                             <td>Notes:</td>
                             <td>
-                                <asp:TextBox ID="tbxNotes" runat="server" TextMode="MultiLine" Height="4em"
+                                <asp:TextBox ID="tbxNotes" runat="server" TextMode="MultiLine" Rows="3"
+                                    CssClass="order-detail-notes"
                                     Width="98%"
                                     ToolTip="For ZZName / sundry orders, enter notes to enable New Item" />
                             </td>
@@ -555,15 +556,31 @@
 
             window.orderDetailSyncNewItemButton = syncNewItemButton;
 
+            function autoSizeNotes() {
+                var notes = byId(notesId);
+                if (!notes)
+                    return;
+                notes.style.height = 'auto';
+                var minPx = Math.round(4.5 * 16); // ~4.5em
+                var maxPx = Math.round(18 * 16);  // ~18em
+                var next = Math.max(minPx, Math.min(maxPx, notes.scrollHeight + 4));
+                notes.style.height = next + 'px';
+            }
+
             function wire() {
                 var notes = byId(notesId);
-                if (notes) {
+                if (notes && !notes.getAttribute('data-od-notes-wired')) {
+                    notes.setAttribute('data-od-notes-wired', '1');
                     ['input', 'keyup', 'change', 'blur', 'paste'].forEach(function (evt) {
                         notes.addEventListener(evt, function () {
-                            window.setTimeout(syncNewItemButton, 0);
+                            window.setTimeout(function () {
+                                autoSizeNotes();
+                                syncNewItemButton();
+                            }, 0);
                         });
                     });
                 }
+                autoSizeNotes();
                 syncNewItemButton();
             }
 

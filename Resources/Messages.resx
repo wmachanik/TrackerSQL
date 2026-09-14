@@ -534,6 +534,12 @@ Disabled recurring orders:
   <data name="Order.ConfirmationDeliveryDate" xml:space="preserve">
     <value>&lt;br /&gt;We currently expect your order to be delivered/dispatched on: {0}.</value>
   </data>
+  <data name="Order.ConfirmationDeliveryStandard" xml:space="preserve">
+    <value>&lt;br /&gt;We will prepare the items for you to be {0} on {1}.</value>
+  </data>
+  <data name="Order.ConfirmationDeliverySoonerException" xml:space="preserve">
+    <value>&lt;br /&gt;Good news — we have stock of the item(s) ordered and are in your area, so we can deliver sooner than our usual website schedule. We currently expect delivery/dispatch on {0}.</value>
+  </data>
   <data name="Order.ConfirmationFooter" xml:space="preserve">
     <value>&lt;br /&gt;This email was sent automatically by Quaffee's order and tracking System.&lt;br /&gt;</value>
   </data>
@@ -1035,11 +1041,17 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapGeneralAppendTrackingNote" xml:space="preserve">
     <value>Off by default — tracking is already shown on the order. Turn on only if you still want Tracking: … in Notes.</value>
   </data>
+  <data name="WooCommerce.MapGeneralWriteExpectedDeliveryLbl" xml:space="preserve">
+    <value>Write expected delivery date to Woo as a private order note</value>
+  </data>
+  <data name="WooCommerce.MapGeneralWriteExpectedDeliveryNote" xml:space="preserve">
+    <value>Optional. When confirmation email is sent for a Woo-linked order, also posts the Tracker RequiredByDate as a private Woo note (not emailed to the customer).</value>
+  </data>
   <data name="WooCommerce.MapGeneralAutoPullLbl" xml:space="preserve">
     <value>When opening Order Import:</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullNote" xml:space="preserve">
-    <value>Automatically pulls a preview if there is no restored session preview. Returning from Order Detail / Contact still restores the last preview first.</value>
+    <value>Automatically pulls a preview if there is no restored session preview. Default is since last import sync. Returning from Order Detail / Contact still restores the last preview first.</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullNone" xml:space="preserve">
     <value>Do not auto-pull (manual Pull only)</value>

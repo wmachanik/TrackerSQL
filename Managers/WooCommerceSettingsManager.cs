@@ -32,7 +32,7 @@ namespace TrackerSQL.Managers
         /// <summary>Run idempotent create/alter once per app domain (not every postback).</summary>
         public WooCommerceSchemaInstaller.EnsureResult EnsureSchemaOnce()
         {
-            const string cacheKey = "WooCommerce.SchemaEnsured.v10";
+            const string cacheKey = "WooCommerce.SchemaEnsured.v13";
             if (HttpRuntime.Cache[cacheKey] != null)
                 return new WooCommerceSchemaInstaller.EnsureResult { Succeeded = true, Message = "Schema already ensured." };
 
@@ -60,7 +60,7 @@ namespace TrackerSQL.Managers
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v6");
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v7");
             HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v8");
-            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v10");
+            HttpRuntime.Cache.Remove("WooCommerce.SchemaEnsured.v13");
             InvalidateIntegrationEnabledCache();
         }
 
@@ -345,6 +345,7 @@ namespace TrackerSQL.Managers
             bool appendTrackingToOrderNotes,
             string autoPullMode,
             string notePartOrder,
+            bool writeExpectedDeliveryToWoo,
             string updatedBy)
         {
             EnsureSchema();
@@ -354,12 +355,14 @@ namespace TrackerSQL.Managers
             settings.AppendTrackingToOrderNotes = appendTrackingToOrderNotes;
             settings.ImportAutoPullMode = NormalizeAutoPullMode(autoPullMode);
             settings.ImportNotePartOrder = NormalizeNotePartOrder(notePartOrder);
+            settings.WriteExpectedDeliveryToWoo = writeExpectedDeliveryToWoo;
             _settingsRepo.SaveSettings(settings, updatedBy);
             AppLogger.WriteLog("woo",
                 string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                    "General import settings: companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}",
+                    "General import settings: companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}",
                     settings.ImportCompanyNameMode, settings.ImportNoteLineFormat,
-                    appendTrackingToOrderNotes, settings.ImportAutoPullMode, settings.ImportNotePartOrder),
+                    appendTrackingToOrderNotes, settings.ImportAutoPullMode, settings.ImportNotePartOrder,
+                    writeExpectedDeliveryToWoo),
                 updatedBy);
         }
 
@@ -381,11 +384,11 @@ namespace TrackerSQL.Managers
         {
             if (string.Equals(mode, "None", StringComparison.OrdinalIgnoreCase))
                 return "None";
-            if (string.Equals(mode, "SinceLastSync", StringComparison.OrdinalIgnoreCase))
-                return "SinceLastSync";
+            if (string.Equals(mode, "Today", StringComparison.OrdinalIgnoreCase))
+                return "Today";
             if (string.Equals(mode, "ThisWeek", StringComparison.OrdinalIgnoreCase))
                 return "ThisWeek";
-            return "Today";
+            return "SinceLastSync";
         }
 
         /// <summary>Returns a validated comma-separated note-part order (all known keys, no duplicates).</summary>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 
@@ -50,31 +51,61 @@ namespace TrackerSQL.Repositories
             return ResolveAbbrev(paymentMethod, paymentMethodTitle, null);
         }
 
+        /// <summary>Match Woo payment method id/title; prefer exact id, then longest substring match.</summary>
         public string ResolveAbbrev(string paymentMethod, string paymentMethodTitle, IList<WooPaymentMethodMap> maps)
         {
-            string hay = ((paymentMethod ?? string.Empty) + " " + (paymentMethodTitle ?? string.Empty)).Trim();
+            string method = (paymentMethod ?? string.Empty).Trim();
+            string title = (paymentMethodTitle ?? string.Empty).Trim();
+            string hay = (method + " " + title).Trim();
             if (string.IsNullOrEmpty(hay))
                 return "Woo";
 
-            IEnumerable<WooPaymentMethodMap> list = maps
-                ?? GetAllOrdered(includeInactive: false);
-            foreach (var map in list)
+            List<WooPaymentMethodMap> list = (maps ?? GetAllOrdered(includeInactive: false))
+                .Where(m => m != null && m.IsActive && !string.IsNullOrWhiteSpace(m.MethodMatch))
+                .OrderByDescending(m => m.MethodMatch.Trim().Length)
+                .ToList();
+
+            // Exact match on Woo payment_method id (e.g. payfast).
+            foreach (WooPaymentMethodMap map in list)
             {
-                if (map == null || string.IsNullOrWhiteSpace(map.MethodMatch))
-                    continue;
-                if (!map.IsActive)
-                    continue;
+                if (string.Equals(method, map.MethodMatch.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return TrimAbbrev(map.PaymentAbbrev);
+            }
+
+            // PayFast titles often include "Instant EFT" — do not let a generic EFT map win.
+            if (ContainsPayFast(hay))
+            {
+                foreach (WooPaymentMethodMap map in list)
+                {
+                    string mm = map.MethodMatch.Trim();
+                    if (ContainsPayFast(mm) || string.Equals(mm, "PF", StringComparison.OrdinalIgnoreCase))
+                        return TrimAbbrev(map.PaymentAbbrev);
+                }
+                return "PF";
+            }
+
+            // Longest substring match for other gateways.
+            foreach (WooPaymentMethodMap map in list)
+            {
                 if (hay.IndexOf(map.MethodMatch.Trim(), StringComparison.OrdinalIgnoreCase) >= 0)
                     return TrimAbbrev(map.PaymentAbbrev);
             }
 
-            return FallbackAbbrev(paymentMethodTitle ?? paymentMethod);
+            return FallbackAbbrev(hay);
         }
 
-        private static string FallbackAbbrev(string paymentMethodTitle)
+        private static bool ContainsPayFast(string value)
         {
-            string hay = (paymentMethodTitle ?? string.Empty).ToLowerInvariant();
-            if (hay.Contains("payfast"))
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            return value.IndexOf("payfast", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("pay_fast", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string FallbackAbbrev(string paymentHaystack)
+        {
+            string hay = (paymentHaystack ?? string.Empty).ToLowerInvariant();
+            if (ContainsPayFast(hay))
                 return "PF";
             if (hay.Contains("yoco"))
                 return "Yoco";
@@ -84,7 +115,7 @@ namespace TrackerSQL.Repositories
                 || hay.Contains("direct payment") || hay.Contains("bank transfer"))
                 return "EFT";
 
-            string title = (paymentMethodTitle ?? "Woo").Trim();
+            string title = (paymentHaystack ?? "Woo").Trim();
             if (title.Length <= 4)
                 return title;
             return title.Substring(0, 4);

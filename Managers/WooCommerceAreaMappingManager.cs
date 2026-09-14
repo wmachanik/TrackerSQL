@@ -330,12 +330,54 @@ namespace TrackerSQL.Managers
             return SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
         }
 
+        /// <summary>
+        /// Area default person, with a safety net: courier-dispatch areas (Durban, Gauteng, etc.)
+        /// must not stay on the Cape Town vehicle default (SQ).
+        /// </summary>
         public int ResolveDeliveryPersonForArea(int areaId)
         {
-            int? personId = _areaDefaultRepo.GetDefaultPersonForArea(areaId);
-            if (personId.HasValue && personId.Value > 0)
-                return personId.Value;
+            int? stored = _areaDefaultRepo.GetDefaultPersonForArea(areaId);
+            string areaName = _areasRepo.GetAreaName(areaId);
+
+            if (IsCourierDispatchArea(areaName))
+            {
+                int courierId = SystemConstants.DeliveryConstants.CourierDeliveryID;
+                if (stored.HasValue && stored.Value > 0 && IsCourierPersonId(stored.Value))
+                    return stored.Value;
+                return courierId;
+            }
+
+            if (stored.HasValue && stored.Value > 0)
+                return stored.Value;
             return GetSystemDefaultDeliveryPersonId();
+        }
+
+        /// <summary>Exact area names that use road courier (not Cape Town vehicle / SQ).</summary>
+        private static bool IsCourierDispatchArea(string areaName)
+        {
+            if (string.IsNullOrWhiteSpace(areaName))
+                return false;
+
+            string name = areaName.Trim();
+            // Do not treat Durbanville as Durban.
+            string[] courierAreas =
+            {
+                "Durban", "Gauteng", "Johannesburg", "East London",
+                "Port Elizabeth", "PE", "Gqeberha", "RegionalSA", "Regional",
+                "FastWay", "Dubai", "George", "Knysna"
+            };
+            foreach (string area in courierAreas)
+            {
+                if (string.Equals(name, area, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsCourierPersonId(int personId)
+        {
+            return personId == SystemConstants.DeliveryConstants.CourierDeliveryID
+                || personId == SystemConstants.DeliveryConstants.ParcelDispatchID;
         }
 
         /// <summary>

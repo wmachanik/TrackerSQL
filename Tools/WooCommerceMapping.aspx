@@ -1518,6 +1518,16 @@
                             </div>
                         </div>
 
+                        <h3 class="woo-map-section-title">Expected delivery on Woo</h3>
+                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralWriteExpectedDeliveryNote" runat="server" /></p>
+                        <div class="filter-toolbar">
+                            <div class="filter-section">
+                                <div class="filter-control">
+                                    <asp:CheckBox ID="chkGeneralWriteExpectedDelivery" runat="server" />
+                                </div>
+                            </div>
+                        </div>
+
                         <h3 class="woo-map-section-title">Order Import auto-pull</h3>
                         <p class="woo-map-section-note"><asp:Literal ID="litGeneralAutoPullNote" runat="server" /></p>
                         <div class="filter-toolbar">

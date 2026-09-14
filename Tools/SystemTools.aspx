@@ -63,6 +63,18 @@
                                         ToolTip="Add or remove roast / delivery closure dates" />
                                 </div>
                             </div>
+                            <div class="dashboard-link tool-tone-holiday">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/Calendar.gif" alt="" />
+                                        <h4>Delivery Promise Rules</h4>
+                                    </div>
+                                    <p>Edit website-promised delivery / dispatch windows</p>
+                                    <asp:Button ID="btnDeliveryPromiseRules" runat="server" Text="Open"
+                                        PostBackUrl="~/Tools/DeliveryPromiseRules.aspx"
+                                        ToolTip="Edit customer SLA delivery promise windows by area" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

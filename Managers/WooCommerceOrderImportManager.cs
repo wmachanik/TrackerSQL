@@ -1120,45 +1120,70 @@ namespace TrackerSQL.Managers
             if (hits.Count == 1)
                 return new EmailMatchResolution { Contact = hits[0] };
 
-            var primaryMatches = hits
-                .Where(c => EmailMatches(c.EmailAddress, normalized))
+            // 1) Name / company match is the primary disambiguator across all email hits.
+            var scored = hits
+                .Select(c => new
+                {
+                    Contact = c,
+                    NameScore = ScoreOrderNameMatch(c, GetWooContactName(order, ship), ship, order?.Billing),
+                    IsPrimaryEmail = EmailMatches(c.EmailAddress, normalized)
+                })
                 .ToList();
 
-            List<Contact> pool = hits;
-            string reason = null;
+            int bestName = scored.Max(x => x.NameScore);
+            Contact picked;
+            string reason;
 
-            if (primaryMatches.Count == 1)
+            if (bestName > 0)
             {
-                pool = primaryMatches;
-                reason = "primary EmailAddress match";
-            }
-            else if (primaryMatches.Count > 1)
-            {
-                pool = primaryMatches;
-            }
-
-            Contact picked = null;
-            if (pool.Count > 1)
-            {
-                picked = PickContactByOrderName(pool, order, ship);
-                if (picked != null)
+                var nameWinners = scored.Where(x => x.NameScore == bestName).ToList();
+                if (nameWinners.Count == 1)
                 {
-                    reason = string.IsNullOrEmpty(reason)
-                        ? "order name match"
-                        : reason + ", order name match";
+                    picked = nameWinners[0].Contact;
+                    reason = nameWinners[0].IsPrimaryEmail
+                        ? "name/company match"
+                        : "name/company match (alt email)";
+                }
+                else
+                {
+                    // 2) Names tied / hard to distinguish — prefer primary EmailAddress over AltEmailAddress.
+                    var primaryAmongNames = nameWinners.Where(x => x.IsPrimaryEmail).ToList();
+                    if (primaryAmongNames.Count == 1)
+                    {
+                        picked = primaryAmongNames[0].Contact;
+                        reason = "name tie — primary EmailAddress";
+                    }
+                    else if (primaryAmongNames.Count > 1)
+                    {
+                        picked = primaryAmongNames.OrderBy(x => x.Contact.ContactID).First().Contact;
+                        reason = "name tie — lowest ContactID among primary emails";
+                    }
+                    else
+                    {
+                        picked = nameWinners.OrderBy(x => x.Contact.ContactID).First().Contact;
+                        reason = "name tie — lowest ContactID (alt emails only)";
+                    }
                 }
             }
-
-            if (picked == null && pool.Count == 1)
-                picked = pool[0];
-            else if (picked == null)
-                picked = pool.OrderBy(c => c.ContactID).First();
-
-            if (string.IsNullOrEmpty(reason))
+            else
             {
-                reason = hits.Count == pool.Count
-                    ? hits.Count + " matches — lowest ContactID"
-                    : "lowest ContactID among " + pool.Count + " primary-email match(es)";
+                // 3) No usable name/company signal — prefer primary email, then lowest ContactID.
+                var primaryOnly = scored.Where(x => x.IsPrimaryEmail).ToList();
+                if (primaryOnly.Count == 1)
+                {
+                    picked = primaryOnly[0].Contact;
+                    reason = "primary EmailAddress (names not distinguishable)";
+                }
+                else if (primaryOnly.Count > 1)
+                {
+                    picked = primaryOnly.OrderBy(x => x.Contact.ContactID).First().Contact;
+                    reason = "lowest ContactID among primary emails (names not distinguishable)";
+                }
+                else
+                {
+                    picked = scored.OrderBy(x => x.Contact.ContactID).First().Contact;
+                    reason = "lowest ContactID among alt emails (names not distinguishable)";
+                }
             }
 
             string note = string.Format(CultureInfo.InvariantCulture,
@@ -1202,6 +1227,18 @@ namespace TrackerSQL.Managers
                 return 0;
 
             int score = 0;
+            string company = FirstNonEmpty(ship?.Company, billing?.Company);
+            if (!string.IsNullOrWhiteSpace(company) && !string.IsNullOrWhiteSpace(contact.CompanyName))
+            {
+                string wooCo = company.Trim();
+                string storedCo = contact.CompanyName.Trim();
+                if (string.Equals(storedCo, wooCo, StringComparison.OrdinalIgnoreCase))
+                    score += 120;
+                else if (storedCo.IndexOf(wooCo, StringComparison.OrdinalIgnoreCase) >= 0
+                    || wooCo.IndexOf(storedCo, StringComparison.OrdinalIgnoreCase) >= 0)
+                    score += 50;
+            }
+
             if (!string.IsNullOrWhiteSpace(wooName))
             {
                 string woo = wooName.Trim();
@@ -1210,23 +1247,29 @@ namespace TrackerSQL.Managers
                     score += 100;
                 else if (string.Equals(FormatStoredContactName(contact), woo, StringComparison.OrdinalIgnoreCase))
                     score += 90;
-                else if (!string.IsNullOrWhiteSpace(contact.CompanyName)
-                    && contact.CompanyName.IndexOf(woo, StringComparison.OrdinalIgnoreCase) >= 0)
-                    score += 40;
             }
 
+            // Person names — score shipping once; billing only if different.
+            int personScore = 0;
             if (ship != null)
             {
                 if (!string.IsNullOrWhiteSpace(ship.FullName)
                     && string.Equals(FormatStoredContactName(contact), ship.FullName.Trim(), StringComparison.OrdinalIgnoreCase))
-                    score += 90;
+                    personScore = Math.Max(personScore, 90);
                 if (PersonNameMatches(contact, ship.FirstName, ship.LastName))
-                    score += 80;
+                    personScore = Math.Max(personScore, 85);
             }
 
-            if (billing != null && PersonNameMatches(contact, billing.FirstName, billing.LastName))
-                score += 80;
+            if (billing != null)
+            {
+                bool sameAsShip = ship != null
+                    && string.Equals(ship.FirstName ?? string.Empty, billing.FirstName ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(ship.LastName ?? string.Empty, billing.LastName ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                if (!sameAsShip && PersonNameMatches(contact, billing.FirstName, billing.LastName))
+                    personScore = Math.Max(personScore, 80);
+            }
 
+            score += personScore;
             return score;
         }
 
@@ -2249,8 +2292,7 @@ namespace TrackerSQL.Managers
 
                 case "Address":
                 {
-                    string address = (ship?.FormattedAddress ?? string.Empty).Trim();
-                    return string.IsNullOrWhiteSpace(address) ? null : address;
+                    return ResolveAddressNotePart(order, preview, ship);
                 }
 
                 case "WooPay":
@@ -2274,6 +2316,9 @@ namespace TrackerSQL.Managers
 
                 case "Email":
                 {
+                    // Walk-in identity only — matched contacts already have email on the contact record.
+                    if (preview == null || !preview.UseZzName)
+                        return null;
                     string email = FirstNonEmpty(ship?.Email, order?.Billing?.Email);
                     return string.IsNullOrWhiteSpace(email) ? null : "[#" + email.Trim() + "#]";
                 }
@@ -2287,6 +2332,47 @@ namespace TrackerSQL.Managers
                 default:
                     return null;
             }
+        }
+
+        /// <summary>
+        /// ZZName always gets the shipping address in Notes.
+        /// Matched contacts: only when Woo address differs by more than 50% from contact billing.
+        /// </summary>
+        private string ResolveAddressNotePart(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
+        {
+            if (ship == null)
+                return null;
+
+            string areaName = preview?.ResolvedAreaName;
+            string wooAddress = WooImportAddressHelper.FormatBillingAddress(ship, AddressConfig, areaName);
+            if (string.IsNullOrWhiteSpace(wooAddress))
+            {
+                wooAddress = (ship.FormattedAddress ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(wooAddress))
+                    return null;
+            }
+
+            if (preview != null && preview.UseZzName)
+                return wooAddress;
+
+            // New / unmatched contact — address is stored on the contact, not needed in Notes.
+            if (preview == null || !preview.MatchedContactId.HasValue || preview.MatchedContactId.Value <= 0)
+                return null;
+
+            Contact contact = _contactsRepo.GetById(preview.MatchedContactId.Value);
+            if (contact == null)
+                return null;
+
+            string contactArea = GetContactAreaName(contact);
+            string storedNorm = WooImportAddressHelper.NormalizeStoredBillingAddress(
+                contact.BillingAddress, AddressConfig, contactArea ?? areaName);
+            string wooNorm = WooImportAddressHelper.NormalizeStoredBillingAddress(
+                wooAddress, AddressConfig, areaName ?? contactArea);
+
+            if (!WooImportAddressHelper.AddressesDifferSignificantly(storedNorm, wooNorm, 0.5))
+                return null;
+
+            return "Addr differs: " + wooAddress;
         }
 
         private static string JoinRenderedNoteParts(List<string> parts)

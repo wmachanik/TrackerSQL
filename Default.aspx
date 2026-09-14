@@ -64,6 +64,13 @@
                     </div>
                     <p>Set up and manage recurring orders</p>
                 </div>
+                <div class="dashboard-card home-tone-woo">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-view-orders-16.png" alt="" />
+                        <h4><a href="Tools/WooOrderImport.aspx">Woo Order Import</a></h4>
+                    </div>
+                    <p>Pull and import orders from WooCommerce</p>
+                </div>
             </div>
         </div>
 

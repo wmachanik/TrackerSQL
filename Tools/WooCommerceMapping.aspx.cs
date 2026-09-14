@@ -182,6 +182,8 @@ namespace TrackerSQL.Tools
             lblGeneralNotePartOrder.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderLbl);
             litGeneralAppendTrackingNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingNote);
             chkGeneralAppendTracking.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingLbl);
+            litGeneralWriteExpectedDeliveryNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryNote);
+            chkGeneralWriteExpectedDelivery.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryLbl);
             litGeneralAutoPullNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullNote);
             lblGeneralAutoPull.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullLbl);
             btnSaveGeneralSettings.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveGeneralSettings);
@@ -3527,13 +3529,14 @@ namespace TrackerSQL.Tools
             BindNotePartOrderList(settings.ImportNotePartOrder);
 
             chkGeneralAppendTracking.Checked = settings.AppendTrackingToOrderNotes;
+            chkGeneralWriteExpectedDelivery.Checked = settings.WriteExpectedDeliveryToWoo;
 
             string autoPull = WooCommerceSettingsManager.NormalizeAutoPullMode(settings.ImportAutoPullMode);
             ddlGeneralAutoPull.Items.Clear();
             ddlGeneralAutoPull.Items.Add(new ListItem(
-                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullToday), "Today"));
-            ddlGeneralAutoPull.Items.Add(new ListItem(
                 MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullSinceSync), "SinceLastSync"));
+            ddlGeneralAutoPull.Items.Add(new ListItem(
+                MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullToday), "Today"));
             ddlGeneralAutoPull.Items.Add(new ListItem(
                 MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullThisWeek), "ThisWeek"));
             ddlGeneralAutoPull.Items.Add(new ListItem(
@@ -3548,15 +3551,17 @@ namespace TrackerSQL.Tools
             string companyMode = ddlGeneralCompanyMode.SelectedValue;
             string noteFmt = ddlGeneralNoteLineFormat.SelectedValue;
             bool appendTracking = chkGeneralAppendTracking.Checked;
+            bool writeExpectedDelivery = chkGeneralWriteExpectedDelivery.Checked;
             string autoPull = ddlGeneralAutoPull.SelectedValue;
             string noteOrder = GetNotePartOrderFromList();
-            _settings.SaveGeneralImportSettings(companyMode, noteFmt, appendTracking, autoPull, noteOrder, UserName());
+            _settings.SaveGeneralImportSettings(
+                companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, UserName());
             BindGeneralTab();
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralSettingsSaved), false);
             WooCommerceUserLog.Write("Mapping general settings saved",
                 string.Format(CultureInfo.InvariantCulture,
-                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}",
-                    companyMode, noteFmt, appendTracking, autoPull, noteOrder),
+                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}",
+                    companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery),
                 UserName());
         }
 

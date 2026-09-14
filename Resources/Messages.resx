@@ -609,8 +609,14 @@ Disabled recurring orders:
   <data name="Order.StatusTrackingLine" xml:space="preserve">
     <value>Tracking / waybill number: {0}.&lt;br /&gt;&lt;br /&gt;</value>
   </data>
+  <data name="Order.StatusTrackingWithCourier" xml:space="preserve">
+    <value>Your order was sent with &lt;strong&gt;{0}&lt;/strong&gt;. Tracking / waybill number: {1}.&lt;br /&gt;&lt;br /&gt;Track your parcel here: &lt;a href="{2}"&gt;{2}&lt;/a&gt;&lt;br /&gt;&lt;br /&gt;</value>
+  </data>
   <data name="Order.TrackingRequired" xml:space="preserve">
     <value>Enter the courier / Pargo tracking (waybill) number. This is required before the order can be marked done.</value>
+  </data>
+  <data name="Order.CourierRequired" xml:space="preserve">
+    <value>Select which courier was used to dispatch this parcel (or None).</value>
   </data>
   <data name="Order.StatusPendingDelivery" xml:space="preserve">
     <value>delivered</value>

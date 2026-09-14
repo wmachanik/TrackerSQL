@@ -39,6 +39,7 @@ namespace TrackerSQL.Pages
                 fvOrderDone.DataBind();
                 gvOrderDoeLines.DataBind();
                 SetDefaultRadioButtonFromDeliveryType();
+                BindCourierDropdown();
                 UpdateTrackingUi();
                 SetStatus("Ready to confirm delivery.", isError: null);
             }
@@ -111,11 +112,53 @@ namespace TrackerSQL.Pages
             return new TempOrdersHeaderRepository().GetById(headerId.Value)?.ToBeDeliveredByID;
         }
 
+        private void BindCourierDropdown()
+        {
+            try
+            {
+                var courierRepo = new CourierServicesRepository();
+                courierRepo.EnsureExists();
+
+                int? preferred = null;
+                Label customerID = fvOrderDone != null
+                    ? fvOrderDone.FindControl("CustomerIDLabel") as Label
+                    : null;
+                if (customerID != null && int.TryParse(customerID.Text, out int contactId) && contactId > 0)
+                {
+                    var contact = new ContactsRepository().GetById(contactId);
+                    preferred = courierRepo.ResolvePreferredId(
+                        contact?.PreferredCourierServiceID,
+                        GetDeliveryPersonId());
+                }
+                else
+                {
+                    preferred = courierRepo.ResolvePreferredId(null, GetDeliveryPersonId());
+                }
+
+                courierRepo.FillDropDown(ddlCourierService, preferred, includeNone: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "OrderDone BindCourierDropdown: " + ex.Message);
+            }
+        }
+
         private void UpdateTrackingUi()
         {
             bool need = OrderDoneManager.RequiresTrackingNumber(GetDeliveryPersonId(), rbtnSendConfirm.SelectedValue);
             pnlTracking.Visible = need;
             rfvTracking.Enabled = need;
+            if (need && (ddlCourierService.Items == null || ddlCourierService.Items.Count == 0))
+                BindCourierDropdown();
+        }
+
+        private int? GetSelectedCourierServiceId()
+        {
+            if (ddlCourierService == null || string.IsNullOrEmpty(ddlCourierService.SelectedValue))
+                return null;
+            if (int.TryParse(ddlCourierService.SelectedValue, out int id) && id > 0)
+                return id;
+            return null;
         }
 
         private void SetStatus(string message, bool? isError)
@@ -218,7 +261,8 @@ namespace TrackerSQL.Pages
                     tbxStock.Text,
                     tbxCount.Text,
                     statusKey,
-                    trackingNumber);
+                    trackingNumber,
+                    GetSelectedCourierServiceId());
 
                 bool emailWarn = !string.IsNullOrEmpty(result.Message)
                     && result.Message.IndexOf("email failed", StringComparison.OrdinalIgnoreCase) >= 0;

@@ -127,6 +127,7 @@ namespace TrackerSQL.Pages
                 ddlItemPackagingTypes.DataBind();
                 ddlDeliveryBy.DataBind();
                 ddlAgent.DataBind();
+                BindCourierServiceDropdown(null);
                 accInvoiceTypesDropDownList.DataBind();
                 accPaymentTermsDropDownList.DataBind();
                 accPriceLevelsDropDownList.DataBind();
@@ -134,6 +135,27 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails DataBindLookups error: " + ex.Message);
+            }
+        }
+
+        private void BindCourierServiceDropdown(int? selectedId)
+        {
+            try
+            {
+                var repo = new CourierServicesRepository();
+                repo.EnsureExists();
+                // Contact preference: default to None unless a preferred courier is set.
+                int? select = selectedId;
+                if (!select.HasValue || select.Value <= 0)
+                {
+                    var none = repo.GetByCode("None");
+                    select = none?.CourierServiceID;
+                }
+                repo.FillDropDown(ddlCourierService, select, includeNone: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails BindCourierServiceDropdown: " + ex.Message);
             }
         }
 
@@ -254,6 +276,7 @@ namespace TrackerSQL.Pages
                 TrySelectDropDownByValue(ddlItemPackagingTypes, contact.PrefItemPackagingID);
 
                 TrySelectDropDownByValue(ddlDeliveryBy, contact.PreferredAgentID);
+                BindCourierServiceDropdown(contact.PreferredCourierServiceID);
                 TrySelectDropDownByValue(ddlAgent, contact.SalesAgentID);
 
                 PriPrefQtyTextBox.Text = contact.PriPrefQty.HasValue ? contact.PriPrefQty.Value.ToString("0.##") : string.Empty;
@@ -705,6 +728,7 @@ namespace TrackerSQL.Pages
             contact.PriPrefQty = ParseNullableDouble(PriPrefQtyTextBox.Text);
             contact.PrefItemPackagingID = ParseNullableInt(ddlItemPackagingTypes.SelectedValue);
             contact.PreferredAgentID = ParseNullableInt(ddlDeliveryBy.SelectedValue);
+            contact.PreferredCourierServiceID = ParseNullableInt(ddlCourierService.SelectedValue);
             contact.SalesAgentID = ParseNullableInt(ddlAgent.SelectedValue);
             contact.EquipentSN = NullIfEmpty(MachineSNTextBox.Text);
             contact.Enabled = enabledCheckBox.Checked;

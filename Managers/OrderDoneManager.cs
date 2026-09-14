@@ -49,10 +49,11 @@ namespace TrackerSQL.Managers
             string stockText,
             string cupCountText,
             string statusKey,
-            string trackingNumber = null)
+            string trackingNumber = null,
+            int? courierServiceId = null)
         {
             return new OrderDoneManager().CompleteOrderInternal(
-                customerId, deliveryDate, stockText, cupCountText, statusKey, trackingNumber);
+                customerId, deliveryDate, stockText, cupCountText, statusKey, trackingNumber, courierServiceId);
         }
 
         public static bool RequiresTrackingNumber(int? deliveredByPersonId, string confirmValue)
@@ -110,7 +111,8 @@ namespace TrackerSQL.Managers
             string stockText,
             string cupCountText,
             string statusKey,
-            string trackingNumber)
+            string trackingNumber,
+            int? courierServiceId)
         {
             var result = new OrderDoneResult();
             if (!TempOrderSession.TryResolve(out int tempHeaderId, out int orderId))
@@ -216,12 +218,12 @@ namespace TrackerSQL.Managers
             bool emailSent = false;
             if (!string.IsNullOrEmpty(statusKey))
             {
-                sentStatus = SendOrderStatusEmail(customerId, statusKey, orderId, trackingNumber);
+                sentStatus = SendOrderStatusEmail(customerId, statusKey, orderId, trackingNumber, courierServiceId);
                 emailSent = sentStatus == null;
             }
 
             string wooNoteStatus = ApplyDispatchTracking(
-                orderId, customerId, trackingNumber, !string.IsNullOrEmpty(statusKey), emailSent);
+                orderId, customerId, trackingNumber, !string.IsNullOrEmpty(statusKey), emailSent, courierServiceId);
 
             var recurringNotes = SyncRecurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
             TempOrderSession.CleanupCompletedOrder(orderId, tempHeaderId);
@@ -292,7 +294,7 @@ namespace TrackerSQL.Managers
             return pCupCount;
         }
 
-        public static string SendOrderStatusEmail(long customerId, string statusKey, int orderId = 0, string trackingNumber = null)
+        public static string SendOrderStatusEmail(long customerId, string statusKey, int orderId = 0, string trackingNumber = null, int? courierServiceId = null)
         {
             if (statusKey == null)
             {
@@ -335,8 +337,7 @@ namespace TrackerSQL.Managers
             string statusMessage = MessageProvider.Get(statusKey);
             string body = MessageProvider.Format(MessageKeys.Order.StatusBody, contactName, statusMessage);
             email.AddToBody(body);
-            if (!string.IsNullOrWhiteSpace(trackingNumber))
-                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, trackingNumber.Trim()));
+            AppendTrackingBody(email, trackingNumber, courierServiceId);
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.StatusFooter));
             email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
 
@@ -353,6 +354,35 @@ namespace TrackerSQL.Managers
             return success ? null : $"? Failed to send email to {recipient}: {email.myResults.sResult}";
         }
 
+        private static void AppendTrackingBody(EmailMailKitCls email, string trackingNumber, int? courierServiceId)
+        {
+            if (email == null || string.IsNullOrWhiteSpace(trackingNumber))
+                return;
+
+            string track = trackingNumber.Trim();
+            CourierService courier = null;
+            if (courierServiceId.HasValue && courierServiceId.Value > 0)
+                courier = new CourierServicesRepository().GetByIdSafe(courierServiceId.Value);
+
+            if (courier != null && !courier.IsNone && !string.IsNullOrWhiteSpace(courier.TrackingUrl))
+            {
+                email.AddToBody(MessageProvider.Format(
+                    MessageKeys.Order.StatusTrackingWithCourier,
+                    courier.ServiceName ?? courier.ServiceCode,
+                    track,
+                    courier.TrackingUrl.Trim()));
+            }
+            else if (courier != null && !courier.IsNone)
+            {
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, track));
+                email.AddToBody("Sent with " + (courier.ServiceName ?? courier.ServiceCode) + ".<br /><br />");
+            }
+            else
+            {
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, track));
+            }
+        }
+
         /// <summary>
         /// Saves the waybill on the Tracker order, emails already sent above,
         /// and posts a Woo customer note (does not complete the Woo order).
@@ -362,7 +392,8 @@ namespace TrackerSQL.Managers
             int customerId,
             string trackingNumber,
             bool emailAttempted,
-            bool emailSent)
+            bool emailSent,
+            int? courierServiceId)
         {
             if (orderId <= 0 || string.IsNullOrWhiteSpace(trackingNumber))
                 return null;
@@ -381,6 +412,15 @@ namespace TrackerSQL.Managers
                     _ordersRepository.UpdateOrderNotes(orderId, notes);
                 }
             }
+
+            var courierRepo = new CourierServicesRepository();
+            CourierService courier = null;
+            if (courierServiceId.HasValue && courierServiceId.Value > 0)
+                courier = courierRepo.GetByIdSafe(courierServiceId.Value);
+
+            string carrierName = courier != null && !courier.IsNone
+                ? (courier.ServiceName ?? courier.ServiceCode)
+                : CarrierLabel(header?.ToBeDeliveredBy ?? 0);
 
             var wooRepo = new WooOrderInfoRepository();
             var info = wooRepo.GetByTrackerOrderId(orderId);
@@ -401,8 +441,7 @@ namespace TrackerSQL.Managers
                 }
                 else
                 {
-                    string note = "Your order has been dispatched. Waybill / tracking number: " + track
-                        + ". This number is also on your order in the shop. The order stays open until the parcel is received.";
+                    string note = BuildCustomerTrackingNote(track, courier);
                     string detail;
                     wooNotePosted = new WooCommerceApiClient().AddOrderNote(
                         creds, wooOrderId.Value, note, customerNote: true, out detail);
@@ -427,7 +466,8 @@ namespace TrackerSQL.Managers
                 OrderID = orderId,
                 ContactID = customerId > 0 ? customerId : (int?)null,
                 WaybillNumber = track,
-                Carrier = CarrierLabel(header?.ToBeDeliveredBy ?? 0),
+                Carrier = carrierName,
+                CourierServiceID = courier != null && !courier.IsNone ? courier.CourierServiceID : (int?)null,
                 DispatchStatus = "Dispatched",
                 DispatchedAt = TimeZoneUtils.Now(),
                 WooOrderId = wooOrderId,
@@ -437,9 +477,68 @@ namespace TrackerSQL.Managers
             };
             new OrderWaybillRepository().Upsert(waybill);
 
+            SyncContactPreferredCourier(customerId, courier);
+
             if (wooMessage != null)
                 return wooMessage;
             return "Waybill " + track + " saved on the order.";
+        }
+
+        /// <summary>
+        /// If dispatch used a real courier and it differs from the contact preference, update the contact
+        /// so the next Order Done defaults to that courier.
+        /// </summary>
+        private void SyncContactPreferredCourier(int customerId, CourierService courier)
+        {
+            if (customerId <= 0 || courier == null || courier.IsNone || courier.CourierServiceID <= 0)
+                return;
+
+            try
+            {
+                var contact = _contactsRepository.GetById(customerId);
+                if (contact == null)
+                    return;
+
+                if (contact.PreferredCourierServiceID.HasValue
+                    && contact.PreferredCourierServiceID.Value == courier.CourierServiceID)
+                    return;
+
+                if (_contactsRepository.UpdatePreferredCourierServiceId(customerId, courier.CourierServiceID))
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                        "Contact " + customerId + " preferred courier set to "
+                        + (courier.ServiceName ?? courier.ServiceCode)
+                        + " (ID " + courier.CourierServiceID + ") from Order Done dispatch");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "SyncContactPreferredCourier failed: " + ex.Message);
+            }
+        }
+
+        private static string BuildCustomerTrackingNote(string track, CourierService courier)
+        {
+            if (courier != null && !courier.IsNone && !string.IsNullOrWhiteSpace(courier.TrackingUrl))
+            {
+                return string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "Your order has been dispatched with {0}. Waybill / tracking number: {1}. Track here: {2}. The order stays open until the parcel is received.",
+                    courier.ServiceName ?? courier.ServiceCode,
+                    track,
+                    courier.TrackingUrl.Trim());
+            }
+
+            if (courier != null && !courier.IsNone)
+            {
+                return "Your order has been dispatched with " + (courier.ServiceName ?? courier.ServiceCode)
+                    + ". Waybill / tracking number: " + track
+                    + ". This number is also on your order in the shop. The order stays open until the parcel is received.";
+            }
+
+            return "Your order has been dispatched. Waybill / tracking number: " + track
+                + ". This number is also on your order in the shop. The order stays open until the parcel is received.";
         }
 
         private static string CarrierLabel(int personId)

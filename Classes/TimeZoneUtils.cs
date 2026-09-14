@@ -79,11 +79,25 @@ namespace TrackerSQL.Classes
 
         public static DateTime ConvertUtcToUserZone(DateTime utcTime)
         {
+            if (utcTime.Kind == DateTimeKind.Local)
+                utcTime = utcTime.ToUniversalTime();
+            else if (utcTime.Kind == DateTimeKind.Unspecified)
+                utcTime = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
+
             return TimeZoneInfo.ConvertTimeFromUtc(utcTime, EffectiveTimeZone);
         }
 
+        /// <summary>
+        /// Treats <paramref name="userLocalTime"/> as a wall-clock time in the app/user timezone
+        /// (not the server OS local zone) and converts to UTC.
+        /// </summary>
         public static DateTime ConvertToUtc(DateTime userLocalTime)
         {
+            // ConvertTimeToUtc requires Unspecified when sourceTimeZone is not TimeZoneInfo.Local.
+            // HTML date inputs / AssumeLocal often produce Kind=Local and throw otherwise.
+            if (userLocalTime.Kind != DateTimeKind.Unspecified)
+                userLocalTime = DateTime.SpecifyKind(userLocalTime, DateTimeKind.Unspecified);
+
             return TimeZoneInfo.ConvertTimeToUtc(userLocalTime, EffectiveTimeZone);
         }
 

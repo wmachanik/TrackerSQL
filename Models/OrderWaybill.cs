@@ -9,6 +9,7 @@ namespace TrackerSQL.Models
         public int? ContactID { get; set; }
         public string WaybillNumber { get; set; }
         public string Carrier { get; set; }
+        public int? CourierServiceID { get; set; }
         public string DispatchStatus { get; set; }
         public DateTime DispatchedAt { get; set; }
         public long? WooOrderId { get; set; }

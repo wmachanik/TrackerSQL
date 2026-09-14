@@ -93,6 +93,9 @@ namespace TrackerSQL.Pages
         protected TabPanel tabpnlSortOrders;
         protected UpdatePanel upnlSortOrders;
         protected GridView gvSortOrders;
+        protected TabPanel tabpnlCouriers;
+        protected UpdatePanel upnlCouriers;
+        protected GridView gvCouriers;
         protected SqlDataSource sdsUserNames;
 
         // Per-request caches for Items grid lookup dropdowns (filled once per bind)
@@ -100,12 +103,20 @@ namespace TrackerSQL.Pages
         private List<ItemServiceType> _itemServiceTypesCache;
         private List<OrderItemLookup> _replacementItemsCache;
         private ItemSortOrdersRepository _sortOrdersRepo;
+        private CourierServicesRepository _couriersRepo;
 
         private ItemSortOrdersRepository GetSortOrdersRepo()
         {
             if (_sortOrdersRepo == null)
                 _sortOrdersRepo = new ItemSortOrdersRepository();
             return _sortOrdersRepo;
+        }
+
+        private CourierServicesRepository GetCouriersRepo()
+        {
+            if (_couriersRepo == null)
+                _couriersRepo = new CourierServicesRepository();
+            return _couriersRepo;
         }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -136,6 +147,7 @@ namespace TrackerSQL.Pages
                 BindPriceLevelsGrid();
                 BindRepairStatusesGrid();
                 BindSortOrdersGrid();
+                BindCouriersGrid();
             }
         }
 
@@ -1386,6 +1398,153 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 SetLookupStatus("Error adding sort order: " + ex.Message, true);
+            }
+        }
+
+        private void BindCouriersGrid()
+        {
+            try
+            {
+                GetCouriersRepo().EnsureExists();
+                var list = GetCouriersRepo().GetAll("SortOrder") ?? new List<CourierService>();
+                gvCouriers.DataSource = list;
+                gvCouriers.DataBind();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error loading couriers: " + ex.Message, true);
+            }
+        }
+
+        protected void gvCouriers_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvCouriers.EditIndex = e.NewEditIndex;
+            BindCouriersGrid();
+            upnlCouriers?.Update();
+        }
+
+        protected void gvCouriers_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvCouriers.EditIndex = -1;
+            BindCouriersGrid();
+            upnlCouriers?.Update();
+        }
+
+        protected void gvCouriers_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvCouriers.DataKeys[e.RowIndex].Value);
+                GridViewRow row = gvCouriers.Rows[e.RowIndex];
+                var tbxCode = (TextBox)row.FindControl("tbxCsCode");
+                var tbxName = (TextBox)row.FindControl("tbxCsName");
+                var tbxUrl = (TextBox)row.FindControl("tbxCsUrl");
+                var cbxDefault = (CheckBox)row.FindControl("cbxCsDefault");
+                var cbxEnabled = (CheckBox)row.FindControl("cbxCsEnabled");
+                var tbxSort = (TextBox)row.FindControl("tbxCsSort");
+                int sort = 0;
+                if (tbxSort != null)
+                    int.TryParse(tbxSort.Text, out sort);
+
+                GetCouriersRepo().Update(new CourierService
+                {
+                    CourierServiceID = id,
+                    ServiceCode = tbxCode?.Text?.Trim(),
+                    ServiceName = tbxName?.Text?.Trim(),
+                    TrackingUrl = tbxUrl?.Text?.Trim(),
+                    IsDefault = cbxDefault != null && cbxDefault.Checked,
+                    IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
+                    SortOrder = sort
+                });
+                gvCouriers.EditIndex = -1;
+                BindCouriersGrid();
+                upnlCouriers?.Update();
+                SetLookupStatus("Courier updated.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error updating courier: " + ex.Message, true);
+            }
+        }
+
+        protected void gvCouriers_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvCouriers.DataKeys[e.RowIndex].Value);
+                if (!GetCouriersRepo().Delete(id))
+                {
+                    SetLookupStatus("Could not delete (None cannot be deleted, or row missing).", true);
+                    return;
+                }
+                gvCouriers.EditIndex = -1;
+                BindCouriersGrid();
+                upnlCouriers?.Update();
+                SetLookupStatus("Courier deleted.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error deleting courier: " + ex.Message, true);
+            }
+        }
+
+        protected void gvCouriers_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+            foreach (string id in new[] { "btnCsUpdate", "btnCsCancel", "btnCsEdit", "btnCsDelete", "btnCsAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
+            }
+        }
+
+        protected void gvCouriers_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "AddItem", StringComparison.Ordinal))
+                return;
+            try
+            {
+                if (gvCouriers.FooterRow == null)
+                    return;
+                var tbxCode = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsCodeFooter");
+                var tbxName = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsNameFooter");
+                var tbxUrl = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsUrlFooter");
+                var cbxDefault = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsDefaultFooter");
+                var cbxEnabled = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsEnabledFooter");
+                var tbxSort = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsSortFooter");
+                string code = tbxCode?.Text?.Trim() ?? string.Empty;
+                string name = tbxName?.Text?.Trim() ?? string.Empty;
+                if (code.Length == 0 || name.Length == 0)
+                {
+                    SetLookupStatus("Code and Name are required.", true);
+                    return;
+                }
+                int sort = 100;
+                if (tbxSort != null)
+                    int.TryParse(tbxSort.Text, out sort);
+
+                GetCouriersRepo().Insert(new CourierService
+                {
+                    ServiceCode = code,
+                    ServiceName = name,
+                    TrackingUrl = tbxUrl?.Text?.Trim(),
+                    IsDefault = cbxDefault != null && cbxDefault.Checked,
+                    IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
+                    SortOrder = sort
+                });
+                gvCouriers.EditIndex = -1;
+                BindCouriersGrid();
+                upnlCouriers?.Update();
+                SetLookupStatus("Courier added.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error adding courier: " + ex.Message, true);
             }
         }
 

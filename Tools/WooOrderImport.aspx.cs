@@ -802,8 +802,9 @@ namespace TrackerSQL.Tools
         {
             if (string.IsNullOrWhiteSpace(text))
                 return null;
-            if (DateTime.TryParse(text.Trim(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime dt))
-                return dt;
+            // Keep Kind=Unspecified so TimeZoneUtils.ConvertToUtc treats the value as app-local wall clock.
+            if (DateTime.TryParse(text.Trim(), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt))
+                return DateTime.SpecifyKind(dt.Date, DateTimeKind.Unspecified);
             return null;
         }
 

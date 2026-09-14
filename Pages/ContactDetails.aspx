@@ -156,14 +156,21 @@
                             ErrorMessage="Please select who will deliver" ControlToValidate="ddlDeliveryBy" InitialValue="0"
                             Display="None" />
                     </td>
+                    <td>Courier</td>
+                    <td>
+                        <asp:DropDownList ID="ddlCourierService" runat="server" CssClass="sys-prefs-input" />
+                    </td>
                     <td>Agent</td>
                     <td>
                         <asp:DropDownList ID="ddlAgent" runat="server" AppendDataBoundItems="true" DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID">
                             <asp:ListItem Text="none" Value="0" />
                         </asp:DropDownList>
                     </td>
+                </tr>
+                <tr>
                     <td>Reminders: [<asp:Label ID="ReminderCountLabel" runat="server" />]</td>
-                    <td>LastReminderSent:<asp:Label ID="LastReminderLabel" runat="server" /></td>
+                    <td colspan="2">LastReminderSent:<asp:Label ID="LastReminderLabel" runat="server" /></td>
+                    <td colspan="3"></td>
                 </tr>
                 <tr>
                     <td>Uses/Enabled/Filters</td>

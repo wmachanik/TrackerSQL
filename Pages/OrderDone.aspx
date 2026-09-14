@@ -106,13 +106,37 @@
                         </asp:GridView>
                     </div>
 
+                    <asp:Panel ID="pnlTracking" runat="server" Visible="false" CssClass="complex-form-section order-done-courier-panel">
+                        <h3 class="woo-map-section-title">Courier dispatch</h3>
+                        <p class="woo-map-section-note">
+                            Select the courier and enter the waybill number. Tracker emails the courier name, tracking number, and track URL.
+                            WooCommerce orders get a customer note; the Woo order stays open.
+                        </p>
+                        <div class="filter-section order-done-courier-fields">
+                            <div class="filter-control">
+                                <asp:Label ID="lblCourierService" runat="server" AssociatedControlID="ddlCourierService"
+                                    Text="Courier service" CssClass="small" />
+                                <asp:DropDownList ID="ddlCourierService" runat="server" CssClass="sys-prefs-input" Width="14em" />
+                            </div>
+                            <div class="filter-control">
+                                <asp:Label ID="lblTracking" runat="server" AssociatedControlID="tbxTrackingNumber"
+                                    Text="Tracking / waybill" CssClass="small" />
+                                <asp:TextBox ID="tbxTrackingNumber" runat="server" Width="14em" MaxLength="100"
+                                    CssClass="sys-prefs-input" />
+                                <asp:RequiredFieldValidator ID="rfvTracking" runat="server" ControlToValidate="tbxTrackingNumber"
+                                    Enabled="false" Display="Dynamic" CssClass="status-error"
+                                    ErrorMessage="Tracking / waybill number is required for Pargo and courier." />
+                            </div>
+                        </div>
+                    </asp:Panel>
+
                     <table class="TblCoffee detail-form-table detail-form-table-spaced">
                         <tr>
                             <td class="col-width-8em">Stock (kg)</td>
                             <td class="col-width-8em">
                                 <asp:TextBox ID="tbxStock" runat="server" Width="5em" CssClass="small" />
                             </td>
-                            <td rowspan="4" class="align-top-pl-16">
+                            <td rowspan="2" class="align-top-pl-16">
                                 <asp:RadioButtonList ID="rbtnSendConfirm" runat="server" CssClass="small"
                                     AutoPostBack="true" OnSelectedIndexChanged="rbtnSendConfirm_SelectedIndexChanged">
                                     <asp:ListItem Text="No confirmation email" Value="none" />
@@ -127,23 +151,6 @@
                             <td>Cup count</td>
                             <td>
                                 <asp:TextBox ID="tbxCount" runat="server" Width="5em" CssClass="small" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2">
-                                <asp:Panel ID="pnlTracking" runat="server" Visible="false" CssClass="page-tone-subtitle mt-8">
-                                    <asp:Label ID="lblTracking" runat="server" AssociatedControlID="tbxTrackingNumber"
-                                        Text="Tracking / waybill" />
-                                    <asp:TextBox ID="tbxTrackingNumber" runat="server" Width="16em" MaxLength="100"
-                                        CssClass="small block-mt-4" />
-                                    <asp:RequiredFieldValidator ID="rfvTracking" runat="server" ControlToValidate="tbxTrackingNumber"
-                                        Enabled="false" Display="Dynamic" CssClass="status-error"
-                                        ErrorMessage="Tracking / waybill number is required for Pargo and courier." />
-                                    <p class="page-tone-subtitle subtitle-tight">
-                                        Required for Pargo / courier. Tracker emails this number. If the order came from WooCommerce,
-                                        a customer note is added in Woo — the Woo order is <strong>not</strong> completed.
-                                    </p>
-                                </asp:Panel>
                             </td>
                         </tr>
                     </table>

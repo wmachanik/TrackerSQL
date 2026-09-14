@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Courier services lookup (parcel track-and-trace).
+  Idempotent — safe to re-run via Tools → XMLtoSQL or CourierServicesRepository.EnsureExists().
+  Existing edits (name/URL) are not overwritten on re-run (MERGE by ServiceCode).
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CourierServicesTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.CourierServicesTbl
+          (
+              CourierServiceID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CourierServicesTbl PRIMARY KEY,
+              ServiceCode NVARCHAR(32) NOT NULL,
+              ServiceName NVARCHAR(100) NOT NULL,
+              TrackingUrl NVARCHAR(500) NULL,
+              IsDefault BIT NOT NULL CONSTRAINT DF_CourierSvc_Default DEFAULT (0),
+              IsEnabled BIT NOT NULL CONSTRAINT DF_CourierSvc_Enabled DEFAULT (1),
+              SortOrder INT NOT NULL CONSTRAINT DF_CourierSvc_Sort DEFAULT (0),
+              CONSTRAINT UQ_CourierServices_Code UNIQUE (ServiceCode)
+          );
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.ContactsTbl', N'PreferredCourierServiceID') IS NULL
+          ALTER TABLE dbo.ContactsTbl ADD PreferredCourierServiceID INT NULL;
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrderWaybillTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrderWaybillTbl', N'CourierServiceID') IS NULL
+          ALTER TABLE dbo.OrderWaybillTbl ADD CourierServiceID INT NULL;
+    ]]>
+  </command>
+
+  <command type="insert">
+    <![CDATA[
+      MERGE dbo.CourierServicesTbl AS t
+      USING (VALUES
+          (N'None',        N'None',         CAST(NULL AS NVARCHAR(500)), 0, 1, 0),
+          (N'Fastway',     N'Fastway',      N'https://www.fastway.co.za/our-services/track-your-parcel', 1, 1, 10),
+          (N'Pargo',       N'Pargo',        N'https://pargo.co.za/track-trace/', 0, 1, 20),
+          (N'CourierGuy',  N'Courier Guy',  N'https://thecourierguy.co.za/tracking/', 0, 1, 30)
+      ) AS s(ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder)
+      ON t.ServiceCode = s.ServiceCode
+      WHEN NOT MATCHED THEN
+          INSERT (ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder)
+          VALUES (s.ServiceCode, s.ServiceName, s.TrackingUrl, s.IsDefault, s.IsEnabled, s.SortOrder);
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT CourierServiceID, ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder
+      FROM dbo.CourierServicesTbl
+      ORDER BY SortOrder, ServiceName;
+    ]]>
+  </command>
+</root>

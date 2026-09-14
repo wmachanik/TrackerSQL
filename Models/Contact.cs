@@ -35,6 +35,8 @@ namespace TrackerSQL.Models
         public double? SecPrefQty { get; set; }
         public bool? TypicallySecToo { get; set; }
         public int? PreferredAgentID { get; set; }
+        /// <summary>Preferred parcel courier (CourierServicesTbl) for waybill / tracking emails.</summary>
+        public int? PreferredCourierServiceID { get; set; }
         public int? SalesAgentID { get; set; }
         public string EquipentSN { get; set; }
         public bool? UsesFilter { get; set; }

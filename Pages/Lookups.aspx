@@ -1057,6 +1057,122 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
+
+        <ajaxToolkit:TabPanel ID="tabpnlCouriers" runat="server" HeaderText="Couriers">
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlCouriers" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvCouriers" />
+                    </Triggers>
+                    <ContentTemplate>
+                        <p class="page-tone-subtitle" style="margin:0.6rem 0;">
+                            Parcel courier services for waybills. Tracking URL is sent to the customer with the waybill number.
+                            Fastway is the system default. Code must stay unique (None / Fastway / Pargo / CourierGuy).
+                        </p>
+                        <div class="results-container scrollable-table-container">
+                            <asp:GridView ID="gvCouriers" runat="server" DataKeyNames="CourierServiceID"
+                                CssClass="results-table results-table-fit" AutoGenerateColumns="False" ShowFooter="true"
+                                OnRowCommand="gvCouriers_RowCommand"
+                                OnRowEditing="gvCouriers_RowEditing"
+                                OnRowCancelingEdit="gvCouriers_RowCancelingEdit"
+                                OnRowUpdating="gvCouriers_RowUpdating"
+                                OnRowDeleting="gvCouriers_RowDeleting"
+                                OnRowDataBound="gvCouriers_RowDataBound">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnCsUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
+                                            <asp:ImageButton ID="btnCsCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnCsEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                            <asp:ImageButton ID="btnCsDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                AlternateText="Delete" ImageUrl="~/images/imgButtons/Trashcan.gif"
+                                                OnClientClick="return confirm('Delete this courier service?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnCsAdd" runat="server" CausesValidation="False" CommandName="AddItem"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Code" SortExpression="ServiceCode">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsCode" runat="server" Text='<%# Bind("ServiceCode") %>' Width="8em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblCsCode" runat="server" Text='<%# Bind("ServiceCode") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsCodeFooter" runat="server" Width="8em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Name" SortExpression="ServiceName">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsName" runat="server" Text='<%# Bind("ServiceName") %>' Width="10em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblCsName" runat="server" Text='<%# Bind("ServiceName") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsNameFooter" runat="server" Width="10em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Tracking URL" SortExpression="TrackingUrl">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsUrl" runat="server" Text='<%# Bind("TrackingUrl") %>' Width="22em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlCsUrl" runat="server" NavigateUrl='<%# Eval("TrackingUrl") %>'
+                                                Text='<%# Eval("TrackingUrl") %>' Target="_blank" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsUrlFooter" runat="server" Width="22em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Default" SortExpression="IsDefault">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxCsDefault" runat="server" Checked='<%# Bind("IsDefault") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxCsDefault" runat="server" Checked='<%# Bind("IsDefault") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxCsDefaultFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="On" SortExpression="IsEnabled">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxCsEnabled" runat="server" Checked='<%# Bind("IsEnabled") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxCsEnabled" runat="server" Checked='<%# Bind("IsEnabled") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxCsEnabledFooter" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Sort" SortExpression="SortOrder">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsSort" runat="server" Text='<%# Bind("SortOrder") %>' Width="3em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblCsSort" runat="server" Text='<%# Bind("SortOrder") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsSortFooter" runat="server" Width="3em" Text="100" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
+
         <ajaxToolkit:TabPanel ID="tabpnlRepairStatuses" runat="server" HeaderText="Repair Statuses">
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">

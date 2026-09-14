@@ -117,6 +117,7 @@
     <Content Include="Administration\ResetPasswordHelper.aspx" />
     <Content Include="Administration\UserInformation.aspx" />
     <Content Include="App_Data\SQLCommands-ItemSortOrder-01.xml" />
+    <Content Include="App_Data\SQLCommands-CourierServices-01.xml" />
     <Content Include="App_Data\SQLCommands-ShowAwayChangesXML.xml" />
     <Content Include="App_Data\SQLCommands-RepStatusUpdate-01.xml" />
     <Content Include="App_Data\SQLCommands001.xml" />
@@ -261,6 +262,7 @@
     <Content Include="App_Data\SQLCommands-WooCommerce-04.xml" />
     <Content Include="App_Data\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DeliveryPromise-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-CourierServices-01.xml" />
     <Content Include="App_Data\SQLCommands-Postal-01.xml" />
     <Content Include="Data\geo-south-africa-postal_EN.csv" />
     <Content Include="Data\area-place-presets.json" />
@@ -379,6 +381,7 @@
     <Compile Include="Models\InactiveContactResult.cs" />
     <Compile Include="Models\InvoiceType.cs" />
     <Compile Include="Models\ItemSortOrder.cs" />
+    <Compile Include="Models\CourierService.cs" />
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\ItemGroup.cs" />
     <Compile Include="Models\ItemGroupGridRow.cs" />
@@ -452,6 +455,7 @@
     <Compile Include="Repositories\ItemPrepTypesRepository.cs" />
     <Compile Include="Repositories\ItemServiceTypesRepository.cs" />
     <Compile Include="Repositories\ItemSortOrdersRepository.cs" />
+    <Compile Include="Repositories\CourierServicesRepository.cs" />
     <Compile Include="Repositories\ItemsRepository.cs" />
     <Compile Include="Repositories\ItemUnitsRepository.cs" />
     <Compile Include="Repositories\MembershipRepository.cs" />

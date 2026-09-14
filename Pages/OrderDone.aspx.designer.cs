@@ -22,6 +22,8 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.RadioButtonList rbtnSendConfirm;
         protected global::System.Web.UI.WebControls.TextBox tbxCount;
         protected global::System.Web.UI.WebControls.Panel pnlTracking;
+        protected global::System.Web.UI.WebControls.Label lblCourierService;
+        protected global::System.Web.UI.WebControls.DropDownList ddlCourierService;
         protected global::System.Web.UI.WebControls.Label lblTracking;
         protected global::System.Web.UI.WebControls.TextBox tbxTrackingNumber;
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvTracking;

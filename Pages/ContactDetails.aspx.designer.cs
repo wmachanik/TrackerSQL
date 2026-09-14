@@ -286,6 +286,11 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.RequiredFieldValidator ddlDeliveryByRequiredFieldValidator;
 
         /// <summary>
+        /// ddlCourierService control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.DropDownList ddlCourierService;
+
+        /// <summary>
         /// ddlAgent control.
         /// </summary>
         /// <remarks>

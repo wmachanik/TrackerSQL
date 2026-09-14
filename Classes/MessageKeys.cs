@@ -147,7 +147,9 @@ namespace TrackerSQL.Classes
             public const string StatusCollected = "Order.StatusCollected";
             public const string StatusDelivered = "Order.StatusDelivered";
             public const string StatusTrackingLine = "Order.StatusTrackingLine";
+            public const string StatusTrackingWithCourier = "Order.StatusTrackingWithCourier";
             public const string TrackingRequired = "Order.TrackingRequired";
+            public const string CourierRequired = "Order.CourierRequired";
 
             public const string StatusBody = "Order.StatusBody";
             public const string ConfirmationHeader = "Order.ConfirmationHeader";

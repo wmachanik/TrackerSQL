@@ -494,6 +494,17 @@ namespace TrackerSQL.Pages
             string status = string.IsNullOrWhiteSpace(wb.DispatchStatus) ? "Dispatched" : wb.DispatchStatus;
             if (!string.IsNullOrWhiteSpace(wb.Carrier))
                 status += " · " + wb.Carrier;
+            if (wb.CourierServiceID.HasValue && wb.CourierServiceID.Value > 0)
+            {
+                try
+                {
+                    var cs = new CourierServicesRepository().GetByIdSafe(wb.CourierServiceID.Value);
+                    if (cs != null && !string.IsNullOrWhiteSpace(cs.TrackingUrl))
+                        status += " · <a href=\"" + HttpUtility.HtmlAttributeEncode(cs.TrackingUrl)
+                            + "\" target=\"_blank\" rel=\"noopener\">track</a>";
+                }
+                catch { /* ignore */ }
+            }
             lblDispatchStatus.Text = status;
             lblWaybill.Text = wb.WaybillNumber;
         }

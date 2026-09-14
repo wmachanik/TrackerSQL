@@ -18,6 +18,7 @@
       <asp:ListItem Text="---Select a Table---" Value=""></asp:ListItem>
       <asp:ListItem Text="Areas" Value="Areas"></asp:ListItem>
       <asp:ListItem Text="Area Prep Days" Value="AreaPrepDays"></asp:ListItem>
+      <asp:ListItem Text="Couriers" Value="Couriers"></asp:ListItem>
       <asp:ListItem Text="Equipment Types" Value="EquipmentTypes"></asp:ListItem>
       <asp:ListItem Text="Invoice Types" Value="InvoiceTypes"></asp:ListItem>
       <asp:ListItem Text="Item Packaging" Value="ItemPackaging"></asp:ListItem>

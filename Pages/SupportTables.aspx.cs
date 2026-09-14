@@ -77,6 +77,7 @@ namespace TrackerSQL.Pages
                 {
                     case "Areas": updated = UpdateArea(e); break;
                     case "AreaPrepDays": updated = UpdateAreaPrepDays(e); break;
+                    case "Couriers": updated = UpdateCourierService(e); break;
                     case "EquipmentTypes": updated = UpdateEquipmentType(e); break;
                     case "InvoiceTypes": updated = UpdateInvoiceType(e); break;
                     case "ItemPackaging": updated = UpdateItemPackaging(e); break;
@@ -123,6 +124,17 @@ namespace TrackerSQL.Pages
                     AddBoundField("PrepDayOfWeekID", "Prep Day", false);
                     AddBoundField("DeliveryDelayDays", "Delay Days", false);
                     AddBoundField("DeliveryOrder", "Order", false);
+                    break;
+
+                case "Couriers":
+                    gvSupporTable.DataKeyNames = new[] { "CourierServiceID" };
+                    AddBoundField("CourierServiceID", "ID", true);
+                    AddBoundField("ServiceCode", "Code", false);
+                    AddBoundField("ServiceName", "Name", false);
+                    AddBoundField("TrackingUrl", "Tracking URL", false);
+                    AddCheckBoxField("IsDefault", "Default");
+                    AddCheckBoxField("IsEnabled", "Enabled");
+                    AddBoundField("SortOrder", "Sort", false);
                     break;
 
                 case "EquipmentTypes":
@@ -245,6 +257,10 @@ namespace TrackerSQL.Pages
                 {
                     case "Areas": BindTable(new AreasRepository(), sortBy, "AreaName"); break;
                     case "AreaPrepDays": BindTable(new AreaPrepDaysRepository(), sortBy, "AreaID"); break;
+                    case "Couriers":
+                        new CourierServicesRepository().EnsureExists();
+                        BindTable(new CourierServicesRepository(), sortBy, "SortOrder");
+                        break;
                     case "EquipmentTypes": BindTable(new EquipTypesRepository(), sortBy, "EquipTypeName"); break;
                     case "InvoiceTypes": BindTable(new InvoiceTypesRepository(), sortBy, "InvoiceTypeDesc"); break;
                     case "ItemPackaging": BindTable(new ItemPackagingsRepository(), sortBy, "ItemPackagingDesc"); break;
@@ -327,6 +343,26 @@ namespace TrackerSQL.Pages
                 return true;
             }
             return false;
+        }
+
+        private bool UpdateCourierService(GridViewUpdateEventArgs e)
+        {
+            int id = Convert.ToInt32(gvSupporTable.DataKeys[e.RowIndex].Value);
+            var repo = new CourierServicesRepository();
+            repo.EnsureExists();
+            var entity = repo.GetByIdSafe(id);
+            if (entity == null)
+                return false;
+
+            entity.ServiceCode = e.NewValues["ServiceCode"]?.ToString() ?? entity.ServiceCode;
+            entity.ServiceName = e.NewValues["ServiceName"]?.ToString() ?? entity.ServiceName;
+            entity.TrackingUrl = e.NewValues["TrackingUrl"]?.ToString();
+            entity.IsDefault = e.NewValues["IsDefault"] != null && Convert.ToBoolean(e.NewValues["IsDefault"]);
+            entity.IsEnabled = e.NewValues["IsEnabled"] == null || Convert.ToBoolean(e.NewValues["IsEnabled"]);
+            if (e.NewValues["SortOrder"] != null && int.TryParse(e.NewValues["SortOrder"].ToString(), out int sort))
+                entity.SortOrder = sort;
+            repo.Update(entity);
+            return true;
         }
 
         private bool UpdateEquipmentType(GridViewUpdateEventArgs e)

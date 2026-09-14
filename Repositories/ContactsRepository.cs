@@ -133,6 +133,7 @@ private Contact Map(IDataReader r)
                 SecPrefQty = GetValue<double?>(r, "SecPrefQty"),
                 TypicallySecToo = GetValue<bool?>(r, "TypicallySecToo"),
                 PreferredAgentID = GetValue<int?>(r, "PreferredAgentID") ?? GetValue<int?>(r, "PreferedAgentID"),
+                PreferredCourierServiceID = GetValue<int?>(r, "PreferredCourierServiceID"),
                 SalesAgentID = GetValue<int?>(r, "SalesAgentID"),
                 EquipentSN = GetValue<string>(r, "EquipentSN") ?? GetValue<string>(r, "MachineSN"),
                 UsesFilter = GetValue<bool?>(r, "UsesFilter"),
@@ -332,6 +333,7 @@ private Contact Map(IDataReader r)
                     SecPrefQty = @SecPrefQty,
                     TypicallySecToo = @TypicallySecToo,
                     PreferredAgentID = @PreferredAgentID,
+                    PreferredCourierServiceID = @PreferredCourierServiceID,
                     SalesAgentID = @SalesAgentID,
                     EquipentSN = @EquipentSN,
                     UsesFilter = @UsesFilter,
@@ -345,6 +347,34 @@ private Contact Map(IDataReader r)
                 WHERE ContactID = @ContactID";
 
             return ExecNonQuery(sql, BuildContactParameters(contact, includeId: true)) > 0;
+        }
+
+        /// <summary>
+        /// Updates only PreferredCourierServiceID (used after courier dispatch on Order Done).
+        /// </summary>
+        public bool UpdatePreferredCourierServiceId(int contactId, int? courierServiceId)
+        {
+            if (contactId <= 0)
+                return false;
+
+            new CourierServicesRepository().EnsureExists();
+
+            const string sql = @"
+UPDATE ContactsTbl
+SET PreferredCourierServiceID = @PreferredCourierServiceID
+WHERE ContactID = @ContactID";
+
+            var p = new List<DBParameter>
+            {
+                new DBParameter
+                {
+                    ParamName = "@PreferredCourierServiceID",
+                    DataValue = FkOrDbNull(courierServiceId),
+                    DataDbType = DbType.Int32
+                },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+            return ExecNonQuery(sql, p) > 0;
         }
 
         /// <summary>
@@ -364,7 +394,7 @@ private Contact Map(IDataReader r)
                     EmailAddress, AltEmailAddress, ContractNo, ContactTypeID,
                     EquipTypeID, ItemPrefID, PriPrefQty, PrefItemPrepTypeID, PrefItemPackagingID,
                     SecondaryItemPrefID, SecPrefQty, TypicallySecToo,
-                    PreferredAgentID, SalesAgentID, EquipentSN,
+                    PreferredAgentID, PreferredCourierServiceID, SalesAgentID, EquipentSN,
                     UsesFilter, AutoFulfill, Enabled, PredictionDisabled,
                     AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes, SendDeliveryConfirmation
                 ) VALUES (
@@ -375,7 +405,7 @@ private Contact Map(IDataReader r)
                     @EmailAddress, @AltEmailAddress, @ContractNo, @ContactTypeID,
                     @EquipTypeID, @ItemPrefID, @PriPrefQty, @PrefItemPrepTypeID, @PrefItemPackagingID,
                     @SecondaryItemPrefID, @SecPrefQty, @TypicallySecToo,
-                    @PreferredAgentID, @SalesAgentID, @EquipentSN,
+                    @PreferredAgentID, @PreferredCourierServiceID, @SalesAgentID, @EquipentSN,
                     @UsesFilter, @AutoFulfill, @Enabled, @PredictionDisabled,
                     @AlwaysSendChkUp, @NormallyResponds, @ReminderCount, @Notes, @SendDeliveryConfirmation
                 );
@@ -417,6 +447,7 @@ private Contact Map(IDataReader r)
                 new DBParameter { ParamName = "@SecPrefQty", DataValue = (object)contact.SecPrefQty ?? DBNull.Value, DataDbType = DbType.Double },
                 new DBParameter { ParamName = "@TypicallySecToo", DataValue = (object)contact.TypicallySecToo ?? DBNull.Value, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@PreferredAgentID", DataValue = FkOrDbNull(contact.PreferredAgentID), DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@PreferredCourierServiceID", DataValue = FkOrDbNull(contact.PreferredCourierServiceID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@SalesAgentID", DataValue = FkOrDbNull(contact.SalesAgentID), DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@EquipentSN", DataValue = (object)contact.EquipentSN ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@UsesFilter", DataValue = (object)contact.UsesFilter ?? DBNull.Value, DataDbType = DbType.Boolean },

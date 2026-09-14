@@ -8112,6 +8112,35 @@ body.woo-map-working [id$="upgWooMap"] {
     padding: 0.5rem 0.75rem 0.75rem;
 }
 
+.order-done-courier-panel {
+    margin: 1rem 0 0.5rem;
+    padding: 0.75rem 1rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.order-done-courier-panel .woo-map-section-title {
+    margin: 0 0 0.35rem;
+}
+
+.order-done-courier-panel .woo-map-section-note {
+    margin: 0 0 0.75rem;
+}
+
+.order-done-courier-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: flex-end;
+}
+
+.order-done-courier-fields .filter-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
 .woo-order-import-preview-scroll .woo-import-row-actions {
     display: inline-flex !important;
     white-space: nowrap;

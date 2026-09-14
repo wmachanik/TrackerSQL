@@ -24,11 +24,10 @@ namespace TrackerSQL.Repositories
 
         public void EnsureTable()
         {
-            if (TableExists())
-                return;
             try
             {
                 using (var db = new TrackerSQLDb())
+                {
                     db.ExecuteNonQuery(@"
 IF OBJECT_ID(N'dbo.OrderWaybillTbl', N'U') IS NULL
 BEGIN
@@ -39,6 +38,7 @@ BEGIN
         ContactID INT NULL,
         WaybillNumber NVARCHAR(100) NOT NULL,
         Carrier NVARCHAR(50) NULL,
+        CourierServiceID INT NULL,
         DispatchStatus NVARCHAR(30) NOT NULL CONSTRAINT DF_OrderWaybill_Status DEFAULT (N'Dispatched'),
         DispatchedAt DATETIME2 NOT NULL CONSTRAINT DF_OrderWaybill_At DEFAULT (SYSUTCDATETIME()),
         WooOrderId BIGINT NULL,
@@ -49,10 +49,30 @@ BEGIN
     );
     CREATE INDEX IX_OrderWaybill_ContactID ON dbo.OrderWaybillTbl (ContactID);
 END");
+                    db.ExecuteNonQuery(@"
+IF OBJECT_ID(N'dbo.OrderWaybillTbl', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.OrderWaybillTbl', N'CourierServiceID') IS NULL
+    ALTER TABLE dbo.OrderWaybillTbl ADD CourierServiceID INT NULL;");
+                }
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog("woo", "OrderWaybillTbl ensure failed: " + ex.Message);
+            }
+        }
+
+        private static bool HasCourierServiceColumn()
+        {
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                    return db.ExecuteScalar<int>(@"
+SELECT COUNT(*) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.OrderWaybillTbl') AND name = N'CourierServiceID'") > 0;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -108,7 +128,30 @@ ORDER BY DispatchedAt DESC, WaybillID DESC";
             if (!TableExists())
                 return;
 
-            const string sql = @"
+            bool hasCourier = HasCourierServiceColumn();
+            string sql = hasCourier
+                ? @"
+IF EXISTS (SELECT 1 FROM OrderWaybillTbl WHERE OrderID = @OrderID)
+    UPDATE OrderWaybillTbl SET
+        ContactID = @ContactID,
+        WaybillNumber = @WaybillNumber,
+        Carrier = @Carrier,
+        CourierServiceID = @CourierServiceID,
+        DispatchStatus = @DispatchStatus,
+        DispatchedAt = @DispatchedAt,
+        WooOrderId = @WooOrderId,
+        WooNotePosted = @WooNotePosted,
+        CustomerEmailSent = @CustomerEmailSent,
+        CreatedBy = @CreatedBy
+    WHERE OrderID = @OrderID
+ELSE
+    INSERT INTO OrderWaybillTbl
+    (OrderID, ContactID, WaybillNumber, Carrier, CourierServiceID, DispatchStatus, DispatchedAt,
+     WooOrderId, WooNotePosted, CustomerEmailSent, CreatedBy)
+    VALUES
+    (@OrderID, @ContactID, @WaybillNumber, @Carrier, @CourierServiceID, @DispatchStatus, @DispatchedAt,
+     @WooOrderId, @WooNotePosted, @CustomerEmailSent, @CreatedBy);"
+                : @"
 IF EXISTS (SELECT 1 FROM OrderWaybillTbl WHERE OrderID = @OrderID)
     UPDATE OrderWaybillTbl SET
         ContactID = @ContactID,
@@ -142,6 +185,15 @@ ELSE
                 new DBParameter { ParamName = "@CustomerEmailSent", DataValue = row.CustomerEmailSent, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@CreatedBy", DataValue = (object)row.CreatedBy ?? DBNull.Value, DataDbType = DbType.String }
             };
+            if (hasCourier)
+            {
+                p.Add(new DBParameter
+                {
+                    ParamName = "@CourierServiceID",
+                    DataValue = row.CourierServiceID.HasValue ? (object)row.CourierServiceID.Value : DBNull.Value,
+                    DataDbType = DbType.Int32
+                });
+            }
             using (var db = new TrackerSQLDb())
                 db.ExecuteNonQuery(sql, p);
         }
@@ -155,6 +207,9 @@ ELSE
                 ContactID = rdr["ContactID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["ContactID"]),
                 WaybillNumber = rdr["WaybillNumber"] as string,
                 Carrier = rdr["Carrier"] as string,
+                CourierServiceID = DbMapper.HasColumn(rdr, "CourierServiceID") && rdr["CourierServiceID"] != DBNull.Value
+                    ? Convert.ToInt32(rdr["CourierServiceID"])
+                    : (int?)null,
                 DispatchStatus = rdr["DispatchStatus"] as string,
                 DispatchedAt = rdr["DispatchedAt"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(rdr["DispatchedAt"]),
                 WooOrderId = rdr["WooOrderId"] == DBNull.Value ? (long?)null : Convert.ToInt64(rdr["WooOrderId"]),

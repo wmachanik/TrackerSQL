@@ -1,3 +1,5 @@
+using System;
+
 namespace TrackerSQL.Models
 {
     public class Person
@@ -8,5 +10,10 @@ namespace TrackerSQL.Models
         public bool? Enabled { get; set; }
         public int? NormalDeliveryDoW { get; set; }
         public string SecurityUsername { get; set; }
+        /// <summary>
+        /// When true, Order Done treats this Delivered-by person as parcel dispatch
+        /// (waybill / courier panel). Source of truth — not Woo settings.
+        /// </summary>
+        public bool IsDispatched { get; set; }
     }
 }

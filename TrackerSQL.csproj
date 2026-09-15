@@ -118,6 +118,7 @@
     <Content Include="Administration\UserInformation.aspx" />
     <Content Include="App_Data\SQLCommands-ItemSortOrder-01.xml" />
     <Content Include="App_Data\SQLCommands-CourierServices-01.xml" />
+    <Content Include="App_Data\SQLCommands-People-IsDispatched-01.xml" />
     <Content Include="App_Data\SQLCommands-ShowAwayChangesXML.xml" />
     <Content Include="App_Data\SQLCommands-RepStatusUpdate-01.xml" />
     <Content Include="App_Data\SQLCommands001.xml" />
@@ -263,6 +264,7 @@
     <Content Include="App_Data\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-CourierServices-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-People-IsDispatched-01.xml" />
     <Content Include="App_Data\SQLCommands-Postal-01.xml" />
     <Content Include="Data\geo-south-africa-postal_EN.csv" />
     <Content Include="Data\area-place-presets.json" />

@@ -1072,18 +1072,13 @@ namespace TrackerSQL.Managers
             var existing = _itemsRepo.GetBySku(sku);
             if (existing != null)
             {
-                if (existing.ItemEnabled == false)
-                {
-                    existing.ItemEnabled = true;
-                    _itemsRepo.SetEnabled(existing.ItemID, true);
-                    AppLogger.WriteLog("woo", "Re-enabled Tracker item #" + existing.ItemID + " SKU " + sku, updatedBy);
-                }
-                else
+                if (!EnsureItemEnabled(existing.ItemID, updatedBy))
                 {
                     AppLogger.WriteLog("woo",
                         "Linked Woo row to existing Tracker item #" + existing.ItemID + " SKU " + sku,
                         updatedBy);
                 }
+                existing.ItemEnabled = true;
                 return existing;
             }
 
@@ -1909,6 +1904,26 @@ namespace TrackerSQL.Managers
             return all.Where(p => allowed.Contains(p.ItemPackagingID)).ToList();
         }
 
+        /// <summary>
+        /// When a Woo SKU is linked to a Tracker item, re-enable that item if it was disabled.
+        /// </summary>
+        public bool EnsureItemEnabled(int itemId, string updatedBy)
+        {
+            if (itemId <= 0)
+                return false;
+
+            var item = _itemsRepo.GetById(itemId);
+            if (item == null || item.ItemEnabled != false)
+                return false;
+
+            _itemsRepo.SetEnabled(itemId, true);
+            AppLogger.WriteLog("woo",
+                "Re-enabled Tracker item #" + itemId
+                + (string.IsNullOrWhiteSpace(item.SKU) ? string.Empty : " SKU " + item.SKU),
+                updatedBy);
+            return true;
+        }
+
         public int SaveMapping(long productId, long? variationId, int itemId, bool mapToNotes, bool includeInImport,
             double qtyFactor, int? packagingId, string sku, string updatedBy, bool exclude = false,
             bool variantsParent = false)
@@ -1936,6 +1951,9 @@ namespace TrackerSQL.Managers
             int persistItemId = (mapToNotes || exclude || variantsParent) ? 0 : itemId;
             int? persistPack = (mapToNotes || exclude || variantsParent) ? null : packagingId;
             double persistQty = qtyFactor <= 0 ? 1 : qtyFactor;
+
+            if (persistItemId > 0)
+                EnsureItemEnabled(persistItemId, updatedBy);
 
             if (existing == null)
             {

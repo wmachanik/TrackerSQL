@@ -445,6 +445,20 @@
                                             <asp:CheckBox ID="cbxEnabled" runat="server" Text="Yes" Checked="true" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Dispatch" SortExpression="IsDispatched"
+                                        HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxIsDispatched" runat="server" Checked='<%# Bind("IsDispatched") %>'
+                                                ToolTip="Require waybill / courier on Order Done" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxIsDispatched" runat="server" Checked='<%# Bind("IsDispatched") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxIsDispatched" runat="server"
+                                                ToolTip="Require waybill / courier on Order Done" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Normal Delivery DoW" SortExpression="NormalDeliveryDoW">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlDayOfWeek" runat="server">

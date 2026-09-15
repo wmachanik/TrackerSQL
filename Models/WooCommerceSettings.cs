@@ -73,7 +73,7 @@ namespace TrackerSQL.Models
         /// <summary>When false (default), Order Done stores waybill on the order UI / WooOrderInfo only — not in Notes.</summary>
         public bool AppendTrackingToOrderNotes { get; set; }
         /// <summary>
-        /// On opening Woo Order Import (when no session preview): None, SinceLastSync (default), Today, or ThisWeek.
+        /// On opening Woo Order Import (when no session preview): None, SinceLastSync (default), Today, or ThisWeek (last 7 days).
         /// </summary>
         public string ImportAutoPullMode { get; set; } = "SinceLastSync";
         public DateTime? UpdatedAt { get; set; }

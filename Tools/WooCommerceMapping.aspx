@@ -1194,7 +1194,9 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="" ItemStyle-CssClass="col-tight">
                                     <ItemTemplate>
-                                        <asp:LinkButton ID="btnDeleteShipping" runat="server" CssClass="filter-panel-btn"
+                                        <asp:ImageButton ID="btnDeleteShipping" runat="server"
+                                            ImageUrl="~/images/imgButtons/DelItem.gif"
+                                            AlternateText="Delete" ToolTip="Delete shipping map"
                                             CommandName="DeleteShipping" CommandArgument='<%# Eval("MapID") %>'
                                             CausesValidation="false"
                                             OnClientClick="return confirm('Delete this shipping map?');" />
@@ -1222,21 +1224,13 @@
                                 AllowPaging="true" PageSize="8"
                                 OnPageIndexChanging="gvDispatchPeople_PageIndexChanging"
                                 OnRowCreated="gvDispatchPeople_RowCreated"
-                                EmptyDataText="No delivery people found.">
+                                EmptyDataText="No dispatch people flagged. Set Dispatch on Lookups → People.">
                                 <PagerStyle CssClass="pager-row" />
                                 <PagerTemplate>
                                     <asp:PlaceHolder ID="plhPager" runat="server" />
                                 </PagerTemplate>
                                 <Columns>
-                                    <asp:TemplateField HeaderText="" ItemStyle-CssClass="col-tight woo-map-dispatch-check-col"
-                                        HeaderStyle-CssClass="col-tight">
-                                        <ItemTemplate>
-                                            <asp:CheckBox ID="chkUseWaybill" runat="server"
-                                                Checked='<%# Eval("UseWaybill") %>'
-                                                ToolTip="Require waybill / leave Woo open for this Delivered by" />
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                    <asp:BoundField DataField="DisplayName" HeaderText="Delivered by"
+                                    <asp:BoundField DataField="DisplayName" HeaderText="Delivered by (dispatch)"
                                         ItemStyle-CssClass="woo-map-dispatch-person-col" />
                                 </Columns>
                             </asp:GridView>
@@ -1244,8 +1238,8 @@
                         <div class="woo-map-dispatch-options">
                             <asp:CheckBox ID="chkTrackingNumberRequired" runat="server" />
                             <p class="woo-map-section-note woo-map-dispatch-msg-hint">
-                                Order Done currently always sends the hard-coded “dispatched” message for these carriers.
-                                Per-carrier message text can be configured here later.
+                                Who requires a waybill is set on <strong>Lookups → People → Dispatch</strong> (works with Woo off).
+                                This page only controls whether the waybill number is required, and Woo note behaviour.
                             </p>
                         </div>
                         <div class="button-row">
@@ -1297,7 +1291,9 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="" ItemStyle-CssClass="col-tight">
                                     <ItemTemplate>
-                                        <asp:LinkButton ID="btnDeletePayment" runat="server" CssClass="filter-panel-btn"
+                                        <asp:ImageButton ID="btnDeletePayment" runat="server"
+                                            ImageUrl="~/images/imgButtons/DelItem.gif"
+                                            AlternateText="Delete" ToolTip="Delete payment map"
                                             CommandName="DeletePayment" CommandArgument='<%# Eval("MapID") %>'
                                             CausesValidation="false"
                                             OnClientClick="return confirm('Delete this payment map?');" />
@@ -1374,8 +1370,10 @@
                                 <asp:BoundField DataField="LastWooStatus" HeaderText="Last Woo" SortExpression="LastWooStatus" ItemStyle-CssClass="col-tight" />
                                 <asp:TemplateField ItemStyle-CssClass="col-cmd">
                                     <ItemTemplate>
-                                        <asp:Button ID="btnDelMap" runat="server" CssClass="filter-panel-btn" CommandName="DelMap"
-                                            CommandArgument='<%# Eval("MappingID") %>' Text="Delete"
+                                        <asp:ImageButton ID="btnDelMap" runat="server"
+                                            ImageUrl="~/images/imgButtons/DelItem.gif"
+                                            AlternateText="Delete" ToolTip="Delete mapping"
+                                            CommandName="DelMap" CommandArgument='<%# Eval("MappingID") %>'
                                             OnClientClick="return confirm('Delete this mapping?');" />
                                     </ItemTemplate>
                                 </asp:TemplateField>

@@ -106,7 +106,7 @@ namespace TrackerSQL.Tools
                 return;
             }
 
-            // Today / This week / Latest / Since last sync — pull immediately.
+            // Today / Last 7 days / Latest / Since last sync — pull immediately.
             PullPreviewFromUi("Mode changed — ");
             upnlWooOrderImport.Update();
         }

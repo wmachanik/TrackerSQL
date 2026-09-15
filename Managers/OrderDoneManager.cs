@@ -83,26 +83,14 @@ namespace TrackerSQL.Managers
 
             try
             {
-                string ids = new WooCommerceSettingsManager().GetSettings()?.DispatchDeliveryPersonIds;
-                if (!string.IsNullOrWhiteSpace(ids))
-                {
-                    foreach (string part in ids.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        int id;
-                        if (int.TryParse(part.Trim(), out id) && id == personId.Value)
-                            return true;
-                    }
-                    return false;
-                }
+                return new PersonsRepository().IsDispatchPerson(personId.Value);
             }
             catch
             {
-                // fall through to built-in defaults
+                // Fallback when PeopleTbl / column unavailable
+                return personId.Value == SystemConstants.DeliveryConstants.CourierDeliveryID
+                    || personId.Value == SystemConstants.DeliveryConstants.ParcelDispatchID;
             }
-
-            // Defaults when Woo settings row has never been saved (Prgo / Cour).
-            return personId.Value == SystemConstants.DeliveryConstants.CourierDeliveryID
-                || personId.Value == SystemConstants.DeliveryConstants.ParcelDispatchID;
         }
 
         private OrderDoneResult CompleteOrderInternal(

@@ -2049,6 +2049,7 @@ namespace TrackerSQL.Pages
                 var tbxPerson = (TextBox)row.FindControl("tbxPersonName");
                 var tbxAbbreviation = (TextBox)row.FindControl("tbxAbbreviation");
                 var cbxEnabled = (CheckBox)row.FindControl("cbxEnabled");
+                var cbxIsDispatched = (CheckBox)row.FindControl("cbxIsDispatched");
                 var ddlDayOfWeek = (DropDownList)row.FindControl("ddlDayOfWeek");
                 var ddlSecurityNames = (DropDownList)row.FindControl("ddlSecurityNames");
 
@@ -2058,6 +2059,7 @@ namespace TrackerSQL.Pages
                     PersonName = tbxPerson?.Text ?? "",
                     Abbreviation = tbxAbbreviation?.Text ?? "",
                     Enabled = cbxEnabled != null && cbxEnabled.Checked,
+                    IsDispatched = cbxIsDispatched != null && cbxIsDispatched.Checked,
                     NormalDeliveryDoW = ddlDayOfWeek != null ? (int?)Convert.ToInt32(ddlDayOfWeek.SelectedValue) : 0,
                     SecurityUsername = ddlSecurityNames != null ? ddlSecurityNames.SelectedValue : ""
                 };
@@ -2178,6 +2180,7 @@ namespace TrackerSQL.Pages
                      var personTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxPersonName");
                     var abrvTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxAbbreviation");
                     var enabledCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxEnabled");
+                    var dispatchCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxIsDispatched");
                     var dowDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlDayOfWeek");
                     var userDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlSecurityNames");
 
@@ -2192,6 +2195,7 @@ namespace TrackerSQL.Pages
                         PersonName = personTbx.Text,
                         Abbreviation = abrvTbx.Text,
                         Enabled = enabledCbx.Checked,
+                        IsDispatched = dispatchCbx != null && dispatchCbx.Checked,
                         NormalDeliveryDoW = Convert.ToInt32(dowDdl.SelectedValue),
                         SecurityUsername = userDdl.SelectedValue
                     };

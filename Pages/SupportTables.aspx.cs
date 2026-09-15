@@ -182,6 +182,7 @@ namespace TrackerSQL.Pages
                     AddBoundField("PersonName", "Name", false);
                     AddBoundField("Abbreviation", "Abbreviation", false);
                     AddCheckBoxField("Enabled", "Enabled");
+                    AddCheckBoxField("IsDispatched", "Dispatch");
                     break;
 
                 case "PriceLevels":
@@ -455,6 +456,8 @@ namespace TrackerSQL.Pages
                 entity.PersonName = e.NewValues["PersonName"]?.ToString() ?? "";
                 entity.Abbreviation = e.NewValues["Abbreviation"]?.ToString() ?? "";
                 entity.Enabled = e.NewValues["Enabled"] != null && Convert.ToBoolean(e.NewValues["Enabled"]);
+                if (e.NewValues["IsDispatched"] != null)
+                    entity.IsDispatched = Convert.ToBoolean(e.NewValues["IsDispatched"]);
                 repo.Update(entity);
                 return true;
             }

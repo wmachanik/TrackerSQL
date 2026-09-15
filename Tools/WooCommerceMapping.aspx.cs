@@ -3167,16 +3167,13 @@ namespace TrackerSQL.Tools
             BindDispatchWaybillPanel();
         }
 
-        private const string VsDispatchSelected = "WooMap.DispatchSelectedIds";
-
         private void BindDispatchWaybillPanel()
         {
             var settings = _settings.GetSettings() ?? new WooCommerceSettings();
-            EnsureDispatchSelectedLoaded(settings);
+            new PersonsRepository().EnsureIsDispatchedColumn();
 
-            var selected = GetDispatchSelectedIds();
             var rows = new List<DispatchPersonRow>();
-            foreach (var person in _orderManager.GetDeliveryPersons() ?? new List<Person>())
+            foreach (var person in new PersonsRepository().GetDispatchPeople() ?? new List<Person>())
             {
                 string abbr = (person.Abbreviation ?? string.Empty).Trim();
                 string name = (person.PersonName ?? string.Empty).Trim();
@@ -3195,7 +3192,7 @@ namespace TrackerSQL.Tools
                 {
                     PersonID = person.PersonID,
                     DisplayName = label,
-                    UseWaybill = selected.Contains(person.PersonID)
+                    UseWaybill = true
                 });
             }
 
@@ -3204,47 +3201,8 @@ namespace TrackerSQL.Tools
             chkTrackingNumberRequired.Checked = settings.TrackingNumberRequired;
         }
 
-        private void EnsureDispatchSelectedLoaded(WooCommerceSettings settings)
-        {
-            if (ViewState[VsDispatchSelected] != null)
-                return;
-
-            var selected = new List<int>();
-            string ids = settings?.DispatchDeliveryPersonIds ?? string.Empty;
-            foreach (string part in ids.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                int id;
-                if (int.TryParse(part.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out id) && id > 0)
-                    selected.Add(id);
-            }
-            ViewState[VsDispatchSelected] = selected;
-        }
-
-        private List<int> GetDispatchSelectedIds()
-        {
-            return ViewState[VsDispatchSelected] as List<int> ?? new List<int>();
-        }
-
-        private void MergeDispatchGridChecks()
-        {
-            var selected = new HashSet<int>(GetDispatchSelectedIds());
-            foreach (GridViewRow row in gvDispatchPeople.Rows)
-            {
-                if (row.RowType != DataControlRowType.DataRow)
-                    continue;
-                int id = Convert.ToInt32(gvDispatchPeople.DataKeys[row.RowIndex].Value, CultureInfo.InvariantCulture);
-                var chk = row.FindControl("chkUseWaybill") as CheckBox;
-                if (chk != null && chk.Checked)
-                    selected.Add(id);
-                else
-                    selected.Remove(id);
-            }
-            ViewState[VsDispatchSelected] = selected.OrderBy(x => x).ToList();
-        }
-
         protected void gvDispatchPeople_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
-            MergeDispatchGridChecks();
             gvDispatchPeople.PageIndex = e.NewPageIndex;
             BindDispatchWaybillPanel();
         }
@@ -3256,14 +3214,15 @@ namespace TrackerSQL.Tools
 
         protected void btnSaveDispatchWaybill_Click(object sender, EventArgs e)
         {
-            MergeDispatchGridChecks();
-            string joined = string.Join(",", GetDispatchSelectedIds());
+            // People.IsDispatched is edited in Lookups; Woo Mapping only saves tracking-required.
+            string joined = string.Join(",",
+                (new PersonsRepository().GetDispatchPeople() ?? new List<Person>())
+                    .Select(p => p.PersonID.ToString(CultureInfo.InvariantCulture)));
             _settings.SaveDispatchWaybillSettings(joined, chkTrackingNumberRequired.Checked, UserName());
-            ViewState[VsDispatchSelected] = null;
             BindDispatchWaybillPanel();
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapDispatchWaybillSaved), false);
             WooCommerceUserLog.Write("Mapping dispatch/waybill",
-                "people=" + (joined.Length > 0 ? joined : "(none)")
+                "people(from Lookups)=" + (joined.Length > 0 ? joined : "(none)")
                 + "; trackingRequired=" + chkTrackingNumberRequired.Checked,
                 UserName());
         }
@@ -3729,12 +3688,9 @@ namespace TrackerSQL.Tools
                 var chk = (CheckBox)e.Row.FindControl("chkShipActive");
                 if (chk != null)
                     MarkOriginal(chk, chk.Checked);
-                var btn = (LinkButton)e.Row.FindControl("btnDeleteShipping");
+                var btn = e.Row.FindControl("btnDeleteShipping") as ImageButton;
                 if (btn != null)
-                {
-                    btn.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDeleteRow);
                     btn.Visible = map != null && map.MapID > 0;
-                }
             }
             else if (e.Row.RowType == DataControlRowType.Footer)
             {
@@ -3775,9 +3731,6 @@ namespace TrackerSQL.Tools
                 var chk = (CheckBox)e.Row.FindControl("chkPayActive");
                 if (chk != null)
                     MarkOriginal(chk, chk.Checked);
-                var btn = (LinkButton)e.Row.FindControl("btnDeletePayment");
-                if (btn != null)
-                    btn.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapDeleteRow);
             }
             else if (e.Row.RowType == DataControlRowType.Footer)
             {

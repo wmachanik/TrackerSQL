@@ -123,25 +123,25 @@
                   (N'StellenboschSomerset', N'Somerset West', 410, 3, 720, 5, 780, N'Delivery', N'FixedDow', 2, 0, 0, NULL),
                   (N'StellenboschSomerset', N'Somerset West', 411, 5, 780, 2, 720, N'Delivery', N'FixedDow', 4, 0, 0, NULL),
 
-                  -- Courier Western Cape (255 = any workday; match by time-of-day only)
-                  (N'CourierWc', N'Knysna', 500, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, N'Workday before 12 → same day; no Thu dispatch'),
-                  (N'CourierWc', N'Knysna', 501, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, N'Workday after 12 → next workday'),
-                  (N'CourierWc', N'Tulbagh', 510, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, NULL),
-                  (N'CourierWc', N'Tulbagh', 511, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, NULL),
+                  -- Courier WC (255 = any workday; match by time-of-day only)
+                  (N'Courier WC', N'Knysna', 500, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, N'Workday before 12 → same day; no Thu dispatch'),
+                  (N'Courier WC', N'Knysna', 501, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, N'Workday after 12 → next workday'),
+                  (N'Courier WC', N'Tulbagh', 510, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 0, NULL),
+                  (N'Courier WC', N'Tulbagh', 511, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 0, NULL),
 
-                  -- Courier rest of SA (255 = any workday)
-                  (N'CourierRsa', N'Gauteng', 600, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, N'Before 12; Thu→Fri; Wed after noon→Fri'),
-                  (N'CourierRsa', N'Gauteng', 601, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, N'After 12; Wed→Fri'),
-                  (N'CourierRsa', N'Durban', 610, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'Durban', 611, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'East London', 620, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'East London', 621, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'Port Elizabeth', 630, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'Port Elizabeth', 631, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'RegionalSA', 640, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'RegionalSA', 641, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'FastWay', 650, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
-                  (N'CourierRsa', N'FastWay', 651, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL)
+                  -- Courier SA (255 = any workday)
+                  (N'CourierSA', N'Gauteng', 600, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, N'Before 12; Thu→Fri; Wed after noon→Fri'),
+                  (N'CourierSA', N'Gauteng', 601, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, N'After 12; Wed→Fri'),
+                  (N'CourierSA', N'Durban', 610, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'Durban', 611, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'East London', 620, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'East London', 621, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'Port Elizabeth', 630, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'Port Elizabeth', 631, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'RegionalSA', 640, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'RegionalSA', 641, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'FastWay', 650, 255, 0, 255, 720, N'Dispatch', N'SameWorkday', NULL, 1, 1, NULL),
+                  (N'CourierSA', N'FastWay', 651, 255, 720, 255, 1440, N'Dispatch', N'NextWorkday', NULL, 1, 1, NULL)
               ) AS v(RuleGroup, AreaMatchName, SortOrder, WindowStartDow, WindowStartMinutes,
                      WindowEndDow, WindowEndMinutes, PromiseKind, ResultMode, ResultDow,
                      NoThursdayDispatch, WedAfterNoonToFriday, Notes)
@@ -161,6 +161,22 @@
               a.PromiseKind, a.ResultMode, a.ResultDow, a.NoThursdayDispatch, a.WedAfterNoonToFriday, a.Notes, 1
           FROM Areas a
           LEFT JOIN dbo.AreasTbl ar ON ar.AreaName = a.AreaMatchName;
+      END
+    ]]>
+  </command>
+
+  <!-- Display names: CourierRsa → CourierSA, CourierWc → Courier WC. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryPromiseRuleTbl', N'U') IS NOT NULL
+      BEGIN
+          UPDATE dbo.DeliveryPromiseRuleTbl
+          SET RuleGroup = N'CourierSA'
+          WHERE RuleGroup IN (N'CourierRsa', N'CourierRSA', N'CourierRSa');
+
+          UPDATE dbo.DeliveryPromiseRuleTbl
+          SET RuleGroup = N'Courier WC'
+          WHERE RuleGroup IN (N'CourierWc', N'CourierWC', N'CourierWc ');
       END
     ]]>
   </command>

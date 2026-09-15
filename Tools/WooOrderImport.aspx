@@ -63,7 +63,7 @@
                                     OnSelectedIndexChanged="ddlMode_SelectedIndexChanged">
                                     <asp:ListItem Value="SinceLastSync" Text="Since last import sync" Selected="True" />
                                     <asp:ListItem Value="Today" Text="Today's orders" />
-                                    <asp:ListItem Value="ThisWeek" Text="This week's orders" />
+                                    <asp:ListItem Value="ThisWeek" Text="Last 7 days" />
                                     <asp:ListItem Value="Specific" Text="Specific order #" />
                                     <asp:ListItem Value="Last" Text="Latest order" />
                                     <asp:ListItem Value="DateRange" Text="Date range" />

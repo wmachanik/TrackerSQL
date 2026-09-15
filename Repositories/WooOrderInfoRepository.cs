@@ -132,6 +132,7 @@ SELECT TOP (" + maxRows.ToString(System.Globalization.CultureInfo.InvariantCultu
 FROM WooOrderInfoTbl w
 INNER JOIN OrdersTbl o ON o.OrderID = w.OrderID
 WHERE w.ImportConflicts IS NOT NULL AND LTRIM(RTRIM(w.ImportConflicts)) <> N''
+  AND ISNULL(o.Done, 0) = 0
 ORDER BY w.LastSyncedUtc DESC, w.OrderID DESC";
 
             using (var db = new TrackerSQLDb())

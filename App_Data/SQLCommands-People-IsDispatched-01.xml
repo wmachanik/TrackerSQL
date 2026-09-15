@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PeopleTbl.IsDispatched — delivery-by persons that require waybill / courier UI on Order Done.
+  Source of truth for dispatch (works with Woo off).
+  Idempotent via Tools → XMLtoSQL or PersonsRepository.EnsureIsDispatchedColumn().
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.PeopleTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'IsDispatched') IS NULL
+      BEGIN
+          ALTER TABLE dbo.PeopleTbl ADD IsDispatched BIT NOT NULL
+              CONSTRAINT DF_People_IsDispatched DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      -- Seed classic Prgo / Cour by abbreviation (and known IDs as backup).
+      IF OBJECT_ID(N'dbo.PeopleTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'IsDispatched') IS NOT NULL
+      BEGIN
+          UPDATE dbo.PeopleTbl
+          SET IsDispatched = 1
+          WHERE IsDispatched = 0
+            AND (
+                  UPPER(LTRIM(RTRIM(Abbreviation))) IN (N'PRGO', N'COUR')
+               OR PersonID IN (5, 7)
+            );
+      END
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT PersonID, Abbreviation, Person, IsDispatched, Enabled
+      FROM dbo.PeopleTbl
+      WHERE IsDispatched = 1
+      ORDER BY Abbreviation;
+    ]]>
+  </command>
+</root>

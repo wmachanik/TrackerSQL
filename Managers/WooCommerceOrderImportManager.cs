@@ -722,26 +722,27 @@ namespace TrackerSQL.Managers
 
                 case WooOrderImportMode.ThisWeek:
                 {
+                    // Stored as ThisWeek for settings compatibility; pulls last 7 local calendar days.
                     DateTime todayLocal = TimeZoneUtils.Now().Date;
-                    int daysFromMonday = ((int)todayLocal.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-                    DateTime weekStart = todayLocal.AddDays(-daysFromMonday);
+                    DateTime last7FromLocal = todayLocal.AddDays(-6);
                     return _api.GetOrdersInRange(
                         creds,
-                        TimeZoneUtils.ConvertToUtc(weekStart),
-                        TimeZoneUtils.ConvertToUtc(weekStart.AddDays(7)));
+                        TimeZoneUtils.ConvertToUtc(last7FromLocal),
+                        TimeZoneUtils.ConvertToUtc(todayLocal.AddDays(1)));
                 }
 
                 case WooOrderImportMode.DateRange:
+                {
                     if (!rangeFrom.HasValue || !rangeTo.HasValue)
                         throw new InvalidOperationException("Enter both from and to dates.");
                     // Inclusive calendar days in app local time → UTC window [from, to+1day).
-                    DateTime fromLocal = rangeFrom.Value.Date;
+                    DateTime rangeFromLocal = rangeFrom.Value.Date;
                     DateTime toExclusiveLocal = rangeTo.Value.Date.AddDays(1);
                     return _api.GetOrdersInRange(
                         creds,
-                        TimeZoneUtils.ConvertToUtc(fromLocal),
+                        TimeZoneUtils.ConvertToUtc(rangeFromLocal),
                         TimeZoneUtils.ConvertToUtc(toExclusiveLocal));
-
+                }
                 default:
                     throw new InvalidOperationException("Unknown import mode.");
             }
@@ -1947,6 +1948,8 @@ namespace TrackerSQL.Managers
                     continue;
                 if (!line.TrackerItemId.HasValue || line.TrackerItemId.Value <= 0)
                     continue;
+
+                _mappingManager.EnsureItemEnabled(line.TrackerItemId.Value, updatedBy);
 
                 int packagingId = line.PackagingId ?? 0;
                 if (inferPackagingFromPriorOrders

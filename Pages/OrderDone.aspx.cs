@@ -14,11 +14,11 @@ namespace TrackerSQL.Pages
     {
         private string GetDeliveryMethodFromPersonID(int deliveryPersonID)
         {
+            if (OrderDoneManager.IsDispatchDeliveryPerson(deliveryPersonID))
+                return "dispatched";
+
             switch (deliveryPersonID)
             {
-                case SystemConstants.DeliveryConstants.CourierDeliveryID:
-                case SystemConstants.DeliveryConstants.ParcelDispatchID:
-                    return "dispatched";
                 case SystemConstants.DeliveryConstants.CollectionID:
                     return "collected";
                 case SystemConstants.DeliveryConstants.DefaultDeliveryPersonID:

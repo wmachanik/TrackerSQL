@@ -829,13 +829,13 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Dispatch / waybill (do not complete Woo)</value>
   </data>
   <data name="WooCommerce.MapDispatchWaybillNote" xml:space="preserve">
-    <value>These are the same “Delivered by” values used on Tracker orders (PeopleTbl abbreviations such as Prgo / Cour). Tick carriers that leave via Pargo or courier: Order Done asks for a waybill, emails the customer, and — for Woo-linked orders — posts a Woo customer note without completing the Woo order. Local delivery and collection stay as normal Done.</value>
+    <value>Dispatch people (who need a waybill on Order Done) are flagged on Lookups → People → Dispatch. That works even when Woo is off. Below is a read-only list of those people. Use the checkbox to require a waybill number; for Woo-linked orders a customer note is posted without completing the Woo order.</value>
   </data>
   <data name="WooCommerce.MapDispatchPeopleLbl" xml:space="preserve">
-    <value>Use waybill when Delivered by is:</value>
+    <value>People currently flagged as Dispatch:</value>
   </data>
   <data name="WooCommerce.MapSaveDispatchWaybill" xml:space="preserve">
-    <value>Save dispatch / waybill settings</value>
+    <value>Save waybill requirement</value>
   </data>
   <data name="WooCommerce.MapDispatchWaybillSaved" xml:space="preserve">
     <value>Dispatch / waybill settings saved.</value>
@@ -1069,7 +1069,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Auto-pull since last import sync</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullThisWeek" xml:space="preserve">
-    <value>Auto-pull this week's orders</value>
+    <value>Auto-pull last 7 days</value>
   </data>
   <data name="WooCommerce.MapSaveGeneralSettings" xml:space="preserve">
     <value>Save general settings</value>

@@ -320,7 +320,12 @@
                                                 </tr>
                                                 <tr>
                                                     <td><asp:Literal ID="litWizLblDispatch" runat="server" /></td>
-                                                    <td><asp:TextBox ID="txtDispatchIds" runat="server" Text="5,7" Width="200px" /></td>
+                                                    <td>
+                                                        <asp:Label ID="lblWizDispatchHint" runat="server" CssClass="woo-map-section-note"
+                                                            Text="Set on Lookups → People → Dispatch (Prgo / Cour seeded). Legacy ID list kept for migration only:" />
+                                                        <asp:TextBox ID="txtDispatchIds" runat="server" Text="5,7" Width="200px"
+                                                            ToolTip="Legacy: migrates into People.IsDispatched on first ensure" />
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td colspan="2">

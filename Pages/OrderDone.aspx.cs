@@ -235,6 +235,24 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
+                int? courierServiceId = GetSelectedCourierServiceId();
+                if (pnlTracking.Visible && !string.IsNullOrWhiteSpace(trackingNumber))
+                {
+                    int excludeOrderId = 0;
+                    if (TempOrderSession.TryResolve(out _, out int resolvedOrderId))
+                        excludeOrderId = resolvedOrderId;
+
+                    string duplicateWarning = OrderDoneManager.GetDuplicateWaybillWarning(
+                        trackingNumber, courierServiceId, excludeOrderId);
+                    if (!string.IsNullOrEmpty(duplicateWarning))
+                    {
+                        SetStatus(duplicateWarning, isError: true);
+                        new showMessageBox(Page, "Duplicate tracking number", duplicateWarning);
+                        updtpnlOrderDone.Update();
+                        return;
+                    }
+                }
+
                 string statusKey = null;
                 switch (rbtnSendConfirm.SelectedValue)
                 {
@@ -262,7 +280,7 @@ namespace TrackerSQL.Pages
                     tbxCount.Text,
                     statusKey,
                     trackingNumber,
-                    GetSelectedCourierServiceId());
+                    courierServiceId);
 
                 bool emailWarn = !string.IsNullOrEmpty(result.Message)
                     && result.Message.IndexOf("email failed", StringComparison.OrdinalIgnoreCase) >= 0;

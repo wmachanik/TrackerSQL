@@ -10,7 +10,7 @@ namespace TrackerSQL.Repositories
     {
         public SendCheckEmailTexts GetTexts()
         {
-            const string sql = "SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckEmailTextsTbl";
+            const string sql = "SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckupEmailTextsTbl";
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql))
             {
@@ -26,7 +26,7 @@ namespace TrackerSQL.Repositories
         public string UpdateTexts(SendCheckEmailTexts emailTexts, int originalId)
         {
             const string sql = @"
-                UPDATE SendCheckEmailTextsTbl
+                UPDATE SendCheckupEmailTextsTbl
                 SET Header = @Header, Body = @Body, Footer = @Footer,
                     DateLastChange = @DateLastChange, Notes = @Notes
                 WHERE SCEMTID = @SCEMTID";

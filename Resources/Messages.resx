@@ -144,6 +144,9 @@
   <data name="CoffeeCheckup.BodyReminderOnly" xml:space="preserve">
     <value>&lt;p&gt;It's time for your next coffee order! Based on your previous orders, here's what we think you might need:&lt;/p&gt;</value>
   </data>
+  <data name="CoffeeCheckup.ManualReminderIntro" xml:space="preserve">
+    <value>&lt;p&gt;Just a friendly coffee checkup from Quaffee — we thought you might be ready for your next order.&lt;/p&gt;</value>
+  </data>
   <data name="CoffeeCheckup.ClosureAdjustmentPrefix" xml:space="preserve">
     <value>Adjusted for closure date: {0}</value>
   </data>
@@ -297,6 +300,12 @@
   <data name="Customer.ReminderCountReset" xml:space="preserve">
     <value>Reminder count reset for customer {0}, force enable: {1}</value>
   </data>
+  <data name="Customer.TrackingWelcomeSubject" xml:space="preserve">
+    <value>Thank you for your Quaffee order — coffee checkup reminders</value>
+  </data>
+  <data name="Customer.TrackingWelcomeBody" xml:space="preserve">
+    <value>&lt;p&gt;Dear {0},&lt;/p&gt;&lt;p&gt;Thank you for your order. We've enabled coffee checkup reminders for &lt;strong&gt;{1}&lt;/strong&gt; so we may send a friendly reminder if we think you might need coffee again.&lt;/p&gt;&lt;p&gt;Prefer not to receive these reminders, or want to disable your account entirely? You can update your preferences here:&lt;br /&gt;&lt;a href="{2}"&gt;{2}&lt;/a&gt;&lt;/p&gt;</value>
+  </data>
   <data name="DeliveryCalculation.CalculatedOptimalDates" xml:space="preserve">
     <value>Calculated optimal dates for {0} - Target day {1}: Roast {2}, Delivery {3}</value>
   </data>
@@ -403,13 +412,13 @@ Disabled recurring orders:
     <value>Cancel &amp; Keep Reminders</value>
   </data>
   <data name="DisableClient.ButtonConfirm" xml:space="preserve">
-    <value>Yes, Disable Reminders</value>
+    <value>Save my preference</value>
   </data>
   <data name="DisableClient.ConfirmationHeader" xml:space="preserve">
-    <value>📧 Disable Coffee Checkup Reminders?</value>
+    <value>Update coffee checkup preferences?</value>
   </data>
   <data name="DisableClient.ConfirmationMessage" xml:space="preserve">
-    <value>You are about to disable coffee checkup reminders for:</value>
+    <value>You are about to change reminder / account settings for:</value>
   </data>
   <data name="DisableClient.DisabledMessage" xml:space="preserve">
     <value>&lt;p&gt;We've successfully disabled coffee checkup reminders for &lt;strong&gt;{0}&lt;/strong&gt; as requested.&lt;/p&gt;</value>
@@ -471,17 +480,35 @@ Disabled recurring orders:
   <data name="DisableClient.RemindersDisabledSubject" xml:space="preserve">
     <value>Quaffee: Reminder emails disabled</value>
   </data>
+  <data name="DisableClient.OptionReminders" xml:space="preserve">
+    <value>Stop only coffee checkup reminder emails (keep account active)</value>
+  </data>
+  <data name="DisableClient.OptionRemindersHelp" xml:space="preserve">
+    <value>You remain an active customer and can still place orders and receive order emails. We simply stop automated “time for coffee?” checkup reminders.</value>
+  </data>
+  <data name="DisableClient.OptionAll" xml:space="preserve">
+    <value>Disable my account and stop all notifications</value>
+  </data>
+  <data name="DisableClient.OptionAllHelp" xml:space="preserve">
+    <value>Marks your contact as disabled. You won’t get checkup reminders or other automated contact emails until you ask us to re-enable you.</value>
+  </data>
+  <data name="DisableClient.OptionsHelp" xml:space="preserve">
+    <value>Choose reminders-only if you still want to place orders and receive other emails. Choose disable account only if you want us to stop contacting you altogether.</value>
+  </data>
   <data name="DisableClient.SuccessDetails" xml:space="preserve">
     <value>Our administrator has been notified of this change.&lt;br /&gt;You will no longer receive automated coffee checkup reminder emails.</value>
   </data>
+  <data name="DisableClient.SuccessDetailsAll" xml:space="preserve">
+    <value>Our administrator has been notified of this change.&lt;br /&gt;Your account has been disabled and you will no longer receive automated emails from us.</value>
+  </data>
   <data name="DisableClient.SuccessHeader" xml:space="preserve">
-    <value>✅ Reminders Disabled Successfully</value>
+    <value>✅ Preferences Updated</value>
   </data>
   <data name="DisableClient.SuccessMessage" xml:space="preserve">
-    <value>Coffee checkup reminders have been disabled for:</value>
+    <value>Your preference has been saved for:</value>
   </data>
   <data name="DisableClient.WarningMessage" xml:space="preserve">
-    <value>⚠️ &lt;strong&gt;This will stop all future coffee checkup reminder emails.&lt;/strong&gt;&lt;br /&gt;You can always re-enable reminders by contacting us directly.</value>
+    <value>⚠️ &lt;strong&gt;Choose how much to turn off.&lt;/strong&gt;&lt;br /&gt;You can stop checkup reminders only, or disable your account entirely. You can always re-enable by contacting us.</value>
   </data>
   <data name="Email.ConfirmationSent" xml:space="preserve">
     <value>Confirmation email sent successfully</value>
@@ -617,6 +644,15 @@ Disabled recurring orders:
   </data>
   <data name="Order.CourierRequired" xml:space="preserve">
     <value>Select which courier was used to dispatch this parcel (or None).</value>
+  </data>
+  <data name="Order.WaybillDuplicate" xml:space="preserve">
+    <value>Tracking number "{0}" was already used to send an order to {1} on {2}. Please correct the tracking number before continuing.</value>
+  </data>
+  <data name="Order.WaybillUpdatedSubject" xml:space="preserve">
+    <value>Corrected tracking / waybill for your Quaffee order</value>
+  </data>
+  <data name="Order.WaybillUpdatedBody" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;&lt;br /&gt;We've updated the tracking / waybill number for your order. The previous number was &lt;strong&gt;{1}&lt;/strong&gt;; please use the corrected details below.&lt;br /&gt;&lt;br /&gt;</value>
   </data>
   <data name="Order.StatusPendingDelivery" xml:space="preserve">
     <value>delivered</value>

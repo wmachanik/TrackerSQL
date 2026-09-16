@@ -239,6 +239,7 @@ namespace TrackerSQL.Managers
 
             contact.ContactID = newId;
             WooContactBootstrap.EnsureAccInfo(_accInfoRepo, contact, order, newId);
+            SendTrackingWelcomeIfNeeded(contact);
 
             WooCommerceUserLog.Write(
                 string.Format(CultureInfo.InvariantCulture, "Created contact from Woo #{0}", preview.WooOrderNumber),
@@ -2191,6 +2192,7 @@ namespace TrackerSQL.Managers
                     return 0;
                 contact.ContactID = newId;
                 WooContactBootstrap.EnsureAccInfo(_accInfoRepo, contact, order, newId);
+                SendTrackingWelcomeIfNeeded(contact);
                 contactCreated = true;
                 return newId;
             }
@@ -2245,6 +2247,19 @@ namespace TrackerSQL.Managers
             WooContactBootstrap.ApplyCoffeePreferences(contact, preview, _itemsRepo);
             WooContactBootstrap.ApplyCapitalization(contact);
             return contact;
+        }
+
+        private static void SendTrackingWelcomeIfNeeded(Contact contact)
+        {
+            try
+            {
+                new CustomerManager().TrySendTrackingWelcomeEmail(contact);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "Woo tracking welcome: " + ex.Message);
+            }
         }
 
         private int? ResolveDeliveryPersonForArea(WooAreaResolveResult areaResult)

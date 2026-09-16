@@ -1,11 +1,9 @@
 using System;
 using System.Configuration;
 using System.Web.UI;
-using System.Web.UI.HtmlControls;
-using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Repositories;
 using TrackerSQL.Managers;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL
 {
@@ -13,7 +11,7 @@ namespace TrackerSQL
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            SetContactEmail();
+            BindMessages();
 
             if (IsPostBack)
                 return;
@@ -26,54 +24,81 @@ namespace TrackerSQL
         {
             if (!TryGetContactId(out var contactId) || !IsValidToken(contactId))
             {
-                ShowInvalidRequest("Invalid or expired disable link.");
+                ShowInvalidRequest(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidToken));
                 return;
             }
 
             var contact = new ContactsRepository().GetById(contactId);
             if (contact == null)
             {
-                ShowInvalidRequest("Contact not found.");
+                ShowInvalidRequest(MessageProvider.Get(MessageKeys.DisableClient.ErrorCustomerNotFound));
                 return;
             }
 
-            bool disableAll = rblDisableChoice.SelectedValue == "disable_all";
+            bool disableAll = rbDisableAll != null && rbDisableAll.Checked;
             if (!DisableClientManager.DisableFromEmailLink(contactId, disableAll))
             {
-                ShowInvalidRequest("Unable to update contact. Please try again or contact us.");
+                ShowInvalidRequest(MessageProvider.Get(MessageKeys.DisableClient.ErrorGeneral));
                 return;
             }
 
             CompanyNameSuccessLabel.Text = Server.HtmlEncode(contact.CompanyName ?? string.Empty);
+            ltrlSuccessDetails.Text = disableAll
+                ? MessageProvider.Get(MessageKeys.DisableClient.SuccessDetailsAll)
+                : MessageProvider.Get(MessageKeys.DisableClient.SuccessDetails);
             ShowSuccess();
+        }
+
+        private void BindMessages()
+        {
+            string contactEmail = ConfigurationManager.AppSettings["SysEmailFrom"] ?? "orders@quaffee.co.za";
+            string encodedEmail = Server.HtmlEncode(contactEmail);
+            string mailTo = "<a href=\"mailto:" + encodedEmail + "\">" + encodedEmail + "</a>";
+
+            ltrlPageHeading.Text = "Coffee Checkup Reminder Settings";
+            ltrlConfirmationHeader.Text = MessageProvider.Get(MessageKeys.DisableClient.ConfirmationHeader);
+            ltrlConfirmationMessage.Text = MessageProvider.Get(MessageKeys.DisableClient.ConfirmationMessage);
+            ltrlWarningMessage.Text = MessageProvider.Get(MessageKeys.DisableClient.WarningMessage);
+
+            lblRemindersOnly.Text = MessageProvider.Get(MessageKeys.DisableClient.OptionReminders);
+            ltrlRemindersHelp.Text = MessageProvider.Get(MessageKeys.DisableClient.OptionRemindersHelp);
+            lblDisableAll.Text = MessageProvider.Get(MessageKeys.DisableClient.OptionAll);
+            ltrlAllHelp.Text = MessageProvider.Get(MessageKeys.DisableClient.OptionAllHelp);
+            ltrlOptionsHelp.Text = MessageProvider.Get(MessageKeys.DisableClient.OptionsHelp);
+
+            btnConfirmDisable.Text = MessageProvider.Get(MessageKeys.DisableClient.ButtonConfirm);
+            ltrlCancelText.Text = MessageProvider.Get(MessageKeys.DisableClient.ButtonCancel)
+                .Replace("&amp;", "&");
+
+            ltrlHelpMessage.Text = MessageProvider.Get(MessageKeys.DisableClient.HelpMessage) + " ";
+            ltrlContactEmail.Text = mailTo;
+
+            ltrlSuccessHeader.Text = MessageProvider.Get(MessageKeys.DisableClient.SuccessHeader);
+            ltrlSuccessMessage.Text = MessageProvider.Get(MessageKeys.DisableClient.SuccessMessage);
+            if (string.IsNullOrEmpty(ltrlSuccessDetails.Text))
+                ltrlSuccessDetails.Text = MessageProvider.Get(MessageKeys.DisableClient.SuccessDetails);
+
+            ltrlReenableMessage.Text = MessageProvider.Format(
+                MessageKeys.DisableClient.ReenableMessage, mailTo);
         }
 
         private void LoadContact()
         {
             if (!TryGetContactId(out var contactId) || !IsValidToken(contactId))
             {
-                ShowInvalidRequest("Invalid or expired disable link.");
+                ShowInvalidRequest(MessageProvider.Get(MessageKeys.DisableClient.ErrorInvalidParams));
                 return;
             }
 
             var contact = new ContactsRepository().GetById(contactId);
             if (contact == null)
             {
-                ShowInvalidRequest("Contact not found.");
+                ShowInvalidRequest(MessageProvider.Get(MessageKeys.DisableClient.ErrorCustomerNotFound));
                 return;
             }
 
             CompanyNameLabel.Text = Server.HtmlEncode(contact.CompanyName ?? string.Empty);
             CompanyNameSuccessLabel.Text = CompanyNameLabel.Text;
-        }
-
-        private void SetContactEmail()
-        {
-            string email = ConfigurationManager.AppSettings["SysEmailFrom"] ?? "orders@quaffee.co.za";
-            string encodedEmail = Server.HtmlEncode(email);
-            string mailTo = "<a href=\"mailto:" + encodedEmail + "\">" + encodedEmail + "</a>";
-            ltrlContactEmail.Text = mailTo;
-            ltrlContactEmailSuccess.Text = mailTo;
         }
 
         private bool TryGetContactId(out int contactId)
@@ -104,7 +129,8 @@ namespace TrackerSQL
             CompanyNameLabel.Text = Server.HtmlEncode(message);
             CompanyNameSuccessLabel.Text = Server.HtmlEncode(message);
             btnConfirmDisable.Enabled = false;
-            rblDisableChoice.Enabled = false;
+            if (rbRemindersOnly != null) rbRemindersOnly.Enabled = false;
+            if (rbDisableAll != null) rbDisableAll.Enabled = false;
             ShowConfirmation();
         }
     }

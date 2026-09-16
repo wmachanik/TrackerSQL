@@ -181,6 +181,62 @@ namespace TrackerSQL.Managers
                 customerId, forceEnable));
         }
 
+        /// <summary>
+        /// Thanks a newly tracking-enabled contact and includes the self-service disable link.
+        /// </summary>
+        public void TrySendTrackingWelcomeEmail(Contact contact)
+        {
+            if (contact == null || contact.ContactID <= 0)
+                return;
+            if (contact.Enabled == false)
+                return;
+            if (contact.PredictionDisabled == true)
+                return;
+
+            string recipient = !string.IsNullOrWhiteSpace(contact.EmailAddress)
+                ? contact.EmailAddress.Trim()
+                : (contact.AltEmailAddress ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(recipient))
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "Tracking welcome skipped for contact " + contact.ContactID + ": no email.");
+                return;
+            }
+
+            try
+            {
+                string disableLink = DisableClientManager.GenerateDisableLink(contact.ContactID);
+                var emailSettings = new EmailSettings();
+                emailSettings.SetRecipient(recipient);
+                var email = new EmailMailKitCls(emailSettings);
+                email.AddSysCCFAddress();
+                email.SetEmailSubject(MessageProvider.Get(MessageKeys.Customer.TrackingWelcomeSubject));
+                email.AddToBody(MessageProvider.Format(
+                    MessageKeys.Customer.TrackingWelcomeBody,
+                    DetermineContactName(contact),
+                    contact.CompanyName ?? "your account",
+                    disableLink));
+                email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
+
+                if (email.SendEmail())
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                        "Tracking welcome sent to " + recipient + " contact=" + contact.ContactID);
+                }
+                else
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                        MessageProvider.Format(MessageKeys.Email.SendError,
+                            contact.CompanyName, email.LastErrorSummary ?? email.myResults.sResult));
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "Tracking welcome failed for contact " + contact.ContactID + ": " + ex.Message);
+            }
+        }
+
         public void SendAwayPeriodConfirmationEmail(int customerId, DateTime startDate, DateTime endDate)
         {
             var contact = _contactsRepository.GetById(customerId);

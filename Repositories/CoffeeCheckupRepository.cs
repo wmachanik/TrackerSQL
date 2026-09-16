@@ -57,14 +57,23 @@ namespace TrackerSQL.Repositories
 
         public List<CustomerTypicalItem> GetCustomerTypicalItems(long contactId)
         {
+            // Latest coffee/consumable usage per item in the last 6 months (no DISTINCT+ORDER BY clash).
             const string sql = @"
-                SELECT DISTINCT u.ItemProvidedID, u.QtyProvided, u.ItemPackagingID
-                FROM ContactsItemUsageTbl u
-                INNER JOIN ItemsTbl i ON u.ItemProvidedID = i.ItemID
-                WHERE u.ContactID = @ContactID
-                  AND i.ItemServiceTypeID IN (2, 21)
-                  AND u.DeliveryDate >= DATEADD(month, -6, CAST(GETDATE() AS date))
-                ORDER BY u.DeliveryDate DESC";
+                SELECT ItemProvidedID, QtyProvided, ItemPackagingID
+                FROM (
+                    SELECT u.ItemProvidedID, u.QtyProvided, u.ItemPackagingID,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY u.ItemProvidedID, u.ItemPackagingID
+                               ORDER BY u.DeliveryDate DESC
+                           ) AS rn
+                    FROM ContactsItemUsageTbl u
+                    INNER JOIN ItemsTbl i ON u.ItemProvidedID = i.ItemID
+                    WHERE u.ContactID = @ContactID
+                      AND i.ItemServiceTypeID IN (2, 21)
+                      AND u.DeliveryDate >= DATEADD(month, -6, CAST(GETDATE() AS date))
+                ) latest
+                WHERE rn = 1
+                ORDER BY ItemProvidedID";
 
             var parameters = new List<DBParameter>
             {

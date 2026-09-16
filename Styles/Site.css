@@ -1867,6 +1867,77 @@ button,
     position: relative !important;
 }
 
+/* Exclude Ajax HtmlEditorExtender toolbar (Send Coffee Checkup, etc.)
+   Global green button chrome + flex sizing smashed the sprite toolbar. */
+.ajax__html_editor_extender_button,
+.ajax__html_editor_extender_buttoncontainer input[type="button"],
+.ajax__html_editor_extender_buttoncontainer input[type="submit"],
+.ajax__html_editor_extender_buttoncontainer button,
+.ajax__html_editor_extender_modebuttonscontainer input[type="button"],
+.ajax__html_editor_extender_modebuttonscontainer input[type="submit"],
+.ajax__html_editor_extender_modebuttonscontainer button,
+.ajax__html_editor_extender_popupCancelButton,
+*[class*="ajax__html_editor_extender"] input[type="button"],
+*[class*="ajax__html_editor_extender"] input[type="submit"],
+*[class*="ajax__html_editor_extender"] button {
+    background-color: #c2c2c2 !important;
+    /* keep ACT background-image sprite — do not set background / background-image */
+    color: inherit !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    min-width: 0 !important;
+    width: 23px !important;
+    height: 21px !important;
+    max-height: none !important;
+    display: block !important;
+    float: left !important;
+    white-space: normal !important;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    align-items: unset !important;
+    justify-content: unset !important;
+    transition: none !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+    box-sizing: content-box !important;
+}
+
+.ajax__html_editor_extender_button:hover,
+.ajax__html_editor_extender_buttoncontainer input[type="button"]:hover,
+.ajax__html_editor_extender_buttoncontainer input[type="submit"]:hover,
+.ajax__html_editor_extender_buttoncontainer button:hover,
+.ajax__html_editor_extender_modebuttonscontainer input[type="button"]:hover,
+.ajax__html_editor_extender_modebuttonscontainer input[type="submit"]:hover,
+.ajax__html_editor_extender_modebuttonscontainer button:hover,
+*[class*="ajax__html_editor_extender"] input[type="button"]:hover,
+*[class*="ajax__html_editor_extender"] input[type="submit"]:hover,
+*[class*="ajax__html_editor_extender"] button:hover {
+    background-color: #3c8aff !important;
+    border-color: transparent !important;
+}
+
+.ajax__html_editor_extender_separator {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    width: 13px !important;
+    height: 21px !important;
+    display: block !important;
+    float: left !important;
+    box-shadow: none !important;
+}
+
+.ajax__html_editor_extender_buttoncontainer,
+.ajax__html_editor_extender_modebuttonscontainer {
+    overflow: auto;
+}
+
 /* Always-visible dropdown chevron (not only on hover) */
 .ajax__combobox_buttoncontainer button::after,
 .ajax__combobox_buttoncontainer input[type="button"]::after,

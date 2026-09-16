@@ -1439,6 +1439,7 @@ namespace TrackerSQL.Pages
                 var tbxCode = (TextBox)row.FindControl("tbxCsCode");
                 var tbxName = (TextBox)row.FindControl("tbxCsName");
                 var tbxUrl = (TextBox)row.FindControl("tbxCsUrl");
+                var tbxUrlParam = (TextBox)row.FindControl("tbxCsUrlParam");
                 var cbxDefault = (CheckBox)row.FindControl("cbxCsDefault");
                 var cbxEnabled = (CheckBox)row.FindControl("cbxCsEnabled");
                 var tbxSort = (TextBox)row.FindControl("tbxCsSort");
@@ -1452,6 +1453,7 @@ namespace TrackerSQL.Pages
                     ServiceCode = tbxCode?.Text?.Trim(),
                     ServiceName = tbxName?.Text?.Trim(),
                     TrackingUrl = tbxUrl?.Text?.Trim(),
+                    TrackingUrlParam = tbxUrlParam?.Text?.Trim(),
                     IsDefault = cbxDefault != null && cbxDefault.Checked,
                     IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
                     SortOrder = sort
@@ -1514,6 +1516,7 @@ namespace TrackerSQL.Pages
                 var tbxCode = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsCodeFooter");
                 var tbxName = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsNameFooter");
                 var tbxUrl = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsUrlFooter");
+                var tbxUrlParam = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsUrlParamFooter");
                 var cbxDefault = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsDefaultFooter");
                 var cbxEnabled = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsEnabledFooter");
                 var tbxSort = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsSortFooter");
@@ -1533,6 +1536,7 @@ namespace TrackerSQL.Pages
                     ServiceCode = code,
                     ServiceName = name,
                     TrackingUrl = tbxUrl?.Text?.Trim(),
+                    TrackingUrlParam = tbxUrlParam?.Text?.Trim(),
                     IsDefault = cbxDefault != null && cbxDefault.Checked,
                     IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
                     SortOrder = sort

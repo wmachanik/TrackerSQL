@@ -4,7 +4,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
-    <title>Disable Coffee Checkup Reminders - Quaffee</title>
+    <title>Coffee Checkup Reminder Settings - Quaffee</title>
     <style type="text/css">
         body {
             font-family: Calibri, Arial, sans-serif;
@@ -87,7 +87,32 @@
             display: none;
         }
 
-        .confirmation-section {
+        .option-block {
+            text-align: left;
+            margin: 16px 0;
+            padding: 12px 14px;
+            background: #fff;
+            border: 1px solid #d9e0c8;
+            border-radius: 6px;
+        }
+
+        .option-block label {
+            font-weight: bold;
+            color: #2c5530;
+        }
+
+        .option-help {
+            margin: 6px 0 0 24px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .options-help {
+            margin-top: 14px;
+            font-size: 14px;
+            color: #666;
+            text-align: left;
         }
     </style>
 </head>
@@ -96,78 +121,76 @@
         <div class="container">
             <div class="header">
                 <img src="images/logo/QuaffeeLogoSmall.jpg" alt="Quaffee Logo" />
-                <h1 style="color: #2c5530; margin-top: 15px;">Coffee Checkup Reminder Settings</h1>
+                <h1 style="color: #2c5530; margin-top: 15px;">
+                    <asp:Literal ID="ltrlPageHeading" runat="server" />
+                </h1>
             </div>
 
-            <!-- Confirmation Section (shown initially) -->
             <div id="confirmationSection" runat="server" class="confirmation-section">
                 <div class="content">
-                    <h2>?? Disable Coffee Checkup Reminders?</h2>
+                    <h2><asp:Literal ID="ltrlConfirmationHeader" runat="server" /></h2>
                     <p style="font-size: 18px; margin: 20px 0;">
-                        You are about to disable coffee checkup reminders for:
-                   
+                        <asp:Literal ID="ltrlConfirmationMessage" runat="server" />
                     </p>
                     <div class="company-name">
                         <asp:Label ID="CompanyNameLabel" Text="Loading..." runat="server" />
                     </div>
                     <p style="font-size: 16px; color: #666; margin: 25px 0;">
-                        ?? <strong>This will stop all future coffee checkup reminder emails.</strong><br />
-                        You can always re-enable reminders by contacting us directly.
+                        <asp:Literal ID="ltrlWarningMessage" runat="server" />
                     </p>
-                    <div id="disableOptions">
-                        <asp:RadioButtonList ID="rblDisableChoice" runat="server" RepeatDirection="Vertical">
-                            <asp:ListItem Text="Disable my account and stop all notifications" Value="disable_all" />
-                            <asp:ListItem Text="Stop only coffee checkup reminder emails (keep account active)" Value="disable_reminders" Selected="true" />
-                        </asp:RadioButtonList>
-                        <p class="help">Choose "Stop only coffee checkup..." if you still want to place orders / receive other emails.</p>
+                    <div id="disableOptions" style="text-align: left;">
+                        <div class="option-block">
+                            <asp:RadioButton ID="rbRemindersOnly" runat="server" GroupName="DisableChoice"
+                                Checked="true" />
+                            <asp:Label ID="lblRemindersOnly" runat="server" AssociatedControlID="rbRemindersOnly" />
+                            <p class="option-help"><asp:Literal ID="ltrlRemindersHelp" runat="server" /></p>
+                        </div>
+                        <div class="option-block">
+                            <asp:RadioButton ID="rbDisableAll" runat="server" GroupName="DisableChoice" />
+                            <asp:Label ID="lblDisableAll" runat="server" AssociatedControlID="rbDisableAll" />
+                            <p class="option-help"><asp:Literal ID="ltrlAllHelp" runat="server" /></p>
+                        </div>
+                        <p class="options-help"><asp:Literal ID="ltrlOptionsHelp" runat="server" /></p>
                     </div>
                 </div>
 
                 <div class="buttons">
                     <asp:Button ID="btnConfirmDisable" runat="server"
-                        Text="Yes, Disable Reminders"
                         CssClass="btn btn-danger"
                         OnClick="btnConfirmDisable_Click"
-                        OnClientClick="return confirm('Are you sure you want to disable coffee checkup reminders? This action will stop all future reminder emails.');" />
+                        OnClientClick="return confirm('Are you sure you want to update your reminder preferences?');" />
 
-                    <a href="https://www.quaffee.co.za" class="btn btn-secondary">Cancel & Keep Reminders
+                    <a href="https://www.quaffee.co.za" class="btn btn-secondary">
+                        <asp:Literal ID="ltrlCancelText" runat="server" />
                     </a>
                 </div>
 
                 <div style="margin-top: 20px; font-size: 14px; color: #666;">
                     <p>
-                        ?? <strong>Need help instead?</strong><br />
-                        Contact us at
+                        <asp:Literal ID="ltrlHelpMessage" runat="server" />
                         <asp:Literal ID="ltrlContactEmail" runat="server" />
-                        or call us to update your preferences.  
+                        or call us to update your preferences.
                     </p>
                 </div>
             </div>
 
-            <!-- Success Section (shown after confirmation) -->
             <div id="successSection" runat="server" class="success-message">
                 <div class="content">
-                    <h2 style="color: #28a745;">? Reminders Disabled Successfully</h2>
+                    <h2 style="color: #28a745;"><asp:Literal ID="ltrlSuccessHeader" runat="server" /></h2>
                     <p style="font-size: 18px; margin: 20px 0;">
-                        Coffee checkup reminders have been disabled for:
-                   
+                        <asp:Literal ID="ltrlSuccessMessage" runat="server" />
                     </p>
                     <div class="company-name">
                         <asp:Label ID="CompanyNameSuccessLabel" runat="server" />
                     </div>
                     <p style="font-size: 16px; color: #666; margin: 25px 0;">
-                        Our administrator has been notified of this change.<br />
-                        You will no longer receive automated coffee checkup reminder emails.
-                   
+                        <asp:Literal ID="ltrlSuccessDetails" runat="server" />
                     </p>
                 </div>
 
                 <div style="margin-top: 20px; font-size: 14px; color: #666;">
                     <p>
-                        <strong>Need to re-enable reminders?</strong><br />
-                        Contact us at
-                        <asp:Literal ID="ltrlContactEmailSuccess" runat="server" />
-                        and we'll be happy to help.
+                        <asp:Literal ID="ltrlReenableMessage" runat="server" />
                     </p>
                 </div>
             </div>
@@ -176,7 +199,6 @@
                <p>Visit our website: <a href="https://www.quaffee.co.za" style="color: #2c5530; font-weight: bold;">www.quaffee.co.za</a></p>
                 <p style="font-size: 12px; color: #999;">
                     This page allows you to manage your coffee checkup reminder preferences.
-               
                 </p>
             </div>
         </div>

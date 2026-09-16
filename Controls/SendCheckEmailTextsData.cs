@@ -12,8 +12,8 @@ namespace TrackerSQL.Controls
 {
     public class SendCheckEmailTextsData
     {
-        private const string CONST_SQL_SELECT = "SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckEmailTextsTbl";
-        private const string CONST_SQL_UPDATE = "UPDATE SendCheckEmailTextsTbl SET Header = ?, Body = ?, Footer = ?, DateLastChange = ?, Notes = ? WHERE SCEMTID = ?";
+        private const string CONST_SQL_SELECT = "SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckupEmailTextsTbl";
+        private const string CONST_SQL_UPDATE = "UPDATE SendCheckupEmailTextsTbl SET Header = ?, Body = ?, Footer = ?, DateLastChange = ?, Notes = ? WHERE SCEMTID = ?";
         private int _SCEMTID;
         private string _Header;
         private string _Body;
@@ -71,7 +71,7 @@ namespace TrackerSQL.Controls
         {
             SendCheckEmailTextsData texts = new SendCheckEmailTextsData();
             TrackerDb trackerDb = new TrackerDb();
-            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckEmailTextsTbl");
+            IDataReader dataReader = trackerDb.ExecuteSQLGetDataReader("SELECT SCEMTID, Header, Body, Footer, DateLastChange, Notes FROM SendCheckupEmailTextsTbl");
             if (dataReader != null)
             {
                 if (dataReader.Read())
@@ -98,7 +98,7 @@ namespace TrackerSQL.Controls
             trackerDb.AddParams((object)TimeZoneUtils.Now().Date, DbType.Date, "@DateLastChange");
             trackerDb.AddParams((object)pEmailTextsData.Notes, DbType.String, "@Notes");
             trackerDb.AddWhereParams((object)pOriginalID, DbType.Int32, "@SCEMTID");
-            string str = trackerDb.ExecuteNonQuerySQL("UPDATE SendCheckEmailTextsTbl SET Header = ?, Body = ?, Footer = ?, DateLastChange = ?, Notes = ? WHERE SCEMTID = ?");
+            string str = trackerDb.ExecuteNonQuerySQL("UPDATE SendCheckupEmailTextsTbl SET Header = ?, Body = ?, Footer = ?, DateLastChange = ?, Notes = ? WHERE SCEMTID = ?");
             trackerDb.Close();
             return str;
         }

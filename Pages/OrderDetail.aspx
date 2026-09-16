@@ -172,7 +172,14 @@
                             <td>Waybill</td>
                             <td>
                                 <asp:Label ID="lblDispatchStatus" runat="server" CssClass="status-flag" style="margin-right: 8px;" />
-                                <asp:Label ID="lblWaybill" runat="server" Font-Bold="true" />
+                                <asp:Label ID="lblWaybill" runat="server" Font-Bold="true" style="margin-right: 8px;" />
+                                <asp:ImageButton ID="btnEditWaybill" runat="server"
+                                    ImageUrl="~/images/imgButtons/EditItem.gif"
+                                    AlternateText="Edit waybill"
+                                    ToolTip="Correct the waybill / tracking number"
+                                    OnClick="btnEditWaybill_Click"
+                                    CausesValidation="false"
+                                    CssClass="image-button" />
                             </td>
                         </tr>
                         <tr>
@@ -185,6 +192,35 @@
                             </td>
                         </tr>
                     </table>
+                    <asp:Panel ID="pnlWaybillEdit" runat="server" CssClass="confirm-modal-overlay" Visible="false">
+                        <div class="confirm-modal">
+                            <h2>Update waybill</h2>
+                            <p>Correct the tracking / waybill details. Optionally email the customer the new number.</p>
+                            <div class="confirm-modal-option">
+                                <asp:Label ID="lblWaybillEditNumber" runat="server" Text="Waybill / tracking" AssociatedControlID="tbxWaybillEdit" />
+                                <asp:TextBox ID="tbxWaybillEdit" runat="server" MaxLength="100" Width="100%"
+                                    ToolTip="Correct the tracking / waybill number" />
+                            </div>
+                            <div class="confirm-modal-option">
+                                <asp:Label ID="lblWaybillEditCourier" runat="server" Text="Courier" AssociatedControlID="ddlWaybillCourier" />
+                                <asp:DropDownList ID="ddlWaybillCourier" runat="server" CssClass="sys-prefs-input" Width="100%" />
+                            </div>
+                            <div class="confirm-modal-option">
+                                <asp:CheckBox ID="cbxNotifyWaybillChange" runat="server" TextAlign="Right"
+                                    Text="Notify customer by email" Checked="true"
+                                    ToolTip="Email the contact the corrected waybill number" />
+                            </div>
+                            <div class="button-row confirm-modal-buttons">
+                                <asp:Button ID="btnUpdateWaybill" runat="server" Text="Update waybill"
+                                    CssClass="filter-panel-btn"
+                                    OnClick="btnUpdateWaybill_Click" CausesValidation="false"
+                                    ToolTip="Save the corrected waybill and optionally email the customer" />
+                                <asp:Button ID="btnCancelWaybillEdit" runat="server" Text="Cancel"
+                                    CssClass="filter-panel-btn"
+                                    OnClick="btnCancelWaybillEdit_Click" CausesValidation="false" />
+                            </div>
+                        </div>
+                    </asp:Panel>
                     <asp:HiddenField ID="hdnHeaderDirty" runat="server" Value="0" />
                     <div class="order-detail-toolbar button-row">
                         <asp:Button ID="btnSaveHeader" runat="server" Text="Save"

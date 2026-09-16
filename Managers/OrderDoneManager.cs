@@ -93,6 +93,70 @@ namespace TrackerSQL.Managers
             }
         }
 
+        /// <summary>
+        /// Returns a user-facing warning when this tracking + courier pair already exists on another order.
+        /// Null when the combination is unused (or inputs are empty).
+        /// </summary>
+        public static string GetDuplicateWaybillWarning(string trackingNumber, int? courierServiceId, int excludeOrderId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(trackingNumber))
+                return null;
+
+            var existing = new OrderWaybillRepository().FindDuplicateWaybill(
+                trackingNumber.Trim(),
+                courierServiceId,
+                excludeOrderId);
+            if (existing == null)
+                return null;
+
+            string customerName = ResolveWaybillCustomerName(existing);
+            string usedOn = existing.DispatchedAt > DateTime.MinValue
+                ? existing.DispatchedAt.ToString("d MMM yyyy")
+                : "an earlier date";
+
+            return MessageProvider.Format(
+                MessageKeys.Order.WaybillDuplicate,
+                trackingNumber.Trim(),
+                customerName,
+                usedOn);
+        }
+
+        private static string ResolveWaybillCustomerName(OrderWaybill waybill)
+        {
+            if (waybill == null)
+                return "another customer";
+
+            try
+            {
+                if (waybill.ContactID.HasValue && waybill.ContactID.Value > 0)
+                {
+                    var contact = new ContactsRepository().GetById(waybill.ContactID.Value);
+                    if (!string.IsNullOrWhiteSpace(contact?.CompanyName))
+                        return contact.CompanyName.Trim();
+                }
+
+                if (waybill.OrderID > 0)
+                {
+                    var header = new OrdersRepository().GetOrderHeaderByOrderId(waybill.OrderID);
+                    if (header != null && header.CustomerID > 0)
+                    {
+                        var contact = new ContactsRepository().GetById((int)header.CustomerID);
+                        if (!string.IsNullOrWhiteSpace(contact?.CompanyName))
+                            return contact.CompanyName.Trim();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "ResolveWaybillCustomerName failed: " + ex.Message);
+            }
+
+            return waybill.OrderID > 0
+                ? "order " + waybill.OrderID
+                : "another customer";
+        }
+
         private OrderDoneResult CompleteOrderInternal(
             int customerId,
             DateTime deliveryDate,
@@ -342,6 +406,199 @@ namespace TrackerSQL.Managers
             return success ? null : $"? Failed to send email to {recipient}: {email.myResults.sResult}";
         }
 
+        /// <summary>
+        /// Corrects a previously saved waybill and optionally emails the contact.
+        /// Returns a status message; messages starting with '?' indicate failure.
+        /// </summary>
+        public static string UpdateWaybillAndNotify(
+            int orderId,
+            string newWaybillNumber,
+            int? courierServiceId,
+            bool notifyCustomer)
+        {
+            if (orderId <= 0)
+                return "? Invalid order.";
+            if (string.IsNullOrWhiteSpace(newWaybillNumber))
+                return "? Enter a waybill / tracking number.";
+
+            string track = newWaybillNumber.Trim();
+            var waybillRepo = new OrderWaybillRepository();
+            var existing = waybillRepo.GetByOrderId(orderId);
+            if (existing == null || string.IsNullOrWhiteSpace(existing.WaybillNumber))
+                return "? No waybill found for this order. Use Order Done to dispatch first.";
+
+            string previous = existing.WaybillNumber.Trim();
+            var ordersRepo = new OrdersRepository();
+            var header = ordersRepo.GetOrderHeaderByOrderId(orderId);
+            int customerId = existing.ContactID
+                ?? (header != null ? (int)header.CustomerID : 0);
+
+            CourierService courier = null;
+            if (courierServiceId.HasValue && courierServiceId.Value > 0)
+                courier = new CourierServicesRepository().GetByIdSafe(courierServiceId.Value);
+            else if (existing.CourierServiceID.HasValue && existing.CourierServiceID.Value > 0)
+                courier = new CourierServicesRepository().GetByIdSafe(existing.CourierServiceID.Value);
+
+            string carrierName = courier != null && !courier.IsNone
+                ? (courier.ServiceName ?? courier.ServiceCode)
+                : existing.Carrier;
+
+            var wooRepo = new WooOrderInfoRepository();
+            var info = wooRepo.GetByTrackerOrderId(orderId);
+            long? wooOrderId = info != null && info.WooOrderId > 0
+                ? info.WooOrderId
+                : existing.WooOrderId;
+
+            bool wooNotePosted = false;
+            string wooMessage = null;
+            if (wooOrderId.HasValue)
+            {
+                if (info != null)
+                {
+                    info.TrackingNumber = track;
+                    wooRepo.Upsert(info);
+                }
+
+                WooCommerceApiClient.ApiCredentials creds;
+                string credError;
+                if (!new WooCommerceSettingsManager().TryGetApiCredentials(out creds, out credError))
+                {
+                    wooMessage = "Woo note not sent (" + (credError ?? "no credentials") + ").";
+                }
+                else
+                {
+                    string note = BuildCorrectedTrackingNote(previous, track, courier);
+                    string detail;
+                    wooNotePosted = new WooCommerceApiClient().AddOrderNote(
+                        creds, wooOrderId.Value, note, customerNote: true, out detail);
+                    if (wooNotePosted)
+                    {
+                        AppLogger.WriteLog("woo",
+                            "Waybill correction posted Woo customer note for Woo #"
+                            + (info?.WooOrderNumber ?? wooOrderId.Value.ToString())
+                            + " previous=" + previous + " new=" + track);
+                    }
+                    else
+                    {
+                        wooMessage = "Woo customer note failed: " + (detail ?? "unknown");
+                        AppLogger.WriteLog("woo", "Waybill correction Woo note failed: " + (detail ?? "unknown"));
+                    }
+                }
+            }
+
+            existing.WaybillNumber = track;
+            existing.Carrier = carrierName;
+            existing.CourierServiceID = courier != null && !courier.IsNone
+                ? courier.CourierServiceID
+                : (int?)null;
+            existing.WooOrderId = wooOrderId;
+            if (wooNotePosted)
+                existing.WooNotePosted = true;
+            existing.CreatedBy = HttpContext.Current?.User?.Identity?.Name;
+            waybillRepo.Upsert(existing);
+
+            string emailResult = null;
+            if (notifyCustomer)
+            {
+                if (customerId <= 0)
+                    emailResult = "? Waybill saved, but no contact on the order to notify.";
+                else
+                    emailResult = SendWaybillUpdatedEmail(customerId, orderId, previous, track,
+                        courier != null && !courier.IsNone ? courier.CourierServiceID : (int?)null);
+            }
+
+            if (customerId > 0 && courier != null && !courier.IsNone)
+                new OrderDoneManager().SyncContactPreferredCourier(customerId, courier);
+
+            bool emailFailed = !string.IsNullOrEmpty(emailResult) && emailResult.StartsWith("?", StringComparison.Ordinal);
+            if (emailFailed)
+                return emailResult;
+
+            var parts = new List<string> { "Waybill updated to " + track + "." };
+            if (notifyCustomer && emailResult == null)
+                parts.Add("Customer notified.");
+            if (!string.IsNullOrEmpty(wooMessage))
+                parts.Add(wooMessage);
+            else if (wooNotePosted)
+                parts.Add("Woo customer note posted.");
+            return string.Join(" ", parts);
+        }
+
+        public static string SendWaybillUpdatedEmail(
+            long customerId,
+            int orderId,
+            string previousWaybill,
+            string newWaybill,
+            int? courierServiceId)
+        {
+            var customer = new ContactsRepository().GetById((int)customerId);
+            if (customer == null)
+                return "? Contact not found.";
+
+            string recipient = !string.IsNullOrWhiteSpace(customer.EmailAddress)
+                ? customer.EmailAddress
+                : customer.AltEmailAddress;
+
+            if (customerId == SystemConstants.CustomerConstants.SundryCustomerID && orderId > 0)
+            {
+                var header = new OrdersRepository().GetOrderHeaderByOrderId(orderId);
+                string fromNotes = new OrderManager().ExtractEmailFromNotes(header?.Notes);
+                if (!string.IsNullOrWhiteSpace(fromNotes))
+                    recipient = fromNotes.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(recipient))
+                return "? No recipient email address found.";
+
+            var emailSettings = new EmailSettings();
+            emailSettings.SetRecipient(recipient);
+            var email = new EmailMailKitCls(emailSettings);
+            email.AddSysCCFAddress();
+            email.SetEmailSubject(MessageProvider.Get(MessageKeys.Order.WaybillUpdatedSubject));
+
+            string contactName = !string.IsNullOrWhiteSpace(customer.ContactFirstName)
+                ? customer.ContactFirstName
+                : MessageProvider.Get(MessageKeys.Order.StatusDefaultContact);
+
+            email.AddToBody(MessageProvider.Format(
+                MessageKeys.Order.WaybillUpdatedBody,
+                contactName,
+                previousWaybill ?? string.Empty,
+                newWaybill ?? string.Empty));
+            AppendTrackingBody(email, newWaybill, courierServiceId);
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.StatusFooter));
+            email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
+
+            bool success = email.SendEmail();
+            if (success)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "Waybill correction emailed to " + recipient + " order=" + orderId
+                    + " previous=" + previousWaybill + " new=" + newWaybill);
+                return null;
+            }
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                "Failed waybill correction email to " + recipient + ": " + email.myResults.sResult);
+            return "? Failed to send email to " + recipient + ": " + email.myResults.sResult;
+        }
+
+        private static string BuildCorrectedTrackingNote(string previous, string track, CourierService courier)
+        {
+            string baseNote = "Corrected tracking / waybill number. Previous: " + previous + ". New: " + track + ".";
+            if (courier != null && !courier.IsNone)
+            {
+                string trackUrl = courier.BuildTrackingUrl(track);
+                if (!string.IsNullOrWhiteSpace(trackUrl))
+                {
+                    return baseNote + " Sent with " + (courier.ServiceName ?? courier.ServiceCode)
+                        + ". Track here: " + trackUrl;
+                }
+                return baseNote + " Sent with " + (courier.ServiceName ?? courier.ServiceCode) + ".";
+            }
+            return baseNote;
+        }
+
         private static void AppendTrackingBody(EmailMailKitCls email, string trackingNumber, int? courierServiceId)
         {
             if (email == null || string.IsNullOrWhiteSpace(trackingNumber))
@@ -354,20 +611,32 @@ namespace TrackerSQL.Managers
 
             if (courier != null && !courier.IsNone && !string.IsNullOrWhiteSpace(courier.TrackingUrl))
             {
+                string trackUrl = courier.BuildTrackingUrl(track) ?? courier.TrackingUrl.Trim();
+                string trackDisplay = track;
+                if (courier.CanDeepLinkTracking(track))
+                {
+                    trackDisplay = "<a href=\"" + HttpUtility.HtmlAttributeEncode(trackUrl) + "\">"
+                        + HttpUtility.HtmlEncode(track) + "</a>";
+                }
+                else
+                {
+                    trackDisplay = HttpUtility.HtmlEncode(track);
+                }
+
                 email.AddToBody(MessageProvider.Format(
                     MessageKeys.Order.StatusTrackingWithCourier,
-                    courier.ServiceName ?? courier.ServiceCode,
-                    track,
-                    courier.TrackingUrl.Trim()));
+                    HttpUtility.HtmlEncode(courier.ServiceName ?? courier.ServiceCode),
+                    trackDisplay,
+                    trackUrl));
             }
             else if (courier != null && !courier.IsNone)
             {
-                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, track));
-                email.AddToBody("Sent with " + (courier.ServiceName ?? courier.ServiceCode) + ".<br /><br />");
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, HttpUtility.HtmlEncode(track)));
+                email.AddToBody("Sent with " + HttpUtility.HtmlEncode(courier.ServiceName ?? courier.ServiceCode) + ".<br /><br />");
             }
             else
             {
-                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, track));
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, HttpUtility.HtmlEncode(track)));
             }
         }
 
@@ -508,18 +777,19 @@ namespace TrackerSQL.Managers
 
         private static string BuildCustomerTrackingNote(string track, CourierService courier)
         {
-            if (courier != null && !courier.IsNone && !string.IsNullOrWhiteSpace(courier.TrackingUrl))
-            {
-                return string.Format(
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    "Your order has been dispatched with {0}. Waybill / tracking number: {1}. Track here: {2}. The order stays open until the parcel is received.",
-                    courier.ServiceName ?? courier.ServiceCode,
-                    track,
-                    courier.TrackingUrl.Trim());
-            }
-
             if (courier != null && !courier.IsNone)
             {
+                string trackUrl = courier.BuildTrackingUrl(track);
+                if (!string.IsNullOrWhiteSpace(trackUrl))
+                {
+                    return string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "Your order has been dispatched with {0}. Waybill / tracking number: {1}. Track here: {2}. The order stays open until the parcel is received.",
+                        courier.ServiceName ?? courier.ServiceCode,
+                        track,
+                        trackUrl);
+                }
+
                 return "Your order has been dispatched with " + (courier.ServiceName ?? courier.ServiceCode)
                     + ". Waybill / tracking number: " + track
                     + ". This number is also on your order in the shop. The order stays open until the parcel is received.";

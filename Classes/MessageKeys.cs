@@ -28,6 +28,8 @@ namespace TrackerSQL.Classes
             public const string EquipmentUpdated = "Customer.EquipmentUpdated";
             public const string EquipmentUpdateError = "Customer.EquipmentUpdateError";
             public const string ReminderCountReset = "Customer.ReminderCountReset";
+            public const string TrackingWelcomeSubject = "Customer.TrackingWelcomeSubject";
+            public const string TrackingWelcomeBody = "Customer.TrackingWelcomeBody";
         }
 
         public static class AwayPeriod
@@ -81,6 +83,12 @@ namespace TrackerSQL.Classes
 
             public const string RemindersDisabledSubject = "DisableClient.RemindersDisabledSubject";
             public const string RemindersDisabledMessage = "DisableClient.RemindersDisabledMessage";
+            public const string OptionReminders = "DisableClient.OptionReminders";
+            public const string OptionRemindersHelp = "DisableClient.OptionRemindersHelp";
+            public const string OptionAll = "DisableClient.OptionAll";
+            public const string OptionAllHelp = "DisableClient.OptionAllHelp";
+            public const string OptionsHelp = "DisableClient.OptionsHelp";
+            public const string SuccessDetailsAll = "DisableClient.SuccessDetailsAll";
         }
 
         /// <summary>
@@ -150,6 +158,9 @@ namespace TrackerSQL.Classes
             public const string StatusTrackingWithCourier = "Order.StatusTrackingWithCourier";
             public const string TrackingRequired = "Order.TrackingRequired";
             public const string CourierRequired = "Order.CourierRequired";
+            public const string WaybillDuplicate = "Order.WaybillDuplicate";
+            public const string WaybillUpdatedSubject = "Order.WaybillUpdatedSubject";
+            public const string WaybillUpdatedBody = "Order.WaybillUpdatedBody";
 
             public const string StatusBody = "Order.StatusBody";
             public const string ConfirmationHeader = "Order.ConfirmationHeader";
@@ -212,6 +223,7 @@ namespace TrackerSQL.Classes
             public const string OrderTypeCombined = "CoffeeCheckup.OrderTypeCombined";
             public const string OrderTypeReminderOnly = "CoffeeCheckup.OrderTypeReminderOnly";
             public const string BodyReminderOnly = "CoffeeCheckup.BodyReminderOnly";
+            public const string ManualReminderIntro = "CoffeeCheckup.ManualReminderIntro";
             public const string BodyOrderType = "CoffeeCheckup.BodyOrderType";
             public const string BodyFinalWarning = "CoffeeCheckup.BodyFinalWarning";
             public const string BodyLastRecurringOrder = "CoffeeCheckup.BodyLastRecurringOrder";

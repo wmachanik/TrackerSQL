@@ -48,6 +48,15 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.HtmlControls.HtmlTableRow trWaybill;
         protected global::System.Web.UI.WebControls.Label lblDispatchStatus;
         protected global::System.Web.UI.WebControls.Label lblWaybill;
+        protected global::System.Web.UI.WebControls.ImageButton btnEditWaybill;
+        protected global::System.Web.UI.WebControls.Panel pnlWaybillEdit;
+        protected global::System.Web.UI.WebControls.Label lblWaybillEditNumber;
+        protected global::System.Web.UI.WebControls.TextBox tbxWaybillEdit;
+        protected global::System.Web.UI.WebControls.Label lblWaybillEditCourier;
+        protected global::System.Web.UI.WebControls.DropDownList ddlWaybillCourier;
+        protected global::System.Web.UI.WebControls.CheckBox cbxNotifyWaybillChange;
+        protected global::System.Web.UI.WebControls.Button btnUpdateWaybill;
+        protected global::System.Web.UI.WebControls.Button btnCancelWaybillEdit;
         protected global::System.Web.UI.WebControls.TextBox tbxNotes;
         protected global::System.Web.UI.WebControls.HiddenField hdnHeaderDirty;
         protected global::System.Web.UI.WebControls.Button btnSaveHeader;

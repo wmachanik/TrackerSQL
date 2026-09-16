@@ -1146,6 +1146,19 @@
                                             <asp:TextBox ID="tbxCsUrlFooter" runat="server" Width="22em" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="URL param" SortExpression="TrackingUrlParam">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsUrlParam" runat="server" Text='<%# Bind("TrackingUrlParam") %>'
+                                                Width="6em" ToolTip="Optional query/path suffix so the waybill opens pre-filled, e.g. Fastway ?l=" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblCsUrlParam" runat="server" Text='<%# Bind("TrackingUrlParam") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsUrlParamFooter" runat="server" Width="6em"
+                                                ToolTip="Optional, e.g. ?l= for Fastway" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Default" SortExpression="IsDefault">
                                         <EditItemTemplate>
                                             <asp:CheckBox ID="cbxCsDefault" runat="server" Checked='<%# Bind("IsDefault") %>' />

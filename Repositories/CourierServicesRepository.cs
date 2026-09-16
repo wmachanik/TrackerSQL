@@ -16,7 +16,7 @@ namespace TrackerSQL.Repositories
         protected override string KeyColumn => "CourierServiceID";
 
         protected override string CoreColumns =>
-            "CourierServiceID, ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder";
+            "CourierServiceID, ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder";
 
         protected override string LookupColumns => CoreColumns;
 
@@ -41,9 +41,9 @@ namespace TrackerSQL.Repositories
 
             const string sql = @"
 INSERT INTO CourierServicesTbl
-(ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder)
+(ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder)
 VALUES
-(@ServiceCode, @ServiceName, @TrackingUrl, @IsDefault, @IsEnabled, @SortOrder)";
+(@ServiceCode, @ServiceName, @TrackingUrl, @TrackingUrlParam, @IsDefault, @IsEnabled, @SortOrder)";
             int n = ExecNonQuery(sql, BuildParams(entity, includeId: false));
             if (n > 0 && entity.IsDefault)
                 ClearOtherDefaults(0);
@@ -62,6 +62,7 @@ UPDATE CourierServicesTbl SET
     ServiceCode = @ServiceCode,
     ServiceName = @ServiceName,
     TrackingUrl = @TrackingUrl,
+    TrackingUrlParam = @TrackingUrlParam,
     IsDefault = @IsDefault,
     IsEnabled = @IsEnabled,
     SortOrder = @SortOrder
@@ -187,6 +188,7 @@ BEGIN
         ServiceCode NVARCHAR(32) NOT NULL,
         ServiceName NVARCHAR(100) NOT NULL,
         TrackingUrl NVARCHAR(500) NULL,
+        TrackingUrlParam NVARCHAR(100) NULL,
         IsDefault BIT NOT NULL CONSTRAINT DF_CourierSvc_Default DEFAULT (0),
         IsEnabled BIT NOT NULL CONSTRAINT DF_CourierSvc_Enabled DEFAULT (1),
         SortOrder INT NOT NULL CONSTRAINT DF_CourierSvc_Sort DEFAULT (0),
@@ -195,17 +197,29 @@ BEGIN
 END");
 
             ExecNonQuery(@"
+IF OBJECT_ID(N'dbo.CourierServicesTbl', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.CourierServicesTbl', N'TrackingUrlParam') IS NULL
+    ALTER TABLE dbo.CourierServicesTbl ADD TrackingUrlParam NVARCHAR(100) NULL;");
+
+            ExecNonQuery(@"
 MERGE dbo.CourierServicesTbl AS t
 USING (VALUES
-    (N'None',        N'None',         NULL, 0, 1, 0),
-    (N'Fastway',     N'Fastway',      N'https://www.fastway.co.za/our-services/track-your-parcel', 1, 1, 10),
-    (N'Pargo',       N'Pargo',        N'https://pargo.co.za/track-trace/', 0, 1, 20),
-    (N'CourierGuy',  N'Courier Guy',  N'https://thecourierguy.co.za/tracking/', 0, 1, 30)
-) AS s(ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder)
+    (N'None',        N'None',         NULL, NULL, 0, 1, 0),
+    (N'Fastway',     N'Fastway',      N'https://www.fastway.co.za/our-services/track-your-parcel', N'?l=', 1, 1, 10),
+    (N'Pargo',       N'Pargo',        N'https://track.pargo.co.za/', N'?code=', 0, 1, 20),
+    (N'CourierGuy',  N'Courier Guy',  N'https://track.thecourierguy.co.za/', N'?ref=', 0, 1, 30)
+) AS s(ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder)
 ON t.ServiceCode = s.ServiceCode
+WHEN MATCHED THEN
+    UPDATE SET
+        ServiceName = s.ServiceName,
+        TrackingUrl = s.TrackingUrl,
+        TrackingUrlParam = s.TrackingUrlParam,
+        IsEnabled = s.IsEnabled,
+        SortOrder = s.SortOrder
 WHEN NOT MATCHED THEN
-    INSERT (ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder)
-    VALUES (s.ServiceCode, s.ServiceName, s.TrackingUrl, s.IsDefault, s.IsEnabled, s.SortOrder);");
+    INSERT (ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder)
+    VALUES (s.ServiceCode, s.ServiceName, s.TrackingUrl, s.TrackingUrlParam, s.IsDefault, s.IsEnabled, s.SortOrder);");
 
             // Contact preference column
             ExecNonQuery(@"
@@ -239,6 +253,7 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
                 new DBParameter { ParamName = "@ServiceCode", DataValue = (entity.ServiceCode ?? string.Empty).Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ServiceName", DataValue = (entity.ServiceName ?? string.Empty).Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@TrackingUrl", DataValue = string.IsNullOrWhiteSpace(entity.TrackingUrl) ? (object)DBNull.Value : entity.TrackingUrl.Trim(), DataDbType = DbType.String },
+                new DBParameter { ParamName = "@TrackingUrlParam", DataValue = string.IsNullOrWhiteSpace(entity.TrackingUrlParam) ? (object)DBNull.Value : entity.TrackingUrlParam.Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@IsDefault", DataValue = entity.IsDefault, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@IsEnabled", DataValue = entity.IsEnabled, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@SortOrder", DataValue = entity.SortOrder, DataDbType = DbType.Int32 }
@@ -266,7 +281,22 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
             }
             catch
             {
-                list = BuiltInRows();
+                // Older DBs without TrackingUrlParam: load without that column.
+                try
+                {
+                    const string sqlLegacy =
+                        "SELECT CourierServiceID, ServiceCode, ServiceName, TrackingUrl, IsDefault, IsEnabled, SortOrder FROM CourierServicesTbl ORDER BY SortOrder, ServiceName";
+                    using (var db = CreateDb())
+                    using (var rdr = db.ExecuteReader(sqlLegacy))
+                    {
+                        while (rdr != null && rdr.Read())
+                            list.Add(Map(rdr));
+                    }
+                }
+                catch
+                {
+                    list = BuiltInRows();
+                }
             }
 
             _allCache = list;
@@ -286,6 +316,9 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
                 ServiceCode = rdr["ServiceCode"] as string,
                 ServiceName = rdr["ServiceName"] as string,
                 TrackingUrl = rdr["TrackingUrl"] as string,
+                TrackingUrlParam = DbMapper.HasColumn(rdr, "TrackingUrlParam")
+                    ? rdr["TrackingUrlParam"] as string
+                    : null,
                 IsDefault = rdr["IsDefault"] != DBNull.Value && Convert.ToBoolean(rdr["IsDefault"]),
                 IsEnabled = rdr["IsEnabled"] == DBNull.Value || Convert.ToBoolean(rdr["IsEnabled"]),
                 SortOrder = rdr["SortOrder"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["SortOrder"])
@@ -296,10 +329,10 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
         {
             return new List<CourierService>
             {
-                new CourierService { CourierServiceID = 1, ServiceCode = "None", ServiceName = "None", TrackingUrl = null, IsDefault = false, IsEnabled = true, SortOrder = 0 },
-                new CourierService { CourierServiceID = 2, ServiceCode = "Fastway", ServiceName = "Fastway", TrackingUrl = "https://www.fastway.co.za/our-services/track-your-parcel", IsDefault = true, IsEnabled = true, SortOrder = 10 },
-                new CourierService { CourierServiceID = 3, ServiceCode = "Pargo", ServiceName = "Pargo", TrackingUrl = "https://pargo.co.za/track-trace/", IsDefault = false, IsEnabled = true, SortOrder = 20 },
-                new CourierService { CourierServiceID = 4, ServiceCode = "CourierGuy", ServiceName = "Courier Guy", TrackingUrl = "https://thecourierguy.co.za/tracking/", IsDefault = false, IsEnabled = true, SortOrder = 30 }
+                new CourierService { CourierServiceID = 1, ServiceCode = "None", ServiceName = "None", TrackingUrl = null, TrackingUrlParam = null, IsDefault = false, IsEnabled = true, SortOrder = 0 },
+                new CourierService { CourierServiceID = 2, ServiceCode = "Fastway", ServiceName = "Fastway", TrackingUrl = "https://www.fastway.co.za/our-services/track-your-parcel", TrackingUrlParam = "?l=", IsDefault = true, IsEnabled = true, SortOrder = 10 },
+                new CourierService { CourierServiceID = 3, ServiceCode = "Pargo", ServiceName = "Pargo", TrackingUrl = "https://track.pargo.co.za/", TrackingUrlParam = "?code=", IsDefault = false, IsEnabled = true, SortOrder = 20 },
+                new CourierService { CourierServiceID = 4, ServiceCode = "CourierGuy", ServiceName = "Courier Guy", TrackingUrl = "https://track.thecourierguy.co.za/", TrackingUrlParam = "?ref=", IsDefault = false, IsEnabled = true, SortOrder = 30 }
             };
         }
     }

@@ -120,6 +120,71 @@ ORDER BY DispatchedAt DESC, WaybillID DESC";
             return list;
         }
 
+        /// <summary>
+        /// Finds an existing waybill that already used this tracking number + courier combination
+        /// (excluding the current order when correcting a waybill).
+        /// </summary>
+        public OrderWaybill FindDuplicateWaybill(string waybillNumber, int? courierServiceId, int excludeOrderId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(waybillNumber))
+                return null;
+
+            EnsureTable();
+            if (!TableExists())
+                return null;
+
+            bool hasCourier = HasCourierServiceColumn();
+            string sql = hasCourier
+                ? @"
+SELECT TOP 1 *
+FROM OrderWaybillTbl
+WHERE LTRIM(RTRIM(WaybillNumber)) = @WaybillNumber
+  AND ISNULL(CourierServiceID, 0) = @CourierServiceID
+  AND (@ExcludeOrderID <= 0 OR OrderID <> @ExcludeOrderID)
+ORDER BY DispatchedAt DESC, WaybillID DESC"
+                : @"
+SELECT TOP 1 *
+FROM OrderWaybillTbl
+WHERE LTRIM(RTRIM(WaybillNumber)) = @WaybillNumber
+  AND (@ExcludeOrderID <= 0 OR OrderID <> @ExcludeOrderID)
+ORDER BY DispatchedAt DESC, WaybillID DESC";
+
+            var p = new List<DBParameter>
+            {
+                new DBParameter
+                {
+                    ParamName = "@WaybillNumber",
+                    DataValue = waybillNumber.Trim(),
+                    DataDbType = DbType.String
+                },
+                new DBParameter
+                {
+                    ParamName = "@ExcludeOrderID",
+                    DataValue = excludeOrderId,
+                    DataDbType = DbType.Int32
+                }
+            };
+            if (hasCourier)
+            {
+                p.Add(new DBParameter
+                {
+                    ParamName = "@CourierServiceID",
+                    DataValue = courierServiceId.HasValue && courierServiceId.Value > 0
+                        ? courierServiceId.Value
+                        : 0,
+                    DataDbType = DbType.Int32
+                });
+            }
+
+            using (var db = new TrackerSQLDb())
+            using (var rdr = db.ExecuteReader(sql, p))
+            {
+                if (rdr != null && rdr.Read())
+                    return Map(rdr);
+            }
+            return null;
+        }
+
         public void Upsert(OrderWaybill row)
         {
             if (row == null || row.OrderID <= 0 || string.IsNullOrWhiteSpace(row.WaybillNumber))

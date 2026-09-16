@@ -46,6 +46,7 @@
             <asp:AsyncPostBackTrigger ControlID="btnCopy2AccInfo" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnForceNext" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnForceCheckup" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnSendReminder" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnRecalcAverage" EventName="Click" />
             <asp:PostBackTrigger ControlID="btnUpdateAndReturn" />
             <asp:PostBackTrigger ControlID="btnAddLasOrder" />
@@ -209,6 +210,10 @@
                         <asp:Button ID="btnForceCheckup" Text="Force Checkup" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnForceCheckup_Click" CausesValidation="false"
                             ToolTip="Force contact into next checkup cycle (Next Coffee in 5 days, reset reminders)" />
+                        <asp:Button ID="btnSendReminder" Text="Send Reminder" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnSendReminder_Click" CausesValidation="false"
+                            OnClientClick="return confirm('Send a coffee checkup reminder email to this contact now?');"
+                            ToolTip="Email a checkup reminder now (updates last reminder date and count)" />
                         <asp:Button ID="btnRecalcAverage" Text="Recalc Ave" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnRecalcAverage_Click" CausesValidation="false" />
                         <span class="image-button" title="Return to the page you came from without saving">
@@ -528,7 +533,7 @@
                                         <ItemTemplate>
                                             <asp:HyperLink ID="hlWaybillOrder" runat="server"
                                                 ImageUrl="~/images/imgButtons/EditItem.gif"
-                                                ToolTip="Open this order"
+                                                ToolTip="Open order to edit waybill"
                                                 NavigateUrl='<%# Eval("OrderNavigateUrl") %>' />
                                         </ItemTemplate>
                                         <ItemStyle HorizontalAlign="Center" />

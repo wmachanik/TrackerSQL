@@ -490,23 +490,118 @@ namespace TrackerSQL.Pages
             bool has = wb != null && !string.IsNullOrWhiteSpace(wb.WaybillNumber);
             trWaybill.Visible = has;
             if (!has)
+            {
+                HideWaybillEditPopup();
                 return;
+            }
+
             string status = string.IsNullOrWhiteSpace(wb.DispatchStatus) ? "Dispatched" : wb.DispatchStatus;
             if (!string.IsNullOrWhiteSpace(wb.Carrier))
-                status += " · " + wb.Carrier;
+                status += " · " + HttpUtility.HtmlEncode(wb.Carrier);
+            lblDispatchStatus.Text = status;
+
+            string waybillText = wb.WaybillNumber.Trim();
+            string waybillHtml = HttpUtility.HtmlEncode(waybillText);
             if (wb.CourierServiceID.HasValue && wb.CourierServiceID.Value > 0)
             {
                 try
                 {
                     var cs = new CourierServicesRepository().GetByIdSafe(wb.CourierServiceID.Value);
-                    if (cs != null && !string.IsNullOrWhiteSpace(cs.TrackingUrl))
-                        status += " · <a href=\"" + HttpUtility.HtmlAttributeEncode(cs.TrackingUrl)
-                            + "\" target=\"_blank\" rel=\"noopener\">track</a>";
+                    if (cs != null && cs.CanDeepLinkTracking(waybillText))
+                    {
+                        string trackUrl = cs.BuildTrackingUrl(waybillText);
+                        waybillHtml = "<a href=\"" + HttpUtility.HtmlAttributeEncode(trackUrl)
+                            + "\" target=\"_blank\" rel=\"noopener\">"
+                            + HttpUtility.HtmlEncode(waybillText) + "</a>";
+                    }
                 }
-                catch { /* ignore */ }
+                catch { /* plain number fallback */ }
             }
-            lblDispatchStatus.Text = status;
-            lblWaybill.Text = wb.WaybillNumber;
+            lblWaybill.Text = waybillHtml;
+
+            if (tbxWaybillEdit != null)
+                tbxWaybillEdit.Text = waybillText;
+            BindWaybillCourierDropdown(wb.CourierServiceID);
+            if (cbxNotifyWaybillChange != null)
+                cbxNotifyWaybillChange.Checked = true;
+        }
+
+        private void BindWaybillCourierDropdown(int? selectedCourierId)
+        {
+            if (ddlWaybillCourier == null)
+                return;
+            try
+            {
+                var courierRepo = new CourierServicesRepository();
+                courierRepo.EnsureExists();
+                courierRepo.FillDropDown(ddlWaybillCourier, selectedCourierId, includeNone: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "OrderDetail BindWaybillCourierDropdown: " + ex.Message);
+            }
+        }
+
+        private void ShowWaybillEditPopup()
+        {
+            if (pnlWaybillEdit == null)
+                return;
+            BindWaybillRow();
+            pnlWaybillEdit.Visible = true;
+        }
+
+        private void HideWaybillEditPopup()
+        {
+            if (pnlWaybillEdit != null)
+                pnlWaybillEdit.Visible = false;
+        }
+
+        protected void btnEditWaybill_Click(object sender, ImageClickEventArgs e)
+        {
+            ShowWaybillEditPopup();
+        }
+
+        protected void btnCancelWaybillEdit_Click(object sender, EventArgs e)
+        {
+            HideWaybillEditPopup();
+        }
+
+        protected void btnUpdateWaybill_Click(object sender, EventArgs e)
+        {
+            if (OrderId <= 0)
+            {
+                SetStatusMessage("Save the order before updating the waybill.", isError: true);
+                return;
+            }
+
+            string newNumber = tbxWaybillEdit != null ? tbxWaybillEdit.Text : null;
+            int? courierId = null;
+            if (ddlWaybillCourier != null
+                && int.TryParse(ddlWaybillCourier.SelectedValue, out int parsed)
+                && parsed > 0)
+            {
+                courierId = parsed;
+            }
+
+            string duplicateWarning = OrderDoneManager.GetDuplicateWaybillWarning(newNumber, courierId, OrderId);
+            if (!string.IsNullOrEmpty(duplicateWarning))
+            {
+                SetStatusMessage(duplicateWarning, isError: true);
+                return;
+            }
+
+            bool notify = cbxNotifyWaybillChange == null || cbxNotifyWaybillChange.Checked;
+            string result = OrderDoneManager.UpdateWaybillAndNotify(OrderId, newNumber, courierId, notify);
+            bool failed = !string.IsNullOrEmpty(result) && result.StartsWith("?", StringComparison.Ordinal);
+            SetStatusMessage(
+                failed ? result.TrimStart('?', ' ').Trim() : (result ?? "Waybill updated."),
+                isError: failed,
+                isSuccess: !failed);
+
+            if (!failed)
+                HideWaybillEditPopup();
+
+            BindWaybillRow();
         }
 
         /// <summary>

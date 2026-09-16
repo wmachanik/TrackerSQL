@@ -50,6 +50,7 @@ SQLCommands-WooCommerce-01.xml
 SQLCommands-WooCommerce-02.xml
 SQLCommands-WooCommerce-03.xml   ← includes OrdersTbl.Notes → NVARCHAR(MAX) + OrderWaybillTbl
 SQLCommands-Postal-01.xml        ← only if live lacks SaPostalCodeTbl
+SQLCommands-CourierServices-01.xml ← courier track URLs + deep-link params (Fastway ?l=, Pargo ?code=, Courier Guy ?ref=)
 
 ================================================================================
 */

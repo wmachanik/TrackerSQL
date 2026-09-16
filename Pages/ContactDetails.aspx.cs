@@ -572,6 +572,7 @@ namespace TrackerSQL.Pages
             btnAddLasOrder.Enabled = editMode;
             btnForceNext.Enabled = editMode;
             btnForceCheckup.Enabled = editMode;
+            btnSendReminder.Enabled = editMode;
             btnRecalcAverage.Enabled = editMode;
             btnInsert.Enabled = !editMode;
             accAddDetailsButton.Enabled = !editMode;
@@ -1132,6 +1133,15 @@ namespace TrackerSQL.Pages
                     "Contact created",
                     accWasSaved ? "accountInfo=yes" : "accountInfo=no",
                     contactIdOverride: newId);
+                try
+                {
+                    new CustomerManager().TrySendTrackingWelcomeEmail(contact);
+                }
+                catch (Exception welcomeEx)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                        "ContactDetails tracking welcome: " + welcomeEx.Message);
+                }
                 SetStatus(accWasSaved
                     ? "Contact and account info created (ID " + newId + ")."
                     : "Contact created (ID " + newId + ").", false);
@@ -1279,6 +1289,50 @@ namespace TrackerSQL.Pages
             {
                 LogContactAudit("Force Checkup failed", ex.Message);
                 NotifyForceAction("Force Checkup", "Error forcing checkup: " + ex.Message, true);
+            }
+        }
+
+        protected void btnSendReminder_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction("Send Reminder", "No contact selected.", true);
+                    return;
+                }
+
+                string error = new CoffeeCheckupManager().SendManualReminder(contactId);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    LogContactAudit("Send Reminder failed", error, contactIdOverride: contactId);
+                    NotifyForceAction("Send Reminder", error, true);
+                    return;
+                }
+
+                RefreshPredictionAfterForce(contactId);
+                try
+                {
+                    var refreshed = new ContactsRepository().GetById(contactId);
+                    if (LastReminderLabel != null)
+                    {
+                        LastReminderLabel.Text = refreshed?.LastDateSentReminder.HasValue == true
+                            ? refreshed.LastDateSentReminder.Value.ToString("yyyy-MM-dd")
+                            : TimeZoneUtils.Now().ToString("yyyy-MM-dd");
+                    }
+                }
+                catch { /* labels already best-effort */ }
+
+                string name = string.IsNullOrWhiteSpace(CompanyNameTextBox.Text)
+                    ? ("Contact " + contactId)
+                    : CompanyNameTextBox.Text.Trim();
+                LogContactAudit("Send Reminder", "manual checkup email sent", contactIdOverride: contactId);
+                NotifyForceAction("Send Reminder", "Reminder email sent to " + name + ".", false);
+            }
+            catch (Exception ex)
+            {
+                LogContactAudit("Send Reminder failed", ex.Message);
+                NotifyForceAction("Send Reminder", "Error sending reminder: " + ex.Message, true);
             }
         }
 

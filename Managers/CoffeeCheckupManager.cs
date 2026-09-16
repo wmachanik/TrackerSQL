@@ -2114,6 +2114,172 @@ namespace TrackerSQL.Managers
             return new SendCheckEmailTextsRepository().GetTexts();
         }
 
+        /// <summary>
+        /// Sends a one-off coffee checkup reminder for a contact (reminder email only; no order created).
+        /// Uses Messages.resx wording (not the Send Coffee Checkup template table).
+        /// Updates last-sent / reminder count and logs like a normal checkup send.
+        /// Returns null on success, otherwise an error message.
+        /// </summary>
+        public string SendManualReminder(int contactId)
+        {
+            if (contactId <= 0)
+                return "No contact selected.";
+
+            try
+            {
+                if (!_emailManager.ValidateConfiguration())
+                    return "Email configuration is invalid — cannot send reminder.";
+
+                var contact = _contactsRepository.GetById(contactId);
+                if (contact == null)
+                    return "Contact not found.";
+
+                if (IsInternalCustomer(contactId))
+                    return "Internal contacts do not receive checkup reminders.";
+
+                string recipient = !string.IsNullOrWhiteSpace(contact.EmailAddress)
+                    ? contact.EmailAddress.Trim()
+                    : (contact.AltEmailAddress ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(recipient))
+                    return "Contact has no email address.";
+
+                if (contact.Enabled == false)
+                    return "Contact is disabled — enable them before sending a reminder.";
+
+                int reminderCount = contact.ReminderCount ?? 0;
+                if (reminderCount >= SystemConstants.CheckupConstants.MaxReminders)
+                    return "Contact has already reached the maximum reminder count.";
+
+                var toRemind = BuildManualReminderContact(contact);
+                if (toRemind == null)
+                    return "Could not build reminder data for this contact.";
+
+                // Email wording from Messages.resx — no SendCheckupEmailTextsTbl dependency.
+                string body = MessageProvider.Get(MessageKeys.CoffeeCheckup.BodyReminderOnly);
+                if (reminderCount + 1 == 6)
+                    body = MessageProvider.Get(MessageKeys.CoffeeCheckup.BodyFinalWarning) + body;
+
+                var emailData = new SendCheckEmailTexts
+                {
+                    Header = MessageProvider.Get(MessageKeys.CoffeeCheckup.ManualReminderIntro),
+                    Body = body,
+                    Footer = string.Empty
+                };
+
+                string orderType = string.Empty; // reminder only
+                string emailSubject = _emailManager.GetEmailSubject(orderType);
+                _emailManager.IncludeConfiguredCc = true;
+                _emailManager.AddEmailToBatch(toRemind, emailData, orderType, emailSubject);
+                var batchResult = _emailManager.SendBatch();
+
+                bool sent = batchResult != null && batchResult.IsSuccess;
+                if (!sent)
+                {
+                    LogReminderAttempt(toRemind, orderType, false);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        "Manual reminder failed for contact " + contactId + ": "
+                        + (batchResult?.ErrorMessage ?? "unknown"));
+                    return "Failed to send reminder email"
+                        + (string.IsNullOrWhiteSpace(batchResult?.ErrorMessage)
+                            ? "."
+                            : ": " + batchResult.ErrorMessage);
+                }
+
+                if (!UpdateCustomerReminderData(toRemind, out string updateFailureReason))
+                {
+                    LogReminderAttempt(toRemind, orderType, true);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                        "Manual reminder emailed but reminder count update failed for contact "
+                        + contactId + ": " + (updateFailureReason ?? "unknown"));
+                    return "Reminder emailed, but could not update reminder count"
+                        + (string.IsNullOrWhiteSpace(updateFailureReason) ? "." : ": " + updateFailureReason);
+                }
+
+                LogReminderAttempt(toRemind, orderType, true);
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                    "Manual reminder sent to " + FormatContactDisplayName(toRemind)
+                    + " (ID " + contactId + ")");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup,
+                    "SendManualReminder error for contact " + contactId + ": " + ex.Message);
+                return "Error sending reminder: " + ex.Message;
+            }
+        }
+
+        private ContactToRemindWithItems BuildManualReminderContact(Contact contact)
+        {
+            if (contact == null || contact.ContactID <= 0)
+                return null;
+
+            var usage = _contactsUsageRepository.GetByContactId(contact.ContactID);
+            DateTime today = TimeZoneUtils.Now().Date;
+            DateTime delivery = usage?.NextCoffeeBy?.Date ?? today.AddDays(7);
+            if (delivery < today)
+                delivery = today.AddDays(7);
+
+            DateTime prep = new TrackerTools().GetClosestNextPreparationDate(delivery.AddDays(-3));
+            if (prep.Date > delivery.Date)
+                prep = new TrackerTools().GetClosestNextPreparationDate(today);
+
+            bool requiresPo = false;
+            try
+            {
+                var acc = new ContactsAccInfoRepository().GetByContactId(contact.ContactID);
+                requiresPo = acc?.RequiresPurchOrder == true;
+            }
+            catch { /* optional */ }
+
+            var toRemind = new ContactToRemindWithItems
+            {
+                CustomerID = contact.ContactID,
+                CompanyName = contact.CompanyName ?? string.Empty,
+                ContactTitle = contact.ContactTitle ?? string.Empty,
+                ContactFirstName = contact.ContactFirstName ?? string.Empty,
+                ContactAltFirstName = contact.ContactAltFirstName ?? string.Empty,
+                EmailAddress = contact.EmailAddress ?? string.Empty,
+                AltEmailAddress = contact.AltEmailAddress ?? string.Empty,
+                AreaID = contact.AreaID ?? 0,
+                CustomerTypeID = contact.ContactTypeID ?? 0,
+                EquipTypeID = contact.EquipTypeID ?? 0,
+                TypicallySecToo = contact.TypicallySecToo ?? false,
+                PreferredAgentID = contact.PreferredAgentID ?? 0,
+                SalesAgentID = contact.SalesAgentID ?? 0,
+                UsesFilter = contact.UsesFilter ?? false,
+                autofulfill = contact.AutoFulfill ?? false,
+                enabled = contact.Enabled != false,
+                AlwaysSendChkUp = contact.AlwaysSendChkUp ?? false,
+                ReminderCount = contact.ReminderCount ?? 0,
+                Notes = contact.Notes ?? string.Empty,
+                RequiresPurchOrder = requiresPo,
+                LastDateSentReminder = contact.LastDateSentReminder ?? DateTime.MinValue,
+                NextPreparationDate = prep.Date,
+                NextDeliveryDate = delivery.Date,
+                NextCoffee = usage?.NextCoffeeBy?.Date ?? delivery.Date,
+                NextClean = usage?.NextCleanOn?.Date ?? DateTime.MinValue,
+                NextFilter = usage?.NextFilterEst?.Date ?? DateTime.MinValue,
+                NextDescal = usage?.NextDescaleEst?.Date ?? DateTime.MinValue,
+                NextService = usage?.NextServiceEst?.Date ?? DateTime.MinValue
+            };
+
+            var typicalItems = _coffeeCheckupRepository.GetCustomerTypicalItems(contact.ContactID)
+                ?? new List<CustomerTypicalItem>();
+            toRemind.ItemsContactRequires = typicalItems.Select(item => new ItemContactRequires
+            {
+                CustomerID = contact.ContactID,
+                ItemID = item.ItemID,
+                ItemQty = item.Quantity,
+                ItemPackagID = item.PackagingID,
+                AutoFulfill = false,
+                RecurringOrder = false,
+                RecurringOrderItemID = 0
+            }).ToList();
+
+            return toRemind;
+        }
+
         public string UpdateEmailTexts(SendCheckEmailTexts emailTexts, int originalId)
         {
             return new SendCheckEmailTextsRepository().UpdateTexts(emailTexts, originalId);

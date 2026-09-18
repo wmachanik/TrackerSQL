@@ -60,6 +60,8 @@ namespace TrackerSQL.Classes
             public const string ErrorInvalidToken = "DisableClient.ErrorInvalidToken";
             public const string ErrorCustomerNotFound = "DisableClient.ErrorCustomerNotFound";
             public const string ErrorGeneral = "DisableClient.ErrorGeneral";
+            public const string ErrorReturnHint = "DisableClient.ErrorReturnHint";
+            public const string ReturnHome = "DisableClient.ReturnHome";
             
             // Goodbye email messages
             public const string GoodbyeSubject = "DisableClient.GoodbyeSubject";
@@ -76,6 +78,8 @@ namespace TrackerSQL.Classes
             // Admin notification messages
             public const string AdminSubjectTemplate = "DisableClient.AdminSubjectTemplate";
             public const string AdminBodyHeader = "DisableClient.AdminBodyHeader";
+            public const string AdminChoiceAll = "DisableClient.AdminChoiceAll";
+            public const string AdminChoiceReminders = "DisableClient.AdminChoiceReminders";
             public const string AdminRecurringFound = "DisableClient.AdminRecurringFound";
             public const string AdminRecurringNone = "DisableClient.AdminRecurringNone";
             public const string AdminManualActionRequired = "DisableClient.AdminManualActionRequired";
@@ -170,6 +174,8 @@ namespace TrackerSQL.Classes
             public const string ConfirmationFooter = "Order.ConfirmationFooter";
             public const string ConfirmationPORequired = "Order.ConfirmationPORequired";
             public const string ConfirmationPOReceived = "Order.ConfirmationPOReceived";
+            public const string ConfirmationTableDeliveryLabel = "Order.ConfirmationTableDeliveryLabel";
+            public const string ConfirmationTableOrderLabel = "Order.ConfirmationTableOrderLabel";
         }
         public static class OrderDetail
         {

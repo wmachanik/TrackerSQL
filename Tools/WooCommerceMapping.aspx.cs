@@ -3199,6 +3199,7 @@ namespace TrackerSQL.Tools
             gvDispatchPeople.DataSource = rows;
             gvDispatchPeople.DataBind();
             chkTrackingNumberRequired.Checked = settings.TrackingNumberRequired;
+            MarkOriginal(chkTrackingNumberRequired, chkTrackingNumberRequired.Checked);
         }
 
         protected void gvDispatchPeople_PageIndexChanging(object sender, GridViewPageEventArgs e)
@@ -3459,6 +3460,13 @@ namespace TrackerSQL.Tools
             chkImportAddressTitleCase.Checked = settings.ImportAddressTitleCase;
             chkImportPhoneReplacePlus27.Checked = settings.ImportPhoneReplacePlus27;
             chkImportPhoneFormatSa.Checked = settings.ImportPhoneFormatSa;
+            MarkOriginal(chkImportAddressIncludeProvince, chkImportAddressIncludeProvince.Checked);
+            MarkOriginal(chkImportAddressIncludeCountry, chkImportAddressIncludeCountry.Checked);
+            MarkOriginal(chkImportAddressDeduplicateSuburb, chkImportAddressDeduplicateSuburb.Checked);
+            MarkOriginal(chkImportAddressStripCapeTown, chkImportAddressStripCapeTown.Checked);
+            MarkOriginal(chkImportAddressTitleCase, chkImportAddressTitleCase.Checked);
+            MarkOriginal(chkImportPhoneReplacePlus27, chkImportPhoneReplacePlus27.Checked);
+            MarkOriginal(chkImportPhoneFormatSa, chkImportPhoneFormatSa.Checked);
         }
 
         private void BindGeneralTab()
@@ -3503,6 +3511,19 @@ namespace TrackerSQL.Tools
             var autoItem = ddlGeneralAutoPull.Items.FindByValue(autoPull);
             if (autoItem != null)
                 autoItem.Selected = true;
+
+            StampGeneralOriginals();
+        }
+
+        private void StampGeneralOriginals()
+        {
+            MarkOriginal(ddlGeneralCompanyMode);
+            MarkOriginal(ddlGeneralNoteLineFormat);
+            MarkOriginal(ddlGeneralAutoPull);
+            MarkOriginal(chkGeneralAppendTracking, chkGeneralAppendTracking.Checked);
+            MarkOriginal(chkGeneralWriteExpectedDelivery, chkGeneralWriteExpectedDelivery.Checked);
+            if (lstGeneralNotePartOrder != null)
+                lstGeneralNotePartOrder.Attributes["data-original"] = GetNotePartOrderFromList();
         }
 
         protected void btnSaveGeneralSettings_Click(object sender, EventArgs e)
@@ -3578,8 +3599,12 @@ namespace TrackerSQL.Tools
             lstGeneralNotePartOrder.Items.Insert(newIdx, item);
             lstGeneralNotePartOrder.SelectedIndex = newIdx;
 
-            // Re-number display labels while keeping values.
+            // Re-number display labels while keeping values. Keep data-original from last BindGeneralTab
+            // so Move up/down enables Save without rewriting the baseline.
+            string savedOriginal = lstGeneralNotePartOrder.Attributes["data-original"];
             BindNotePartOrderList(GetNotePartOrderFromList());
+            if (!string.IsNullOrEmpty(savedOriginal))
+                lstGeneralNotePartOrder.Attributes["data-original"] = savedOriginal;
             if (newIdx >= 0 && newIdx < lstGeneralNotePartOrder.Items.Count)
                 lstGeneralNotePartOrder.SelectedIndex = newIdx;
         }

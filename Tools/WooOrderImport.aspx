@@ -61,7 +61,7 @@
                                 <asp:DropDownList ID="ddlMode" runat="server" CssClass="sys-prefs-input"
                                     AutoPostBack="true" CausesValidation="false"
                                     OnSelectedIndexChanged="ddlMode_SelectedIndexChanged">
-                                    <asp:ListItem Value="SinceLastSync" Text="Since last import sync" Selected="True" />
+                                    <asp:ListItem Value="SinceLastSync" Text="Since last imported Woo ID" Selected="True" />
                                     <asp:ListItem Value="Today" Text="Today's orders" />
                                     <asp:ListItem Value="ThisWeek" Text="Last 7 days" />
                                     <asp:ListItem Value="Specific" Text="Specific order #" />

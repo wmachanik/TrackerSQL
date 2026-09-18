@@ -229,12 +229,35 @@
             && type !== 'reset';
     }
 
+    function isIgnoredUnsavedTarget(el) {
+        var node = el;
+        while (node && node.nodeType === 1) {
+            if (node.getAttribute && node.getAttribute('data-tracker-unsaved-ignore') === '1') {
+                return true;
+            }
+            if (node.classList && (node.classList.contains('confirm-modal-overlay')
+                || node.classList.contains('confirm-modal'))) {
+                return true;
+            }
+            var id = node.id || '';
+            if (id.indexOf('Waybill') >= 0 || id.indexOf('waybill') >= 0) {
+                return true;
+            }
+            node = node.parentElement || node.parentNode;
+        }
+        return false;
+    }
+
     function onDelegatedEdit(e) {
         if (!cfg || !cfg.rootId || !e || !e.target) {
             return;
         }
         var root = byId(cfg.rootId);
         if (!root || !root.contains(e.target)) {
+            return;
+        }
+        // Waybill / confirm overlays save via their own postback — don't mark the order header dirty.
+        if (isIgnoredUnsavedTarget(e.target)) {
             return;
         }
         if (!isEditableField(e.target)) {

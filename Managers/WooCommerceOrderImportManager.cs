@@ -604,6 +604,7 @@ namespace TrackerSQL.Managers
 
             EnsurePreviewContext();
             DateTime? maxImportedDate = null;
+            long maxImportedWooId = 0;
 
             foreach (var row in rows.Where(r => r != null && r.Selected))
             {
@@ -661,6 +662,8 @@ namespace TrackerSQL.Managers
                         if (!maxImportedDate.HasValue || preview.OrderDate.Value > maxImportedDate.Value)
                             maxImportedDate = preview.OrderDate.Value;
                     }
+                    if (preview.WooOrderId > maxImportedWooId)
+                        maxImportedWooId = preview.WooOrderId;
 
                     result.Messages.Add(string.Format(CultureInfo.InvariantCulture,
                         "{0} Woo #{1} → Tracker order #{2}.",
@@ -676,8 +679,8 @@ namespace TrackerSQL.Managers
                 }
             }
 
-            if (maxImportedDate.HasValue)
-                TouchOrdersSyncCursor(maxImportedDate.Value, updatedBy);
+            if (maxImportedDate.HasValue || maxImportedWooId > 0)
+                TouchOrdersSyncCursor(maxImportedDate, maxImportedWooId, updatedBy);
 
             WooCommerceUserLog.Write(
                 "Order import batch",
@@ -708,9 +711,16 @@ namespace TrackerSQL.Managers
                     return _api.GetLatestOrders(creds, 1);
 
                 case WooOrderImportMode.SinceLastSync:
-                    var settings = _settingsManager.GetSettings();
-                    DateTime since = settings.LastOrdersSyncUtc ?? DateTime.UtcNow.AddDays(-30);
-                    return _api.GetOrdersSince(creds, since);
+                {
+                    // Sync from the highest Woo order id already imported (live Tracker link).
+                    long maxImportedWooId = _wooOrderRepo.GetMaxWooOrderId();
+                    if (maxImportedWooId <= 0)
+                    {
+                        // First import — avoid pulling the entire Woo history.
+                        return _api.GetOrdersSince(creds, DateTime.UtcNow.AddDays(-30));
+                    }
+                    return _api.GetOrdersAfterId(creds, maxImportedWooId);
+                }
 
                 case WooOrderImportMode.Today:
                 {
@@ -2735,12 +2745,33 @@ ORDER BY CASE WHEN WooVariationId = @V THEN 0 ELSE 1 END";
                 return db.ExecuteScalar<string>(sql, p) ?? string.Empty;
         }
 
-        private void TouchOrdersSyncCursor(DateTime latestOrderUtc, string updatedBy)
+        private void TouchOrdersSyncCursor(DateTime? latestOrderUtc, long maxWooOrderId, string updatedBy)
         {
             var settings = _settingsManager.GetSettings();
-            if (!settings.LastOrdersSyncUtc.HasValue || latestOrderUtc > settings.LastOrdersSyncUtc.Value)
-                settings.LastOrdersSyncUtc = latestOrderUtc;
-            _settingsRepo.SaveSettings(settings, updatedBy);
+            bool changed = false;
+
+            if (latestOrderUtc.HasValue
+                && (!settings.LastOrdersSyncUtc.HasValue || latestOrderUtc.Value > settings.LastOrdersSyncUtc.Value))
+            {
+                settings.LastOrdersSyncUtc = latestOrderUtc.Value;
+                changed = true;
+            }
+
+            if (maxWooOrderId > 0)
+            {
+                long previousId = 0;
+                if (!string.IsNullOrWhiteSpace(settings.LastOrdersSyncOrderNumber))
+                    long.TryParse(settings.LastOrdersSyncOrderNumber.Trim(), NumberStyles.Integer,
+                        CultureInfo.InvariantCulture, out previousId);
+                if (maxWooOrderId > previousId)
+                {
+                    settings.LastOrdersSyncOrderNumber = maxWooOrderId.ToString(CultureInfo.InvariantCulture);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                _settingsRepo.SaveSettings(settings, updatedBy);
         }
 
         private static string FirstNonEmpty(params string[] values)

@@ -80,6 +80,9 @@ namespace TrackerSQL
 
             ltrlReenableMessage.Text = MessageProvider.Format(
                 MessageKeys.DisableClient.ReenableMessage, mailTo);
+
+            ltrlErrorHeader.Text = MessageProvider.Get(MessageKeys.DisableClient.ErrorHeader);
+            ltrlReturnHomeText.Text = MessageProvider.Get(MessageKeys.DisableClient.ReturnHome);
         }
 
         private void LoadContact()
@@ -115,23 +118,26 @@ namespace TrackerSQL
         {
             confirmationSection.Style["display"] = "block";
             successSection.Style["display"] = "none";
+            errorSection.Style["display"] = "none";
         }
 
         private void ShowSuccess()
         {
             confirmationSection.Style["display"] = "none";
             successSection.Style["display"] = "block";
+            errorSection.Style["display"] = "none";
             btnConfirmDisable.Enabled = false;
         }
 
         private void ShowInvalidRequest(string message)
         {
-            CompanyNameLabel.Text = Server.HtmlEncode(message);
-            CompanyNameSuccessLabel.Text = Server.HtmlEncode(message);
+            // Message is the headline so "Customer not found" is clear; no preference form.
+            ltrlErrorHeader.Text = Server.HtmlEncode(message ?? string.Empty);
+            ltrlErrorMessage.Text = MessageProvider.Get(MessageKeys.DisableClient.ErrorReturnHint);
+            confirmationSection.Style["display"] = "none";
+            successSection.Style["display"] = "none";
+            errorSection.Style["display"] = "block";
             btnConfirmDisable.Enabled = false;
-            if (rbRemindersOnly != null) rbRemindersOnly.Enabled = false;
-            if (rbDisableAll != null) rbDisableAll.Enabled = false;
-            ShowConfirmation();
         }
     }
 }

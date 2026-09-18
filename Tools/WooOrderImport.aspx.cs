@@ -8,6 +8,7 @@ using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Tools
 {
@@ -314,16 +315,17 @@ namespace TrackerSQL.Tools
         {
             try
             {
-                var s = _settings.GetSettings();
-                if (s.LastOrdersSyncUtc.HasValue)
+                long maxWooId = new WooOrderInfoRepository().GetMaxWooOrderId();
+                if (maxWooId > 0)
                 {
                     litLastSync.Text = string.Format(CultureInfo.InvariantCulture,
-                        "Last orders sync (UTC): {0:yyyy-MM-dd HH:mm}. Default pull is today’s orders (app local time). “Since last import sync” uses this cursor.",
-                        s.LastOrdersSyncUtc.Value);
+                        "Highest imported Woo order ID: {0}. “Since last import sync” pulls Woo orders with a higher ID.",
+                        maxWooId);
                 }
                 else
                 {
-                    litLastSync.Text = "No previous order import sync recorded. Default pull is today’s orders.";
+                    litLastSync.Text =
+                        "No imported Woo orders yet. “Since last import sync” falls back to the last 30 days until the first import.";
                 }
             }
             catch

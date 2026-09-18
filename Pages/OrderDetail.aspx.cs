@@ -548,12 +548,16 @@ namespace TrackerSQL.Pages
                 return;
             BindWaybillRow();
             pnlWaybillEdit.Visible = true;
+            if (upnlWaybillEdit != null)
+                upnlWaybillEdit.Update();
         }
 
         private void HideWaybillEditPopup()
         {
             if (pnlWaybillEdit != null)
                 pnlWaybillEdit.Visible = false;
+            if (upnlWaybillEdit != null)
+                upnlWaybillEdit.Update();
         }
 
         protected void btnEditWaybill_Click(object sender, ImageClickEventArgs e)
@@ -602,6 +606,8 @@ namespace TrackerSQL.Pages
                 HideWaybillEditPopup();
 
             BindWaybillRow();
+            if (pnlOrderHeader != null)
+                pnlOrderHeader.Update();
         }
 
         /// <summary>
@@ -1160,6 +1166,8 @@ namespace TrackerSQL.Pages
         {
             if (pnlOrderHeader != null && pnlOrderHeader.UpdateMode == UpdatePanelUpdateMode.Conditional)
                 pnlOrderHeader.Update();
+            if (upnlWaybillEdit != null && upnlWaybillEdit.UpdateMode == UpdatePanelUpdateMode.Conditional)
+                upnlWaybillEdit.Update();
 
             RefreshNewItemPanel();
             RefreshStatusPanel();
@@ -2566,6 +2574,14 @@ namespace TrackerSQL.Pages
             {
                 SetStatusMessage("Save the order before sending confirmation.", isError: true);
                 return;
+            }
+
+            // Persist unsaved header/line edits before emailing (same pattern as Order Done).
+            bool headerDirty = hdnHeaderDirty != null && hdnHeaderDirty.Value == "1";
+            if (headerDirty)
+            {
+                if (!TrySaveOrderChanges(navigatingAway: false))
+                    return;
             }
 
             string contactId = GetEffectiveContactId().ToString();

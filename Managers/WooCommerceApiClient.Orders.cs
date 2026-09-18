@@ -71,6 +71,49 @@ namespace TrackerSQL.Managers
             return GetOrdersFiltered(creds, sinceUtc, null, maxPages);
         }
 
+        /// <summary>
+        /// Orders with Woo id greater than <paramref name="afterWooOrderId"/>.
+        /// Pages newest-first by id and stops once a page is entirely at/below the cursor.
+        /// </summary>
+        public List<WooOrderDto> GetOrdersAfterId(ApiCredentials creds, long afterWooOrderId, int maxPages = 20)
+        {
+            if (afterWooOrderId < 0)
+                afterWooOrderId = 0;
+
+            var results = new List<WooOrderDto>();
+            int page = 1;
+            while (page <= maxPages)
+            {
+                string path = "/wp-json/wc/v3/orders?per_page=100&page=" + page.ToString(CultureInfo.InvariantCulture)
+                    + "&orderby=id&order=desc";
+
+                JToken json = GetJson(creds, path);
+                var batch = ParseOrderList(json);
+                if (batch.Count == 0)
+                    break;
+
+                bool sawAtOrBelowCursor = false;
+                foreach (WooOrderDto order in batch)
+                {
+                    if (order == null || order.Id <= 0)
+                        continue;
+                    if (order.Id > afterWooOrderId)
+                        results.Add(order);
+                    else
+                        sawAtOrBelowCursor = true;
+                }
+
+                if (sawAtOrBelowCursor || batch.Count < 100)
+                    break;
+                page++;
+            }
+
+            // Oldest-first for a stable preview (matches date-asc behaviour).
+            return results
+                .OrderBy(o => o.Id)
+                .ToList();
+        }
+
         public List<WooOrderDto> GetOrdersInRange(ApiCredentials creds, DateTime fromUtc, DateTime toUtc, int maxPages = 20)
         {
             if (toUtc < fromUtc)

@@ -58,7 +58,7 @@ namespace TrackerSQL.Managers
                 AccEmail = contact?.EmailAddress?.Trim(),
                 AltAccEmail = contact?.AltEmailAddress?.Trim(),
                 ContactVATNo = ExtractVatNumber(order),
-                InvoiceTypeID = SystemConstants.InvoiceTypeConstants.Standard,
+                InvoiceTypeID = SystemConstants.InvoiceTypeConstants.DefaultForNewContact,
                 Enabled = true
             };
 

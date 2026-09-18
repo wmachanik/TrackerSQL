@@ -183,15 +183,14 @@ namespace TrackerSQL.Managers
 
         /// <summary>
         /// Thanks a newly tracking-enabled contact and includes the self-service disable link.
+        /// Returns true when an email was sent.
         /// </summary>
-        public void TrySendTrackingWelcomeEmail(Contact contact)
+        public bool TrySendTrackingWelcomeEmail(Contact contact)
         {
             if (contact == null || contact.ContactID <= 0)
-                return;
+                return false;
             if (contact.Enabled == false)
-                return;
-            if (contact.PredictionDisabled == true)
-                return;
+                return false;
 
             string recipient = !string.IsNullOrWhiteSpace(contact.EmailAddress)
                 ? contact.EmailAddress.Trim()
@@ -200,7 +199,7 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                     "Tracking welcome skipped for contact " + contact.ContactID + ": no email.");
-                return;
+                return false;
             }
 
             try
@@ -222,18 +221,19 @@ namespace TrackerSQL.Managers
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                         "Tracking welcome sent to " + recipient + " contact=" + contact.ContactID);
+                    return true;
                 }
-                else
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
-                        MessageProvider.Format(MessageKeys.Email.SendError,
-                            contact.CompanyName, email.LastErrorSummary ?? email.myResults.sResult));
-                }
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    MessageProvider.Format(MessageKeys.Email.SendError,
+                        contact.CompanyName, email.LastErrorSummary ?? email.myResults.sResult));
+                return false;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                     "Tracking welcome failed for contact " + contact.ContactID + ": " + ex.Message);
+                return false;
             }
         }
 

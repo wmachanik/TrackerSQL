@@ -497,6 +497,7 @@
     <Compile Include="Managers\ItemGroupDataSource.cs" />
     <Compile Include="Managers\IOrderChangeRequestService.cs" />
     <Compile Include="Managers\MessagesResourceManager.cs" />
+    <Compile Include="Managers\ManualSqlHistoryStore.cs" />
     <Compile Include="Managers\NextPrepDateDataSource.cs" />
     <Compile Include="Managers\OrderChangeRequestLoggingService.cs" />
     <Compile Include="Managers\OrderDetailManager .cs" />

@@ -192,7 +192,40 @@
                             </td>
                         </tr>
                     </table>
-                    <asp:Panel ID="pnlWaybillEdit" runat="server" CssClass="confirm-modal-overlay" Visible="false">
+                    <asp:HiddenField ID="hdnHeaderDirty" runat="server" Value="0" />
+                    <div class="order-detail-toolbar button-row">
+                        <asp:Button ID="btnSaveHeader" runat="server" Text="Save"
+                            CssClass="filter-panel-btn order-detail-btn order-detail-save-btn"
+                            OnClick="btnSaveHeader_Click" CausesValidation="false"
+                            ToolTip="Save your changes to this order" Enabled="false" />
+                        <asp:Button ID="btnSaveAndReturn" runat="server" Text="Save &amp; Return"
+                            CssClass="filter-panel-btn order-detail-btn order-detail-save-btn"
+                            OnClientClick="return window.orderHeaderPrepareReturnNavigation ? window.orderHeaderPrepareReturnNavigation() : true;"
+                            OnClick="btnSaveAndReturn_Click" CausesValidation="false"
+                            ToolTip="Save your changes and return to the previous page" Enabled="false" />
+                        <button id="btnUndoHeader" runat="server" type="submit"
+                            class="btn btn-undo order-detail-btn order-detail-btn-icon"
+                            onserverclick="btnUndoHeader_Click" causesvalidation="false"
+                            title="Undo the last saved change to this order" style="display:none;">
+                            <asp:Image ID="imgUndoHeader" runat="server" ImageUrl="~/images/imgButtons/Undo.png" AlternateText="Undo last saved change" />
+                        </button>
+                        <asp:Button ID="btnLastOrder" runat="server" Text="Last Order"
+                            CssClass="filter-panel-btn order-detail-btn order-detail-last-btn" OnClick="btnLastOrder_Click"
+                            ToolTip="Load items from this contact's previous order" Visible="false" />
+                    </div>
+                </ContentTemplate>
+                <Triggers>
+                    <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
+                    <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
+                </Triggers>
+            </asp:UpdatePanel>
+            <%-- Outside header dirty root so waybill/courier edits do not trip leave warnings. --%>
+            <asp:UpdatePanel ID="upnlWaybillEdit" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                <ContentTemplate>
+                    <asp:Panel ID="pnlWaybillEdit" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                        data-tracker-unsaved-ignore="1">
                         <div class="confirm-modal">
                             <h2>Update waybill</h2>
                             <p>Correct the tracking / waybill details. Optionally email the customer the new number.</p>
@@ -221,33 +254,9 @@
                             </div>
                         </div>
                     </asp:Panel>
-                    <asp:HiddenField ID="hdnHeaderDirty" runat="server" Value="0" />
-                    <div class="order-detail-toolbar button-row">
-                        <asp:Button ID="btnSaveHeader" runat="server" Text="Save"
-                            CssClass="filter-panel-btn order-detail-btn order-detail-save-btn"
-                            OnClick="btnSaveHeader_Click" CausesValidation="false"
-                            ToolTip="Save your changes to this order" Enabled="false" />
-                        <asp:Button ID="btnSaveAndReturn" runat="server" Text="Save &amp; Return"
-                            CssClass="filter-panel-btn order-detail-btn order-detail-save-btn"
-                            OnClientClick="return window.orderHeaderPrepareReturnNavigation ? window.orderHeaderPrepareReturnNavigation() : true;"
-                            OnClick="btnSaveAndReturn_Click" CausesValidation="false"
-                            ToolTip="Save your changes and return to the previous page" Enabled="false" />
-                        <button id="btnUndoHeader" runat="server" type="submit"
-                            class="btn btn-undo order-detail-btn order-detail-btn-icon"
-                            onserverclick="btnUndoHeader_Click" causesvalidation="false"
-                            title="Undo the last saved change to this order" style="display:none;">
-                            <asp:Image ID="imgUndoHeader" runat="server" ImageUrl="~/images/imgButtons/Undo.png" AlternateText="Undo last saved change" />
-                        </button>
-                        <asp:Button ID="btnLastOrder" runat="server" Text="Last Order"
-                            CssClass="filter-panel-btn order-detail-btn order-detail-last-btn" OnClick="btnLastOrder_Click"
-                            ToolTip="Load items from this contact's previous order" Visible="false" />
-                    </div>
                 </ContentTemplate>
                 <Triggers>
-                    <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
-                    <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
-                    <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
-                    <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnEditWaybill" EventName="Click" />
                 </Triggers>
             </asp:UpdatePanel>
         </div>
@@ -422,7 +431,9 @@
                             ToolTip="new order (AltShftN)" />
                         <asp:Button ID="btnConfirmOrder" runat="server" Text="Email Confirmation" AccessKey="E"
                             CssClass="filter-panel-btn"
-                            OnClick="btnConfirmOrder_Click" ToolTip="send Email confirmation (AltShftE)" />
+                            OnClick="btnConfirmOrder_Click"
+                            OnClientClick="return (window.TrackerUnsaved && TrackerUnsaved.confirmSaveThenContinue) ? TrackerUnsaved.confirmSaveThenContinue('You have unsaved changes. Save them before emailing the confirmation?') : true;"
+                            ToolTip="send Email confirmation (AltShftE)" />
                         <asp:Button ID="btnMerge" runat="server" Text="Merge" Visible="false"
                             CssClass="filter-panel-btn"
                             OnClick="btnMerge_Click" CausesValidation="false"

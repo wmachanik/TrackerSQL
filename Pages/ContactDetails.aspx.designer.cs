@@ -408,6 +408,36 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnInsert;
 
         /// <summary>
+        /// pnlDuplicatePrompt control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlDuplicatePrompt;
+
+        /// <summary>
+        /// litDuplicateTitle control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litDuplicateTitle;
+
+        /// <summary>
+        /// litDuplicatePrompt control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litDuplicatePrompt;
+
+        /// <summary>
+        /// btnDuplicateAddAnyway control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateAddAnyway;
+
+        /// <summary>
+        /// btnDuplicateMerge control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateMerge;
+
+        /// <summary>
+        /// btnDuplicateCancel control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateCancel;
+
+        /// <summary>
         /// btnCopy2AccInfo control.
         /// </summary>
         /// <remarks>

@@ -101,28 +101,35 @@ namespace TrackerSQL.Managers
             }
         }
 
-        private void AppendLineWithBreak(StringBuilder builder, string content)
+        private void AppendSection(StringBuilder builder, string content)
         {
-            builder.AppendLine(content + "<br/><br/>");
+            if (builder == null || string.IsNullOrWhiteSpace(content))
+                return;
+            builder.Append(content.Trim());
         }
 
         private string BuildEmailBody(ContactToRemindWithItems contact, SendCheckEmailTexts emailData, string orderType)
         {
             var emailBuilder = new StringBuilder();
 
-            emailBuilder.AppendLine(BuildGreeting(contact));
-            AppendLineWithBreak(emailBuilder, CleanupSpacing(emailData.Header));
-            AppendLineWithBreak(emailBuilder, CleanupSpacing(emailData.Body));
-            AppendLineWithBreak(emailBuilder, BuildItemsList(contact));
-            AppendLineWithBreak(emailBuilder, emailData.Footer);
-            emailBuilder.AppendLine(BuildDisableLink(contact));
+            AppendSection(emailBuilder, BuildGreeting(contact));
+            if (emailData != null)
+            {
+                AppendSection(emailBuilder, CleanupSpacing(emailData.Header));
+                AppendSection(emailBuilder, CleanupSpacing(emailData.Body));
+            }
+            AppendSection(emailBuilder, BuildItemsList(contact));
+            if (emailData != null)
+                AppendSection(emailBuilder, CleanupSpacing(emailData.Footer));
+            AppendSection(emailBuilder, BuildDisableLink(contact));
 
             string fullEmail = emailBuilder.ToString();
             fullEmail = fullEmail.Replace("[#PREPDATE#]", contact.NextPreparationDate.ToString("dddd, dd MMM"));
             fullEmail = fullEmail.Replace("[#DELIVERYDATE#]", contact.NextDeliveryDate.ToString("dddd, dd MMM"));
 
             string signature = GetEmailSignatureWithFallback();
-            fullEmail += "<br/>" + signature;
+            if (!string.IsNullOrWhiteSpace(signature))
+                fullEmail += signature;
 
             return fullEmail;
         }
@@ -151,9 +158,9 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"Error getting email signature: {ex.Message}");
                 string userName = GetCurrentUserName();
-                return $"<br/>Kind regards,<br/>{userName}<br/><b>a member of the Quaffee Team</b><br/>" +
-                       "?? <a href='mailto:orders@quaffee.co.za'>orders@quaffee.co.za</a><br/>" +
-                       "?? <a href='http://www.quaffee.co.za'>www.quaffee.co.za</a><br/>";
+                return $"<p style=\"margin:12px 0 0 0;\">Kind regards,<br/>{userName}<br/><b>a member of the Quaffee Team</b><br/>" +
+                       "<a href='mailto:orders@quaffee.co.za'>orders@quaffee.co.za</a><br/>" +
+                       "<a href='http://www.quaffee.co.za'>www.quaffee.co.za</a></p>";
             }
         }
 
@@ -203,26 +210,25 @@ namespace TrackerSQL.Managers
                 return string.Empty;
 
             var html = new StringBuilder();
-            html.AppendLine(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableIntro));
-            html.AppendLine(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableStart));
-            html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableHeader),
+            html.Append(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableStart));
+            html.Append(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableHeader),
                 MessageProvider.Get(MessageKeys.CoffeeCheckup.TableCompanyContact),
                 contact.CompanyName));
-            html.AppendLine("<tbody>");
-            html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
+            html.Append("<tbody>");
+            html.Append(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
                 MessageProvider.Get(MessageKeys.CoffeeCheckup.TableNextPreparationDate),
                 contact.NextPreparationDate.ToString("dd MMM, ddd"),
                 ""));
-            html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowAlt),
+            html.Append(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowAlt),
                 "Next estimate dispatch date",
                 contact.NextDeliveryDate.ToString("dd MMM, ddd"),
                 ""));
             string orderType = GetOrderTypeForDisplay(contact);
-            html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
+            html.Append(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
                 MessageProvider.Get(MessageKeys.CoffeeCheckup.TableType),
                 orderType,
                 ""));
-            html.AppendLine(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowColspan),
+            html.Append(string.Format(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowColspan),
                 MessageProvider.Get(MessageKeys.CoffeeCheckup.TableListOfItems)));
 
             for (int i = 0; i < contact.ItemsContactRequires.Count; i++)
@@ -240,14 +246,14 @@ namespace TrackerSQL.Managers
                     ? MessageKeys.CoffeeCheckup.HtmlTableRowNormal
                     : MessageKeys.CoffeeCheckup.HtmlTableRowAlt;
 
-                html.AppendLine(string.Format(MessageProvider.Get(rowTemplate),
+                html.Append(string.Format(MessageProvider.Get(rowTemplate),
                     itemDesc,
                     qtyWithPackaging,
                     ""));
             }
 
-            html.AppendLine("</tbody>");
-            html.AppendLine("</table>");
+            html.Append("</tbody>");
+            html.Append("</table>");
 
             return html.ToString();
         }
@@ -306,7 +312,7 @@ namespace TrackerSQL.Managers
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"DISABLE LINK ERROR for customer {contact.CustomerID}: {ex.Message}");
-                return $"<br/><br/><p>If you would prefer not to receive these reminders, " +
+                return $"<p style=\"margin:12px 0 0 0;\">If you would prefer not to receive these reminders, " +
                        $"<a href='https://tracker.quaffee.co.za/DisableClient.aspx?{SystemConstants.UrlParameterConstants.CustomerID}={contact.CustomerID}'>click here to disable them</a>.</p>";
             }
         }

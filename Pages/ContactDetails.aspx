@@ -43,6 +43,9 @@
         <Triggers>
             <asp:AsyncPostBackTrigger ControlID="btnUpdate" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnInsert" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnDuplicateAddAnyway" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnDuplicateMerge" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnDuplicateCancel" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnCopy2AccInfo" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnForceNext" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnForceCheckup" EventName="Click" />
@@ -228,6 +231,30 @@
                     </td>
                 </tr>
             </table>
+
+            <asp:Panel ID="pnlDuplicatePrompt" runat="server" Visible="false"
+                CssClass="confirm-modal-overlay" data-tracker-unsaved-ignore="1">
+                <div class="confirm-modal">
+                    <h2><asp:Literal ID="litDuplicateTitle" runat="server" Text="Possible duplicate contact" /></h2>
+                    <div class="confirm-modal-option">
+                        <asp:Literal ID="litDuplicatePrompt" runat="server" />
+                    </div>
+                    <div class="button-row confirm-modal-buttons">
+                        <asp:Button ID="btnDuplicateAddAnyway" runat="server" Text="Add as new (unique name)"
+                            CssClass="filter-panel-btn" OnClick="btnDuplicateAddAnyway_Click"
+                            CausesValidation="false"
+                            ToolTip="Create/save with a unique name (appends a number if needed)" />
+                        <asp:Button ID="btnDuplicateMerge" runat="server" Text="Merge into existing"
+                            CssClass="filter-panel-btn" OnClick="btnDuplicateMerge_Click"
+                            CausesValidation="false"
+                            ToolTip="Fill blank fields on the existing contact from this form, then open that contact" />
+                        <asp:Button ID="btnDuplicateCancel" runat="server" Text="Cancel"
+                            CssClass="filter-panel-btn" OnClick="btnDuplicateCancel_Click"
+                            CausesValidation="false"
+                            ToolTip="Do not create or change contacts" />
+                    </div>
+                </div>
+            </asp:Panel>
 
             <div class="status-message mt-12" id="pnlStatus" runat="server">
                 <asp:Literal ID="ltrlStatus" Text="" runat="server" />

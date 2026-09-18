@@ -133,7 +133,7 @@
     <value>Adjusted Dates: Prep {0}, Delivery {1}</value>
   </data>
   <data name="CoffeeCheckup.BodyFinalWarning" xml:space="preserve">
-    <value>&lt;div style='color: red; font-weight: bold;'&gt;⚠️ FINAL REMINDER: This is the last automated reminder we'll send. If you no longer need coffee reminders, please let us know.&lt;/div&gt;&lt;br/&gt;</value>
+    <value>&lt;div style="color: red; font-weight: bold; margin:0 0 8px 0;"&gt;FINAL REMINDER: This is the last automated reminder we'll send. If you no longer need coffee reminders, please let us know.&lt;/div&gt;</value>
   </data>
   <data name="CoffeeCheckup.BodyLastRecurringOrder" xml:space="preserve">
     <value>&lt;div style='color: #a65c00; font-weight: bold;'&gt;Please note: this is the last delivery under your recurring order (ends {0}). After this, the recurring order will stop unless you arrange a new one with us.&lt;/div&gt;&lt;br/&gt;</value>
@@ -142,10 +142,10 @@
     <value>&lt;p&gt;Your {0} is ready for processing:&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.BodyReminderOnly" xml:space="preserve">
-    <value>&lt;p&gt;It's time for your next coffee order! Based on your previous orders, here's what we think you might need:&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Would you like us to prepare another coffee order for you? Based on your previous orders, here is what we think you might need:&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.ManualReminderIntro" xml:space="preserve">
-    <value>&lt;p&gt;Just a friendly coffee checkup from Quaffee — we thought you might be ready for your next order.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Just a friendly coffee checkup from Quaffee — would you like us to prepare another order for you? Based on your previous orders, here is what we think you might need:&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.ClosureAdjustmentPrefix" xml:space="preserve">
     <value>Adjusted for closure date: {0}</value>
@@ -178,7 +178,7 @@
     <value>Failed to insert records into temporary tables</value>
   </data>
   <data name="CoffeeCheckup.FooterDisableLink" xml:space="preserve">
-    <value>&lt;br/&gt;&lt;p&gt;If you would prefer not to receive these reminders, &lt;a href='{0}'&gt;click here to disable them&lt;/a&gt;.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:12px 0 0 0;"&gt;If you would prefer not to receive these reminders, &lt;a href='{0}'&gt;click here to disable them&lt;/a&gt;.&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.FooterOrderAdded" xml:space="preserve">
     <value>&lt;p&gt;✅ &lt;strong&gt;Good news!&lt;/strong&gt; We've automatically created an order for you with the items above.&lt;/p&gt;</value>
@@ -187,10 +187,10 @@
     <value>&lt;p&gt;📋 &lt;a href='{0}'&gt;View your order details here&lt;/a&gt;&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.GreetingGeneric" xml:space="preserve">
-    <value>&lt;p&gt;Hi Coffee Lover,&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Hi Coffee Lover,&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.GreetingWithName" xml:space="preserve">
-    <value>&lt;p&gt;Hi {0},&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Hi {0},&lt;/p&gt;</value>
   </data>
   <data name="CoffeeCheckup.HolidayClosureEmailNote" xml:space="preserve">
     <value>&lt;i&gt;Heads-up:&lt;/i&gt; Upcoming holidays or scheduled closures may affect delivery dates.</value>
@@ -205,7 +205,7 @@
     <value>&lt;tr style="background-color: #f2f2f2;"&gt;&lt;td colspan="2" style="font-weight: bold; padding: 8px; border-bottom: 1px solid #ccc;"&gt;{0}: {1}&lt;/td&gt;&lt;/tr&gt;</value>
   </data>
   <data name="CoffeeCheckup.HtmlTableIntro" xml:space="preserve">
-    <value>&lt;p&gt;Here are the details for your next coffee delivery:&lt;/p&gt;</value>
+    <value></value>
   </data>
   <data name="CoffeeCheckup.HtmlTableRowAlt" xml:space="preserve">
     <value>&lt;tr&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee; font-weight: bold; background-color: #f0f0f0; width: 40%;"&gt;{0}&lt;/td&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee;"&gt;{1}&lt;/td&gt;&lt;/tr&gt;</value>
@@ -217,7 +217,7 @@
     <value>&lt;tr&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee; font-weight: bold; background-color: #f9f9f9; width: 40%;"&gt;{0}&lt;/td&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee;"&gt;{1}&lt;/td&gt;&lt;/tr&gt;</value>
   </data>
   <data name="CoffeeCheckup.HtmlTableStart" xml:space="preserve">
-    <value>&lt;table cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; margin: 10px 0;"&gt;</value>
+    <value>&lt;table cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; margin: 8px 0 4px 0;"&gt;</value>
   </data>
   <data name="CoffeeCheckup.OrderTypeAutoFulfill" xml:space="preserve">
     <value>Auto-fulfill Order</value>
@@ -301,10 +301,10 @@
     <value>Reminder count reset for customer {0}, force enable: {1}</value>
   </data>
   <data name="Customer.TrackingWelcomeSubject" xml:space="preserve">
-    <value>Thank you for your Quaffee order — coffee checkup reminders</value>
+    <value>Welcome to Quaffee's order tracking</value>
   </data>
   <data name="Customer.TrackingWelcomeBody" xml:space="preserve">
-    <value>&lt;p&gt;Dear {0},&lt;/p&gt;&lt;p&gt;Thank you for your order. We've enabled coffee checkup reminders for &lt;strong&gt;{1}&lt;/strong&gt; so we may send a friendly reminder if we think you might need coffee again.&lt;/p&gt;&lt;p&gt;Prefer not to receive these reminders, or want to disable your account entirely? You can update your preferences here:&lt;br /&gt;&lt;a href="{2}"&gt;{2}&lt;/a&gt;&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Dear {0},&lt;/p&gt;&lt;p style="margin:0 0 8px 0;"&gt;We've added &lt;strong&gt;{1}&lt;/strong&gt; to our contact tracking system. This lets us (and you) keep a history of your orders, and uses some statistical calculations to estimate when you may next need coffee.&lt;/p&gt;&lt;p style="margin:0 0 8px 0;"&gt;You can choose not to receive reminders at any time, and you can also disable yourself entirely if you prefer.&lt;/p&gt;&lt;p style="margin:0 0 8px 0;"&gt;To do that now, &lt;a href="{2}"&gt;set my preferences now&lt;/a&gt;.&lt;/p&gt;</value>
   </data>
   <data name="DeliveryCalculation.CalculatedOptimalDates" xml:space="preserve">
     <value>Calculated optimal dates for {0} - Target day {1}: Roast {2}, Delivery {3}</value>
@@ -370,19 +370,26 @@
     <value>Weekly target {0}, optimal delivery {1}</value>
   </data>
   <data name="DisableClient.AdminBodyHeader" xml:space="preserve">
-    <value>Customer has disabled coffee checkup reminders:
+    <value>A contact updated coffee checkup preferences via the self-service email link:
 
 Customer ID: {0}
 Company Name: {1}
-Disabled Date: {2}
-Method: Self-service via email link
+Date: {2}
+Choice: {3}
+Contact email: {4}
 
 </value>
   </data>
+  <data name="DisableClient.AdminChoiceAll" xml:space="preserve">
+    <value>Disable account entirely (Enabled = off, no checkup reminders)</value>
+  </data>
+  <data name="DisableClient.AdminChoiceReminders" xml:space="preserve">
+    <value>Stop coffee checkup reminders only (contact remains enabled)</value>
+  </data>
   <data name="DisableClient.AdminFooter" xml:space="preserve">
-    <value>A goodbye email has been sent to the customer.
+    <value>A dated note has been added on the contact record.
 
-No further action required unless customer contacts you directly.</value>
+No further action is required unless the contact asks to be re-enabled.</value>
   </data>
   <data name="DisableClient.AdminManualActionRequired" xml:space="preserve">
     <value>
@@ -406,7 +413,7 @@ Disabled recurring orders:
 </value>
   </data>
   <data name="DisableClient.AdminSubjectTemplate" xml:space="preserve">
-    <value>Customer Disabled Coffee Checkup Reminders - {0}</value>
+    <value>Self-service preference change — {0}</value>
   </data>
   <data name="DisableClient.ButtonCancel" xml:space="preserve">
     <value>Cancel &amp; Keep Reminders</value>
@@ -424,13 +431,19 @@ Disabled recurring orders:
     <value>&lt;p&gt;We've successfully disabled coffee checkup reminders for &lt;strong&gt;{0}&lt;/strong&gt; as requested.&lt;/p&gt;</value>
   </data>
   <data name="DisableClient.ErrorCustomerNotFound" xml:space="preserve">
-    <value>Customer not found. Please contact us for assistance.</value>
+    <value>Customer not found.</value>
   </data>
   <data name="DisableClient.ErrorGeneral" xml:space="preserve">
     <value>An error occurred while processing your request. Please try again or contact us for assistance.</value>
   </data>
   <data name="DisableClient.ErrorHeader" xml:space="preserve">
-    <value>❌ Error</value>
+    <value>Unable to continue</value>
+  </data>
+  <data name="DisableClient.ErrorReturnHint" xml:space="preserve">
+    <value>You can return to our website below.</value>
+  </data>
+  <data name="DisableClient.ReturnHome" xml:space="preserve">
+    <value>Return to quaffee.co.za</value>
   </data>
   <data name="DisableClient.ErrorInvalidParams" xml:space="preserve">
     <value>Invalid or missing parameters. Please use the link from your email.</value>
@@ -538,10 +551,10 @@ Disabled recurring orders:
     <value>Failed to send email to {0}: {1}</value>
   </data>
   <data name="Email.SignatureNoUser" xml:space="preserve">
-    <value>&lt;br/&gt;&lt;br/&gt;Kind regards,&lt;br/&gt;&lt;br/&gt;&lt;b&gt;The Quaffee Team&lt;/b&gt;&lt;br/&gt;📧 &lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;🌐 &lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;br/&gt;</value>
+    <value>&lt;p style="margin:12px 0 0 0;"&gt;Kind regards,&lt;br/&gt;&lt;b&gt;The Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
   </data>
   <data name="Email.SignatureTemplate" xml:space="preserve">
-    <value>&lt;br/&gt;&lt;br/&gt;Kind regards,&lt;br/&gt;&lt;br/&gt;{0}, &lt;b&gt;a member of the Quaffee Team&lt;/b&gt;&lt;br/&gt;📧 &lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;🌐 &lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;br/&gt;</value>
+    <value>&lt;p style="margin:12px 0 0 0;"&gt;Kind regards,&lt;br/&gt;{0}, &lt;b&gt;a member of the Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
   </data>
   <data name="Email.ThankYouMessage" xml:space="preserve">
     <value>Thank you for your business!</value>
@@ -559,22 +572,28 @@ Disabled recurring orders:
     <value>Order Completed</value>
   </data>
   <data name="Order.ConfirmationDeliveryDate" xml:space="preserve">
-    <value>&lt;br /&gt;We currently expect your order to be delivered/dispatched on: {0}.</value>
+    <value>We currently expect your order to be delivered/dispatched on: {0}.</value>
   </data>
   <data name="Order.ConfirmationDeliveryStandard" xml:space="preserve">
-    <value>&lt;br /&gt;We will prepare the items for you to be {0} on {1}.</value>
+    <value>We will prepare the items for you to be {0} on {1}.</value>
   </data>
   <data name="Order.ConfirmationDeliverySoonerException" xml:space="preserve">
-    <value>&lt;br /&gt;Good news — we have stock of the item(s) ordered and are in your area, so we can deliver sooner than our usual website schedule. We currently expect delivery/dispatch on {0}.</value>
+    <value>Good news — we have stock of the item(s) ordered and are in your area, so we can deliver sooner than our usual website schedule. We currently expect delivery/dispatch on {0}.</value>
   </data>
   <data name="Order.ConfirmationFooter" xml:space="preserve">
-    <value>&lt;br /&gt;This email was sent automatically by Quaffee's order and tracking System.&lt;br /&gt;</value>
+    <value>&lt;p style="margin:12px 0 0 0; font-size:12px; color:#666;"&gt;This email was sent automatically by Quaffee's order and tracking system.&lt;/p&gt;</value>
   </data>
   <data name="Order.ConfirmationHeader" xml:space="preserve">
-    <value>We confirm the following order:&lt;br /&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;We confirm the following order:&lt;/p&gt;</value>
   </data>
   <data name="Order.ConfirmationIntro" xml:space="preserve">
-    <value>Dear {0}&lt;br /&gt;&lt;p&gt;Thank you for ordering from Quaffee. &lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Dear {0},&lt;/p&gt;&lt;p style="margin:0 0 8px 0;"&gt;Thank you for ordering from Quaffee.&lt;/p&gt;</value>
+  </data>
+  <data name="Order.ConfirmationTableDeliveryLabel" xml:space="preserve">
+    <value>Expected delivery / dispatch</value>
+  </data>
+  <data name="Order.ConfirmationTableOrderLabel" xml:space="preserve">
+    <value>Order #</value>
   </data>
   <data name="Order.ConfirmationPOReceived" xml:space="preserve">
     <value>We have associated the Purchase Order {0} with this order.</value>
@@ -592,7 +611,7 @@ Disabled recurring orders:
     <value>Order confirmed successfully</value>
   </data>
   <data name="Order.EmailFooter" xml:space="preserve">
-    <value>Thank you for choosing Quaffee!&lt;br /&gt;</value>
+    <value>&lt;p style="margin:8px 0 0 0;"&gt;Thank you for choosing Quaffee!&lt;/p&gt;</value>
   </data>
   <data name="Order.FutureMessage" xml:space="preserve">
     <value>This order is scheduled for future processing</value>
@@ -1093,7 +1112,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>When opening Order Import:</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullNote" xml:space="preserve">
-    <value>Automatically pulls a preview if there is no restored session preview. Default is since last import sync. Returning from Order Detail / Contact still restores the last preview first.</value>
+    <value>Automatically pulls a preview if there is no restored session preview. Default is since the highest imported Woo order ID. Returning from Order Detail / Contact still restores the last preview first.</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullNone" xml:space="preserve">
     <value>Do not auto-pull (manual Pull only)</value>
@@ -1102,7 +1121,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Auto-pull today's orders</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullSinceSync" xml:space="preserve">
-    <value>Auto-pull since last import sync</value>
+    <value>Auto-pull since last imported Woo ID</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullThisWeek" xml:space="preserve">
     <value>Auto-pull last 7 days</value>

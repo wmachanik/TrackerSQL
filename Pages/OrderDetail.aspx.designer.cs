@@ -49,6 +49,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Label lblDispatchStatus;
         protected global::System.Web.UI.WebControls.Label lblWaybill;
         protected global::System.Web.UI.WebControls.ImageButton btnEditWaybill;
+        protected global::System.Web.UI.UpdatePanel upnlWaybillEdit;
         protected global::System.Web.UI.WebControls.Panel pnlWaybillEdit;
         protected global::System.Web.UI.WebControls.Label lblWaybillEditNumber;
         protected global::System.Web.UI.WebControls.TextBox tbxWaybillEdit;

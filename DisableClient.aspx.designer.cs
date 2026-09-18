@@ -35,5 +35,9 @@ namespace TrackerSQL
         protected global::System.Web.UI.WebControls.Label CompanyNameSuccessLabel;
         protected global::System.Web.UI.WebControls.Literal ltrlSuccessDetails;
         protected global::System.Web.UI.WebControls.Literal ltrlReenableMessage;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl errorSection;
+        protected global::System.Web.UI.WebControls.Literal ltrlErrorHeader;
+        protected global::System.Web.UI.WebControls.Literal ltrlErrorMessage;
+        protected global::System.Web.UI.WebControls.Literal ltrlReturnHomeText;
     }
 }

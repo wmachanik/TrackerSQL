@@ -160,7 +160,7 @@
                         OnClick="btnConfirmDisable_Click"
                         OnClientClick="return confirm('Are you sure you want to update your reminder preferences?');" />
 
-                    <a href="https://www.quaffee.co.za" class="btn btn-secondary">
+                    <a href="https://quaffee.co.za" class="btn btn-secondary">
                         <asp:Literal ID="ltrlCancelText" runat="server" />
                     </a>
                 </div>
@@ -195,8 +195,22 @@
                 </div>
             </div>
 
+            <div id="errorSection" runat="server" style="display: none;">
+                <div class="content">
+                    <h2 style="color: #c82333;"><asp:Literal ID="ltrlErrorHeader" runat="server" /></h2>
+                    <p style="font-size: 18px; margin: 20px 0;">
+                        <asp:Literal ID="ltrlErrorMessage" runat="server" />
+                    </p>
+                </div>
+                <div class="buttons">
+                    <a href="https://quaffee.co.za" class="btn btn-secondary">
+                        <asp:Literal ID="ltrlReturnHomeText" runat="server" />
+                    </a>
+                </div>
+            </div>
+
             <div class="footer">
-               <p>Visit our website: <a href="https://www.quaffee.co.za" style="color: #2c5530; font-weight: bold;">www.quaffee.co.za</a></p>
+               <p>Visit our website: <a href="https://quaffee.co.za" style="color: #2c5530; font-weight: bold;">quaffee.co.za</a></p>
                 <p style="font-size: 12px; color: #999;">
                     This page allows you to manage your coffee checkup reminder preferences.
                 </p>

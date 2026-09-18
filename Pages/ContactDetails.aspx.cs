@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -584,6 +585,11 @@ namespace TrackerSQL.Pages
             int salesAgentId = PersonDefaults.GetDefaultSalesAgentId();
             if (salesAgentId > 0)
                 TrySelectDropDownByValue(ddlAgent, salesAgentId);
+
+            // Default account / invoice type to Standard for new contacts.
+            TrySelectDropDownByValue(
+                accInvoiceTypesDropDownList,
+                SystemConstants.InvoiceTypeConstants.DefaultForNewContact);
         }
 
         private int? ParseNullableInt(string value)
@@ -620,7 +626,9 @@ namespace TrackerSQL.Pages
                 AltAccFirstName = contact.ContactAltFirstName ?? string.Empty,
                 AltAccLastName = contact.ContactAltLastName ?? string.Empty,
                 AccEmail = contact.EmailAddress ?? string.Empty,
-                AltAccEmail = contact.AltEmailAddress ?? string.Empty
+                AltAccEmail = contact.AltEmailAddress ?? string.Empty,
+                InvoiceTypeID = SystemConstants.InvoiceTypeConstants.DefaultForNewContact,
+                Enabled = true
             };
 
             string billing = contact.BillingAddress ?? string.Empty;
@@ -826,7 +834,8 @@ namespace TrackerSQL.Pages
                 ContactID = contactId,
                 FullCoName = CoalesceText(form.FullCoName, defaults.FullCoName),
                 ContactVATNo = CoalesceText(form.ContactVATNo, defaults.ContactVATNo),
-                InvoiceTypeID = CoalesceFk(form.InvoiceTypeID, defaults.InvoiceTypeID),
+                InvoiceTypeID = CoalesceFk(form.InvoiceTypeID, defaults.InvoiceTypeID)
+                    ?? SystemConstants.InvoiceTypeConstants.DefaultForNewContact,
                 RequiresPurchOrder = form.RequiresPurchOrder ?? defaults.RequiresPurchOrder,
                 Enabled = form.Enabled ?? defaults.Enabled ?? true,
                 BillAddr1 = CoalesceText(form.BillAddr1, defaults.BillAddr1),
@@ -914,7 +923,7 @@ namespace TrackerSQL.Pages
             return TrySaveAccInfo(acc, out accWasSaved, out errorMessage);
         }
 
-        private bool TrySaveContact(out string errorMessage)
+        private bool TrySaveContact(out string errorMessage, bool allowDuplicateName = false)
         {
             errorMessage = null;
             try
@@ -942,6 +951,29 @@ namespace TrackerSQL.Pages
                 var contact = ReadContactFromForm(existing);
                 contact.ContactID = contactId;
 
+                string company = (contact.CompanyName ?? string.Empty).Trim();
+                var nameHits = repo.FindByCompanyNameExact(company, excludeContactId: contactId);
+                if (!allowDuplicateName && nameHits.Count > 0)
+                {
+                    string unique = repo.EnsureUniqueCompanyName(company, excludeContactId: contactId);
+                    ShowDuplicatePrompt(
+                        BuildDuplicatePromptHtml(company, nameHits, emailHits: null, forRename: true, suggestedUniqueName: unique),
+                        DuplicatePromptKind.Rename,
+                        mergeTargetId: 0);
+                    errorMessage = null;
+                    return false;
+                }
+
+                if (allowDuplicateName)
+                {
+                    string unique = repo.EnsureUniqueCompanyName(company, excludeContactId: contactId);
+                    if (!string.Equals(unique, company, StringComparison.OrdinalIgnoreCase))
+                    {
+                        contact.CompanyName = unique;
+                        CompanyNameTextBox.Text = unique;
+                    }
+                }
+
                 if (!repo.Update(contact))
                 {
                     errorMessage = "Contact save failed — no rows updated.";
@@ -958,6 +990,11 @@ namespace TrackerSQL.Pages
                 errorMessage = accWasSaved
                     ? "Contact and account info saved."
                     : "Contact saved.";
+                if (allowDuplicateName
+                    && !string.Equals(company, contact.CompanyName ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                {
+                    errorMessage += " Name saved as \"" + contact.CompanyName + "\" to keep dropdown names unique.";
+                }
                 LogContactAudit(
                     "Contact saved",
                     accWasSaved ? "accountInfo=yes" : "accountInfo=no",
@@ -1052,7 +1089,7 @@ namespace TrackerSQL.Pages
 
             if (TrySaveContact(out string message))
                 SetStatus(message ?? "Contact saved.", false);
-            else
+            else if (!string.IsNullOrEmpty(message))
                 SetStatus(message ?? "Save failed.", true);
 
             RefreshAfterSave();
@@ -1068,8 +1105,11 @@ namespace TrackerSQL.Pages
 
             if (!TrySaveContact(out string message))
             {
-                SetStatus(message ?? "Save failed.", true);
-                MarkDirtyFromServer();
+                if (!string.IsNullOrEmpty(message))
+                {
+                    SetStatus(message ?? "Save failed.", true);
+                    MarkDirtyFromServer();
+                }
                 RefreshAfterSave();
                 return;
             }
@@ -1102,50 +1142,8 @@ namespace TrackerSQL.Pages
                 }
 
                 var contact = ReadContactFromForm(null);
-
-                var repo = new ContactsRepository();
-                int newId = repo.Insert(contact);
-                if (newId <= 0)
-                {
-                    LogContactAudit("Contact create failed", "Insert returned 0");
-                    SetStatus("Insert failed — contact was not created.", true);
-                    RefreshAfterSave();
+                if (!TryConfirmDuplicatesThenInsert(contact, allowDuplicates: false))
                     return;
-                }
-
-                contact.ContactID = newId;
-                CompanyIDLabel.Text = newId.ToString();
-                SetButtonStatus(true);
-
-                if (!TrySaveAccInfo(newId, contact, out bool accWasSaved, out string accError))
-                {
-                    LogContactAudit(
-                        "Contact created (account info failed)",
-                        accError,
-                        contactIdOverride: newId);
-                    SetStatus("Contact created (ID " + newId + "), but account info failed: " + accError, true);
-                    RefreshAfterSave();
-                    return;
-                }
-
-                ClearDirtyState();
-                LogContactAudit(
-                    "Contact created",
-                    accWasSaved ? "accountInfo=yes" : "accountInfo=no",
-                    contactIdOverride: newId);
-                try
-                {
-                    new CustomerManager().TrySendTrackingWelcomeEmail(contact);
-                }
-                catch (Exception welcomeEx)
-                {
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Email,
-                        "ContactDetails tracking welcome: " + welcomeEx.Message);
-                }
-                SetStatus(accWasSaved
-                    ? "Contact and account info created (ID " + newId + ")."
-                    : "Contact created (ID " + newId + ").", false);
-                RefreshAfterSave();
             }
             catch (Exception ex)
             {
@@ -1154,6 +1152,441 @@ namespace TrackerSQL.Pages
                 SetStatus("Error inserting contact: " + ex.Message, true);
                 RefreshAfterSave();
             }
+        }
+
+        protected void btnDuplicateAddAnyway_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var kind = GetDuplicatePromptKind();
+                HideDuplicatePrompt();
+
+                if (kind == DuplicatePromptKind.Rename)
+                {
+                    if (!EnsureValidForSave())
+                    {
+                        RefreshAfterSave();
+                        return;
+                    }
+
+                    if (TrySaveContact(out string message, allowDuplicateName: true))
+                        SetStatus(message ?? "Contact saved.", false);
+                    else if (!string.IsNullOrEmpty(message))
+                        SetStatus(message ?? "Save failed.", true);
+                    RefreshAfterSave();
+                    return;
+                }
+
+                if (TryGetContactId(out _))
+                {
+                    SetStatus("This contact already exists — use Save instead of Insert.", true);
+                    RefreshAfterSave();
+                    return;
+                }
+
+                if (!EnsureValidForSave())
+                {
+                    RefreshAfterSave();
+                    return;
+                }
+
+                var contact = ReadContactFromForm(null);
+                if (!TryConfirmDuplicatesThenInsert(contact, allowDuplicates: true))
+                    return;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails duplicate add-anyway error: " + ex.Message);
+                SetStatus("Error inserting contact: " + ex.Message, true);
+                RefreshAfterSave();
+            }
+        }
+
+        protected void btnDuplicateMerge_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int targetId = GetDuplicateMergeTargetId();
+                HideDuplicatePrompt();
+
+                if (targetId <= 0)
+                {
+                    SetStatus("No existing contact selected to merge into.", true);
+                    RefreshAfterSave();
+                    return;
+                }
+
+                var repo = new ContactsRepository();
+                var existing = repo.GetById(targetId);
+                if (existing == null)
+                {
+                    SetStatus("Existing contact not found for merge.", true);
+                    RefreshAfterSave();
+                    return;
+                }
+
+                var incoming = ReadContactFromForm(null);
+                MergeContactFields(existing, incoming);
+
+                if (!repo.Update(existing))
+                {
+                    SetStatus("Merge failed — could not update the existing contact.", true);
+                    RefreshAfterSave();
+                    return;
+                }
+
+                TrySaveAccInfo(targetId, existing, out _, out _);
+
+                ClearDirtyState();
+                LogContactAudit("Contact fields merged into existing", "targetId=" + targetId, contactIdOverride: targetId);
+                LoadContact(targetId);
+                SetButtonStatus(true);
+                SetStatus("Merged form fields into existing contact (ID " + targetId + "). Blank fields were filled from what you entered.", false);
+                RefreshAfterSave();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails duplicate merge error: " + ex.Message);
+                SetStatus("Error merging contact: " + ex.Message, true);
+                RefreshAfterSave();
+            }
+        }
+
+        protected void btnDuplicateCancel_Click(object sender, EventArgs e)
+        {
+            HideDuplicatePrompt();
+            SetStatus("Cancelled — no changes were made.", isError: null);
+            RefreshAfterSave();
+        }
+
+        private enum DuplicatePromptKind
+        {
+            Insert,
+            Rename
+        }
+
+        private const string ViewStateDupKind = "ContactDupPromptKind";
+        private const string ViewStateDupMergeId = "ContactDupMergeTargetId";
+
+        private DuplicatePromptKind GetDuplicatePromptKind()
+        {
+            object raw = ViewState[ViewStateDupKind];
+            if (raw is DuplicatePromptKind kind)
+                return kind;
+            if (raw is int asInt && Enum.IsDefined(typeof(DuplicatePromptKind), asInt))
+                return (DuplicatePromptKind)asInt;
+            return DuplicatePromptKind.Insert;
+        }
+
+        private int GetDuplicateMergeTargetId()
+        {
+            object raw = ViewState[ViewStateDupMergeId];
+            if (raw is int id)
+                return id;
+            if (raw != null && int.TryParse(raw.ToString(), out int parsed))
+                return parsed;
+            return 0;
+        }
+
+        private void HideDuplicatePrompt()
+        {
+            if (pnlDuplicatePrompt != null)
+                pnlDuplicatePrompt.Visible = false;
+            if (litDuplicatePrompt != null)
+                litDuplicatePrompt.Text = string.Empty;
+            ViewState[ViewStateDupKind] = null;
+            ViewState[ViewStateDupMergeId] = null;
+        }
+
+        private void ShowDuplicatePrompt(string htmlMessage, DuplicatePromptKind kind, int mergeTargetId)
+        {
+            ViewState[ViewStateDupKind] = kind;
+            ViewState[ViewStateDupMergeId] = mergeTargetId;
+
+            if (litDuplicateTitle != null)
+            {
+                litDuplicateTitle.Text = kind == DuplicatePromptKind.Rename
+                    ? "Duplicate company name"
+                    : "Possible duplicate contact";
+            }
+
+            if (btnDuplicateAddAnyway != null)
+            {
+                btnDuplicateAddAnyway.Text = kind == DuplicatePromptKind.Rename
+                    ? "Save with unique name"
+                    : "Add as new (unique name)";
+            }
+
+            if (btnDuplicateMerge != null)
+                btnDuplicateMerge.Visible = kind == DuplicatePromptKind.Insert && mergeTargetId > 0;
+
+            if (pnlDuplicatePrompt != null)
+                pnlDuplicatePrompt.Visible = true;
+            if (litDuplicatePrompt != null)
+                litDuplicatePrompt.Text = htmlMessage ?? string.Empty;
+            SetStatus(string.Empty, false);
+            RefreshAfterSave();
+        }
+
+        /// <summary>
+        /// Blocks insert when name/email matches unless the user confirmed via Add anyway.
+        /// On allowDuplicates, appends a number so dropdown names stay unique.
+        /// </summary>
+        private bool TryConfirmDuplicatesThenInsert(Contact contact, bool allowDuplicates)
+        {
+            var repo = new ContactsRepository();
+            string company = (contact.CompanyName ?? string.Empty).Trim();
+            var nameHits = repo.FindByCompanyNameExact(company);
+            var emailHits = repo.FindByAnyEmailExact(contact.EmailAddress, contact.AltEmailAddress);
+
+            if (!allowDuplicates)
+            {
+                if (emailHits.Count > 0 || nameHits.Count > 0)
+                {
+                    int mergeTargetId = ResolveMergeTargetId(nameHits, emailHits);
+                    ShowDuplicatePrompt(
+                        BuildDuplicatePromptHtml(company, nameHits, emailHits, forRename: false, suggestedUniqueName: null),
+                        DuplicatePromptKind.Insert,
+                        mergeTargetId);
+                    return false;
+                }
+            }
+            else
+            {
+                string unique = repo.EnsureUniqueCompanyName(company);
+                if (!string.Equals(unique, company, StringComparison.OrdinalIgnoreCase))
+                {
+                    contact.CompanyName = unique;
+                    CompanyNameTextBox.Text = unique;
+                    ViewState["ContactUniqueNameApplied"] = unique;
+                }
+            }
+
+            return CompleteContactInsert(contact, repo);
+        }
+
+        private static int ResolveMergeTargetId(List<Contact> nameHits, List<Contact> emailHits)
+        {
+            Contact pick = PreferMergeCandidate(emailHits) ?? PreferMergeCandidate(nameHits);
+            return pick != null ? pick.ContactID : 0;
+        }
+
+        private static Contact PreferMergeCandidate(List<Contact> hits)
+        {
+            if (hits == null || hits.Count == 0)
+                return null;
+
+            Contact enabled = null;
+            foreach (Contact c in hits)
+            {
+                if (c == null || c.ContactID <= 0)
+                    continue;
+                if (c.Enabled != false)
+                    return c;
+                if (enabled == null)
+                    enabled = c;
+            }
+            return enabled;
+        }
+
+        private static string BuildDuplicatePromptHtml(
+            string company,
+            List<Contact> nameHits,
+            List<Contact> emailHits,
+            bool forRename,
+            string suggestedUniqueName)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            if (nameHits != null && nameHits.Count > 0)
+            {
+                sb.Append("<p>A contact with the name <strong>")
+                    .Append(System.Web.HttpUtility.HtmlEncode(company))
+                    .Append("</strong> already exists:</p><ul>");
+                AppendContactListItems(sb, nameHits, includeEmails: false);
+                sb.Append("</ul>");
+            }
+
+            if (!forRename && emailHits != null && emailHits.Count > 0)
+            {
+                sb.Append("<p>")
+                    .Append(nameHits != null && nameHits.Count > 0
+                        ? "Also, this email address is already used by:"
+                        : "This email address is already used by:")
+                    .Append("</p><ul>");
+                AppendContactListItems(sb, emailHits, includeEmails: true);
+                sb.Append("</ul>");
+            }
+
+            if (forRename)
+            {
+                sb.Append("<p>Company names must be unique in dropdown lists. Save as <strong>")
+                    .Append(System.Web.HttpUtility.HtmlEncode(suggestedUniqueName ?? (company + " 2")))
+                    .Append("</strong>, or cancel.</p>");
+            }
+            else
+            {
+                sb.Append("<p><strong>Add as new</strong> creates a separate contact with a unique name (a number is added if needed). ");
+                sb.Append("<strong>Merge into existing</strong> fills blank fields on the matched contact from what you entered. ");
+                sb.Append("<strong>Cancel</strong> leaves everything unchanged.</p>");
+            }
+
+            return sb.ToString();
+        }
+
+        private static void AppendContactListItems(System.Text.StringBuilder sb, List<Contact> hits, bool includeEmails)
+        {
+            int shown = 0;
+            foreach (Contact c in hits)
+            {
+                if (shown >= 8)
+                    break;
+                sb.Append("<li>")
+                    .Append(System.Web.HttpUtility.HtmlEncode(FormatDuplicateContactLabel(c)));
+                if (includeEmails)
+                {
+                    sb.Append(" — ")
+                        .Append(System.Web.HttpUtility.HtmlEncode(DescribeContactEmails(c)));
+                }
+                sb.Append("</li>");
+                shown++;
+            }
+            if (hits.Count > 8)
+                sb.Append("<li>…and ").Append(hits.Count - 8).Append(" more</li>");
+        }
+
+        private static string FormatDuplicateContactLabel(Contact c)
+        {
+            if (c == null)
+                return "(unknown)";
+            string name = string.IsNullOrWhiteSpace(c.CompanyName) ? "(no name)" : c.CompanyName.Trim();
+            string enabled = c.Enabled == false ? " [disabled]" : string.Empty;
+            return name + " (ID " + c.ContactID + ")" + enabled;
+        }
+
+        private static string DescribeContactEmails(Contact c)
+        {
+            if (c == null)
+                return string.Empty;
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(c.EmailAddress))
+                parts.Add(c.EmailAddress.Trim());
+            if (!string.IsNullOrWhiteSpace(c.AltEmailAddress))
+                parts.Add(c.AltEmailAddress.Trim());
+            return parts.Count == 0 ? "(no email)" : string.Join(" / ", parts);
+        }
+
+        /// <summary>
+        /// Fills blank/null fields on <paramref name="target"/> from <paramref name="source"/>.
+        /// Does not overwrite existing values; does not change ContactID / reminder counters.
+        /// </summary>
+        private static void MergeContactFields(Contact target, Contact source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(target.ContactTitle)) target.ContactTitle = source.ContactTitle;
+            if (string.IsNullOrWhiteSpace(target.ContactFirstName)) target.ContactFirstName = source.ContactFirstName;
+            if (string.IsNullOrWhiteSpace(target.ContactLastName)) target.ContactLastName = source.ContactLastName;
+            if (string.IsNullOrWhiteSpace(target.ContactAltFirstName)) target.ContactAltFirstName = source.ContactAltFirstName;
+            if (string.IsNullOrWhiteSpace(target.ContactAltLastName)) target.ContactAltLastName = source.ContactAltLastName;
+            if (string.IsNullOrWhiteSpace(target.Department)) target.Department = source.Department;
+            if (string.IsNullOrWhiteSpace(target.BillingAddress)) target.BillingAddress = source.BillingAddress;
+            if (!target.AreaID.HasValue || target.AreaID.Value <= 0) target.AreaID = source.AreaID;
+            if (string.IsNullOrWhiteSpace(target.StateOrProvince)) target.StateOrProvince = source.StateOrProvince;
+            if (string.IsNullOrWhiteSpace(target.PostalCode)) target.PostalCode = source.PostalCode;
+            if (string.IsNullOrWhiteSpace(target.CountryOrRegion)) target.CountryOrRegion = source.CountryOrRegion;
+            if (string.IsNullOrWhiteSpace(target.PhoneNumber)) target.PhoneNumber = source.PhoneNumber;
+            if (string.IsNullOrWhiteSpace(target.CellNumber)) target.CellNumber = source.CellNumber;
+            if (string.IsNullOrWhiteSpace(target.FaxNumber)) target.FaxNumber = source.FaxNumber;
+            if (string.IsNullOrWhiteSpace(target.EmailAddress)) target.EmailAddress = source.EmailAddress;
+            if (string.IsNullOrWhiteSpace(target.AltEmailAddress)) target.AltEmailAddress = source.AltEmailAddress;
+            if (!target.ContactTypeID.HasValue || target.ContactTypeID.Value <= 0) target.ContactTypeID = source.ContactTypeID;
+            if (!target.EquipTypeID.HasValue || target.EquipTypeID.Value <= 0) target.EquipTypeID = source.EquipTypeID;
+            if (!target.ItemPrefID.HasValue || target.ItemPrefID.Value <= 0) target.ItemPrefID = source.ItemPrefID;
+            if (!target.PriPrefQty.HasValue) target.PriPrefQty = source.PriPrefQty;
+            if (!target.PrefItemPackagingID.HasValue || target.PrefItemPackagingID.Value <= 0)
+                target.PrefItemPackagingID = source.PrefItemPackagingID;
+            if (!target.PreferredAgentID.HasValue || target.PreferredAgentID.Value <= 0)
+                target.PreferredAgentID = source.PreferredAgentID;
+            if (!target.PreferredCourierServiceID.HasValue || target.PreferredCourierServiceID.Value <= 0)
+                target.PreferredCourierServiceID = source.PreferredCourierServiceID;
+            if (!target.SalesAgentID.HasValue || target.SalesAgentID.Value <= 0)
+                target.SalesAgentID = source.SalesAgentID;
+            if (string.IsNullOrWhiteSpace(target.EquipentSN)) target.EquipentSN = source.EquipentSN;
+            if (string.IsNullOrWhiteSpace(target.Notes) && !string.IsNullOrWhiteSpace(source.Notes))
+                target.Notes = source.Notes;
+            else if (!string.IsNullOrWhiteSpace(source.Notes)
+                && !string.IsNullOrWhiteSpace(target.Notes)
+                && target.Notes.IndexOf(source.Notes, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                target.Notes = (target.Notes ?? string.Empty).TrimEnd()
+                    + "\nMerged from new contact form: " + source.Notes.Trim();
+            }
+        }
+
+        private bool CompleteContactInsert(Contact contact, ContactsRepository repo)
+        {
+            HideDuplicatePrompt();
+
+            int newId = repo.Insert(contact);
+            if (newId <= 0)
+            {
+                LogContactAudit("Contact create failed", "Insert returned 0");
+                SetStatus("Insert failed — contact was not created.", true);
+                RefreshAfterSave();
+                return false;
+            }
+
+            contact.ContactID = newId;
+            CompanyIDLabel.Text = newId.ToString();
+            SetButtonStatus(true);
+
+            if (!TrySaveAccInfo(newId, contact, out bool accWasSaved, out string accError))
+            {
+                LogContactAudit(
+                    "Contact created (account info failed)",
+                    accError,
+                    contactIdOverride: newId);
+                SetStatus("Contact created (ID " + newId + "), but account info failed: " + accError, true);
+                RefreshAfterSave();
+                return false;
+            }
+
+            ClearDirtyState();
+            LogContactAudit(
+                "Contact created",
+                accWasSaved ? "accountInfo=yes" : "accountInfo=no",
+                contactIdOverride: newId);
+
+            string welcomeNote = string.Empty;
+            try
+            {
+                bool sent = new CustomerManager().TrySendTrackingWelcomeEmail(contact);
+                welcomeNote = sent
+                    ? " Welcome email with preference / disable link sent."
+                    : " Welcome email not sent (no email address, or send failed — check email log).";
+            }
+            catch (Exception welcomeEx)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "ContactDetails tracking welcome: " + welcomeEx.Message);
+                welcomeNote = " Welcome email failed — check email log.";
+            }
+
+            string nameNote = string.Empty;
+            object uniqueApplied = ViewState["ContactUniqueNameApplied"];
+            ViewState["ContactUniqueNameApplied"] = null;
+            if (uniqueApplied != null && !string.IsNullOrWhiteSpace(uniqueApplied.ToString()))
+                nameNote = " Saved as \"" + uniqueApplied + "\".";
+
+            SetStatus((accWasSaved
+                ? "Contact and account info created (ID " + newId + ")."
+                : "Contact created (ID " + newId + ").")
+                + nameNote
+                + welcomeNote, false);
+            RefreshAfterSave();
+            return true;
         }
 
         protected void btnCopy2AccInfo_Click(object sender, EventArgs e)

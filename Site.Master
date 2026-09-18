@@ -220,11 +220,14 @@
                                         <asp:MenuItem NavigateUrl="~/Tools/LogViewer.aspx" Text="Log Viewer" Value="Logs" />
                                         <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="System Tools" Value="System Tools">
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="All Tools" Value="All Tools" />
-                                            <asp:MenuItem NavigateUrl="~/Tools/MoveDeliveryDate.aspx" Text="Move Del. Dt" Value="Move Delivery Date"></asp:MenuItem>
-                                            <asp:MenuItem NavigateUrl="~/Tools/DeliveryPromiseRules.aspx" Text="Delivery Promise" Value="DeliveryPromiseRules"></asp:MenuItem>
-                                            <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx" Text="System Preferences" Value="SystemPreferences"></asp:MenuItem>
-                                            <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mapping" Value="WooMapping"></asp:MenuItem>
-                                            <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag."></asp:MenuItem>
+                                            <asp:MenuItem NavigateUrl="~/Tools/MoveDeliveryDate.aspx" Text="Move Del. Dt" Value="Move Delivery Date" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/HolidayClosures.aspx" Text="Holiday Closures" Value="HolidayClosures" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/XMLtoSQL.aspx" Text="XML to SQL" Value="XMLtoSQL" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/MessagesEditor.aspx" Text="Messages Editor" Value="MessagesEditor" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx" Text="System Preferences" Value="SystemPreferences" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mapping" Value="WooMapping" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag." />
+                                            <asp:MenuItem NavigateUrl="~/Tools/LogViewer.aspx" Text="Log Viewer" Value="LogViewer" />
                                         </asp:MenuItem>
                                         <asp:MenuItem Text="Forms" Value="Forms">
                                             <asp:MenuItem NavigateUrl="~/Pages/LeaveApp.aspx" Text="Leave App" Value="Leave App"></asp:MenuItem>

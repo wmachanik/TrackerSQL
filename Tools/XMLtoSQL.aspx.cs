@@ -13,6 +13,7 @@ using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Xml;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 
 namespace TrackerSQL.Tools
 {
@@ -20,14 +21,126 @@ namespace TrackerSQL.Tools
     {
         private const string DefaultReturnUrl = "~/Tools/SystemTools.aspx";
         private const string LogName = "xmltosql";
+        private const string VsModeTab = "XmlToSql.ModeTab";
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (IsPostBack)
+            if (!IsPostBack)
+            {
+                SetDefaultFileName();
+                ShowModeTab(0);
+                SetStatus("Select an XML command file, then click Execute. Prefer SQLCommands_Test_SQLServer.xml for a safe smoke test.", isError: null);
+            }
+            else
+            {
+                ApplyTabHighlight(GetModeTab());
+            }
+
+            // Belt-and-suspenders: Tools/Web.config already restricts to Administrators.
+            if (!SecurityManager.IsAdmin())
+            {
+                Response.Redirect("~/Account/Login.aspx", true);
+            }
+        }
+
+        private int GetModeTab()
+        {
+            object v = ViewState[VsModeTab];
+            if (v is int i)
+                return i;
+            return 0;
+        }
+
+        private void ShowModeTab(int index)
+        {
+            if (index < 0) index = 0;
+            if (index > 1) index = 1;
+            ViewState[VsModeTab] = index;
+            if (mvModes != null)
+                mvModes.ActiveViewIndex = index;
+            ApplyTabHighlight(index);
+        }
+
+        private void ApplyTabHighlight(int index)
+        {
+            if (btnTabXml != null)
+                btnTabXml.CssClass = index == 0 ? "sys-prefs-tab active" : "sys-prefs-tab";
+            if (btnTabManual != null)
+                btnTabManual.CssClass = index == 1 ? "sys-prefs-tab active" : "sys-prefs-tab";
+        }
+
+        protected void btnTabXml_Click(object sender, EventArgs e)
+        {
+            ShowModeTab(0);
+            SetStatus("XML packs mode — pick a file and Execute.", isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnTabManual_Click(object sender, EventArgs e)
+        {
+            ShowModeTab(1);
+            BindManualHistory();
+            SetStatus("Manual SQL mode — enter a single statement, then Execute SQL.", isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        private void ClearResults()
+        {
+            pnlSQLResults.Controls.Clear();
+            gvSQLResults.DataSource = null;
+            gvSQLResults.DataBind();
+        }
+
+        private void BindManualHistory()
+        {
+            if (gvManualHistory == null)
+                return;
+            gvManualHistory.DataSource = ManualSqlHistoryStore.LoadAll();
+            gvManualHistory.DataBind();
+        }
+
+        private static string CurrentUserName()
+        {
+            try
+            {
+                string name = System.Web.HttpContext.Current?.User?.Identity?.Name;
+                if (string.IsNullOrWhiteSpace(name))
+                    return "(unknown)";
+                if (name.Contains("\\"))
+                    name = name.Substring(name.LastIndexOf('\\') + 1);
+                return name;
+            }
+            catch
+            {
+                return "(unknown)";
+            }
+        }
+
+        private void ShowSelectResult(string sql, DataTable table, string heading, bool truncatedNote = false)
+        {
+            if (table == null)
                 return;
 
-            SetDefaultFileName();
-            SetStatus("Select an XML command file, then click Execute. Prefer SQLCommands_Test_SQLServer.xml for a safe smoke test.", isError: null);
+            string note = truncatedNote
+                ? " <em>(history snapshot truncated)</em>"
+                : string.Empty;
+            var title = new Literal
+            {
+                Text = "<h4>" + Server.HtmlEncode(heading ?? "SELECT result") + "</h4>"
+                    + "<pre style='white-space:pre-wrap;'>" + Server.HtmlEncode(sql ?? string.Empty) + "</pre>"
+                    + "<p><em>Rows: " + table.Rows.Count + "</em>" + note + "</p>"
+            };
+            var grid = new GridView
+            {
+                CssClass = "results-table",
+                AutoGenerateColumns = true
+            };
+            grid.DataSource = table;
+            grid.DataBind();
+
+            pnlSQLResults.Controls.Add(title);
+            pnlSQLResults.Controls.Add(grid);
+            pnlSQLResults.Controls.Add(new Literal { Text = "<hr />" });
         }
 
         private void SetStatus(string message, bool? isError)
@@ -100,9 +213,7 @@ namespace TrackerSQL.Tools
 
         protected void GoButton_Click(object sender, EventArgs e)
         {
-            pnlSQLResults.Controls.Clear();
-            gvSQLResults.DataSource = null;
-            gvSQLResults.DataBind();
+            ClearResults();
 
             string filePath = FileNameTextBox.Text.Trim();
             if (string.IsNullOrEmpty(filePath))
@@ -158,6 +269,137 @@ namespace TrackerSQL.Tools
                 }
             }
 
+            BindSummary(commands);
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnManualExecute_Click(object sender, EventArgs e)
+        {
+            ClearResults();
+            ShowModeTab(1);
+
+            string sql = (tbxManualSql.Text ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(sql))
+            {
+                BindManualHistory();
+                SetStatus("Enter a SQL statement first.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            string typeChoice = (ddlManualType.SelectedValue ?? "auto").Trim().ToLowerInvariant();
+            string type = typeChoice == "auto" ? DetectSqlType(sql) : typeChoice;
+
+            var cmd = new SqlCommandResult
+            {
+                Type = type,
+                Sql = sql
+            };
+
+            AppLogger.WriteLog(LogName, "Manual SQL (" + type + "): " + cmd.SqlPreview);
+
+            DataTable selectTable = null;
+            try
+            {
+                selectTable = ExecuteCommand(cmd, 1);
+            }
+            catch (Exception ex)
+            {
+                cmd.Succeeded = false;
+                cmd.Error = "Exception: " + ex.Message;
+                AppLogger.WriteLog(LogName, "Manual SQL exception: " + ex.Message);
+            }
+
+            string historyMessage = cmd.Succeeded
+                ? (string.IsNullOrWhiteSpace(cmd.Error) ? "OK" : cmd.Error)
+                : (cmd.Error ?? "Failed");
+
+            try
+            {
+                ManualSqlHistoryStore.Add(
+                    cmd.Type,
+                    sql,
+                    cmd.Succeeded,
+                    historyMessage,
+                    selectTable,
+                    CurrentUserName());
+            }
+            catch (Exception histEx)
+            {
+                AppLogger.WriteLog(LogName, "Manual SQL history save failed: " + histEx.Message);
+            }
+
+            BindSummary(new List<SqlCommandResult> { cmd });
+            BindManualHistory();
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnManualClear_Click(object sender, EventArgs e)
+        {
+            ShowModeTab(1);
+            tbxManualSql.Text = string.Empty;
+            ddlManualType.SelectedValue = "auto";
+            ClearResults();
+            BindManualHistory();
+            SetStatus("Cleared.", isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        protected void gvManualHistory_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "OpenHistory", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            ShowModeTab(1);
+            string id = Convert.ToString(e.CommandArgument);
+            ManualSqlHistoryEntry entry = ManualSqlHistoryStore.GetById(id);
+            if (entry == null)
+            {
+                BindManualHistory();
+                SetStatus("History entry not found.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            tbxManualSql.Text = entry.Sql ?? string.Empty;
+            string type = (entry.Type ?? "auto").Trim().ToLowerInvariant();
+            if (ddlManualType.Items.FindByValue(type) != null)
+                ddlManualType.SelectedValue = type;
+            else
+                ddlManualType.SelectedValue = "auto";
+
+            ClearResults();
+            var summary = new SqlCommandResult
+            {
+                Type = entry.Type,
+                Sql = entry.Sql,
+                Succeeded = entry.Succeeded,
+                Error = entry.Message
+            };
+            BindSummary(new List<SqlCommandResult> { summary });
+
+            if (entry.ResultSnapshot != null && entry.ResultSnapshot.Columns != null
+                && entry.ResultSnapshot.Columns.Count > 0)
+            {
+                DataTable table = ManualSqlHistoryStore.SnapshotToDataTable(entry.ResultSnapshot);
+                ShowSelectResult(
+                    entry.Sql,
+                    table,
+                    "Saved SELECT result (" + entry.RanAtDisplay + ")",
+                    truncatedNote: entry.ResultSnapshot.Truncated);
+            }
+
+            BindManualHistory();
+            SetStatus(
+                "Loaded history from " + entry.RanAtDisplay
+                + (entry.Succeeded ? " (OK)." : " (failed).")
+                + " Edit and Execute SQL to run again.",
+                isError: entry.Succeeded ? (bool?)false : true);
+            upnlXmlToSql.Update();
+        }
+
+        private void BindSummary(List<SqlCommandResult> commands)
+        {
             gvSQLResults.DataSource = commands;
             gvSQLResults.DataBind();
 
@@ -180,11 +422,42 @@ namespace TrackerSQL.Tools
                 + " OK=" + successCount
                 + " Fail=" + failureCount
                 + " Skip=" + skippedCount);
-
-            upnlXmlToSql.Update();
         }
 
-        private void ExecuteCommand(SqlCommandResult cmd, int ordinal)
+        private static string DetectSqlType(string sql)
+        {
+            string s = StripInlineComments(sql ?? string.Empty).TrimStart();
+            if (string.IsNullOrEmpty(s))
+                return "unknown";
+
+            // Skip leading parentheses / WITH CTE → treat as SELECT when it queries.
+            if (s.StartsWith("with", StringComparison.OrdinalIgnoreCase)
+                || s.StartsWith("select", StringComparison.OrdinalIgnoreCase)
+                || s.StartsWith("(select", StringComparison.OrdinalIgnoreCase))
+                return "select";
+            if (s.StartsWith("insert", StringComparison.OrdinalIgnoreCase))
+                return "insert";
+            if (s.StartsWith("update", StringComparison.OrdinalIgnoreCase))
+                return "update";
+            if (s.StartsWith("delete", StringComparison.OrdinalIgnoreCase))
+                return "delete";
+            if (s.StartsWith("create", StringComparison.OrdinalIgnoreCase))
+                return "create";
+            if (s.StartsWith("alter", StringComparison.OrdinalIgnoreCase))
+                return "alter";
+            if (s.StartsWith("drop", StringComparison.OrdinalIgnoreCase))
+                return "drop";
+            if (s.StartsWith("exec", StringComparison.OrdinalIgnoreCase)
+                || s.StartsWith("execute", StringComparison.OrdinalIgnoreCase))
+                return "exec";
+
+            return "exec";
+        }
+
+        /// <summary>
+        /// Runs one command. For SELECT, returns the result table (also rendered into pnlSQLResults).
+        /// </summary>
+        private DataTable ExecuteCommand(SqlCommandResult cmd, int ordinal)
         {
             string type = (cmd.Type ?? string.Empty).Trim().ToLowerInvariant();
             AppLogger.WriteLog(LogName, "Executing command " + ordinal + ": " + type);
@@ -197,34 +470,19 @@ namespace TrackerSQL.Tools
                 if (!cmd.Succeeded)
                 {
                     cmd.Error = "SELECT failed or returned no result set.";
-                    return;
+                    return null;
                 }
 
-                var title = new Literal
-                {
-                    Text = "<h4>SELECT result " + ordinal + "</h4>"
-                        + "<pre style='white-space:pre-wrap;'>" + Server.HtmlEncode(cmd.Sql) + "</pre>"
-                        + "<p><em>Rows: " + table.Rows.Count + "</em></p>"
-                };
-                var grid = new GridView
-                {
-                    CssClass = "results-table",
-                    AutoGenerateColumns = true
-                };
-                grid.DataSource = table;
-                grid.DataBind();
-
-                pnlSQLResults.Controls.Add(title);
-                pnlSQLResults.Controls.Add(grid);
-                pnlSQLResults.Controls.Add(new Literal { Text = "<hr />" });
-                return;
+                cmd.Error = "Rows: " + table.Rows.Count;
+                ShowSelectResult(cmd.Sql, table, "SELECT result " + ordinal);
+                return table;
             }
 
             if (type == "disabled")
             {
                 cmd.Succeeded = true;
                 cmd.Error = "Skipped (disabled)";
-                return;
+                return null;
             }
 
             if (type == "update" || type == "insert" || type == "delete"
@@ -234,9 +492,12 @@ namespace TrackerSQL.Tools
                 if (type == "create" || type == "alter")
                     cmd.Sql = StripInlineComments(cmd.Sql);
 
-                string err = RunCommand(cmd.Sql);
+                string err;
+                int rowsAffected = RunCommand(cmd.Sql, out err);
                 cmd.Succeeded = string.IsNullOrWhiteSpace(err);
-                cmd.Error = err;
+                cmd.Error = cmd.Succeeded
+                    ? (rowsAffected >= 0 ? "Rows affected: " + rowsAffected : "OK")
+                    : err;
 
                 if (cmd.Succeeded && type == "create"
                     && cmd.Sql.Trim().StartsWith("create table", StringComparison.OrdinalIgnoreCase))
@@ -249,11 +510,12 @@ namespace TrackerSQL.Tools
                     }
                 }
 
-                return;
+                return null;
             }
 
             cmd.Succeeded = false;
             cmd.Error = "Unknown command type: " + cmd.Type;
+            return null;
         }
 
         private static List<SqlCommandResult> LoadCommandsFromXml(string filePath)
@@ -425,20 +687,21 @@ namespace TrackerSQL.Tools
             }
         }
 
-        private static string RunCommand(string sql)
+        private static int RunCommand(string sql, out string error)
         {
             try
             {
                 using (var db = new TrackerSQLDb())
                 {
-                    db.ExecuteNonQuery(sql);
+                    int rows = db.ExecuteNonQuery(sql);
+                    error = null;
+                    return rows;
                 }
-
-                return null;
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                error = ex.Message;
+                return -1;
             }
         }
 

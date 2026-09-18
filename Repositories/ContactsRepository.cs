@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using TrackerSQL.Models;
 using TrackerSQL.Classes;
 using static TrackerSQL.Classes.DbParamHelpers;
@@ -531,35 +532,88 @@ WHERE ContactID = @ContactID";
 
         /// <summary>
         /// Applies disable choice from the public email disable link (DisableClient.aspx).
-        /// Always records a dated note on the contact.
+        /// Sets PredictionDisabled (and optionally Enabled) using literal bit values, clears
+        /// AlwaysSendChkUp / reminder counters, and prepends a dated note — then verifies.
         /// </summary>
         public bool ApplyEmailDisableChoice(int contactId, bool disableAll)
         {
+            if (contactId <= 0)
+                return false;
+
+            string noteMessage = disableAll
+                ? "Self-service: contact fully disabled via email link (Enabled off, reminders off)."
+                : "Self-service: coffee checkup reminders disabled via email link (contact remains enabled).";
+            string noteLine = $"{TimeZoneUtils.Now():yyyy-MM-dd}: {noteMessage}\n";
+
+            // Use literal 1/0 for bits (same pattern as DisableContactReminders) — avoids any
+            // SqlParameter bit / same-name-as-column edge cases that can leave the flag unchanged.
             string sql = disableAll
-                ? @"UPDATE ContactsTbl SET Enabled = @Enabled, PredictionDisabled = @PredictionDisabled, AlwaysSendChkUp = @AlwaysSendChkUp WHERE ContactID = @ContactID"
-                : @"UPDATE ContactsTbl SET PredictionDisabled = @PredictionDisabled, AlwaysSendChkUp = @AlwaysSendChkUp WHERE ContactID = @ContactID";
+                ? @"UPDATE ContactsTbl
+SET Enabled = 0,
+    PredictionDisabled = 1,
+    AlwaysSendChkUp = 0,
+    ReminderCount = 0,
+    LastDateSentReminder = NULL,
+    Notes = @Notes + ISNULL(Notes, '')
+WHERE ContactID = @ContactID"
+                : @"UPDATE ContactsTbl
+SET PredictionDisabled = 1,
+    AlwaysSendChkUp = 0,
+    ReminderCount = 0,
+    LastDateSentReminder = NULL,
+    Notes = @Notes + ISNULL(Notes, '')
+WHERE ContactID = @ContactID";
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@PredictionDisabled", DataValue = true, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@AlwaysSendChkUp", DataValue = false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = noteLine, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
             };
 
-            if (disableAll)
+            int rows = ExecNonQuery(sql, parameters);
+            if (rows <= 0)
             {
-                parameters.Insert(0, new DBParameter { ParamName = "@Enabled", DataValue = false, DataDbType = DbType.Boolean });
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ApplyEmailDisableChoice: UPDATE affected 0 rows for contact " + contactId);
+                return false;
             }
 
-            bool ok = ExecNonQuery(sql, parameters) > 0;
-            if (ok)
+            Contact updated = GetById(contactId);
+            if (updated == null)
+                return false;
+
+            if (updated.PredictionDisabled != true)
             {
-                AppendSystemNote(contactId, disableAll
-                    ? "Contact disabled via email link (all reminders / contact)"
-                    : "Prediction disabled via email link");
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ApplyEmailDisableChoice: PredictionDisabled not set after UPDATE for contact "
+                    + contactId + " — forcing via SetPredictionDisabled.");
+                SetPredictionDisabled(contactId, true, "self-service email link");
+                updated = GetById(contactId);
             }
 
-            return ok;
+            if (disableAll && updated != null && updated.Enabled != false)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ApplyEmailDisableChoice: Enabled still on after full-disable for contact "
+                    + contactId + " — forcing Enabled = 0.");
+                ExecNonQuery(
+                    "UPDATE ContactsTbl SET Enabled = 0 WHERE ContactID = @ContactID",
+                    ContactIdParam(contactId));
+                updated = GetById(contactId);
+            }
+
+            bool predictionOk = updated != null && updated.PredictionDisabled == true;
+            bool enabledOk = !disableAll || (updated != null && updated.Enabled == false);
+            if (!predictionOk || !enabledOk)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ApplyEmailDisableChoice: verify failed for contact " + contactId
+                    + " PredictionDisabled=" + (updated?.PredictionDisabled?.ToString() ?? "null")
+                    + " Enabled=" + (updated?.Enabled?.ToString() ?? "null"));
+                return false;
+            }
+
+            return true;
         }
 
         public bool DisableContactReminders(int contactId, string notes)
@@ -598,12 +652,12 @@ WHERE ContactID = @ContactID";
 
             const string sql = @"
                 UPDATE ContactsTbl
-                SET PredictionDisabled = @PredictionDisabled
+                SET PredictionDisabled = CASE WHEN @PredictionDisabledBit = 1 THEN 1 ELSE 0 END
                 WHERE ContactID = @ContactID";
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@PredictionDisabled", DataValue = predictionDisabled, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@PredictionDisabledBit", DataValue = predictionDisabled ? 1 : 0, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
             };
 
@@ -726,7 +780,56 @@ WHERE ContactID = @ContactID";
                 new DBParameter { ParamName = "@Pattern", DataValue = emailPattern, DataDbType = DbType.String });
         }
 
-        /// <summary>Exact match on primary or alternate email (case-insensitive, trimmed).</summary>
+        /// <summary>Exact company name match (trimmed). Optionally excludes a contact (for rename checks).</summary>
+        public List<Contact> FindByCompanyNameExact(string companyName, int? excludeContactId = null)
+        {
+            if (string.IsNullOrWhiteSpace(companyName))
+                return new List<Contact>();
+
+            string where = "LTRIM(RTRIM(CompanyName)) = @CompanyName";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@CompanyName", DataValue = companyName.Trim(), DataDbType = DbType.String }
+            };
+
+            if (excludeContactId.HasValue && excludeContactId.Value > 0)
+            {
+                where += " AND ContactID <> @ExcludeContactID";
+                parameters.Add(new DBParameter
+                {
+                    ParamName = "@ExcludeContactID",
+                    DataValue = excludeContactId.Value,
+                    DataDbType = DbType.Int32
+                });
+            }
+
+            return SearchContacts(where, parameters);
+        }
+
+        /// <summary>
+        /// Returns a company name that does not collide with an existing contact.
+        /// Appends " 2", " 3", … when needed. Optionally excludes a contact id (rename).
+        /// </summary>
+        public string EnsureUniqueCompanyName(string companyName, int? excludeContactId = null)
+        {
+            string baseName = (companyName ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(baseName))
+                return baseName;
+
+            if (FindByCompanyNameExact(baseName, excludeContactId).Count == 0)
+                return baseName;
+
+            for (int n = 2; n < 1000; n++)
+            {
+                string candidate = baseName + " " + n;
+                if (FindByCompanyNameExact(candidate, excludeContactId).Count == 0)
+                    return candidate;
+            }
+
+            return baseName + " " + Guid.NewGuid().ToString("N").Substring(0, 6);
+        }
+
+        /// <summary>Exact match on primary or alternate email (trimmed). Empty email returns empty list.</summary>
         public List<Contact> FindByEmailExact(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -735,6 +838,32 @@ WHERE ContactID = @ContactID";
             return SearchContacts(
                 "LTRIM(RTRIM(EmailAddress)) = @Email OR LTRIM(RTRIM(AltEmailAddress)) = @Email",
                 new DBParameter { ParamName = "@Email", DataValue = email.Trim(), DataDbType = DbType.String });
+        }
+
+        /// <summary>
+        /// Contacts that share any of the supplied emails (primary or alternate on either side).
+        /// </summary>
+        public List<Contact> FindByAnyEmailExact(params string[] emails)
+        {
+            var hits = new Dictionary<int, Contact>();
+            if (emails == null)
+                return new List<Contact>();
+
+            foreach (string raw in emails)
+            {
+                if (string.IsNullOrWhiteSpace(raw))
+                    continue;
+                foreach (Contact c in FindByEmailExact(raw))
+                {
+                    if (c != null && c.ContactID > 0 && !hits.ContainsKey(c.ContactID))
+                        hits[c.ContactID] = c;
+                }
+            }
+
+            return hits.Values
+                .OrderBy(c => c.CompanyName ?? string.Empty)
+                .ThenBy(c => c.ContactID)
+                .ToList();
         }
 
         /// <summary>Find contacts by last name (primary, alternate, or company name contains).</summary>
@@ -771,6 +900,7 @@ WHERE ContactID = @ContactID";
 
             return new ContactEmailDetails
             {
+                CompanyName = contact.CompanyName ?? string.Empty,
                 FirstName = contact.ContactFirstName ?? string.Empty,
                 LastName = contact.ContactLastName ?? string.Empty,
                 EmailAddress = contact.EmailAddress ?? string.Empty,

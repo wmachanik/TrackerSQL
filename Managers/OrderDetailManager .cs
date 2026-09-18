@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Web;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
@@ -41,18 +43,32 @@ namespace TrackerSQL.Managers
             email.SetEmailSubject(MessageProvider.Get(MessageKeys.Order.ConfirmatonSubject));
 
             string contactName = EmailUtils.GetFriendlyContactName(contact);
-            email.AddFormatAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationIntro), contactName);
+            string companyName = !string.IsNullOrWhiteSpace(contact.CompanyName)
+                ? contact.CompanyName.Trim()
+                : contactName;
 
-            email.AddFormatAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationHeader));
+            email.AddToBody(MessageProvider.Format(MessageKeys.Order.ConfirmationIntro, contactName));
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationHeader));
+            email.AddToBody(BuildConfirmationTableHtml(companyName, header, orderLines, notes));
 
-            AppendOrderItemsToEmailBody(email, orderLines, notes);
+            string deliveryNote = BuildDeliveryExplanationHtml(header);
+            if (!string.IsNullOrWhiteSpace(deliveryNote))
+                email.AddToBody(deliveryNote);
 
-            AppendDeliveryExplanation(email, contactName, header);
+            if (!string.IsNullOrWhiteSpace(header?.PurchaseOrder))
+            {
+                string po = header.PurchaseOrder.Trim();
+                if (string.Equals(po, SystemConstants.UIConstants.PORequiredText, StringComparison.OrdinalIgnoreCase))
+                    email.AddToBody("<p style=\"margin:8px 0 0 0;\">" + MessageProvider.Get(MessageKeys.Order.ConfirmationPORequired) + "</p>");
+                else
+                    email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+                        + MessageProvider.Format(MessageKeys.Order.ConfirmationPOReceived, HttpUtility.HtmlEncode(po))
+                        + "</p>");
+            }
 
-            email.AddStrAndNewLineToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
-
-            email.AddFormatToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
-            email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
+            email.AddToBody(MessageProvider.GetEmailSignature());
 
             bool success = email.SendEmail();
             if (success)
@@ -64,10 +80,89 @@ namespace TrackerSQL.Managers
             return success;
         }
 
-        private void AppendDeliveryExplanation(EmailMailKitCls email, string contactName, OrderHeaderData header)
+        private string BuildConfirmationTableHtml(
+            string companyName,
+            OrderHeaderData header,
+            List<OrderLineData> orderLines,
+            string notes)
+        {
+            var html = new StringBuilder();
+            html.Append(MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableStart));
+            html.Append(string.Format(
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableHeader),
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.TableCompanyContact),
+                HttpUtility.HtmlEncode(companyName ?? string.Empty)));
+            html.Append("<tbody>");
+
+            string deliveryLabel = MessageProvider.Get(MessageKeys.Order.ConfirmationTableDeliveryLabel);
+            string deliveryValue = header != null
+                ? header.RequiredByDate.ToString("dd MMM, ddd, yyyy")
+                : string.Empty;
+            html.Append(string.Format(
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
+                deliveryLabel,
+                HttpUtility.HtmlEncode(deliveryValue),
+                ""));
+
+            if (header != null && header.OrderID > 0)
+            {
+                html.Append(string.Format(
+                    MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowAlt),
+                    MessageProvider.Get(MessageKeys.Order.ConfirmationTableOrderLabel),
+                    header.OrderID.ToString(),
+                    ""));
+            }
+
+            html.Append(string.Format(
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowColspan),
+                MessageProvider.Get(MessageKeys.CoffeeCheckup.TableListOfItems)));
+
+            int itemIndex = 0;
+            if (orderLines != null)
+            {
+                foreach (var line in orderLines)
+                {
+                    int sortOrder = _itemsRepository.GetItemSortOrder(line.ItemID);
+                    string left;
+                    string right;
+
+                    if (sortOrder == SystemConstants.ItemConstants.NotesSortOrder)
+                    {
+                        left = "Notes";
+                        right = HttpUtility.HtmlEncode(EmailUtils.CleanNoteText(notes) ?? string.Empty);
+                    }
+                    else
+                    {
+                        left = HttpUtility.HtmlEncode(line.ItemName ?? string.Empty);
+                        if (string.IsNullOrEmpty(line.PackagingName) || line.PackagingID == 0)
+                            right = HttpUtility.HtmlEncode(FormatQty(line.Qty));
+                        else
+                            right = HttpUtility.HtmlEncode(FormatQty(line.Qty) + " (" + line.PackagingName + ")");
+                    }
+
+                    string rowTemplate = itemIndex % 2 == 0
+                        ? MessageKeys.CoffeeCheckup.HtmlTableRowNormal
+                        : MessageKeys.CoffeeCheckup.HtmlTableRowAlt;
+                    html.Append(string.Format(MessageProvider.Get(rowTemplate), left, right, ""));
+                    itemIndex++;
+                }
+            }
+
+            html.Append("</tbody></table>");
+            return html.ToString();
+        }
+
+        private static string FormatQty(double qty)
+        {
+            if (Math.Abs(qty - Math.Round(qty)) < 0.0001)
+                return ((int)Math.Round(qty)).ToString();
+            return qty.ToString("0.##");
+        }
+
+        private string BuildDeliveryExplanationHtml(OrderHeaderData header)
         {
             if (header == null)
-                return;
+                return null;
 
             string dateText = header.RequiredByDate.ToString("dd MMM, ddd, yyyy");
             int? areaId = ResolveContactAreaId(header.CustomerID);
@@ -76,43 +171,58 @@ namespace TrackerSQL.Managers
             bool soonerException = orderToday
                 && _promiseManager.IsSoonerThanPromiseException(areaId, header.OrderDate, header.RequiredByDate, now);
 
+            string inner;
             if (soonerException)
             {
-                email.AddFormatAndNewLineToBody(
-                    MessageProvider.Get(MessageKeys.Order.ConfirmationDeliverySoonerException),
+                inner = MessageProvider.Format(
+                    MessageKeys.Order.ConfirmationDeliverySoonerException,
                     dateText);
-                return;
             }
-
-            if (orderToday)
+            else if (orderToday)
             {
                 string statusKey = GetStatusKeyFromDeliveryPersonId(header.ToBeDeliveredBy);
                 string statusText = string.IsNullOrEmpty(statusKey)
                     ? MessageProvider.Get(MessageKeys.Order.StatusPendingDelivery)
                     : MessageProvider.Get(statusKey);
-                email.AddFormatAndNewLineToBody(
-                    MessageProvider.Get(MessageKeys.Order.ConfirmationDeliveryStandard),
+                inner = MessageProvider.Format(
+                    MessageKeys.Order.ConfirmationDeliveryStandard,
                     statusText,
                     dateText);
-                return;
             }
-
-            // Existing orders (not placed today): keep prior wording.
-            string legacyStatusKey = GetStatusKeyFromDeliveryPersonId(header.ToBeDeliveredBy);
-            if (!string.IsNullOrEmpty(legacyStatusKey))
+            else
             {
-                string statusText = MessageProvider.Get(legacyStatusKey);
-                string preDeliveryFormat = MessageProvider.Get(MessageKeys.Order.StatusPreDeliveryBody);
-                if (!string.IsNullOrEmpty(preDeliveryFormat))
+                // Avoid StatusPreDeliveryBody here — it repeats "Dear …" after ConfirmationIntro.
+                string legacyStatusKey = GetStatusKeyFromDeliveryPersonId(header.ToBeDeliveredBy);
+                if (!string.IsNullOrEmpty(legacyStatusKey))
                 {
-                    email.AddFormatToBody(preDeliveryFormat, contactName, statusText, dateText);
-                    return;
+                    string statusText = MessageProvider.Get(legacyStatusKey);
+                    inner = MessageProvider.Format(
+                        MessageKeys.Order.ConfirmationDeliveryStandard,
+                        statusText,
+                        dateText);
+                }
+                else
+                {
+                    inner = MessageProvider.Format(
+                        MessageKeys.Order.ConfirmationDeliveryDate,
+                        dateText);
                 }
             }
 
-            email.AddFormatAndNewLineToBody(
-                MessageProvider.Get(MessageKeys.Order.ConfirmationDeliveryDate),
-                dateText);
+            if (string.IsNullOrWhiteSpace(inner))
+                return null;
+
+            // Strip leading <br /> from older templates so spacing stays tight.
+            inner = inner.Trim();
+            while (inner.StartsWith("<br", StringComparison.OrdinalIgnoreCase))
+            {
+                int gt = inner.IndexOf('>');
+                if (gt < 0)
+                    break;
+                inner = inner.Substring(gt + 1).TrimStart();
+            }
+
+            return "<p style=\"margin:8px 0 0 0;\">" + inner + "</p>";
         }
 
         private int? ResolveContactAreaId(long customerId)
@@ -149,29 +259,6 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog("woo", "WriteExpectedDeliveryToWoo failed: " + ex.Message);
             }
-        }
-
-        private void AppendOrderItemsToEmailBody(EmailMailKitCls email, List<OrderLineData> orderLines, string notes)
-        {
-            email.AddToBody("<ul>");
-            foreach (var line in orderLines)
-            {
-                int sortOrder = _itemsRepository.GetItemSortOrder(line.ItemID);
-
-                if (sortOrder == SystemConstants.ItemConstants.NotesSortOrder)
-                {
-                    string cleanedNotes = EmailUtils.CleanNoteText(notes);
-                    email.AddFormatToBody("<li>{0}</li>", cleanedNotes);
-                }
-                else
-                {
-                    if (string.IsNullOrEmpty(line.PackagingName) || line.PackagingID == 0)
-                        email.AddFormatToBody(MessageProvider.Get(MessageKeys.Order.ItemFormatBasic), line.ItemName, line.Qty);
-                    else
-                        email.AddFormatToBody(MessageProvider.Get(MessageKeys.Order.ItemFormatWithPrep), line.ItemName, line.Qty, line.PackagingName);
-                }
-            }
-            email.AddToBody("</ul>");
         }
 
         private string GetStatusKeyFromDeliveryPersonId(int deliveryPersonId)

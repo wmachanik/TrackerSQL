@@ -41,6 +41,32 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
+        /// Highest Woo order id already linked to a live Tracker order.
+        /// Used by “Since last import sync” to pull only newer Woo orders.
+        /// </summary>
+        public long GetMaxWooOrderId()
+        {
+            if (!TableExists())
+                return 0;
+
+            const string sql = @"
+SELECT ISNULL(MAX(w.WooOrderId), 0)
+FROM WooOrderInfoTbl w
+INNER JOIN OrdersTbl o ON o.OrderID = w.OrderID
+WHERE w.WooOrderId > 0";
+
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                    return db.ExecuteScalar<long>(sql);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Woo import link only when the Tracker order still exists.
         /// Orphaned rows (order deleted) are removed so the Woo order can be imported again.
         /// </summary>

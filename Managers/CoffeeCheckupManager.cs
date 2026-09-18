@@ -2154,15 +2154,15 @@ namespace TrackerSQL.Managers
                 if (toRemind == null)
                     return "Could not build reminder data for this contact.";
 
-                // Email wording from Messages.resx — no SendCheckupEmailTextsTbl dependency.
-                string body = MessageProvider.Get(MessageKeys.CoffeeCheckup.BodyReminderOnly);
+                // Soft question wording from Messages.resx (single intro — avoid stacked paragraphs).
+                string intro = MessageProvider.Get(MessageKeys.CoffeeCheckup.ManualReminderIntro);
                 if (reminderCount + 1 == 6)
-                    body = MessageProvider.Get(MessageKeys.CoffeeCheckup.BodyFinalWarning) + body;
+                    intro = MessageProvider.Get(MessageKeys.CoffeeCheckup.BodyFinalWarning) + intro;
 
                 var emailData = new SendCheckEmailTexts
                 {
-                    Header = MessageProvider.Get(MessageKeys.CoffeeCheckup.ManualReminderIntro),
-                    Body = body,
+                    Header = intro,
+                    Body = string.Empty,
                     Footer = string.Empty
                 };
 

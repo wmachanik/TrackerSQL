@@ -362,6 +362,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /App_Data/QuaffeeTracker08.mdb
+/App_Data/manual-sql-history.json
 
 # Temp files - ignore ASP.NET shadow copy cache
 bin/Temp/

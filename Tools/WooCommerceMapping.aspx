@@ -110,25 +110,60 @@
             return isNaN(n) ? 0 : n;
         };
 
-        window.wooMapSnapshotOriginals = function (root) {
+        window.wooMapSnapshotOriginals = function (root, force) {
             root = root || document;
             var els = root.querySelectorAll('input, select, textarea');
             for (var i = 0; i < els.length; i++) {
-                if (window.wooMapOriginalValue(els[i]) == null) continue;
-                var val = window.wooMapControlValue(els[i]);
-                els[i].setAttribute('data-original', val);
-                if (els[i].parentNode && els[i].parentNode.getAttribute
-                    && els[i].parentNode.getAttribute('data-original') != null)
-                    els[i].parentNode.setAttribute('data-original', val);
+                var el = els[i];
+                // Only controls already stamped by the server participate.
+                if (window.wooMapOriginalValue(el) == null)
+                    continue;
+                // Without force: keep the server baseline (needed after Move up/down postbacks).
+                if (!force)
+                    continue;
+                var val = window.wooMapControlValue(el);
+                el.setAttribute('data-original', val);
+                if (el.parentNode && el.parentNode.getAttribute
+                    && el.parentNode.getAttribute('data-original') != null)
+                    el.parentNode.setAttribute('data-original', val);
             }
             var mode = document.getElementById('<%= ddlCatMode.ClientID %>');
-            if (mode)
+            if (mode && force)
                 mode.setAttribute('data-original', mode.value || '');
+            var noteOrder = document.getElementById('<%= lstGeneralNotePartOrder.ClientID %>');
+            if (noteOrder && noteOrder.getAttribute('data-original') != null && force)
+                noteOrder.setAttribute('data-original', window.wooMapListBoxOrderValue(noteOrder));
+        };
+
+        window.wooMapListBoxOrderValue = function (lst) {
+            if (!lst || !lst.options) return '';
+            var vals = [];
+            for (var i = 0; i < lst.options.length; i++)
+                vals.push(lst.options[i].value || '');
+            return vals.join(',');
+        };
+
+        window.wooMapResolveControl = function (el) {
+            if (!el) return null;
+            var tag = (el.tagName || '').toUpperCase();
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA')
+                return el;
+            if (el.querySelector)
+                return el.querySelector('input, select, textarea') || el;
+            return el;
+        };
+
+        window.wooMapIsControlDirty = function (el) {
+            el = window.wooMapResolveControl(el);
+            if (!el) return false;
+            var orig = window.wooMapOriginalValue(el);
+            if (orig == null) return false;
+            return window.wooMapControlValue(el) !== orig;
         };
 
         window.wooMapClearDirty = function () {
             window.wooMapDirty = false;
-            window.wooMapSnapshotOriginals();
+            window.wooMapSnapshotOriginals(document, true);
             var ids = [
                 '<%= hdnPendingCount.ClientID %>',
                 '<%= hdnUnsavedCat.ClientID %>',
@@ -178,13 +213,32 @@
             var notesItemDirty = !!(notesItem && notesItem.getAttribute('data-original') != null
                 && (notesItem.value || '') !== (notesItem.getAttribute('data-original') || ''));
 
+            var noteOrder = document.getElementById('<%= lstGeneralNotePartOrder.ClientID %>');
+            var noteOrderDirty = !!(noteOrder && noteOrder.getAttribute('data-original') != null
+                && window.wooMapListBoxOrderValue(noteOrder) !== (noteOrder.getAttribute('data-original') || ''));
+            var generalDirty = window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralCompanyMode.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralNoteLineFormat.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralAutoPull.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralAppendTracking.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralWriteExpectedDelivery.ClientID %>'))
+                || noteOrderDirty;
+            var addressDirty = window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeProvince.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeCountry.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressDeduplicateSuburb.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressStripCapeTown.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressTitleCase.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportPhoneReplacePlus27.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkImportPhoneFormatSa.ClientID %>'));
+            var dispatchDirty = window.wooMapIsControlDirty(document.getElementById('<%= chkTrackingNumberRequired.ClientID %>'));
+
             window.wooMapMarkUnsaved('<%= hdnUnsavedCat.ClientID %>', catSectionDirty);
             window.wooMapMarkUnsaved('<%= hdnUnsavedAttrParents.ClientID %>', attrParentVisible);
             window.wooMapMarkUnsaved('<%= hdnUnsavedAttrMaps.ClientID %>', attrMapVisible);
             window.wooMapMarkUnsaved('<%= hdnUnsavedPull.ClientID %>', pullVisible);
             window.wooMapMarkUnsaved('<%= hdnUnsavedMissing.ClientID %>', missingVisible);
             window.wooMapDirty = catSectionDirty || attrParentVisible || attrMapVisible || pullVisible || missingVisible
-                || areaGridDirty || shipGridDirty || payGridDirty || defAreaDirty || notesItemDirty;
+                || areaGridDirty || shipGridDirty || payGridDirty || defAreaDirty || notesItemDirty
+                || generalDirty || addressDirty || dispatchDirty;
 
             window.wooMapSetDisabled(document.getElementById('<%= btnSaveCatIncludes.ClientID %>'), !catSectionDirty);
             window.wooMapSetDisabled(document.getElementById('<%= btnSaveAttrParents.ClientID %>'), !attrParentVisible);
@@ -197,6 +251,9 @@
             window.wooMapSetDisabled(document.getElementById('<%= btnSavePaymentMaps.ClientID %>'), !payGridDirty);
             window.wooMapSetDisabled(document.getElementById('<%= btnSaveDefaultArea.ClientID %>'), !defAreaDirty);
             window.wooMapSetDisabled(document.getElementById('<%= btnSaveImportNotesItem.ClientID %>'), !notesItemDirty);
+            window.wooMapSetDisabled(document.getElementById('<%= btnSaveGeneralSettings.ClientID %>'), !generalDirty);
+            window.wooMapSetDisabled(document.getElementById('<%= btnSaveAddressConfig.ClientID %>'), !addressDirty);
+            window.wooMapSetDisabled(document.getElementById('<%= btnSaveDispatchWaybill.ClientID %>'), !dispatchDirty);
         };
 
         window.wooMapMissingSkuTyped = function (el) {

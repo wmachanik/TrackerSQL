@@ -1,4 +1,4 @@
-<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerSQL.SiteMaster" %>
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="TrackerSQL.SiteMaster" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="ajaxToolkit" %>
 
@@ -8,7 +8,7 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20260916-1" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20260924-16" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -192,13 +192,14 @@
                                     </asp:MenuItem>
                                     <asp:MenuItem Selectable="False" Text="Orders" Value="Orders">
                                         <asp:MenuItem NavigateUrl="~/Pages/OrderDetail.aspx?NewOrder=true" Text="New Order"
-                                            Value="New Order"></asp:MenuItem>
+                                            Value="New Order" ToolTip="New order (checks Woo for newer orders when enabled in settings)"></asp:MenuItem>
                                         <asp:MenuItem NavigateUrl="~/Pages/OrderEntry.aspx" Text="View/Edit Orders"
                                             Value="View/Edit Orders"></asp:MenuItem>
                                         <asp:MenuItem NavigateUrl="~/Pages/RecurringOrders.aspx"
                                             Text="Recurring Orders" ToolTip="Recurring Orders" Value="Recurring Orders"></asp:MenuItem>
                                         <asp:MenuItem NavigateUrl="~/Tools/WooOrderImport.aspx" Text="Woo Order Import"
-                                            Value="WooOrderImport" ToolTip="Import orders from WooCommerce"></asp:MenuItem>
+                                            Value="WooOrderImport" ToolTip="Import orders from WooCommerce"
+                                            ImageUrl="~/images/imgButtons/WooImport.png"></asp:MenuItem>
                                     </asp:MenuItem>
                                     <asp:MenuItem Selectable="False" Text="Repairs" Value="Repairs">
                                         <asp:MenuItem NavigateUrl="~/Pages/Repairs.aspx" Text="Repairs"
@@ -227,7 +228,6 @@
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx" Text="System Preferences" Value="SystemPreferences" />
                                             <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mapping" Value="WooMapping" />
                                             <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag." />
-                                            <asp:MenuItem NavigateUrl="~/Tools/LogViewer.aspx" Text="Log Viewer" Value="LogViewer" />
                                         </asp:MenuItem>
                                         <asp:MenuItem Text="Forms" Value="Forms">
                                             <asp:MenuItem NavigateUrl="~/Pages/LeaveApp.aspx" Text="Leave App" Value="Leave App"></asp:MenuItem>
@@ -287,7 +287,7 @@
                 <li><a href="/Pages/ContactsAway.aspx">Contacts Away</a></li>
                 <li><a href="/Pages/SendCoffeeCheckup.aspx">Send Checkup</a></li>
                 <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">New Order</a></li>
-                <li><a href="/Tools/WooOrderImport.aspx">Woo Order Import</a></li>
+                <li><a href="/Tools/WooOrderImport.aspx"><img src="/images/imgButtons/WooImport.png" alt="" class="mobile-nav-icon" /> Woo Order Import</a></li>
                 <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">Deliveries</a></li>
                 <li><a href="/Pages/Repairs.aspx">Repairs</a></li>

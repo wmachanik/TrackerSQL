@@ -58,6 +58,12 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Literal litUpdatePersonNamesDetail;
         protected global::System.Web.UI.WebControls.Button btnCompanyPromptConfirm;
         protected global::System.Web.UI.WebControls.Button btnCompanyPromptCancel;
+        protected global::System.Web.UI.WebControls.Panel pnlWooLinkPrompt;
+        protected global::System.Web.UI.WebControls.Literal litWooLinkPrompt;
+        protected global::System.Web.UI.WebControls.HiddenField hdnWooLinkWooOrderId;
+        protected global::System.Web.UI.WebControls.RadioButtonList rblWooLinkCandidates;
+        protected global::System.Web.UI.WebControls.Button btnWooLinkConfirm;
+        protected global::System.Web.UI.WebControls.Button btnWooLinkCancel;
         protected global::System.Web.UI.WebControls.Button btnRefreshConflicts;
         protected global::System.Web.UI.WebControls.GridView gvConflicts;
     }

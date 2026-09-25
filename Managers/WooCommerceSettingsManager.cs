@@ -32,7 +32,7 @@ namespace TrackerSQL.Managers
         /// <summary>Run idempotent create/alter once per app domain (not every postback).</summary>
         public WooCommerceSchemaInstaller.EnsureResult EnsureSchemaOnce()
         {
-            const string cacheKey = "WooCommerce.SchemaEnsured.v13";
+            const string cacheKey = "WooCommerce.SchemaEnsured.v14";
             if (HttpRuntime.Cache[cacheKey] != null)
                 return new WooCommerceSchemaInstaller.EnsureResult { Succeeded = true, Message = "Schema already ensured." };
 
@@ -346,6 +346,7 @@ namespace TrackerSQL.Managers
             string autoPullMode,
             string notePartOrder,
             bool writeExpectedDeliveryToWoo,
+            bool checkNewOrdersOnNewOrder,
             string updatedBy)
         {
             EnsureSchema();
@@ -356,13 +357,14 @@ namespace TrackerSQL.Managers
             settings.ImportAutoPullMode = NormalizeAutoPullMode(autoPullMode);
             settings.ImportNotePartOrder = NormalizeNotePartOrder(notePartOrder);
             settings.WriteExpectedDeliveryToWoo = writeExpectedDeliveryToWoo;
+            settings.CheckNewOrdersOnNewOrder = checkNewOrdersOnNewOrder;
             _settingsRepo.SaveSettings(settings, updatedBy);
             AppLogger.WriteLog("woo",
                 string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                    "General import settings: companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}",
+                    "General import settings: companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}, checkNewOnNewOrder={6}",
                     settings.ImportCompanyNameMode, settings.ImportNoteLineFormat,
                     appendTrackingToOrderNotes, settings.ImportAutoPullMode, settings.ImportNotePartOrder,
-                    writeExpectedDeliveryToWoo),
+                    writeExpectedDeliveryToWoo, checkNewOrdersOnNewOrder),
                 updatedBy);
         }
 

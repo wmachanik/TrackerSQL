@@ -166,7 +166,7 @@
     <value>Failed to send coffee checkup email</value>
   </data>
   <data name="CoffeeCheckup.ErrorOrderInsert" xml:space="preserve">
-    <value>Failed to create order for customer</value>
+    <value>Failed to create order for contact</value>
   </data>
   <data name="CoffeeCheckup.ErrorRecurringDateFailure" xml:space="preserve">
     <value>Failed to set recurring order dates</value>
@@ -280,25 +280,25 @@
     <value>Operation completed successfully.</value>
   </data>
   <data name="Customer.Disabled" xml:space="preserve">
-    <value>Customer {0} (ID: {1}) disabled successfully</value>
+    <value>Contact {0} (ID: {1}) disabled successfully</value>
   </data>
   <data name="Customer.DisabledViaSelfService" xml:space="preserve">
-    <value>Customer {0} (ID: {1}) disabled via self-service</value>
+    <value>Contact {0} (ID: {1}) disabled via self-service</value>
   </data>
   <data name="Customer.DisableError" xml:space="preserve">
-    <value>Error disabling customer {0}: {1}</value>
+    <value>Error disabling contact {0}: {1}</value>
   </data>
   <data name="Customer.EquipmentUpdated" xml:space="preserve">
-    <value>Equipment updated for customer {0}: Type {1}, SN {2}</value>
+    <value>Equipment updated for contact {0}: Type {1}, SN {2}</value>
   </data>
   <data name="Customer.EquipmentUpdateError" xml:space="preserve">
-    <value>Equipment update failed for customer {0}: {1}</value>
+    <value>Equipment update failed for contact {0}: {1}</value>
   </data>
   <data name="Customer.NotFound" xml:space="preserve">
-    <value>Customer {0} not found</value>
+    <value>Contact {0} not found</value>
   </data>
   <data name="Customer.ReminderCountReset" xml:space="preserve">
-    <value>Reminder count reset for customer {0}, force enable: {1}</value>
+    <value>Reminder count reset for contact {0}, force enable: {1}</value>
   </data>
   <data name="Customer.TrackingWelcomeSubject" xml:space="preserve">
     <value>Welcome to Quaffee's order tracking</value>
@@ -310,19 +310,19 @@
     <value>Calculated optimal dates for {0} - Target day {1}: Roast {2}, Delivery {3}</value>
   </data>
   <data name="DeliveryCalculation.CalculatingMonthlyDelivery" xml:space="preserve">
-    <value>Calculating monthly delivery for customer {0}, target day {1}</value>
+    <value>Calculating monthly delivery for contact {0}, target day {1}</value>
   </data>
   <data name="DeliveryCalculation.CalculatingWeeklyDelivery" xml:space="preserve">
-    <value>Calculating weekly delivery for customer {0}, every {1} weeks</value>
+    <value>Calculating weekly delivery for contact {0}, every {1} weeks</value>
   </data>
   <data name="DeliveryCalculation.DateInPast" xml:space="preserve">
-    <value>Customer {0}: Proposed date {1} is in the past</value>
+    <value>Contact {0}: Proposed date {1} is in the past</value>
   </data>
   <data name="DeliveryCalculation.DateTooFarFuture" xml:space="preserve">
-    <value>Customer {0}: Proposed date {1} is too far in the future</value>
+    <value>Contact {0}: Proposed date {1} is too far in the future</value>
   </data>
   <data name="DeliveryCalculation.ErrorCalculatingDelivery" xml:space="preserve">
-    <value>Error calculating delivery date for customer {0}: {1}</value>
+    <value>Error calculating delivery date for contact {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorCalculatingOccurrence" xml:space="preserve">
     <value>Error calculating monthly occurrence for day {0}: {1}</value>
@@ -331,22 +331,22 @@
     <value>Error calculating roast date from delivery {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorCalculatingWeekly" xml:space="preserve">
-    <value>Error calculating weekly delivery for customer {0}: {1}</value>
+    <value>Error calculating weekly delivery for contact {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorFindingAreaDate" xml:space="preserve">
-    <value>Error finding Area delivery date for customer {0}: {1}</value>
+    <value>Error finding Area delivery date for contact {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.ErrorFindingClosestDate" xml:space="preserve">
     <value>Error finding closest delivery date: {0}</value>
   </data>
   <data name="DeliveryCalculation.ErrorValidatingDate" xml:space="preserve">
-    <value>Error validating delivery date for customer {0}: {1}</value>
+    <value>Error validating delivery date for contact {0}: {1}</value>
   </data>
   <data name="DeliveryCalculation.FoundNextDeliveryCycle" xml:space="preserve">
     <value>Found next delivery cycle {0} after {1} days</value>
   </data>
   <data name="DeliveryCalculation.InvalidPrepDate" xml:space="preserve">
-    <value>Invalid roast date for customer {0}, using target date</value>
+    <value>Invalid roast date for contact {0}, using target date</value>
   </data>
   <data name="DeliveryCalculation.NextOccurrenceCalculated" xml:space="preserve">
     <value>Next monthly occurrence for day {0}: {1}</value>
@@ -372,7 +372,7 @@
   <data name="DisableClient.AdminBodyHeader" xml:space="preserve">
     <value>A contact updated coffee checkup preferences via the self-service email link:
 
-Customer ID: {0}
+Contact ID: {0}
 Company Name: {1}
 Date: {2}
 Choice: {3}
@@ -408,7 +408,7 @@ Disabled recurring orders:
 </value>
   </data>
   <data name="DisableClient.AdminRecurringNone" xml:space="preserve">
-    <value>✅ No recurring orders found for this customer.
+    <value>✅ No recurring orders found for this contact.
 
 </value>
   </data>
@@ -431,7 +431,7 @@ Disabled recurring orders:
     <value>&lt;p&gt;We've successfully disabled coffee checkup reminders for &lt;strong&gt;{0}&lt;/strong&gt; as requested.&lt;/p&gt;</value>
   </data>
   <data name="DisableClient.ErrorCustomerNotFound" xml:space="preserve">
-    <value>Customer not found.</value>
+    <value>Contact not found.</value>
   </data>
   <data name="DisableClient.ErrorGeneral" xml:space="preserve">
     <value>An error occurred while processing your request. Please try again or contact us for assistance.</value>
@@ -610,8 +610,29 @@ Disabled recurring orders:
   <data name="Order.Confirmed" xml:space="preserve">
     <value>Order confirmed successfully</value>
   </data>
+  <data name="Order.PortalAckSubject" xml:space="preserve">
+    <value>Quaffee: we have received your order</value>
+  </data>
+  <data name="Order.PortalAckHeader" xml:space="preserve">
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;We have received the following order through My Quaffee:&lt;/p&gt;</value>
+  </data>
+  <data name="Order.PortalAckDelivery" xml:space="preserve">
+    <value>We will aim to deliver/dispatch it on {0}.</value>
+  </data>
+  <data name="Order.PortalAckCaveat" xml:space="preserve">
+    <value>&lt;p style="margin:8px 0 0 0;"&gt;We will endeavour to supply this order as placed. However, there is a chance we may need to change it depending on stock and availability. If anything needs to change, we will let you know.&lt;/p&gt;</value>
+  </data>
+  <data name="Order.PortalAckChanges" xml:space="preserve">
+    <value>&lt;p style="margin:8px 0 0 0;"&gt;You asked for these changes: &lt;em&gt;{0}&lt;/em&gt;. We will review them before your order goes out.&lt;/p&gt;</value>
+  </data>
   <data name="Order.EmailFooter" xml:space="preserve">
     <value>&lt;p style="margin:8px 0 0 0;"&gt;Thank you for choosing Quaffee!&lt;/p&gt;</value>
+  </data>
+  <data name="Portal.EmailAlreadyJoined" xml:space="preserve">
+    <value>&lt;p style="margin:12px 0 0 0;"&gt;You already have access to &lt;strong&gt;My Quaffee&lt;/strong&gt; — view your contact details, orders, repairs, and recurring orders. &lt;a href="{0}"&gt;Sign in here&lt;/a&gt;.&lt;/p&gt;</value>
+  </data>
+  <data name="Portal.EmailJoinInvite" xml:space="preserve">
+    <value>&lt;p style="margin:12px 0 0 0;"&gt;Want to view your contact details, orders, repairs, and recurring orders online? Join &lt;strong&gt;My Quaffee&lt;/strong&gt;: &lt;a href="{0}"&gt;request access here&lt;/a&gt; using the email address we have on file.&lt;/p&gt;</value>
   </data>
   <data name="Order.FutureMessage" xml:space="preserve">
     <value>This order is scheduled for future processing</value>
@@ -695,10 +716,10 @@ Disabled recurring orders:
     <value>Request Changes</value>
   </data>
   <data name="OrderDetail.RequestChangesMailBody" xml:space="preserve">
-    <value>Please describe the change you would like to request below this line:\r\n\r\nCustomerID: {0}\r\nDeliveryDate: {1}\r\nRequested change: </value>
+    <value>Please describe the change you would like to request below this line:\r\n\r\nContactID: {0}\r\nDeliveryDate: {1}\r\nRequested change: </value>
   </data>
   <data name="OrderDetail.RequestChangesMailSubject" xml:space="preserve">
-    <value>Order change request - Customer {0} - Delivery {1}</value>
+    <value>Order change request - Contact {0} - Delivery {1}</value>
   </data>
   <data name="Repairs.DisclaimerFooter" xml:space="preserve">
     <value>Note: you're receiving this because your email is linked to a machine repair.&lt;br /&gt;&lt;br /&gt;
@@ -1046,10 +1067,10 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>General</value>
   </data>
   <data name="WooCommerce.MapGeneralHelp" xml:space="preserve">
-    <value>Import behaviour that applies across Woo order import: company names on existing contacts, how gear/unmapped lines appear in order notes, and whether dispatch tracking is copied into Notes.</value>
+    <value>Import behaviour for Woo order import and New Order. Hover a setting for details.</value>
   </data>
   <data name="WooCommerce.MapGeneralCompanyModeLbl" xml:space="preserve">
-    <value>When Woo has a company name and the contact already exists:</value>
+    <value>Company name (existing contacts)</value>
   </data>
   <data name="WooCommerce.MapGeneralCompanyModeCareOf" xml:space="preserve">
     <value>Keep contact name; prefix billing with c/o Company;</value>
@@ -1079,7 +1100,7 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>Cancel</value>
   </data>
   <data name="WooCommerce.MapGeneralNoteLineFormatLbl" xml:space="preserve">
-    <value>Gear / notes-mapped line text:</value>
+    <value>Gear / notes line text</value>
   </data>
   <data name="WooCommerce.MapGeneralNoteLineSkuOnly" xml:space="preserve">
     <value>SKU only</value>
@@ -1091,25 +1112,25 @@ When you continue, Tracker will create companion database tables (orders and ite
     <value>These lines are the gear / notes-mapped SKU text used inside the Gear part below.</value>
   </data>
   <data name="WooCommerce.MapGeneralNotePartOrderLbl" xml:space="preserve">
-    <value>Note part order (all Woo imports):</value>
+    <value>Note part order</value>
   </data>
   <data name="WooCommerce.MapGeneralNotePartOrderNote" xml:space="preserve">
     <value>Applies to every imported order. Each part is included only when available. Use Move up / Move down to change the order. Keep Name first for ZZName / gear-only so the delivery sheet can read the walk-in name before the first colon.</value>
   </data>
   <data name="WooCommerce.MapGeneralAppendTrackingLbl" xml:space="preserve">
-    <value>Also append tracking number to order Notes on dispatch</value>
+    <value>Append tracking to Notes on dispatch</value>
   </data>
   <data name="WooCommerce.MapGeneralAppendTrackingNote" xml:space="preserve">
     <value>Off by default — tracking is already shown on the order. Turn on only if you still want Tracking: … in Notes.</value>
   </data>
   <data name="WooCommerce.MapGeneralWriteExpectedDeliveryLbl" xml:space="preserve">
-    <value>Write expected delivery date to Woo as a private order note</value>
+    <value>Write expected delivery to Woo</value>
   </data>
   <data name="WooCommerce.MapGeneralWriteExpectedDeliveryNote" xml:space="preserve">
     <value>Optional. When confirmation email is sent for a Woo-linked order, also posts the Tracker RequiredByDate as a private Woo note (not emailed to the customer).</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullLbl" xml:space="preserve">
-    <value>When opening Order Import:</value>
+    <value>Order Import auto-pull</value>
   </data>
   <data name="WooCommerce.MapGeneralAutoPullNote" xml:space="preserve">
     <value>Automatically pulls a preview if there is no restored session preview. Default is since the highest imported Woo order ID. Returning from Order Detail / Contact still restores the last preview first.</value>
@@ -1125,6 +1146,12 @@ When you continue, Tracker will create companion database tables (orders and ite
   </data>
   <data name="WooCommerce.MapGeneralAutoPullThisWeek" xml:space="preserve">
     <value>Auto-pull last 7 days</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCheckNewOrdersLbl" xml:space="preserve">
+    <value>Check new Woo orders on New Order</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCheckNewOrdersNote" xml:space="preserve">
+    <value>When on (default), opening New Order asks Woo for orders newer than the last imported Woo ID. If any are found, you can jump to Order Import or continue adding a manual order. Turn off to skip the check (faster).</value>
   </data>
   <data name="WooCommerce.MapSaveGeneralSettings" xml:space="preserve">
     <value>Save general settings</value>

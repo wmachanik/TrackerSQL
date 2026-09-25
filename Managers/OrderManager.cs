@@ -495,11 +495,15 @@ namespace TrackerSQL.Managers
             public DateTime NewRequiredByDate { get; set; }
             public DateTime NewPrepDate { get; set; }
             public bool MovedWholeOrder { get; set; }
+            /// <summary>True when the only line was moved into another order and the source header was deleted.</summary>
+            public bool SourceOrderRemoved { get; set; }
             public bool Success => string.IsNullOrEmpty(Error) && TargetOrderId > 0;
         }
 
         /// <summary>
-        /// Reschedules one line to the next delivery day, or the whole order when it is the only line. Prep date is unchanged.
+        /// Reschedules one line to the next delivery day (Mon–Thu +1, Fri→Mon). Prep date is unchanged.
+        /// Single-line order: updates RequiredByDate on the header (or merges into an existing order for that date).
+        /// Multi-line order: moves the line onto the contact's order for that next day, creating one if needed.
         /// </summary>
         public MoveLineToNewOrderResult MoveOrderLineToNextWorkingDay(int sourceOrderId, int orderLineId)
         {
@@ -537,12 +541,48 @@ namespace TrackerSQL.Managers
             }
 
             DateTime newRequiredByDate = GetNextDeliveryDay(sourceHeader.RequiredByDate);
-
             result.NewRequiredByDate = newRequiredByDate;
             result.NewPrepDate = sourceHeader.PrepDate;
 
+            var nextDayHeader = new OrderHeaderData
+            {
+                CustomerID = sourceHeader.CustomerID,
+                OrderDate = sourceHeader.OrderDate,
+                PrepDate = sourceHeader.PrepDate,
+                RequiredByDate = newRequiredByDate,
+                ToBeDeliveredBy = sourceHeader.ToBeDeliveredBy,
+                PurchaseOrder = sourceHeader.PurchaseOrder,
+                Confirmed = sourceHeader.Confirmed,
+                InvoiceDone = false,
+                Done = false,
+                Notes = sourceHeader.Notes
+            };
+
+            // Single line: bump this order's delivery date unless another order already owns that date.
             if (lines.Count == 1)
             {
+                int? existingNext = FindDuplicateOrderForHeader(nextDayHeader, sourceOrderId);
+                if (existingNext.HasValue && existingNext.Value > 0)
+                {
+                    if (!_ordersRepository.MoveOrderLineToOrder(orderLineId, existingNext.Value))
+                    {
+                        result.Error = "Failed to move order line to the existing next-day order.";
+                        return result;
+                    }
+
+                    if (!_ordersRepository.DeleteOrderById(sourceOrderId))
+                    {
+                        result.Error = "Line was moved but the empty source order could not be removed.";
+                        result.TargetOrderId = existingNext.Value;
+                        return result;
+                    }
+
+                    result.TargetOrderId = existingNext.Value;
+                    result.MovedWholeOrder = false;
+                    result.SourceOrderRemoved = true;
+                    return result;
+                }
+
                 var updatedHeader = new OrderHeaderData
                 {
                     OrderID = sourceOrderId,
@@ -558,13 +598,6 @@ namespace TrackerSQL.Managers
                     Notes = sourceHeader.Notes
                 };
 
-                int? duplicateId = FindDuplicateOrderForHeader(updatedHeader, sourceOrderId);
-                if (duplicateId.HasValue)
-                {
-                    result.Error = $"Order #{duplicateId.Value} already exists for that delivery date.";
-                    return result;
-                }
-
                 if (!UpdateOrderHeader(sourceOrderId, updatedHeader))
                 {
                     result.Error = "Failed to reschedule delivery date.";
@@ -576,26 +609,19 @@ namespace TrackerSQL.Managers
                 return result;
             }
 
-            var newHeader = new OrderHeaderData
-            {
-                CustomerID = sourceHeader.CustomerID,
-                OrderDate = sourceHeader.OrderDate,
-                PrepDate = sourceHeader.PrepDate,
-                RequiredByDate = newRequiredByDate,
-                ToBeDeliveredBy = sourceHeader.ToBeDeliveredBy,
-                PurchaseOrder = sourceHeader.PurchaseOrder,
-                Confirmed = sourceHeader.Confirmed,
-                InvoiceDone = false,
-                Done = false,
-                Notes = sourceHeader.Notes
-            };
-
-            var ensure = EnsureOrderHeader(newHeader, forceNewOrder: true);
+            // Multi-line: attach to existing next-day order if present, otherwise create one.
+            var ensure = EnsureOrderHeader(nextDayHeader, useExistingIfFound: true, forceNewOrder: false);
             if (!ensure.Success)
             {
                 result.Error = string.IsNullOrEmpty(ensure.Error)
-                    ? "Failed to create order for moved line."
+                    ? "Failed to create or find order for moved line."
                     : ensure.Error;
+                return result;
+            }
+
+            if (ensure.OrderId == sourceOrderId)
+            {
+                result.Error = "Could not resolve a different order for the next delivery day.";
                 return result;
             }
 
@@ -957,6 +983,12 @@ namespace TrackerSQL.Managers
                     itemUsage.ItemProvidedID ?? 0,
                     DateTime.Now);
 
+                if (finalItemTypeId <= 0)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Last usage for customer {customerId} has no valid item (ItemProvidedID={itemUsage.ItemProvidedID}) - skipped");
+                    return null;
+                }
+
                 string itemName = _itemsRepository.GetItemDescById(finalItemTypeId);
                 int packagingId = itemUsage.ItemPackagingID ?? 0;
                 string packagingName = packagingId > 0 ? GetPackagingDesc(packagingId) : string.Empty;
@@ -988,12 +1020,24 @@ namespace TrackerSQL.Managers
         {
             try
             {
+                if (preferences == null || preferences.PreferedItem <= 0)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Customer {customerId} has no preferred item - no order line created from preferences");
+                    return null;
+                }
+
                 // Apply group item logic if needed
                 TrackerTools trackerTools = new TrackerTools();
                 int finalItemTypeId = trackerTools.ChangeItemIfGroupToNextItemInGroup(
                     customerId,
                     preferences.PreferedItem,
                     DateTime.Now);
+
+                if (finalItemTypeId <= 0)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"Preferred item {preferences.PreferedItem} for customer {customerId} did not resolve to a valid item - skipped");
+                    return null;
+                }
 
                 // Get item name for display
                 string itemName = _itemsRepository.GetItemDescById(finalItemTypeId);

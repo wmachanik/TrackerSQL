@@ -120,7 +120,7 @@
     <form id="frmDisable" runat="server">
         <div class="container">
             <div class="header">
-                <img src="images/logo/QuaffeeLogoSmall.jpg" alt="Quaffee Logo" />
+                <img src="images/logo/QuaffeeLogoSmall.jpg" alt="Quaffee Logo" style="height: 100px; width: auto;" />
                 <h1 style="color: #2c5530; margin-top: 15px;">
                     <asp:Literal ID="ltrlPageHeading" runat="server" />
                 </h1>

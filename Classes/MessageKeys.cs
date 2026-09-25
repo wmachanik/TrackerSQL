@@ -176,6 +176,11 @@ namespace TrackerSQL.Classes
             public const string ConfirmationPOReceived = "Order.ConfirmationPOReceived";
             public const string ConfirmationTableDeliveryLabel = "Order.ConfirmationTableDeliveryLabel";
             public const string ConfirmationTableOrderLabel = "Order.ConfirmationTableOrderLabel";
+            public const string PortalAckSubject = "Order.PortalAckSubject";
+            public const string PortalAckHeader = "Order.PortalAckHeader";
+            public const string PortalAckDelivery = "Order.PortalAckDelivery";
+            public const string PortalAckCaveat = "Order.PortalAckCaveat";
+            public const string PortalAckChanges = "Order.PortalAckChanges";
         }
         public static class OrderDetail
         {
@@ -267,6 +272,15 @@ namespace TrackerSQL.Classes
             public const string UpcomingClosures = "CoffeeCheckup.UpcomingClosures";
             public const string AdjustedDatesLabel = "CoffeeCheckup.AdjustedDatesLabel";
             public const string HolidayClosureEmailNote = "CoffeeCheckup.HolidayClosureEmailNote";
+        }
+
+        /// <summary>
+        /// Contact portal email blurbs and related copy.
+        /// </summary>
+        public static class Portal
+        {
+            public const string EmailJoinInvite = "Portal.EmailJoinInvite";
+            public const string EmailAlreadyJoined = "Portal.EmailAlreadyJoined";
         }
 
         /// <summary>
@@ -416,6 +430,8 @@ namespace TrackerSQL.Classes
             public const string MapGeneralAutoPullToday = "WooCommerce.MapGeneralAutoPullToday";
             public const string MapGeneralAutoPullSinceSync = "WooCommerce.MapGeneralAutoPullSinceSync";
             public const string MapGeneralAutoPullThisWeek = "WooCommerce.MapGeneralAutoPullThisWeek";
+            public const string MapGeneralCheckNewOrdersLbl = "WooCommerce.MapGeneralCheckNewOrdersLbl";
+            public const string MapGeneralCheckNewOrdersNote = "WooCommerce.MapGeneralCheckNewOrdersNote";
             public const string MapSaveGeneralSettings = "WooCommerce.MapSaveGeneralSettings";
             public const string MapGeneralSettingsSaved = "WooCommerce.MapGeneralSettingsSaved";
             public const string MapCatHelp = "WooCommerce.MapCatHelp";

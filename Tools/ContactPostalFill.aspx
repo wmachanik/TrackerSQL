@@ -117,7 +117,8 @@
                     OnClick="btnApply_Click" CausesValidation="false" Text="Apply selected"
                     OnClientClick="if (!confirm('Write suggested postal codes to the selected contacts?')) return false; return postalSetupMarkSaving(this);" />
             </div>
-            <asp:GridView ID="gvSuggestions" runat="server" CssClass="results-table postal-area-setup-grid"
+            <div class="results-container">
+            <asp:GridView ID="gvSuggestions" runat="server" CssClass="results-table postal-fill-grid"
                 AutoGenerateColumns="false" DataKeyNames="ContactID"
                 AllowPaging="true" PageSize="25"
                 OnPageIndexChanging="gvSuggestions_PageIndexChanging"
@@ -156,6 +157,7 @@
                     <asp:BoundField DataField="Reason" HeaderText="Why" />
                 </Columns>
             </asp:GridView>
+            </div>
         </div>
 
         <div class="button-row">

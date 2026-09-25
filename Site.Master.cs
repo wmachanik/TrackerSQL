@@ -38,6 +38,20 @@ namespace TrackerSQL
 
             BindAppVersionLabels();
             BindApplicationErrorBanner();
+
+            // Contact-portal users stay in Portal/ — never the staff shell.
+            if (Request.IsAuthenticated
+                && ContactPortalManager.IsContactRole(Context.User?.Identity?.Name))
+            {
+                string path = Request.AppRelativeCurrentExecutionFilePath ?? string.Empty;
+                if (!path.StartsWith("~/Portal/", StringComparison.OrdinalIgnoreCase)
+                    && path.IndexOf("Logout", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    Response.Redirect("~/Portal/Home.aspx", true);
+                    return;
+                }
+            }
+
             bool wooOn = IsWooIntegrationEnabledCached();
             SyncWooMappingMenuItem(wooOn);
             SyncWooOrderImportMenuItem(wooOn);

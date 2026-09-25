@@ -902,6 +902,80 @@ ORDER BY OrderID DESC";
             return id > 0 ? id : (int?)null;
         }
 
+        /// <summary>
+        /// Tracker orders for a contact near a date that are not already linked in WooOrderInfoTbl.
+        /// Used by WooLink (manual link of Woo → existing Tracker order).
+        /// </summary>
+        public List<Order> FindUnlinkedOrdersNearDate(int contactId, DateTime centerDate, int dayWindow = 2, int maxRows = 20)
+        {
+            var list = new List<Order>();
+            if (contactId <= 0)
+                return list;
+
+            if (dayWindow < 0)
+                dayWindow = 0;
+            if (maxRows <= 0)
+                maxRows = 20;
+
+            DateTime from = centerDate.Date.AddDays(-dayWindow);
+            DateTime to = centerDate.Date.AddDays(dayWindow);
+
+            string sql = @"
+SELECT TOP (@MaxRows)
+    o.OrderID, o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate,
+    o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.Notes, o.PurchaseOrder, o.InvoiceDone
+FROM OrdersTbl o
+WHERE o.ContactID = @ContactID
+  AND (
+        (o.OrderDate IS NOT NULL AND o.OrderDate >= @FromDate AND o.OrderDate <= @ToDate)
+     OR (o.RequiredByDate IS NOT NULL AND o.RequiredByDate >= @FromDate AND o.RequiredByDate <= @ToDate)
+      )
+  AND NOT EXISTS (
+        SELECT 1 FROM WooOrderInfoTbl w WHERE w.OrderID = o.OrderID
+      )
+ORDER BY
+    ABS(DATEDIFF(day,
+        COALESCE(o.OrderDate, o.RequiredByDate, @CenterDate),
+        @CenterDate)),
+    o.OrderID DESC";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@MaxRows", DataValue = maxRows, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@FromDate", DataValue = from, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@ToDate", DataValue = to, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@CenterDate", DataValue = centerDate.Date, DataDbType = DbType.Date }
+            };
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                    list.Add(Map(rdr));
+            }
+
+            return list;
+        }
+
+        public bool UpdatePurchaseOrderIfEmpty(int orderId, string purchaseOrder)
+        {
+            if (orderId <= 0 || string.IsNullOrWhiteSpace(purchaseOrder))
+                return false;
+
+            const string sql = @"
+UPDATE OrdersTbl
+SET PurchaseOrder = @PurchaseOrder
+WHERE OrderID = @OrderID
+  AND (PurchaseOrder IS NULL OR LTRIM(RTRIM(PurchaseOrder)) = '')";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@PurchaseOrder", DataValue = purchaseOrder.Trim(), DataDbType = DbType.String },
+                new DBParameter { ParamName = "@OrderID", DataValue = orderId, DataDbType = DbType.Int32 }
+            };
+            return ExecNonQuery(sql, parameters) > 0;
+        }
+
         public bool UpdateOrderNotes(long orderId, string notes)
         {
             const string sql = "UPDATE OrdersTbl SET Notes = @Notes WHERE OrderID = @OrderID";
@@ -1345,6 +1419,59 @@ ORDER BY OrderID DESC";
             }
         }
 
+        private const string PortalOrderLinesSelect = @"
+                SELECT ol.OrderID,
+                       ISNULL(i.ItemDesc, '') AS ItemDesc,
+                       ISNULL(ol.QtyOrdered, 0) AS Qty,
+                       ISNULL(p.ItemPrepDescription, '') AS PackagingDesc
+                FROM OrderLinesTbl ol
+                LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
+                LEFT JOIN ItemPackagingsTbl p ON p.ItemPackagingID = ol.PackagingID";
+
+        /// <summary>Contact Portal: order lines with item and packaging names (no IDs).</summary>
+        public List<ContactPortalOrderLine> GetPortalOrderLines(int orderId)
+        {
+            if (orderId <= 0)
+                return new List<ContactPortalOrderLine>();
+
+            return ReadPortalOrderLines(
+                PortalOrderLinesSelect + " WHERE ol.OrderID = @OrderID ORDER BY ol.OrderLineID",
+                new DBParameter { ParamName = "@OrderID", DataValue = orderId, DataDbType = DbType.Int32 });
+        }
+
+        /// <summary>Contact Portal: every line on every order for a contact (one query for the orders list).</summary>
+        public List<ContactPortalOrderLine> GetPortalOrderLinesByContact(int contactId)
+        {
+            if (contactId <= 0)
+                return new List<ContactPortalOrderLine>();
+
+            return ReadPortalOrderLines(
+                PortalOrderLinesSelect + @"
+                INNER JOIN OrdersTbl o ON o.OrderID = ol.OrderID
+                WHERE o.ContactID = @ContactID
+                ORDER BY ol.OrderID, ol.OrderLineID",
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 });
+        }
+
+        private List<ContactPortalOrderLine> ReadPortalOrderLines(string sql, DBParameter parameter)
+        {
+            var list = new List<ContactPortalOrderLine>();
+            using (var rdr = ExecReader(sql, new List<DBParameter> { parameter }))
+            {
+                while (rdr != null && rdr.Read())
+                {
+                    list.Add(new ContactPortalOrderLine
+                    {
+                        OrderID = Convert.ToInt32(rdr["OrderID"]),
+                        ItemDesc = rdr["ItemDesc"].ToString(),
+                        Qty = Convert.ToDouble(rdr["Qty"]),
+                        PackagingDesc = rdr["PackagingDesc"].ToString()
+                    });
+                }
+            }
+            return list;
+        }
+
         /// <summary>
         /// Orders for a contact (newest delivery first), with first line item + line count for UI preview.
         /// </summary>
@@ -1367,6 +1494,7 @@ ORDER BY OrderID DESC";
                     o.Done,
                     o.InvoiceDone,
                     ISNULL(o.Notes, '') AS Notes,
+                    ISNULL(o.PurchaseOrder, '') AS PurchaseOrder,
                     ISNULL(firstLine.ItemID, 0) AS FirstItemID,
                     ISNULL(i.ItemDesc, '') AS FirstItemDesc,
                     ISNULL(firstLine.QtyOrdered, 0) AS FirstQty,
@@ -1419,6 +1547,7 @@ ORDER BY OrderID DESC";
                         Done = rdr["Done"] != DBNull.Value && Convert.ToBoolean(rdr["Done"]),
                         InvoiceDone = rdr["InvoiceDone"] != DBNull.Value && Convert.ToBoolean(rdr["InvoiceDone"]),
                         Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
+                        PurchaseOrder = rdr["PurchaseOrder"] == DBNull.Value ? string.Empty : rdr["PurchaseOrder"].ToString(),
                         FirstItemID = rdr["FirstItemID"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["FirstItemID"]),
                         FirstItemDesc = rdr["FirstItemDesc"] == DBNull.Value
                             ? string.Empty

@@ -23,6 +23,7 @@ namespace TrackerSQL.Repositories
             "ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
             "ImportNotesItemID, ImportCompanyNameMode, ImportNoteLineFormat, AppendTrackingToOrderNotes, " +
             "ImportAutoPullMode, ImportZzNameNoteLayout, ImportNotePartOrder, WriteExpectedDeliveryToWoo, " +
+            "CheckNewOrdersOnNewOrder, " +
             "UpdatedAt, UpdatedBy";
 
         public WooCommerceSettings GetSettings()
@@ -78,6 +79,7 @@ namespace TrackerSQL.Repositories
                 ImportNoteLineFormat = "SkuAndName",
                 AppendTrackingToOrderNotes = false,
                 ImportAutoPullMode = "SinceLastSync",
+                CheckNewOrdersOnNewOrder = true,
                 ImportZzNameNoteLayout = "NameGearAddressMeta",
                 ImportNotePartOrder = "Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated",
                 ImportAddressDeduplicateSuburb = true,

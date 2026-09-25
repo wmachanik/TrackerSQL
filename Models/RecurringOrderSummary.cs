@@ -60,6 +60,26 @@ namespace TrackerSQL.Models
             }
         }
 
+        /// <summary>Contact Portal wording: "Every 2 Weeks", "Monthly On Day 15".</summary>
+        public string CustomerPatternDisplay
+        {
+            get
+            {
+                string type = (RecurringTypeDesc ?? string.Empty).Trim();
+                int n = Value ?? 0;
+                if (type.Equals("Weeks", StringComparison.OrdinalIgnoreCase))
+                    return n <= 1 ? "Every Week" : "Every " + n + " Weeks";
+                if (type.Equals("DayOfMonth", StringComparison.OrdinalIgnoreCase))
+                    return n > 0 ? "Monthly On Day " + n : "Monthly";
+                return ContactPortalDisplay.TitleCase(RecurringPatternDisplay);
+            }
+        }
+
+        public string DateLastDoneDisplay => ContactPortalDisplay.FormatDate(DateLastDone);
+        public string NextDateRequiredDisplay => ContactPortalDisplay.FormatDate(NextDateRequired);
+        public string RequireUntilDateDisplay => ContactPortalDisplay.FormatDate(RequireUntilDate);
+        public string CustomerStatusDisplay => Enabled == false ? "Paused" : "Active";
+
         public string ItemsDisplay
         {
             get

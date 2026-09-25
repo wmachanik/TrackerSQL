@@ -81,7 +81,7 @@ namespace TrackerSQL.Classes
                 
                 // Add logo header
                 emailBuilder.AppendLine("<div style='text-align: center; margin-bottom: 30px;'>");
-                emailBuilder.AppendLine("<img src='https://tracker.quaffee.co.za/images/logo/QuaffeeLogoSmall.jpg' alt='Quaffee Logo' style='max-width: 200px;' />");
+                emailBuilder.AppendLine("<img src='https://tracker.quaffee.co.za/images/logo/QuaffeeLogoSmall.jpg' alt='Quaffee Logo' height='100' style='height: 100px; width: auto;' />");
                 
                 // Process message keys with their formatting parameters
                 for (int i = 0; i < keyAndValues.Length; i++)

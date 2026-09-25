@@ -35,7 +35,7 @@
                                 <asp:ListItem Value="0" Selected="True" Text="none" />
                                 <asp:ListItem Value="CompanyName" Text="Company Name" />
                                 <asp:ListItem Value="ContactFirstName" Text="First Name" />
-                                <asp:ListItem Value="EmailAddress" Text="Email" />
+                                <asp:ListItem Value="EmailAddress" Text="Email (main or alt)" />
                                 <asp:ListItem Value="PeopleTbl.Abbreviation" Text="Delivery By" />
                                 <asp:ListItem Value="AreasTbl.AreaName" Text="Area" />
                                 <asp:ListItem Value="EquipTypesTbl.EquipTypeName" Text="Equipment Type" />

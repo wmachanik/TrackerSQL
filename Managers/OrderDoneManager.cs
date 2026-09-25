@@ -390,6 +390,9 @@ namespace TrackerSQL.Managers
             string body = MessageProvider.Format(MessageKeys.Order.StatusBody, contactName, statusMessage);
             email.AddToBody(body);
             AppendTrackingBody(email, trackingNumber, courierServiceId);
+            string portalBlurb = ContactPortalManager.BuildEmailPortalBlurbHtml((int)customerId);
+            if (!string.IsNullOrWhiteSpace(portalBlurb))
+                email.AddToBody(portalBlurb);
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.StatusFooter));
             email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
 
@@ -566,6 +569,9 @@ namespace TrackerSQL.Managers
                 previousWaybill ?? string.Empty,
                 newWaybill ?? string.Empty));
             AppendTrackingBody(email, newWaybill, courierServiceId);
+            string portalBlurb = ContactPortalManager.BuildEmailPortalBlurbHtml((int)customerId);
+            if (!string.IsNullOrWhiteSpace(portalBlurb))
+                email.AddToBody(portalBlurb);
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.StatusFooter));
             email.AddToBody(MessageProvider.Get(MessageProvider.GetEmailSignature()));
 

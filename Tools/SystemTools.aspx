@@ -1,5 +1,4 @@
-<%@ Page Title="System Tools" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true"
-    CodeBehind="SystemTools.aspx.cs" Inherits="TrackerSQL.Tools.SystemTools" MaintainScrollPositionOnPostback="true" %>
+<%@ Page Title="System Tools" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SystemTools.aspx.cs" Inherits="TrackerSQL.Tools.SystemTools" MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntSystemToolsHdr" title="System Tools" ContentPlaceHolderID="HeadContent" runat="server">
 </asp:Content>
@@ -141,7 +140,7 @@
                             <div class="dashboard-link tool-tone-reset">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
-                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <img class="tool-card-icon" src="../images/imgButtons/PostalCode.png" alt="" />
                                         <h4>Postal Area Setup</h4>
                                     </div>
                                     <p>Import SA postcode reference and build Tracker area ranges</p>
@@ -152,7 +151,7 @@
                             <div class="dashboard-link tool-tone-reset">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
-                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <img class="tool-card-icon" src="../images/imgButtons/ContactCardLink.png" alt="" />
                                         <h4>Contact postal fill</h4>
                                     </div>
                                     <p>Suggest / assign postcodes for contacts missing one</p>
@@ -169,7 +168,7 @@
                             <div class="dashboard-link tool-tone-sysdata">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
-                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <img class="tool-card-icon" src="../images/imgButtons/SystemSettingsWithGlobe.png" alt="system preferences" />
                                         <h4>System Preferences</h4>
                                     </div>
                                     <p>General settings and WooCommerce integration</p>
@@ -179,7 +178,7 @@
                             <div class="dashboard-link tool-tone-sysdata" id="pnlWooMappingTool" runat="server">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
-                                        <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                                        <img class="tool-card-icon" src="../images/imgButtons/Woocommerce-Icon.png" alt="woo settings" />
                                         <h4>WooCommerce Mapping</h4>
                                     </div>
                                     <p><asp:Literal ID="litWooMappingToolBlurb" runat="server" Text="Categories, item SKU maps, and enabled sync" /></p>
@@ -212,22 +211,22 @@
                                     <asp:Button ID="btnXMLTOSQL" runat="server" Text="Open" PostBackUrl="~/Tools/XMLtoSQL.aspx" />
                                 </div>
                             </div>
+                            <div class="dashboard-link tool-tone-sysdata">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/ContactPortalIcon.jpg" alt="" />
+                                        <h4>Contact Portal</h4>
+                                    </div>
+                                    <p>Editable fields and change requests from contacts</p>
+                                    <asp:Button ID="btnContactPortalAdmin" runat="server" Text="Open" PostBackUrl="~/Tools/ContactPortalAdmin.aspx" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="complex-form-section">
                         <h3>Diagnostics &amp; maintenance</h3>
                         <div class="dashboard-links tools-dashboard">
-                            <div class="dashboard-link tool-tone-logs">
-                                <div class="dashboard-card">
-                                    <div class="tool-card-header">
-                                        <img class="tool-card-icon" src="../images/imgButtons/View.png" alt="" />
-                                        <h4>Log Viewer</h4>
-                                    </div>
-                                    <p>Review system logs</p>
-                                    <asp:Button ID="btnLogViewer" runat="server" Text="Open" PostBackUrl="~/Tools/LogViewer.aspx" />
-                                </div>
-                            </div>
                             <div class="dashboard-link tool-tone-email">
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">

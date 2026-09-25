@@ -21,13 +21,13 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlWooMappingTool;
         protected global::System.Web.UI.WebControls.Literal litWooMappingToolBlurb;
         protected global::System.Web.UI.WebControls.Button btnWooMapping;
-        protected global::System.Web.UI.WebControls.Button btnLogViewer;
         protected global::System.Web.UI.WebControls.Button btnEmailDiagnostics;
         protected global::System.Web.UI.WebControls.Button btnSetLastOrderDate;
         protected global::System.Web.UI.WebControls.CheckBox chkRecalcPredictionsStaleOnly;
         protected global::System.Web.UI.WebControls.Button btnRecalcPredictions;
         protected global::System.Web.UI.WebControls.Button btnRecalcTotalCups;
         protected global::System.Web.UI.WebControls.Button btnMessagesEditor;
+        protected global::System.Web.UI.WebControls.Button btnContactPortalAdmin;
         protected global::System.Web.UI.WebControls.Button btnDatabaseBackup;
         protected global::System.Web.UI.WebControls.Button btnSqlConnectionTest;
         protected global::System.Web.UI.WebControls.Button btnDisableInactiveClients;

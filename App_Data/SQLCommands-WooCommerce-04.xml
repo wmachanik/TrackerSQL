@@ -128,4 +128,15 @@
       END
     ]]>
   </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'CheckNewOrdersOnNewOrder') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD CheckNewOrdersOnNewOrder BIT NOT NULL
+              CONSTRAINT DF_WooSet_CheckNewOnNewOrder DEFAULT (1);
+      END
+    ]]>
+  </command>
 </root>

@@ -271,9 +271,15 @@ private Contact Map(IDataReader r)
 
         /// <summary>
         /// Prepends a dated system note to ContactsTbl.Notes (newest first).
-        /// Used whenever the system changes account type, prediction, or enabled status.
+        /// By default also records a durable change-log summary (survives Notes edits).
+        /// Pass writeChangeLog: false when the caller records structured field diffs separately.
         /// </summary>
-        public bool AppendSystemNote(int contactId, string message)
+        public bool AppendSystemNote(
+            int contactId,
+            string message,
+            string source = null,
+            string changedBy = null,
+            bool writeChangeLog = true)
         {
             if (contactId <= 0 || string.IsNullOrWhiteSpace(message))
                 return false;
@@ -290,7 +296,23 @@ private Contact Map(IDataReader r)
                 new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
             };
 
-            return ExecNonQuery(sql, parameters) > 0;
+            bool ok = ExecNonQuery(sql, parameters) > 0;
+            if (ok && writeChangeLog)
+            {
+                try
+                {
+                    Managers.ContactChangeLogManager.LogSummary(
+                        contactId,
+                        string.IsNullOrWhiteSpace(source) ? Managers.ContactChangeLogManager.SourceSystem : source,
+                        message.Trim(),
+                        changedBy);
+                }
+                catch
+                {
+                    // Notes already written — change log is best-effort.
+                }
+            }
+            return ok;
         }
 
         public Contact GetById(long id) => GetById((int)id);
@@ -535,15 +557,15 @@ WHERE ContactID = @ContactID";
         /// Sets PredictionDisabled (and optionally Enabled) using literal bit values, clears
         /// AlwaysSendChkUp / reminder counters, and prepends a dated note — then verifies.
         /// </summary>
-        public bool ApplyEmailDisableChoice(int contactId, bool disableAll)
+        public bool ApplyEmailDisableChoice(int contactId, bool disableAll, string source = "email link", bool addNote = true)
         {
             if (contactId <= 0)
                 return false;
 
             string noteMessage = disableAll
-                ? "Self-service: contact fully disabled via email link (Enabled off, reminders off)."
-                : "Self-service: coffee checkup reminders disabled via email link (contact remains enabled).";
-            string noteLine = $"{TimeZoneUtils.Now():yyyy-MM-dd}: {noteMessage}\n";
+                ? $"Self-service: contact fully disabled via {source} (Enabled off, reminders off)."
+                : $"Self-service: coffee checkup reminders disabled via {source} (contact remains enabled).";
+            string noteLine = addNote ? $"{TimeZoneUtils.Now():yyyy-MM-dd}: {noteMessage}\n" : string.Empty;
 
             // Use literal 1/0 for bits (same pattern as DisableContactReminders) — avoids any
             // SqlParameter bit / same-name-as-column edge cases that can leave the flag unchanged.
@@ -587,7 +609,7 @@ WHERE ContactID = @ContactID";
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "ApplyEmailDisableChoice: PredictionDisabled not set after UPDATE for contact "
                     + contactId + " — forcing via SetPredictionDisabled.");
-                SetPredictionDisabled(contactId, true, "self-service email link");
+                SetPredictionDisabled(contactId, true, "self-service email link", addNote);
                 updated = GetById(contactId);
             }
 
@@ -639,7 +661,7 @@ WHERE ContactID = @ContactID";
         /// When the flag actually changes, a dated note is prepended to ContactsTbl.Notes.
         /// </summary>
         /// <param name="reason">Optional context for the note, e.g. "recurring order added".</param>
-        public bool SetPredictionDisabled(int contactId, bool predictionDisabled, string reason = null)
+        public bool SetPredictionDisabled(int contactId, bool predictionDisabled, string reason = null, bool addNote = true)
         {
             if (contactId <= 0)
                 return false;
@@ -662,7 +684,7 @@ WHERE ContactID = @ContactID";
             };
 
             bool ok = ExecNonQuery(sql, parameters) > 0;
-            if (ok && wasDisabled != predictionDisabled)
+            if (ok && addNote && wasDisabled != predictionDisabled)
             {
                 string action = predictionDisabled ? "Prediction disabled" : "Prediction re-enabled";
                 string note = string.IsNullOrWhiteSpace(reason) ? action : action + " — " + reason.Trim();

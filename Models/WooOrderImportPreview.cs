@@ -49,6 +49,8 @@ namespace TrackerSQL.Models
         public DateTime? OrderDate { get; set; }
         public bool AlreadyImported { get; set; }
         public int? ExistingTrackerOrderId { get; set; }
+        /// <summary>True when an unlinked Tracker order for the matched contact exists near the Woo date (WooLink).</summary>
+        public bool CanWooLink { get; set; }
         public bool IsGearOnly { get; set; }
         public bool UseZzName { get; set; }
         public int? MatchedContactId { get; set; }
@@ -147,5 +149,31 @@ namespace TrackerSQL.Models
         public string SourceItemSku { get; set; }
         public string SourceItemDesc { get; set; }
         public int SortOrder { get; set; }
+    }
+
+    /// <summary>Result of New Order Woo check for orders since max imported ID.</summary>
+    public class WooNewOrdersCheckResult
+    {
+        public bool Succeeded { get; set; }
+        public int NewOrderCount { get; set; }
+        public long MaxImportedWooOrderId { get; set; }
+        public long ElapsedMs { get; set; }
+        public long DbElapsedMs { get; set; }
+        public long WooElapsedMs { get; set; }
+        public string Detail { get; set; }
+        public List<long> SampleNewWooOrderIds { get; set; } = new List<long>();
+    }
+
+    /// <summary>Candidate for manually linking Woo ↔ Tracker (WooLink).</summary>
+    public class WooOrderLinkCandidate
+    {
+        public int TrackerOrderId { get; set; }
+        public long WooOrderId { get; set; }
+        public string WooOrderNumber { get; set; }
+        public DateTime? TrackerOrderDate { get; set; }
+        public DateTime? TrackerRequiredByDate { get; set; }
+        public DateTime? WooOrderDate { get; set; }
+        public string ContactName { get; set; }
+        public string Label { get; set; }
     }
 }

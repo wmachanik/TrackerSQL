@@ -125,7 +125,7 @@ namespace TrackerSQL.Pages
 
             if (!this.IsPostBack)
             {
-                this.tabcLookup.ActiveTabIndex = 0;
+                this.tabcLookup.ActiveTabIndex = ResolveLookupTabIndex(Request.QueryString["tab"]);
 
                 // gvAreaDays is not always populated; protect against out-of-range
                 if (this.gvAreaDays != null && this.gvAreaDays.Rows != null && this.gvAreaDays.Rows.Count > 1)
@@ -149,6 +149,35 @@ namespace TrackerSQL.Pages
                 BindSortOrdersGrid();
                 BindCouriersGrid();
             }
+        }
+
+        /// <summary>
+        /// Deep-link support: Lookups.aspx?tab=People (case-insensitive tab HeaderText / known aliases).
+        /// </summary>
+        private int ResolveLookupTabIndex(string tab)
+        {
+            if (string.IsNullOrWhiteSpace(tab) || tabcLookup == null || tabcLookup.Tabs == null)
+                return 0;
+
+            string key = tab.Trim();
+            for (int i = 0; i < tabcLookup.Tabs.Count; i++)
+            {
+                string header = tabcLookup.Tabs[i].HeaderText ?? string.Empty;
+                if (string.Equals(header, key, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+
+            if (string.Equals(key, "People", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(key, "Dispatch", StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 0; i < tabcLookup.Tabs.Count; i++)
+                {
+                    if (tabcLookup.Tabs[i] == tabpnlPeople)
+                        return i;
+                }
+            }
+
+            return 0;
         }
 
         private void RegisterLookupPostBackControls()

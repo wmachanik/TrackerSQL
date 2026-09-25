@@ -121,6 +121,7 @@ namespace TrackerSQL.Managers
             AppendSection(emailBuilder, BuildItemsList(contact));
             if (emailData != null)
                 AppendSection(emailBuilder, CleanupSpacing(emailData.Footer));
+            AppendSection(emailBuilder, BuildPortalBlurb(contact));
             AppendSection(emailBuilder, BuildDisableLink(contact));
 
             string fullEmail = emailBuilder.ToString();
@@ -298,6 +299,13 @@ namespace TrackerSQL.Managers
             }
 
             return MessageProvider.Get(MessageKeys.CoffeeCheckup.GreetingGeneric);
+        }
+
+        private string BuildPortalBlurb(ContactToRemindWithItems contact)
+        {
+            if (contact == null || contact.CustomerID <= 0)
+                return string.Empty;
+            return ContactPortalManager.BuildEmailPortalBlurbHtml((int)contact.CustomerID);
         }
 
         private string BuildDisableLink(ContactToRemindWithItems contact)

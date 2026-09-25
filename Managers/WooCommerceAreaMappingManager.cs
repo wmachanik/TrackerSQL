@@ -111,7 +111,70 @@ namespace TrackerSQL.Managers
             if (fromRanges != null)
                 return fromRanges;
 
-            return fromSa ?? FallbackDefault("Postcode not in any configured range");
+            if (fromSa != null)
+                return fromSa;
+
+            // Before catch-all Regional: Pretoria / JHB postcode bands map to Gauteng.
+            var fromGautengBand = TryResolveGautengBand(code);
+            if (fromGautengBand != null)
+                return fromGautengBand;
+
+            return FallbackDefault("Postcode not in any configured range");
+        }
+
+        /// <summary>
+        /// Pretoria 0001–0299 and East/West Rand / JHB 1400–2199 → Gauteng,
+        /// so these do not fall through to the Regional catch-all default.
+        /// </summary>
+        private WooAreaResolveResult TryResolveGautengBand(int code)
+        {
+            if (!PostalAreaSetupManager.IsGautengBand(code))
+                return null;
+
+            int gautengId = 0;
+            string gautengName = null;
+            foreach (var row in GetAreaDeliveryDefaults() ?? new List<WooAreaDeliveryDefault>())
+            {
+                if (row == null || string.IsNullOrWhiteSpace(row.AreaName))
+                    continue;
+                string name = row.AreaName.Trim();
+                if (string.Equals(name, "Gauteng", StringComparison.OrdinalIgnoreCase)
+                    || name.IndexOf("Gauteng", StringComparison.OrdinalIgnoreCase) >= 0
+                    || string.Equals(name, "Johannesburg", StringComparison.OrdinalIgnoreCase))
+                {
+                    gautengId = row.AreaID;
+                    gautengName = row.AreaName;
+                    break;
+                }
+            }
+
+            if (gautengId <= 0)
+            {
+                foreach (var area in _areasRepo.GetAll("AreaName") ?? new List<Area>())
+                {
+                    if (area == null || string.IsNullOrWhiteSpace(area.AreaName))
+                        continue;
+                    string name = area.AreaName.Trim();
+                    if (string.Equals(name, "Gauteng", StringComparison.OrdinalIgnoreCase)
+                        || name.IndexOf("Gauteng", StringComparison.OrdinalIgnoreCase) >= 0
+                        || string.Equals(name, "Johannesburg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        gautengId = area.AreaID;
+                        gautengName = area.AreaName;
+                        break;
+                    }
+                }
+            }
+
+            if (gautengId <= 0)
+                return null;
+
+            return BuildResult(
+                gautengId,
+                gautengName,
+                false,
+                "Postcode " + code.ToString("0000", CultureInfo.InvariantCulture)
+                + " is in the Gauteng band (0001–0299 / 1400–2199)");
         }
 
         private WooAreaResolveResult ResolveAreaFromConfiguredRanges(int code, string suburb)

@@ -35,7 +35,7 @@
 
             <asp:Panel ID="pnlMain" runat="server" CssClass="simpleForm page-tone-panel page-tone-tools">
                 <div class="page-tone-header tool-card-header">
-                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                    <img class="tool-card-icon" src="../images/imgButtons/WooImport.png" alt="" />
                     <div>
                         <h1 class="page-tone-title"><asp:Literal ID="litTitle" runat="server" Text="WooCommerce order import" /></h1>
                         <p class="page-tone-subtitle">
@@ -124,6 +124,16 @@
                                                 AlternateText='<%# GetAddOrderButtonText(Eval("AlreadyImported")) %>'
                                                 ToolTip='<%# GetAddOrderButtonText(Eval("AlreadyImported")) %>'
                                                 CommandName="AddOrder"
+                                                CommandArgument='<%# Eval("WooOrderId") %>'
+                                                CausesValidation="false" />
+                                        </asp:PlaceHolder>
+                                        <asp:PlaceHolder runat="server" Visible='<%# ShowWooLinkButton(Eval("AlreadyImported"), Eval("CanWooLink")) %>'>
+                                            <asp:ImageButton ID="btnWooLink" runat="server"
+                                                CssClass="woo-import-action-btn"
+                                                ImageUrl="~/images/imgButtons/WooLink.png"
+                                                AlternateText="Link to existing Tracker order"
+                                                ToolTip="Link this Woo order to an existing Tracker order (same contact, ±2 days) without re-importing"
+                                                CommandName="WooLink"
                                                 CommandArgument='<%# Eval("WooOrderId") %>'
                                                 CausesValidation="false" />
                                         </asp:PlaceHolder>
@@ -273,6 +283,26 @@
                                 OnClick="btnCompanyPromptConfirm_Click" CausesValidation="false" />
                             <asp:Button ID="btnCompanyPromptCancel" runat="server" CssClass="filter-panel-btn"
                                 OnClick="btnCompanyPromptCancel_Click" CausesValidation="false" />
+                        </div>
+                    </div>
+                </asp:Panel>
+
+                <asp:Panel ID="pnlWooLinkPrompt" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                    data-tracker-unsaved-ignore="1">
+                    <div class="confirm-modal">
+                        <h2>Link Woo order to Tracker</h2>
+                        <p><asp:Literal ID="litWooLinkPrompt" runat="server" /></p>
+                        <asp:HiddenField ID="hdnWooLinkWooOrderId" runat="server" />
+                        <div class="confirm-modal-option">
+                            <asp:RadioButtonList ID="rblWooLinkCandidates" runat="server" RepeatDirection="Vertical" />
+                        </div>
+                        <div class="button-row confirm-modal-buttons">
+                            <asp:Button ID="btnWooLinkConfirm" runat="server" Text="Link selected"
+                                CssClass="filter-panel-btn" OnClick="btnWooLinkConfirm_Click"
+                                CausesValidation="false" />
+                            <asp:Button ID="btnWooLinkCancel" runat="server" Text="Cancel"
+                                CssClass="filter-panel-btn" OnClick="btnWooLinkCancel_Click"
+                                CausesValidation="false" />
                         </div>
                     </div>
                 </asp:Panel>

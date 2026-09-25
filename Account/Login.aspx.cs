@@ -5,70 +5,51 @@
 
 using System;
 using System.Web;
-using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 
 //- only form later versions #nullable disable
 namespace TrackerSQL.Account
 {
+    /// <summary>
+    /// Single sign-in for staff (username) and Contact Portal contacts (email).
+    /// The account's role decides where it lands: Contact-role users go to the portal.
+    /// </summary>
     public partial class Login : Page
     {
+        protected PlaceHolder phAdmin;
         protected HyperLink RegisterHyperLink;
         protected System.Web.UI.WebControls.Login LoginUser;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            this.RegisterHyperLink.NavigateUrl = "Register.aspx?ReturnUrl=" + HttpUtility.UrlEncode(this.Request.QueryString["ReturnUrl"]);
+            string returnUrl = Request.QueryString["ReturnUrl"];
+            RegisterHyperLink.NavigateUrl = "Register.aspx"
+                + (string.IsNullOrEmpty(returnUrl) ? string.Empty : "?ReturnUrl=" + HttpUtility.UrlEncode(returnUrl));
         }
+
+        /// <summary>Allows signing in with the account email when it is not itself the user name.</summary>
+        protected void LoginUser_LoggingIn(object sender, LoginCancelEventArgs e)
+        {
+            string resolved = SignInNameResolver.Resolve(LoginUser.UserName);
+            if (!string.IsNullOrEmpty(resolved))
+                LoginUser.UserName = resolved;
+        }
+
         protected void LoginUser_LoggedIn(object sender, EventArgs e)
         {
             string username = LoginUser.UserName;
 
-            MembershipUser user = Membership.GetUser(username);
-            if (user == null) return;
-
-            Guid userId = (Guid)user.ProviderUserKey;
-
-            try
+            if (ContactPortalManager.IsContactRole(username))
             {
-                // Ensure table exists -> this is done in GetCurrentPreferences anyway
-                // TrackerSQL.Classes.UserPreferencesHelper.EnsureUserPreferencesTableExists();
-
-                // Get preferences or fallback
-                var prefs = TrackerSQL.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
-
-                // Store in Session
-                Session["UserPreferences"] = prefs;
-                Session["UserTimeZoneInfo"] = prefs.GetTimeZoneInfo(); // <-- Set this first
-
-                // log that they are logged in
-                DateTime userNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Session["UserTimeZoneInfo"] as TimeZoneInfo);
-                TrackerSQL.Classes.AppLogger.WriteLog(SystemConstants.LogTypes.Login, $"User '{LoginUser.UserName}' logged in at {userNow:yyyy-MM-dd HH:mm:ss} ({(Session["UserTimeZoneInfo"] as TimeZoneInfo)?.Id})");
-
-                // Optional shortcut: store just the TimeZoneInfo
-                Session["UserTimeZoneInfo"] = prefs.GetTimeZoneInfo();
+                string target = new ContactPortalManager().CompleteContactSignIn(username, Request.QueryString["ReturnUrl"]);
+                Response.Redirect(target, true);
+                return;
             }
-            catch (Exception ex)
-            {
-                // Fallback to default time zone only if DB fails
-                string defaultTzId = System.Configuration.ConfigurationManager.AppSettings["AppTimeZoneId"];
-                var defaultZone = TimeZoneInfo.FindSystemTimeZoneById(defaultTzId ?? "South Africa Standard Time");
 
-                Session["UserPreferences"] = new TrackerSQL.Classes.UserPreferences
-                {
-                    UserId = userId,
-                    TimeZoneId = defaultZone.Id,
-                    Language = "en-ZA",
-                    LoadedOn = DateTime.UtcNow
-                };
-
-                Session["UserTimeZoneInfo"] = defaultZone;
-
-                TrackerSQL.Classes.AppLogger.WriteLog(SystemConstants.LogTypes.Login, $"Fallback to default zone for {username}: {ex.Message}");
-            }
+            UserPreferencesHelper.InitializeSessionForStaffUser(username);
         }
     }
-
 }

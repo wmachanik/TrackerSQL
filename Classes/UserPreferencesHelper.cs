@@ -110,6 +110,49 @@ namespace TrackerSQL.Classes
             return prefs;
         }
 
+        /// <summary>
+        /// Staff sign-in: loads preferences + time zone into Session and logs the login.
+        /// Falls back to the app default zone when the DB is unavailable.
+        /// </summary>
+        public static void InitializeSessionForStaffUser(string userName)
+        {
+            var context = HttpContext.Current;
+            if (context?.Session == null)
+                return;
+
+            MembershipUser user = Membership.GetUser(userName);
+            if (user?.ProviderUserKey == null)
+                return;
+
+            Guid userId = (Guid)user.ProviderUserKey;
+            try
+            {
+                var prefs = GetCurrentPreferencesForUser(userId);
+                TimeZoneInfo zone = prefs.GetTimeZoneInfo();
+                context.Session[SessionKey] = prefs;
+                context.Session["UserTimeZoneInfo"] = zone;
+
+                DateTime userNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
+                    $"User '{userName}' logged in at {userNow:yyyy-MM-dd HH:mm:ss} ({zone?.Id})");
+            }
+            catch (Exception ex)
+            {
+                var defaultZone = TimeZoneInfo.FindSystemTimeZoneById(DefaultTimeZone);
+                context.Session[SessionKey] = new UserPreferences
+                {
+                    UserId = userId,
+                    TimeZoneId = defaultZone.Id,
+                    Language = "en-ZA",
+                    LoadedOn = DateTime.UtcNow
+                };
+                context.Session["UserTimeZoneInfo"] = defaultZone;
+
+                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
+                    $"Fallback to default zone for {userName}: {ex.Message}");
+            }
+        }
+
         public static UserPreferences LoadPreferencesFromDb(Guid userId)
         {
             string connString = GetConnectionString();

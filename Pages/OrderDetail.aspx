@@ -44,6 +44,25 @@
                     </div>
                 </div>
 
+    <asp:Panel ID="pnlNewWooOrders" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+        DefaultButton="btnNewWooOrdersImport"
+        data-tracker-unsaved-ignore="1">
+        <div class="confirm-modal">
+            <h2>New Woo orders</h2>
+            <p><asp:Literal ID="litNewWooOrdersPrompt" runat="server" /></p>
+            <div class="button-row confirm-modal-buttons">
+                <asp:Button ID="btnNewWooOrdersImport" runat="server" Text="Import Woo orders"
+                    CssClass="filter-panel-btn sys-prefs-enable-btn"
+                    OnClick="btnNewWooOrdersImport_Click" CausesValidation="false"
+                    ToolTip="Open Woo Order Import to pull the new orders" />
+                <asp:Button ID="btnNewWooOrdersContinue" runat="server" Text="Continue with new order"
+                    CssClass="filter-panel-btn"
+                    OnClick="btnNewWooOrdersContinue_Click" CausesValidation="false"
+                    ToolTip="Stay on New Order and add a manual order" />
+            </div>
+        </div>
+    </asp:Panel>
+
     <div class="order-detail-stack">
         <asp:UpdatePanel ID="upnlOrderConflict" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true" CssClass="instruction-dialog-host">
             <Triggers>
@@ -168,6 +187,16 @@
                                 </span>
                             </td>
                         </tr>
+                        <tr id="trWooLink" runat="server" visible="false">
+                            <td>Woo order</td>
+                            <td>
+                                <asp:HyperLink ID="hlWooOrder" runat="server" Target="_blank"
+                                    CssClass="order-detail-woo-link"
+                                    ToolTip="Open this order in WooCommerce admin" />
+                                <asp:Label ID="lblWooOrder" runat="server" CssClass="order-detail-woo-link"
+                                    Visible="false" />
+                            </td>
+                        </tr>
                         <tr id="trWaybill" runat="server" visible="false">
                             <td>Waybill</td>
                             <td>
@@ -212,6 +241,14 @@
                         <asp:Button ID="btnLastOrder" runat="server" Text="Last Order"
                             CssClass="filter-panel-btn order-detail-btn order-detail-last-btn" OnClick="btnLastOrder_Click"
                             ToolTip="Load items from this contact's previous order" Visible="false" />
+                        <span id="spnWooLink" runat="server" class="image-button" title="Link this Tracker order to a Woo order"
+                            visible="false">
+                            <asp:ImageButton ID="btnWooLink" runat="server"
+                                ImageUrl="~/images/imgButtons/WooLink.png"
+                                AlternateText="Link Woo"
+                                ToolTip="Link this Tracker order to a Woo order (same contact, ±2 days) — only if not already linked"
+                                OnClick="btnWooLink_Click" CausesValidation="false" />
+                        </span>
                     </div>
                 </ContentTemplate>
                 <Triggers>
@@ -257,6 +294,32 @@
                 </ContentTemplate>
                 <Triggers>
                     <asp:AsyncPostBackTrigger ControlID="btnEditWaybill" EventName="Click" />
+                </Triggers>
+            </asp:UpdatePanel>
+
+            <asp:UpdatePanel ID="upnlWooLink" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                <ContentTemplate>
+                    <asp:Panel ID="pnlWooLink" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                        data-tracker-unsaved-ignore="1">
+                        <div class="confirm-modal">
+                            <h2>Link to Woo order</h2>
+                            <p><asp:Literal ID="litWooLinkPrompt" runat="server" /></p>
+                            <div class="confirm-modal-option">
+                                <asp:RadioButtonList ID="rblWooLinkCandidates" runat="server" RepeatDirection="Vertical" />
+                            </div>
+                            <div class="button-row confirm-modal-buttons">
+                                <asp:Button ID="btnWooLinkConfirm" runat="server" Text="Link selected"
+                                    CssClass="filter-panel-btn" OnClick="btnWooLinkConfirm_Click"
+                                    CausesValidation="false" />
+                                <asp:Button ID="btnWooLinkCancel" runat="server" Text="Cancel"
+                                    CssClass="filter-panel-btn" OnClick="btnWooLinkCancel_Click"
+                                    CausesValidation="false" />
+                            </div>
+                        </div>
+                    </asp:Panel>
+                </ContentTemplate>
+                <Triggers>
+                    <asp:AsyncPostBackTrigger ControlID="btnWooLink" EventName="Click" />
                 </Triggers>
             </asp:UpdatePanel>
         </div>
@@ -334,12 +397,14 @@
                                     <ItemTemplate>
                                         <asp:ImageButton ID="MoveOneDayOnImageButton" AlternateText="+date" CommandName="MoveOneDayOn"
                                             ImageUrl="~/images/imgButtons/MoveOnADay.gif" runat="server"
-                                            CommandArgument="<%# ((GridViewRow) Container).RowIndex %>"
+                                            CommandArgument='<%# Eval("OrderLineID") %>'
+                                            CausesValidation="false"
                                             ToolTip="Reschedule this line to the next delivery day (prep unchanged)" />
                                         <asp:ImageButton ID="DeleteItemImageButton" AlternateText="del" CommandName="DeleteOrder"
                                             ImageUrl="~/images/imgButtons/DelItem.gif"
                                             OnClientClick="return confirm('Are you sure you want to delete this order item?');"
                                             runat="server" CommandArgument='<%# Eval("OrderLineID") %>'
+                                            CausesValidation="false"
                                             ToolTip="delete this" />
                                         <asp:HiddenField ID="hdnOrderLineID" runat="server" Value='<%# Bind("OrderLineID") %>' />
                                         <asp:HiddenField ID="hdnOrderID" runat="server" Value='<%# Bind("OrderID") %>' />

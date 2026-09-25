@@ -24,6 +24,7 @@ namespace TrackerSQL.Pages
     {
         public const string CONST_QRYSTR_ORDERID = "OrderID";
         public const string CONST_QRYSTR_NEWORDER = "NewOrder";
+        public const string CONST_QRYSTR_WOOCHECK = "WooCheck";
         public const string CONST_QRYSTR_DELIVERYDATE = "DeliveryDate";
         public const string CONST_QRYSTR_NOTES = "Notes";
         public const string CONST_QRYSTR_DELIVERED = "Delivered";
@@ -41,6 +42,9 @@ namespace TrackerSQL.Pages
         private const string CONST_ORDERLINE_HIDDENFIELD_PACKAGING_LABEL = "lblPackagingDesc";
         private const string CONST_ORDERLINE_HIDDENFIELD_PACKAGING_ID = "hdnPackagingID";
         private const string CONST_ORDERLINE_HIDDENFIELD_ORDER_ID = "hdnOrderID";
+
+        private const string NoLastOrderItemsMessage =
+            "No previous order or preferred item found for this contact. Use New Item to add items, or set a preferred item on the contact.";
 
         private const string VSKEY_PERSISTED_ORDER_ID = "PersistedOrderId";
         private const string VSKEY_CONFLICT_ORDER_ID = "ConflictOrderId";
@@ -304,6 +308,16 @@ namespace TrackerSQL.Pages
                 || OrderId <= 0;
         }
 
+        private bool IsWooCheckRequest()
+        {
+            string raw = Request.QueryString[CONST_QRYSTR_WOOCHECK];
+            if (string.IsNullOrWhiteSpace(raw))
+                return false;
+            return string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "yes", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void InitializeNewOrder()
         {
             ApplyPageTone(isNewOrder: true);
@@ -326,13 +340,132 @@ namespace TrackerSQL.Pages
             btnConfirmOrder.Enabled = false;
             btnOrderDelivered.Enabled = false;
             btnUnDoDone.Enabled = false;
-            SetStatusMessage("Select a contact, then add items.");
+            if (btnWooLink != null)
+                btnWooLink.Visible = false;
+            if (spnWooLink != null)
+                spnWooLink.Visible = false;
+            if (trWooLink != null)
+                trWooLink.Visible = false;
             PersistedOrderId = 0;
             ClearHeaderUndo();
             ClearDraftConflictState();
             SetNewItemPanelVisible(false);
             UpdateNewItemButtonState();
             BindOrderLines();
+
+            if (pnlNewWooOrders != null)
+                pnlNewWooOrders.Visible = false;
+
+            if (ShouldRunNewOrderWooCheck())
+                RunNewOrderWooCheck();
+            else
+                SetStatusMessage("Select a contact, then add items.");
+        }
+
+        private bool ShouldRunNewOrderWooCheck()
+        {
+            // Legacy ?WooCheck=1 still forces the check.
+            if (IsWooCheckRequest())
+                return true;
+            try
+            {
+                var mgr = new WooCommerceSettingsManager();
+                mgr.EnsureSchemaOnce();
+                var settings = mgr.GetSettings();
+                return settings == null || settings.CheckNewOrdersOnNewOrder;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Checks Woo for orders newer than the max imported Woo ID (when enabled in General settings).
+        /// If any are found, offers Import vs continue manually.
+        /// </summary>
+        private void RunNewOrderWooCheck()
+        {
+            WooNewOrdersCheckResult check;
+            try
+            {
+                check = new WooCommerceOrderImportManager().CheckNewOrdersSinceLastImport();
+            }
+            catch (Exception ex)
+            {
+                SetStatusMessage("Woo new-order check failed: " + ex.Message
+                    + " You can still add an order manually.", isError: true);
+                return;
+            }
+
+            if (!check.Succeeded)
+            {
+                SetStatusMessage("Woo new-order check failed: " + (check.Detail ?? "unknown error")
+                    + " You can still add an order manually.", isError: true);
+                return;
+            }
+
+            if (check.NewOrderCount <= 0)
+            {
+                SetStatusMessage("Select a contact, then add items.");
+                return;
+            }
+
+            string sample = string.Empty;
+            if (check.SampleNewWooOrderIds != null && check.SampleNewWooOrderIds.Count > 0)
+            {
+                sample = " (IDs: "
+                    + string.Join(", ", check.SampleNewWooOrderIds.ConvertAll(id =>
+                        id.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+                    + (check.NewOrderCount > check.SampleNewWooOrderIds.Count ? "…" : string.Empty)
+                    + ")";
+            }
+
+            string headline = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "There {0} {1} new Woo order{2} since last imported Woo ID {3}{4}.",
+                check.NewOrderCount == 1 ? "is" : "are",
+                check.NewOrderCount,
+                check.NewOrderCount == 1 ? string.Empty : "s",
+                check.MaxImportedWooOrderId,
+                sample);
+
+            if (litNewWooOrdersPrompt != null)
+                litNewWooOrdersPrompt.Text = HttpUtility.HtmlEncode(headline);
+            if (pnlNewWooOrders != null)
+                pnlNewWooOrders.Visible = true;
+
+            // Import is the default action: focus it and make Enter submit Import.
+            if (btnNewWooOrdersImport != null)
+            {
+                Form.DefaultButton = btnNewWooOrdersImport.UniqueID;
+                ScriptManager.RegisterStartupScript(
+                    this,
+                    GetType(),
+                    "focusNewWooOrdersImport",
+                    "setTimeout(function(){var b=document.getElementById('"
+                        + btnNewWooOrdersImport.ClientID
+                        + "');if(b){b.focus();}},0);",
+                    true);
+            }
+
+            SetStatusMessage(
+                headline + " Choose Import or continue adding a manual order.",
+                isWarn: true);
+        }
+
+        protected void btnNewWooOrdersImport_Click(object sender, EventArgs e)
+        {
+            if (pnlNewWooOrders != null)
+                pnlNewWooOrders.Visible = false;
+            Response.Redirect(ResolveUrl("~/Tools/WooOrderImport.aspx"), true);
+        }
+
+        protected void btnNewWooOrdersContinue_Click(object sender, EventArgs e)
+        {
+            if (pnlNewWooOrders != null)
+                pnlNewWooOrders.Visible = false;
+            SetStatusMessage("Select a contact, then add items.");
         }
 
         private void ApplyPageTone(bool isNewOrder)
@@ -382,6 +515,7 @@ namespace TrackerSQL.Pages
             SetNewItemPanelVisible(false);
             UpdateDuplicateMergeState();
             ApplyHeaderUiState();
+            SyncWooLinkButtonVisibility();
         }
 
         private bool TryRedirectLegacyOrderUrl()
@@ -1490,6 +1624,7 @@ namespace TrackerSQL.Pages
             btnOrderDelivered.Enabled = OrderId > 0 && !orderDone;
             btnUnDoDone.Enabled = OrderId > 0 && orderDone;
             btnLastOrder.Visible = contactSelected && !orderDone;
+            SyncWooLinkButtonVisibility();
             ApplyCancelOrderButtonAccess(orderDone);
             UpdateHeaderUndoButton();
             RefreshFooterButtonPanel();
@@ -1499,6 +1634,177 @@ namespace TrackerSQL.Pages
         {
             if (updtButtonPanel != null && updtButtonPanel.UpdateMode == UpdatePanelUpdateMode.Conditional)
                 updtButtonPanel.Update();
+        }
+
+        private void SyncWooLinkButtonVisibility()
+        {
+            SyncWooLinkDisplay();
+        }
+
+        /// <summary>
+        /// Shows durable Woo link from WooOrderInfoTbl (not Notes). Link button only when unlinked.
+        /// </summary>
+        private void SyncWooLinkDisplay()
+        {
+            SetWooLinkButtonVisible(false);
+            if (trWooLink != null)
+                trWooLink.Visible = false;
+            if (hlWooOrder != null)
+            {
+                hlWooOrder.Visible = false;
+                hlWooOrder.NavigateUrl = string.Empty;
+                hlWooOrder.Text = string.Empty;
+            }
+            if (lblWooOrder != null)
+            {
+                lblWooOrder.Visible = false;
+                lblWooOrder.Text = string.Empty;
+            }
+
+            int orderId = OrderId > 0 ? OrderId : PersistedOrderId;
+            if (orderId <= 0)
+                return;
+
+            try
+            {
+                var link = new WooOrderInfoRepository().GetByTrackerOrderId(orderId);
+                if (link == null)
+                {
+                    SetWooLinkButtonVisible(true);
+                    return;
+                }
+
+                string number = !string.IsNullOrWhiteSpace(link.WooOrderNumber)
+                    ? link.WooOrderNumber.Trim()
+                    : link.WooOrderId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string label = "Woo #" + number;
+                if (link.WooOrderId > 0 && !string.Equals(number, link.WooOrderId.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                    label += " (id " + link.WooOrderId.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")";
+
+                string adminUrl = BuildWooAdminOrderUrl(link.WooOrderId);
+                if (trWooLink != null)
+                    trWooLink.Visible = true;
+
+                if (!string.IsNullOrWhiteSpace(adminUrl) && hlWooOrder != null)
+                {
+                    hlWooOrder.Visible = true;
+                    hlWooOrder.Text = HttpUtility.HtmlEncode(label);
+                    hlWooOrder.NavigateUrl = adminUrl;
+                }
+                else if (lblWooOrder != null)
+                {
+                    lblWooOrder.Visible = true;
+                    lblWooOrder.Text = label;
+                }
+            }
+            catch
+            {
+                SetWooLinkButtonVisible(false);
+            }
+        }
+
+        private void SetWooLinkButtonVisible(bool visible)
+        {
+            if (spnWooLink != null)
+                spnWooLink.Visible = visible;
+            if (btnWooLink != null)
+                btnWooLink.Visible = visible;
+        }
+
+        private static string BuildWooAdminOrderUrl(long wooOrderId)
+        {
+            if (wooOrderId <= 0)
+                return null;
+            try
+            {
+                var settings = new WooCommerceSettingsManager().GetSettings();
+                string admin = settings?.AdminBaseUrl?.Trim();
+                if (string.IsNullOrWhiteSpace(admin))
+                    return null;
+                // HPOS / modern Woo admin: …/wp-admin/admin.php?page=wc-orders&action=edit&id={id}
+                return admin.TrimEnd('/') + "/admin.php?page=wc-orders&action=edit&id="
+                    + wooOrderId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        protected void btnWooLink_Click(object sender, EventArgs e)
+        {
+            int orderId = OrderId > 0 ? OrderId : PersistedOrderId;
+            if (orderId <= 0)
+            {
+                SetStatusMessage("Save the order before linking to Woo.", isError: true);
+                return;
+            }
+
+            var candidates = new WooCommerceOrderImportManager().FindWooLinkCandidates(orderId, out string error);
+            if (candidates == null || candidates.Count == 0)
+            {
+                SetStatusMessage(error ?? "No matching unlinked Woo orders found.", isError: true);
+                if (pnlWooLink != null)
+                    pnlWooLink.Visible = false;
+                if (upnlWooLink != null)
+                    upnlWooLink.Update();
+                return;
+            }
+
+            litWooLinkPrompt.Text = HttpUtility.HtmlEncode(
+                "Pick the Woo order to link to Tracker #" + orderId
+                + ". Same contact, Woo order date within ±2 days of this order. Already-linked Woo orders are excluded.");
+
+            rblWooLinkCandidates.Items.Clear();
+            foreach (var c in candidates)
+            {
+                rblWooLinkCandidates.Items.Add(new ListItem(
+                    c.Label ?? ("Woo #" + c.WooOrderId),
+                    c.WooOrderId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            }
+            if (rblWooLinkCandidates.Items.Count > 0)
+                rblWooLinkCandidates.SelectedIndex = 0;
+
+            pnlWooLink.Visible = true;
+            if (upnlWooLink != null)
+                upnlWooLink.Update();
+        }
+
+        protected void btnWooLinkConfirm_Click(object sender, EventArgs e)
+        {
+            int orderId = OrderId > 0 ? OrderId : PersistedOrderId;
+            long wooOrderId = 0;
+            if (rblWooLinkCandidates.SelectedItem != null)
+                long.TryParse(rblWooLinkCandidates.SelectedValue, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out wooOrderId);
+
+            pnlWooLink.Visible = false;
+            if (upnlWooLink != null)
+                upnlWooLink.Update();
+
+            if (orderId <= 0 || wooOrderId <= 0)
+            {
+                SetStatusMessage("Select a Woo order to link.", isError: true);
+                return;
+            }
+
+            string user = Context?.User?.Identity?.Name ?? string.Empty;
+            if (!new WooCommerceOrderImportManager().LinkWooToTrackerOrder(wooOrderId, orderId, user, out string error))
+            {
+                SetStatusMessage(error ?? "Link failed.", isError: true);
+                return;
+            }
+
+            SyncWooLinkButtonVisibility();
+            SetStatusMessage("Linked Tracker order #" + orderId + " to Woo order #" + wooOrderId + ".", isSuccess: true);
+        }
+
+        protected void btnWooLinkCancel_Click(object sender, EventArgs e)
+        {
+            pnlWooLink.Visible = false;
+            if (upnlWooLink != null)
+                upnlWooLink.Update();
+            SetStatusMessage("Woo link cancelled.", log: false);
         }
 
         private void ApplyCancelOrderButtonAccess(bool orderMarkedDone = false)
@@ -1911,7 +2217,8 @@ namespace TrackerSQL.Pages
             RefreshNewItemPanel();
         }
 
-        private void CompleteLastOrderItems(int orderId, bool wasDraftOrder, bool forceNewOrder = false)
+        private void CompleteLastOrderItems(int orderId, bool wasDraftOrder, bool forceNewOrder = false,
+            List<OrderManager.OrderLineData> lastItems = null)
         {
             long effectiveContactId = GetEffectiveContactId();
             int contactId = effectiveContactId > 0
@@ -1920,6 +2227,15 @@ namespace TrackerSQL.Pages
             if (contactId <= 0)
             {
                 SetStatusMessage("Please select a contact first.", isError: true);
+                return;
+            }
+
+            // Check for items before EnsureOrderHeader so an empty order is never created
+            if (lastItems == null)
+                lastItems = _orderManager.GetLastOrderItems(contactId, setDates: false);
+            if (lastItems.Count == 0)
+            {
+                SetStatusMessage(NoLastOrderItemsMessage, isWarn: true);
                 return;
             }
 
@@ -1943,13 +2259,6 @@ namespace TrackerSQL.Pages
                 }
 
                 orderId = ensure.OrderId;
-            }
-
-            var lastItems = _orderManager.GetLastOrderItems(contactId, setDates: false);
-            if (lastItems.Count == 0)
-            {
-                SetStatusMessage("No previous order found for this contact.");
-                return;
             }
 
             var lines = new List<OrderTblData>();
@@ -2152,6 +2461,13 @@ namespace TrackerSQL.Pages
 
             try
             {
+                var lastItems = _orderManager.GetLastOrderItems(contactId, setDates: false);
+                if (lastItems.Count == 0)
+                {
+                    SetStatusMessage(NoLastOrderItemsMessage, isWarn: true);
+                    return;
+                }
+
                 bool wasDraftOrder = OrderId <= 0;
                 var header = ReadHeaderFromControls();
                 header.CustomerID = contactId;
@@ -2179,7 +2495,7 @@ namespace TrackerSQL.Pages
                     orderId = ensure.OrderId;
                 }
 
-                CompleteLastOrderItems(orderId, wasDraftOrder);
+                CompleteLastOrderItems(orderId, wasDraftOrder, lastItems: lastItems);
             }
             catch (Exception ex)
             {
@@ -2468,15 +2784,12 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
-                if (!int.TryParse(e.CommandArgument?.ToString(), out int rowIndex)
-                    || rowIndex < 0
-                    || rowIndex >= gvOrderLines.DataKeys.Count)
+                if (!int.TryParse(e.CommandArgument?.ToString(), out int orderLineId) || orderLineId <= 0)
                 {
                     SetStatusMessage("Could not identify the order line to move.", isError: true);
                     return;
                 }
 
-                int orderLineId = Convert.ToInt32(gvOrderLines.DataKeys[rowIndex].Value);
                 var result = _orderManager.MoveOrderLineToNextWorkingDay(OrderId, orderLineId);
                 if (!result.Success)
                 {
@@ -2489,6 +2802,16 @@ namespace TrackerSQL.Pages
                     var header = _orderManager.GetOrderHeader(result.TargetOrderId);
                     if (header != null)
                         BindHeaderToControls(header);
+                }
+                else if (result.SourceOrderRemoved || result.TargetOrderId != OrderId)
+                {
+                    // Line left this order — stay on remaining lines, or open the target if source was removed.
+                    if (result.SourceOrderRemoved && result.TargetOrderId > 0)
+                    {
+                        Response.Redirect(ResolveUrl("~/Pages/OrderDetail.aspx?OrderID=" + result.TargetOrderId), false);
+                        Context.ApplicationInstance.CompleteRequest();
+                        return;
+                    }
                 }
 
                 BindOrderLines();

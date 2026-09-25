@@ -201,6 +201,14 @@
     <Content Include="images\imgButtons\Wait.gif" />
     <Content Include="images\imgButtons\World.gif" />
     <Content Include="images\logo\QuaffeeLogoSmall.jpg" />
+    <Content Include="images\logo\QuaffeeLogoSmallest.jpg" />
+    <Content Include="images\imgButtons\ContactCardLink.png" />
+    <Content Include="images\imgButtons\PostalCode.png" />
+    <Content Include="images\imgButtons\SystemSettingsWithGlobe.png" />
+    <Content Include="images\imgButtons\Woocommerce-Icon.png" />
+    <Content Include="images\imgButtons\WooImport.png" />
+    <Content Include="images\imgButtons\WooLink.png" />
+    <Content Include="images\imgButtons\ContactPortalIcon.jpg" />
     <Content Include="images\logo\QuaffeeLogoWeb.jpg" />
     <Content Include="Pages\ItemsRequired.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
@@ -266,10 +274,30 @@
     <Content Include="App_Data\GoLive\SQLCommands-CourierServices-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-People-IsDispatched-01.xml" />
     <Content Include="App_Data\SQLCommands-Postal-01.xml" />
+    <Content Include="App_Data\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="Data\geo-south-africa-postal_EN.csv" />
     <Content Include="Data\area-place-presets.json" />
     <Content Include="Tools\SystemTools.aspx" />
     <Content Include="Tools\XMLtoSQL.aspx" />
+    <Content Include="Portal\Web.config" />
+    <Content Include="Portal\Portal.Master" />
+    <Content Include="Portal\Login.aspx" />
+    <Content Include="Portal\ChangePassword.aspx" />
+    <Content Include="Portal\Home.aspx" />
+    <Content Include="Portal\MyContact.aspx" />
+    <Content Include="Portal\MyOrders.aspx" />
+    <Content Include="Portal\MyOrder.aspx" />
+    <Content Include="Portal\RepeatOrder.aspx" />
+    <Content Include="Portal\ViewAs.aspx" />
+    <Content Include="Portal\MyRepairs.aspx" />
+    <Content Include="Portal\MyRepair.aspx" />
+    <Content Include="Portal\MyRecurring.aspx" />
+    <Content Include="Portal\MyRecurringDetail.aspx" />
+    <Content Include="Tools\ContactPortalAdmin.aspx" />
+    <Content Include="App_Data\SQLCommands-ContactPortal-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
@@ -290,6 +318,112 @@
     <Compile Include="Account\ChangePasswordSuccess.aspx.designer.cs">
       <DependentUpon>ChangePasswordSuccess.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Portal\PortalPageBase.cs" />
+    <Compile Include="Portal\Portal.Master.cs">
+      <DependentUpon>Portal.Master</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\Portal.Master.designer.cs">
+      <DependentUpon>Portal.Master</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\Login.aspx.cs">
+      <DependentUpon>Login.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\Login.aspx.designer.cs">
+      <DependentUpon>Login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\ChangePassword.aspx.cs">
+      <DependentUpon>ChangePassword.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\ChangePassword.aspx.designer.cs">
+      <DependentUpon>ChangePassword.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\Home.aspx.cs">
+      <DependentUpon>Home.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\Home.aspx.designer.cs">
+      <DependentUpon>Home.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyContact.aspx.cs">
+      <DependentUpon>MyContact.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyContact.aspx.designer.cs">
+      <DependentUpon>MyContact.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyOrders.aspx.cs">
+      <DependentUpon>MyOrders.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyOrders.aspx.designer.cs">
+      <DependentUpon>MyOrders.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyOrder.aspx.cs">
+      <DependentUpon>MyOrder.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyOrder.aspx.designer.cs">
+      <DependentUpon>MyOrder.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\RepeatOrder.aspx.cs">
+      <DependentUpon>RepeatOrder.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\RepeatOrder.aspx.designer.cs">
+      <DependentUpon>RepeatOrder.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\ViewAs.aspx.cs">
+      <DependentUpon>ViewAs.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\ViewAs.aspx.designer.cs">
+      <DependentUpon>ViewAs.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyRepairs.aspx.cs">
+      <DependentUpon>MyRepairs.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyRepairs.aspx.designer.cs">
+      <DependentUpon>MyRepairs.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyRepair.aspx.cs">
+      <DependentUpon>MyRepair.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyRepair.aspx.designer.cs">
+      <DependentUpon>MyRepair.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyRecurring.aspx.cs">
+      <DependentUpon>MyRecurring.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyRecurring.aspx.designer.cs">
+      <DependentUpon>MyRecurring.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Portal\MyRecurringDetail.aspx.cs">
+      <DependentUpon>MyRecurringDetail.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Portal\MyRecurringDetail.aspx.designer.cs">
+      <DependentUpon>MyRecurringDetail.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\ContactPortalAdmin.aspx.cs">
+      <DependentUpon>ContactPortalAdmin.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\ContactPortalAdmin.aspx.designer.cs">
+      <DependentUpon>ContactPortalAdmin.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
+    <Compile Include="Managers\MembershipRoleManager.cs" />
+    <Compile Include="Managers\ContactPortalManager.cs" />
+    <Compile Include="Models\ContactPortalModels.cs" />
+    <Compile Include="Repositories\ContactUserLinkRepository.cs" />
+    <Compile Include="Repositories\ContactPortalChangeRequestRepository.cs" />
+    <Compile Include="Repositories\ContactPortalSettingsRepository.cs" />
     <Compile Include="Account\Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -359,6 +493,7 @@
     <Compile Include="Models\AwayReason.cs" />
     <Compile Include="Models\ClosureDate.cs" />
     <Compile Include="Models\Contact.cs" />
+    <Compile Include="Models\ContactChangeLogEntry.cs" />
     <Compile Include="Models\ContactOrderSummary.cs" />
     <Compile Include="Models\CoffeeCheckupModels.cs" />
     <Compile Include="Models\ContactsAccInfo.cs" />
@@ -440,6 +575,7 @@
     <Compile Include="Repositories\ContactsAwayPeriodRepository.cs" />
     <Compile Include="Repositories\ContactsItemUsageRepository.cs" />
     <Compile Include="Repositories\ContactsRepository.cs" />
+    <Compile Include="Repositories\ContactChangeLogRepository.cs" />
     <Compile Include="Repositories\ContactSummariesRepository.cs" />
     <Compile Include="Repositories\ContactsUsageRepository.cs" />
     <Compile Include="Repositories\ContactTrackedServiceItemsRepository.cs" />
@@ -482,6 +618,7 @@
     <Compile Include="Repositories\TotalCountTrackerRepository.cs" />
     <Compile Include="Repositories\UsedItemGroupRepository.cs" />
     <Compile Include="Classes\GridPager.cs" />
+    <Compile Include="Classes\SignInNameResolver.cs" />
     <Compile Include="Classes\SystemConstants.cs" />
     <Compile Include="Classes\PersonDefaults.cs" />
     <Compile Include="Classes\TrackerSQLDb.cs" />
@@ -831,6 +968,8 @@
     <Compile Include="Managers\WooCommerceMappingManager.cs" />
     <Compile Include="Managers\WooCommerceAreaMappingManager.cs" />
     <Compile Include="Managers\PostalSchemaInstaller.cs" />
+    <Compile Include="Managers\ContactChangeLogSchemaInstaller.cs" />
+    <Compile Include="Managers\ContactChangeLogManager.cs" />
     <Compile Include="Managers\SaPostalCodeManager.cs" />
     <Compile Include="Managers\PostalAreaSetupManager.cs" />
     <Compile Include="Managers\ContactPostalFillManager.cs" />
@@ -973,7 +1112,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <!-- RETIRED 2026-07-14: direct-URL / legacy pages excluded from build+publish. Files remain on disk. See Documentation/WorkInProgress/Page_Migration_Gap_Analysis.md Ã‚Â§2.4. Also on disk but never in project: Pages/NewOrder*.aspx, Pages/CustomerDetails.aspx, Pages/RepairDetailOld.aspx, Pages/LoadSendCoffeeCheckup.aspx, Pages/Print.aspx, Tools/MergeCustomersFromQB.aspx -->
+  <!-- RETIRED 2026-07-14: direct-URL / legacy pages excluded from build+publish. Files remain on disk. See Documentation/WorkInProgress/Page_Migration_Gap_Analysis.md Ãƒâ€šÃ‚Â§2.4. Also on disk but never in project: Pages/NewOrder*.aspx, Pages/CustomerDetails.aspx, Pages/RepairDetailOld.aspx, Pages/LoadSendCoffeeCheckup.aspx, Pages/Print.aspx, Tools/MergeCustomersFromQB.aspx -->
   <ItemGroup />
   <!-- LEGACY migration artifacts under Migrations/, Data/Metadata/, etc. are NOT in this project. Canonical SQL/migrations live in TrackerMigration. Files may remain on disk but must not be published or treated as source of truth. -->
   <!-- LEGACY typed DataSets under DataSets/ are excluded (Access-era TableAdapters). Active pages use Repositories/. Folder remains on disk for reference only. -->

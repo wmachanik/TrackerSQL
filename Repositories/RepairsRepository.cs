@@ -143,6 +143,53 @@ namespace TrackerSQL.Repositories
             return QueryRepairs(sql, parameters, "DateLogged DESC");
         }
 
+        /// <summary>
+        /// Contact Portal: repairs for a contact with status, fault and machine names resolved.
+        /// Pass repairId to fetch a single repair (still scoped to the contact).
+        /// </summary>
+        public List<ContactPortalRepairView> GetPortalViews(int contactId, int repairId = 0)
+        {
+            var list = new List<ContactPortalRepairView>();
+            if (contactId <= 0)
+                return list;
+
+            string sql = @"
+                SELECT r.RepairID,
+                       ISNULL(r.JobCardNumber, '') AS JobCardNumber,
+                       r.DateLogged,
+                       r.LastStatusChange,
+                       ISNULL(e.EquipTypeName, '') AS EquipTypeName,
+                       ISNULL(r.EquipSerialNumber, '') AS EquipSerialNumber,
+                       ISNULL(f.RepairFaultDesc, '') AS FaultName,
+                       ISNULL(r.RepairFaultDesc, '') AS FaultNotes,
+                       ISNULL(r.RepairStatusID, 0) AS RepairStatusID,
+                       ISNULL(s.RepairStatusDesc, '') AS StatusName,
+                       ISNULL(s.StatusNote, '') AS StatusNote,
+                       ISNULL(r.Notes, '') AS Notes
+                FROM RepairsTbl r
+                LEFT JOIN RepairStatusesTbl s ON s.RepairStatusID = r.RepairStatusID
+                LEFT JOIN RepairFaultsTbl f ON f.RepairFaultID = r.RepairFaultID
+                LEFT JOIN EquipTypesTbl e ON e.EquipTypeID = r.EquipTypeID
+                WHERE r.ContactID = @ContactID"
+                + (repairId > 0 ? " AND r.RepairID = @RepairID" : string.Empty) + @"
+                ORDER BY r.DateLogged DESC, r.RepairID DESC";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+            if (repairId > 0)
+                parameters.Add(new DBParameter { ParamName = "@RepairID", DataValue = repairId, DataDbType = DbType.Int32 });
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                while (rdr != null && rdr.Read())
+                    list.Add(DbMapper.Map<ContactPortalRepairView>(rdr));
+            }
+
+            return list;
+        }
+
         /// <summary>All repairs for a contact logged on/after the given date, newest first.</summary>
         public List<Repair> GetByContactSince(int contactId, DateTime sinceDate)
         {

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Durable contact field change history (survives Notes edits/deletes).
+  Idempotent — safe to re-run via Contact Details or Ensure schema.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactChangeLogTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ContactChangeLogTbl
+          (
+              ChangeLogID BIGINT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_ContactChangeLogTbl PRIMARY KEY,
+              ContactID INT NOT NULL,
+              ChangedAt DATETIME NOT NULL
+                  CONSTRAINT DF_ContactChangeLog_ChangedAt DEFAULT (GETDATE()),
+              ChangedBy NVARCHAR(128) NULL,
+              Source NVARCHAR(64) NOT NULL,
+              Summary NVARCHAR(500) NULL,
+              FieldName NVARCHAR(64) NULL,
+              OldValue NVARCHAR(MAX) NULL,
+              NewValue NVARCHAR(MAX) NULL
+          );
+
+          CREATE INDEX IX_ContactChangeLog_ContactChanged
+              ON dbo.ContactChangeLogTbl (ContactID, ChangedAt DESC);
+      END
+    ]]>
+  </command>
+</root>

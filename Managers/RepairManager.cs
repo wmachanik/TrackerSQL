@@ -375,6 +375,8 @@ namespace TrackerSQL.Managers
                 statusNote,
                 TrackerTools.SafeString(repair.JobCardNumber));
 
+            body += ContactPortalManager.BuildEmailPortalBlurbHtml((int)repair.CustomerID);
+
             body += MessageProvider.Get(MessageKeys.Repairs.DisclaimerFooter) +
                 MessageProvider.Get(MessageProvider.GetEmailSignature());
 

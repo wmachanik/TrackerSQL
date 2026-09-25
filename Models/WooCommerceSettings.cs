@@ -76,6 +76,10 @@ namespace TrackerSQL.Models
         /// On opening Woo Order Import (when no session preview): None, SinceLastSync (default), Today, or ThisWeek (last 7 days).
         /// </summary>
         public string ImportAutoPullMode { get; set; } = "SinceLastSync";
+        /// <summary>
+        /// When true (default), opening New Order checks Woo for orders newer than the max imported Woo ID.
+        /// </summary>
+        public bool CheckNewOrdersOnNewOrder { get; set; } = true;
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

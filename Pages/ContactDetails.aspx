@@ -114,9 +114,9 @@
                 </tr>
                 <tr>
                     <td>Email</td>
-                    <td colspan="2"><asp:TextBox ID="EmailAddressTextBox" runat="server" Width="25em" /></td>
+                    <td><asp:TextBox ID="EmailAddressTextBox" runat="server" Width="100%" /></td>
                     <td>Alt Email Addr</td>
-                    <td colspan="2"><asp:TextBox ID="AltEmailAddressTextBox" runat="server" Width="25em" /></td>
+                    <td colspan="3"><asp:TextBox ID="AltEmailAddressTextBox" runat="server" Width="25em" /></td>
                 </tr>
                 <tr>
                     <td>Contact Type</td>
@@ -153,16 +153,13 @@
                 <tr>
                     <td>Delivery By</td>
                     <td>
-                        <asp:DropDownList ID="ddlDeliveryBy" runat="server" AppendDataBoundItems="true" DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID">
+                        <asp:DropDownList ID="ddlDeliveryBy" runat="server" AppendDataBoundItems="true" DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID"
+                            AutoPostBack="true" OnSelectedIndexChanged="ddlDeliveryBy_SelectedIndexChanged">
                             <asp:ListItem Text="- ? -" Value="0" />
                         </asp:DropDownList>
                         <asp:RequiredFieldValidator ID="ddlDeliveryByRequiredFieldValidator" runat="server"
                             ErrorMessage="Please select who will deliver" ControlToValidate="ddlDeliveryBy" InitialValue="0"
                             Display="None" />
-                    </td>
-                    <td>Courier</td>
-                    <td>
-                        <asp:DropDownList ID="ddlCourierService" runat="server" CssClass="sys-prefs-input" />
                     </td>
                     <td>Agent</td>
                     <td>
@@ -170,11 +167,24 @@
                             <asp:ListItem Text="none" Value="0" />
                         </asp:DropDownList>
                     </td>
+                    <asp:PlaceHolder ID="phCourier" runat="server">
+                        <td>Courier</td>
+                        <td>
+                            <asp:DropDownList ID="ddlCourierService" runat="server" />
+                        </td>
+                    </asp:PlaceHolder>
+                    <asp:PlaceHolder ID="phCourierBlank" runat="server" Visible="false">
+                        <td>&nbsp;</td><td>&nbsp;</td>
+                    </asp:PlaceHolder>
                 </tr>
                 <tr>
                     <td>Reminders: [<asp:Label ID="ReminderCountLabel" runat="server" />]</td>
-                    <td colspan="2">LastReminderSent:<asp:Label ID="LastReminderLabel" runat="server" /></td>
-                    <td colspan="3"></td>
+                    <td>Last sent: <asp:Label ID="LastReminderLabel" runat="server" /></td>
+                    <td>Contact Portal</td>
+                    <td colspan="3">
+                        <asp:Label ID="lblPortalStatus" runat="server" Text="" />
+                        <asp:Literal ID="ltrlPortalConflicts" runat="server" EnableViewState="false" />
+                    </td>
                 </tr>
                 <tr>
                     <td>Uses/Enabled/Filters</td>
@@ -217,6 +227,13 @@
                             OnClick="btnSendReminder_Click" CausesValidation="false"
                             OnClientClick="return confirm('Send a coffee checkup reminder email to this contact now?');"
                             ToolTip="Email a checkup reminder now (updates last reminder date and count)" />
+                        <asp:Button ID="btnInvitePortal" Text="Invite to portal" runat="server" CssClass="filter-panel-btn"
+                            OnClick="btnInvitePortal_Click" CausesValidation="false"
+                            OnClientClick="return confirm('Email this contact a temporary password for the contact portal?');"
+                            ToolTip="Create or reset Contact-role login and email a temporary password" />
+                        <asp:Button ID="btnViewInPortal" Text="View in portal" runat="server" Visible="false"
+                            CssClass="filter-panel-btn portal-preview-btn" CausesValidation="false"
+                            ToolTip="Administrators: open the Contact Portal as this contact in a new tab (read-only preview)" />
                         <asp:Button ID="btnRecalcAverage" Text="Recalc Ave" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnRecalcAverage_Click" CausesValidation="false" />
                         <span class="image-button" title="Return to the page you came from without saving">
@@ -491,6 +508,36 @@
                                                 </EditItemTemplate>
                                             </asp:TemplateField>
                                         </Columns>
+                                    </asp:GridView>
+                                </div>
+                            </ContentTemplate>
+                        </asp:UpdatePanel>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Change Log" ID="tabpnlChangeLog">
+                    <HeaderTemplate>Change Log</HeaderTemplate>
+                    <ContentTemplate>
+                        <asp:UpdatePanel ID="upnlContactChangeLog" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                            <ContentTemplate>
+                                <div class="pad-4">
+                                    <p class="sys-prefs-help">Field changes are stored here permanently (separate from Notes, which can be edited).</p>
+                                    <asp:GridView ID="gvContactChangeLog" runat="server" CssClass="TblWhite small"
+                                        AutoGenerateColumns="False" EmptyDataText="No field changes recorded yet."
+                                        AllowPaging="True" PageSize="20"
+                                        OnPageIndexChanging="gvContactChangeLog_PageIndexChanging"
+                                        OnRowCreated="gvContactChangeLog_RowCreated">
+                                        <Columns>
+                                            <asp:BoundField DataField="ChangedAt" HeaderText="When" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
+                                            <asp:BoundField DataField="ChangedBy" HeaderText="By" />
+                                            <asp:BoundField DataField="Source" HeaderText="Source" />
+                                            <asp:BoundField DataField="FieldName" HeaderText="Field" />
+                                            <asp:BoundField DataField="ChangeDisplay" HeaderText="Change" />
+                                            <asp:BoundField DataField="Summary" HeaderText="Note" />
+                                        </Columns>
+                                        <PagerStyle CssClass="pager-row" />
+                                        <PagerTemplate>
+                                            <asp:PlaceHolder ID="plhPager" runat="server" />
+                                        </PagerTemplate>
                                     </asp:GridView>
                                 </div>
                             </ContentTemplate>

@@ -51,7 +51,10 @@ namespace TrackerSQL.Repositories
                     var parsed = ParseFilter(whereFilter); // (column, operator, value)
                     if (parsed != null && ColumnMap.TryGetValue(parsed.Item1, out string mappedCol))
                     {
-                        whereParts.Add($"{mappedCol} {parsed.Item2} {parsed.Item3}");
+                        if (string.Equals(parsed.Item1, "EmailAddress", StringComparison.OrdinalIgnoreCase))
+                            whereParts.Add($"({mappedCol} {parsed.Item2} {parsed.Item3} OR c.AltEmailAddress {parsed.Item2} {parsed.Item3})");
+                        else
+                            whereParts.Add($"{mappedCol} {parsed.Item2} {parsed.Item3}");
                     }
                 }
 

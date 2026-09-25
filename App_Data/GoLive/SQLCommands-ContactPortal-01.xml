@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Contact portal: membership↔contact link, change-request queue, editable-field settings.
+  Idempotent — safe to re-run via Ensure schema.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactUserLinkTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ContactUserLinkTbl
+          (
+              LinkID INT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_ContactUserLinkTbl PRIMARY KEY,
+              UserId UNIQUEIDENTIFIER NOT NULL,
+              ContactID INT NOT NULL,
+              MustChangePassword BIT NOT NULL
+                  CONSTRAINT DF_ContactUserLink_MustChangePassword DEFAULT (1),
+              CreatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_ContactUserLink_CreatedAt DEFAULT (GETDATE()),
+              LastLoginAt DATETIME NULL,
+              CONSTRAINT UQ_ContactUserLink_UserId UNIQUE (UserId)
+          );
+
+          CREATE INDEX IX_ContactUserLink_ContactID
+              ON dbo.ContactUserLinkTbl (ContactID);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactPortalChangeRequestTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ContactPortalChangeRequestTbl
+          (
+              RequestID BIGINT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_ContactPortalChangeRequestTbl PRIMARY KEY,
+              ContactID INT NOT NULL,
+              UserId UNIQUEIDENTIFIER NULL,
+              Kind NVARCHAR(32) NOT NULL,
+              RelatedId BIGINT NULL,
+              RequestText NVARCHAR(MAX) NOT NULL,
+              Status NVARCHAR(24) NOT NULL
+                  CONSTRAINT DF_ContactPortalCR_Status DEFAULT (N'Open'),
+              CreatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_ContactPortalCR_CreatedAt DEFAULT (GETDATE()),
+              ResolvedAt DATETIME NULL,
+              ResolvedBy NVARCHAR(128) NULL,
+              StaffNote NVARCHAR(1000) NULL
+          );
+
+          CREATE INDEX IX_ContactPortalCR_ContactCreated
+              ON dbo.ContactPortalChangeRequestTbl (ContactID, CreatedAt DESC);
+
+          CREATE INDEX IX_ContactPortalCR_StatusCreated
+              ON dbo.ContactPortalChangeRequestTbl (Status, CreatedAt DESC);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactPortalSettingsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ContactPortalSettingsTbl
+          (
+              SettingsID INT NOT NULL
+                  CONSTRAINT PK_ContactPortalSettingsTbl PRIMARY KEY,
+              EditableContactFields NVARCHAR(1000) NOT NULL
+                  CONSTRAINT DF_ContactPortalSettings_Fields
+                      DEFAULT (N'PhoneNumber,CellNumber,EmailAddress,AltEmailAddress'),
+              UpdatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_ContactPortalSettings_UpdatedAt DEFAULT (GETDATE()),
+              UpdatedBy NVARCHAR(128) NULL
+          );
+
+          INSERT INTO dbo.ContactPortalSettingsTbl (SettingsID, EditableContactFields, UpdatedBy)
+          VALUES (1, N'PhoneNumber,CellNumber,EmailAddress,AltEmailAddress', N'system');
+      END
+    ]]>
+  </command>
+</root>

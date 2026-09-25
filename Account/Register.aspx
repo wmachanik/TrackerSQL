@@ -9,9 +9,16 @@
             <img class="tool-card-icon" src="../images/imgButtons/Person.gif" alt="" />
             <div>
                 <h1 class="page-tone-title">Register</h1>
-                <p class="page-tone-subtitle">Create a new TrackerSQL account</p>
+                <p class="page-tone-subtitle">Create a new TrackerSQL admin account</p>
             </div>
         </div>
+
+        <p class="status-message status-info">
+            This page is for Quaffee admin users only. Customers do not need to register —
+            <asp:HyperLink ID="hlPortalRequest" runat="server" EnableViewState="false"
+                NavigateUrl="~/Portal/Login.aspx?request=1" Text="request a temporary password for My Quaffee" />
+            using the email address we have on file.
+        </p>
 
         <asp:CreateUserWizard ID="RegisterUser" runat="server" EnableViewState="False"
             OnCreatedUser="RegisterUser_CreatedUser" DisableCreatedUser="True"

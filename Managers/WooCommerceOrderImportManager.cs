@@ -115,6 +115,319 @@ namespace TrackerSQL.Managers
             return previews;
         }
 
+        /// <summary>
+        /// Timing probe / New Order check: how long to discover Woo orders newer than MAX imported Woo ID.
+        /// Does not import — only counts.
+        /// </summary>
+        public WooNewOrdersCheckResult CheckNewOrdersSinceLastImport()
+        {
+            var result = new WooNewOrdersCheckResult();
+            var total = System.Diagnostics.Stopwatch.StartNew();
+
+            try
+            {
+                var dbSw = System.Diagnostics.Stopwatch.StartNew();
+                result.MaxImportedWooOrderId = _wooOrderRepo.GetMaxWooOrderId();
+                dbSw.Stop();
+                result.DbElapsedMs = dbSw.ElapsedMilliseconds;
+
+                if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out string credError))
+                {
+                    result.Succeeded = false;
+                    result.Detail = string.IsNullOrWhiteSpace(credError)
+                        ? "Woo credentials not configured."
+                        : credError;
+                    return result;
+                }
+
+                var wooSw = System.Diagnostics.Stopwatch.StartNew();
+                List<WooOrderDto> orders = result.MaxImportedWooOrderId <= 0
+                    ? _api.GetOrdersSince(creds, DateTime.UtcNow.AddDays(-30))
+                    : _api.GetOrdersAfterId(creds, result.MaxImportedWooOrderId);
+                wooSw.Stop();
+                result.WooElapsedMs = wooSw.ElapsedMilliseconds;
+
+                result.NewOrderCount = orders != null ? orders.Count : 0;
+                if (orders != null && orders.Count > 0)
+                {
+                    result.SampleNewWooOrderIds = orders
+                        .Where(o => o != null && o.Id > 0)
+                        .OrderBy(o => o.Id)
+                        .Select(o => o.Id)
+                        .Take(8)
+                        .ToList();
+                }
+
+                result.Succeeded = true;
+                if (result.MaxImportedWooOrderId <= 0)
+                {
+                    result.Detail = result.NewOrderCount == 0
+                        ? "No prior imports — checked last 30 days; no Woo orders found."
+                        : "No prior imports — checked last 30 days.";
+                }
+                else
+                {
+                    result.Detail = result.NewOrderCount == 0
+                        ? "No Woo orders newer than ID " + result.MaxImportedWooOrderId + "."
+                        : result.NewOrderCount + " Woo order(s) newer than ID " + result.MaxImportedWooOrderId + ".";
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Succeeded = false;
+                result.Detail = "Woo check failed: " + ex.Message;
+                AppLogger.WriteLog("woo", "CheckNewOrdersSinceLastImport: " + ex.Message);
+            }
+            finally
+            {
+                total.Stop();
+                result.ElapsedMs = total.ElapsedMilliseconds;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Finder for WooLink from Woo Import: unlinked Tracker orders for the matched contact near the Woo order date.
+        /// </summary>
+        public List<WooOrderLinkCandidate> FindTrackerLinkCandidates(long wooOrderId, out string error)
+        {
+            error = null;
+            var list = new List<WooOrderLinkCandidate>();
+            if (wooOrderId <= 0)
+            {
+                error = "Invalid Woo order id.";
+                return list;
+            }
+
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
+                return list;
+
+            WooOrderDto order = _api.GetOrder(creds, wooOrderId);
+            if (order == null)
+            {
+                error = "Woo order not found.";
+                return list;
+            }
+
+            if (ResolveExistingImportLink(order) != null)
+            {
+                error = "That Woo order is already linked to a Tracker order.";
+                return list;
+            }
+
+            EnsurePreviewContext();
+            var preview = BuildPreview(order);
+            if (!preview.MatchedContactId.HasValue || preview.MatchedContactId.Value <= 0)
+            {
+                error = "No matching Tracker contact for this Woo order (name/email). Add or match the contact first.";
+                return list;
+            }
+
+            DateTime center = (order.DateCreated ?? TimeZoneUtils.Now()).Date;
+            List<Order> candidates = _ordersRepo.FindUnlinkedOrdersNearDate(
+                preview.MatchedContactId.Value, center, dayWindow: 2, maxRows: 20);
+
+            foreach (Order o in candidates)
+            {
+                if (o == null || o.OrderID <= 0)
+                    continue;
+                list.Add(new WooOrderLinkCandidate
+                {
+                    TrackerOrderId = o.OrderID,
+                    WooOrderId = order.Id,
+                    WooOrderNumber = order.Number ?? order.Id.ToString(CultureInfo.InvariantCulture),
+                    TrackerOrderDate = o.OrderDate,
+                    TrackerRequiredByDate = o.RequiredByDate,
+                    WooOrderDate = order.DateCreated,
+                    ContactName = preview.ContactDisplayName,
+                    Label = FormatTrackerLinkLabel(o)
+                });
+            }
+
+            if (list.Count == 0)
+                error = "No unlinked Tracker orders for this contact within ±2 days of the Woo order date.";
+
+            return list;
+        }
+
+        /// <summary>
+        /// Finder for WooLink from Order Detail: unlinked Woo orders matching this Tracker order's contact near its dates.
+        /// </summary>
+        public List<WooOrderLinkCandidate> FindWooLinkCandidates(int trackerOrderId, out string error)
+        {
+            error = null;
+            var list = new List<WooOrderLinkCandidate>();
+            if (trackerOrderId <= 0)
+            {
+                error = "Save the order first.";
+                return list;
+            }
+
+            if (_wooOrderRepo.GetByTrackerOrderId(trackerOrderId) != null)
+            {
+                error = "This Tracker order is already linked to Woo.";
+                return list;
+            }
+
+            Order tracker = _ordersRepo.GetById(trackerOrderId);
+            if (tracker == null)
+            {
+                error = "Tracker order not found.";
+                return list;
+            }
+
+            int contactId = tracker.ContactID ?? 0;
+            if (contactId <= 0)
+            {
+                error = "Order has no contact — cannot match Woo orders.";
+                return list;
+            }
+
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
+                return list;
+
+            DateTime center = (tracker.OrderDate ?? tracker.RequiredByDate ?? TimeZoneUtils.Now()).Date;
+            DateTime fromUtc = TimeZoneUtils.ConvertToUtc(center.AddDays(-2));
+            DateTime toUtc = TimeZoneUtils.ConvertToUtc(center.AddDays(3));
+
+            List<WooOrderDto> wooOrders;
+            try
+            {
+                wooOrders = _api.GetOrdersInRange(creds, fromUtc, toUtc);
+            }
+            catch (Exception ex)
+            {
+                error = "Woo API error: " + ex.Message;
+                return list;
+            }
+
+            EnsurePreviewContext();
+            Contact contact = _contactsRepo.GetById(contactId);
+            string contactName = contact != null
+                ? (contact.CompanyName ?? ("Contact #" + contactId))
+                : ("Contact #" + contactId);
+
+            foreach (WooOrderDto woo in wooOrders ?? new List<WooOrderDto>())
+            {
+                if (woo == null || woo.Id <= 0)
+                    continue;
+                if (ResolveExistingImportLink(woo) != null)
+                    continue;
+
+                var preview = BuildPreview(woo);
+                if (!preview.MatchedContactId.HasValue || preview.MatchedContactId.Value != contactId)
+                    continue;
+
+                list.Add(new WooOrderLinkCandidate
+                {
+                    TrackerOrderId = trackerOrderId,
+                    WooOrderId = woo.Id,
+                    WooOrderNumber = woo.Number ?? woo.Id.ToString(CultureInfo.InvariantCulture),
+                    TrackerOrderDate = tracker.OrderDate,
+                    TrackerRequiredByDate = tracker.RequiredByDate,
+                    WooOrderDate = woo.DateCreated,
+                    ContactName = contactName,
+                    Label = FormatWooLinkLabel(woo)
+                });
+            }
+
+            if (list.Count == 0)
+                error = "No unlinked Woo orders for this contact within ±2 days of the order date.";
+
+            return list;
+        }
+
+        public bool LinkWooToTrackerOrder(long wooOrderId, int trackerOrderId, string updatedBy, out string error)
+        {
+            error = null;
+            if (wooOrderId <= 0 || trackerOrderId <= 0)
+            {
+                error = "Invalid order ids.";
+                return false;
+            }
+
+            if (_wooOrderRepo.GetLiveByWooOrderId(wooOrderId) != null)
+            {
+                error = "That Woo order is already linked.";
+                return false;
+            }
+            if (_wooOrderRepo.GetByTrackerOrderId(trackerOrderId) != null)
+            {
+                error = "That Tracker order is already linked to Woo.";
+                return false;
+            }
+
+            if (!_ordersRepo.OrderExists(trackerOrderId))
+            {
+                error = "Tracker order not found.";
+                return false;
+            }
+
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
+                return false;
+
+            WooOrderDto order = _api.GetOrder(creds, wooOrderId);
+            if (order == null)
+            {
+                error = "Woo order not found.";
+                return false;
+            }
+
+            string wooNumber = (order.Number ?? order.Id.ToString(CultureInfo.InvariantCulture)).Trim();
+            _wooOrderRepo.Upsert(new WooOrderInfo
+            {
+                OrderID = trackerOrderId,
+                WooOrderId = order.Id,
+                WooOrderNumber = wooNumber,
+                WooStatus = order.Status,
+                PaymentMethod = order.PaymentMethodTitle ?? order.PaymentMethod,
+                PaymentStatus = order.Status,
+                PaymentPaid = order.DatePaid.HasValue,
+                LastSyncedUtc = DateTime.UtcNow,
+                RawSnapshotJson = order.RawJson,
+                ImportConflicts = null
+            });
+
+            _ordersRepo.UpdatePurchaseOrderIfEmpty(trackerOrderId, wooNumber);
+
+            AppLogger.WriteLog("woo",
+                string.Format(CultureInfo.InvariantCulture,
+                    "WooLink: Woo #{0} → Tracker order #{1}", wooNumber, trackerOrderId),
+                updatedBy);
+            WooCommerceUserLog.Write(
+                "WooLink",
+                string.Format(CultureInfo.InvariantCulture, "Woo #{0} linked to Tracker #{1}", wooNumber, trackerOrderId),
+                updatedBy);
+
+            return true;
+        }
+
+        private static string FormatTrackerLinkLabel(Order o)
+        {
+            if (o == null)
+                return string.Empty;
+            string dates = string.Empty;
+            if (o.OrderDate.HasValue)
+                dates += " ordered " + o.OrderDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            if (o.RequiredByDate.HasValue)
+                dates += " delivery " + o.RequiredByDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string po = string.IsNullOrWhiteSpace(o.PurchaseOrder) ? string.Empty : " PO " + o.PurchaseOrder.Trim();
+            return "Tracker #" + o.OrderID + dates + po;
+        }
+
+        private static string FormatWooLinkLabel(WooOrderDto woo)
+        {
+            if (woo == null)
+                return string.Empty;
+            string num = woo.Number ?? woo.Id.ToString(CultureInfo.InvariantCulture);
+            string date = woo.DateCreated.HasValue
+                ? woo.DateCreated.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : "?";
+            string status = string.IsNullOrWhiteSpace(woo.Status) ? string.Empty : " · " + woo.Status;
+            return "Woo #" + num + " (" + date + status + ")";
+        }
+
         /// <summary>Re-fetch listed Woo orders and rebuild preview (explicit refresh from Woo).</summary>
         public List<WooOrderImportPreviewRow> RefreshPreviewFromWoo(IList<long> wooOrderIds, out string error)
         {
@@ -430,6 +743,7 @@ namespace TrackerSQL.Managers
             WooAddressDto ship = order.Shipping ?? new WooAddressDto();
             string companyMode = ResolveCompanyNameMode(options.CompanyNameMode);
             var changeParts = new List<string>();
+            Contact before = _contactsRepo.GetById(contact.ContactID);
 
             ApplyContactUpdateSelections(contact, order, ship, options, companyMode, changeParts);
 
@@ -449,11 +763,20 @@ namespace TrackerSQL.Managers
                 WooContactBootstrap.UpdateAccInfoAddresses(_accInfoRepo, contact, order, contact.ContactID);
 
             string changeDetail = string.Join("; ", changeParts);
-            _contactsRepo.AppendSystemNote(contact.ContactID,
-                string.Format(CultureInfo.InvariantCulture,
-                    "Updated from Woo #{0}: {1}.",
-                    preview.WooOrderNumber,
-                    changeDetail));
+            string noteMsg = string.Format(CultureInfo.InvariantCulture,
+                "Updated from Woo #{0}.",
+                preview.WooOrderNumber);
+            _contactsRepo.AppendSystemNote(contact.ContactID, noteMsg,
+                source: ContactChangeLogManager.SourceWooUpdate,
+                changedBy: updatedBy,
+                writeChangeLog: false);
+            ContactChangeLogManager.LogDiff(
+                contact.ContactID,
+                before,
+                contact,
+                ContactChangeLogManager.SourceWooUpdate,
+                noteMsg,
+                updatedBy);
 
             WooCommerceUserLog.Write(
                 string.Format(CultureInfo.InvariantCulture, "Updated contact from Woo #{0}", preview.WooOrderNumber),
@@ -795,6 +1118,7 @@ namespace TrackerSQL.Managers
             ResolveContactPreview(order, preview, ship);
             ResolveDeliveryPreview(order, preview, ship);
             CollectConflicts(order, preview, ship);
+            ResolveCanWooLink(order, preview);
 
             preview.LinesSummary = string.Join("; ", preview.Lines.Select(l =>
             {
@@ -1023,6 +1347,23 @@ namespace TrackerSQL.Managers
             if (_previewContext.ItemMapsByKey.TryGetValue(key, out map))
                 return map;
             return null;
+        }
+
+        /// <summary>
+        /// WooLink is only useful when a matched contact already has an unlinked Tracker order near the Woo date.
+        /// </summary>
+        private void ResolveCanWooLink(WooOrderDto order, WooOrderImportPreviewRow preview)
+        {
+            preview.CanWooLink = false;
+            if (preview == null || preview.AlreadyImported)
+                return;
+            if (!preview.MatchedContactId.HasValue || preview.MatchedContactId.Value <= 0)
+                return;
+
+            DateTime center = (order?.DateCreated ?? TimeZoneUtils.Now()).Date;
+            List<Order> candidates = _ordersRepo.FindUnlinkedOrdersNearDate(
+                preview.MatchedContactId.Value, center, dayWindow: 2, maxRows: 1);
+            preview.CanWooLink = candidates != null && candidates.Count > 0;
         }
 
         private void ResolveContactPreview(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
@@ -2204,21 +2545,36 @@ namespace TrackerSQL.Managers
                 WooContactBootstrap.EnsureAccInfo(_accInfoRepo, contact, order, newId);
                 SendTrackingWelcomeIfNeeded(contact);
                 contactCreated = true;
+                ContactChangeLogManager.LogSummary(
+                    newId,
+                    ContactChangeLogManager.SourceWooImport,
+                    string.Format(CultureInfo.InvariantCulture, "Created from Woo #{0}.", preview.WooOrderNumber),
+                    updatedBy);
                 return newId;
             }
 
             var areaForDiff = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
             var changeParts = DescribeShippingChanges(contact, order, ship, areaForDiff?.AreaID);
+            Contact before = _contactsRepo.GetById(contact.ContactID);
             ApplyWooShippingToContact(contact, order, ship, null);
             ApplyWooPersonNames(contact, ship, null);
             _contactsRepo.Update(contact);
             if (changeParts.Count > 0)
             {
-                _contactsRepo.AppendSystemNote(contact.ContactID,
-                    string.Format(CultureInfo.InvariantCulture,
-                        "Updated from Woo #{0}: {1}.",
-                        preview.WooOrderNumber,
-                        string.Join("; ", changeParts)));
+                string noteMsg = string.Format(CultureInfo.InvariantCulture,
+                    "Updated from Woo #{0}.",
+                    preview.WooOrderNumber);
+                _contactsRepo.AppendSystemNote(contact.ContactID, noteMsg,
+                    source: ContactChangeLogManager.SourceWooImport,
+                    changedBy: updatedBy,
+                    writeChangeLog: false);
+                ContactChangeLogManager.LogDiff(
+                    contact.ContactID,
+                    before,
+                    contact,
+                    ContactChangeLogManager.SourceWooImport,
+                    noteMsg,
+                    updatedBy);
             }
             return contact.ContactID;
         }

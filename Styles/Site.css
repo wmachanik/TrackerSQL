@@ -1,4 +1,4 @@
-/* Rev: 20260907-2
+﻿/* Rev: 20260924-16
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -2613,6 +2613,49 @@ span.image-button > a:hover {
     overflow-x: auto !important; /* Always allow horizontal scroll if needed */
     -webkit-overflow-scrolling: touch !important;
     position: relative;
+}
+
+/* Hug the table instead of stretching to the page */
+.results-container.results-container-fit {
+    width: auto;
+    max-width: 100%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+/* General settings: green striped results-table, size to the controls */
+table.results-table.woo-general-settings select,
+table.results-table.woo-general-settings .sys-prefs-input,
+table.results-table.woo-general-settings select.sys-prefs-input {
+    width: auto !important;
+    max-width: none !important;
+}
+
+table.results-table.woo-general-settings th,
+table.results-table.woo-general-settings td {
+    width: auto !important;
+    white-space: nowrap;
+}
+
+/* Contact postal fill: stay inside the panel; wrap long address/reason text */
+.page-tone-tools .complex-form-section {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+table.results-table.postal-fill-grid {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+}
+
+table.results-table.postal-fill-grid th,
+table.results-table.postal-fill-grid td {
+    width: auto !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
 }
 
 @media (max-width: 900px) {
@@ -7892,88 +7935,8 @@ body.woo-map-working [id$="upgWooMap"] {
     color: #5a6a52;
 }
 
-.woo-map-shipping-grid-wrap {
-    width: 100%;
-    overflow-x: auto;
-    margin: 0 0 0.75rem;
-}
-
-@media (max-width: 600px) {
-    .woo-map-shipping-grid .sys-prefs-input {
-        max-width: 100%;
-    }
-}
-
-.woo-map-section-subtitle {
-    margin: 0.75rem 0 0.4rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #3d4a38;
-}
-
-.woo-map-dispatch-grid-wrap {
-    width: 100%;
-    max-width: 32rem;
-    margin: 0 0 0.75rem;
-    overflow-x: auto;
-}
-
-.woo-map-dispatch-grid {
-    width: 100%;
-}
-
-.woo-map-dispatch-check-col {
-    width: 2.5rem;
-    text-align: center;
-    vertical-align: middle;
-}
-
-.woo-map-dispatch-person-col {
-    word-break: break-word;
-}
-
-.woo-map-dispatch-options {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin: 0 0 0.75rem;
-    max-width: 36rem;
-}
-
-.woo-map-dispatch-msg-hint {
-    margin: 0;
-}
-
-.woo-map-btn-wide {
-    min-width: 14rem !important;
-    max-width: none !important;
-    width: auto !important;
-    height: auto !important;
-    white-space: normal !important;
-    line-height: 1.25 !important;
-    padding: 0.45rem 0.9rem !important;
-}
-
-@media (max-width: 600px) {
-    .woo-map-dispatch-grid-wrap {
-        max-width: none;
-    }
-
-    .woo-map-btn-wide {
-        min-width: 0 !important;
-        width: 100% !important;
-    }
-}
-
 .woo-map-areas-default {
     margin-bottom: 0.75rem;
-}
-
-.woo-map-footer-hint {
-    font-size: 0.85em;
-    color: #7a8a6e;
-    font-style: italic;
 }
 
 .woo-map-area-defaults-grid .woo-map-area-name-col {
@@ -8013,21 +7976,6 @@ body.woo-map-working [id$="upgWooMap"] {
 
 .postal-area-setup-grid td {
     vertical-align: top;
-}
-
-.woo-map-notes-wide {
-    min-width: 12rem;
-    width: 100%;
-    max-width: 36rem;
-    box-sizing: border-box;
-}
-
-@media (min-width: 1200px) {
-    .woo-map-notes-wide {
-        min-width: 22rem;
-        max-width: 48rem;
-        min-height: 4.5rem;
-    }
 }
 
 .woo-map-system-default {
@@ -9463,6 +9411,17 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     border-color: #8bb8e8;
 }
 
+/* Admin "View in portal" button: standard button, brown so it stands apart */
+input.filter-panel-btn.portal-preview-btn {
+    background-color: #5a4a2f !important;
+    border-color: #5a4a2f !important;
+}
+
+    input.filter-panel-btn.portal-preview-btn:hover {
+        background-color: #6b5a3c !important;
+        border-color: #6b5a3c !important;
+    }
+
 @media print {
     thead {
         display: table-header-group;
@@ -9624,5 +9583,578 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     .page-tone-panel.page-tone-orders table.TblSimple.detail-form-table,
     .page-tone-panel.page-tone-neworder table.TblSimple.detail-form-table {
         padding: 0 !important;
+    }
+}
+
+/* ===== Contact portal ===== */
+.portal-body {
+    margin: 0;
+    padding: 0;
+    background: #f4f6f2;
+    font-family: Calibri, 'Gill Sans', 'Trebuchet MS', sans-serif;
+}
+
+.portal-header {
+    background: #fff;
+    color: #302a20;
+    padding: 0.5rem 0;
+    border-bottom: 4px solid #6aa121;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.portal-header-inner {
+    width: 98%;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    justify-content: space-between;
+}
+
+.portal-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #3f6b4f !important;
+    font-weight: 700;
+    text-decoration: none !important;
+    font-size: 1.1rem;
+}
+
+.portal-logo {
+    height: 48px;
+    width: auto;
+    display: block;
+}
+
+.portal-brand-text {
+    padding-left: 0.75rem;
+    border-left: 2px solid #d6e6c3;
+    letter-spacing: 0.02em;
+}
+
+.portal-nav a,
+.portal-nav input[type="submit"],
+.portal-nav a:link,
+.portal-nav a:visited {
+    color: #3f6b4f !important;
+    margin-right: 0.75rem;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-width: 0 !important;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.portal-nav a:hover,
+.portal-nav input[type="submit"]:hover {
+    color: #302a20 !important;
+    text-decoration: underline !important;
+}
+
+/* White backdrop panel around the page body (like .page in Site.Master); panels sit in the 94% column */
+.portal-main {
+    width: 98%;
+    box-sizing: border-box;
+    margin: 1rem auto;
+    padding: 16px 0 24px;
+    background: #fff;
+    border: 1px solid #dfe6d8;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.portal-content {
+    width: 94%;
+    margin: 0 auto;
+}
+
+.portal-footer {
+    text-align: center;
+    color: #6a7a62;
+    font-size: 0.85rem;
+    padding: 1rem;
+}
+
+.portal-card {
+    margin-top: 0;
+}
+
+.portal-readonly {
+    background: #f0f0f0 !important;
+    color: #444 !important;
+}
+
+.portal-field-list label {
+    margin-right: 1rem;
+    white-space: nowrap;
+}
+
+/* Contact Details: other contacts sharing the portal invite email */
+.portal-conflicts {
+    margin-top: 0.35rem;
+}
+
+.portal-conflicts .status-badge {
+    margin-left: 0.25rem;
+}
+
+/* Whole dashboard card as a link (Account/Login choice, Portal home) */
+.login-choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0 12px;
+}
+
+.dashboard-card-link,
+.dashboard-card-link:link,
+.dashboard-card-link:visited {
+    flex: 1 1 260px;
+    display: block;
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+    .dashboard-card-link h4 {
+        color: #3f6b4f;
+    }
+
+    .dashboard-card-link:hover h4,
+    .dashboard-card-link:focus h4 {
+        text-decoration: underline;
+    }
+
+    .dashboard-card-link:focus-visible .dashboard-card {
+        outline: 2px solid #6aa121;
+        outline-offset: 2px;
+    }
+
+.login-choice .dashboard-card {
+    min-height: 7rem;
+}
+
+.portal-welcome h1 {
+    margin: 0.25rem 0 0.35rem;
+    color: #3f6b4f;
+}
+
+.portal-welcome p {
+    margin: 0 0 0.75rem;
+    color: #555;
+}
+
+.page-tone-panel.portal-login-card {
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+/* Email/password boxes span the card so a full email address is visible */
+.portal-login-card table.results-table.results-table-fit {
+    width: 100% !important;
+}
+
+    .portal-login-card table.results-table.results-table-fit td:last-child {
+        width: auto !important;
+    }
+
+.portal-login-card input.sys-prefs-input {
+    padding: 6px 8px;
+    min-height: 34px;
+}
+
+/* Tools/ContactPortalAdmin: fields and change-request panels stacked */
+.portal-admin-stack > .page-tone-panel {
+    margin-bottom: 16px;
+}
+
+textarea.sys-prefs-input.portal-admin-note {
+    min-width: 16rem !important;
+    padding: 4px 6px;
+}
+
+/* Signed-in contact whose ContactsTbl record is disabled */
+.portal-account-notice {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border: 1px solid #e8c27a;
+    border-left: 4px solid #d9822b;
+    border-radius: 6px;
+    background: #fff6e5;
+    color: #5a3e10;
+}
+
+    .portal-account-notice .status-badge {
+        text-transform: none;
+        white-space: nowrap;
+    }
+
+/* Administrator "view as contact" preview banner */
+.portal-account-notice.portal-preview-notice {
+    border-color: #9fc3e0;
+    border-left-color: #2f6fa3;
+    background: #eef5fb;
+    color: #1f3f5c;
+}
+
+    .portal-preview-notice a {
+        margin-left: auto;
+        font-weight: bold;
+    }
+
+/* Contact Portal panels always fill the portal column (page-tone-orders is fit-content elsewhere) */
+.page-tone-panel.portal-card {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 16px;
+}
+
+.portal-card .status-badge {
+    text-transform: none;
+    white-space: nowrap;
+}
+
+/* Label-over-value field grid: 4 columns on desktop, 2 on tablet, 1 on phone */
+.portal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px 16px;
+    margin: 4px 0 14px;
+}
+
+.portal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+    .portal-field > label,
+    .portal-field > .portal-field-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #3d5a80;
+    }
+
+    .portal-field .portal-field-value {
+        background: #fff;
+        border: 1px solid #d9e0ea;
+        border-radius: 4px;
+        padding: 6px 8px;
+        min-height: 1.4em;
+        overflow-wrap: anywhere;
+    }
+
+.portal-form-grid input.sys-prefs-input,
+.portal-form-grid textarea.sys-prefs-input {
+    padding: 6px 8px;
+    min-height: 34px;
+}
+
+.portal-field-span-2 {
+    grid-column: span 2;
+}
+
+.portal-field-span-4 {
+    grid-column: 1 / -1;
+}
+
+/* Full-width customer tables (text wraps; action column hugs its button) */
+.portal-table-wrap {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    background: var(--light-green);
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 12px;
+}
+
+table.results-table.portal-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+}
+
+    table.results-table.portal-table th,
+    table.results-table.portal-table td {
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+
+    table.results-table.portal-table .portal-col-nowrap {
+        white-space: nowrap !important;
+    }
+
+    table.results-table.portal-table .portal-col-num {
+        white-space: nowrap !important;
+        text-align: right;
+    }
+
+    table.results-table.portal-table .portal-col-action {
+        width: 1% !important;
+        white-space: nowrap !important;
+        text-align: center;
+    }
+
+    /* Column takes the spare width; its text stays on one line and ends in "…" (full text in the tooltip) */
+    table.results-table.portal-table td.portal-col-fill {
+        width: 100% !important;
+        max-width: 0 !important;
+    }
+
+    table.results-table.portal-table .portal-ellipsis {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+@media (max-width: 700px) {
+    table.results-table.portal-table td.portal-col-fill {
+        max-width: none !important;
+    }
+
+    table.results-table.portal-table .portal-ellipsis {
+        white-space: normal;
+    }
+}
+
+.portal-field-action {
+    justify-content: flex-end;
+}
+
+    .portal-field-action .image-button {
+        align-self: flex-start;
+    }
+
+/* On/off switch: asp:CheckBox CssClass="portal-switch" renders span > input + label */
+.portal-switch-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 10px;
+}
+
+.portal-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+    .portal-switch input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+    }
+
+    .portal-switch label {
+        position: relative;
+        display: inline-block;
+        min-height: 28px;
+        line-height: 28px;
+        padding-left: 60px;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+    }
+
+        .portal-switch label::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 28px;
+            border-radius: 14px;
+            background: #c9ced6;
+            transition: background 0.2s ease;
+        }
+
+        .portal-switch label::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+    .portal-switch input:checked + label::before {
+        background: #6aa121;
+    }
+
+    .portal-switch input:checked + label::after {
+        transform: translateX(22px);
+    }
+
+    .portal-switch input:focus-visible + label::before {
+        outline: 2px solid #3d5a80;
+        outline-offset: 2px;
+    }
+
+    .portal-switch input:disabled + label {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+/* Portal button rows: space between buttons (Place Order / Back, Submit Change Request / Back) */
+.portal-card .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+    .portal-card .button-row .filter-panel-btn,
+    .portal-card .button-row .image-button {
+        margin: 0;
+    }
+
+/* Portal "next coffee" highlight (Home and My Orders) */
+.portal-next-coffee {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-left: 4px solid #6aa121;
+    border-radius: 6px;
+    background: #f1f8e9;
+}
+
+    .portal-next-coffee > img {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+    }
+
+    .portal-next-coffee .portal-next-coffee-text {
+        flex: 1 1 auto;
+    }
+
+    .portal-next-coffee strong {
+        display: block;
+        font-size: 1.05rem;
+    }
+
+    .portal-next-coffee .portal-next-coffee-text span {
+        display: block;
+        color: #555;
+        font-size: 0.9rem;
+    }
+
+    .portal-next-coffee .image-button {
+        flex: 0 0 auto;
+        align-self: center;
+    }
+
+@media (max-width: 600px) {
+    .portal-next-coffee {
+        flex-wrap: wrap;
+    }
+}
+
+/* Portal list paging (GridView built-in numeric pager) */
+table.results-table.portal-table tr.pager-row table td {
+    padding: 0 3px !important;
+    border: none !important;
+}
+
+    table.results-table.portal-table tr.pager-row table td a,
+    table.results-table.portal-table tr.pager-row table td span {
+        display: inline-block;
+        min-width: 2rem;
+        padding: 4px 8px;
+        border: 1px solid #4e664d;
+        border-radius: 4px;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    table.results-table.portal-table tr.pager-row table td span {
+        background: #4e664d;
+        color: #fff;
+        font-weight: 600;
+    }
+
+/* Portal please-wait overlay (UpdateProgress in Portal.Master) */
+.portal-wait-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.portal-wait-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 28px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+    font-weight: 600;
+}
+
+/* Portal home: two cards per row */
+.portal-dashboard .dashboard-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .portal-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .portal-form-grid,
+    .portal-dashboard .dashboard-links {
+        grid-template-columns: 1fr;
+    }
+
+    .portal-field-span-2 {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-card-link,
+    .dashboard-card-link:link,
+    .dashboard-card-link:visited {
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 600px) {
+    .portal-logo {
+        height: 36px;
+    }
+
+    .portal-brand-text {
+        font-size: 0.95rem;
     }
 }

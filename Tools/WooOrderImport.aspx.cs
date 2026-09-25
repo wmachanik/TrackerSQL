@@ -169,6 +169,13 @@ namespace TrackerSQL.Tools
             return true;
         }
 
+        protected bool ShowWooLinkButton(object alreadyImported, object canWooLink)
+        {
+            if (alreadyImported is bool imported && imported)
+                return false;
+            return canWooLink is bool can && can;
+        }
+
         protected string GetAddOrderButtonText(object alreadyImported)
         {
             return alreadyImported is bool b && b
@@ -417,6 +424,19 @@ namespace TrackerSQL.Tools
                 return;
             }
 
+            if (string.Equals(e.CommandName, "WooLink", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    ShowWooLinkPrompt(wooOrderId);
+                }
+                catch (Exception ex)
+                {
+                    SetStatus(ex.Message, true);
+                }
+                return;
+            }
+
             if (string.Equals(e.CommandName, "AddContact", StringComparison.OrdinalIgnoreCase))
             {
                 try
@@ -455,6 +475,78 @@ namespace TrackerSQL.Tools
         protected string GetUpdateContactClientClick(object dataItem)
         {
             return "return true;";
+        }
+
+        private void ShowWooLinkPrompt(long wooOrderId)
+        {
+            HideWooLinkPrompt();
+            var candidates = _manager.FindTrackerLinkCandidates(wooOrderId, out string error);
+            if (candidates == null || candidates.Count == 0)
+            {
+                SetStatus(error ?? "No Tracker orders to link.", true);
+                return;
+            }
+
+            hdnWooLinkWooOrderId.Value = wooOrderId.ToString(CultureInfo.InvariantCulture);
+            litWooLinkPrompt.Text = HttpUtility.HtmlEncode(
+                "Pick the Tracker order that was entered manually for Woo #"
+                + (candidates[0].WooOrderNumber ?? wooOrderId.ToString(CultureInfo.InvariantCulture))
+                + " (" + (candidates[0].ContactName ?? "contact") + "). Same contact, order/delivery date within ±2 days.");
+
+            rblWooLinkCandidates.Items.Clear();
+            foreach (var c in candidates)
+            {
+                rblWooLinkCandidates.Items.Add(new ListItem(
+                    c.Label ?? ("Tracker #" + c.TrackerOrderId),
+                    c.TrackerOrderId.ToString(CultureInfo.InvariantCulture)));
+            }
+            if (rblWooLinkCandidates.Items.Count > 0)
+                rblWooLinkCandidates.SelectedIndex = 0;
+
+            pnlWooLinkPrompt.Visible = true;
+        }
+
+        private void HideWooLinkPrompt()
+        {
+            if (pnlWooLinkPrompt != null)
+                pnlWooLinkPrompt.Visible = false;
+            if (hdnWooLinkWooOrderId != null)
+                hdnWooLinkWooOrderId.Value = string.Empty;
+            if (rblWooLinkCandidates != null)
+                rblWooLinkCandidates.Items.Clear();
+        }
+
+        protected void btnWooLinkConfirm_Click(object sender, EventArgs e)
+        {
+            long wooOrderId = ParseLong(hdnWooLinkWooOrderId.Value);
+            int trackerOrderId = 0;
+            if (rblWooLinkCandidates.SelectedItem != null)
+                int.TryParse(rblWooLinkCandidates.SelectedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out trackerOrderId);
+
+            HideWooLinkPrompt();
+            if (wooOrderId <= 0 || trackerOrderId <= 0)
+            {
+                SetStatus("Select a Tracker order to link.", true);
+                return;
+            }
+
+            if (!_manager.LinkWooToTrackerOrder(wooOrderId, trackerOrderId, UserName(), out string error))
+            {
+                SetStatus(error ?? "Link failed.", true);
+                return;
+            }
+
+            RefreshPreviewAfterImport(wooOrderId);
+            SaveUiStateToSession(GetPreviewRows());
+            BindConflicts();
+            SetStatus(string.Format(CultureInfo.InvariantCulture,
+                "Linked Woo order to Tracker order #{0}.", trackerOrderId), false);
+        }
+
+        protected void btnWooLinkCancel_Click(object sender, EventArgs e)
+        {
+            HideWooLinkPrompt();
+            SetStatus("Link cancelled.", false);
         }
 
         private void ShowContactUpdatePrompt(long wooOrderId)

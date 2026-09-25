@@ -174,18 +174,27 @@ namespace TrackerSQL.Tools
             btnWriteMissingSkus.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapWriteMissingSkus);
             litSyncHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSyncHelp);
             litGeneralHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralHelp);
-            litGeneralCompanyModeNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeNote);
             lblGeneralCompanyMode.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeLbl);
-            litGeneralNoteLineFormatNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineFormatNote);
+            lblGeneralCompanyMode.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompanyModeNote);
+            ddlGeneralCompanyMode.ToolTip = lblGeneralCompanyMode.ToolTip;
             lblGeneralNoteLineFormat.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineFormatLbl);
-            litGeneralNotePartOrderNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderNote);
+            lblGeneralNoteLineFormat.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNoteLineFormatNote);
+            ddlGeneralNoteLineFormat.ToolTip = lblGeneralNoteLineFormat.ToolTip;
             lblGeneralNotePartOrder.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderLbl);
-            litGeneralAppendTrackingNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingNote);
-            chkGeneralAppendTracking.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingLbl);
-            litGeneralWriteExpectedDeliveryNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryNote);
-            chkGeneralWriteExpectedDelivery.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryLbl);
-            litGeneralAutoPullNote.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullNote);
+            lblGeneralNotePartOrder.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralNotePartOrderNote);
+            lstGeneralNotePartOrder.ToolTip = lblGeneralNotePartOrder.ToolTip;
+            lblGeneralAppendTracking.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingLbl);
+            lblGeneralAppendTracking.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingNote);
+            chkGeneralAppendTracking.ToolTip = lblGeneralAppendTracking.ToolTip;
+            lblGeneralWriteExpectedDelivery.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryLbl);
+            lblGeneralWriteExpectedDelivery.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryNote);
+            chkGeneralWriteExpectedDelivery.ToolTip = lblGeneralWriteExpectedDelivery.ToolTip;
             lblGeneralAutoPull.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullLbl);
+            lblGeneralAutoPull.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAutoPullNote);
+            ddlGeneralAutoPull.ToolTip = lblGeneralAutoPull.ToolTip;
+            lblGeneralCheckNewOrders.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCheckNewOrdersLbl);
+            lblGeneralCheckNewOrders.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCheckNewOrdersNote);
+            chkGeneralCheckNewOrders.ToolTip = lblGeneralCheckNewOrders.ToolTip;
             btnSaveGeneralSettings.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveGeneralSettings);
             litCatModeLbl.Text = MessageProvider.Get(MessageKeys.WooCommerce.LabelCategoryMode) + " ";
             btnSaveCatIncludes.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSaveIncludes);
@@ -3497,6 +3506,7 @@ namespace TrackerSQL.Tools
 
             chkGeneralAppendTracking.Checked = settings.AppendTrackingToOrderNotes;
             chkGeneralWriteExpectedDelivery.Checked = settings.WriteExpectedDeliveryToWoo;
+            chkGeneralCheckNewOrders.Checked = settings.CheckNewOrdersOnNewOrder;
 
             string autoPull = WooCommerceSettingsManager.NormalizeAutoPullMode(settings.ImportAutoPullMode);
             ddlGeneralAutoPull.Items.Clear();
@@ -3522,6 +3532,7 @@ namespace TrackerSQL.Tools
             MarkOriginal(ddlGeneralAutoPull);
             MarkOriginal(chkGeneralAppendTracking, chkGeneralAppendTracking.Checked);
             MarkOriginal(chkGeneralWriteExpectedDelivery, chkGeneralWriteExpectedDelivery.Checked);
+            MarkOriginal(chkGeneralCheckNewOrders, chkGeneralCheckNewOrders.Checked);
             if (lstGeneralNotePartOrder != null)
                 lstGeneralNotePartOrder.Attributes["data-original"] = GetNotePartOrderFromList();
         }
@@ -3532,16 +3543,18 @@ namespace TrackerSQL.Tools
             string noteFmt = ddlGeneralNoteLineFormat.SelectedValue;
             bool appendTracking = chkGeneralAppendTracking.Checked;
             bool writeExpectedDelivery = chkGeneralWriteExpectedDelivery.Checked;
+            bool checkNewOrders = chkGeneralCheckNewOrders.Checked;
             string autoPull = ddlGeneralAutoPull.SelectedValue;
             string noteOrder = GetNotePartOrderFromList();
             _settings.SaveGeneralImportSettings(
-                companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, UserName());
+                companyMode, noteFmt, appendTracking, autoPull, noteOrder,
+                writeExpectedDelivery, checkNewOrders, UserName());
             BindGeneralTab();
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralSettingsSaved), false);
             WooCommerceUserLog.Write("Mapping general settings saved",
                 string.Format(CultureInfo.InvariantCulture,
-                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}",
-                    companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery),
+                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}, checkNewOnNewOrder={6}",
+                    companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, checkNewOrders),
                 UserName());
         }
 
@@ -3571,12 +3584,12 @@ namespace TrackerSQL.Tools
             return WooCommerceSettingsManager.NormalizeNotePartOrder(string.Join(",", keys));
         }
 
-        protected void btnNotePartMoveUp_Click(object sender, EventArgs e)
+        protected void lnkNotePartMoveUp_Click(object sender, EventArgs e)
         {
             MoveSelectedNotePart(-1);
         }
 
-        protected void btnNotePartMoveDown_Click(object sender, EventArgs e)
+        protected void lnkNotePartMoveDown_Click(object sender, EventArgs e)
         {
             MoveSelectedNotePart(1);
         }

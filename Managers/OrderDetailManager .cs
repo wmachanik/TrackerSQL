@@ -67,6 +67,10 @@ namespace TrackerSQL.Managers
             }
 
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
+            string portalBlurb = ContactPortalManager.BuildEmailPortalBlurbHtml(
+                header != null ? (int)header.CustomerID : 0);
+            if (!string.IsNullOrWhiteSpace(portalBlurb))
+                email.AddToBody(portalBlurb);
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
             email.AddToBody(MessageProvider.GetEmailSignature());
 
@@ -77,6 +81,54 @@ namespace TrackerSQL.Managers
             statusMessage = success
                 ? $"Email sent to {contactName}"
                 : $"Error sending email: {email.myResults.sResult}";
+            return success;
+        }
+
+        /// <summary>
+        /// Acknowledgement for an order the contact placed in the Contact Portal. Unlike the
+        /// confirmation it makes no delivery promise ("good news"): the order may change with stock.
+        /// </summary>
+        public bool SendPortalOrderAcknowledgement(ContactEmailDetails contact, OrderHeaderData header,
+            List<OrderLineData> orderLines, string requestedChanges, out string statusMessage)
+        {
+            string recipientEmail = contact == null ? null
+                : !string.IsNullOrWhiteSpace(contact.EmailAddress) ? contact.EmailAddress : contact.altEmailAddress;
+            if (string.IsNullOrWhiteSpace(recipientEmail))
+            {
+                statusMessage = "No email address found.";
+                return false;
+            }
+
+            var emailSettings = new EmailSettings();
+            emailSettings.SetRecipient(recipientEmail);
+            var email = new EmailMailKitCls(emailSettings) { IncludeConfiguredCc = false };
+            email.SetEmailSubject(MessageProvider.Get(MessageKeys.Order.PortalAckSubject));
+
+            string contactName = EmailUtils.GetFriendlyContactName(contact);
+            string companyName = !string.IsNullOrWhiteSpace(contact.CompanyName) ? contact.CompanyName.Trim() : contactName;
+
+            email.AddToBody(MessageProvider.Format(MessageKeys.Order.ConfirmationIntro, contactName));
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.PortalAckHeader));
+            email.AddToBody(BuildConfirmationTableHtml(companyName, header, orderLines, string.Empty));
+            email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+                + MessageProvider.Format(MessageKeys.Order.PortalAckDelivery, header.RequiredByDate.ToString("dd MMM, ddd, yyyy"))
+                + "</p>");
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.PortalAckCaveat));
+            if (!string.IsNullOrWhiteSpace(requestedChanges))
+                email.AddToBody(MessageProvider.Format(MessageKeys.Order.PortalAckChanges, HttpUtility.HtmlEncode(requestedChanges.Trim())));
+            if (!string.IsNullOrWhiteSpace(header.PurchaseOrder))
+                email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+                    + MessageProvider.Format(MessageKeys.Order.ConfirmationPOReceived, HttpUtility.HtmlEncode(header.PurchaseOrder.Trim()))
+                    + "</p>");
+
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
+            email.AddToBody(MessageProvider.GetEmailSignature());
+
+            bool success = email.SendEmail();
+            statusMessage = success
+                ? "Acknowledgement sent to " + recipientEmail
+                : "Acknowledgement failed: " + (string.IsNullOrWhiteSpace(email.LastErrorSummary) ? "unknown error" : email.LastErrorSummary);
             return success;
         }
 

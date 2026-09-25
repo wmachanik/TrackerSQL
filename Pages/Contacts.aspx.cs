@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
@@ -16,6 +17,7 @@ namespace TrackerSQL.Pages
         // Session key used by page filter
         private const string CONST_WHERECLAUSE_SESSIONVAR = "ContactSummaryWhereFilter";
         private const string CONST_SORTEXPRESSION_VIEWSTATE = "ContactsSortExpression";
+        private const string CONST_FILTER_COOKIE = "TrackerContactsFilter";
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -25,11 +27,12 @@ namespace TrackerSQL.Pages
                 {
                     tbxFilterBy.Text = Request.QueryString["CompanyName"].ToString();
                     ddlFilterBy.SelectedValue = "CompanyName";
-                    Session[CONST_WHERECLAUSE_SESSIONVAR] = $"CompanyName LIKE '{tbxFilterBy.Text}%'";
+                    Session[CONST_WHERECLAUSE_SESSIONVAR] = $"CompanyName LIKE '{tbxFilterBy.Text.Replace("'", "''")}%'";
                 }
                 else
                 {
                     Session[CONST_WHERECLAUSE_SESSIONVAR] = string.Empty;
+                    RestoreFilterFromCookie();
                 }
 
                 ViewState[CONST_SORTEXPRESSION_VIEWSTATE] = "CompanyName";
@@ -118,34 +121,35 @@ namespace TrackerSQL.Pages
             if (ddlFilterBy.SelectedValue == "0")
                 ddlFilterBy.SelectedValue = "CompanyName";
 
-            string filterField = ddlFilterBy.SelectedValue;
-            // Escape single quotes — names like O'Brien must not break the LIKE clause.
-            string filterValue = tbxFilterBy.Text.Trim().Replace("'", "''");
+            string where = BuildWhereClause(ddlFilterBy.SelectedValue, tbxFilterBy.Text);
+            if (where == null)
+            {
+                Session[CONST_WHERECLAUSE_SESSIONVAR] = "1=0";
+                SetFilterStatus("Please enter a valid numeric Contact ID.", true);
+                new showMessageBox(Page, "Input Error", "Please enter a valid numeric Contact ID.");
+                BindContactsGrid();
+                upnlContactSummary.Update();
+                return;
+            }
 
-            if (filterField == "ContactID")
-            {
-                if (int.TryParse(filterValue, out int contactId))
-                {
-                    Session[CONST_WHERECLAUSE_SESSIONVAR] = $"ContactID = {contactId}";
-                }
-                else
-                {
-                    Session[CONST_WHERECLAUSE_SESSIONVAR] = "1=0";
-                    SetFilterStatus("Please enter a valid numeric Contact ID.", true);
-                    new showMessageBox(Page, "Input Error", "Please enter a valid numeric Contact ID.");
-                    BindContactsGrid();
-                    upnlContactSummary.Update();
-                    return;
-                }
-            }
-            else
-            {
-                if (!filterValue.StartsWith("%"))
-                    filterValue = "%" + filterValue + "%";
-                Session[CONST_WHERECLAUSE_SESSIONVAR] = $"{filterField} LIKE '{filterValue}'";
-            }
+            Session[CONST_WHERECLAUSE_SESSIONVAR] = where;
+            SaveFilterCookie();
             gvContacts.PageIndex = 0;
             BindContactsGrid();
+        }
+
+        /// <summary>SQL filter for the chosen field and text; null when a Contact ID search is not numeric.</summary>
+        private static string BuildWhereClause(string filterField, string text)
+        {
+            // Escape single quotes — names like O'Brien must not break the LIKE clause.
+            string filterValue = (text ?? string.Empty).Trim().Replace("'", "''");
+
+            if (filterField == "ContactID")
+                return int.TryParse(filterValue, out int contactId) ? $"ContactID = {contactId}" : null;
+
+            if (!filterValue.StartsWith("%"))
+                filterValue = "%" + filterValue + "%";
+            return $"{filterField} LIKE '{filterValue}'";
         }
 
         protected void btnReset_Click(object sender, EventArgs e)
@@ -153,9 +157,67 @@ namespace TrackerSQL.Pages
             Session[CONST_WHERECLAUSE_SESSIONVAR] = string.Empty;
             ddlFilterBy.SelectedIndex = 0;
             tbxFilterBy.Text = string.Empty;
+            SaveFilterCookie();
             gvContacts.PageIndex = 0;
             BindContactsGrid();
             upnlContactSummary.Update();
+        }
+
+        /// <summary>Remembers enabled/disabled/both plus the last search (field and text) in this browser.</summary>
+        private void SaveFilterCookie()
+        {
+            string raw = ddlContactEnabled.SelectedValue + "|"
+                + (string.IsNullOrWhiteSpace(tbxFilterBy.Text) ? "0" : ddlFilterBy.SelectedValue) + "|"
+                + (tbxFilterBy.Text ?? string.Empty).Trim();
+            string encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(raw))
+                .Replace('+', '-').Replace('/', '_').Replace('=', '.');
+
+            var cookie = new HttpCookie(CONST_FILTER_COOKIE, encoded)
+            {
+                HttpOnly = true,
+                Expires = DateTime.Now.AddDays(90),
+                Path = "/"
+            };
+            if (Request.IsSecureConnection)
+                cookie.Secure = true;
+            Response.Cookies.Set(cookie);
+        }
+
+        private void RestoreFilterFromCookie()
+        {
+            HttpCookie cookie = Request.Cookies[CONST_FILTER_COOKIE];
+            if (cookie == null || string.IsNullOrWhiteSpace(cookie.Value))
+                return;
+
+            string[] parts;
+            try
+            {
+                string base64 = cookie.Value.Replace('-', '+').Replace('_', '/').Replace('.', '=');
+                parts = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64)).Split(new[] { '|' }, 3);
+            }
+            catch (FormatException)
+            {
+                return;
+            }
+            if (parts.Length < 3)
+                return;
+
+            if (ddlContactEnabled.Items.FindByValue(parts[0]) != null)
+                ddlContactEnabled.SelectedValue = parts[0];
+
+            // Field name goes straight into SQL — only accept values offered in the dropdown.
+            string field = parts[1];
+            string text = parts[2];
+            if (field == "0" || ddlFilterBy.Items.FindByValue(field) == null || string.IsNullOrWhiteSpace(text))
+                return;
+
+            string where = BuildWhereClause(field, text);
+            if (where == null)
+                return;
+
+            ddlFilterBy.SelectedValue = field;
+            tbxFilterBy.Text = text;
+            Session[CONST_WHERECLAUSE_SESSIONVAR] = where;
         }
 
         protected void tbxFilterBy_TextChanged(object sender, EventArgs e)
@@ -168,6 +230,7 @@ namespace TrackerSQL.Pages
 
         protected void ddlContactEnabled_SelectedIndexChanged(object sender, EventArgs e)
         {
+            SaveFilterCookie();
             gvContacts.PageIndex = 0;
             BindContactsGrid();
         }

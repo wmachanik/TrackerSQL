@@ -17,18 +17,52 @@ namespace TrackerSQL.Managers
         public static bool DisableFromEmailLink(int contactId, bool disableAll)
         {
             var repo = new ContactsRepository();
+            Contact before = repo.GetById(contactId);
             if (!repo.ApplyEmailDisableChoice(contactId, disableAll))
                 return false;
 
+            Contact contact = repo.GetById(contactId);
+            ContactChangeLogManager.LogDiff(
+                contactId,
+                before,
+                contact,
+                ContactChangeLogManager.SourceDisable,
+                disableAll
+                    ? "Contact disabled their account via the email link"
+                    : "Contact turned off reminder emails via the email link",
+                "customer (email link)");
+
             try
             {
-                Contact contact = repo.GetById(contactId);
                 NotifyOrdersOfSelfServiceDisable(contact, disableAll);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                     "DisableClient admin notify failed for contact " + contactId + ": " + ex.Message);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Contact Portal: turns off checkup reminders only (contact stays enabled so the portal
+        /// login keeps working) and notifies orders@. The caller records the Change Log entry.
+        /// </summary>
+        public static bool DisableRemindersFromPortal(int contactId)
+        {
+            var repo = new ContactsRepository();
+            if (!repo.ApplyEmailDisableChoice(contactId, false, "Contact Portal", addNote: false))
+                return false;
+
+            try
+            {
+                NotifyOrdersOfSelfServiceDisable(repo.GetById(contactId), false);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                    "Portal reminder opt-out notify failed for contact " + contactId + ": " + ex.Message);
             }
 
             return true;

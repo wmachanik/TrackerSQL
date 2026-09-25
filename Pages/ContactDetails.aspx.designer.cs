@@ -214,6 +214,24 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.TextBox AltEmailAddressTextBox;
 
         /// <summary>
+        /// lblPortalStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPortalStatus;
+
+        /// <summary>
+        /// ltrlPortalConflicts control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltrlPortalConflicts;
+
+        /// <summary>
         /// ddlContactTypes control.
         /// </summary>
         /// <remarks>
@@ -289,6 +307,12 @@ namespace TrackerSQL.Pages
         /// ddlCourierService control.
         /// </summary>
         protected global::System.Web.UI.WebControls.DropDownList ddlCourierService;
+
+        /// <summary>
+        /// phCourier / phCourierBlank controls.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.PlaceHolder phCourier;
+        protected global::System.Web.UI.WebControls.PlaceHolder phCourierBlank;
 
         /// <summary>
         /// ddlAgent control.
@@ -481,6 +505,20 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnSendReminder;
+
+        /// <summary>
+        /// btnInvitePortal control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnInvitePortal;
+
+        /// <summary>
+        /// btnViewInPortal control (administrators: read-only portal preview as this contact).
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnViewInPortal;
 
         /// <summary>
         /// btnRecalcAverage control.
@@ -901,6 +939,21 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactItems;
+
+        /// <summary>
+        /// tabpnlChangeLog control.
+        /// </summary>
+        protected global::AjaxControlToolkit.TabPanel tabpnlChangeLog;
+
+        /// <summary>
+        /// upnlContactChangeLog control.
+        /// </summary>
+        protected global::System.Web.UI.UpdatePanel upnlContactChangeLog;
+
+        /// <summary>
+        /// gvContactChangeLog control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvContactChangeLog;
 
         /// <summary>
         /// tabpnlOrders control.

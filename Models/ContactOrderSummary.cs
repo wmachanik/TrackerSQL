@@ -15,6 +15,7 @@ namespace TrackerSQL.Models
         public bool Done { get; set; }
         public bool InvoiceDone { get; set; }
         public string Notes { get; set; }
+        public string PurchaseOrder { get; set; }
         public string WaybillNumber { get; set; }
         public string DispatchStatus { get; set; }
         public DateTime? DispatchedAt { get; set; }
@@ -25,6 +26,10 @@ namespace TrackerSQL.Models
 
         public bool IsEditable => !Done;
 
+        /// <summary>All lines, when loaded (Contact Portal). Empty otherwise — use ItemsDisplay.</summary>
+        public System.Collections.Generic.List<string> ItemLines { get; set; }
+            = new System.Collections.Generic.List<string>();
+
         public string StatusDisplay
         {
             get
@@ -32,6 +37,21 @@ namespace TrackerSQL.Models
                 if (!string.IsNullOrWhiteSpace(WaybillNumber))
                     return string.IsNullOrWhiteSpace(DispatchStatus) ? "Dispatched" : DispatchStatus;
                 return Done ? "Done" : string.Empty;
+            }
+        }
+
+        /// <summary>Customer-facing status — never blank (Contact Portal).</summary>
+        public string CustomerStatusDisplay
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(WaybillNumber))
+                    return string.IsNullOrWhiteSpace(DispatchStatus)
+                        ? "Dispatched"
+                        : ContactPortalDisplay.TitleCase(DispatchStatus);
+                if (Done)
+                    return "Completed";
+                return Confirmed ? "Confirmed" : "Received";
             }
         }
 

@@ -15,8 +15,8 @@
     <tr>
       <td style="padding-right: 10px">
         <!-- logo goes at the top of the page--->
-         <asp:Image ID="imgQuaffeeLogo" runat="server" ImageUrl="~/images/logo/QuaffeeLogoSmall.jpg"
-           AlternateText="Quaffee Logo" ImageAlign="Left" />
+         <asp:Image ID="imgQuaffeeLogo" runat="server" ImageUrl="~/images/logo/QuaffeeLogoSmallest.jpg"
+           AlternateText="Quaffee Logo" ImageAlign="Left" style="height: 80px; width: auto; margin-right: 20px;" />
       </td>
       <td class="mHdrText rightJustify"> 
         I the undersigned acknowledge receipt of the items marked below. I am an authorized signatory for delivery of 

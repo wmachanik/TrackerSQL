@@ -129,6 +129,7 @@ namespace TrackerSQL.Pages
                 ddlDeliveryBy.DataBind();
                 ddlAgent.DataBind();
                 BindCourierServiceDropdown(null);
+                UpdateCourierVisibility();
                 accInvoiceTypesDropDownList.DataBind();
                 accPaymentTermsDropDownList.DataBind();
                 accPriceLevelsDropDownList.DataBind();
@@ -158,6 +159,28 @@ namespace TrackerSQL.Pages
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails BindCourierServiceDropdown: " + ex.Message);
             }
+        }
+
+        /// <summary>Courier preference only applies when the delivery person is a dispatch (courier) person.</summary>
+        private void UpdateCourierVisibility()
+        {
+            bool isDispatch = false;
+            try
+            {
+                isDispatch = int.TryParse(ddlDeliveryBy.SelectedValue, out int personId)
+                    && new PersonsRepository().IsDispatchPerson(personId);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails UpdateCourierVisibility: " + ex.Message);
+            }
+            phCourier.Visible = isDispatch;
+            phCourierBlank.Visible = !isDispatch;
+        }
+
+        protected void ddlDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateCourierVisibility();
         }
 
         private void SetStatus(string message, bool? isError)
@@ -278,6 +301,7 @@ namespace TrackerSQL.Pages
 
                 TrySelectDropDownByValue(ddlDeliveryBy, contact.PreferredAgentID);
                 BindCourierServiceDropdown(contact.PreferredCourierServiceID);
+                UpdateCourierVisibility();
                 TrySelectDropDownByValue(ddlAgent, contact.SalesAgentID);
 
                 PriPrefQtyTextBox.Text = contact.PriPrefQty.HasValue ? contact.PriPrefQty.Value.ToString("0.##") : string.Empty;
@@ -324,6 +348,8 @@ namespace TrackerSQL.Pages
 
                 // Orders / Recurring / Repairs history tabs
                 BindHistoryTabs(id);
+
+                UpdatePortalInviteButton(id);
             }
             catch (Exception ex)
             {
@@ -342,6 +368,7 @@ namespace TrackerSQL.Pages
             {
                 BindContactOrdersGrid(contactId);
                 BindContactWaybillsGrid(contactId);
+                BindContactChangeLogGrid(contactId);
 
                 var recurring = new RecurringOrdersRepository().GetSummariesByContactId(contactId);
                 tabpnlRecurring.Visible = recurring.Count > 0;
@@ -362,6 +389,48 @@ namespace TrackerSQL.Pages
                 if (tabpnlWaybills != null)
                     tabpnlWaybills.Visible = false;
             }
+        }
+
+        private void BindContactChangeLogGrid(int contactId)
+        {
+            if (gvContactChangeLog == null)
+                return;
+
+            try
+            {
+                ContactChangeLogManager.EnsureSchemaOnce();
+                var rows = new ContactChangeLogRepository().GetByContactId(contactId, maxRows: 500)
+                    ?? new List<ContactChangeLogEntry>();
+
+                int pageCount = Math.Max(1, (int)Math.Ceiling(rows.Count / (double)gvContactChangeLog.PageSize));
+                if (gvContactChangeLog.PageIndex >= pageCount)
+                    gvContactChangeLog.PageIndex = pageCount - 1;
+
+                gvContactChangeLog.DataSource = rows;
+                gvContactChangeLog.DataBind();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "ContactDetails.BindContactChangeLogGrid error: " + ex.Message);
+                gvContactChangeLog.DataSource = new List<ContactChangeLogEntry>();
+                gvContactChangeLog.DataBind();
+            }
+
+            if (upnlContactChangeLog != null)
+                upnlContactChangeLog.Update();
+        }
+
+        protected void gvContactChangeLog_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvContactChangeLog.PageIndex = e.NewPageIndex;
+            if (TryGetContactId(out int contactId))
+                BindContactChangeLogGrid(contactId);
+        }
+
+        protected void gvContactChangeLog_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvContactChangeLog, e.Row);
         }
 
         private void BindContactOrdersGrid(int contactId)
@@ -574,6 +643,7 @@ namespace TrackerSQL.Pages
             btnForceNext.Enabled = editMode;
             btnForceCheckup.Enabled = editMode;
             btnSendReminder.Enabled = editMode;
+            btnInvitePortal.Enabled = editMode;
             btnRecalcAverage.Enabled = editMode;
             btnInsert.Enabled = !editMode;
             accAddDetailsButton.Enabled = !editMode;
@@ -980,6 +1050,13 @@ namespace TrackerSQL.Pages
                     return false;
                 }
 
+                ContactChangeLogManager.LogDiff(
+                    contactId,
+                    existing,
+                    contact,
+                    ContactChangeLogManager.SourceContactDetails,
+                    "Contact saved");
+
                 if (!TrySaveAccInfo(contactId, contact, out bool accWasSaved, out string accError))
                 {
                     errorMessage = accError ?? "Account info save failed.";
@@ -999,6 +1076,7 @@ namespace TrackerSQL.Pages
                     "Contact saved",
                     accWasSaved ? "accountInfo=yes" : "accountInfo=no",
                     contactIdOverride: contactId);
+                BindContactChangeLogGrid(contactId);
                 return true;
             }
             catch (Exception ex)
@@ -1225,6 +1303,7 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
+                Contact before = repo.GetById(targetId);
                 var incoming = ReadContactFromForm(null);
                 MergeContactFields(existing, incoming);
 
@@ -1234,6 +1313,13 @@ namespace TrackerSQL.Pages
                     RefreshAfterSave();
                     return;
                 }
+
+                ContactChangeLogManager.LogDiff(
+                    targetId,
+                    before,
+                    existing,
+                    ContactChangeLogManager.SourceMerge,
+                    "Merged form fields into existing contact");
 
                 TrySaveAccInfo(targetId, existing, out _, out _);
 
@@ -1766,6 +1852,123 @@ namespace TrackerSQL.Pages
             {
                 LogContactAudit("Send Reminder failed", ex.Message);
                 NotifyForceAction("Send Reminder", "Error sending reminder: " + ex.Message, true);
+            }
+        }
+
+        protected void btnInvitePortal_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction("Invite to portal", "No contact selected.", true);
+                    return;
+                }
+
+                ContactPortalInviteResult result = new ContactPortalManager().InviteContactById(contactId);
+                bool ok = result.Succeeded;
+                string message = result.Message;
+                LogContactAudit(ok ? "Portal invite sent" : "Portal invite failed", message, contactIdOverride: contactId);
+                BindPortalEmailConflicts(result.OtherContacts);
+                NotifyForceAction("Invite to portal", message ?? (ok ? "Invite sent." : "Invite failed."), !ok);
+                if (ok)
+                    UpdatePortalInviteButton(contactId);
+            }
+            catch (Exception ex)
+            {
+                LogContactAudit("Portal invite failed", ex.Message);
+                NotifyForceAction("Invite to portal", "Error: " + ex.Message, true);
+            }
+        }
+
+        /// <summary>Links (new tab) to other contacts sharing the invite email.</summary>
+        private void BindPortalEmailConflicts(List<ContactPortalEmailConflict> others)
+        {
+            if (ltrlPortalConflicts == null)
+                return;
+            if (others == null || others.Count == 0)
+            {
+                ltrlPortalConflicts.Text = string.Empty;
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<div class=\"portal-conflicts\">Other contacts with this email: ");
+            for (int i = 0; i < others.Count; i++)
+            {
+                var c = others[i];
+                if (i > 0)
+                    sb.Append(" · ");
+                string url = ResolveUrl("~/Pages/ContactDetails.aspx?ID=" + c.ContactID);
+                string label = (string.IsNullOrWhiteSpace(c.CompanyName) ? "Contact" : c.CompanyName)
+                    + " (#" + c.ContactID + ")";
+                sb.Append("<a href=\"").Append(HttpUtility.HtmlAttributeEncode(url))
+                  .Append("\" target=\"_blank\" rel=\"noopener\">")
+                  .Append(HttpUtility.HtmlEncode(label)).Append("</a>");
+                if (!c.Enabled)
+                    sb.Append(" <span class=\"status-badge is-disabled\">disabled</span>");
+                if (c.HoldsPortalLogin)
+                    sb.Append(" <span class=\"status-badge is-done\">has portal login</span>");
+            }
+            sb.Append("</div>");
+            ltrlPortalConflicts.Text = sb.ToString();
+        }
+
+        private void UpdatePortalInviteButton(int contactId)
+        {
+            if (contactId <= 0)
+                return;
+
+            if (btnViewInPortal != null)
+            {
+                btnViewInPortal.Visible = SecurityManager.IsAdmin();
+                string previewUrl = ResolveUrl("~/Portal/ViewAs.aspx?ContactID=" + contactId);
+                btnViewInPortal.OnClientClick = "window.open('" + HttpUtility.JavaScriptStringEncode(previewUrl) + "', '_blank'); return false;";
+            }
+
+            try
+            {
+                var link = new ContactPortalManager().GetLinkForContact(contactId);
+                if (link != null)
+                {
+                    if (btnInvitePortal != null)
+                    {
+                        btnInvitePortal.Text = "Resend portal invite";
+                        string last = link.LastLoginAt.HasValue
+                            ? ("Last portal login " + link.LastLoginAt.Value.ToString("yyyy-MM-dd HH:mm"))
+                            : "Never signed in to portal";
+                        btnInvitePortal.ToolTip = last + ". Click to email a new temporary password.";
+                    }
+                    if (lblPortalStatus != null)
+                    {
+                        bool active = link.LastLoginAt.HasValue && !link.MustChangePassword;
+                        lblPortalStatus.Text = active
+                            ? "<span class=\"status-badge is-enabled\">Active</span>"
+                            : "<span class=\"status-badge is-done\">Invited</span>";
+                        lblPortalStatus.ToolTip = link.LastLoginAt.HasValue
+                            ? "Last signed in " + link.LastLoginAt.Value.ToString("yyyy-MM-dd HH:mm")
+                                + (link.MustChangePassword ? " (still on temporary password)" : string.Empty)
+                            : "Invite sent, not signed in yet";
+                    }
+                }
+                else
+                {
+                    if (btnInvitePortal != null)
+                    {
+                        btnInvitePortal.Text = "Invite to portal";
+                        btnInvitePortal.ToolTip = "Create or reset Contact-role login and email a temporary password";
+                    }
+                    if (lblPortalStatus != null)
+                    {
+                        lblPortalStatus.Text = "<span class=\"status-badge is-disabled\">Not Linked</span>";
+                        lblPortalStatus.ToolTip = "Use Invite to portal (needs an email on file), or the contact can request access from the portal access page";
+                    }
+                }
+            }
+            catch
+            {
+                if (lblPortalStatus != null)
+                    lblPortalStatus.Text = string.Empty;
             }
         }
 

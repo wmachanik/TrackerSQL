@@ -1,0 +1,51 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Portal.Master.cs" Inherits="TrackerSQL.Portal.PortalMaster" %>
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Quaffee</title>
+    <link href="~/Styles/Site.css?v=20260924-16" rel="stylesheet" type="text/css" runat="server" />
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
+</head>
+<body class="portal-body">
+    <form id="form1" runat="server">
+        <asp:ScriptManager ID="smPortal" runat="server" EnablePartialRendering="true" />
+        <asp:UpdateProgress ID="uprgPortal" runat="server" DisplayAfter="100" DynamicLayout="true">
+            <ProgressTemplate>
+                <div class="portal-wait-overlay" role="status" aria-live="polite">
+                    <div class="portal-wait-box">
+                        <img src="<%= ResolveUrl("~/images/animi/QuaffeeProgress.gif") %>" alt="" />
+                        <span>Please wait&hellip;</span>
+                    </div>
+                </div>
+            </ProgressTemplate>
+        </asp:UpdateProgress>
+        <header class="portal-header">
+            <div class="portal-header-inner">
+                <a class="portal-brand" href="<%= ResolveUrl("~/Portal/Home.aspx") %>">
+                    <img class="portal-logo" src="<%= ResolveUrl("~/images/logo/QuaffeeLogoWeb.jpg") %>" alt="Quaffee" />
+                    <span class="portal-brand-text">My Quaffee</span>
+                </a>
+                <nav class="portal-nav" runat="server" id="navPortal">
+                    <asp:HyperLink ID="lnkHome" runat="server" NavigateUrl="~/Portal/Home.aspx" Text="Home" />
+                    <asp:HyperLink ID="lnkContact" runat="server" NavigateUrl="~/Portal/MyContact.aspx" Text="My Details" />
+                    <asp:HyperLink ID="lnkOrders" runat="server" NavigateUrl="~/Portal/MyOrders.aspx" Text="My Orders" />
+                    <asp:HyperLink ID="lnkRepairs" runat="server" NavigateUrl="~/Portal/MyRepairs.aspx" Text="My Repairs" />
+                    <asp:HyperLink ID="lnkRecurring" runat="server" NavigateUrl="~/Portal/MyRecurring.aspx" Text="My Recurring Orders" />
+                    <asp:LinkButton ID="btnLogout" runat="server" Text="Sign Out" OnClick="btnLogout_Click" CausesValidation="false" />
+                </nav>
+            </div>
+        </header>
+        <main class="portal-main">
+            <div class="portal-content">
+                <asp:Literal ID="litAccountNotice" runat="server" />
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </div>
+        </main>
+        <footer class="portal-footer">
+            <span>My Quaffee</span>
+        </footer>
+    </form>
+</body>
+</html>

@@ -13,6 +13,10 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlPageTitle;
         protected global::System.Web.UI.WebControls.Literal litPageTitle;
         protected global::System.Web.UI.WebControls.Literal litPageSubtitle;
+        protected global::System.Web.UI.WebControls.Panel pnlNewWooOrders;
+        protected global::System.Web.UI.WebControls.Literal litNewWooOrdersPrompt;
+        protected global::System.Web.UI.WebControls.Button btnNewWooOrdersImport;
+        protected global::System.Web.UI.WebControls.Button btnNewWooOrdersContinue;
         protected global::System.Web.UI.ScriptManager scrmOrderDetail;
         protected global::System.Web.UI.UpdateProgress udtpOrderDetail;
         protected global::System.Web.UI.UpdatePanel upnlSaveReturnRedirect;
@@ -45,6 +49,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.CheckBox cbxConfirmed;
         protected global::System.Web.UI.WebControls.CheckBox cbxInvoiceDone;
         protected global::System.Web.UI.WebControls.CheckBox cbxDone;
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trWooLink;
+        protected global::System.Web.UI.WebControls.HyperLink hlWooOrder;
+        protected global::System.Web.UI.WebControls.Label lblWooOrder;
         protected global::System.Web.UI.HtmlControls.HtmlTableRow trWaybill;
         protected global::System.Web.UI.WebControls.Label lblDispatchStatus;
         protected global::System.Web.UI.WebControls.Label lblWaybill;
@@ -64,6 +71,14 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnSaveAndReturn;
         protected global::System.Web.UI.HtmlControls.HtmlButton btnUndoHeader;
         protected global::System.Web.UI.WebControls.Button btnLastOrder;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl spnWooLink;
+        protected global::System.Web.UI.WebControls.ImageButton btnWooLink;
+        protected global::System.Web.UI.UpdatePanel upnlWooLink;
+        protected global::System.Web.UI.WebControls.Panel pnlWooLink;
+        protected global::System.Web.UI.WebControls.Literal litWooLinkPrompt;
+        protected global::System.Web.UI.WebControls.RadioButtonList rblWooLinkCandidates;
+        protected global::System.Web.UI.WebControls.Button btnWooLinkConfirm;
+        protected global::System.Web.UI.WebControls.Button btnWooLinkCancel;
         protected global::System.Web.UI.UpdatePanel upnlOrderLines;
         protected global::System.Web.UI.WebControls.GridView gvOrderLines;
         protected global::System.Web.UI.UpdatePanel upnlNewOrderItem;

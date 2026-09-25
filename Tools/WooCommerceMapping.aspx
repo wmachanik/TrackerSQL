@@ -221,6 +221,7 @@
                 || window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralAutoPull.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralAppendTracking.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralWriteExpectedDelivery.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralCheckNewOrders.ClientID %>'))
                 || noteOrderDirty;
             var addressDirty = window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeProvince.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeCountry.ClientID %>'))
@@ -707,7 +708,7 @@
 
             <asp:Panel ID="pnlWooDisabled" runat="server" Visible="false" CssClass="simpleForm page-tone-panel page-tone-sysdata">
                 <div class="page-tone-header tool-card-header">
-                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                    <img class="tool-card-icon" src="../images/imgButtons/Woocommerce-Icon.png" alt="" />
                     <div>
                         <h1 class="page-tone-title">WooCommerce Mapping</h1>
                     </div>
@@ -723,7 +724,7 @@
 
             <asp:Panel ID="pnlMain" runat="server" CssClass="simpleForm page-tone-panel page-tone-sysdata">
                 <div class="page-tone-header tool-card-header">
-                    <img class="tool-card-icon" src="../images/imgButtons/Toolbox.png" alt="" />
+                    <img class="tool-card-icon" src="../images/imgButtons/Woocommerce-Icon.png" alt="" />
                     <div>
                         <h1 class="page-tone-title"><asp:Literal ID="litTitle" runat="server" /></h1>
                         <p class="page-tone-subtitle"><asp:Literal ID="litSubtitle" runat="server" /></p>
@@ -1198,109 +1199,121 @@
                     </asp:View>
 
                     <asp:View ID="viewShipping" runat="server">
-                        <p><asp:Literal ID="litShippingHelp" runat="server" /></p>
+                        <p class="sys-prefs-help"><asp:Literal ID="litShippingHelp" runat="server" /></p>
 
-                        <h3 class="woo-map-section-title">Woo shipping method → Delivered by</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litShippingMapsNote" runat="server" /></p>
-                        <p class="woo-map-section-note" id="pnlShippingEmptyHint" runat="server" visible="false">
+                        <h3 class="sys-prefs-section-title">Woo shipping method → Delivered by</h3>
+                        <p class="sys-prefs-help"><asp:Literal ID="litShippingMapsNote" runat="server" /></p>
+                        <p class="sys-prefs-help" id="pnlShippingEmptyHint" runat="server" visible="false">
                             <asp:Literal ID="litShippingEmptyHint" runat="server" />
                         </p>
-                        <div class="results-container woo-map-shipping-grid-wrap">
-                        <asp:GridView ID="gvShippingMaps" runat="server" CssClass="results-table woo-map-shipping-grid"
-                            AutoGenerateColumns="false" DataKeyNames="MapID" ShowFooter="true"
-                            OnRowDataBound="gvShippingMaps_RowDataBound"
-                            OnRowCommand="gvShippingMaps_RowCommand">
-                            <Columns>
-                                <asp:BoundField DataField="MapID" HeaderText="ID" ItemStyle-CssClass="col-tight" ReadOnly="true" />
-                                <asp:TemplateField HeaderText="Woo method contains">
-                                    <ItemTemplate>
-                                        <asp:TextBox ID="txtMethodMatch" runat="server" CssClass="sys-prefs-input"
-                                            Text='<%# Eval("MethodMatch") %>' ToolTip="Matched case-insensitively against Woo shipping method title" />
-                                    </ItemTemplate>
-                                    <FooterTemplate>
-                                        <asp:TextBox ID="txtNewMethodMatch" runat="server" CssClass="sys-prefs-input"
-                                            ToolTip="e.g. Pargo, Local pickup" placeholder="e.g. Pargo" />
-                                    </FooterTemplate>
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Delivered by">
-                                    <ItemTemplate>
-                                        <asp:DropDownList ID="ddlShipPerson" runat="server" CssClass="sys-prefs-input" />
-                                    </ItemTemplate>
-                                    <FooterTemplate>
-                                        <asp:DropDownList ID="ddlNewShipPerson" runat="server" CssClass="sys-prefs-input" />
-                                    </FooterTemplate>
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Active" ItemStyle-CssClass="col-tight">
-                                    <ItemTemplate>
-                                        <asp:CheckBox ID="chkShipActive" runat="server" Checked='<%# Eval("IsActive") %>' />
-                                    </ItemTemplate>
-                                    <FooterTemplate>
-                                        <asp:CheckBox ID="chkNewShipActive" runat="server" Checked="true" />
-                                    </FooterTemplate>
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Notes" ItemStyle-CssClass="postal-ranges-cell">
-                                    <ItemTemplate>
-                                        <asp:TextBox ID="txtShipNotes" runat="server" CssClass="sys-prefs-input woo-map-notes-wide"
-                                            TextMode="MultiLine" Rows="2"
-                                            Text='<%# Eval("Notes") %>' />
-                                    </ItemTemplate>
-                                    <FooterTemplate>
-                                        <asp:TextBox ID="txtNewShipNotes" runat="server" CssClass="sys-prefs-input woo-map-notes-wide"
-                                            TextMode="MultiLine" Rows="2" />
-                                    </FooterTemplate>
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="" ItemStyle-CssClass="col-tight">
-                                    <ItemTemplate>
-                                        <asp:ImageButton ID="btnDeleteShipping" runat="server"
-                                            ImageUrl="~/images/imgButtons/DelItem.gif"
-                                            AlternateText="Delete" ToolTip="Delete shipping map"
-                                            CommandName="DeleteShipping" CommandArgument='<%# Eval("MapID") %>'
-                                            CausesValidation="false"
-                                            OnClientClick="return confirm('Delete this shipping map?');" />
-                                    </ItemTemplate>
-                                    <FooterTemplate>
-                                        <span class="woo-map-footer-hint">New row ↑</span>
-                                    </FooterTemplate>
-                                </asp:TemplateField>
-                            </Columns>
-                        </asp:GridView>
-                        </div>
                         <div class="button-row">
-                            <asp:Button ID="btnSaveShippingMaps" runat="server" CssClass="filter-panel-btn woo-map-btn-wide"
+                            <asp:Button ID="btnSaveShippingMaps" runat="server" CssClass="filter-panel-btn"
                                 OnClick="btnSaveShippingMaps_Click" CausesValidation="false"
                                 OnClientClick="return wooMapPrepareSave(this);" data-woo-save-ready="0" />
                         </div>
+                        <div class="results-container">
+                            <asp:GridView ID="gvShippingMaps" runat="server" CssClass="results-table results-table-fit"
+                                AutoGenerateColumns="false" DataKeyNames="MapID" ShowFooter="true"
+                                OnRowDataBound="gvShippingMaps_RowDataBound"
+                                OnRowCommand="gvShippingMaps_RowCommand">
+                                <Columns>
+                                    <asp:BoundField DataField="MapID" HeaderText="ID" ItemStyle-CssClass="col-tight" ReadOnly="true" />
+                                    <asp:TemplateField HeaderText="Woo method contains" ItemStyle-CssClass="col-fill">
+                                        <ItemTemplate>
+                                            <asp:TextBox ID="txtMethodMatch" runat="server" CssClass="sys-prefs-input"
+                                                Text='<%# Eval("MethodMatch") %>' ToolTip="Matched case-insensitively against Woo shipping method title" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="txtNewMethodMatch" runat="server" CssClass="sys-prefs-input"
+                                                ToolTip="e.g. Pargo, Local pickup" placeholder="e.g. Pargo" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Delivered by" ItemStyle-CssClass="col-tight">
+                                        <ItemTemplate>
+                                            <asp:DropDownList ID="ddlShipPerson" runat="server" CssClass="sys-prefs-input" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:DropDownList ID="ddlNewShipPerson" runat="server" CssClass="sys-prefs-input" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Active" ItemStyle-CssClass="col-tight">
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="chkShipActive" runat="server" Checked='<%# Eval("IsActive") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="chkNewShipActive" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Notes" ItemStyle-CssClass="col-fill">
+                                        <ItemTemplate>
+                                            <asp:TextBox ID="txtShipNotes" runat="server" CssClass="sys-prefs-input"
+                                                TextMode="MultiLine" Rows="2"
+                                                Text='<%# Eval("Notes") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="txtNewShipNotes" runat="server" CssClass="sys-prefs-input"
+                                                TextMode="MultiLine" Rows="2" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="" ItemStyle-CssClass="col-cmd">
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnDeleteShipping" runat="server"
+                                                ImageUrl="~/images/imgButtons/DelItem.gif"
+                                                AlternateText="Delete" ToolTip="Delete shipping map"
+                                                CommandName="DeleteShipping" CommandArgument='<%# Eval("MapID") %>'
+                                                CausesValidation="false"
+                                                OnClientClick="return confirm('Delete this shipping map?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <span class="sys-prefs-saved-hint">New row ↑</span>
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
 
-                        <h3 class="woo-map-section-title"><asp:Literal ID="litDispatchWaybillTitle" runat="server" /></h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litDispatchWaybillNote" runat="server" /></p>
-                        <h4 class="woo-map-section-subtitle"><asp:Literal ID="lblDispatchPeople" runat="server" /></h4>
-                        <div class="results-container woo-map-dispatch-grid-wrap">
+                        <h3 class="sys-prefs-section-title"><asp:Literal ID="litDispatchWaybillTitle" runat="server" /></h3>
+                        <p class="sys-prefs-help"><asp:Literal ID="litDispatchWaybillNote" runat="server" /></p>
+                        <h4 class="sys-prefs-section-title"><asp:Literal ID="lblDispatchPeople" runat="server" /></h4>
+                        <p class="sys-prefs-help">Display only — tick <strong>Dispatch</strong> on Lookups → People to include someone here.</p>
+                        <div class="button-row">
+                            <asp:HyperLink ID="hlOpenPeopleDispatch" runat="server"
+                                NavigateUrl="~/Pages/Lookups.aspx?tab=People"
+                                CssClass="filter-panel-btn sys-prefs-mapping-link"
+                                Text="Open People (set Dispatch)"
+                                ToolTip="Open Lookups → People to flag who needs a waybill" />
+                        </div>
+                        <div class="results-container">
                             <asp:GridView ID="gvDispatchPeople" runat="server"
-                                CssClass="results-table woo-map-dispatch-grid"
+                                CssClass="results-table results-table-fit"
                                 AutoGenerateColumns="false" DataKeyNames="PersonID"
                                 AllowPaging="true" PageSize="8"
                                 OnPageIndexChanging="gvDispatchPeople_PageIndexChanging"
                                 OnRowCreated="gvDispatchPeople_RowCreated"
-                                EmptyDataText="No dispatch people flagged. Set Dispatch on Lookups → People.">
+                                EmptyDataText="No dispatch people flagged. Open People and tick Dispatch.">
                                 <PagerStyle CssClass="pager-row" />
                                 <PagerTemplate>
                                     <asp:PlaceHolder ID="plhPager" runat="server" />
                                 </PagerTemplate>
                                 <Columns>
                                     <asp:BoundField DataField="DisplayName" HeaderText="Delivered by (dispatch)"
-                                        ItemStyle-CssClass="woo-map-dispatch-person-col" />
+                                        ItemStyle-CssClass="col-fill" />
                                 </Columns>
                             </asp:GridView>
                         </div>
-                        <div class="woo-map-dispatch-options">
-                            <asp:CheckBox ID="chkTrackingNumberRequired" runat="server" />
-                            <p class="woo-map-section-note woo-map-dispatch-msg-hint">
-                                Who requires a waybill is set on <strong>Lookups → People → Dispatch</strong> (works with Woo off).
-                                This page only controls whether the waybill number is required, and Woo note behaviour.
-                            </p>
-                        </div>
+                        <table class="detail-form-table sys-prefs-form-table">
+                            <tr>
+                                <td class="sys-prefs-field">
+                                    <asp:CheckBox ID="chkTrackingNumberRequired" runat="server" />
+                                </td>
+                            </tr>
+                        </table>
+                        <p class="sys-prefs-help">
+                            Who requires a waybill is set on Lookups → People → Dispatch (works with Woo off).
+                            This page only controls whether the waybill number is required, and Woo note behaviour.
+                        </p>
                         <div class="button-row">
-                            <asp:Button ID="btnSaveDispatchWaybill" runat="server" CssClass="filter-panel-btn woo-map-btn-wide"
+                            <asp:Button ID="btnSaveDispatchWaybill" runat="server" CssClass="filter-panel-btn"
                                 OnClick="btnSaveDispatchWaybill_Click" CausesValidation="false"
                                 OnClientClick="return wooMapPrepareSave(this);" data-woo-save-ready="0" />
                         </div>
@@ -1356,7 +1369,7 @@
                                             OnClientClick="return confirm('Delete this payment map?');" />
                                     </ItemTemplate>
                                     <FooterTemplate>
-                                        <span class="woo-map-footer-hint">New row ↑</span>
+                                        <span class="sys-prefs-saved-hint">New row ↑</span>
                                     </FooterTemplate>
                                 </asp:TemplateField>
                             </Columns>
@@ -1521,77 +1534,82 @@
                     </asp:View>
 
                     <asp:View ID="viewGeneral" runat="server">
-                        <p><asp:Literal ID="litGeneralHelp" runat="server" /></p>
+                        <p class="sys-prefs-help"><asp:Literal ID="litGeneralHelp" runat="server" /></p>
 
-                        <h3 class="woo-map-section-title">Company name on existing contacts</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralCompanyModeNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                        <div class="results-container results-container-fit">
+                        <table class="results-table results-table-fit woo-general-settings">
+                            <tr>
+                                <td class="sys-prefs-label">
                                     <asp:Label ID="lblGeneralCompanyMode" runat="server" AssociatedControlID="ddlGeneralCompanyMode" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:DropDownList ID="ddlGeneralCompanyMode" runat="server" CssClass="sys-prefs-input" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <h3 class="woo-map-section-title">Order note line format</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralNoteLineFormatNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
                                     <asp:Label ID="lblGeneralNoteLineFormat" runat="server" AssociatedControlID="ddlGeneralNoteLineFormat" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:DropDownList ID="ddlGeneralNoteLineFormat" runat="server" CssClass="sys-prefs-input" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <h3 class="woo-map-section-title">Order note parts (all imports)</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralNotePartOrderNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
                                     <asp:Label ID="lblGeneralNotePartOrder" runat="server" AssociatedControlID="lstGeneralNotePartOrder" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:ListBox ID="lstGeneralNotePartOrder" runat="server" CssClass="sys-prefs-input"
-                                        Rows="8" Width="36em" />
-                                </div>
-                                <div class="filter-control" style="display:flex; flex-direction:column; gap:6px;">
-                                    <asp:Button ID="btnNotePartMoveUp" runat="server" CssClass="filter-panel-btn"
-                                        Text="Move up" OnClick="btnNotePartMoveUp_Click" CausesValidation="false" />
-                                    <asp:Button ID="btnNotePartMoveDown" runat="server" CssClass="filter-panel-btn"
-                                        Text="Move down" OnClick="btnNotePartMoveDown_Click" CausesValidation="false" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <h3 class="woo-map-section-title">Dispatch tracking</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralAppendTrackingNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                                        Rows="8" />
+                                    <div class="button-row">
+                                        <span class="image-button" title="Move selected part up">
+                                            <img src="../images/imgButtons/arrow_up.gif" alt="" />
+                                            <asp:LinkButton ID="lnkNotePartMoveUp" runat="server"
+                                                Text="Move up"
+                                                OnClick="lnkNotePartMoveUp_Click" CausesValidation="false" />
+                                        </span>
+                                        <span class="image-button" title="Move selected part down">
+                                            <img src="../images/imgButtons/arrow_down.gif" alt="" />
+                                            <asp:LinkButton ID="lnkNotePartMoveDown" runat="server"
+                                                Text="Move down"
+                                                OnClick="lnkNotePartMoveDown_Click" CausesValidation="false" />
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblGeneralAppendTracking" runat="server" AssociatedControlID="chkGeneralAppendTracking" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:CheckBox ID="chkGeneralAppendTracking" runat="server" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <h3 class="woo-map-section-title">Expected delivery on Woo</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralWriteExpectedDeliveryNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblGeneralWriteExpectedDelivery" runat="server" AssociatedControlID="chkGeneralWriteExpectedDelivery" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:CheckBox ID="chkGeneralWriteExpectedDelivery" runat="server" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <h3 class="woo-map-section-title">Order Import auto-pull</h3>
-                        <p class="woo-map-section-note"><asp:Literal ID="litGeneralAutoPullNote" runat="server" /></p>
-                        <div class="filter-toolbar">
-                            <div class="filter-section">
-                                <div class="filter-control">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
                                     <asp:Label ID="lblGeneralAutoPull" runat="server" AssociatedControlID="ddlGeneralAutoPull" />
+                                </td>
+                                <td class="sys-prefs-field">
                                     <asp:DropDownList ID="ddlGeneralAutoPull" runat="server" CssClass="sys-prefs-input" />
-                                </div>
-                            </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblGeneralCheckNewOrders" runat="server" AssociatedControlID="chkGeneralCheckNewOrders" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:CheckBox ID="chkGeneralCheckNewOrders" runat="server" />
+                                </td>
+                            </tr>
+                        </table>
                         </div>
 
                         <div class="button-row">

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
+  EXAMPLE ONLY: every password and secret is 'mypassword'. Copy to the real file name and fill in the real values;
+  the real config files are not in git.
+
   Release XDT transform applied to Web.config when publishing/packaging with the
   Release configuration (Visual Studio / MSBuild).
 
@@ -28,7 +31,7 @@
   <connectionStrings>
     <!-- Was ApplicationServices — site4now SQL; name required by TrackerSQL -->
     <add name="TrackerDataSQL"
-         connectionString="Data Source=SQL8001.site4now.net;Initial Catalog=db_a8d7e2_trackersecurity;User Id=db_a8d7e2_trackersecurity_admin;Password=kxb537b6gc"
+         connectionString="Data Source=SQL8001.site4now.net;Initial Catalog=db_a8d7e2_trackersecurity;User Id=db_a8d7e2_trackersecurity_admin;Password=mypassword"
          providerName="System.Data.SqlClient"
          xdt:Transform="SetAttributes" xdt:Locator="Match(name)" />
   </connectionStrings>

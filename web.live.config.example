@@ -1,28 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Full production Web.config snapshot for TrackerSQL 3.0.0.5 (quaffeetracker.co.za).
-  Working release: delivery sheet print / New Order / order audit and Done FK fixes.
+  EXAMPLE ONLY: every password and secret is 'mypassword'. Copy to the real file name and fill in the real values;
+  the real config files are not in git.
 
-  Use this file to overwrite Web.config on the live host after a manual/FTP deploy.
+  Live production Web.config for TrackerSQL on quaffeetracker.co.za (v3.0.3.0 binaries).
+  Upload as Web.config on the host (backup the server copy first).
 
-  Visual Studio Release publish applies the same production deltas via
-  Web.Release.config (XDT) onto the local Web.config — keep those transforms
-  aligned with this file when live settings change.
+  TrackerDataSQL = former ApplicationServices (SQL8001 / site4now).
 
-  TrackerSQL shape (not legacy TrackerDotNet / Access):
-  - Single connection: TrackerDataSQL (site4now; was ApplicationServices)
-  - DisableAccessDb=true; no Access/Somee security connection strings
-  - DatabaseBackupFolder = host path SQL can write (not web App_Data)
-  - HTTPS redirect + PublicOrderToken rewrite
-  - EmailTestMode=false; EnableRequestTiming=false
+  3.0.3.0 changes (search "3.0.3.0") - mobile REST API at /api/v1:
+    1. Version 3.0.2.0 -> 3.0.3.0
+    2. MobileApi.* appSettings
+    3. system.webServer: WebDAV removed and the extensionless handler allows every verb (PUT/OPTIONS for the app)
+    4. Binding redirects for Newtonsoft.Json, System.Web.Http, System.Net.Http.Formatting,
+       System.Threading.Tasks.Extensions and System.Runtime.CompilerServices.Unsafe
+    5. Anonymous <location path="api"> (the API checks its own Bearer tokens)
+    6. Anonymous <location path="driver"> with index.html as its default page (driver app web copy; upload the driver folder)
+    7. staticContent mimeMap for .apk (Android app download, Tools/DriverApp.aspx; upload the Downloads folder)
+    8. Content-Security-Policy, nosniff and no-referrer headers on /driver (the web app runs only its own files)
+  Upload the whole bin folder: new DLLs include System.Web.Http, System.Web.Http.WebHost,
+  System.Net.Http.Formatting, Newtonsoft.Json.Bson and System.Threading.Tasks.Extensions.
+  The mobile API tables are created automatically on first use (or System Tools > Mobile API tester > Check API tables).
+
+  3.0.2.0 changes vs the 3.0.1.14 live copy (search "3.0.2.0"):
+    1. Version 3.0.1.14 -> 3.0.2.0
+    2. Removed anonymous <location path="Default.aspx"> (home page now requires sign-in)
+    3. Added anonymous <location path="Styles"> and <location path="images"> (login pages need CSS/logo)
+  Also upload the new Portal/Web.config (Customer Portal access rules) - it is separate from this file.
 -->
 <configuration>
 	<appSettings>
-		<add key="Version" value="3.0.0.5" />
+		<!-- 3.0.3.0: was 3.0.2.0 -->
+		<add key="Version" value="3.0.3.0" />
+		<add key="WooCommerceCryptoKey" value="mypassword" />
 		<add key="SysEmailFrom" value="orders@quaffee.co.za" />
 		<add key="SysCCEmailAddress" value="orders@quaffee.co.za" />
 		<add key="EMailLogIn" value="noreply@quaffee.co.za" />
-		<add key="EMailPassword" value="Mx7!qkN4!@9zB" />
+		<add key="EMailPassword" value="mypassword" />
 		<add key="EMailSMTP" value="smtp.office365.com" />
 		<add key="EMailPort" value="587" />
 		<add key="EMailSSLEnabled" value="true" />
@@ -32,7 +46,7 @@
 		<!-- 60s: Office 365 AUTH often exceeds the old live 10s timeout on shared hosting -->
 		<add key="EmailTimeout" value="60000" />
 		<add key="AppTimeZoneId" value="South Africa Standard Time" />
-		<add key="DisableClientSecret" value="FrogQuaffer!IsSad2SayGoodBye.K8mF3nR9" />
+		<add key="DisableClientSecret" value="mypassword" />
 		<add key="ApplicationBaseUrl" value="https://quaffeetracker.co.za/" />
 		<add key="EmailTestMode" value="false" />
 		<add key="EmailTestRecipient" value="warren@machanik.com" />
@@ -53,16 +67,27 @@
 		<add key="ContactRepairHistoryMonths" value="48" />
 		<add key="RequestChanges.NotifyEmail" value="true" />
 		<add key="DisableAccessDb" value="true" />
+		<!-- 3.0.3.0: mobile REST API. AutoCompleteDeliveries is only the default until System → Driver App settings are saved.
+		     Security: LoginFailuresPerIp (bad sign-ins per IP per 15 min), RequestsPerMinute (per phone, 0 = no limit),
+		     TokenIdleDays (unused phones signed out, 0 = never), TrustForwardedProto (true only behind a proxy). -->
+		<add key="MobileApi.TokenDays" value="90" />
+		<add key="MobileApi.TokenIdleDays" value="30" />
+		<add key="MobileApi.LoginFailuresPerIp" value="10" />
+		<add key="MobileApi.RequestsPerMinute" value="120" />
+		<add key="MobileApi.TrustForwardedProto" value="false" />
+		<add key="MobileApi.AutoCompleteDeliveries" value="false" />
+		<add key="MobileApi.RequireHttps" value="true" />
+		<add key="MobileApi.LogDays" value="30" />
+		<add key="MobileApi.CorsOrigins" value="capacitor://localhost,ionic://localhost,http://localhost,https://localhost" />
 		<!-- Keep false in production unless diagnosing mail -->
 		<add key="EnableEmailLogging" value="false" />
 		<add key="EmailDebugSaveMime" value="false" />
 		<add key="EnableRequestTiming" value="false" />
-		<!-- Absolute path SQL can write to, or ~/App_Data/Backup. Live host often: h:\root\home\...\www\db -->
+		<!-- Absolute path SQL can write to (not web App_Data on shared hosting) -->
 		<add key="DatabaseBackupFolder" value="h:\root\home\webquaffer-001\www\db" />
 	</appSettings>
 	<connectionStrings>
-		<!-- Was ApplicationServices — same site4now SQL; name required by TrackerSQL -->
-		<add name="TrackerDataSQL" connectionString="Data Source=SQL8001.site4now.net;Initial Catalog=db_a8d7e2_trackersecurity;User Id=db_a8d7e2_trackersecurity_admin;Password=kxb537b6gc" providerName="System.Data.SqlClient" />
+		<add name="TrackerDataSQL" connectionString="Data Source=SQL8001.site4now.net;Initial Catalog=db_a8d7e2_trackersecurity;User Id=db_a8d7e2_trackersecurity_admin;Password=mypassword" providerName="System.Data.SqlClient" />
 	</connectionStrings>
 	<system.web>
 		<compilation debug="false" targetFramework="4.8">
@@ -73,7 +98,7 @@
 				<add assembly="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=B77A5C561934E089" />
 			</assemblies>
 		</compilation>
-		<httpRuntime targetFramework="4.8" requestValidationMode="4.5" />
+		<httpRuntime targetFramework="4.8" requestValidationMode="4.5" executionTimeout="600" enableVersionHeader="false" />		
 		<authentication mode="Forms">
 			<forms loginUrl="~/Account/Login.aspx" timeout="2880" />
 		</authentication>
@@ -107,13 +132,14 @@
 			</controls>
 		</pages>
 		<xhtmlConformance mode="Transitional" />
-		<!-- Production: hide stack traces from visitors; Global.asax also redirects to HttpErrorPage -->
+		<!-- Hide stack traces from visitors; Global.asax also redirects to HttpErrorPage -->
 		<customErrors mode="RemoteOnly" defaultRedirect="~/HttpErrorPage.aspx" />
 		<machineKey decryptionKey="25AEF974B0AA6F8F8D46D5275CE0BAF755D519D6A519A329" validationKey="0E7C4CC08FB899B6520DF0B4AA2D52FEF88F7EC14B1E7415F7EBAC24D63462166BF81A69A7C70B02FA114E788B86C475F03CE21E34941BFDB5FA76F05A3245EF" />
 		<sessionState mode="InProc" timeout="20" />
 		<globalization requestEncoding="utf-8" responseEncoding="utf-8" fileEncoding="utf-8" />
 	</system.web>
 
+	<!-- 3.0.2.0: removed the anonymous <location path="Default.aspx"> block that was here -->
 	<location path="Account/Login.aspx">
 		<system.web>
 			<authorization>
@@ -124,7 +150,18 @@
 
 	<system.webServer>
 		<!-- true helps managed handlers / rewrite on shared hosting -->
-		<modules runAllManagedModulesForAllRequests="true" />
+		<modules runAllManagedModulesForAllRequests="true">
+			<!-- 3.0.3.0: WebDAV would block PUT from the mobile app -->
+			<remove name="WebDAVModule" />
+		</modules>
+		<!-- 3.0.3.0: extensionless /api/v1/... URLs for every verb -->
+		<handlers>
+			<remove name="WebDAV" />
+			<remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+			<remove name="OPTIONSVerbHandler" />
+			<remove name="TRACEVerbHandler" />
+			<add name="ExtensionlessUrlHandler-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+		</handlers>
 		<directoryBrowse enabled="true" />
 		<defaultDocument>
 			<files>
@@ -132,7 +169,12 @@
 				<add value="Default.aspx" />
 			</files>
 		</defaultDocument>
-		<!-- Detailed only on the server itself; remote visitors get custom/friendly errors -->
+		<!-- 3.0.3.0: driver app download (Tools/DriverApp.aspx); IIS does not know .apk -->
+		<staticContent>
+			<remove fileExtension=".apk" />
+			<mimeMap fileExtension=".apk" mimeType="application/vnd.android.package-archive" />
+		</staticContent>
+		<!-- Detailed errors only on the server; remote visitors get friendly errors -->
 		<httpErrors errorMode="DetailedLocalOnly" existingResponse="PassThrough" />
 		<urlCompression doDynamicCompression="false" />
 		<caching enabled="false" />
@@ -150,13 +192,13 @@
 					<action type="Rewrite" url="Pages/ViewMyOrder.aspx?t={R:1}" appendQueryString="false" />
 				</rule>
 			</rules>
-		</rewrite>
+		</rewrite> 
 	</system.webServer>
 
 	<system.net>
 		<mailSettings>
 			<smtp from="orders@quaffee.co.za">
-				<network host="mail.quaffee.com" userName="orders@quaffee.com" password="Quaff3r*rder" />
+				<network host="mail.quaffee.com" userName="orders@quaffee.com" password="mypassword" />
 			</smtp>
 		</mailSettings>
 	</system.net>
@@ -183,6 +225,27 @@
 				<assemblyIdentity name="System.Buffers" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
 				<bindingRedirect oldVersion="0.0.0.0-4.0.4.0" newVersion="4.0.4.0" />
 			</dependentAssembly>
+			<!-- 3.0.3.0: Web API 2 (mobile REST API) -->
+			<dependentAssembly>
+				<assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-13.0.0.0" newVersion="13.0.0.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Web.Http" publicKeyToken="31bf3856ad364e35" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-5.3.0.0" newVersion="5.3.0.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Net.Http.Formatting" publicKeyToken="31bf3856ad364e35" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.0.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Threading.Tasks.Extensions" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-4.2.1.0" newVersion="4.2.1.0" />
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Runtime.CompilerServices.Unsafe" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-6.0.1.0" newVersion="6.0.1.0" />
+			</dependentAssembly>
 		</assemblyBinding>
 	</runtime>
 
@@ -200,6 +263,52 @@
 			</authorization>
 		</system.web>
 	</location>
+	<!-- 3.0.2.0: added - login pages (admin and Customer Portal) load CSS/logo before sign-in -->
+	<location path="Styles">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<location path="images">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<!-- 3.0.2.0: end of added block -->
+	<!-- 3.0.3.0: mobile REST API; it returns 401 JSON itself instead of the login redirect -->
+	<location path="api">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+	</location>
+	<!-- 3.0.3.0: driver app web copy at /driver/ (signs in through /api itself) -->
+	<location path="driver">
+		<system.web>
+			<authorization>
+				<allow users="*" />
+			</authorization>
+		</system.web>
+		<system.webServer>
+			<defaultDocument>
+				<files>
+					<add value="index.html" />
+				</files>
+			</defaultDocument>
+			<httpProtocol>
+				<customHeaders>
+					<add name="Content-Security-Policy" value="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
+					<add name="X-Content-Type-Options" value="nosniff" />
+					<add name="Referrer-Policy" value="no-referrer" />
+				</customHeaders>
+			</httpProtocol>
+		</system.webServer>
+	</location>
 	<location path="Pages/ViewMyOrder.aspx">
 		<system.web>
 			<authorization>
@@ -216,7 +325,7 @@
 			</httpProtocol>
 		</system.webServer>
 	</location>
-	<!-- Anonymous SQL probe when login cannot reach the DB (remove after go-live if preferred). -->
+	<!-- Anonymous SQL probe when login cannot reach the DB (lock down when no longer needed). -->
 	<location path="Tools/SqlConnectionTest.aspx">
 		<system.web>
 			<authorization>

@@ -368,3 +368,12 @@ FodyWeavers.xsd
 bin/Temp/
 obj/Temp/
 .vs/
+
+# Real configs hold live passwords: only the *.example copies are committed.
+/Web.config
+/web.live.config
+/Web.Release.config
+/weblive.config
+/web..back.config
+/Documentation/repomix-output.xml
+/App_Data/ErrorLog.txt

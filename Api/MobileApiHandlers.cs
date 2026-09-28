@@ -171,7 +171,7 @@ namespace TrackerSQL.Api
     /// </summary>
     public class MobileApiCorsHandler : DelegatingHandler
     {
-        private const string DefaultOrigins = "capacitor://localhost,ionic://localhost,http://localhost,https://localhost";
+        private const string DefaultOrigins = "https://localhost,capacitor://localhost";
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

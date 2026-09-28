@@ -52,7 +52,7 @@
 		<add key="MobileApi.AutoCompleteDeliveries" value="false" />
 		<add key="MobileApi.RequireHttps" value="true" />
 		<add key="MobileApi.LogDays" value="30" />
-		<add key="MobileApi.CorsOrigins" value="capacitor://localhost,ionic://localhost,http://localhost,https://localhost" />
+		<add key="MobileApi.CorsOrigins" value="https://localhost,capacitor://localhost" />
 		<!-- When true: App_Data/email.log + App_Data/pre_send_*.eml dumps -->
 		<add key="EnableEmailLogging" value="false" />
 		<!-- Legacy alias for pre_send_*.eml only; prefer EnableEmailLogging -->
@@ -112,7 +112,7 @@
 		</pages>
 		<!-- Local/dev: Off shows yellow screens. Live uses RemoteOnly → HttpErrorPage (see weblive / Web.Release). -->
 		<customErrors mode="Off" />
-		<machineKey decryptionKey="25AEF974B0AA6F8F8D46D5275CE0BAF755D519D6A519A329" validationKey="0E7C4CC08FB899B6520DF0B4AA2D52FEF88F7EC14B1E7415F7EBAC24D63462166BF81A69A7C70B02FA114E788B86C475F03CE21E34941BFDB5FA76F05A3245EF" />
+		<machineKey decryptionKey="mypassword" validationKey="mypassword" />
 	</system.web>
 
 	<!-- Login must be anonymous-reachable under deny ? -->

@@ -16,7 +16,7 @@
   <appSettings>
     <add key="Version" value="3.0.3.0"
          xdt:Transform="SetAttributes" xdt:Locator="Match(key)" />
-    <add key="ApplicationBaseUrl" value="https://quaffeetracker.co.za/"
+    <add key="ApplicationBaseUrl" value="https://tracker.quaffee.co.za/"
          xdt:Transform="SetAttributes" xdt:Locator="Match(key)" />
     <add key="EmailTestMode" value="false"
          xdt:Transform="SetAttributes" xdt:Locator="Match(key)" />

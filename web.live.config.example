@@ -3,8 +3,8 @@
   EXAMPLE ONLY: every password and secret is 'mypassword'. Copy to the real file name and fill in the real values;
   the real config files are not in git.
 
-  Live production Web.config for TrackerSQL on quaffeetracker.co.za (v3.0.3.0 binaries).
-  Upload as Web.config on the host (backup the server copy first).
+  Live production Web.config for TrackerSQL on tracker.quaffee.co.za (primary; quaffeetracker.co.za is the same site)
+  (v3.0.3.0 binaries). Upload as Web.config on the host (backup the server copy first).
 
   TrackerDataSQL = former ApplicationServices (SQL8001 / site4now).
 
@@ -18,6 +18,8 @@
     6. Anonymous <location path="driver"> with index.html as its default page (driver app web copy; upload the driver folder)
     7. staticContent mimeMap for .apk (Android app download, Tools/DriverApp.aspx; upload the Downloads folder)
     8. Content-Security-Policy, nosniff and no-referrer headers on /driver (the web app runs only its own files)
+    9. ApplicationBaseUrl https://quaffeetracker.co.za/ -> https://tracker.quaffee.co.za/ (primary address, used in email links)
+    10. httpRuntime enableVersionHeader="false" (the ASP.NET version is not advertised)
   Upload the whole bin folder: new DLLs include System.Web.Http, System.Web.Http.WebHost,
   System.Net.Http.Formatting, Newtonsoft.Json.Bson and System.Threading.Tasks.Extensions.
   The mobile API tables are created automatically on first use (or System Tools > Mobile API tester > Check API tables).
@@ -47,7 +49,8 @@
 		<add key="EmailTimeout" value="60000" />
 		<add key="AppTimeZoneId" value="South Africa Standard Time" />
 		<add key="DisableClientSecret" value="mypassword" />
-		<add key="ApplicationBaseUrl" value="https://quaffeetracker.co.za/" />
+		<!-- 3.0.3.0: was https://quaffeetracker.co.za/ (both addresses serve this site; tracker.quaffee.co.za is primary) -->
+		<add key="ApplicationBaseUrl" value="https://tracker.quaffee.co.za/" />
 		<add key="EmailTestMode" value="false" />
 		<add key="EmailTestRecipient" value="warren@machanik.com" />
 		<add key="EnableDatabaseDetailedLogging" value="false" />
@@ -69,7 +72,9 @@
 		<add key="DisableAccessDb" value="true" />
 		<!-- 3.0.3.0: mobile REST API. AutoCompleteDeliveries is only the default until System → Driver App settings are saved.
 		     Security: LoginFailuresPerIp (bad sign-ins per IP per 15 min), RequestsPerMinute (per phone, 0 = no limit),
-		     TokenIdleDays (unused phones signed out, 0 = never), TrustForwardedProto (true only behind a proxy). -->
+		     TokenIdleDays (unused phones signed out, 0 = never), TrustForwardedProto (true only behind a proxy).
+		     CorsOrigins are the phone app's own built-in origins (Android https://localhost, iPhone capacitor://localhost),
+		     not this server's address; the app on the phone calls https://tracker.quaffee.co.za. -->
 		<add key="MobileApi.TokenDays" value="90" />
 		<add key="MobileApi.TokenIdleDays" value="30" />
 		<add key="MobileApi.LoginFailuresPerIp" value="10" />
@@ -78,7 +83,7 @@
 		<add key="MobileApi.AutoCompleteDeliveries" value="false" />
 		<add key="MobileApi.RequireHttps" value="true" />
 		<add key="MobileApi.LogDays" value="30" />
-		<add key="MobileApi.CorsOrigins" value="capacitor://localhost,ionic://localhost,http://localhost,https://localhost" />
+		<add key="MobileApi.CorsOrigins" value="https://localhost,capacitor://localhost" />
 		<!-- Keep false in production unless diagnosing mail -->
 		<add key="EnableEmailLogging" value="false" />
 		<add key="EmailDebugSaveMime" value="false" />
@@ -134,7 +139,7 @@
 		<xhtmlConformance mode="Transitional" />
 		<!-- Hide stack traces from visitors; Global.asax also redirects to HttpErrorPage -->
 		<customErrors mode="RemoteOnly" defaultRedirect="~/HttpErrorPage.aspx" />
-		<machineKey decryptionKey="25AEF974B0AA6F8F8D46D5275CE0BAF755D519D6A519A329" validationKey="0E7C4CC08FB899B6520DF0B4AA2D52FEF88F7EC14B1E7415F7EBAC24D63462166BF81A69A7C70B02FA114E788B86C475F03CE21E34941BFDB5FA76F05A3245EF" />
+		<machineKey decryptionKey="mypassword" validationKey="mypassword" />
 		<sessionState mode="InProc" timeout="20" />
 		<globalization requestEncoding="utf-8" responseEncoding="utf-8" fileEncoding="utf-8" />
 	</system.web>

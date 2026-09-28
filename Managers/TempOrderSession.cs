@@ -17,38 +17,22 @@ namespace TrackerSQL.Managers
 
         public static int? GetHeaderId()
         {
-            var session = HttpContext.Current?.Session;
-            if (session == null || session[SystemConstants.SessionConstants.TempOrderHeaderId] == null)
-                return null;
-
-            return Convert.ToInt32(session[SystemConstants.SessionConstants.TempOrderHeaderId]);
+            return GetValue(SystemConstants.SessionConstants.TempOrderHeaderId);
         }
 
         public static int? GetOrderId()
         {
-            var session = HttpContext.Current?.Session;
-            if (session == null || session[SystemConstants.SessionConstants.TempOrderId] == null)
-                return null;
-
-            return Convert.ToInt32(session[SystemConstants.SessionConstants.TempOrderId]);
+            return GetValue(SystemConstants.SessionConstants.TempOrderId);
         }
 
         public static void SetHeaderId(int headerId)
         {
-            var session = HttpContext.Current?.Session;
-            if (session == null)
-                return;
-
-            session[SystemConstants.SessionConstants.TempOrderHeaderId] = headerId;
+            SetValue(SystemConstants.SessionConstants.TempOrderHeaderId, headerId);
         }
 
         public static void SetOrderId(int orderId)
         {
-            var session = HttpContext.Current?.Session;
-            if (session == null)
-                return;
-
-            session[SystemConstants.SessionConstants.TempOrderId] = orderId;
+            SetValue(SystemConstants.SessionConstants.TempOrderId, orderId);
         }
 
         public static void Clear()
@@ -59,12 +43,49 @@ namespace TrackerSQL.Managers
 
         public static void ClearHeaderId()
         {
-            HttpContext.Current?.Session?.Remove(SystemConstants.SessionConstants.TempOrderHeaderId);
+            RemoveValue(SystemConstants.SessionConstants.TempOrderHeaderId);
         }
 
         public static void ClearOrderId()
         {
-            HttpContext.Current?.Session?.Remove(SystemConstants.SessionConstants.TempOrderId);
+            RemoveValue(SystemConstants.SessionConstants.TempOrderId);
+        }
+
+        // Requests without session state (the mobile REST API) keep the workflow for the current request only.
+        private const string ItemsKeyPrefix = "TempOrderSession.";
+
+        private static int? GetValue(string key)
+        {
+            var context = HttpContext.Current;
+            if (context == null)
+                return null;
+
+            object value = context.Session != null ? context.Session[key] : context.Items[ItemsKeyPrefix + key];
+            return value == null ? (int?)null : Convert.ToInt32(value);
+        }
+
+        private static void SetValue(string key, int value)
+        {
+            var context = HttpContext.Current;
+            if (context == null)
+                return;
+
+            if (context.Session != null)
+                context.Session[key] = value;
+            else
+                context.Items[ItemsKeyPrefix + key] = value;
+        }
+
+        private static void RemoveValue(string key)
+        {
+            var context = HttpContext.Current;
+            if (context == null)
+                return;
+
+            if (context.Session != null)
+                context.Session.Remove(key);
+            else
+                context.Items.Remove(ItemsKeyPrefix + key);
         }
 
         /// <summary>

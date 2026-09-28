@@ -133,6 +133,20 @@ namespace TrackerSQL.Classes
                 AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"❗ Attachment not found: {filePath}");
             }
         }
+
+        /// <summary>Attaches in-memory content (e.g. a signature image stored in the database).</summary>
+        public void AddAttachment(string fileName, byte[] data, string contentType)
+        {
+            if (data == null || data.Length == 0 || string.IsNullOrWhiteSpace(fileName))
+                return;
+
+            ContentType type;
+            if (string.IsNullOrWhiteSpace(contentType) || !ContentType.TryParse(contentType, out type))
+                type = new ContentType("application", "octet-stream");
+
+            bodyBuilder.Attachments.Add(fileName, data, type);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📎 Attached: {fileName} ({data.Length} bytes)");
+        }
         /// <summary>
         /// Adds the 'From' address to the CC list if it's not already present.
         /// Uses MailKit-safe access without reassigning read-only properties.

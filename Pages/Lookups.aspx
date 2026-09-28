@@ -1200,6 +1200,117 @@
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
 
+        <ajaxToolkit:TabPanel ID="tabpnlDriverOptions" runat="server" HeaderText="Driver Options">
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlDriverOptions" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvDriverOptions" />
+                    </Triggers>
+                    <ContentTemplate>
+                        <p class="page-tone-subtitle" style="margin:0.6rem 0;">
+                            Choices the driver app offers when a delivery is captured, e.g. "Left at reception" or "Nobody there".
+                            Tick <strong>Needs name</strong> when the driver must type who received it or get a signature.
+                            Changes reach the phones the next time they have signal.
+                        </p>
+                        <div class="results-container scrollable-table-container">
+                            <asp:GridView ID="gvDriverOptions" runat="server" DataKeyNames="Id"
+                                CssClass="results-table results-table-fit" AutoGenerateColumns="False" ShowFooter="true"
+                                OnRowCommand="gvDriverOptions_RowCommand"
+                                OnRowEditing="gvDriverOptions_RowEditing"
+                                OnRowCancelingEdit="gvDriverOptions_RowCancelingEdit"
+                                OnRowUpdating="gvDriverOptions_RowUpdating"
+                                OnRowDeleting="gvDriverOptions_RowDeleting"
+                                OnRowDataBound="gvDriverOptions_RowDataBound">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnDoUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />
+                                            <asp:ImageButton ID="btnDoCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnDoEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                            <asp:ImageButton ID="btnDoDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                AlternateText="Delete" ImageUrl="~/images/imgButtons/Trashcan.gif"
+                                                OnClientClick="return confirm('Delete this driver option? Untick On to hide it instead.');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnDoAdd" runat="server" CausesValidation="False" CommandName="AddItem"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="When">
+                                        <EditItemTemplate>
+                                            <asp:DropDownList ID="ddlDoOutcome" runat="server" SelectedValue='<%# Bind("Outcome") %>'>
+                                                <asp:ListItem Value="Delivered" Text="Delivered" />
+                                                <asp:ListItem Value="NotDelivered" Text="Not delivered" />
+                                            </asp:DropDownList>
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblDoOutcome" runat="server"
+                                                Text='<%# (string)Eval("Outcome") == "NotDelivered" ? "Not delivered" : "Delivered" %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:DropDownList ID="ddlDoOutcomeFooter" runat="server">
+                                                <asp:ListItem Value="Delivered" Text="Delivered" />
+                                                <asp:ListItem Value="NotDelivered" Text="Not delivered" />
+                                            </asp:DropDownList>
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Option">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxDoText" runat="server" Text='<%# Bind("Text") %>' Width="18em" MaxLength="100" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblDoText" runat="server" Text='<%# Eval("Text") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxDoTextFooter" runat="server" Width="18em" MaxLength="100" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Needs name">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxDoNeedsName" runat="server" Checked='<%# Bind("NeedsName") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxDoNeedsName" runat="server" Checked='<%# Eval("NeedsName") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxDoNeedsNameFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="On">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxDoEnabled" runat="server" Checked='<%# Bind("Enabled") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxDoEnabled" runat="server" Checked='<%# Eval("Enabled") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxDoEnabledFooter" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Sort">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxDoSort" runat="server" Text='<%# Bind("SortOrder") %>' Width="3em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblDoSort" runat="server" Text='<%# Eval("SortOrder") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxDoSortFooter" runat="server" Width="3em" Text="100" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
+
         <ajaxToolkit:TabPanel ID="tabpnlRepairStatuses" runat="server" HeaderText="Repair Statuses">
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlRepairStatuses" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">

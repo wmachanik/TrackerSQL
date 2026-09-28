@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mobile REST API (/api/v1): device sign-in tokens, driver delivery proof (received-by name
+  and signature), offline sync de-duplication and the request log.
+  Idempotent: safe to re-run (the API runs it on first use; also from Tools/ApiTester.aspx).
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeviceTokensTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileDeviceTokensTbl
+          (
+              TokenID BIGINT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_MobileDeviceTokensTbl PRIMARY KEY,
+              TokenHash CHAR(64) NOT NULL,
+              UserName NVARCHAR(256) NOT NULL,
+              PersonID INT NULL,
+              DeviceId NVARCHAR(128) NULL,
+              DeviceName NVARCHAR(128) NULL,
+              AppVersion NVARCHAR(32) NULL,
+              CreatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_MobileDeviceTokens_CreatedAt DEFAULT (GETDATE()),
+              LastUsedAt DATETIME NULL,
+              ExpiresAt DATETIME NOT NULL,
+              RevokedAt DATETIME NULL,
+              RevokedBy NVARCHAR(256) NULL
+          );
+
+          CREATE UNIQUE INDEX UX_MobileDeviceTokens_TokenHash
+              ON dbo.MobileDeviceTokensTbl (TokenHash);
+          CREATE INDEX IX_MobileDeviceTokens_UserName
+              ON dbo.MobileDeviceTokensTbl (UserName);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileDeliveryProofTbl
+          (
+              ProofID BIGINT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_MobileDeliveryProofTbl PRIMARY KEY,
+              ClientRef NVARCHAR(64) NOT NULL,
+              OrderID INT NOT NULL,
+              ContactID INT NULL,
+              PersonID INT NULL,
+              UserName NVARCHAR(256) NULL,
+              Outcome VARCHAR(16) NOT NULL
+                  CONSTRAINT DF_MobileDeliveryProof_Outcome DEFAULT ('Delivered'),
+              ReceivedByName NVARCHAR(128) NULL,
+              SignatureImage VARBINARY(MAX) NULL,
+              SignatureContentType VARCHAR(32) NULL,
+              DriverNote NVARCHAR(1000) NULL,
+              DeliveredAt DATETIME NOT NULL,
+              Latitude DECIMAL(9,6) NULL,
+              Longitude DECIMAL(9,6) NULL,
+              Status VARCHAR(16) NOT NULL
+                  CONSTRAINT DF_MobileDeliveryProof_Status DEFAULT ('Received'),
+              StatusMessage NVARCHAR(1000) NULL,
+              ReceivedAt DATETIME NOT NULL
+                  CONSTRAINT DF_MobileDeliveryProof_ReceivedAt DEFAULT (GETDATE()),
+              CompletedAt DATETIME NULL,
+              CompletedBy NVARCHAR(256) NULL
+          );
+
+          CREATE UNIQUE INDEX UX_MobileDeliveryProof_ClientRef
+              ON dbo.MobileDeliveryProofTbl (ClientRef);
+          CREATE INDEX IX_MobileDeliveryProof_Order
+              ON dbo.MobileDeliveryProofTbl (OrderID, DeliveredAt DESC);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileSyncRefTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileSyncRefTbl
+          (
+              ClientRef NVARCHAR(64) NOT NULL
+                  CONSTRAINT PK_MobileSyncRefTbl PRIMARY KEY,
+              Kind VARCHAR(32) NOT NULL,
+              EntityID INT NOT NULL,
+              UserName NVARCHAR(256) NULL,
+              CreatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_MobileSyncRef_CreatedAt DEFAULT (GETDATE())
+          );
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiRequestLogTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileApiRequestLogTbl
+          (
+              LogID BIGINT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_MobileApiRequestLogTbl PRIMARY KEY,
+              LoggedAt DATETIME NOT NULL,
+              Method VARCHAR(10) NOT NULL,
+              Path NVARCHAR(400) NOT NULL,
+              StatusCode SMALLINT NOT NULL,
+              DurationMs INT NOT NULL,
+              RequestBytes INT NULL,
+              ResponseBytes INT NULL,
+              UserName NVARCHAR(256) NULL,
+              TokenID BIGINT NULL,
+              ClientIp VARCHAR(45) NULL,
+              UserAgent NVARCHAR(256) NULL,
+              Note NVARCHAR(500) NULL
+          );
+
+          CREATE INDEX IX_MobileApiRequestLog_LoggedAt
+              ON dbo.MobileApiRequestLogTbl (LoggedAt);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.MobileDeliveryProofTbl', N'Reason') IS NULL
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD Reason NVARCHAR(100) NULL;
+      IF COL_LENGTH(N'dbo.MobileDeliveryProofTbl', N'MissingItems') IS NULL
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD MissingItems NVARCHAR(1000) NULL;
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryOptionsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileDeliveryOptionsTbl
+          (
+              OptionID INT IDENTITY(1,1) NOT NULL
+                  CONSTRAINT PK_MobileDeliveryOptionsTbl PRIMARY KEY,
+              Outcome VARCHAR(16) NOT NULL,
+              OptionText NVARCHAR(100) NOT NULL,
+              NeedsName BIT NOT NULL
+                  CONSTRAINT DF_MobileDeliveryOptions_NeedsName DEFAULT (0),
+              SortOrder INT NOT NULL
+                  CONSTRAINT DF_MobileDeliveryOptions_SortOrder DEFAULT (100),
+              IsEnabled BIT NOT NULL
+                  CONSTRAINT DF_MobileDeliveryOptions_IsEnabled DEFAULT (1)
+          );
+
+          INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder) VALUES
+              ('Delivered', N'Handed to the contact', 1, 10),
+              ('Delivered', N'Handed to an assistant', 1, 20),
+              ('Delivered', N'Left at reception', 1, 30),
+              ('Delivered', N'Left with security', 0, 40),
+              ('Delivered', N'Left at the gate', 0, 50),
+              ('Delivered', N'Left at the door', 0, 60),
+              ('Delivered', N'No signature obtained', 0, 70),
+              ('NotDelivered', N'Nobody there', 0, 10),
+              ('NotDelivered', N'Closed', 0, 20),
+              ('NotDelivered', N'Rejected / refused', 0, 30),
+              ('NotDelivered', N'Asked for another day', 0, 40),
+              ('NotDelivered', N'Wrong address', 0, 50),
+              ('NotDelivered', N'Could not get access', 0, 60),
+              ('NotDelivered', N'Ran out of time', 0, 70);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.MobileApiSettingsTbl
+          (
+              SettingsID INT NOT NULL
+                  CONSTRAINT PK_MobileApiSettingsTbl PRIMARY KEY,
+              RunDoneOnDelivery BIT NOT NULL
+                  CONSTRAINT DF_MobileApiSettings_RunDone DEFAULT (0),
+              SendDeliveryConfirmation BIT NOT NULL
+                  CONSTRAINT DF_MobileApiSettings_SendConfirm DEFAULT (0),
+              AllowNotesToOffice BIT NOT NULL
+                  CONSTRAINT DF_MobileApiSettings_NotesToOffice DEFAULT (1),
+              OfficeEmail NVARCHAR(200) NULL,
+              UpdatedAt DATETIME NOT NULL
+                  CONSTRAINT DF_MobileApiSettings_UpdatedAt DEFAULT (GETDATE()),
+              UpdatedBy NVARCHAR(100) NULL
+          );
+      END
+    ]]>
+  </command>
+</root>

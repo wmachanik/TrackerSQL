@@ -78,6 +78,26 @@ namespace TrackerSQL.Managers
             }
         }
 
+        /// <summary>Admin test for a named user (no signed-in principal needed, e.g. the mobile API sign-in).</summary>
+        public static bool IsAdminUser(string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName)) return false;
+
+            string adminUserName = SystemConstants.UserConstants.AdminUserName;
+            if (!string.IsNullOrEmpty(adminUserName) &&
+                userName.Equals(adminUserName, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            try
+            {
+                return AdminRoleAliases.Any(r => Roles.IsUserInRole(userName, r));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// Returns true if current user is in ANY of the supplied roles.
         /// Automatically false for anonymous.

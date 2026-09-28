@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>My Quaffee</title>
-    <link href="~/Styles/Site.css?v=20260924-16" rel="stylesheet" type="text/css" runat="server" />
+    <link href="~/Styles/Site.css?v=20260924-21" rel="stylesheet" type="text/css" runat="server" />
     <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
 </head>
 <body class="portal-body">

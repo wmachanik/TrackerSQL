@@ -1,4 +1,4 @@
-﻿/* Rev: 20260924-16
+﻿/* Rev: 20260924-21
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -10158,3 +10158,267 @@ table.results-table.portal-table tr.pager-row table td {
         font-size: 0.95rem;
     }
 }
+
+/* Mobile API tester (Tools/ApiTester.aspx) */
+.api-tester-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.api-tester label {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.85rem;
+}
+
+.api-tester label.api-tester-check {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.api-tester-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.api-tester-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #dfe6d8;
+    border-radius: 6px;
+    background: #fafcf8;
+}
+
+.api-tester-card h4 {
+    width: 100%;
+    margin: 0 0 0.25rem;
+}
+
+.api-tester-card .sys-prefs-help {
+    width: 100%;
+    margin: 0;
+}
+
+.api-tester-wide {
+    grid-column: 1 / -1;
+}
+
+.api-tester-json {
+    width: 100%;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.85rem;
+}
+
+.api-tester-signature {
+    border: 1px dashed #8a7a5a;
+    border-radius: 4px;
+    background: #fff;
+    touch-action: none;
+    cursor: crosshair;
+    max-width: 100%;
+}
+
+.api-tester-output {
+    max-height: 480px;
+    overflow: auto;
+    padding: 0.6rem;
+    background: #1f2320;
+    color: #e6efe0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.api-tester-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.api-tester-images img {
+    max-width: 240px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+.api-tester-images figure {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.api-whoami {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid #e6cf9a;
+    border-radius: 6px;
+    background: #fff7e6;
+}
+
+.api-whoami.signed-in {
+    border-color: #b9d3a8;
+    background: #eef6ea;
+}
+
+.api-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 1px solid #cfd8c6;
+}
+
+.api-tabs button.api-tab {
+    padding: 6px 14px !important;
+    border: 1px solid #cfd8c6 !important;
+    border-bottom: none !important;
+    border-radius: 6px 6px 0 0 !important;
+    background: #eef2ea !important;
+    color: #3d4a33 !important;
+    font-size: 0.9rem !important;
+    font-weight: normal;
+    box-shadow: none !important;
+    cursor: pointer;
+    margin-bottom: -1px;
+}
+
+.api-tabs button.api-tab:hover {
+    background: #e2e9dc !important;
+}
+
+.api-tabs button.api-tab.active {
+    background: #fff !important;
+    color: #2f3d27 !important;
+    font-weight: 600;
+    border-bottom: 1px solid #fff !important;
+}
+
+.api-tester-output:empty {
+    display: none;
+}
+
+.api-tab-panel {
+    display: none;
+    padding: 0.9rem 1rem;
+    border: 1px solid #cfd8c6;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    background: #fff;
+}
+
+.api-tab-panel.active {
+    display: block;
+}
+
+.api-tab-panel h4 {
+    margin: 1rem 0 0.35rem;
+}
+
+.api-tab-intro {
+    margin: 0 0 0.75rem;
+    color: #4d5a44;
+}
+
+.api-tester-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.api-result-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.api-facts {
+    color: #5a6352;
+    font-size: 0.85rem;
+}
+
+.api-status {
+    display: inline-block;
+    min-width: 2.5rem;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #fff;
+}
+
+.api-status-ok { background: #4f7a3a; }
+.api-status-warn { background: #b7791f; }
+.api-status-err { background: #b83a3a; }
+
+.api-log-wrap {
+    overflow-x: auto;
+}
+
+table.results-table.api-log-table {
+    width: 100%;
+    table-layout: auto !important;
+    font-size: 0.82rem;
+}
+
+table.results-table.api-log-table th,
+table.results-table.api-log-table td {
+    width: 1%;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
+    vertical-align: top;
+}
+
+table.results-table.api-log-table td.api-log-call {
+    white-space: normal !important;
+    word-break: break-all;
+    min-width: 180px;
+    max-width: 320px !important;
+}
+
+table.results-table.api-log-table .api-log-note {
+    width: auto;
+    white-space: normal !important;
+    min-width: 240px;
+}
+
+.api-help-list {
+    margin: 0.25rem 0 0.75rem 1.25rem;
+    padding: 0;
+}
+
+.api-help-list li {
+    margin-bottom: 0.35rem;
+}
+/* Tools/DriverApp.aspx: download button for the Android driver app */
+.driver-app-page ol li, .driver-app-page ul li { margin-bottom: 0.35em; }
+a.driver-app-download {
+    display: inline-block;
+    margin-right: 0.8em;
+    padding: 0.7em 1.4em;
+    border-radius: 6px;
+    background: var(--primary-green);
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+}
+a.driver-app-download:hover { background: var(--secondary-brown); color: #fff; }
+.driver-app-settings .sys-prefs-help { display: block; margin: 0.2em 0 0 1.6em; color: #666; font-size: 0.9em; }
+.driver-app-settings label { font-weight: 600; }
+.driver-app-settings input[type=checkbox] + label { font-weight: 600; margin-left: 0.3em; }

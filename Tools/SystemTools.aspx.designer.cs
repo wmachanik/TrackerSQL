@@ -28,6 +28,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnRecalcTotalCups;
         protected global::System.Web.UI.WebControls.Button btnMessagesEditor;
         protected global::System.Web.UI.WebControls.Button btnContactPortalAdmin;
+        protected global::System.Web.UI.WebControls.Button btnApiTester;
+        protected global::System.Web.UI.WebControls.Button btnDriverApp;
         protected global::System.Web.UI.WebControls.Button btnDatabaseBackup;
         protected global::System.Web.UI.WebControls.Button btnSqlConnectionTest;
         protected global::System.Web.UI.WebControls.Button btnDisableInactiveClients;

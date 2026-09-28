@@ -2,7 +2,52 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.2.0 — in progress (branch `feature/3.0.2.0`)
+## 3.0.3.0 — 2026-09-28
+
+### Features
+- **Mobile REST API for a delivery driver app** — JSON API at `/api/v1` (ASP.NET Web API 2, inside the Tracker site) for an Android / iPhone app. Drivers sign in with their Tracker login, which must be linked to a person in Lookups → People (Security Username). Administrators can sign in without being linked.
+  - **Sign-in:** `POST auth/login` returns a long-lived device token (90 days, `MobileApi.TokenDays`), sent as `Authorization: Bearer <token>`. Only a hash of the token is stored. Signing in again on the same device replaces its old token; `POST auth/logout` revokes it, and administrators can list and revoke devices (`GET devices`, `POST devices/{id}/revoke`). `GET auth/me` returns the user and person.
+  - **Delivery sheet offline:** `GET delivery/dates` and `GET delivery/sheet?date=&person=me|all|id` (the driver's own deliveries by default; they can open another driver's or everyone's to help out, and the request log notes it) return each stop with the contact person's name (for ZZName orders, the name from the order notes), phone, cell, address, area, notes, PO, items and any proof already captured, in delivery order.
+  - **Proof of delivery, captured offline:** `POST delivery/sync` takes a batch of deliveries (received-by name, signature image, note, time, location, or Not Delivered). Each carries a phone-generated `clientRef`, so retrying a sync never records it twice. By default the proof is stored and the office completes the order; System → Driver App can run Order Done straight away instead. `GET delivery/proofs` and `GET delivery/proofs/{id}/signature` show what was captured.
+  - **Repairs:** `GET repairs` (open only, by contact, or changed since a time), `GET repairs/{id}`, `POST repairs` (create; `clientRef` makes offline creates safe to retry) and `PUT repairs/{id}` (send only the fields that change). Saves follow Repair Detail: the related order is kept in step and the contact is emailed on a status change.
+  - **Lookups and contacts:** `GET lookups` (repair statuses, faults, machine types, conditions, people, driver options) and `GET contacts?q=` / `GET contacts/{id}`.
+  - **Driver options:** the choices the app offers when capturing a delivery ("Left at reception", "Handed to an assistant", "No signature obtained"; "Nobody there", "Rejected / refused" …) are edited in Lookups → Driver Options. "Needs name" makes the driver enter who received it or get a signature. The chosen option is stored with the proof (`Reason`).
+  - **Items not handed over:** the driver ticks off what was handed over; anything short or to follow is stored with the proof (`MissingItems`), and such a delivery is never auto-completed, so the office can sort out the rest.
+  - **Repairs on the sheet:** each stop lists its item lines with order line ids, marks repair (Service) lines, which are not handed over, and includes the repairs linked to the order (job card, machine, serial, fault, status).
+  - **Data efficient:** replies are gzip-compressed (the sheet is about 7 KB, 2 KB on the wire), nulls are left out, and the sheet, dates, repairs and lookups carry an ETag, so the app gets a 304 with no body when nothing has changed. Phones may also gzip what they send.
+  - **Security:** HTTPS is required except on the server itself (`MobileApi.RequireHttps`), and cross-origin calls are only accepted from the app origins in `MobileApi.CorsOrigins`. Tables are created automatically on first use (`SQLCommands-MobileApi-01.xml`).
+  - **Request log:** every call is recorded (time, user, call, result, time taken, bytes each way, IP address, and a short note such as "Sign-in failed for 'x'" or "3 deliveries: 3 saved"). Only these facts are kept, never what was sent, so passwords, tokens and signatures are not logged. Kept for 30 days (`MobileApi.LogDays`; 0 turns it off). Administrators can read it with `GET log`.
+- **Mobile API tester** — `Tools/ApiTester.aspx` (System Tools, administrators only).
+  - A bar at the top always shows who the calls are being sent as, with a Sign out button.
+  - Tabs: Sign in (like the phone, or with your web sign-in), Delivery sheet, Deliver an order (with a signature pad), Repairs, Contacts & lookups, Devices (list and revoke), Request log (filter by user or problems only, optional auto-refresh), and Settings & security (current settings, how the API is protected, and a Check API tables button).
+  - Each reply shows the result, time taken, size downloaded (and compressed size) and the version (ETag), with an "only if changed" option to test 304s.
+- **Lookups → Driver Options** — new tab to add, edit, hide or delete the delivery choices shown in the driver app.
+- **Driver app on the website** — the Quaffee Driver app is also served from `/driver/` (built by TrackerDriver `npm run build:site`). Drivers open it on their phone and choose "Install app" / "Add to Home Screen"; it keeps working with no signal. `/driver` is anonymous in Web.config (the app signs in through the API) and uses `index.html` as its start page.
+- **System → Driver App** (`Tools/DriverApp.aspx`, also a System Tools card and a Home page card) — download page for the Android app (`Downloads/QuaffeeDriver.apk`, built by TrackerDriver `npm run apk`) with install steps, plus the web app link. Web.config maps `.apk` to `application/vnd.android.package-archive`.
+  - **Settings (administrators):** run Order Done when a driver sends a delivery; email the client a delivery confirmation; let drivers email their note to the office, and the office address for those notes (empty = `SysCCEmailAddress`). Stored in `MobileApiSettingsTbl`; until saved, "run Done" follows the old `MobileApi.AutoCompleteDeliveries` appSetting.
+  - **Delivery confirmation email:** who received it, when, how it was delivered, what was delivered and what is still to follow, with the signature attached; copied to the orders address. ZZName orders use the address in the order notes. When Order Done also runs, its "delivered" email is skipped so the client gets one email.
+  - **Driver notes to the office:** the driver can tick "Email this note to the office" (e.g. the client asked for a change); it is emailed with the client, order, PO and delivery details.
+- **Driver app quantities** are rounded with Tracker's `NumDecimalPoints` (3) instead of 2.
+- **Short deliveries:** the driver can enter the quantity actually handed over per item (`lines` on sync); the shortfall is stored as "1 × Kenya AA (1kg) (1 of 2 delivered)" and the delivery is left for the office.
+- **Driver app list:** the Unconfirmed tag and the order number are no longer shown; the PO is shown instead when there is one.
+- **Mobile API hardening:**
+  - Too many failed sign-ins from one IP address (any usernames) pause sign-ins from there for 15 minutes with a 429 (`MobileApi.LoginFailuresPerIp`, default 10), on top of the normal lockout after 5 wrong passwords.
+  - A phone not used for 30 days must sign in again (`MobileApi.TokenIdleDays`).
+  - A token stops working within 5 minutes when its login is deactivated, locked, deleted or unlinked from its delivery person; the app is told why.
+  - Each phone may make 120 calls a minute (`MobileApi.RequestsPerMinute`); more get a 429 with Retry-After.
+  - Signatures and the proof list are administrators only, and signatures are never cached.
+  - Every API reply is marked no-store (unless it carries an ETag), nosniff, no framing and no referrer; HTTPS replies send Strict-Transport-Security.
+  - `X-Forwarded-Proto` is only trusted when `MobileApi.TrustForwardedProto` is true.
+  - `/driver/` sends a Content-Security-Policy (only its own scripts, only calls to this site).
+  - The ASP.NET version header is no longer sent.
+  - The API Tester's Settings & security tab shows the new settings.
+- **Driver app data status:** the top bar shows where the lists come from: Live (from Tracker), Updating (downloading), Offline or Phone copy (saved on the phone), or Wi-Fi only. The delivery and repair lists say "From Tracker …" or "Phone copy from … (why)".
+- **Driver app mobile data options** (More): "Send deliveries and repairs using mobile data" and "Update lists using mobile data". When off, captured deliveries wait for Wi-Fi ("2 for Wi-Fi"; "Send now using mobile data" still works), and saved lists update only on Wi-Fi or when ⟳ is tapped. "Save everything on this phone" sends anything waiting and saves the day's deliveries (the driver's and everyone's), open repairs and lookups before leaving.
+
+### Fixes
+- Order Done can now run outside a web page session (needed for auto-completing deliveries from the API).
+
+## 3.0.2.0 — 2026-09-25
 
 ### Features
 - **Contact Portal** — contact-facing portal (shown to contacts as "My Quaffee") (`/Portal/`) for contact details, orders, recurring orders and repairs; admin invite from Contact Details; admin page `Tools/ContactPortalAdmin.aspx`. Schema pack `SQLCommands-ContactPortal-01.xml`. Portal header carries the Quaffee logo; portal home uses clickable dashboard cards (2 per row, incl. Change Password and Sign Out).

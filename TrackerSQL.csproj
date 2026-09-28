@@ -64,6 +64,18 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json.Bson, Version=1.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.Bson.1.0.2\lib\net45\Newtonsoft.Json.Bson.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Formatting, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.Client.6.0.0\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.Core.5.3.0\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.WebHost, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.WebApi.WebHost.5.3.0\lib\net45\System.Web.Http.WebHost.dll</HintPath>
+    </Reference>
     <Reference Include="System.Buffers, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Buffers.4.6.0\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
@@ -294,8 +306,14 @@
     <Content Include="Portal\MyRecurring.aspx" />
     <Content Include="Portal\MyRecurringDetail.aspx" />
     <Content Include="Tools\ContactPortalAdmin.aspx" />
+    <Content Include="Tools\ApiTester.aspx" />
+    <Content Include="driver\**\*" />
+    <Content Include="Downloads\**\*" />
+    <Content Include="Tools\DriverApp.aspx" />
     <Content Include="App_Data\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
+    <Content Include="App_Data\SQLCommands-MobileApi-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-MobileApi-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -417,7 +435,35 @@
     <Compile Include="Tools\ContactPortalAdmin.aspx.designer.cs">
       <DependentUpon>ContactPortalAdmin.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Tools\ApiTester.aspx.cs">
+      <DependentUpon>ApiTester.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\ApiTester.aspx.designer.cs">
+      <DependentUpon>ApiTester.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\DriverApp.aspx.cs">
+      <DependentUpon>DriverApp.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\DriverApp.aspx.designer.cs">
+      <DependentUpon>DriverApp.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
+    <Compile Include="Managers\MobileApiSchemaInstaller.cs" />
+    <Compile Include="Managers\MobileAuthManager.cs" />
+    <Compile Include="Managers\MobileDeliveryManager.cs" />
+    <Compile Include="Managers\MobileRepairManager.cs" />
+    <Compile Include="Managers\MobileApiSettingsManager.cs" />
+    <Compile Include="Managers\MobileDeliveryEmailManager.cs" />
+    <Compile Include="Managers\MobileApiSecurity.cs" />
+    <Compile Include="Repositories\MobileApiRepository.cs" />
+    <Compile Include="Repositories\MobileApiSettingsRepository.cs" />
+    <Compile Include="Models\MobileApiModels.cs" />
+    <Compile Include="Api\WebApiConfig.cs" />
+    <Compile Include="Api\MobileApiHandlers.cs" />
+    <Compile Include="Api\MobileApiController.cs" />
+    <Compile Include="Api\MobileApiControllers.cs" />
     <Compile Include="Managers\MembershipRoleManager.cs" />
     <Compile Include="Managers\ContactPortalManager.cs" />
     <Compile Include="Models\ContactPortalModels.cs" />

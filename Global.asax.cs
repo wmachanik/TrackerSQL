@@ -16,6 +16,8 @@ namespace TrackerSQL
         {
             WriteStartupLog("Application_Start");
 
+            System.Web.Http.GlobalConfiguration.Configure(TrackerSQL.Api.WebApiConfig.Register);
+
             // Force-disable unobtrusive validation
             System.Web.UI.ValidationSettings.UnobtrusiveValidationMode =
                 System.Web.UI.UnobtrusiveValidationMode.None;

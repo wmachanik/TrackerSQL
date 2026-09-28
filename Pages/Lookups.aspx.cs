@@ -14,6 +14,7 @@ using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
@@ -96,6 +97,9 @@ namespace TrackerSQL.Pages
         protected TabPanel tabpnlCouriers;
         protected UpdatePanel upnlCouriers;
         protected GridView gvCouriers;
+        protected TabPanel tabpnlDriverOptions;
+        protected UpdatePanel upnlDriverOptions;
+        protected GridView gvDriverOptions;
         protected SqlDataSource sdsUserNames;
 
         // Per-request caches for Items grid lookup dropdowns (filled once per bind)
@@ -148,6 +152,7 @@ namespace TrackerSQL.Pages
                 BindRepairStatusesGrid();
                 BindSortOrdersGrid();
                 BindCouriersGrid();
+                BindDriverOptionsGrid();
             }
         }
 
@@ -1578,6 +1583,134 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 SetLookupStatus("Error adding courier: " + ex.Message, true);
+            }
+        }
+
+        private void BindDriverOptionsGrid()
+        {
+            try
+            {
+                MobileApiSchemaInstaller.EnsureReady();
+                gvDriverOptions.DataSource = new MobileApiRepository().GetDeliveryOptions(enabledOnly: false);
+                gvDriverOptions.DataBind();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error loading driver options: " + ex.Message, true);
+            }
+        }
+
+        protected void gvDriverOptions_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvDriverOptions.EditIndex = e.NewEditIndex;
+            BindDriverOptionsGrid();
+            upnlDriverOptions?.Update();
+        }
+
+        protected void gvDriverOptions_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvDriverOptions.EditIndex = -1;
+            BindDriverOptionsGrid();
+            upnlDriverOptions?.Update();
+        }
+
+        private static MobileDeliveryOption ReadDriverOption(Control row, string suffix)
+        {
+            var ddlOutcome = (DropDownList)row.FindControl("ddlDoOutcome" + suffix);
+            var tbxText = (TextBox)row.FindControl("tbxDoText" + suffix);
+            var cbxNeedsName = (CheckBox)row.FindControl("cbxDoNeedsName" + suffix);
+            var cbxEnabled = (CheckBox)row.FindControl("cbxDoEnabled" + suffix);
+            var tbxSort = (TextBox)row.FindControl("tbxDoSort" + suffix);
+            int sort = 100;
+            if (tbxSort != null)
+                int.TryParse(tbxSort.Text, out sort);
+            return new MobileDeliveryOption
+            {
+                Outcome = ddlOutcome?.SelectedValue == MobileDeliveryManager.OutcomeNotDelivered
+                    ? MobileDeliveryManager.OutcomeNotDelivered
+                    : MobileDeliveryManager.OutcomeDelivered,
+                Text = tbxText?.Text?.Trim() ?? string.Empty,
+                NeedsName = cbxNeedsName != null && cbxNeedsName.Checked,
+                Enabled = cbxEnabled == null || cbxEnabled.Checked,
+                SortOrder = sort
+            };
+        }
+
+        protected void gvDriverOptions_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                var option = ReadDriverOption(gvDriverOptions.Rows[e.RowIndex], string.Empty);
+                option.Id = Convert.ToInt32(gvDriverOptions.DataKeys[e.RowIndex].Value);
+                if (option.Text.Length == 0)
+                {
+                    SetLookupStatus("Enter the option text.", true);
+                    return;
+                }
+                new MobileApiRepository().UpdateDeliveryOption(option);
+                gvDriverOptions.EditIndex = -1;
+                BindDriverOptionsGrid();
+                upnlDriverOptions?.Update();
+                SetLookupStatus("Driver option updated.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error updating driver option: " + ex.Message, true);
+            }
+        }
+
+        protected void gvDriverOptions_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            try
+            {
+                new MobileApiRepository().DeleteDeliveryOption(Convert.ToInt32(gvDriverOptions.DataKeys[e.RowIndex].Value));
+                gvDriverOptions.EditIndex = -1;
+                BindDriverOptionsGrid();
+                upnlDriverOptions?.Update();
+                SetLookupStatus("Driver option deleted.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error deleting driver option: " + ex.Message, true);
+            }
+        }
+
+        protected void gvDriverOptions_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+            foreach (string id in new[] { "btnDoUpdate", "btnDoCancel", "btnDoEdit", "btnDoDelete", "btnDoAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
+            }
+        }
+
+        protected void gvDriverOptions_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "AddItem", StringComparison.Ordinal) || gvDriverOptions.FooterRow == null)
+                return;
+            try
+            {
+                var option = ReadDriverOption(gvDriverOptions.FooterRow, "Footer");
+                if (option.Text.Length == 0)
+                {
+                    SetLookupStatus("Enter the option text.", true);
+                    return;
+                }
+                new MobileApiRepository().InsertDeliveryOption(option);
+                gvDriverOptions.EditIndex = -1;
+                BindDriverOptionsGrid();
+                upnlDriverOptions?.Update();
+                SetLookupStatus("Driver option added.", false);
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Error adding driver option: " + ex.Message, true);
             }
         }
 

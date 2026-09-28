@@ -221,6 +221,26 @@
                                     <asp:Button ID="btnContactPortalAdmin" runat="server" Text="Open" PostBackUrl="~/Tools/ContactPortalAdmin.aspx" />
                                 </div>
                             </div>
+                            <div class="dashboard-link tool-tone-sysdata">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/SystemSettingsWithGlobe.png" alt="" />
+                                        <h4>Mobile API tester</h4>
+                                    </div>
+                                    <p>Try the delivery driver app's REST calls and see reply sizes</p>
+                                    <asp:Button ID="btnApiTester" runat="server" Text="Open" PostBackUrl="~/Tools/ApiTester.aspx" />
+                                </div>
+                            </div>
+                            <div class="dashboard-link tool-tone-sysdata">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/icons8-delivery-16.png" alt="" />
+                                        <h4>Driver app</h4>
+                                    </div>
+                                    <p>Download the Quaffee Driver app for Android, or install the web app</p>
+                                    <asp:Button ID="btnDriverApp" runat="server" Text="Open" PostBackUrl="~/Tools/DriverApp.aspx" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

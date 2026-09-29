@@ -59,15 +59,13 @@ namespace TrackerSQL.Pages
         protected ImageButton btnReturn;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
-        protected Panel pnlInvoiceTypePrompt;
-        protected Literal ltrlInvoiceTypePrompt;
-        protected CheckBox chkInsertDisablePrediction;
-        protected Button btnInvoiceTypeDeliveryNote;
-        protected Button btnInvoiceTypeDispatch;
-        protected Button btnInvoiceTypeKeep;
+        protected DropDownList ddlInvoiceType;
+        protected Panel pnlPredictionPrompt;
+        protected Literal ltrlPredictionPrompt;
+        protected Button btnPredictionDisable;
+        protected Button btnPredictionKeep;
         protected Panel pnlDisablePrompt;
         protected Literal ltrlDisablePrompt;
-        protected CheckBox chkDisableSwitchStandard;
         protected CheckBox chkDisableReenablePrediction;
         protected Button btnDisablePromptApply;
         protected Button btnDisablePromptSkip;
@@ -94,12 +92,14 @@ namespace TrackerSQL.Pages
             if (pnlNewLine != null)
                 pnlNewLine.Visible = true;
 
-            // Company/Delivery have EnableViewState=false — rebuild every request
+            // Company/Delivery/Flag have EnableViewState=false — rebuild every request
             string postedCompany = Request.Form[ddlCompanyName.UniqueID];
             string postedDelivery = Request.Form[ddlDeliveryBy.UniqueID];
+            string postedInvoiceType = Request.Form[ddlInvoiceType.UniqueID];
             BindDropDownLists();
             RestoreListSelection(ddlCompanyName, postedCompany);
             RestoreListSelection(ddlDeliveryBy, postedDelivery);
+            RestoreListSelection(ddlInvoiceType, postedInvoiceType);
 
             // Keep order id stable across async postbacks (label/ViewState can be empty)
             SyncRecurringOrderIdControls(ResolveCurrentRecurringOrderId());
@@ -141,6 +141,7 @@ namespace TrackerSQL.Pages
                 {
                     SetSelectedValueIfPresent(ddlCompanyName, contactId);
                     ApplyPreferredDeliveryByFromContact(contactId);
+                    ApplyInvoiceTypeFromContact(contactId);
                 }
 
                 SetStatus("New recurring order — choose a contact, add lines, then Save.", isError: null);
@@ -229,9 +230,8 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterPostBackControl(btnInsert);
             scriptManager.RegisterPostBackControl(btnDelete);
             scriptManager.RegisterPostBackControl(btnReturn);
-            scriptManager.RegisterPostBackControl(btnInvoiceTypeDeliveryNote);
-            scriptManager.RegisterPostBackControl(btnInvoiceTypeDispatch);
-            scriptManager.RegisterPostBackControl(btnInvoiceTypeKeep);
+            scriptManager.RegisterPostBackControl(btnPredictionDisable);
+            scriptManager.RegisterPostBackControl(btnPredictionKeep);
             scriptManager.RegisterPostBackControl(btnDisablePromptApply);
             scriptManager.RegisterPostBackControl(btnDisablePromptSkip);
         }
@@ -324,6 +324,27 @@ namespace TrackerSQL.Pages
         {
             BindCompanies();
             BindDeliveryBy();
+            BindInvoiceTypes();
+        }
+
+        private void BindInvoiceTypes()
+        {
+            ddlInvoiceType.Items.Clear();
+            foreach (var invoiceType in new InvoiceTypesRepository().GetAll("InvoiceTypeID"))
+                ddlInvoiceType.Items.Add(new ListItem(invoiceType.InvoiceTypeDesc, invoiceType.InvoiceTypeID.ToString()));
+            SetSelectedValueIfPresent(ddlInvoiceType, SystemConstants.InvoiceTypeConstants.Standard);
+        }
+
+        /// <summary>
+        /// New recurring orders start with the contact's account invoice type as their flag.
+        /// </summary>
+        private void ApplyInvoiceTypeFromContact(int contactId)
+        {
+            if (contactId <= 0 || ddlInvoiceType == null)
+                return;
+
+            int? contactTypeId = new ContactsAccInfoRepository().GetInvoiceTypeIdByContactId(contactId);
+            SetSelectedValueIfPresent(ddlInvoiceType, contactTypeId ?? SystemConstants.InvoiceTypeConstants.Standard);
         }
 
         private void BindCompanies()
@@ -398,6 +419,7 @@ namespace TrackerSQL.Pages
             }
 
             ApplyPreferredDeliveryByFromContact(contactId);
+            ApplyInvoiceTypeFromContact(contactId);
         }
 
         private void LoadRecurringOrder(int recurringOrderId, bool setStatus = true)
@@ -416,6 +438,7 @@ namespace TrackerSQL.Pages
             SyncRecurringOrderIdControls(recurringOrder.RecurringOrderID);
             SetSelectedValueIfPresent(ddlCompanyName, recurringOrder.ContactID);
             SetSelectedValueIfPresent(ddlDeliveryBy, recurringOrder.DeliveryByID);
+            SetSelectedValueIfPresent(ddlInvoiceType, recurringOrder.InvoiceTypeID);
             EnabledCheckBox.Checked = recurringOrder.Enabled ?? false;
             NotesTextBox.Text = recurringOrder.Notes;
 
@@ -490,6 +513,8 @@ namespace TrackerSQL.Pages
                 ?? GetNullableInt(ddlCompanyName.SelectedValue);
             dataFromForm.DeliveryByID = GetNullableInt(GetPostedOrControlValue(ddlDeliveryBy))
                 ?? GetNullableInt(ddlDeliveryBy.SelectedValue);
+            dataFromForm.InvoiceTypeID = GetNullableInt(GetPostedOrControlValue(ddlInvoiceType))
+                ?? GetNullableInt(ddlInvoiceType.SelectedValue);
             dataFromForm.Enabled = EnabledCheckBox.Checked;
             dataFromForm.Notes = string.IsNullOrWhiteSpace(NotesTextBox.Text) ? null : NotesTextBox.Text.Trim();
             return dataFromForm;
@@ -556,8 +581,8 @@ namespace TrackerSQL.Pages
             if (manualDisable && ShowDisablePrompt(recurringOrder.ContactID))
                 return true;
 
-            // Re-enabling is like adding: offer delivery note / dispatch + disable prediction.
-            if (manualEnable && ShowInvoiceTypePrompt(recurringOrder.ContactID, "re-enabled"))
+            // Re-enabling is like adding: offer to disable prediction.
+            if (manualEnable && ShowPredictionPrompt(recurringOrder.ContactID, "re-enabled"))
                 return true;
 
             new showMessageBox(Page, "Recurring Order Update", status);
@@ -565,7 +590,7 @@ namespace TrackerSQL.Pages
         }
 
         /// <summary>
-        /// Inserts a new recurring order. Returns true when the invoice-type popup was shown.
+        /// Inserts a new recurring order. Returns true when the prediction popup was shown.
         /// </summary>
         private bool InsertRecord(bool returnToListAfterSuccess)
         {
@@ -628,9 +653,9 @@ namespace TrackerSQL.Pages
                 "RecurringOrderDetails: inserted RecurringOrderID=" + recurringOrder.RecurringOrderID
                 + " ContactID=" + recurringOrder.ContactID);
 
-            if (ShowInvoiceTypePrompt(recurringOrder.ContactID))
+            if (ShowPredictionPrompt(recurringOrder.ContactID))
             {
-                // ApplyInvoiceTypeChoice uses ReturnAfterDisablePrompt (set by Save / Save & Return).
+                // ApplyPredictionChoice uses ReturnAfterDisablePrompt (set by Save / Save & Return).
                 if (ViewState["ReturnAfterDisablePrompt"] == null)
                     ViewState["ReturnAfterDisablePrompt"] = returnToListAfterSuccess;
                 return true;
@@ -675,6 +700,7 @@ namespace TrackerSQL.Pages
                 RecurringOrderID = recurringOrder.RecurringOrderID,
                 ContactID = recurringOrder.ContactID,
                 DeliveryByID = recurringOrder.DeliveryByID,
+                InvoiceTypeID = recurringOrder.InvoiceTypeID,
                 Enabled = recurringOrder.Enabled,
                 Notes = recurringOrder.Notes,
                 Items = recurringOrder.Items == null
@@ -709,6 +735,7 @@ namespace TrackerSQL.Pages
             ReoccuringOrderIDLabel.Text = originalOrder.RecurringOrderID.ToString();
             SetSelectedValueIfPresent(ddlCompanyName, originalOrder.ContactID);
             SetSelectedValueIfPresent(ddlDeliveryBy, originalOrder.DeliveryByID);
+            SetSelectedValueIfPresent(ddlInvoiceType, originalOrder.InvoiceTypeID);
             EnabledCheckBox.Checked = originalOrder.Enabled ?? false;
             NotesTextBox.Text = originalOrder.Notes;
             BindRecurringItemsGrid(originalOrder.Items);
@@ -781,6 +808,7 @@ namespace TrackerSQL.Pages
                 });
                 ddlCompanyName.SelectedIndex = 0;
                 ddlDeliveryBy.SelectedIndex = 0;
+                SetSelectedValueIfPresent(ddlInvoiceType, SystemConstants.InvoiceTypeConstants.Standard);
                 EnabledCheckBox.Checked = true;
                 NotesTextBox.Text = string.Empty;
                 ClearDirtyClientState();
@@ -799,69 +827,40 @@ namespace TrackerSQL.Pages
             InsertRecord(returnToListAfterSuccess: true);
         }
 
-        private string GetContactInvoiceTypeDesc(int contactId)
-        {
-            int? currentTypeId = new ContactsAccInfoRepository().GetInvoiceTypeIdByContactId(contactId);
-            if (currentTypeId.HasValue)
-            {
-                var invoiceType = new InvoiceTypesRepository().GetById(currentTypeId.Value);
-                if (!string.IsNullOrWhiteSpace(invoiceType?.InvoiceTypeDesc))
-                    return invoiceType.InvoiceTypeDesc;
-            }
-
-            return "unknown";
-        }
-
         /// <summary>
-        /// After inserting or re-enabling a recurring order, ask whether the contact's account
-        /// type should become delivery note or dispatch note, and whether prediction should be
-        /// disabled (recurring orders and the prediction system conflict).
-        /// Returns false when there is no contact to ask about.
+        /// After inserting or re-enabling a recurring order, offer to disable prediction
+        /// (recurring orders and the prediction system conflict). How the orders are invoiced
+        /// is the recurring order's own flag, so the contact's account type is left alone.
+        /// Returns false when there is nothing to ask (no contact, or prediction already off).
         /// </summary>
-        private bool ShowInvoiceTypePrompt(int? contactId, string action = "inserted")
+        private bool ShowPredictionPrompt(int? contactId, string action = "inserted")
         {
             if (!contactId.HasValue || contactId.Value <= 0)
                 return false;
 
-            ViewState["PendingInvoiceTypeContactID"] = contactId.Value;
+            if (new ContactsRepository().GetById(contactId.Value)?.PredictionDisabled == true)
+                return false;
+
+            ViewState["PendingPredictionContactID"] = contactId.Value;
 
             string contactName = GetSelectedContactName() ?? "the contact";
-            string currentType = GetContactInvoiceTypeDesc(contactId.Value);
-
-            // Only offer to disable prediction when it isn't disabled already.
-            // Delivery Note / Dispatch Note always disable prediction; this checkbox is for "No Change".
-            bool predictionAlreadyDisabled =
-                new ContactsRepository().GetById(contactId.Value)?.PredictionDisabled == true;
-            chkInsertDisablePrediction.Visible = !predictionAlreadyDisabled;
-            chkInsertDisablePrediction.Checked = !predictionAlreadyDisabled;
-            ViewState["PendingDisablePredictionDefault"] = !predictionAlreadyDisabled;
-
-            ltrlInvoiceTypePrompt.Text = string.Format(
-                "Recurring order {0}. Should the account type for {1} be changed to delivery note or dispatch note? Current type: {2}.{3}",
-                HttpUtility.HtmlEncode(action),
-                HttpUtility.HtmlEncode(contactName), HttpUtility.HtmlEncode(currentType),
-                predictionAlreadyDisabled
-                    ? " Prediction is already disabled for this contact."
-                    : " Choosing Delivery Note or Dispatch Note also disables prediction.");
-            pnlInvoiceTypePrompt.Visible = true;
+            ltrlPredictionPrompt.Text = string.Format(
+                "Recurring order {0}. Recurring orders and prediction conflict — disable prediction for {1}? (recommended)",
+                HttpUtility.HtmlEncode(action), HttpUtility.HtmlEncode(contactName));
+            pnlPredictionPrompt.Visible = true;
             upnlReoccuringOrderDetails.Update();
             ClearDirtyClientState();
             return true;
         }
 
-        protected void btnInvoiceTypeDeliveryNote_Click(object sender, EventArgs e)
+        protected void btnPredictionDisable_Click(object sender, EventArgs e)
         {
-            ApplyInvoiceTypeChoice(SystemConstants.InvoiceTypeConstants.DeliveryNote, "delivery note");
+            ApplyPredictionChoice(disablePrediction: true);
         }
 
-        protected void btnInvoiceTypeDispatch_Click(object sender, EventArgs e)
+        protected void btnPredictionKeep_Click(object sender, EventArgs e)
         {
-            ApplyInvoiceTypeChoice(SystemConstants.InvoiceTypeConstants.DispatchNote, "dispatch note");
-        }
-
-        protected void btnInvoiceTypeKeep_Click(object sender, EventArgs e)
-        {
-            ApplyInvoiceTypeChoice(0, null);
+            ApplyPredictionChoice(disablePrediction: false);
         }
 
         /// <summary>
@@ -887,59 +886,36 @@ namespace TrackerSQL.Pages
         }
 
         /// <summary>
-        /// Applies the account-type popup choices (invoiceTypeId 0 = keep current account type).
-        /// Delivery Note / Dispatch Note always disable prediction (it conflicts with recurring).
-        /// On "No Change", the disable-prediction tick is optional. Returns to the list after an
-        /// insert or "Update &amp; Return"; stays on the page after a plain "Save".
+        /// Applies the prediction popup choice. Returns to the list after an insert or
+        /// "Update &amp; Return"; stays on the page after a plain "Save".
         /// </summary>
-        private void ApplyInvoiceTypeChoice(int invoiceTypeId, string invoiceTypeName)
+        private void ApplyPredictionChoice(bool disablePrediction)
         {
-            int contactId = ResolvePromptContactId("PendingInvoiceTypeContactID");
+            int contactId = ResolvePromptContactId("PendingPredictionContactID");
             var applied = new List<string>();
 
-            bool wantsInvoiceChange = invoiceTypeId > 0;
-            // Delivery/Dispatch always turn prediction off. For "No Change", honour the checkbox
-            // (with ViewState fallback — UpdatePanel + full postback can drop the posted tick).
-            bool wantsPredictionOff = wantsInvoiceChange
-                ? (ReadViewStateBool("PendingDisablePredictionDefault") ?? true)
-                : ResolveDisablePredictionFromPrompt();
-
-            if (contactId <= 0 && (wantsInvoiceChange || wantsPredictionOff))
+            if (disablePrediction && contactId <= 0)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                    "RecurringOrderDetails: could not resolve the contact for the account-type popup — no changes applied.");
-                pnlInvoiceTypePrompt.Visible = false;
-                SetStatus("Could not identify the contact — the account type / prediction changes were NOT applied. "
-                    + "Please make them on the contact's details page.", isError: true);
+                    "RecurringOrderDetails: could not resolve the contact for the prediction popup — no changes applied.");
+                pnlPredictionPrompt.Visible = false;
+                SetStatus("Could not identify the contact — prediction was NOT disabled. "
+                    + "Please change it on the contact's details page.", isError: true);
                 return;
             }
 
-            if (contactId > 0)
+            if (disablePrediction)
             {
-                if (wantsInvoiceChange)
-                {
-                    bool changed = new ContactsAccInfoRepository().SetInvoiceTypeByContactId(
-                        contactId, invoiceTypeId, "recurring order");
-                    applied.Add(changed ? "account type set to " + invoiceTypeName : "account type change failed");
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                        "RecurringOrderDetails: ContactID=" + contactId + " account type "
-                        + (changed ? "changed to " + invoiceTypeName + "." : "could NOT be changed to " + invoiceTypeName + "."));
-                }
-
-                if (wantsPredictionOff)
-                {
-                    bool changed = new ContactsRepository().SetPredictionDisabled(
-                        contactId, true, "recurring order");
-                    applied.Add(changed ? "prediction disabled" : "prediction change failed");
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                        "RecurringOrderDetails: ContactID=" + contactId + " prediction "
-                        + (changed ? "disabled (recurring order active)." : "could NOT be disabled."));
-                }
+                bool changed = new ContactsRepository().SetPredictionDisabled(
+                    contactId, true, "recurring order");
+                applied.Add(changed ? "prediction disabled" : "prediction change failed");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "RecurringOrderDetails: ContactID=" + contactId + " prediction "
+                    + (changed ? "disabled (recurring order active)." : "could NOT be disabled."));
             }
 
-            pnlInvoiceTypePrompt.Visible = false;
-            ViewState.Remove("PendingInvoiceTypeContactID");
-            ViewState.Remove("PendingDisablePredictionDefault");
+            pnlPredictionPrompt.Visible = false;
+            ViewState.Remove("PendingPredictionContactID");
 
             // Insert never sets the flag (return to the list); Save sets false (stay here),
             // Update & Return sets true — same convention as the disable prompt.
@@ -961,48 +937,12 @@ namespace TrackerSQL.Pages
                 ? "No contact changes made."
                 : "Contact updated: " + string.Join(", ", applied) + ".";
             SetStatus("Recurring order saved. " + contactChanges, isError: false);
-
-            if (ReadViewStateBool("OpenAddLineAfterInvoicePrompt") == true)
-            {
-                ViewState.Remove("OpenAddLineAfterInvoicePrompt");
-                ShowNewLinePanel(true);
-                BindNewLineLookups();
-                ClearNewLineFields();
-                SetStatus("Recurring order saved. " + contactChanges
-                    + " Enter the new line details, then click Add.", isError: false);
-            }
-
             upnlReoccuringOrderDetails.Update();
         }
 
         /// <summary>
-        /// Reads the "disable prediction" tick for the "No Change" account-type path.
-        /// Falls back to the recommended default stored when the prompt was shown, because a
-        /// checked checkbox can fail to post after an UpdatePanel show + full postback.
-        /// </summary>
-        private bool ResolveDisablePredictionFromPrompt()
-        {
-            bool recommended = ReadViewStateBool("PendingDisablePredictionDefault") ?? false;
-            if (!chkInsertDisablePrediction.Visible && !recommended)
-                return false;
-
-            // Prefer the live posted form value when the checkbox was rendered.
-            string posted = Request.Form[chkInsertDisablePrediction.UniqueID];
-            if (posted != null)
-                return true; // HTML checkboxes only post when checked
-
-            // Missing from the post: either unchecked, or not rendered. If we recommended
-            // disable and the control still thinks it is checked, keep the recommendation.
-            if (recommended && chkInsertDisablePrediction.Checked)
-                return true;
-
-            return false;
-        }
-
-        /// <summary>
-        /// After a manual disable (Enabled checkbox unticked + save), ask whether the contact's
-        /// account type should revert to standard and whether prediction should be re-enabled.
-        /// Returns false when there is nothing to ask about.
+        /// After a manual disable (Enabled checkbox unticked + save), offer to re-enable
+        /// prediction. Returns false when prediction is already on.
         /// </summary>
         private bool ShowDisablePrompt(int? contactId)
         {
@@ -1011,22 +951,16 @@ namespace TrackerSQL.Pages
 
             bool predictionCurrentlyDisabled =
                 new ContactsRepository().GetById(contactId.Value)?.PredictionDisabled == true;
-
-            chkDisableSwitchStandard.Visible =
-                SystemConstants.InvoiceTypeConstants.SwitchContactToStandardOnRecurringDisable;
-            chkDisableSwitchStandard.Checked = chkDisableSwitchStandard.Visible;
-            chkDisableReenablePrediction.Visible = predictionCurrentlyDisabled;
-            chkDisableReenablePrediction.Checked = predictionCurrentlyDisabled;
-
-            if (!chkDisableSwitchStandard.Visible && !chkDisableReenablePrediction.Visible)
+            if (!predictionCurrentlyDisabled)
                 return false;
 
+            chkDisableReenablePrediction.Visible = true;
+            chkDisableReenablePrediction.Checked = true;
+
             string contactName = GetSelectedContactName() ?? "the contact";
-            string currentType = GetContactInvoiceTypeDesc(contactId.Value);
             ltrlDisablePrompt.Text = string.Format(
-                "This recurring order has been disabled. Current account type for {0}: {1}.{2}",
-                HttpUtility.HtmlEncode(contactName), HttpUtility.HtmlEncode(currentType),
-                predictionCurrentlyDisabled ? " Prediction is currently disabled for this contact." : string.Empty);
+                "This recurring order has been disabled. Prediction is currently disabled for {0}.",
+                HttpUtility.HtmlEncode(contactName));
 
             ViewState["PendingDisableContactID"] = contactId.Value;
             pnlDisablePrompt.Visible = true;
@@ -1038,41 +972,27 @@ namespace TrackerSQL.Pages
         {
             int contactId = ResolvePromptContactId("PendingDisableContactID");
             var applied = new List<string>();
+            bool wantsReenable = chkDisableReenablePrediction.Visible && chkDisableReenablePrediction.Checked;
 
-            if (contactId <= 0
-                && ((chkDisableSwitchStandard.Visible && chkDisableSwitchStandard.Checked)
-                    || (chkDisableReenablePrediction.Visible && chkDisableReenablePrediction.Checked)))
+            if (contactId <= 0 && wantsReenable)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
                     "RecurringOrderDetails: could not resolve the contact for the disable popup — no changes applied.");
                 pnlDisablePrompt.Visible = false;
-                SetStatus("Could not identify the contact — the account type / prediction changes were NOT applied. "
-                    + "Please make them on the contact's details page.", isError: true);
+                SetStatus("Could not identify the contact — prediction was NOT re-enabled. "
+                    + "Please change it on the contact's details page.", isError: true);
                 upnlReoccuringOrderDetails.Update();
                 return;
             }
 
-            if (contactId > 0)
+            if (contactId > 0 && wantsReenable)
             {
-                if (chkDisableSwitchStandard.Visible && chkDisableSwitchStandard.Checked)
-                {
-                    bool changed = new ContactsAccInfoRepository().SetInvoiceTypeByContactId(
-                        contactId, SystemConstants.InvoiceTypeConstants.Standard,
-                        "recurring order disabled");
-                    applied.Add(changed ? "account type set to standard" : "account type change failed");
-                }
-
-                if (chkDisableReenablePrediction.Visible && chkDisableReenablePrediction.Checked)
-                {
-                    bool changed = new ContactsRepository().SetPredictionDisabled(
-                        contactId, false, "recurring order disabled");
-                    applied.Add(changed ? "prediction re-enabled" : "prediction change failed");
-                }
-
-                if (applied.Count > 0)
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                        "RecurringOrderDetails: ContactID=" + contactId + " on recurring order disable: "
-                        + string.Join(", ", applied) + ".");
+                bool changed = new ContactsRepository().SetPredictionDisabled(
+                    contactId, false, "recurring order disabled");
+                applied.Add(changed ? "prediction re-enabled" : "prediction change failed");
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "RecurringOrderDetails: ContactID=" + contactId + " on recurring order disable: "
+                    + string.Join(", ", applied) + ".");
             }
 
             CloseDisablePrompt(applied);

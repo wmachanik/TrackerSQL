@@ -314,6 +314,10 @@
     <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\SQLCommands-MobileApi-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-MobileApi-01.xml" />
+    <Content Include="App_Data\SQLCommands-OrderFlags-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-OrderFlags-01.xml" />
+    <Content Include="App_Data\SQLCommands-OrderFlags-02-ResetContacts.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-OrderFlags-02-ResetContacts.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -451,6 +455,10 @@
     </Compile>
     <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
     <Compile Include="Managers\MobileApiSchemaInstaller.cs" />
+    <Compile Include="Managers\OrderFlagsSchemaInstaller.cs" />
+    <Compile Include="Classes\OrderFlagPill.cs" />
+    <Compile Include="Managers\AreaWeekBoardManager.cs" />
+    <Compile Include="Models\AreaWeekBoard.cs" />
     <Compile Include="Managers\MobileAuthManager.cs" />
     <Compile Include="Managers\MobileDeliveryManager.cs" />
     <Compile Include="Managers\MobileRepairManager.cs" />

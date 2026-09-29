@@ -177,7 +177,11 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
                 LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
                 LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID
-                OUTER APPLY (SELECT MIN(d.DeliveryOrder) AS DeliveryOrder FROM AreaPrepDaysTbl d WHERE d.AreaID = c.AreaID) apd
+                OUTER APPLY (SELECT TOP 1 d.DeliveryOrder FROM AreaPrepDaysTbl d WHERE d.AreaID = c.AreaID
+                             ORDER BY CASE WHEN ((d.PrepDayOfWeekID - 1 + ISNULL(d.DeliveryDelayDays, 0)) % 7) + 1
+                                                = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
+                                           THEN 0 ELSE 1 END,
+                                      d.DeliveryOrder) apd
                 OUTER APPLY (SELECT TOP 1 m.ProofID, m.Outcome, m.Reason, m.ReceivedByName, m.MissingItems, m.DeliveredAt, m.Status,
                                     CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr

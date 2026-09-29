@@ -286,7 +286,8 @@ namespace TrackerSQL.Managers
                 Notes = header.Notes ?? string.Empty,
                 Confirmed = header.Confirmed,
                 Done = header.Done,
-                InvoiceDone = header.InvoiceDone
+                InvoiceDone = header.InvoiceDone,
+                InvoiceTypeID = header.InvoiceTypeID
             };
         }
 
@@ -371,6 +372,9 @@ namespace TrackerSQL.Managers
 
             if (string.IsNullOrEmpty(line.PurchaseOrder) && !string.IsNullOrEmpty(header.PurchaseOrder))
                 line.PurchaseOrder = header.PurchaseOrder;
+
+            if (!line.InvoiceTypeID.HasValue && header.InvoiceTypeID.HasValue)
+                line.InvoiceTypeID = header.InvoiceTypeID;
 
             line.Confirmed = header.Confirmed;
             line.Done = header.Done;
@@ -555,7 +559,8 @@ namespace TrackerSQL.Managers
                 Confirmed = sourceHeader.Confirmed,
                 InvoiceDone = false,
                 Done = false,
-                Notes = sourceHeader.Notes
+                Notes = sourceHeader.Notes,
+                InvoiceTypeID = sourceHeader.InvoiceTypeID
             };
 
             // Single line: bump this order's delivery date unless another order already owns that date.
@@ -595,7 +600,8 @@ namespace TrackerSQL.Managers
                     Confirmed = sourceHeader.Confirmed,
                     InvoiceDone = sourceHeader.InvoiceDone,
                     Done = sourceHeader.Done,
-                    Notes = sourceHeader.Notes
+                    Notes = sourceHeader.Notes,
+                    InvoiceTypeID = sourceHeader.InvoiceTypeID
                 };
 
                 if (!UpdateOrderHeader(sourceOrderId, updatedHeader))

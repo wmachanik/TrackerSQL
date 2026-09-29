@@ -12,7 +12,7 @@ namespace TrackerSQL.Repositories
     {
         public Order GetById(int id)
         {
-            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone FROM OrdersTbl WHERE OrderID = @Id";
+            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID FROM OrdersTbl WHERE OrderID = @Id";
             var p = new List<DBParameter> { new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" } };
 
             using (var db = new TrackerSQLDb())
@@ -32,7 +32,7 @@ namespace TrackerSQL.Repositories
         public List<Order> GetAll()
         {
             var list = new List<Order>();
-            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone FROM OrdersTbl";
+            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID FROM OrdersTbl";
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql))
             {
@@ -226,7 +226,8 @@ namespace TrackerSQL.Repositories
                 Packed = r["Packed"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["Packed"]),
                 Notes = r["Notes"] == DBNull.Value ? string.Empty : r["Notes"].ToString(),
                 PurchaseOrder = r["PurchaseOrder"] == DBNull.Value ? string.Empty : r["PurchaseOrder"].ToString(),
-                InvoiceDone = r["InvoiceDone"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["InvoiceDone"])
+                InvoiceDone = r["InvoiceDone"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["InvoiceDone"]),
+                InvoiceTypeID = r["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["InvoiceTypeID"])
             };
         }
         public OrderHeaderData GetOrderHeaderByOrderId(int orderId)
@@ -246,7 +247,8 @@ namespace TrackerSQL.Repositories
                 Done = order.Done ?? false,
                 InvoiceDone = order.InvoiceDone ?? false,
                 PurchaseOrder = order.PurchaseOrder ?? string.Empty,
-                Notes = order.Notes ?? string.Empty
+                Notes = order.Notes ?? string.Empty,
+                InvoiceTypeID = order.InvoiceTypeID
             };
         }
 
@@ -567,7 +569,8 @@ namespace TrackerSQL.Repositories
                     ContactID = @ContactID, OrderDate = @OrderDate, PrepDate = @PrepDate,
                     ToBeDeliveredByID = @ToBeDeliveredByID, RequiredByDate = @RequiredByDate,
                     Confirmed = @Confirmed, Done = @Done, InvoiceDone = @InvoiceDone,
-                    PurchaseOrder = @PurchaseOrder, Notes = @Notes
+                    PurchaseOrder = @PurchaseOrder, Notes = @Notes,
+                    InvoiceTypeID = COALESCE(@InvoiceTypeID, InvoiceTypeID)
                 WHERE OrderID IN ({string.Join(", ", inParams)})";
 
             int result = ExecNonQuery(sql, parameters);
@@ -592,7 +595,7 @@ namespace TrackerSQL.Repositories
             var list = new List<OrderHeaderData>();
             const string sql = @"
                 SELECT o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate, p.PersonID,
-                       o.Confirmed, o.Done, o.InvoiceDone, o.PurchaseOrder, o.Notes
+                       o.Confirmed, o.Done, o.InvoiceDone, o.PurchaseOrder, o.Notes, o.InvoiceTypeID
                 FROM OrdersTbl o
                 LEFT OUTER JOIN PeopleTbl p ON o.ToBeDeliveredByID = p.PersonID
                 WHERE o.ContactID = @ContactID AND o.PrepDate = @PrepDate";
@@ -618,7 +621,8 @@ namespace TrackerSQL.Repositories
                         Done = rdr["Done"] != DBNull.Value && Convert.ToBoolean(rdr["Done"]),
                         InvoiceDone = rdr["InvoiceDone"] != DBNull.Value && Convert.ToBoolean(rdr["InvoiceDone"]),
                         PurchaseOrder = rdr["PurchaseOrder"] == DBNull.Value ? string.Empty : rdr["PurchaseOrder"].ToString(),
-                        Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString()
+                        Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
+                        InvoiceTypeID = rdr["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["InvoiceTypeID"])
                     });
                 }
             }
@@ -631,7 +635,7 @@ namespace TrackerSQL.Repositories
             const string sql = @"
                 SELECT o.OrderID, o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate,
                        o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.InvoiceDone,
-                       o.PurchaseOrder, o.Notes,
+                       o.PurchaseOrder, o.Notes, o.InvoiceTypeID,
                        ol.OrderLineID, ol.ItemID, ol.QtyOrdered, ol.PrepTypeID, ol.PackagingID
                 FROM OrdersTbl o
                 LEFT JOIN OrderLinesTbl ol ON o.OrderID = ol.OrderID
@@ -667,13 +671,21 @@ namespace TrackerSQL.Repositories
         public int InsertOrderHeader(OrderTblData orderData)
         {
             EnsureNotesColumnWide();
+            // No flag supplied (normal / Woo / prediction orders) → the contact's account type.
             const string sql = @"
                 INSERT INTO OrdersTbl
                 (ContactID, OrderDate, PrepDate, ToBeDeliveredByID, RequiredByDate, Confirmed, Done, Packed,
-                 InvoiceDone, PurchaseOrder, Notes)
+                 InvoiceDone, PurchaseOrder, Notes, InvoiceTypeID)
                 VALUES
                 (@ContactID, @OrderDate, @PrepDate, @ToBeDeliveredByID, @RequiredByDate, @Confirmed, @Done, @Packed,
-                 @InvoiceDone, @PurchaseOrder, @Notes);
+                 @InvoiceDone, @PurchaseOrder, @Notes,
+                 COALESCE(
+                     (SELECT it.InvoiceTypeID FROM InvoiceTypesTbl it WHERE it.InvoiceTypeID = @InvoiceTypeID),
+                     (SELECT TOP 1 it.InvoiceTypeID
+                      FROM ContactsAccInfoTbl a
+                      INNER JOIN InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
+                      WHERE a.ContactID = @ContactID),
+                     (SELECT it.InvoiceTypeID FROM InvoiceTypesTbl it WHERE it.InvoiceTypeID = 1)));
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var parameters = new List<DBParameter>
@@ -688,7 +700,8 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@Packed", DataValue = orderData.Packed, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@InvoiceDone", DataValue = orderData.InvoiceDone, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@PurchaseOrder", DataValue = orderData.PurchaseOrder ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@Notes", DataValue = orderData.Notes ?? string.Empty, DataDbType = DbType.String }
+                new DBParameter { ParamName = "@Notes", DataValue = orderData.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@InvoiceTypeID", DataValue = FkOrDbNull(orderData.InvoiceTypeID ?? 0), DataDbType = DbType.Int32 }
             };
 
             return ExecuteScalar<int>(sql, parameters);
@@ -923,7 +936,7 @@ ORDER BY OrderID DESC";
             string sql = @"
 SELECT TOP (@MaxRows)
     o.OrderID, o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate,
-    o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.Notes, o.PurchaseOrder, o.InvoiceDone
+    o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.Notes, o.PurchaseOrder, o.InvoiceDone, o.InvoiceTypeID
 FROM OrdersTbl o
 WHERE o.ContactID = @ContactID
   AND (
@@ -1247,7 +1260,8 @@ WHERE OrderID = @OrderID
                 Packed = rdr["Packed"] != DBNull.Value && Convert.ToBoolean(rdr["Packed"]),
                 InvoiceDone = rdr["InvoiceDone"] != DBNull.Value && Convert.ToBoolean(rdr["InvoiceDone"]),
                 PurchaseOrder = rdr["PurchaseOrder"] == DBNull.Value ? string.Empty : rdr["PurchaseOrder"].ToString(),
-                Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString()
+                Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
+                InvoiceTypeID = rdr["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["InvoiceTypeID"])
             };
         }
 
@@ -1264,7 +1278,8 @@ WHERE OrderID = @OrderID
                 new DBParameter { ParamName = "@Done", DataValue = header.Done, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@InvoiceDone", DataValue = header.InvoiceDone, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@PurchaseOrder", DataValue = header.PurchaseOrder ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@Notes", DataValue = header.Notes ?? string.Empty, DataDbType = DbType.String }
+                new DBParameter { ParamName = "@Notes", DataValue = header.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@InvoiceTypeID", DataValue = DbParamHelpers.FkOrDbNull(header.InvoiceTypeID ?? 0), DataDbType = DbType.Int32 }
             };
         }
 

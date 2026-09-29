@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  3.0.3.1 order flags (invoice type per order).
+  - InvoiceTypesTbl gets PillLabel / PillColour: the pill shown on the delivery sheet (empty label = no pill).
+  - RecurringOrdersTbl.InvoiceTypeID: flag copied onto each order the recurring order creates.
+  - OrdersTbl.InvoiceTypeID: the order's own flag (editable on Order Detail).
+  - Backfill uses the old rule (the contact's account invoice type) for recurring orders and open orders.
+  Idempotent: run by OrderFlagsSchemaInstaller at application start, or via Tools → XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.InvoiceTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.InvoiceTypesTbl', N'PillLabel') IS NULL
+      BEGIN
+          ALTER TABLE dbo.InvoiceTypesTbl ADD PillLabel NVARCHAR(20) NULL, PillColour NVARCHAR(20) NULL;
+
+          EXEC(N'
+              UPDATE dbo.InvoiceTypesTbl
+              SET PillLabel = CASE InvoiceTypeID
+                                  WHEN 2 THEN N''Delivery note''
+                                  WHEN 3 THEN N''Dispatch note''
+                                  WHEN 4 THEN N''Gift''
+                                  WHEN 5 THEN N''Cash receipt''
+                                  WHEN 6 THEN N''Sample''
+                              END,
+                  PillColour = CASE InvoiceTypeID
+                                  WHEN 2 THEN N''#6f42c1''
+                                  WHEN 3 THEN N''#0d6efd''
+                                  WHEN 4 THEN N''#d63384''
+                                  WHEN 5 THEN N''#198754''
+                                  WHEN 6 THEN N''#fd7e14''
+                              END
+              WHERE InvoiceTypeID BETWEEN 2 AND 6;');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.RecurringOrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.RecurringOrdersTbl', N'InvoiceTypeID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.RecurringOrdersTbl ADD InvoiceTypeID INT NULL
+              CONSTRAINT FK_RecurringOrdersTbl_InvoiceTypeID REFERENCES dbo.InvoiceTypesTbl (InvoiceTypeID);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrdersTbl', N'InvoiceTypeID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.OrdersTbl ADD InvoiceTypeID INT NULL
+              CONSTRAINT FK_OrdersTbl_InvoiceTypeID REFERENCES dbo.InvoiceTypesTbl (InvoiceTypeID);
+      END
+    ]]>
+  </command>
+
+  <!-- Recurring orders without a flag take the contact's account type (the pre-3.0.3.1 rule), else standard. -->
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.RecurringOrdersTbl', N'InvoiceTypeID') IS NOT NULL
+      BEGIN
+          UPDATE r
+          SET r.InvoiceTypeID = ISNULL(it.InvoiceTypeID, 1)
+          FROM dbo.RecurringOrdersTbl r
+          LEFT JOIN dbo.ContactsAccInfoTbl a ON a.ContactID = r.ContactID
+          LEFT JOIN dbo.InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
+          WHERE r.InvoiceTypeID IS NULL;
+      END
+    ]]>
+  </command>
+
+  <!-- Open orders without a flag: the recurring order's flag when the contact has an enabled one,
+       otherwise the contact's account type. Done orders stay NULL (the sheet falls back to the contact). -->
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.OrdersTbl', N'InvoiceTypeID') IS NOT NULL
+         AND COL_LENGTH(N'dbo.RecurringOrdersTbl', N'InvoiceTypeID') IS NOT NULL
+      BEGIN
+          UPDATE o
+          SET o.InvoiceTypeID = COALESCE(ro.InvoiceTypeID, it.InvoiceTypeID, 1)
+          FROM dbo.OrdersTbl o
+          LEFT JOIN dbo.ContactsAccInfoTbl a ON a.ContactID = o.ContactID
+          LEFT JOIN dbo.InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
+          OUTER APPLY (
+              SELECT TOP 1 r.InvoiceTypeID
+              FROM dbo.RecurringOrdersTbl r
+              WHERE r.ContactID = o.ContactID AND ISNULL(r.Enabled, 0) = 1
+              ORDER BY r.RecurringOrderID
+          ) ro
+          WHERE o.InvoiceTypeID IS NULL
+            AND ISNULL(o.Done, 0) = 0;
+      END
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT it.InvoiceTypeID, it.InvoiceTypeDesc, it.PillLabel, it.PillColour,
+             (SELECT COUNT(*) FROM dbo.RecurringOrdersTbl r WHERE r.InvoiceTypeID = it.InvoiceTypeID) AS RecurringOrders,
+             (SELECT COUNT(*) FROM dbo.OrdersTbl o WHERE o.InvoiceTypeID = it.InvoiceTypeID AND ISNULL(o.Done, 0) = 0) AS OpenOrders
+      FROM dbo.InvoiceTypesTbl it
+      ORDER BY it.InvoiceTypeID;
+    ]]>
+  </command>
+</root>

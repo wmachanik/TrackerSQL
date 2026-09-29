@@ -1,4 +1,4 @@
-﻿/* Rev: 20260924-21
+﻿/* Rev: 20260929-01
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -8988,6 +8988,185 @@ table.grouping-table .image-button > a {
     color: #9a4a1f;
     background: #fdf0e6;
     border-color: #e8c4a0;
+}
+
+/* Lookups → Areas delivery week board */
+.area-board-wrap {
+    margin: 0.5rem 0 1rem;
+}
+
+.area-board-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.area-board-toolbar .lookups-areas-days-title {
+    margin: 0;
+}
+
+.area-board-help {
+    color: #666;
+    flex: 1 1 20rem;
+}
+
+.area-board {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(9rem, 1fr));
+    gap: 0.5rem;
+    overflow-x: auto;
+    align-items: start;
+}
+
+.area-board-col {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    padding: 0.35rem;
+    min-height: 6rem;
+}
+
+.area-board-col.is-empty {
+    background: #fff8f0;
+    border-style: dashed;
+}
+
+.area-board-col.is-dirty {
+    border-color: #fd7e14;
+    box-shadow: 0 0 0 1px #fd7e14;
+}
+
+.area-board-col-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.area-board-count {
+    color: #666;
+    font-weight: normal;
+}
+
+.area-board-list,
+.area-board-plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    min-height: 1.5rem;
+}
+
+.area-board-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.25rem 0.35rem;
+    margin: 0.25rem 0;
+    cursor: grab;
+    user-select: none;
+}
+
+.area-board-plain .area-board-card {
+    cursor: pointer;
+}
+
+.area-board-card.is-dragging {
+    opacity: 0.45;
+}
+
+.area-board-card.is-tied {
+    border-left: 4px solid #fd7e14;
+}
+
+.area-board-card.is-duplicate {
+    border-left: 4px solid #dc3545;
+}
+
+.area-board-pos {
+    display: inline-block;
+    min-width: 1.4em;
+    font-weight: 600;
+    color: #666;
+}
+
+.area-board-name {
+    font-weight: 600;
+}
+
+.area-board-move {
+    float: right;
+}
+
+.area-board-move button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0 0.15em;
+    color: #666;
+}
+
+.area-board-move button:hover {
+    color: #000;
+}
+
+.area-board-meta {
+    display: block;
+    color: #666;
+}
+
+.area-board-tag {
+    display: inline-block;
+    padding: 0 0.4em;
+    margin-right: 0.25em;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+.area-board-tag.is-promise {
+    color: #2f5d3a;
+    background: #e7f4ea;
+    border-color: #b7d9c0;
+}
+
+.area-board-tag.is-warn {
+    color: #9a4a1f;
+    background: #fdf0e6;
+    border-color: #e8c4a0;
+}
+
+.area-board-tag.is-error {
+    color: #842029;
+    background: #f8d7da;
+    border-color: #f1aeb5;
+}
+
+.area-board-empty {
+    color: #999;
+    font-style: italic;
+    padding: 0.25rem 0;
+}
+
+.area-board-gap {
+    border: 1px dashed #dc3545;
+    color: #a52834;
+    background: #fff5f5;
+    border-radius: 4px;
+    padding: 0.2rem 0.35rem;
+    margin: 0.25rem 0;
+    cursor: pointer;
+}
+
+/* Order flag pill (Lookups → Invoice Types colour is set inline) */
+.status-badge.order-flag-pill {
+    color: #fff;
+    background: #6c757d;
+    border-color: #6c757d;
+    text-transform: none;
+    white-space: nowrap;
+    margin-right: 0.35em;
 }
 
 /* Nested detail grid inside a grouping card — chrome only */

@@ -28,6 +28,102 @@
                 if (tb) tb.value = hit.value.toUpperCase();
             } catch (ex) { }
         }
+
+        // Areas week board. Delegated handlers — the board is re-rendered by the Areas UpdatePanel.
+        // Cards only move within their own day; hidden-field / button ids come from data-* on .area-board.
+        (function () {
+            var dragged = null;
+
+            function board() { return document.querySelector('.area-board'); }
+            function closest(el, cls) {
+                while (el && el.nodeType === 1) {
+                    if (el.classList.contains(cls)) return el;
+                    el = el.parentNode;
+                }
+                return null;
+            }
+            function markDirty(list) {
+                if (!list) return;
+                list.setAttribute('data-dirty', '1');
+                var col = closest(list, 'area-board-col');
+                if (col) col.classList.add('is-dirty');
+                var cards = list.querySelectorAll('.area-board-card');
+                for (var i = 0; i < cards.length; i++) {
+                    var pos = cards[i].querySelector('.area-board-pos');
+                    if (pos) pos.textContent = String(i + 1);
+                }
+            }
+
+            document.addEventListener('dragstart', function (e) {
+                var card = closest(e.target, 'area-board-card');
+                if (!card || !closest(card, 'area-board-list')) return;
+                dragged = card;
+                card.classList.add('is-dragging');
+                try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', card.getAttribute('data-id')); } catch (ex) { }
+            });
+            document.addEventListener('dragend', function () {
+                if (dragged) dragged.classList.remove('is-dragging');
+                dragged = null;
+            });
+            document.addEventListener('dragover', function (e) {
+                var list = closest(e.target, 'area-board-list');
+                if (!dragged || !list || dragged.parentNode !== list) return;
+                e.preventDefault();
+                var cards = list.querySelectorAll('.area-board-card:not(.is-dragging)');
+                var before = null;
+                for (var i = 0; i < cards.length; i++) {
+                    var box = cards[i].getBoundingClientRect();
+                    if (e.clientY < box.top + box.height / 2) { before = cards[i]; break; }
+                }
+                if (before) list.insertBefore(dragged, before); else list.appendChild(dragged);
+            });
+            document.addEventListener('drop', function (e) {
+                var list = closest(e.target, 'area-board-list');
+                if (!dragged || !list || dragged.parentNode !== list) return;
+                e.preventDefault();
+                markDirty(list);
+            });
+            document.addEventListener('click', function (e) {
+                var up = closest(e.target, 'area-board-up');
+                var down = closest(e.target, 'area-board-down');
+                if (!up && !down) return;
+                e.preventDefault();
+                var card = closest(e.target, 'area-board-card');
+                var list = card ? card.parentNode : null;
+                if (!list) return;
+                if (up && card.previousElementSibling) list.insertBefore(card, card.previousElementSibling);
+                else if (down && card.nextElementSibling) list.insertBefore(card.nextElementSibling, card);
+                markDirty(list);
+            });
+            document.addEventListener('dblclick', function (e) {
+                var card = closest(e.target, 'area-board-card') || closest(e.target, 'area-board-gap');
+                var b = board();
+                if (!card || !b) return;
+                var field = document.getElementById(b.getAttribute('data-select-field'));
+                var button = document.getElementById(b.getAttribute('data-select-button'));
+                if (!field || !button) return;
+                field.value = card.getAttribute('data-area');
+                button.click();
+            });
+
+            // "dow:id,id,id|dow:id,..." for the days that were changed.
+            window.areaBoardPrepareSave = function () {
+                var b = board();
+                if (!b) return false;
+                var field = document.getElementById(b.getAttribute('data-order-field'));
+                if (!field) return false;
+                var parts = [];
+                var lists = b.querySelectorAll('.area-board-list[data-dirty="1"]');
+                for (var i = 0; i < lists.length; i++) {
+                    var ids = [];
+                    var cards = lists[i].querySelectorAll('.area-board-card');
+                    for (var j = 0; j < cards.length; j++) ids.push(cards[j].getAttribute('data-id'));
+                    parts.push(lists[i].getAttribute('data-dow') + ':' + ids.join(','));
+                }
+                field.value = parts.join('|');
+                return true;
+            };
+        })();
     </script>
 </asp:Content>
 <asp:Content ID="cntLookupBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -634,6 +730,26 @@
                                 <img class="lookups-tab-icon" src="../images/imgButtons/icons8-list-of-areas.png"
                                     width="32" height="32" alt="" />
                             </div>
+                        </div>
+                        <div class="area-board-wrap">
+                            <div class="area-board-toolbar">
+                                <h4 class="lookups-areas-days-title">Delivery Week</h4>
+                                <span class="area-board-help">Each day lists the areas delivered on it (prep day + delay).
+                                    Drag an area, or use ▲▼, to set that day's delivery order, then Save.
+                                    Double-click an area to edit its prep days below.</span>
+                                <asp:HiddenField ID="hdnAreaBoardOrder" runat="server" />
+                                <asp:HiddenField ID="hdnAreaBoardSelectAreaId" runat="server" />
+                                <asp:Button ID="btnAreaBoardSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"
+                                    CausesValidation="false" OnClick="btnAreaBoardSave_Click"
+                                    OnClientClick="return areaBoardPrepareSave();"
+                                    ToolTip="Save the order of the days you changed (10, 20, 30 ...)" />
+                                <asp:Button ID="btnAreaBoardReset" runat="server" Text="Undo Changes" CssClass="filter-panel-btn"
+                                    CausesValidation="false" OnClick="btnAreaBoardReset_Click"
+                                    ToolTip="Reload the saved delivery order" />
+                                <asp:Button ID="btnAreaBoardSelect" runat="server" Text="Select" CausesValidation="false"
+                                    OnClick="btnAreaBoardSelect_Click" Style="display: none" />
+                            </div>
+                            <asp:Literal ID="ltrlAreaBoard" runat="server" Mode="PassThrough" />
                         </div>
                         <div class="lookups-areas-layout">
                             <div class="lookups-areas-list">
@@ -1514,6 +1630,22 @@
                                         <FooterTemplate>
                                             <asp:TextBox ID="InvoiceTypeDescTextBox" runat="server" Width="15em" />
                                             <asp:HiddenField ID="InvoiceTypeIDHidden" runat="server" Value="0" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Delivery Sheet Pill" SortExpression="PillLabel">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="PillLabelTextBox" runat="server" Text='<%# Bind("PillLabel") %>' Width="10em" MaxLength="20"
+                                                placeholder="label (blank = no pill)" ToolTip="Text on the delivery sheet pill. Leave blank for no pill (e.g. Standard)." />
+                                            <asp:TextBox ID="PillColourTextBox" runat="server" Text='<%# Bind("PillColour") %>' Width="6em" MaxLength="20"
+                                                placeholder="#6f42c1" ToolTip="Pill colour: #rgb, #rrggbb or a colour name" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Literal ID="PillPreviewLiteral" runat="server" Mode="PassThrough"
+                                                Text='<%# TrackerSQL.Classes.OrderFlagPill.Html(Convert.ToString(Eval("PillLabel")), Convert.ToString(Eval("PillColour"))) %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="PillLabelTextBox" runat="server" Width="10em" MaxLength="20" placeholder="label (blank = no pill)" />
+                                            <asp:TextBox ID="PillColourTextBox" runat="server" Width="6em" MaxLength="20" placeholder="#6f42c1" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Enabled" SortExpression="Enabled">

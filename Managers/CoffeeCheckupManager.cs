@@ -1816,6 +1816,12 @@ namespace TrackerSQL.Managers
                         pOrderData.Notes = pOrderData.Notes.Substring(0, 255);
                 }
 
+                // Recurring orders carry their own flag (delivery note, dispatch note, gift, ...).
+                var recurringLine = lines.FirstOrDefault(line => line.RecurringOrder && line.RecurringOrderItemID > 0);
+                if (recurringLine != null)
+                    pOrderData.InvoiceTypeID = _recurringOrdersRepository
+                        .GetInvoiceTypeIdForRecurringOrderItem(recurringLine.RecurringOrderItemID);
+
                 int orderId = _ordersRepository.InsertOrderHeader(pOrderData);
                 if (orderId <= 0)
                     return "Failed to insert order";

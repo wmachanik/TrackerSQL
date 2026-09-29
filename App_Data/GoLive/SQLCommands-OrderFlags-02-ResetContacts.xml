@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  3.0.3.1 one-off (run manually with Tools → XMLtoSQL, after SQLCommands-OrderFlags-01.xml; NOT run automatically).
+  Before 3.0.3.1 a recurring order switched the contact's account invoice type to delivery note / dispatch note.
+  That flag now lives on the recurring order and on each order, so contacts with an enabled recurring order
+  go back to standard. Their extra (non-recurring) orders are then standard invoices.
+  A dated line is added to the contact's notes. Contacts without an enabled recurring order are not touched.
+-->
+<root>
+  <command type="select">
+    <![CDATA[
+      SELECT c.ContactID, c.CompanyName, it.InvoiceTypeDesc AS AccountType, rit.InvoiceTypeDesc AS RecurringFlag
+      FROM dbo.ContactsAccInfoTbl a
+      INNER JOIN dbo.ContactsTbl c ON c.ContactID = a.ContactID
+      INNER JOIN dbo.InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
+      CROSS APPLY (
+          SELECT TOP 1 r.InvoiceTypeID
+          FROM dbo.RecurringOrdersTbl r
+          WHERE r.ContactID = a.ContactID AND ISNULL(r.Enabled, 0) = 1
+          ORDER BY r.RecurringOrderID
+      ) ro
+      LEFT JOIN dbo.InvoiceTypesTbl rit ON rit.InvoiceTypeID = ro.InvoiceTypeID
+      WHERE a.InvoiceTypeID IN (2, 3)
+      ORDER BY c.CompanyName;
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.RecurringOrdersTbl', N'InvoiceTypeID') IS NOT NULL
+      BEGIN
+          DECLARE @reset TABLE (ContactID INT PRIMARY KEY, OldType NVARCHAR(40));
+
+          UPDATE a
+          SET a.InvoiceTypeID = 1
+          OUTPUT inserted.ContactID, it.InvoiceTypeDesc INTO @reset (ContactID, OldType)
+          FROM dbo.ContactsAccInfoTbl a
+          INNER JOIN dbo.InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
+          WHERE a.InvoiceTypeID IN (2, 3)
+            AND EXISTS (SELECT 1 FROM dbo.RecurringOrdersTbl r
+                        WHERE r.ContactID = a.ContactID AND ISNULL(r.Enabled, 0) = 1);
+
+          UPDATE c
+          SET c.Notes = CONVERT(NVARCHAR(10), CAST(SYSDATETIME() AS DATE), 23)
+                        + N': Account type set to standard (was ' + ISNULL(r.OldType, N'?')
+                        + N'; the flag is now on the recurring order)' + NCHAR(10) + ISNULL(c.Notes, N'')
+          FROM dbo.ContactsTbl c
+          INNER JOIN @reset r ON r.ContactID = c.ContactID;
+      END
+    ]]>
+  </command>
+</root>

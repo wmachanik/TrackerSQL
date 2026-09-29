@@ -67,14 +67,6 @@ namespace TrackerSQL.Classes
             /// (Contact Details Insert and Woo bootstrap).
             /// </summary>
             public const int DefaultForNewContact = Standard;
-
-            /// <summary>
-            /// When true, disabling a recurring order (on order done or manually) switches the
-            /// contact's account/invoice type back to Standard — but only once the contact has
-            /// no other enabled recurring orders left.
-            /// TODO: move to a system settings database once one exists.
-            /// </summary>
-            public static readonly bool SwitchContactToStandardOnRecurringDisable = true;
         }
 
         /// <summary>Recurring-order behaviour toggles (move to system settings DB later).</summary>

@@ -172,6 +172,13 @@
                             </td>
                         </tr>
                         <tr>
+                            <td>Order Flag</td>
+                            <td>
+                                <asp:DropDownList ID="ddlInvoiceType" runat="server"
+                                    ToolTip="How this order is invoiced (delivery note, dispatch note, gift, ...). Shown as a pill on the delivery sheet." />
+                            </td>
+                        </tr>
+                        <tr>
                             <td>Stati</td>
                             <td class="status-flags">
                                 <span class="status-flag">

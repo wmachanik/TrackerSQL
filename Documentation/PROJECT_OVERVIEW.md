@@ -50,7 +50,8 @@
 
 ## Current Release (2026-09-29)
 
-- **Live version:** 3.0.3.0 at **`https://tracker.quaffee.co.za`** (also `https://quaffeetracker.co.za`), myasp.net shared hosting. Branch `feature/3.0.3.0`. See [../CHANGELOG.md](../CHANGELOG.md).
+- **Live version:** 3.0.3.0 at **`https://tracker.quaffee.co.za`** (also `https://quaffeetracker.co.za`), myasp.net shared hosting. See [../CHANGELOG.md](../CHANGELOG.md).
+- **Next release:** 3.0.3.1 on branch `feature/3.0.3.1`: order flags (recurring order → order, pills on the delivery sheet) and the Areas delivery week board. Go-live needs the `SQLCommands-OrderFlags-02-ResetContacts.xml` step in the CHANGELOG.
 - **Quaffee Driver app** (new in 3.0.3.0): companion Vue/Capacitor app in `C:\SRC\ASP.net\TrackerDriver` using Tracker's `/api/v1` REST API. See [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md).
 - **Deploying and config secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md). The GitHub repo is public: real config files are git-ignored (Hard Rule #0f).
 
@@ -352,6 +353,17 @@ The migration standardizes terminology across the application:
 - Delivery notifications
 - Order confirmations
 
+**Order flags (3.0.3.1):**
+- `OrdersTbl.InvoiceTypeID` is the order's flag (Standard, Delivery note, Dispatch note, Gift, Cash receipt, Sample…) and tells whoever does invoicing how to invoice it. It is editable on Order Detail.
+- `RecurringOrdersTbl.InvoiceTypeID` is copied onto every order the recurring order creates (`CoffeeCheckupManager.CreateOrderForContact`).
+- A new order with no flag takes the contact's account type (`ContactsAccInfoTbl.InvoiceTypeID`), else Standard. A recurring order no longer changes the contact's account type.
+- The delivery sheet shows `COALESCE(order flag, contact account type)` as a pill; label and colour are `InvoiceTypesTbl.PillLabel` / `PillColour` (Lookups → Invoice Types; empty label = no pill).
+
+**Delivery areas and days:**
+- Each `AreaPrepDaysTbl` row is one prep day of an area: `PrepDayOfWeekID` (1 = Sunday … 7 = Saturday) plus `DeliveryDelayDays` gives the delivery weekday. `DeliveryOrder` is the stop order **on that delivery day**.
+- The delivery sheet and driver app sort by the prep row that delivers on the order's `RequiredByDate` weekday.
+- Lookups → Areas has a Mon–Sun board for ordering each day (`AreaWeekBoardManager`). It also compares the days with the website delivery promise rules (`DeliveryPromiseRuleTbl`, days 0 = Sunday … 6 = Saturday).
+
 ### Important Data Tables
 
 **Core Tables:**
@@ -481,6 +493,7 @@ When assisting with this project, always reference:
 |---------|------|---------|
 | 1.0 | 2025-03-26 | Initial AI-focused documentation created |
 | 1.1 | 2026-09-29 | Current release section (3.0.3.0 live, driver app, deployment/secrets) |
+| 1.2 | 2026-09-29 | 3.0.3.1: order flags and delivery areas business rules |
 
 ---
 

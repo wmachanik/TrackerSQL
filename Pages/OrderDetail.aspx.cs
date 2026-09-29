@@ -335,6 +335,7 @@ namespace TrackerSQL.Pages
             SetContactId(0);
             BindContactDropdown();
             BindDeliveryPersonDropdown(forceRebind: true);
+            BindInvoiceTypeDropdown(0, null);
             BindNewItemLookups();
             btnLastOrder.Visible = false;
             btnConfirmOrder.Enabled = false;
@@ -579,7 +580,11 @@ namespace TrackerSQL.Pages
                 InvoiceDone = cbxInvoiceDone.Checked,
                 Done = cbxDone.Checked,
                 PurchaseOrder = tbxPurchaseOrder.Text ?? string.Empty,
-                Notes = tbxNotes.Text ?? string.Empty
+                Notes = tbxNotes.Text ?? string.Empty,
+                InvoiceTypeID = TryGetListControlValue(ddlInvoiceType, out string invoiceTypeValue)
+                    && int.TryParse(invoiceTypeValue, out int invoiceTypeId) && invoiceTypeId > 0
+                        ? invoiceTypeId
+                        : (int?)null
             };
 
             header.OrderDate = DateTime.TryParse(tbxOrderDate.Text, out DateTime orderDate) ? orderDate.Date : DateTime.MinValue;
@@ -613,7 +618,37 @@ namespace TrackerSQL.Pages
                     deliveryItem.Selected = true;
             }
 
+            BindInvoiceTypeDropdown(header.CustomerID, header.InvoiceTypeID);
+
             UpdateContactLink(header.CustomerID);
+        }
+
+        /// <summary>
+        /// Order flag list. "Contact default" (value 0) means no flag stored on the order: new
+        /// orders then take the contact's account type, and old orders show that on the sheet.
+        /// </summary>
+        private void BindInvoiceTypeDropdown(long contactId, int? selectedInvoiceTypeId)
+        {
+            var invoiceTypes = new InvoiceTypesRepository().GetAll("InvoiceTypeID");
+
+            string defaultText = "Contact default";
+            if (contactId > 0)
+            {
+                int? contactTypeId = new ContactsAccInfoRepository().GetInvoiceTypeIdByContactId((int)contactId);
+                var contactType = invoiceTypes.FirstOrDefault(t => t.InvoiceTypeID == contactTypeId);
+                if (contactType != null)
+                    defaultText += " (" + contactType.InvoiceTypeDesc + ")";
+            }
+
+            ddlInvoiceType.Items.Clear();
+            ddlInvoiceType.Items.Add(new ListItem(defaultText, "0"));
+            foreach (var invoiceType in invoiceTypes)
+                ddlInvoiceType.Items.Add(new ListItem(invoiceType.InvoiceTypeDesc, invoiceType.InvoiceTypeID.ToString()));
+
+            ListItem selected = selectedInvoiceTypeId.HasValue
+                ? ddlInvoiceType.Items.FindByValue(selectedInvoiceTypeId.Value.ToString())
+                : null;
+            (selected ?? ddlInvoiceType.Items[0]).Selected = true;
         }
 
         private void BindWaybillRow()
@@ -879,7 +914,8 @@ namespace TrackerSQL.Pages
                 Done = source.Done,
                 InvoiceDone = source.InvoiceDone,
                 PurchaseOrder = source.PurchaseOrder,
-                Notes = source.Notes
+                Notes = source.Notes,
+                InvoiceTypeID = source.InvoiceTypeID
             };
         }
 
@@ -897,7 +933,8 @@ namespace TrackerSQL.Pages
                 || previous.Done != current.Done
                 || previous.InvoiceDone != current.InvoiceDone
                 || (previous.PurchaseOrder ?? string.Empty) != (current.PurchaseOrder ?? string.Empty)
-                || (previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty);
+                || (previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty)
+                || previous.InvoiceTypeID != current.InvoiceTypeID;
         }
 
         protected void btnUndoHeader_Click(object sender, EventArgs e)
@@ -1038,6 +1075,7 @@ namespace TrackerSQL.Pages
                 tbxRequiredByDate?.ClientID,
                 ddlToBeDeliveredBy?.ClientID,
                 tbxPurchaseOrder?.ClientID,
+                ddlInvoiceType?.ClientID,
                 cbxConfirmed?.ClientID,
                 cbxInvoiceDone?.ClientID,
                 tbxNotes?.ClientID,
@@ -1414,6 +1452,8 @@ namespace TrackerSQL.Pages
                 parts.Add("PO changed");
             if ((previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty))
                 parts.Add("Notes changed");
+            if (previous.InvoiceTypeID != current.InvoiceTypeID)
+                parts.Add($"Flag {previous.InvoiceTypeID?.ToString() ?? "default"}->{current.InvoiceTypeID?.ToString() ?? "default"}");
 
             return parts.Count > 0 ? string.Join("; ", parts) : "header updated";
         }
@@ -1561,6 +1601,12 @@ namespace TrackerSQL.Pages
             LastContactIdForDeliveryPref = contactId;
             BindDeliveryPersonDropdown(forceRebind: true, preservePersonId: deliveryId);
 
+            int? chosenInvoiceTypeId = TryGetListControlValue(ddlInvoiceType, out string invoiceTypeValue)
+                && int.TryParse(invoiceTypeValue, out int invoiceTypeId) && invoiceTypeId > 0
+                    ? invoiceTypeId
+                    : (int?)null;
+            BindInvoiceTypeDropdown(contactId, chosenInvoiceTypeId);
+
             if (prefs.RequiresPurchOrder && string.IsNullOrWhiteSpace(tbxPurchaseOrder.Text))
                 tbxPurchaseOrder.Text = SystemConstants.UIConstants.PORequiredText;
 
@@ -1588,6 +1634,7 @@ namespace TrackerSQL.Pages
             tbxRequiredByDate.Enabled = enabled;
             ddlToBeDeliveredBy.Enabled = enabled;
             tbxPurchaseOrder.Enabled = enabled;
+            ddlInvoiceType.Enabled = enabled;
             cbxConfirmed.Enabled = enabled;
             cbxInvoiceDone.Enabled = enabled;
             tbxNotes.Enabled = enabled;

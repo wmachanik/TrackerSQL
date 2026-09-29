@@ -48,6 +48,26 @@ namespace TrackerSQL.Repositories
 
             return ExecNonQuery(sql, parameters);
         }
+
+        /// <summary>Sets DeliveryOrder on several prep-day rows in one batch. Returns rows updated.</summary>
+        public int UpdateDeliveryOrders(IList<KeyValuePair<int, short>> deliveryOrdersById)
+        {
+            if (deliveryOrdersById == null || deliveryOrdersById.Count == 0)
+                return 0;
+
+            var sql = new System.Text.StringBuilder();
+            var parameters = new List<DBParameter>();
+            for (int i = 0; i < deliveryOrdersById.Count; i++)
+            {
+                sql.Append("UPDATE AreaPrepDaysTbl SET DeliveryOrder = @o").Append(i)
+                   .Append(" WHERE AreaPrepDaysID = @id").Append(i).Append(";\n");
+                parameters.Add(new DBParameter { ParamName = "@o" + i, DataValue = deliveryOrdersById[i].Value, DataDbType = DbType.Int16 });
+                parameters.Add(new DBParameter { ParamName = "@id" + i, DataValue = deliveryOrdersById[i].Key, DataDbType = DbType.Int32 });
+            }
+
+            return ExecNonQuery(sql.ToString(), parameters);
+        }
+
         /// <summary>
         /// Deletes a AreaPrepDays record by ID
         /// </summary>

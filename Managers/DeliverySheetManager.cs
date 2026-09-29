@@ -10,11 +10,12 @@ namespace TrackerSQL.Managers
     {
         private const string CONST_ZZNAME_PREFIX = "_*:";
 
-        private readonly Func<long, int> _getContactInvoiceType;
+        private readonly IDictionary<int, InvoiceType> _invoiceTypesById;
 
-        public DeliverySheetManager(Func<long, int> getContactInvoiceType)
+        /// <param name="invoiceTypesById">Order flag lookup (InvoiceTypesTbl) for the pills.</param>
+        public DeliverySheetManager(IDictionary<int, InvoiceType> invoiceTypesById)
         {
-            _getContactInvoiceType = getContactInvoiceType ?? (contactId => 0);
+            _invoiceTypesById = invoiceTypesById ?? new Dictionary<int, InvoiceType>();
         }
 
         public DeliverySheetBuildResult Build(List<DeliverySheetOrderRow> rows, bool includeDeliveryPeople)
@@ -67,18 +68,6 @@ namespace TrackerSQL.Managers
             bool includeDeliveryPeople,
             SortedDictionary<string, string> deliveryPeople)
         {
-            string[] invoiceTypePrefixes = new string[8]
-            {
-                "",
-                "dN",
-                "d#",
-                "g$",
-                "cS",
-                "s@",
-                "!!",
-                "??"
-            };
-
             var item = new DeliverySheetDisplayItem
             {
                 OrderID = row.OrderID,
@@ -112,22 +101,10 @@ namespace TrackerSQL.Managers
                 item.ContactName = string.Format("{0}[{1}]", item.ContactName, row.Notes);
             }
 
-            if (!item.ContactID.Equals(SystemConstants.CustomerConstants.SundryCustomerNamePrefix))
+            if (row.InvoiceTypeID.HasValue
+                && _invoiceTypesById.TryGetValue(row.InvoiceTypeID.Value, out InvoiceType invoiceType))
             {
-                long contactId;
-
-                if (long.TryParse(item.ContactID, out contactId))
-                {
-                    int invoiceType = _getContactInvoiceType(contactId);
-
-                    if (invoiceType > 1 && invoiceType - 1 < invoiceTypePrefixes.Length)
-                    {
-                        item.ContactName = string.Format(
-                            "{0}]> {1}",
-                            invoiceTypePrefixes[invoiceType - 1],
-                            item.ContactName);
-                    }
-                    }
+                item.FlagPillHtml = OrderFlagPill.Html(invoiceType);
             }
 
             // Done status is rendered as a status-badge next to the name in the page UI

@@ -143,9 +143,8 @@
                 <asp:PostBackTrigger ControlID="btnUpdateAndReturn" />
                 <asp:PostBackTrigger ControlID="btnDelete" />
                 <asp:PostBackTrigger ControlID="btnReturn" />
-                <asp:PostBackTrigger ControlID="btnInvoiceTypeDeliveryNote" />
-                <asp:PostBackTrigger ControlID="btnInvoiceTypeDispatch" />
-                <asp:PostBackTrigger ControlID="btnInvoiceTypeKeep" />
+                <asp:PostBackTrigger ControlID="btnPredictionDisable" />
+                <asp:PostBackTrigger ControlID="btnPredictionKeep" />
                 <asp:PostBackTrigger ControlID="btnDisablePromptApply" />
                 <asp:PostBackTrigger ControlID="btnDisablePromptSkip" />
             </Triggers>
@@ -182,6 +181,16 @@
                         <td>
                             <asp:CheckBox ID="EnabledCheckBox" runat="server" Text="Complete Recurring Order Enabled"
                                 ToolTip="Check when this complete recurring order should be enabled" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Order Flag</td>
+                        <td>
+                            <asp:DropDownList ID="ddlInvoiceType" runat="server" EnableViewState="false"
+                                ToolTip="How orders from this recurring order are invoiced (e.g. delivery note for a subscription). Copied onto each order it creates and shown as a pill on the delivery sheet." />
+                        </td>
+                        <td colspan="2">
+                            <span class="small">Copied onto each order this creates; can still be changed on the order.</span>
                         </td>
                     </tr>
                     <tr>
@@ -438,27 +447,19 @@
                     <asp:Literal ID="ltrlStatus" runat="server" />
                 </div>
 
-                <asp:Panel ID="pnlInvoiceTypePrompt" runat="server" CssClass="confirm-modal-overlay" Visible="false">
+                <asp:Panel ID="pnlPredictionPrompt" runat="server" CssClass="confirm-modal-overlay" Visible="false">
                     <div class="confirm-modal">
-                        <h2>Contact Account Type</h2>
-                        <p><asp:Literal ID="ltrlInvoiceTypePrompt" runat="server" /></p>
-                        <div class="confirm-modal-option">
-                            <asp:CheckBox ID="chkInsertDisablePrediction" runat="server" Checked="true"
-                                Text="If keeping account type: also disable prediction (recommended). Delivery Note / Dispatch Note always disable prediction." />
-                        </div>
+                        <h2>Disable Prediction?</h2>
+                        <p><asp:Literal ID="ltrlPredictionPrompt" runat="server" /></p>
                         <div class="button-row confirm-modal-buttons">
-                            <asp:Button ID="btnInvoiceTypeDeliveryNote" runat="server" Text="Delivery Note"
-                                CssClass="filter-panel-btn" OnClick="btnInvoiceTypeDeliveryNote_Click" CausesValidation="false"
+                            <asp:Button ID="btnPredictionDisable" runat="server" Text="Disable Prediction"
+                                CssClass="filter-panel-btn" OnClick="btnPredictionDisable_Click" CausesValidation="false"
                                 OnClientClick="return beginRecurringOrderSave(this, 'Saving...');"
-                                ToolTip="Change the contact's account type to delivery note" />
-                            <asp:Button ID="btnInvoiceTypeDispatch" runat="server" Text="Dispatch Note"
-                                CssClass="filter-panel-btn" OnClick="btnInvoiceTypeDispatch_Click" CausesValidation="false"
+                                ToolTip="Turn off prediction / checkup reminders for this contact (recommended)" />
+                            <asp:Button ID="btnPredictionKeep" runat="server" Text="Leave On"
+                                CssClass="filter-panel-btn" OnClick="btnPredictionKeep_Click" CausesValidation="false"
                                 OnClientClick="return beginRecurringOrderSave(this, 'Saving...');"
-                                ToolTip="Change the contact's account type to dispatch note" />
-                            <asp:Button ID="btnInvoiceTypeKeep" runat="server" Text="No Change"
-                                CssClass="filter-panel-btn" OnClick="btnInvoiceTypeKeep_Click" CausesValidation="false"
-                                OnClientClick="return beginRecurringOrderSave(this, 'Saving...');"
-                                ToolTip="Keep the contact's current account type" />
+                                ToolTip="Keep prediction on for this contact" />
                         </div>
                     </div>
                 </asp:Panel>
@@ -467,10 +468,6 @@
                     <div class="confirm-modal">
                         <h2>Recurring Order Disabled</h2>
                         <p><asp:Literal ID="ltrlDisablePrompt" runat="server" /></p>
-                        <div class="confirm-modal-option">
-                            <asp:CheckBox ID="chkDisableSwitchStandard" runat="server" Checked="true"
-                                Text="Switch the contact's account type back to standard" />
-                        </div>
                         <div class="confirm-modal-option">
                             <asp:CheckBox ID="chkDisableReenablePrediction" runat="server" Checked="true"
                                 Text="Re-enable prediction (clear the contact's 'Prediction disabled' flag)" />
@@ -483,7 +480,7 @@
                             <asp:Button ID="btnDisablePromptSkip" runat="server" Text="No Changes"
                                 CssClass="filter-panel-btn" OnClick="btnDisablePromptSkip_Click" CausesValidation="false"
                                 OnClientClick="return beginRecurringOrderSave(this, 'Saving...');"
-                                ToolTip="Leave the contact's account type and prediction setting as they are" />
+                                ToolTip="Leave the contact's prediction setting as it is" />
                         </div>
                     </div>
                 </asp:Panel>

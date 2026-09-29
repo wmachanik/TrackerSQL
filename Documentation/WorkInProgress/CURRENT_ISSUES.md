@@ -5,6 +5,15 @@
 
 ---
 
+## 3.0.3.1 (2026-09-29, not yet live)
+
+**Go-live:** after the first start run XMLtoSQL → `SQLCommands-OrderFlags-02-ResetContacts.xml` (see CHANGELOG).
+
+**Delivery days / areas:**
+- `AreasRepository.GetPrepRulesForArea` / `GetPrepRulesForContact` (used by `DateCalculator` for recurring and prediction dates) still read the old `AreasTbl.PrepDayOfWeekID` / `DeliveryDelay` instead of `AreaPrepDaysTbl`. `GetPrepRulesForArea` also selects `AreasTbl.DeliveryOrder`, which does not exist. `DateCalculator` compares the value with .NET `DayOfWeek` (0 = Sunday) while the table uses 1 = Sunday. Left unchanged in 3.0.3.1 because fixing it would move recurring delivery dates; needs a decision and testing.
+- Delivery promise gaps found by the new Areas board (dev data): Belville, Durbanville, Hout bay, Maitland/Pinelands, Milnerton, Northern Sub and Paarden Eiland are promised Mon/Wed/Thu deliveries, but their prep days deliver Tue/Fri. Simonstown is promised Monday. Either the promise rules or the prep days need changing.
+- Delivery orders were set per area, so most days show ties until each day is saved once on the board. Dubai (Tue) and Knysna (Fri) have two prep days delivering on the same day.
+
 ## Open items after 3.0.3.0 (2026-09-29)
 
 **Security (do first):**

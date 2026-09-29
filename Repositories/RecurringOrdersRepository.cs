@@ -54,7 +54,7 @@ namespace TrackerSQL.Repositories
 
         public RecurringOrder GetById(int id)
         {
-            const string sql = "SELECT RecurringOrderID, ContactID, Enabled, Notes, DeliveryByID FROM RecurringOrdersTbl WHERE RecurringOrderID = @Id";
+            const string sql = "SELECT RecurringOrderID, ContactID, Enabled, Notes, DeliveryByID, InvoiceTypeID FROM RecurringOrdersTbl WHERE RecurringOrderID = @Id";
             var parameters = new List<DBParameter>
             {
                 new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" }
@@ -84,9 +84,9 @@ namespace TrackerSQL.Repositories
         public int Insert(RecurringOrder recurringOrder)
         {
             const string sql = @"INSERT INTO RecurringOrdersTbl
-                (ContactID, Enabled, Notes, DeliveryByID)
+                (ContactID, Enabled, Notes, DeliveryByID, InvoiceTypeID)
                 VALUES
-                (@ContactID, @Enabled, @Notes, @DeliveryByID);
+                (@ContactID, @Enabled, @Notes, @DeliveryByID, @InvoiceTypeID);
                 SELECT CAST(SCOPE_IDENTITY() AS int);";
 
             using (var db = new TrackerSQLDb())
@@ -103,7 +103,8 @@ namespace TrackerSQL.Repositories
                 SET ContactID = @ContactID,
                     Enabled = @Enabled,
                     Notes = @Notes,
-                    DeliveryByID = @DeliveryByID
+                    DeliveryByID = @DeliveryByID,
+                    InvoiceTypeID = @InvoiceTypeID
                 WHERE RecurringOrderID = @RecurringOrderID";
 
             using (var db = new TrackerSQLDb())
@@ -112,15 +113,37 @@ namespace TrackerSQL.Repositories
             }
 
             ReplaceItems(recurringOrder.RecurringOrderID, recurringOrder.Items);
+        }
 
-            // Manual disables (details page checkbox) are handled by the page's confirmation
-            // popup — only the automatic DisableRecurringOrder paths switch silently.
+        /// <summary>
+        /// Order flag (InvoiceTypeID) of the recurring order that owns this line, or null.
+        /// Send Checkup stamps it on the order it creates.
+        /// </summary>
+        public int? GetInvoiceTypeIdForRecurringOrderItem(int recurringOrderItemId)
+        {
+            if (recurringOrderItemId <= 0)
+                return null;
+
+            using (var db = new TrackerSQLDb())
+            {
+                object raw = db.ExecuteScalar(
+                    @"SELECT r.InvoiceTypeID
+                      FROM RecurringOrderItemsTbl ri
+                      INNER JOIN RecurringOrdersTbl r ON r.RecurringOrderID = ri.RecurringOrderID
+                      WHERE ri.RecurringOrderItemID = @RecurringOrderItemID",
+                    new List<DBParameter>
+                    {
+                        new DBParameter { ParamName = "@RecurringOrderItemID", DataValue = recurringOrderItemId, DataDbType = DbType.Int32 }
+                    });
+                if (raw == null || raw == DBNull.Value)
+                    return null;
+                return Convert.ToInt32(raw);
+            }
         }
 
         /// <summary>
         /// Deletes the recurring order and its lines. Returns a short user-facing note when the
-        /// contact's settings were restored (account type to standard, prediction re-enabled),
-        /// otherwise an empty string.
+        /// contact's prediction was re-enabled, otherwise an empty string.
         /// </summary>
         public string Delete(int recurringOrderId)
         {
@@ -149,12 +172,10 @@ namespace TrackerSQL.Repositories
                 db.ExecuteNonQuery("DELETE FROM RecurringOrdersTbl WHERE RecurringOrderID = @RecurringOrderID", parameters);
             }
 
-            // Deleting acts like a disable for the contact: if this was their last enabled
-            // recurring order, revert account type to Standard and re-enable prediction
-            // (both changes are dated into ContactsTbl.Notes).
+            // If this was their last enabled recurring order, re-enable prediction
+            // (dated into ContactsTbl.Notes).
             if (contactId > 0)
-                return RestoreContactSettingsWhenNoneEnabled(contactId,
-                    "recurring order deleted", reenablePrediction: true);
+                return ReenablePredictionWhenNoneEnabled(contactId, "recurring order deleted");
 
             return string.Empty;
         }
@@ -162,7 +183,7 @@ namespace TrackerSQL.Repositories
         public List<RecurringOrder> GetAll()
         {
             var list = new List<RecurringOrder>();
-            const string sql = "SELECT RecurringOrderID, ContactID, Enabled, Notes, DeliveryByID FROM RecurringOrdersTbl";
+            const string sql = "SELECT RecurringOrderID, ContactID, Enabled, Notes, DeliveryByID, InvoiceTypeID FROM RecurringOrdersTbl";
 
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql))
@@ -373,7 +394,6 @@ namespace TrackerSQL.Repositories
             if (disabled)
             {
                 int contactId = GetContactIdForRecurringOrder(recurringOrderId);
-                SwitchContactToStandardOnDisable(recurringOrderId);
                 if (contactId > 0)
                 {
                     // Automatic disables (order-done past until-date, checkup expiry) also email
@@ -385,21 +405,6 @@ namespace TrackerSQL.Repositories
             }
 
             return disabled;
-        }
-
-        /// <summary>
-        /// When a recurring order is disabled automatically (order done past its until-date,
-        /// checkup expiry) the contact's account/invoice type reverts to Standard — controlled by
-        /// SystemConstants.InvoiceTypeConstants.SwitchContactToStandardOnRecurringDisable.
-        /// Skipped while the contact still has another enabled recurring order.
-        /// Manual disables on the details page ask the user via a popup instead.
-        /// </summary>
-        private void SwitchContactToStandardOnDisable(int recurringOrderId)
-        {
-            int contactId = GetContactIdForRecurringOrder(recurringOrderId);
-            if (contactId > 0)
-                RestoreContactSettingsWhenNoneEnabled(contactId,
-                    $"RecurringOrderID={recurringOrderId} disabled", reenablePrediction: false);
         }
 
         private static int GetContactIdForRecurringOrder(int recurringOrderId)
@@ -419,18 +424,13 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// Once a contact has NO enabled recurring orders left (after a disable or delete),
-        /// their account/invoice type reverts to Standard — controlled by
-        /// SystemConstants.InvoiceTypeConstants.SwitchContactToStandardOnRecurringDisable.
-        /// Optionally also re-enables prediction (deletes do; automatic disables leave it to
-        /// the details-page popup for manual disables).
+        /// Once a contact has NO enabled recurring orders left (after a delete), prediction is
+        /// re-enabled (recurring orders and prediction conflict, so it was turned off for them).
+        /// The order flag lives on the recurring order, so the contact's account type is not touched.
         /// Returns a short user-facing note of what changed, or an empty string.
         /// </summary>
-        private string RestoreContactSettingsWhenNoneEnabled(int contactId, string reason, bool reenablePrediction)
+        private string ReenablePredictionWhenNoneEnabled(int contactId, string reason)
         {
-            if (!SystemConstants.InvoiceTypeConstants.SwitchContactToStandardOnRecurringDisable)
-                return string.Empty;
-
             try
             {
                 int otherEnabledCount;
@@ -454,35 +454,18 @@ namespace TrackerSQL.Repositories
                         + otherEnabledCount + " enabled recurring order(s).";
                 }
 
-                var changes = new List<string>();
-
-                bool changed = new ContactsAccInfoRepository().SetInvoiceTypeByContactId(
-                    contactId, SystemConstants.InvoiceTypeConstants.Standard, reason);
-                if (changed)
-                    changes.Add("account type set to standard");
+                bool predictionRestored = new ContactsRepository().SetPredictionDisabled(
+                    contactId, false, reason);
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                    $"{reason} — ContactID={contactId} account type "
-                    + (changed ? "switched to standard." : "could not be switched to standard."));
+                    $"{reason} — ContactID={contactId} prediction "
+                    + (predictionRestored ? "re-enabled." : "could not be re-enabled."));
 
-                if (reenablePrediction)
-                {
-                    bool predictionRestored = new ContactsRepository().SetPredictionDisabled(
-                        contactId, false, reason);
-                    if (predictionRestored)
-                        changes.Add("prediction re-enabled");
-                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                        $"{reason} — ContactID={contactId} prediction "
-                        + (predictionRestored ? "re-enabled." : "could not be re-enabled."));
-                }
-
-                return changes.Count == 0
-                    ? string.Empty
-                    : "Contact updated: " + string.Join(", ", changes) + ".";
+                return predictionRestored ? "Contact updated: prediction re-enabled." : string.Empty;
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
-                    $"RestoreContactSettingsWhenNoneEnabled failed for ContactID={contactId} ({reason}): {ex.Message}");
+                    $"ReenablePredictionWhenNoneEnabled failed for ContactID={contactId} ({reason}): {ex.Message}");
                 return string.Empty;
             }
         }
@@ -984,7 +967,8 @@ namespace TrackerSQL.Repositories
                 new DBParameter { DataValue = recurringOrder.ContactID.HasValue && recurringOrder.ContactID.Value > 0 ? (object)recurringOrder.ContactID.Value : DBNull.Value, DataDbType = DbType.Int32, ParamName = "@ContactID" },
                 new DBParameter { DataValue = recurringOrder.Enabled.HasValue ? (object)recurringOrder.Enabled.Value : DBNull.Value, DataDbType = DbType.Boolean, ParamName = "@Enabled" },
                 new DBParameter { DataValue = string.IsNullOrWhiteSpace(recurringOrder.Notes) ? DBNull.Value : (object)recurringOrder.Notes.Trim(), DataDbType = DbType.String, ParamName = "@Notes" },
-                new DBParameter { DataValue = recurringOrder.DeliveryByID.HasValue && recurringOrder.DeliveryByID.Value > 0 ? (object)recurringOrder.DeliveryByID.Value : DBNull.Value, DataDbType = DbType.Int32, ParamName = "@DeliveryByID" }
+                new DBParameter { DataValue = recurringOrder.DeliveryByID.HasValue && recurringOrder.DeliveryByID.Value > 0 ? (object)recurringOrder.DeliveryByID.Value : DBNull.Value, DataDbType = DbType.Int32, ParamName = "@DeliveryByID" },
+                new DBParameter { DataValue = recurringOrder.InvoiceTypeID.HasValue && recurringOrder.InvoiceTypeID.Value > 0 ? (object)recurringOrder.InvoiceTypeID.Value : DBNull.Value, DataDbType = DbType.Int32, ParamName = "@InvoiceTypeID" }
             };
 
             if (includeKey)
@@ -1213,7 +1197,8 @@ namespace TrackerSQL.Repositories
                 ContactID = GetValue<int?>(reader, "ContactID"),
                 Enabled = GetValue<bool?>(reader, "Enabled"),
                 Notes = GetValue<string>(reader, "Notes"),
-                DeliveryByID = GetValue<int?>(reader, "DeliveryByID")
+                DeliveryByID = GetValue<int?>(reader, "DeliveryByID"),
+                InvoiceTypeID = GetValue<int?>(reader, "InvoiceTypeID")
             };
         }
 

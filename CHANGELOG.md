@@ -2,6 +2,31 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.1 — 2026-09-29
+
+### Features
+- **Order flags instead of changing the contact's account type** — a recurring (subscription) order no longer switches the contact's account invoice type to Delivery note / Dispatch note. The flag (Standard, Delivery note, Dispatch note, Gift, Cash receipt / already paid, Sample …) is now stored on the recurring order and on each order.
+  - **Recurring Order Details:** new *Order Flag* list (new recurring orders start with the contact's account type). Orders the recurring order creates carry its flag.
+  - **Order Detail:** new *Order Flag* list under P/Order. *Contact default (…)* uses the contact's account type; any other choice is saved on that order only. Changes show in the header change summary.
+  - The popup that offered to change the contact's account type when a recurring order was added or disabled is gone. Disabling a recurring order now only asks whether to turn prediction back on.
+- **Delivery sheet pills** — the order's flag shows as a coloured pill beside the contact name, replacing the `dN` / `d#` name prefixes. Print view shows the name only.
+- **Lookups → Invoice Types** — new *Delivery Sheet Pill* column: the pill text and colour (`#rrggbb` or a colour name) for each type. An empty label shows no pill.
+- **Lookups → Areas delivery week** — a Mon–Sun board above the areas list shows which areas are delivered each day (prep day + delivery delay), in delivery order.
+  - Drag cards (or use ▲ ▼) to set each day's order and click *Save Delivery Order* (*Undo Changes* discards them); the day is renumbered 10, 20, 30…
+  - Tags: *promised* (a delivery promise rule offers that day), *tie* (two areas share a position; saving the day fixes it), *twice* (an area has two prep days delivering that day).
+  - Gaps: areas the delivery promise rules promise for a day on which none of their prep days deliver, and areas with no delivery day at all. Double-click a card to open that area's prep days.
+
+### Fixes
+- **Delivery order per day** — the delivery sheet and the driver app sort by the delivery order of the area's prep day that delivers on the order's date, instead of the area's lowest delivery order across all days.
+
+### Housekeeping
+- Old migration SQL scripts and tooling removed from the project (archived outside the repository). Schema changes are documented in the `App_Data/SQLCommands-*.xml` packs (Hard Rule #0d).
+
+### Go-live notes
+- `SQLCommands-OrderFlags-01.xml` runs automatically at startup: it adds the pill columns and the flag columns, and sets the flag on recurring orders and open orders from the contact's current account type (the old rule).
+- Then run **XMLtoSQL → `SQLCommands-OrderFlags-02-ResetContacts.xml`** once. It lists, then resets to Standard, the contacts whose account type is Delivery note / Dispatch note and who have an enabled recurring order, and adds a dated line to their notes. Without it their extra (non-recurring) orders keep defaulting to the note type.
+- Both packs are also in `App_Data/GoLive/`.
+
 ## 3.0.3.0 — 2026-09-28 (live 2026-09-29)
 
 ### Deployment

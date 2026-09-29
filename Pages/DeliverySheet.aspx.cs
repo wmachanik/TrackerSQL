@@ -276,15 +276,8 @@ namespace TrackerSQL.Pages
             else
                 ClearPageStatus();
 
-            var accInfoRepository = new ContactsAccInfoRepository();
-            var invoiceTypes = PrefetchInvoiceTypes(accInfoRepository, queryResult.Items);
-            var manager = new DeliverySheetManager(
-                contactId =>
-                {
-                    int id = (int)contactId;
-                    int typeId;
-                    return invoiceTypes.TryGetValue(id, out typeId) ? typeId : 0;
-                });
+            var manager = new DeliverySheetManager(new InvoiceTypesRepository().GetAllById());
+
 
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
@@ -300,7 +293,7 @@ namespace TrackerSQL.Pages
          * - StripEmailOut
          * - ReadDeliveryItems logic
          * - Sundry contact handling
-         * - Invoice type prefix handling
+         * - Order flag pill (replaces the old dN / d# name prefixes)
          * - Item HTML generation
          * - Totals calculation
          * - Sundry item reordering
@@ -431,39 +424,21 @@ namespace TrackerSQL.Pages
 
                 if (pPrintForm)
                 {
+                    // Flags are for invoicing, not the driver — the printed sheet shows the name only.
                     string contactName = currentItem.ContactName;
-
-                    if (contactName.Contains("]>"))
-                    {
-                        int num3 = contactName.IndexOf("]>");
-                        contactName = contactName.Substring(num3 + 3);
-                    }
-
                     cellContact.Text = currentItem.Done ? "done · " + contactName : contactName;
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {
-                    cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done) + currentItem.ContactName;
+                    cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done)
+                        + currentItem.FlagPillHtml + currentItem.ContactName;
                 }
                 else
                 {
-                    string contactName = currentItem.ContactName;
-
-                    if (contactName.Contains("]>"))
-                    {
-                        int length = contactName.IndexOf("]>");
-
-                        cellContact.Text =
-                            FormatDeliveryStatusBadge(currentItem.Done) +
-                            $"{contactName.Substring(0, length)} - " +
-                            $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName.Substring(length + 3)}</a>";
-                    }
-                    else
-                    {
-                        cellContact.Text =
-                            FormatDeliveryStatusBadge(currentItem.Done) +
-                            $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{contactName}</a>";
-                    }
+                    cellContact.Text =
+                        FormatDeliveryStatusBadge(currentItem.Done) +
+                        currentItem.FlagPillHtml +
+                        $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{currentItem.ContactName}</a>";
 
                     cellContact.CssClass = "wordwrap";
                 }
@@ -958,34 +933,13 @@ namespace TrackerSQL.Pages
             else
                 ClearPageStatus();
 
-            var accInfoRepository = new ContactsAccInfoRepository();
-            var invoiceTypes = PrefetchInvoiceTypes(accInfoRepository, queryResult.Items);
-            var manager = new DeliverySheetManager(
-                contactId =>
-                {
-                    int id = (int)contactId;
-                    int typeId;
-                    return invoiceTypes.TryGetValue(id, out typeId) ? typeId : 0;
-                });
+            var manager = new DeliverySheetManager(new InvoiceTypesRepository().GetAllById());
+
 
             // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
             var buildResult = manager.Build(queryResult.Items, false);
 
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
-        }
-
-        private static Dictionary<int, int> PrefetchInvoiceTypes(
-            ContactsAccInfoRepository accInfoRepository,
-            IList<DeliverySheetOrderRow> rows)
-        {
-            if (accInfoRepository == null || rows == null || rows.Count == 0)
-                return new Dictionary<int, int>();
-
-            var contactIds = rows
-                .Where(r => r != null && r.ContactID > 0)
-                .Select(r => (int)r.ContactID)
-                .Distinct();
-            return accInfoRepository.GetInvoiceTypeIdsByContactIds(contactIds);
         }
 
         /// <summary>

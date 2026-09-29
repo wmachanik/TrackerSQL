@@ -18,6 +18,10 @@ namespace TrackerSQL
 
             System.Web.Http.GlobalConfiguration.Configure(TrackerSQL.Api.WebApiConfig.Register);
 
+            string schemaError = TrackerSQL.Managers.OrderFlagsSchemaInstaller.Run();
+            if (schemaError != null)
+                WriteStartupLog("Order flag schema failed: " + schemaError);
+
             // Force-disable unobtrusive validation
             System.Web.UI.ValidationSettings.UnobtrusiveValidationMode =
                 System.Web.UI.UnobtrusiveValidationMode.None;

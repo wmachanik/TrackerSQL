@@ -46,6 +46,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.TextBox tbxRequiredByDate;
         protected global::AjaxControlToolkit.CalendarExtender tbxRequiredByDate_CalendarExtender;
         protected global::System.Web.UI.WebControls.TextBox tbxPurchaseOrder;
+        protected global::System.Web.UI.WebControls.DropDownList ddlInvoiceType;
         protected global::System.Web.UI.WebControls.CheckBox cbxConfirmed;
         protected global::System.Web.UI.WebControls.CheckBox cbxInvoiceDone;
         protected global::System.Web.UI.WebControls.CheckBox cbxDone;

@@ -137,6 +137,12 @@ namespace TrackerSQL.Repositories
             return SearchDeliverySheetRowsByContact(clientName);
         }
 
+        /// <summary>
+        /// One row per order line. Delivery order comes from the area's prep-day row whose
+        /// delivery weekday (prep day + delay, 1=Sun..7=Sat) matches the order's delivery date,
+        /// falling back to the area's lowest order. The flag is the order's own, or the
+        /// contact's account type for orders created before flags were stored on orders.
+        /// </summary>
         private static string BaseDeliverySheetSql()
         {
             return @"
@@ -163,7 +169,8 @@ namespace TrackerSQL.Repositories
                     o.Notes,
                     ip.ItemPrepDescription AS PackDesc,
                     ip.BGColour,
-                    p.Abbreviation AS DeliveryByAbbreviation
+                    p.Abbreviation AS DeliveryByAbbreviation,
+                    COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
                     ON o.OrderID = ol.OrderID
@@ -175,8 +182,21 @@ namespace TrackerSQL.Repositories
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i
                     ON ol.ItemID = i.ItemID
-                LEFT JOIN AreaPrepDaysTbl apd
-                    ON apd.AreaID = c.AreaID";
+                OUTER APPLY (
+                    SELECT TOP 1 a.DeliveryOrder
+                    FROM AreaPrepDaysTbl a
+                    WHERE a.AreaID = c.AreaID
+                    ORDER BY
+                        CASE WHEN ((a.PrepDayOfWeekID - 1 + ISNULL(a.DeliveryDelayDays, 0)) % 7) + 1
+                                  = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
+                             THEN 0 ELSE 1 END,
+                        a.DeliveryOrder
+                ) apd
+                OUTER APPLY (
+                    SELECT TOP 1 ai.InvoiceTypeID
+                    FROM ContactsAccInfoTbl ai
+                    WHERE ai.ContactID = o.ContactID
+                ) acc";
         }
 
         private RepositoryListResult<ActiveDeliveryDate> ExecuteActiveDeliveryDateQuery(
@@ -260,7 +280,8 @@ namespace TrackerSQL.Repositories
                 Notes = GetString(rdr, "Notes"),
                 PackDesc = GetString(rdr, "PackDesc"),
                 BGColour = GetString(rdr, "BGColour"),
-                DeliveryByAbbreviation = GetString(rdr, "DeliveryByAbbreviation")
+                DeliveryByAbbreviation = GetString(rdr, "DeliveryByAbbreviation"),
+                InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID")
             };
         }
 

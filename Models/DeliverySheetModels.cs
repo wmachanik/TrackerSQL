@@ -51,6 +51,9 @@ namespace TrackerSQL.Models
 
         public string DeliveryByAbbreviation { get; set; }
 
+        /// <summary>Order flag (order's own, else the contact's account type).</summary>
+        public int? InvoiceTypeID { get; set; }
+
         public DeliverySheetOrderRow()
         {
             ContactName = string.Empty;
@@ -88,6 +91,9 @@ namespace TrackerSQL.Models
 
         public string Notes { get; set; }
 
+        /// <summary>Order flag pill HTML (empty when the flag has no pill, e.g. Standard).</summary>
+        public string FlagPillHtml { get; set; }
+
         public DeliverySheetDisplayItem()
         {
             ContactID = string.Empty;
@@ -96,6 +102,7 @@ namespace TrackerSQL.Models
             PurchaseOrder = string.Empty;
             Items = string.Empty;
             Notes = string.Empty;
+            FlagPillHtml = string.Empty;
         }
     }
 

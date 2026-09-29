@@ -51,20 +51,21 @@ See also: [`MIGRATION_NAMING_ALIGNMENT.md`](MIGRATION_NAMING_ALIGNMENT.md)
 
 ---
 
-## Rule #0d: DATABASE MIGRATIONS LIVE IN TrackerMigration
+## Rule #0d: SCHEMA CHANGES ARE APP_DATA XML PACKS
 
-SQL schema creation, data migrate scripts, alter/rename scripts, and verification SQL are **not** owned by TrackerSQL.
+The Access → SQL Server data migration is finished (TrackerSQL is no longer linked to the migration project). The **live SQL Server database** is the schema reference.
 
 ### REQUIRED
 
-1. Treat **TrackerMigration** as the only source of truth for CreateTables / Migrate_* / Alter_* / Verify_*.
-2. Paths under TrackerSQL such as `Data/Metadata/Sql/`, `Migrations/`, root `CleanMigrationTables.sql`, etc. are **legacy leftovers** — do not run them, do not “fix” them as active migration sources, and do not add new migration scripts here.
-3. Application code (repos/models) must match the **live SQL Server** schema as defined by TrackerMigration — if a rename is needed, change it in TrackerMigration (and the DB), then update TrackerSQL app code.
+1. Every schema or data change ships as an idempotent XML pack in `App_Data/SQLCommands-<Feature>-NN.xml` (copy in `App_Data/GoLive/`), added to `TrackerSQL.csproj` as Content.
+2. Packs only create/alter what is missing (`IF OBJECT_ID(...) IS NULL`, `IF COL_LENGTH(...) IS NULL`, `WHERE ... IS NULL` backfills) so they are safe to re-run.
+3. Run them from the feature's schema installer (`XmlSchemaCommandRunner.RunFiles`) on first use, or manually with **Tools → XMLtoSQL**. One-off data fixes that must not run automatically are XMLtoSQL-only packs.
+4. Application code (repos/models) must match the live schema.
 
 ### PROHIBITED
 
-❌ Adding new `Migrate_*`, `Alter_*`, or `CreateTables_*` scripts under TrackerSQL  
-❌ Using TrackerSQL’s `Data/Metadata/Sql/*.sql` as the current schema reference when it conflicts with TrackerMigration / the live DB
+❌ Standalone `.sql` migration scripts, `CreateTables_*` / `Migrate_*` files, or schema changes made only by hand on one database  
+❌ Treating the old migration scripts as schema reference — they were removed on 2026-09-29 and archived outside the repo (`C:\SRC\ASP.net\TrackerSQL-MigrationArchive-2026-09-29.zip`)
 
 ---
 
@@ -537,8 +538,8 @@ A: The old code is being replaced. We're migrating AWAY from Access. Don't go ba
 **Q: ObjectDataSource is easier than code-behind binding.**  
 A: Only for trivial cases. For real-world scenarios with dropdowns and CRUD, Repository pattern is cleaner and more maintainable.
 
-**Q: What if I need to access Access for migration?**  
-A: Use the `MigrationRunner` project. The main TrackerSQL application should NEVER touch Access.
+**Q: What if I need data from the old Access database?**  
+A: The migration is finished. The main TrackerSQL application should NEVER touch Access.
 
 ---
 

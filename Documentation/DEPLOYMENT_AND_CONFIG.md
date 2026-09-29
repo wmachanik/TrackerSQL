@@ -61,7 +61,7 @@ and force-push.
 
 Feature tables are created by XML packs in `App_Data/` (`SQLCommands-*.xml`, live copies in `App_Data/GoLive/`),
 run by `XmlSchemaCommandRunner` from each feature's schema installer. They only create/alter what is missing.
-Core schema changes still belong in **TrackerMigration** (Hard Rule #0d).
+Every schema change ships this way (Hard Rule #0d).
 
 ## 5. Host requirements met in `web.live.config`
 

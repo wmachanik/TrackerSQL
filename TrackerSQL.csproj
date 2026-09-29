@@ -319,7 +319,7 @@
     <Content Include="Web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
-    <!-- Dev-only on disk, not published: Documentation\, DevTools\ -->
+    <!-- Dev-only on disk, not published: Documentation\ -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Account\ChangePassword.aspx.cs">
@@ -1163,6 +1163,6 @@
   -->
   <!-- RETIRED 2026-07-14: direct-URL / legacy pages excluded from build+publish. Files remain on disk. See Documentation/WorkInProgress/Page_Migration_Gap_Analysis.md Ãƒâ€šÃ‚Â§2.4. Also on disk but never in project: Pages/NewOrder*.aspx, Pages/CustomerDetails.aspx, Pages/RepairDetailOld.aspx, Pages/LoadSendCoffeeCheckup.aspx, Pages/Print.aspx, Tools/MergeCustomersFromQB.aspx -->
   <ItemGroup />
-  <!-- LEGACY migration artifacts under Migrations/, Data/Metadata/, etc. are NOT in this project. Canonical SQL/migrations live in TrackerMigration. Files may remain on disk but must not be published or treated as source of truth. -->
+  <!-- Schema changes ship as App_Data/SQLCommands-*.xml packs (Hard Rule #0d). The old migration scripts were removed 2026-09-29 (archived outside the repo). -->
   <!-- LEGACY typed DataSets under DataSets/ are excluded (Access-era TableAdapters). Active pages use Repositories/. Folder remains on disk for reference only. -->
 </Project>

@@ -64,21 +64,13 @@ This document provides **specific guidance for AI assistants** (GitHub Copilot, 
 When starting a new AI conversation about this codebase, use this summary:
 
 ```
-This is a .NET Framework 4.8 ASP.NET Web Forms application being migrated from 
-Microsoft Access to SQL Server. The project uses C# 7.3 syntax only. There are 
-two components: (1) the main web application (TrackerSQL.csproj) and (2) a 
-migration utility (MigrationRunner). The migration involves renaming tables and 
-columns (Customer* ? Contact*, Machine* ? Equipment*, etc.). Always check 
-Documentation\TABLE_SCHEMA_REFERENCE.md for current column and table names.
+This is a .NET Framework 4.8 ASP.NET Web Forms application on SQL Server (the
+Access migration is finished and no longer part of this project). The project
+uses C# 7.3 syntax only. The live SQL Server database is the schema reference;
+schema changes ship as idempotent App_Data/SQLCommands-*.xml packs (Hard Rule #0d).
+Data access goes through Repositories/ (RepositoryBase + TrackerSQLDb); files in
+Controls/ and DataSets/ are legacy and mostly not compiled — check TrackerSQL.csproj.
 ```
-
-## MigrationRunner AI Documents
-
-For work in `Migrations\MigrationRunner`, read these first:
-
-- `Documentation\AI\MigrationRunner\README.md`
-- `Documentation\AI\MigrationRunner\Migration-Workflow.md`
-- `Documentation\AI\MigrationRunner\Migration-Rules.md`
 
 ---
 

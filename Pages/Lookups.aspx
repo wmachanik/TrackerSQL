@@ -129,7 +129,7 @@
                 markDirty(list);
             });
 
-            // "dow:id,id,id|dow:id,..." for the days that were changed.
+            // "dow:areaId,areaId|dow:areaId,..." for the lists that were changed (dow 0 = All areas).
             window.deliveryDaysPrepareSave = function () {
                 var v = view();
                 if (!v) return false;
@@ -790,6 +790,15 @@
                                                     <asp:TextBox ID="tbxAreaName" runat="server" Text="" Width="100%" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Dlvry Order"
+                                                HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
+                                                <HeaderTemplate>
+                                                    <span title="The order the area's deliveries go in on the delivery sheet. Set it on the Delivery Days tab.">Dlvry Order</span>
+                                                </HeaderTemplate>
+                                                <ItemTemplate><%# GetAreaDeliveryOrderText(Eval("AreaID")) %></ItemTemplate>
+                                                <EditItemTemplate><%# GetAreaDeliveryOrderText(Eval("AreaID")) %></EditItemTemplate>
+                                                <FooterTemplate></FooterTemplate>
+                                            </asp:TemplateField>
                                             <asp:TemplateField HeaderText="ID" Visible="false">
                                                 <EditItemTemplate>
                                                     <asp:Label ID="lblAreaID" runat="server" Text='<%# Bind("AreaID") %>' />
@@ -850,8 +859,6 @@
                                                 </asp:DropDownList>
                                                 <asp:TextBox ID="tbxDeliveryDelay" runat="server" Text="1" Width="3em"
                                                     ToolTip="Delivery delay (days)" />
-                                                <asp:TextBox ID="tbxDeliveryOrder" runat="server" Text="20" Width="3em"
-                                                    ToolTip="Delivery order" />
                                                 <asp:Button ID="btnAddAreaDay" runat="server" Text="Add Prep Day"
                                                     CssClass="filter-panel-btn" OnClick="btnAddAreaDay_Click" />
                                             </div>
@@ -911,14 +918,14 @@
                                                 HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight"
                                                 FooterStyle-CssClass="col-tight">
                                                 <EditItemTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text='<%# Bind("DeliveryOrder") %>' />
+                                                    <asp:Label ID="lblDeliveryOrder" runat="server" Text='<%# Eval("DeliveryOrder") %>'
+                                                        ToolTip="The area's delivery order — set on the Delivery Days tab" />
                                                 </EditItemTemplate>
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblDeliveryOrder" runat="server" Text='<%# Bind("DeliveryOrder") %>' />
+                                                    <asp:Label ID="lblDeliveryOrder" runat="server" Text='<%# Eval("DeliveryOrder") %>'
+                                                        ToolTip="The area's delivery order — set on the Delivery Days tab" />
                                                 </ItemTemplate>
-                                                <FooterTemplate>
-                                                    <asp:TextBox ID="tbxDeliveryOrder" runat="server" Width="2em" Text="30" />
-                                                </FooterTemplate>
+                                                <FooterTemplate></FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField ShowHeader="False"
                                                 HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd"
@@ -954,20 +961,17 @@
                 <%-- Always: prep-day edits on the Areas tab show here straight away. --%>
                 <asp:UpdatePanel ID="upnlDeliveryDays" runat="server" UpdateMode="Always">
                     <ContentTemplate>
-                        <div class="filter-toolbar lookups-tab-toolbar">
-                            <div class="filter-section search-controls">
-                                <span class="delivery-days-help">The areas delivered on each day (prep day + delivery delay), in delivery order.
-                                    Drag an area or use ▲ ▼, then Save Delivery Order. Click an area name to edit its prep days.</span>
-                            </div>
-                            <div class="filter-section admin-controls">
-                                <asp:Button ID="btnDeliveryDaysSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"
-                                    CausesValidation="false" OnClick="btnDeliveryDaysSave_Click"
-                                    OnClientClick="return deliveryDaysPrepareSave();"
-                                    ToolTip="Save the order of the days you changed (10, 20, 30 ...)" />
-                                <asp:Button ID="btnDeliveryDaysReset" runat="server" Text="Undo Changes" CssClass="filter-panel-btn"
-                                    CausesValidation="false" OnClick="btnDeliveryDaysReset_Click"
-                                    ToolTip="Reload the saved delivery order" />
-                            </div>
+                        <p class="delivery-days-help">Each area has one delivery order: the delivery sheet lists each driver's deliveries area by area in this order.
+                            Pick a day (or All areas), drag an area or use ▲ ▼, then Save Delivery Order. Moving an area on one day moves it on all of its days.
+                            Click an area name to edit its prep days.</p>
+                        <div class="delivery-days-actions">
+                            <asp:Button ID="btnDeliveryDaysSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"
+                                CausesValidation="false" OnClick="btnDeliveryDaysSave_Click"
+                                OnClientClick="return deliveryDaysPrepareSave();"
+                                ToolTip="Save the new order; every area is renumbered 10, 20, 30 ..." />
+                            <asp:Button ID="btnDeliveryDaysReset" runat="server" Text="Undo Changes" CssClass="filter-panel-btn"
+                                CausesValidation="false" OnClick="btnDeliveryDaysReset_Click"
+                                ToolTip="Reload the saved delivery order" />
                         </div>
                         <asp:HiddenField ID="hdnDeliveryDaysOrder" runat="server" />
                         <asp:HiddenField ID="hdnDeliveryDaysDay" runat="server" />

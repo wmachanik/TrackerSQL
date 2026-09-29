@@ -4,12 +4,14 @@ using TrackerSQL.Classes;
 namespace TrackerSQL.Managers
 {
     /// <summary>
-    /// Adds the 3.0.3.1 order flag columns (SQLCommands-OrderFlags-01.xml). Run from Application_Start
-    /// because OrdersTbl.InvoiceTypeID is read by most order pages.
+    /// Adds the 3.0.3.1 order flag columns (SQLCommands-OrderFlags-01.xml) and gives every area one delivery
+    /// order (SQLCommands-AreaDeliveryOrder-01.xml). Run from Application_Start because OrdersTbl.InvoiceTypeID
+    /// is read by most order pages.
     /// </summary>
     public static class OrderFlagsSchemaInstaller
     {
         public const string XmlFileName = "SQLCommands-OrderFlags-01.xml";
+        public const string AreaDeliveryOrderXmlFileName = "SQLCommands-AreaDeliveryOrder-01.xml";
 
         private static readonly object Sync = new object();
         private static bool _ready;
@@ -35,7 +37,7 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName }, out string error);
+                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName, AreaDeliveryOrderXmlFileName }, out string error);
                 if (!string.IsNullOrEmpty(error))
                     return error;
                 _ready = true;

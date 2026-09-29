@@ -7,8 +7,9 @@ using TrackerSQL.Repositories;
 namespace TrackerSQL.Managers
 {
     /// <summary>
-    /// Builds Lookups → Delivery Days (areas per delivery weekday) and saves the per-day delivery order.
+    /// Builds Lookups → Delivery Days (areas per delivery weekday) and saves the area delivery order.
     /// Delivery weekday of a prep-day row = prep day + delivery delay, wrapping (1=Sun..7=Sat).
+    /// An area has one delivery order, held on every one of its prep-day rows (AreaPrepDaysTbl.DeliveryOrder).
     /// </summary>
     public class AreaWeekBoardManager
     {
@@ -47,47 +48,63 @@ namespace TrackerSQL.Managers
             var board = new AreaWeekBoard();
             var areas = _areasRepository.GetAll("AreaName");
             var areaNames = areas.ToDictionary(a => a.AreaID, a => a.AreaName ?? string.Empty);
-            var prepDays = _prepDaysRepository.GetAll("DeliveryOrder, AreaPrepDaysID");
+            var prepDays = _prepDaysRepository.GetAll("AreaPrepDaysID")
+                .Where(p => areaNames.ContainsKey(p.AreaID) && DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays).HasValue)
+                .ToList();
             var promisesByAreaDay = BuildPromiseLookup(areas);
+
+            var areaOrder = AreaOrder(prepDays, areaNames);
+            var deliveryOrderByArea = prepDays
+                .GroupBy(p => p.AreaID)
+                .ToDictionary(g => g.Key, g => g.Min(p => (int?)p.DeliveryOrder));
 
             var days = BoardDayOrder.ToDictionary(
                 dow => dow,
                 dow => new AreaWeekDay { DayOfWeekID = dow, DayName = DayName(dow) });
+            board.AllAreas = new AreaWeekDay { DayOfWeekID = 0, DayName = "All" };
 
-            foreach (var prepDay in prepDays)
+            foreach (int areaId in areaOrder)
             {
-                int? deliveryDow = DeliveryDayOfWeek(prepDay.PrepDayOfWeekID, prepDay.DeliveryDelayDays);
-                if (!deliveryDow.HasValue || !areaNames.ContainsKey(prepDay.AreaID))
-                    continue;
+                var areaPreps = prepDays
+                    .Where(p => p.AreaID == areaId)
+                    .OrderBy(p => Array.IndexOf(BoardDayOrder, DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays).Value))
+                    .Select(p => new
+                    {
+                        DeliveryDow = DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays).Value,
+                        Prep = new AreaWeekPrep { PrepDayOfWeekID = p.PrepDayOfWeekID ?? 0, DeliveryDelayDays = p.DeliveryDelayDays ?? 0 }
+                    })
+                    .ToList();
+                var deliveryDays = areaPreps.Select(p => p.DeliveryDow).Distinct().ToList();
 
-                promisesByAreaDay.TryGetValue(Tuple.Create(prepDay.AreaID, deliveryDow.Value), out string promise);
-                days[deliveryDow.Value].Cards.Add(new AreaWeekCard
+                board.AllAreas.Cards.Add(new AreaWeekCard
                 {
-                    AreaPrepDaysID = prepDay.AreaPrepDaysID,
-                    AreaID = prepDay.AreaID,
-                    AreaName = areaNames[prepDay.AreaID],
-                    PrepDayOfWeekID = prepDay.PrepDayOfWeekID ?? 0,
-                    DeliveryDelayDays = prepDay.DeliveryDelayDays ?? 0,
-                    DeliveryOrder = prepDay.DeliveryOrder,
-                    PromiseText = promise ?? string.Empty
+                    AreaID = areaId,
+                    AreaName = areaNames[areaId],
+                    DeliveryOrder = deliveryOrderByArea[areaId],
+                    Preps = areaPreps.Select(p => p.Prep).ToList(),
+                    DeliveryDays = deliveryDays,
+                    PromiseText = string.Empty
                 });
+
+                foreach (int dow in deliveryDays)
+                {
+                    var dayPreps = areaPreps.Where(p => p.DeliveryDow == dow).Select(p => p.Prep).ToList();
+                    promisesByAreaDay.TryGetValue(Tuple.Create(areaId, dow), out string promise);
+                    days[dow].Cards.Add(new AreaWeekCard
+                    {
+                        AreaID = areaId,
+                        AreaName = areaNames[areaId],
+                        DeliveryOrder = deliveryOrderByArea[areaId],
+                        Preps = dayPreps,
+                        DeliveryDays = deliveryDays,
+                        DuplicateOnDay = dayPreps.Count > 1,
+                        PromiseText = promise ?? string.Empty
+                    });
+                }
             }
 
             foreach (var day in days.Values)
             {
-                day.Cards = day.Cards
-                    .OrderBy(c => c.DeliveryOrder ?? short.MaxValue)
-                    .ThenBy(c => c.AreaName, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                foreach (var tie in day.Cards.Where(c => c.DeliveryOrder.HasValue).GroupBy(c => c.DeliveryOrder).Where(g => g.Count() > 1))
-                    foreach (var card in tie)
-                        card.OrderTied = true;
-
-                foreach (var duplicate in day.Cards.GroupBy(c => c.AreaID).Where(g => g.Count() > 1))
-                    foreach (var card in duplicate)
-                        card.DuplicateOnDay = true;
-
                 var deliveredAreaIds = new HashSet<int>(day.Cards.Select(c => c.AreaID));
                 day.PromiseGaps = promisesByAreaDay
                     .Where(p => p.Key.Item2 == day.DayOfWeekID && !deliveredAreaIds.Contains(p.Key.Item1))
@@ -111,25 +128,69 @@ namespace TrackerSQL.Managers
             return board;
         }
 
-        /// <summary>
-        /// Saves the order of one delivery day: the listed prep-day rows get 10, 20, 30 ...
-        /// Rows that do not deliver on that day are ignored. Returns the number of rows saved.
-        /// </summary>
-        public int SaveDayOrder(int dayOfWeekId, IList<int> orderedAreaPrepDaysIds)
+        /// <summary>Area delivery order (lowest DeliveryOrder of the area's prep rows) by AreaID.</summary>
+        public Dictionary<int, int?> GetAreaDeliveryOrders()
         {
-            if (dayOfWeekId < 1 || dayOfWeekId > 7 || orderedAreaPrepDaysIds == null || orderedAreaPrepDaysIds.Count == 0)
+            return _prepDaysRepository.GetAll(null)
+                .GroupBy(p => p.AreaID)
+                .ToDictionary(g => g.Key, g => g.Min(p => (int?)p.DeliveryOrder));
+        }
+
+        /// <summary>
+        /// Saves a new order for the areas of one delivery day (0 = all areas). The day's areas swap places among
+        /// themselves in the overall area order; then every area is renumbered 10, 20, 30 ... on all of its prep rows.
+        /// Returns the number of the day's areas saved.
+        /// </summary>
+        public int SaveDayOrder(int dayOfWeekId, IList<int> orderedAreaIds)
+        {
+            if (dayOfWeekId < 0 || dayOfWeekId > 7 || orderedAreaIds == null || orderedAreaIds.Count == 0)
                 return 0;
 
-            var onThisDay = new HashSet<int>(_prepDaysRepository.GetAll(null)
-                .Where(p => DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays) == dayOfWeekId)
-                .Select(p => p.AreaPrepDaysID));
+            var areaNames = _areasRepository.GetAll("AreaName").ToDictionary(a => a.AreaID, a => a.AreaName ?? string.Empty);
+            var prepDays = _prepDaysRepository.GetAll(null)
+                .Where(p => areaNames.ContainsKey(p.AreaID) && DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays).HasValue)
+                .ToList();
 
-            var ordered = orderedAreaPrepDaysIds.Where(onThisDay.Contains).Distinct().ToList();
+            var overall = AreaOrder(prepDays, areaNames);
+            var onThisDay = new HashSet<int>(prepDays
+                .Where(p => dayOfWeekId == 0 || DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays) == dayOfWeekId)
+                .Select(p => p.AreaID));
+
+            var dayOrder = orderedAreaIds.Where(onThisDay.Contains).Distinct().ToList();
+            if (dayOrder.Count == 0)
+                return 0;
+            dayOrder.AddRange(overall.Where(id => onThisDay.Contains(id) && !dayOrder.Contains(id)));
+
+            int next = 0;
+            for (int i = 0; i < overall.Count; i++)
+            {
+                if (onThisDay.Contains(overall[i]))
+                    overall[i] = dayOrder[next++];
+            }
+
             var newOrders = new List<KeyValuePair<int, short>>();
-            for (int i = 0; i < ordered.Count; i++)
-                newOrders.Add(new KeyValuePair<int, short>(ordered[i], (short)((i + 1) * OrderStep)));
+            for (int i = 0; i < overall.Count; i++)
+            {
+                short order = (short)((i + 1) * OrderStep);
+                int areaId = overall[i];
+                if (prepDays.Any(p => p.AreaID == areaId && p.DeliveryOrder != order))
+                    newOrders.Add(new KeyValuePair<int, short>(areaId, order));
+            }
 
-            return _prepDaysRepository.UpdateDeliveryOrders(newOrders);
+            _prepDaysRepository.UpdateAreaDeliveryOrders(newOrders);
+            return dayOrder.Count;
+        }
+
+        /// <summary>AreaIDs with a delivery day, by area delivery order then name.</summary>
+        private static List<int> AreaOrder(IEnumerable<AreaPrepDays> prepDays, IDictionary<int, string> areaNames)
+        {
+            return prepDays
+                .GroupBy(p => p.AreaID)
+                .Select(g => new { AreaID = g.Key, Order = g.Min(p => (int?)p.DeliveryOrder) ?? int.MaxValue })
+                .OrderBy(a => a.Order)
+                .ThenBy(a => areaNames[a.AreaID], StringComparer.OrdinalIgnoreCase)
+                .Select(a => a.AreaID)
+                .ToList();
         }
 
         /// <summary>

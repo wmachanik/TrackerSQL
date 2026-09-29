@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using TrackerSQL.Models;
@@ -56,28 +53,6 @@ namespace TrackerSQL.Classes
                 ? " style=\"background-color:" + trimmedColour + ";border-color:" + trimmedColour + "\""
                 : string.Empty;
             return "<span class=\"status-badge order-flag-pill\"" + style + ">" + encodedLabel + "</span>";
-        }
-
-        /// <summary>Key for the delivery sheet: each flag that has an icon, as "icon label".</summary>
-        public static string LegendHtml(IEnumerable<InvoiceType> invoiceTypes)
-        {
-            var withIcons = (invoiceTypes ?? Enumerable.Empty<InvoiceType>())
-                .Where(t => HasPill(t) && !string.IsNullOrWhiteSpace(t.PillIcon) && (t.Enabled ?? true))
-                .OrderBy(t => t.InvoiceTypeID)
-                .ToList();
-            if (withIcons.Count == 0)
-                return string.Empty;
-
-            var html = new StringBuilder("<span class=\"order-flag-legend\">");
-            foreach (var invoiceType in withIcons)
-            {
-                html.Append("<span class=\"order-flag-legend-item\">")
-                    .Append(Html(invoiceType))
-                    .Append(HttpUtility.HtmlEncode(invoiceType.PillLabel.Trim()))
-                    .Append("</span>");
-            }
-            html.Append("</span>");
-            return html.ToString();
         }
 
         public static bool IsValidColour(string colour)

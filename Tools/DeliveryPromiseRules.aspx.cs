@@ -47,6 +47,9 @@ namespace TrackerSQL.Tools
                 FillDowDropdown(ddlNewEndDow, 2);
                 FillDowDropdown(ddlNewResultDow, 1, includeAnyWorkday: false);
                 BindNewAreaDropdown();
+                string q = Request.QueryString["q"];
+                if (!string.IsNullOrWhiteSpace(q))
+                    txtSearch.Text = q.Trim();
                 BindGrid();
             }
         }

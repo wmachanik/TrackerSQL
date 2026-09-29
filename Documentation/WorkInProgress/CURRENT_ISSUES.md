@@ -15,8 +15,9 @@
   - Monday: Belville, Durbanville, Hout bay, Maitland/Pinelands, Milnerton, Northern Sub, Paarden Eiland and Simonstown (TokaiNoordhoek rule) are not delivered.
   - Wednesday: Belville, Durbanville, Maitland/Pinelands, Milnerton, Northern Sub.
   - Thursday: the same five plus Hout bay.
-  - Their prep days deliver Tue / Fri instead. Either the promise rules or the prep days need changing.
-- Delivery orders were set per area, so most days show ties ("same number") until each day is saved once on Lookups → Delivery Days. Dubai (Tue) and Knysna (Fri) have two prep days delivering on the same day.
+  - Their prep days deliver Tue / Fri instead. Either the promise rules or the prep days need changing (Delivery Days links to both).
+  - Possible follow-up: build the website promise from the prep days instead of keeping separate promise rules, so they cannot disagree.
+- Delivery orders differed between an area's prep days and were shared between areas; `SQLCommands-AreaDeliveryOrder-01.xml` fixed that on dev (areas ranked by their lowest order). Check the result on Delivery Days → All areas. Dubai has two prep days delivering on Tuesday (prepped Tue + 7 days and Wed + 6 days).
 
 ## Open items after 3.0.3.0 (2026-09-29)
 

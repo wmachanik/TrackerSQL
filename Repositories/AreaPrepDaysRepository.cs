@@ -49,23 +49,48 @@ namespace TrackerSQL.Repositories
             return ExecNonQuery(sql, parameters);
         }
 
-        /// <summary>Sets DeliveryOrder on several prep-day rows in one batch. Returns rows updated.</summary>
-        public int UpdateDeliveryOrders(IList<KeyValuePair<int, short>> deliveryOrdersById)
+        /// <summary>
+        /// Sets the area delivery order on every prep-day row of each area, in one batch.
+        /// An area has one delivery order: all of its prep-day rows carry the same value.
+        /// </summary>
+        public int UpdateAreaDeliveryOrders(IList<KeyValuePair<int, short>> deliveryOrdersByAreaId)
         {
-            if (deliveryOrdersById == null || deliveryOrdersById.Count == 0)
+            if (deliveryOrdersByAreaId == null || deliveryOrdersByAreaId.Count == 0)
                 return 0;
 
             var sql = new System.Text.StringBuilder();
             var parameters = new List<DBParameter>();
-            for (int i = 0; i < deliveryOrdersById.Count; i++)
+            for (int i = 0; i < deliveryOrdersByAreaId.Count; i++)
             {
                 sql.Append("UPDATE AreaPrepDaysTbl SET DeliveryOrder = @o").Append(i)
-                   .Append(" WHERE AreaPrepDaysID = @id").Append(i).Append(";\n");
-                parameters.Add(new DBParameter { ParamName = "@o" + i, DataValue = deliveryOrdersById[i].Value, DataDbType = DbType.Int16 });
-                parameters.Add(new DBParameter { ParamName = "@id" + i, DataValue = deliveryOrdersById[i].Key, DataDbType = DbType.Int32 });
+                   .Append(" WHERE AreaID = @a").Append(i).Append(";\n");
+                parameters.Add(new DBParameter { ParamName = "@o" + i, DataValue = deliveryOrdersByAreaId[i].Value, DataDbType = DbType.Int16 });
+                parameters.Add(new DBParameter { ParamName = "@a" + i, DataValue = deliveryOrdersByAreaId[i].Key, DataDbType = DbType.Int32 });
             }
 
             return ExecNonQuery(sql.ToString(), parameters);
+        }
+
+        /// <summary>
+        /// Delivery order for a new prep-day row: the area's existing order, or after every other area
+        /// when it is the area's first prep day.
+        /// </summary>
+        public short GetDeliveryOrderForNewPrepDay(int areaId)
+        {
+            const string sql = @"
+                SELECT COALESCE(
+                    (SELECT MIN(DeliveryOrder) FROM AreaPrepDaysTbl WHERE AreaID = @AreaID),
+                    (SELECT ISNULL(MAX(DeliveryOrder), 0) + 10 FROM AreaPrepDaysTbl))";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@AreaID", DataValue = areaId, DataDbType = DbType.Int32 }
+            };
+            using (var db = CreateDb())
+            {
+                object result = db.ExecuteScalar(sql, parameters);
+                return result == null || result == DBNull.Value ? (short)10 : Convert.ToInt16(result);
+            }
         }
 
         /// <summary>

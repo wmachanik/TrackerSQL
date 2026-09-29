@@ -1,4 +1,4 @@
-﻿/* Rev: 20260929-02
+﻿/* Rev: 20260929-03
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -8992,7 +8992,16 @@ table.grouping-table .image-button > a {
 
 /* Lookups → Delivery Days (one day at a time, rows reordered by drag or ▲ ▼) */
 .delivery-days-help {
+    max-width: 60rem;
+    margin: 0.5rem 0;
     color: #666;
+}
+
+.delivery-days-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
 }
 
 .delivery-days {
@@ -9118,10 +9127,6 @@ table.grouping-table .image-button > a {
     opacity: 0.45;
 }
 
-.delivery-days-row.is-tied {
-    border-left-color: #fd7e14;
-}
-
 .delivery-days-row.is-duplicate {
     border-left-color: #dc3545;
 }
@@ -9166,10 +9171,8 @@ table.grouping-table .image-button > a {
     border-color: #b7d9c0;
 }
 
-.delivery-days-tag.is-warn {
-    color: #9a4a1f;
-    background: #fdf0e6;
-    border-color: #e8c4a0;
+a.delivery-days-tag.is-promise:hover {
+    text-decoration: underline;
 }
 
 .delivery-days-tag.is-error {
@@ -9223,6 +9226,21 @@ table.grouping-table .image-button > a {
     color: #666;
 }
 
+.delivery-days-check-fix a {
+    min-width: 0;
+    margin-left: 0.75em;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.delivery-days-check-fix a:first-child {
+    margin-left: 0.5em;
+}
+
+.delivery-days-pick.is-all {
+    margin-left: 0.75rem;
+}
+
 /* Order flag pill (Lookups → Invoice Types colour is set inline) */
 .status-badge.order-flag-pill {
     color: #fff;
@@ -9233,36 +9251,23 @@ table.grouping-table .image-button > a {
     margin-right: 0.35em;
 }
 
-/* Icon form: round, white, coloured ring; the label is the tooltip */
+/* Icon form: small round badge with a thin coloured ring; the label is the tooltip */
 .status-badge.order-flag-pill.is-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.7em;
-    height: 1.7em;
-    padding: 0 0.2em;
-    font-size: 1.05em;
-    border-width: 2px;
+    width: 1.35em;
+    height: 1.35em;
+    padding: 0;
+    margin-right: 0.2em;
+    font-size: 0.95em;
+    border-width: 1.5px;
     border-radius: 999px;
     background: #fff;
     color: #333;
     line-height: 1;
     vertical-align: middle;
     cursor: help;
-}
-
-.order-flag-legend {
-    float: left;
-    color: #555;
-}
-
-.order-flag-legend-item {
-    margin-right: 0.9em;
-    white-space: nowrap;
-}
-
-.order-flag-legend-item .order-flag-pill {
-    margin-right: 0.25em;
 }
 
 /* Nested detail grid inside a grouping card — chrome only */

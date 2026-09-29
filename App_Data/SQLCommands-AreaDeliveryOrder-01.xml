@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  3.0.3.1 one delivery order per area (AreaPrepDaysTbl.DeliveryOrder).
+  The delivery sheet sorts each driver's deliveries by the area's delivery order, so every prep-day row of an
+  area must carry the same number and no two areas may share one. Lookups -> Delivery Days keeps it that way.
+  This pack fixes existing data once: areas are ranked by their lowest current order (then name) and
+  renumbered 10, 20, 30 ... on all of their prep-day rows.
+  Idempotent: only runs while an area has differing / missing orders or two areas share a number.
+  Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.AreaPrepDaysTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.AreasTbl', N'U') IS NOT NULL
+         AND (   EXISTS (SELECT 1 FROM dbo.AreaPrepDaysTbl WHERE DeliveryOrder IS NULL)
+              OR EXISTS (SELECT 1 FROM dbo.AreaPrepDaysTbl GROUP BY AreaID HAVING MIN(DeliveryOrder) <> MAX(DeliveryOrder))
+              OR EXISTS (SELECT 1
+                         FROM (SELECT AreaID, MIN(DeliveryOrder) AS AreaOrder FROM dbo.AreaPrepDaysTbl GROUP BY AreaID) x
+                         GROUP BY x.AreaOrder
+                         HAVING COUNT(*) > 1))
+      BEGIN
+          ;WITH AreaRank AS (
+              SELECT p.AreaID,
+                     ROW_NUMBER() OVER (ORDER BY ISNULL(MIN(p.DeliveryOrder), 32767), MIN(ISNULL(a.AreaName, N'')), p.AreaID) AS RankNo
+              FROM dbo.AreaPrepDaysTbl p
+              LEFT JOIN dbo.AreasTbl a ON a.AreaID = p.AreaID
+              GROUP BY p.AreaID
+          )
+          UPDATE p
+          SET DeliveryOrder = r.RankNo * 10
+          FROM dbo.AreaPrepDaysTbl p
+          JOIN AreaRank r ON r.AreaID = p.AreaID;
+      END
+    ]]>
+  </command>
+</root>

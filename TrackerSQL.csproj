@@ -318,6 +318,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-OrderFlags-01.xml" />
     <Content Include="App_Data\SQLCommands-OrderFlags-02-ResetContacts.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-OrderFlags-02-ResetContacts.xml" />
+    <Content Include="App_Data\SQLCommands-AreaDeliveryOrder-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-AreaDeliveryOrder-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />

@@ -2642,9 +2642,8 @@ namespace TrackerSQL.Pages
             {
                 DropDownList control1 = FindControlRecursive(gvAreaDays, "ddlPreperationDoW") as DropDownList;
                 TextBox control2 = FindControlRecursive(gvAreaDays, "tbxDeliveryDelay") as TextBox;
-                TextBox control3 = FindControlRecursive(gvAreaDays, "tbxDeliveryOrder") as TextBox;
 
-                if (control1 == null || control2 == null || control3 == null)
+                if (control1 == null || control2 == null)
                 {
                     lblStatus.Text = "Could not find delivery-day fields to add.";
                     return;
@@ -2663,7 +2662,7 @@ namespace TrackerSQL.Pages
                     AreaID = areaId,
                     PrepDayOfWeekID = string.IsNullOrEmpty(control1.SelectedValue) ? (byte?)null : Convert.ToByte(control1.SelectedValue),
                     DeliveryDelayDays = string.IsNullOrEmpty(control2.Text) ? (short?)null : Convert.ToInt16(control2.Text),
-                    DeliveryOrder = string.IsNullOrEmpty(control3.Text) ? (short?)null : Convert.ToInt16(control3.Text)
+                    DeliveryOrder = new AreaPrepDaysRepository().GetDeliveryOrderForNewPrepDay(areaId)
                 };
 
                 var sql = "INSERT INTO AreaPrepDaysTbl (AreaID, PrepDayOfWeekID, DeliveryDelayDays, DeliveryOrder) VALUES (@a, @p, @d, @o)";
@@ -2720,7 +2719,6 @@ namespace TrackerSQL.Pages
                     GridViewRow gridViewRow = e.CommandName.Equals("Update") ? this.gvAreaDays.Rows[this.gvAreaDays.EditIndex] : this.gvAreaDays.FooterRow;
                     DropDownList control1 = (DropDownList)gridViewRow.FindControl("ddlPreperationDoW");
                     TextBox control2 = (TextBox)gridViewRow.FindControl("tbxDeliveryDelay");
-                    TextBox control3 = (TextBox)gridViewRow.FindControl("tbxDeliveryOrder");
                     var controlId = (HiddenField)gridViewRow.FindControl("AreaPrepDaysIDHidden");
 
                     int areaId = Convert.ToInt32(this.gvAreas.SelectedDataKey.Value);
@@ -2729,26 +2727,25 @@ namespace TrackerSQL.Pages
                     {
                         AreaID = areaId,
                         PrepDayOfWeekID = string.IsNullOrEmpty(control1.SelectedValue) ? (byte?)null : Convert.ToByte(control1.SelectedValue),
-                        DeliveryDelayDays = string.IsNullOrEmpty(control2.Text) ? (short?)null : Convert.ToInt16(control2.Text),
-                        DeliveryOrder = string.IsNullOrEmpty(control3.Text) ? (short?)null : Convert.ToInt16(control3.Text)
+                        DeliveryDelayDays = string.IsNullOrEmpty(control2.Text) ? (short?)null : Convert.ToInt16(control2.Text)
                     };
 
                     if (e.CommandName.Equals("Update"))
                     {
                         prepDay.AreaPrepDaysID = controlId != null ? Convert.ToInt32(controlId.Value) : 0;
-                        var sql = "UPDATE AreaPrepDaysTbl SET AreaID=@a, PrepDayOfWeekID=@p, DeliveryDelayDays=@d, DeliveryOrder=@o WHERE AreaPrepDaysID=@id";
+                        var sql = "UPDATE AreaPrepDaysTbl SET AreaID=@a, PrepDayOfWeekID=@p, DeliveryDelayDays=@d WHERE AreaPrepDaysID=@id";
                         var p = new List<TrackerSQL.Classes.DBParameter>
                         {
                             new TrackerSQL.Classes.DBParameter { ParamName = "@a", DataDbType = System.Data.DbType.Int32, DataValue = prepDay.AreaID },
                             new TrackerSQL.Classes.DBParameter { ParamName = "@p", DataDbType = System.Data.DbType.Byte, DataValue = (object)prepDay.PrepDayOfWeekID ?? DBNull.Value },
                             new TrackerSQL.Classes.DBParameter { ParamName = "@d", DataDbType = System.Data.DbType.Int16, DataValue = (object)prepDay.DeliveryDelayDays ?? DBNull.Value },
-                            new TrackerSQL.Classes.DBParameter { ParamName = "@o", DataDbType = System.Data.DbType.Int16, DataValue = (object)prepDay.DeliveryOrder ?? DBNull.Value },
                             new TrackerSQL.Classes.DBParameter { ParamName = "@id", DataDbType = System.Data.DbType.Int32, DataValue = prepDay.AreaPrepDaysID },
                         };
                         ExecNonQuery(sql, p);
                     }
                     else
                     {
+                        prepDay.DeliveryOrder = new AreaPrepDaysRepository().GetDeliveryOrderForNewPrepDay(areaId);
                         var sql = "INSERT INTO AreaPrepDaysTbl (AreaID, PrepDayOfWeekID, DeliveryDelayDays, DeliveryOrder) VALUES (@a, @p, @d, @o)";
                         var p = new List<TrackerSQL.Classes.DBParameter>
                         {
@@ -2803,7 +2800,7 @@ namespace TrackerSQL.Pages
         /// <summary>Day shown: the one last picked, else today when it has deliveries, else the first day with deliveries.</summary>
         private int ResolveDeliveryDaysDay(AreaWeekBoard board)
         {
-            if (int.TryParse(hdnDeliveryDaysDay?.Value, out int picked) && board.Days.Any(d => d.DayOfWeekID == picked))
+            if (int.TryParse(hdnDeliveryDaysDay?.Value, out int picked) && (picked == 0 || board.Days.Any(d => d.DayOfWeekID == picked)))
                 return picked;
 
             int today = (int)DateTime.Today.DayOfWeek + 1;
@@ -2835,6 +2832,9 @@ namespace TrackerSQL.Pages
                 html.AppendFormat("<button type=\"button\" class=\"{0}\" data-dow=\"{1}\">{2}<span class=\"delivery-days-pick-count\">{3}</span>{4}</button>",
                     cssClass, day.DayOfWeekID, day.DayName, day.Cards.Count, warning);
             }
+            html.AppendFormat("<button type=\"button\" class=\"delivery-days-pick is-all{0}\" data-dow=\"0\" title=\"Every area in delivery order\">All areas"
+                + "<span class=\"delivery-days-pick-count\">{1}</span></button>",
+                activeDay == 0 ? " is-active" : string.Empty, board.AllAreas.Cards.Count);
             html.Append("</div>");
 
             if (board.Unassigned.Count > 0)
@@ -2844,19 +2844,33 @@ namespace TrackerSQL.Pages
                     .Append(". These areas have no prep days, so they never appear on a delivery sheet.</p>");
             }
 
+            bool canEditPromises = CanEditPromiseRules();
             foreach (var day in board.Days)
-                RenderDeliveryDay(html, day, day.DayOfWeekID == activeDay);
+                RenderDeliveryDay(html, day, day.DayOfWeekID == activeDay, canEditPromises);
+            RenderDeliveryDay(html, board.AllAreas, activeDay == 0, canEditPromises);
 
             html.Append("</div>");
             return html.ToString();
         }
 
-        private static void RenderDeliveryDay(System.Text.StringBuilder html, AreaWeekDay day, bool active)
+        /// <summary>Delivery Promise Rules (System Tools) is for administrators only.</summary>
+        private bool CanEditPromiseRules()
         {
-            string dayName = AreaWeekBoardManager.FullDayName(day.DayOfWeekID);
+            var user = Context?.User;
+            return user != null && user.Identity != null && user.Identity.IsAuthenticated &&
+                   (user.IsInRole("Administrators") || user.IsInRole("Admin"));
+        }
+
+        private static void RenderDeliveryDay(System.Text.StringBuilder html, AreaWeekDay day, bool active, bool canEditPromises)
+        {
+            bool allAreas = day.DayOfWeekID == 0;
+            string dayName = allAreas ? "All areas" : AreaWeekBoardManager.FullDayName(day.DayOfWeekID);
             html.AppendFormat("<section class=\"delivery-days-day{0}\" data-dow=\"{1}\">", active ? " is-active" : string.Empty, day.DayOfWeekID);
             html.AppendFormat("<h4 class=\"delivery-days-title\">{0} <span>{1} area{2}</span></h4>",
                 dayName, day.Cards.Count, day.Cards.Count == 1 ? string.Empty : "s");
+            if (allAreas)
+                html.Append("<p class=\"delivery-days-note\">Every area in delivery order. Each day lists its areas in this same order, "
+                    + "so moving an area here moves it on all of its days.</p>");
 
             if (day.Cards.Count == 0)
             {
@@ -2869,25 +2883,30 @@ namespace TrackerSQL.Pages
                 foreach (var card in day.Cards)
                 {
                     position++;
-                    string cssClass = "delivery-days-row"
-                        + (card.OrderTied ? " is-tied" : string.Empty)
-                        + (card.DuplicateOnDay ? " is-duplicate" : string.Empty);
-                    string prep = card.DeliveryDelayDays == 0
-                        ? "prepped and delivered on " + dayName
-                        : string.Format("prepped {0}, {1} day{2} to deliver", AreaWeekBoardManager.FullDayName(card.PrepDayOfWeekID),
-                            card.DeliveryDelayDays, card.DeliveryDelayDays == 1 ? string.Empty : "s");
+                    string cssClass = "delivery-days-row" + (card.DuplicateOnDay ? " is-duplicate" : string.Empty);
+                    string prep = allAreas
+                        ? "delivered " + string.Join(", ", card.DeliveryDays.Select(AreaWeekBoardManager.DayName))
+                        : string.Join("; ", card.Preps.Select(p => p.DeliveryDelayDays == 0
+                            ? "prepped and delivered on " + dayName
+                            : string.Format("prepped {0}, {1} day{2} to deliver", AreaWeekBoardManager.FullDayName(p.PrepDayOfWeekID),
+                                p.DeliveryDelayDays, p.DeliveryDelayDays == 1 ? string.Empty : "s")));
 
-                    html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\">", cssClass, card.AreaPrepDaysID);
+                    html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\">", cssClass, card.AreaID);
                     html.Append("<span class=\"delivery-days-grip\" title=\"Drag to move\">&#8942;&#8942;</span>");
                     html.AppendFormat("<span class=\"delivery-days-pos\">{0}</span>", position);
                     html.Append(DeliveryDaysOpenLink(card.AreaID, card.AreaName));
                     html.AppendFormat("<span class=\"delivery-days-prep\">{0}</span>", HttpUtility.HtmlEncode(prep));
                     html.Append("<span class=\"delivery-days-tags\">");
                     if (!string.IsNullOrEmpty(card.PromiseText))
-                        html.AppendFormat("<span class=\"delivery-days-tag is-promise\" title=\"The website promises {0} delivery for {1}\">on website</span>",
-                            dayName, HttpUtility.HtmlAttributeEncode(card.PromiseText));
-                    if (card.OrderTied)
-                        html.Append("<span class=\"delivery-days-tag is-warn\" title=\"Same delivery order number as another area on this day. Save Delivery Order renumbers the day.\">same number</span>");
+                    {
+                        string promiseTitle = string.Format("The website promises {0} delivery for {1}", dayName, card.PromiseText);
+                        if (canEditPromises)
+                            html.AppendFormat("<a class=\"delivery-days-tag is-promise\" href=\"{0}\" target=\"_blank\" title=\"{1} — click to open its promise rules\">on website</a>",
+                                PromiseRulesUrl(card.AreaName), HttpUtility.HtmlAttributeEncode(promiseTitle));
+                        else
+                            html.AppendFormat("<span class=\"delivery-days-tag is-promise\" title=\"{0}\">on website</span>",
+                                HttpUtility.HtmlAttributeEncode(promiseTitle));
+                    }
                     if (card.DuplicateOnDay)
                         html.AppendFormat("<span class=\"delivery-days-tag is-error\" title=\"Two of this area's prep days deliver on {0}. Check its prep days.\">twice</span>", dayName);
                     html.Append("</span>");
@@ -2903,11 +2922,18 @@ namespace TrackerSQL.Pages
                 html.Append("<div class=\"delivery-days-check\">");
                 html.AppendFormat("<div class=\"delivery-days-check-title\">&#9888; Website promises {0} delivery, but these areas are not delivered on {0}</div>", dayName);
                 html.AppendFormat("<p>The Delivery Promise Rules (System Tools) tell customers in these areas that orders placed in the window shown arrive on {0}, "
-                    + "but none of the area's prep days deliver on {0}. Add a prep day that delivers on {0} (click the area), or change the rule.</p>", dayName);
+                    + "but none of the area's prep days deliver on {0}. Fix whichever is wrong: add a prep day that delivers on {0}, or change the promise rule.</p>", dayName);
                 html.Append("<ul>");
                 foreach (var gap in day.PromiseGaps)
-                    html.AppendFormat("<li>{0} <span class=\"delivery-days-check-window\">{1}</span></li>",
-                        DeliveryDaysOpenLink(gap.AreaID, gap.AreaName), HttpUtility.HtmlEncode(gap.PromiseText));
+                {
+                    html.AppendFormat("<li><strong>{0}</strong> <span class=\"delivery-days-check-window\">{1}</span> <span class=\"delivery-days-check-fix\">",
+                        HttpUtility.HtmlEncode(gap.AreaName), HttpUtility.HtmlEncode(gap.PromiseText));
+                    html.AppendFormat("<a href=\"#\" class=\"delivery-days-open\" data-area=\"{0}\" title=\"Open this area's prep days on the Areas tab\">edit prep days</a>", gap.AreaID);
+                    if (canEditPromises)
+                        html.AppendFormat("<a href=\"{0}\" target=\"_blank\" title=\"Open the Delivery Promise Rules for this area in a new tab\">edit promise rules</a>",
+                            PromiseRulesUrl(gap.AreaName));
+                    html.Append("</span></li>");
+                }
                 html.Append("</ul></div>");
             }
 
@@ -2918,6 +2944,11 @@ namespace TrackerSQL.Pages
         {
             return string.Format("<a href=\"#\" class=\"delivery-days-open\" data-area=\"{0}\" title=\"Edit this area's prep days\">{1}</a>",
                 areaId, HttpUtility.HtmlEncode(areaName));
+        }
+
+        private static string PromiseRulesUrl(string areaName)
+        {
+            return HttpUtility.HtmlAttributeEncode("../Tools/DeliveryPromiseRules.aspx?q=" + HttpUtility.UrlEncode(areaName ?? string.Empty));
         }
 
         protected void btnDeliveryDaysSave_Click(object sender, EventArgs e)
@@ -2934,7 +2965,7 @@ namespace TrackerSQL.Pages
             {
                 var manager = new AreaWeekBoardManager();
                 var savedDays = new List<string>();
-                int savedRows = 0;
+                int savedAreas = 0;
                 foreach (string dayPart in posted.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     string[] pieces = dayPart.Split(':');
@@ -2948,22 +2979,23 @@ namespace TrackerSQL.Pages
                     int saved = manager.SaveDayOrder(dayOfWeekId, ids);
                     if (saved > 0)
                     {
-                        savedRows += saved;
-                        savedDays.Add(AreaWeekBoardManager.FullDayName(dayOfWeekId));
+                        savedAreas += saved;
+                        savedDays.Add(dayOfWeekId == 0 ? "all areas" : AreaWeekBoardManager.FullDayName(dayOfWeekId));
                     }
                 }
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
-                    "Lookups: area delivery order saved for " + string.Join(", ", savedDays) + " (" + savedRows + " rows).");
+                    "Lookups: area delivery order saved from " + string.Join(", ", savedDays) + " (" + savedAreas + " areas moved).");
                 SetLookupStatus(savedDays.Count == 0
                     ? "Nothing saved — the list may be out of date. Undo Changes to reload it."
-                    : "Delivery order saved for " + string.Join(", ", savedDays) + ".", savedDays.Count == 0 ? (bool?)true : false);
+                    : "Delivery order saved (" + string.Join(", ", savedDays) + "). Areas are renumbered 10, 20, 30 ... in that order.",
+                    savedDays.Count == 0 ? (bool?)true : false);
 
+                _areaDeliveryOrders = null;
+                BindAreasGrid();
                 if (gvAreaDays.Visible)
-                {
                     BindAreaDaysGrid();
-                    upnlAreas.Update();
-                }
+                upnlAreas.Update();
             }
             catch (Exception ex)
             {
@@ -3000,6 +3032,22 @@ namespace TrackerSQL.Pages
             gvAreaDays.Visible = true;
             BindAreaDaysGrid();
             upnlAreas.Update();
+        }
+
+        private Dictionary<int, int?> _areaDeliveryOrders;
+
+        /// <summary>Areas grid: the area's delivery order (set on the Delivery Days tab); blank when it has no prep days.</summary>
+        public string GetAreaDeliveryOrderText(object areaId)
+        {
+            if (areaId == null || areaId == DBNull.Value || !int.TryParse(areaId.ToString(), out int id))
+                return string.Empty;
+
+            if (_areaDeliveryOrders == null)
+                _areaDeliveryOrders = new AreaWeekBoardManager().GetAreaDeliveryOrders();
+
+            return _areaDeliveryOrders.TryGetValue(id, out int? order) && order.HasValue
+                ? order.Value.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
         }
 
         public string GetPrepDayName(object prepDayOfWeekId)

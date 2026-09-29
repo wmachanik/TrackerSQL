@@ -9,24 +9,27 @@ Release notes for shipped TrackerSQL versions. Newest first.
   - **Recurring Order Details:** new *Order Flag* list (new recurring orders start with the contact's account type). Orders the recurring order creates carry its flag.
   - **Order Detail:** new *Order Flag* list under P/Order. *Contact default (…)* uses the contact's account type; any other choice is saved on that order only. Changes show in the header change summary.
   - The popup that offered to change the contact's account type when a recurring order was added or disabled is gone. Disabling a recurring order now only asks whether to turn prediction back on.
-- **Delivery sheet flag icons** — the order's flag shows as a small round icon beside the contact name (📝 Delivery note, 📦 Dispatch note, 🎁 Gift, 💵 Cash receipt, 🧪 Sample), replacing the `dN` / `d#` name prefixes. Hovering shows the full name, and a key under the sheet lists the icons. Print view shows the name only.
+- **Delivery sheet flag icons** — the order's flag shows as a small round icon beside the contact name (📝 Delivery note, 📦 Dispatch note, 🎁 Gift, 💵 Cash receipt, 🧪 Sample), replacing the `dN` / `d#` name prefixes. Hovering shows the full name (the icons are set in Lookups → Invoice Types). Print view shows the name only.
 - **Lookups → Invoice Types** — new *Delivery Sheet Pill* column: label, colour (`#rrggbb` or a colour name) and icon (an emoji or a short code; Windows + . opens the emoji picker). With no icon the label is shown as a coloured pill; an empty label shows nothing.
-- **Lookups → Delivery Days** — new tab (the Areas tab is unchanged). Pick a day (Mon–Sun, with the number of areas) to see the areas delivered that day (prep day + delivery delay), one per line, in delivery order.
-  - Drag areas (or use ▲ ▼) and click *Save Delivery Order* (*Undo Changes* discards them); the day is renumbered 10, 20, 30…
-  - Tags: *on website* (the Delivery Promise Rules promise this day for the area), *same number* (two areas share a delivery order number; saving the day fixes it), *twice* (two of the area's prep days deliver that day).
-  - **Website promise check:** under each day, the areas the Delivery Promise Rules promise for that day (with the ordering window, e.g. "orders Thu 08:00 – Fri 13:00") but which none of their prep days deliver on. Days with such areas show ⚠. Areas with no prep days at all are listed at the top.
+- **Lookups → Delivery Days** — new tab where the area delivery order is set. The delivery sheet lists each driver's deliveries area by area in this order. Pick a day (Mon–Sun, with the number of areas) to see the areas delivered that day (prep day + delivery delay), one per line, in delivery order; *All areas* shows every area with its delivery days.
+  - Drag areas (or use ▲ ▼) and click *Save Delivery Order* (*Undo Changes* discards them). Each area has **one** delivery order: moving an area on one day moves it on all of its days, and every area is renumbered 10, 20, 30…
+  - Tags: *on website* (the Delivery Promise Rules promise this day for the area; admins can click it to open those rules), *twice* (two of the area's prep days deliver that day).
+  - **Website promise check:** under each day, the areas the Delivery Promise Rules promise for that day (with the ordering window, e.g. "orders Thu 08:00 – Fri 13:00") but which none of their prep days deliver on, each with *edit prep days* and (for admins) *edit promise rules* links. Days with such areas show ⚠. Areas with no prep days at all are listed at the top.
   - Clicking an area opens it on the Areas tab with its prep days.
+- **Lookups → Areas** — new read-only *Dlvry Order* column (the area's delivery order). In the prep days list the order is shown but no longer typed in; a new prep day takes the area's order (or goes last for an area's first prep day).
+- **Delivery Promise Rules** — `?q=` pre-fills the search (used by the Delivery Days links).
 
 ### Fixes
-- **Delivery order per day** — the delivery sheet and the driver app sort by the delivery order of the area's prep day that delivers on the order's date, instead of the area's lowest delivery order across all days.
+- **One delivery order per area** — an area's prep days could carry different delivery orders, and different areas could share a number, so the sheet mixed those areas' deliveries (falling back to company name). `SQLCommands-AreaDeliveryOrder-01.xml` fixes existing data once (ranked by each area's lowest order, then name; renumbered 10, 20, 30…) and Delivery Days keeps it consistent.
 
 ### Housekeeping
 - Old migration SQL scripts and tooling removed from the project (archived outside the repository). Schema changes are documented in the `App_Data/SQLCommands-*.xml` packs (Hard Rule #0d).
 
 ### Go-live notes
 - `SQLCommands-OrderFlags-01.xml` runs automatically at startup: it adds the pill columns (label, colour, icon) and the flag columns, and sets the flag on recurring orders and open orders from the contact's current account type (the old rule).
+- `SQLCommands-AreaDeliveryOrder-01.xml` also runs at startup: it gives every area one delivery order (only while areas have differing or shared numbers). Check the order on Lookups → Delivery Days → *All areas* after go-live.
 - Then run **XMLtoSQL → `SQLCommands-OrderFlags-02-ResetContacts.xml`** once. It lists, then resets to Standard, the contacts whose account type is Delivery note / Dispatch note and who have an enabled recurring order, and adds a dated line to their notes. Without it their extra (non-recurring) orders keep defaulting to the note type.
-- Both packs are also in `App_Data/GoLive/`.
+- All three packs are also in `App_Data/GoLive/`.
 
 ## 3.0.3.0 — 2026-09-28 (live 2026-09-29)
 

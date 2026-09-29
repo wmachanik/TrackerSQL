@@ -10,6 +10,7 @@ Release notes for shipped TrackerSQL versions. Newest first.
   - **Order Detail:** new *Order Flag* list under P/Order. *Contact default (…)* uses the contact's account type; any other choice is saved on that order only. Changes show in the header change summary.
   - The popup that offered to change the contact's account type when a recurring order was added or disabled is gone. Disabling a recurring order now only asks whether to turn prediction back on.
 - **Delivery sheet flag icons** — the order's flag shows as a small round icon beside the contact name (📝 Delivery note, 📦 Dispatch note, 🎁 Gift, 💵 Cash receipt, 🧪 Sample), replacing the `dN` / `d#` name prefixes. Hovering shows the full name (the icons are set in Lookups → Invoice Types). Print view shows the name only.
+- **Delivery sheet area pill** — optional small pill before the contact name with a three-letter area code: the first three consonants of the area name (Constantia → `cns`, Cape Town → `cpt`); hovering shows the full area name. Shown on screen and on the printed sheet. Turn it on or off in **System Preferences → General → Show Area on Delivery Sheet** (on by default).
 - **Lookups → Invoice Types** — new *Delivery Sheet Pill* column: label, colour (`#rrggbb` or a colour name) and icon (an emoji or a short code; Windows + . opens the emoji picker). With no icon the label is shown as a coloured pill; an empty label shows nothing.
 - **Lookups → Delivery Days** — new tab where the area delivery order is set. The delivery sheet lists each driver's deliveries area by area in this order. Pick a day (Mon–Sun, with the number of areas) to see the areas delivered that day (prep day + delivery delay), one per line, in delivery order; *All areas* shows every area with its delivery days.
   - Drag areas (or use ▲ ▼) and click *Save Delivery Order* (*Undo Changes* discards them). Each area has **one** delivery order: moving an area on one day moves it on all of its days, and every area is renumbered 10, 20, 30…
@@ -29,7 +30,7 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 ### Go-live notes
 - `SQLCommands-OrderFlags-01.xml` runs automatically at startup: it adds the pill columns (label, colour, icon) and the flag columns, and sets the flag on recurring orders and open orders from the contact's current account type (the old rule).
-- `SQLCommands-AreaDeliveryOrder-01.xml` also runs at startup: it gives every area one delivery order (only while areas have differing or shared numbers). Check the order on Lookups → Delivery Days → *All areas* after go-live.
+- `SQLCommands-AreaDeliveryOrder-01.xml` also runs at startup: it adds `SysDataTbl.ShowAreaOnDeliverySheet` (default on) and gives every area one delivery order (only while areas have differing or shared numbers). Check the order on Lookups → Delivery Days → *All areas* after go-live.
 - Then run **XMLtoSQL → `SQLCommands-OrderFlags-02-ResetContacts.xml`** once. It lists, then resets to Standard, the contacts whose account type is Delivery note / Dispatch note and who have an enabled recurring order, and adds a dated line to their notes. Without it their extra (non-recurring) orders keep defaulting to the note type.
 - All three packs are also in `App_Data/GoLive/`.
 

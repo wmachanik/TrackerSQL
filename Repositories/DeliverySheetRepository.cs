@@ -173,6 +173,7 @@ namespace TrackerSQL.Repositories
                     ip.ItemPrepDescription AS PackDesc,
                     ip.BGColour,
                     p.Abbreviation AS DeliveryByAbbreviation,
+                    ar.AreaName,
                     COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
@@ -181,6 +182,8 @@ namespace TrackerSQL.Repositories
                     ON o.ContactID = c.ContactID
                 LEFT JOIN PeopleTbl p
                     ON o.ToBeDeliveredByID = p.PersonID
+                LEFT JOIN AreasTbl ar
+                    ON ar.AreaID = c.AreaID
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i
@@ -283,6 +286,7 @@ namespace TrackerSQL.Repositories
                 PackDesc = GetString(rdr, "PackDesc"),
                 BGColour = GetString(rdr, "BGColour"),
                 DeliveryByAbbreviation = GetString(rdr, "DeliveryByAbbreviation"),
+                AreaName = GetString(rdr, "AreaName"),
                 InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID")
             };
         }

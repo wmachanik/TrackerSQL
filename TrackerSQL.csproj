@@ -458,6 +458,7 @@
     <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
     <Compile Include="Managers\MobileApiSchemaInstaller.cs" />
     <Compile Include="Managers\OrderFlagsSchemaInstaller.cs" />
+    <Compile Include="Classes\AreaPill.cs" />
     <Compile Include="Classes\OrderFlagPill.cs" />
     <Compile Include="Managers\AreaWeekBoardManager.cs" />
     <Compile Include="Models\AreaWeekBoard.cs" />

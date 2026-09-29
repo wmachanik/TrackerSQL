@@ -422,8 +422,8 @@ namespace TrackerSQL.Pages
 
                 if (pPrintForm)
                 {
-                    // Flags are for invoicing, not the driver — the printed sheet shows the name only.
-                    string contactName = currentItem.ContactName;
+                    // Flags are for invoicing, not the driver — the printed sheet shows the area and name only.
+                    string contactName = currentItem.AreaPillHtml + currentItem.ContactName;
                     cellContact.Text = currentItem.Done ? "done · " + contactName : contactName;
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
@@ -436,6 +436,7 @@ namespace TrackerSQL.Pages
                     cellContact.Text =
                         FormatDeliveryStatusBadge(currentItem.Done) +
                         currentItem.FlagPillHtml +
+                        currentItem.AreaPillHtml +
                         $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{currentItem.ContactName}</a>";
 
                     cellContact.CssClass = "wordwrap";
@@ -939,10 +940,11 @@ namespace TrackerSQL.Pages
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
         }
 
-        /// <summary>Sheet manager with the order flag lookup (flag icons show their name as a tooltip).</summary>
+        /// <summary>Sheet manager with the order flag lookup (flag icons show their name as a tooltip) and the area pill option.</summary>
         private static DeliverySheetManager CreateSheetManager()
         {
-            return new DeliverySheetManager(new InvoiceTypesRepository().GetAllById());
+            return new DeliverySheetManager(new InvoiceTypesRepository().GetAllById(),
+                new SysDataRepository().GetShowAreaOnDeliverySheet());
         }
 
         /// <summary>

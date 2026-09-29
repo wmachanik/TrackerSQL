@@ -168,6 +168,8 @@
                                                 </EditItemTemplate>
                                             </asp:TemplateField>
                                             <asp:BoundField DataField="InternalContactIDs" HeaderText="Internal Contact IDs" NullDisplayText="(none)" />
+                                            <asp:CheckBoxField DataField="ShowAreaOnDeliverySheet"
+                                                HeaderText="Show Area on Delivery Sheet (3-letter pill before the name, e.g. cns = Constantia)" />
                                             <asp:CommandField ShowEditButton="True" ButtonType="Image"
                                                 EditImageUrl="~/images/imgButtons/EditItem.gif"
                                                 UpdateImageUrl="~/images/imgButtons/UpdateItem.gif"

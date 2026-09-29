@@ -6,9 +6,21 @@
   This pack fixes existing data once: areas are ranked by their lowest current order (then name) and
   renumbered 10, 20, 30 ... on all of their prep-day rows.
   Idempotent: only runs while an area has differing / missing orders or two areas share a number.
+  Also adds SysDataTbl.ShowAreaOnDeliverySheet (System Preferences -> General): show the area as a
+  three-letter pill before the contact name on the delivery sheet (default on).
   Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
 -->
 <root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.SysDataTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.SysDataTbl', N'ShowAreaOnDeliverySheet') IS NULL
+      BEGIN
+          ALTER TABLE dbo.SysDataTbl ADD ShowAreaOnDeliverySheet BIT NOT NULL
+              CONSTRAINT DF_SysDataTbl_ShowAreaOnDeliverySheet DEFAULT (1);
+      END
+    ]]>
+  </command>
   <command type="alter">
     <![CDATA[
       IF OBJECT_ID(N'dbo.AreaPrepDaysTbl', N'U') IS NOT NULL

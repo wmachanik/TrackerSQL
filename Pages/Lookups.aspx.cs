@@ -2872,72 +2872,91 @@ namespace TrackerSQL.Pages
                 html.Append("<p class=\"delivery-days-note\">Every area in delivery order. Each day lists its areas in this same order, "
                     + "so moving an area here moves it on all of its days.</p>");
 
+            int position = 0;
             if (day.Cards.Count == 0)
             {
-                html.AppendFormat("<p class=\"delivery-days-empty\">No areas are delivered on {0}.</p>", dayName);
+                html.AppendFormat("<p class=\"delivery-days-empty\">No areas are normally delivered on {0}.</p>", dayName);
             }
             else
             {
                 html.AppendFormat("<ol class=\"delivery-days-list\" data-dow=\"{0}\">", day.DayOfWeekID);
-                int position = 0;
                 foreach (var card in day.Cards)
-                {
-                    position++;
-                    string cssClass = "delivery-days-row" + (card.DuplicateOnDay ? " is-duplicate" : string.Empty);
-                    string prep = allAreas
-                        ? "delivered " + string.Join(", ", card.DeliveryDays.Select(AreaWeekBoardManager.DayName))
-                        : string.Join("; ", card.Preps.Select(p => p.DeliveryDelayDays == 0
-                            ? "prepped and delivered on " + dayName
-                            : string.Format("prepped {0}, {1} day{2} to deliver", AreaWeekBoardManager.FullDayName(p.PrepDayOfWeekID),
-                                p.DeliveryDelayDays, p.DeliveryDelayDays == 1 ? string.Empty : "s")));
-
-                    html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\">", cssClass, card.AreaID);
-                    html.Append("<span class=\"delivery-days-grip\" title=\"Drag to move\">&#8942;&#8942;</span>");
-                    html.AppendFormat("<span class=\"delivery-days-pos\">{0}</span>", position);
-                    html.Append(DeliveryDaysOpenLink(card.AreaID, card.AreaName));
-                    html.AppendFormat("<span class=\"delivery-days-prep\">{0}</span>", HttpUtility.HtmlEncode(prep));
-                    html.Append("<span class=\"delivery-days-tags\">");
-                    if (!string.IsNullOrEmpty(card.PromiseText))
-                    {
-                        string promiseTitle = string.Format("The website promises {0} delivery for {1}", dayName, card.PromiseText);
-                        if (canEditPromises)
-                            html.AppendFormat("<a class=\"delivery-days-tag is-promise\" href=\"{0}\" target=\"_blank\" title=\"{1} — click to open its promise rules\">on website</a>",
-                                PromiseRulesUrl(card.AreaName), HttpUtility.HtmlAttributeEncode(promiseTitle));
-                        else
-                            html.AppendFormat("<span class=\"delivery-days-tag is-promise\" title=\"{0}\">on website</span>",
-                                HttpUtility.HtmlAttributeEncode(promiseTitle));
-                    }
-                    if (card.DuplicateOnDay)
-                        html.AppendFormat("<span class=\"delivery-days-tag is-error\" title=\"Two of this area's prep days deliver on {0}. Check its prep days.\">twice</span>", dayName);
-                    html.Append("</span>");
-                    html.Append("<span class=\"delivery-days-move\"><button type=\"button\" class=\"delivery-days-up\" title=\"Move up\">&#9650;</button>"
-                        + "<button type=\"button\" class=\"delivery-days-down\" title=\"Move down\">&#9660;</button></span>");
-                    html.Append("</li>");
-                }
+                    RenderDeliveryDaysRow(html, card, ++position, day.DayOfWeekID, dayName, allAreas, false, canEditPromises);
                 html.Append("</ol>");
             }
 
-            if (day.PromiseGaps.Count > 0)
+            if (!allAreas && day.OffDayCards.Count > 0)
             {
-                html.Append("<div class=\"delivery-days-check\">");
-                html.AppendFormat("<div class=\"delivery-days-check-title\">&#9888; Website promises {0} delivery, but these areas are not delivered on {0}</div>", dayName);
-                html.AppendFormat("<p>The Delivery Promise Rules (System Tools) tell customers in these areas that orders placed in the window shown arrive on {0}, "
-                    + "but none of the area's prep days deliver on {0}. Fix whichever is wrong: add a prep day that delivers on {0}, or change the promise rule.</p>", dayName);
-                html.Append("<ul>");
-                foreach (var gap in day.PromiseGaps)
-                {
-                    html.AppendFormat("<li><strong>{0}</strong> <span class=\"delivery-days-check-window\">{1}</span> <span class=\"delivery-days-check-fix\">",
-                        HttpUtility.HtmlEncode(gap.AreaName), HttpUtility.HtmlEncode(gap.PromiseText));
-                    html.AppendFormat("<a href=\"#\" class=\"delivery-days-open\" data-area=\"{0}\" title=\"Open this area's prep days on the Areas tab\">edit prep days</a>", gap.AreaID);
-                    if (canEditPromises)
-                        html.AppendFormat("<a href=\"{0}\" target=\"_blank\" title=\"Open the Delivery Promise Rules for this area in a new tab\">edit promise rules</a>",
-                            PromiseRulesUrl(gap.AreaName));
-                    html.Append("</span></li>");
-                }
-                html.Append("</ul></div>");
+                html.AppendFormat("<p class=\"delivery-days-offday-note\"><span class=\"delivery-days-offday-icon\">?</span> "
+                    + "<strong>Not normally delivered on {0}.</strong> If one of these areas has a {0} delivery, it goes on the delivery sheet {1}in this order.",
+                    dayName, day.Cards.Count > 0 ? "after the areas above, " : string.Empty);
+                if (day.OffDayCards.Any(c => !string.IsNullOrEmpty(c.PromiseText)))
+                    html.AppendFormat(" <span class=\"delivery-days-offday-promise\">Red: the website promises {0} delivery for that area. Add a prep day that delivers on {0} (click the area), or change the promise rule.</span>", dayName);
+                html.Append("</p>");
+
+                html.AppendFormat("<ol class=\"delivery-days-list is-offday\" data-dow=\"{0}\" data-group=\"off\" data-start=\"{1}\">", day.DayOfWeekID, position);
+                foreach (var card in day.OffDayCards)
+                    RenderDeliveryDaysRow(html, card, ++position, day.DayOfWeekID, dayName, false, true, canEditPromises);
+                html.Append("</ol>");
+            }
+
+            var areasListed = new HashSet<int>(day.Cards.Concat(day.OffDayCards).Select(c => c.AreaID));
+            var promisedWithoutPrepDays = day.PromiseGaps.Where(g => !areasListed.Contains(g.AreaID)).ToList();
+            if (promisedWithoutPrepDays.Count > 0)
+            {
+                html.AppendFormat("<p class=\"delivery-days-note\">The website also promises {0} delivery for areas with no prep days: ", dayName);
+                html.Append(string.Join(", ", promisedWithoutPrepDays.Select(g => DeliveryDaysOpenLink(g.AreaID, g.AreaName)
+                    + (canEditPromises ? " (<a href=\"" + PromiseRulesUrl(g.AreaName) + "\" target=\"_blank\">promise rules</a>)" : string.Empty))));
+                html.Append(".</p>");
             }
 
             html.Append("</section>");
+        }
+
+        /// <param name="offDay">Grey row: the area is not normally delivered on this day.</param>
+        private static void RenderDeliveryDaysRow(System.Text.StringBuilder html, AreaWeekCard card, int position, int dayOfWeekId, string dayName,
+            bool allAreas, bool offDay, bool canEditPromises)
+        {
+            bool promised = !string.IsNullOrEmpty(card.PromiseText);
+            string cssClass = "delivery-days-row"
+                + (card.DuplicateOnDay ? " is-duplicate" : string.Empty)
+                + (offDay ? " is-offday" : string.Empty)
+                + (offDay && promised ? " is-promise-gap" : string.Empty);
+            string prep = allAreas || offDay
+                ? "delivered " + (card.DeliveryDays.Count == 0 ? "never" : string.Join(", ", card.DeliveryDays.Select(AreaWeekBoardManager.DayName)))
+                : string.Join("; ", card.Preps.Select(p => p.DeliveryDelayDays == 0
+                    ? "prepped and delivered on " + dayName
+                    : string.Format("prepped {0}, {1} day{2} to deliver", AreaWeekBoardManager.FullDayName(p.PrepDayOfWeekID),
+                        p.DeliveryDelayDays, p.DeliveryDelayDays == 1 ? string.Empty : "s")));
+
+            html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\">", cssClass, card.AreaID);
+            html.Append("<span class=\"delivery-days-grip\" title=\"Drag to move\">&#8942;&#8942;</span>");
+            html.AppendFormat("<span class=\"delivery-days-pos\">{0}</span>", position);
+            if (offDay)
+                html.AppendFormat("<span class=\"delivery-days-offday-icon\" title=\"Not normally delivered on {0}\">?</span>", dayName);
+            html.Append(DeliveryDaysOpenLink(card.AreaID, card.AreaName));
+            html.AppendFormat("<span class=\"delivery-days-prep\">{0}</span>", HttpUtility.HtmlEncode(prep));
+            html.Append("<span class=\"delivery-days-tags\">");
+            if (promised)
+            {
+                string promiseTitle = offDay
+                    ? string.Format("The website promises {0} delivery for {1}, but none of this area's prep days deliver on {0}", dayName, card.PromiseText)
+                    : string.Format("The website promises {0} delivery for {1}", dayName, card.PromiseText);
+                string tagClass = offDay ? "delivery-days-tag is-promise-gap" : "delivery-days-tag is-promise";
+                string tagText = offDay ? "website promises " + AreaWeekBoardManager.DayName(dayOfWeekId) : "on website";
+                if (canEditPromises)
+                    html.AppendFormat("<a class=\"{0}\" href=\"{1}\" target=\"_blank\" title=\"{2} — click to open its promise rules\">{3}</a>",
+                        tagClass, PromiseRulesUrl(card.AreaName), HttpUtility.HtmlAttributeEncode(promiseTitle), HttpUtility.HtmlEncode(tagText));
+                else
+                    html.AppendFormat("<span class=\"{0}\" title=\"{1}\">{2}</span>",
+                        tagClass, HttpUtility.HtmlAttributeEncode(promiseTitle), HttpUtility.HtmlEncode(tagText));
+            }
+            if (card.DuplicateOnDay)
+                html.AppendFormat("<span class=\"delivery-days-tag is-error\" title=\"Two of this area's prep days deliver on {0}. Check its prep days.\">twice</span>", dayName);
+            html.Append("</span>");
+            html.Append("<span class=\"delivery-days-move\"><button type=\"button\" class=\"delivery-days-up\" title=\"Move up\">&#9650;</button>"
+                + "<button type=\"button\" class=\"delivery-days-down\" title=\"Move down\">&#9660;</button></span>");
+            html.Append("</li>");
         }
 
         private static string DeliveryDaysOpenLink(int areaId, string areaName)
@@ -2969,18 +2988,22 @@ namespace TrackerSQL.Pages
                 foreach (string dayPart in posted.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     string[] pieces = dayPart.Split(':');
-                    if (pieces.Length != 2 || !int.TryParse(pieces[0], out int dayOfWeekId))
+                    if (pieces.Length != 2)
+                        continue;
+                    bool offDay = pieces[0].EndsWith("off", StringComparison.Ordinal);
+                    if (!int.TryParse(offDay ? pieces[0].Substring(0, pieces[0].Length - 3) : pieces[0], out int dayOfWeekId))
                         continue;
 
                     var ids = pieces[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(s => int.TryParse(s, out int id) ? id : 0)
                         .Where(id => id > 0)
                         .ToList();
-                    int saved = manager.SaveDayOrder(dayOfWeekId, ids);
+                    int saved = manager.SaveDayOrder(dayOfWeekId, ids, offDay);
                     if (saved > 0)
                     {
                         savedAreas += saved;
-                        savedDays.Add(dayOfWeekId == 0 ? "all areas" : AreaWeekBoardManager.FullDayName(dayOfWeekId));
+                        savedDays.Add(dayOfWeekId == 0 ? "all areas"
+                            : AreaWeekBoardManager.FullDayName(dayOfWeekId) + (offDay ? " (not normally delivered)" : string.Empty));
                     }
                 }
 

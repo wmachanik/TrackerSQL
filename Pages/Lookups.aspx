@@ -30,7 +30,7 @@
         }
 
         // Lookups → Delivery Days. Delegated handlers — the view is re-rendered by its UpdatePanel.
-        // Rows only move within their own day; field / button ids come from data-* on .delivery-days.
+        // Rows only move within their own list (a day's areas, or its grey off-day areas); field / button ids come from data-* on .delivery-days.
         (function () {
             var dragged = null;
 
@@ -49,7 +49,8 @@
                 var v = view();
                 var pick = v ? v.querySelector('.delivery-days-pick[data-dow="' + list.getAttribute('data-dow') + '"]') : null;
                 if (pick) pick.classList.add('is-dirty');
-                var rows = list.querySelectorAll('.delivery-days-row');
+                var day = closest(list, 'delivery-days-day') || list;
+                var rows = day.querySelectorAll('.delivery-days-row');
                 for (var i = 0; i < rows.length; i++) {
                     var pos = rows[i].querySelector('.delivery-days-pos');
                     if (pos) pos.textContent = String(i + 1);
@@ -129,7 +130,8 @@
                 markDirty(list);
             });
 
-            // "dow:areaId,areaId|dow:areaId,..." for the lists that were changed (dow 0 = All areas).
+            // "dow:areaId,areaId|dowoff:areaId,..." for the lists that were changed (dow 0 = All areas;
+            // "off" = the grey list of areas not normally delivered that day).
             window.deliveryDaysPrepareSave = function () {
                 var v = view();
                 if (!v) return false;
@@ -141,7 +143,8 @@
                     var ids = [];
                     var rows = lists[i].querySelectorAll('.delivery-days-row');
                     for (var j = 0; j < rows.length; j++) ids.push(rows[j].getAttribute('data-id'));
-                    parts.push(lists[i].getAttribute('data-dow') + ':' + ids.join(','));
+                    var key = lists[i].getAttribute('data-dow') + (lists[i].getAttribute('data-group') === 'off' ? 'off' : '');
+                    parts.push(key + ':' + ids.join(','));
                 }
                 field.value = parts.join('|');
                 return true;
@@ -963,6 +966,7 @@
                     <ContentTemplate>
                         <p class="delivery-days-help">Each area has one delivery order: the delivery sheet lists each driver's deliveries area by area in this order.
                             Pick a day (or All areas), drag an area or use ▲ ▼, then Save Delivery Order. Moving an area on one day moves it on all of its days.
+                            Areas not normally delivered on the day are listed in grey underneath: their deliveries that day go after the day's own areas.
                             Click an area name to edit its prep days.</p>
                         <div class="delivery-days-actions">
                             <asp:Button ID="btnDeliveryDaysSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"

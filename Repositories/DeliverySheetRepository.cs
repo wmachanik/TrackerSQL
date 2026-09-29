@@ -55,7 +55,8 @@ namespace TrackerSQL.Repositories
                     o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
-                    apd.DeliveryOrder,
+                    OffDay,
+                    DeliveryOrder,
                     c.CompanyName,
                     i.SortOrder";
 
@@ -115,7 +116,8 @@ namespace TrackerSQL.Repositories
                     o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
-                    apd.DeliveryOrder,
+                    OffDay,
+                    DeliveryOrder,
                     c.CompanyName,
                     i.SortOrder";
 
@@ -138,9 +140,9 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// One row per order line. Delivery order comes from the area's prep-day row whose
-        /// delivery weekday (prep day + delay, 1=Sun..7=Sat) matches the order's delivery date,
-        /// falling back to the area's lowest order. The flag is the order's own, or the
+        /// One row per order line. Delivery order is the area's order (Lookups → Delivery Days).
+        /// OffDay = 0 when one of the area's prep days (prep day + delay, 1=Sun..7=Sat) delivers on the
+        /// order's weekday; off-day areas and contacts without an area / prep days (OffDay 1) sort after them. The flag is the order's own, or the
         /// contact's account type for orders created before flags were stored on orders.
         /// </summary>
         private static string BaseDeliverySheetSql()
@@ -159,7 +161,8 @@ namespace TrackerSQL.Repositories
                     ol.QtyOrdered,
                     i.ItemEnabled,
                     i.ReplacementItemID AS ReplacementID,
-                    apd.DeliveryOrder,
+                    ISNULL(apd.OffDay, 1) AS OffDay,
+                    ISNULL(apd.DeliveryOrder, 32767) AS DeliveryOrder,
                     i.SortOrder,
                     o.ToBeDeliveredByID,
                     o.PurchaseOrder,
@@ -183,14 +186,13 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN ItemsTbl i
                     ON ol.ItemID = i.ItemID
                 OUTER APPLY (
-                    SELECT TOP 1 a.DeliveryOrder
-                    FROM AreaPrepDaysTbl a
-                    WHERE a.AreaID = c.AreaID
-                    ORDER BY
+                    SELECT TOP 1 a.DeliveryOrder,
                         CASE WHEN ((a.PrepDayOfWeekID - 1 + ISNULL(a.DeliveryDelayDays, 0)) % 7) + 1
                                   = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
-                             THEN 0 ELSE 1 END,
-                        a.DeliveryOrder
+                             THEN 0 ELSE 1 END AS OffDay
+                    FROM AreaPrepDaysTbl a
+                    WHERE a.AreaID = c.AreaID
+                    ORDER BY OffDay, a.DeliveryOrder
                 ) apd
                 OUTER APPLY (
                     SELECT TOP 1 ai.InvoiceTypeID

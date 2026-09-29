@@ -163,7 +163,7 @@ namespace TrackerSQL.Repositories
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
                        c.PhoneNumber, c.CellNumber, c.BillingAddress, c.StateOrProvince, c.PostalCode,
                        a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
-                       ISNULL(apd.DeliveryOrder, 999) AS DeliveryOrder,
+                       CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        o.ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
                        ol.OrderLineID, ol.ItemID, i.ItemServiceTypeID,
                        ol.QtyOrdered, i.ItemDesc, ip.ItemPrepDescription AS PackDesc,
@@ -177,11 +177,12 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
                 LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
                 LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID
-                OUTER APPLY (SELECT TOP 1 d.DeliveryOrder FROM AreaPrepDaysTbl d WHERE d.AreaID = c.AreaID
-                             ORDER BY CASE WHEN ((d.PrepDayOfWeekID - 1 + ISNULL(d.DeliveryDelayDays, 0)) % 7) + 1
-                                                = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
-                                           THEN 0 ELSE 1 END,
-                                      d.DeliveryOrder) apd
+                OUTER APPLY (SELECT TOP 1 d.DeliveryOrder,
+                                    CASE WHEN ((d.PrepDayOfWeekID - 1 + ISNULL(d.DeliveryDelayDays, 0)) % 7) + 1
+                                              = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
+                                         THEN 0 ELSE 1 END AS OffDay
+                             FROM AreaPrepDaysTbl d WHERE d.AreaID = c.AreaID
+                             ORDER BY OffDay, d.DeliveryOrder) apd
                 OUTER APPLY (SELECT TOP 1 m.ProofID, m.Outcome, m.Reason, m.ReceivedByName, m.MissingItems, m.DeliveredAt, m.Status,
                                     CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr
@@ -197,7 +198,8 @@ namespace TrackerSQL.Repositories
                 sql += " AND o.OrderID = @OrderID";
                 ps.Add(P("@OrderID", orderId.Value, DbType.Int32));
             }
-            sql += " ORDER BY o.Done, ISNULL(apd.DeliveryOrder, 999), c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
+            sql += " ORDER BY o.Done, CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
+                 + " c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
 
             return Query(sql, r => new SheetRow
             {

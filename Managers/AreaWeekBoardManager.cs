@@ -116,6 +116,19 @@ namespace TrackerSQL.Managers
                     })
                     .OrderBy(g => g.AreaName, StringComparer.OrdinalIgnoreCase)
                     .ToList();
+
+                day.OffDayCards = board.AllAreas.Cards
+                    .Where(c => !deliveredAreaIds.Contains(c.AreaID))
+                    .Select(c => new AreaWeekCard
+                    {
+                        AreaID = c.AreaID,
+                        AreaName = c.AreaName,
+                        DeliveryOrder = c.DeliveryOrder,
+                        Preps = c.Preps,
+                        DeliveryDays = c.DeliveryDays,
+                        PromiseText = promisesByAreaDay.TryGetValue(Tuple.Create(c.AreaID, day.DayOfWeekID), out string promise) ? promise : string.Empty
+                    })
+                    .ToList();
             }
 
             board.Days = BoardDayOrder.Select(dow => days[dow]).ToList();
@@ -137,13 +150,13 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Saves a new order for the areas of one delivery day (0 = all areas). The day's areas swap places among
-        /// themselves in the overall area order; then every area is renumbered 10, 20, 30 ... on all of its prep rows.
-        /// Returns the number of the day's areas saved.
+        /// Saves a new order for the areas of one delivery day (0 = all areas), or with <paramref name="offDay"/> for the
+        /// areas not normally delivered that day. Those areas swap places among themselves in the overall area order;
+        /// then every area is renumbered 10, 20, 30 ... on all of its prep rows. Returns the number of areas saved.
         /// </summary>
-        public int SaveDayOrder(int dayOfWeekId, IList<int> orderedAreaIds)
+        public int SaveDayOrder(int dayOfWeekId, IList<int> orderedAreaIds, bool offDay = false)
         {
-            if (dayOfWeekId < 0 || dayOfWeekId > 7 || orderedAreaIds == null || orderedAreaIds.Count == 0)
+            if (dayOfWeekId < 0 || dayOfWeekId > 7 || (offDay && dayOfWeekId == 0) || orderedAreaIds == null || orderedAreaIds.Count == 0)
                 return 0;
 
             var areaNames = _areasRepository.GetAll("AreaName").ToDictionary(a => a.AreaID, a => a.AreaName ?? string.Empty);
@@ -155,6 +168,8 @@ namespace TrackerSQL.Managers
             var onThisDay = new HashSet<int>(prepDays
                 .Where(p => dayOfWeekId == 0 || DeliveryDayOfWeek(p.PrepDayOfWeekID, p.DeliveryDelayDays) == dayOfWeekId)
                 .Select(p => p.AreaID));
+            if (offDay)
+                onThisDay = new HashSet<int>(overall.Where(id => !onThisDay.Contains(id)));
 
             var dayOrder = orderedAreaIds.Where(onThisDay.Contains).Distinct().ToList();
             if (dayOrder.Count == 0)

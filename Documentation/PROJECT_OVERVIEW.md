@@ -361,7 +361,7 @@ The migration standardizes terminology across the application:
 
 **Delivery areas and days:**
 - Each `AreaPrepDaysTbl` row is one prep day of an area: `PrepDayOfWeekID` (1 = Sunday … 7 = Saturday) plus `DeliveryDelayDays` gives the delivery weekday. `DeliveryOrder` is the **area's** delivery order: every prep row of an area carries the same value and no two areas share one (`SQLCommands-AreaDeliveryOrder-01.xml` fixes older data at startup).
-- The delivery sheet and driver app sort each driver's deliveries by that order (joined through the prep row that delivers on the order's `RequiredByDate` weekday), then company name.
+- The delivery sheet and driver app sort each driver's deliveries by: areas with a prep row delivering on the order's `RequiredByDate` weekday first (`OffDay` = 0), then the rest (`OffDay` = 1, including contacts with no area / prep days), each by area order, then company name. The app's `Seq` is the order, or 10000 + order for off-day stops. Delivery Days shows the off-day areas in grey under each day in the same order.
 - Lookups → Delivery Days sets the order (`AreaWeekBoardManager`): one day or all areas at a time; saving swaps the day's areas among their own places in the overall order and renumbers every area 10, 20, 30… The Areas tab shows the order read-only; new prep rows take the area's order (`AreaPrepDaysRepository.GetDeliveryOrderForNewPrepDay`). Its "website promise check" lists areas that the Delivery Promise Rules (`DeliveryPromiseRuleTbl`, days 0 = Sunday … 6 = Saturday, `FixedDow` rules only) promise for a day on which none of the area's prep days deliver.
 
 ### Important Data Tables

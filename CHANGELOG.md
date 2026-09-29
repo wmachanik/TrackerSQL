@@ -13,14 +13,16 @@ Release notes for shipped TrackerSQL versions. Newest first.
 - **Lookups → Invoice Types** — new *Delivery Sheet Pill* column: label, colour (`#rrggbb` or a colour name) and icon (an emoji or a short code; Windows + . opens the emoji picker). With no icon the label is shown as a coloured pill; an empty label shows nothing.
 - **Lookups → Delivery Days** — new tab where the area delivery order is set. The delivery sheet lists each driver's deliveries area by area in this order. Pick a day (Mon–Sun, with the number of areas) to see the areas delivered that day (prep day + delivery delay), one per line, in delivery order; *All areas* shows every area with its delivery days.
   - Drag areas (or use ▲ ▼) and click *Save Delivery Order* (*Undo Changes* discards them). Each area has **one** delivery order: moving an area on one day moves it on all of its days, and every area is renumbered 10, 20, 30…
+  - Under each day's areas, the areas **not normally delivered** that day are listed in grey (with a ? marker), in delivery order. If one of them has a delivery that day it goes on the sheet after the day's own areas, in that order. Grey areas can be reordered among themselves.
   - Tags: *on website* (the Delivery Promise Rules promise this day for the area; admins can click it to open those rules), *twice* (two of the area's prep days deliver that day).
-  - **Website promise check:** under each day, the areas the Delivery Promise Rules promise for that day (with the ordering window, e.g. "orders Thu 08:00 – Fri 13:00") but which none of their prep days deliver on, each with *edit prep days* and (for admins) *edit promise rules* links. Days with such areas show ⚠. Areas with no prep days at all are listed at the top.
+  - **Website promises not met:** a grey area that the Delivery Promise Rules promise for that day is shown in red with *website promises Mon* (the ordering window, e.g. "orders Thu 08:00 – Fri 13:00", is its tooltip; admins can click it to open the rules). Click the area to add a prep day instead. Days with such areas show ⚠. Areas with no prep days at all are listed at the top.
   - Clicking an area opens it on the Areas tab with its prep days.
 - **Lookups → Areas** — new read-only *Dlvry Order* column (the area's delivery order). In the prep days list the order is shown but no longer typed in; a new prep day takes the area's order (or goes last for an area's first prep day).
 - **Delivery Promise Rules** — `?q=` pre-fills the search (used by the Delivery Days links).
 
 ### Fixes
 - **One delivery order per area** — an area's prep days could carry different delivery orders, and different areas could share a number, so the sheet mixed those areas' deliveries (falling back to company name). `SQLCommands-AreaDeliveryOrder-01.xml` fixes existing data once (ranked by each area's lowest order, then name; renumbered 10, 20, 30…) and Delivery Days keeps it consistent.
+- **Deliveries on an area's unusual day** — the delivery sheet and the driver app list, per driver, the areas normally delivered that weekday first, then deliveries for other areas, both in area delivery order. Contacts with no area or whose area has no prep days come last (they used to be first on the sheet).
 
 ### Housekeeping
 - Old migration SQL scripts and tooling removed from the project (archived outside the repository). Schema changes are documented in the `App_Data/SQLCommands-*.xml` packs (Hard Rule #0d).

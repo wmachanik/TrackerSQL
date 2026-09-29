@@ -1,4 +1,4 @@
-﻿/* Rev: 20260929-03
+﻿/* Rev: 20260929-04
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9043,6 +9043,11 @@ table.grouping-table .image-button > a {
     font-weight: normal;
 }
 
+.delivery-days-pick.is-active.is-empty {
+    color: #fff !important;
+    border-color: var(--primary-green) !important;
+}
+
 .delivery-days-pick.is-dirty {
     box-shadow: 0 0 0 2px #fd7e14;
 }
@@ -9199,42 +9204,67 @@ a.delivery-days-tag.is-promise:hover {
     color: #000 !important;
 }
 
-.delivery-days-check {
-    margin-top: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #f1aeb5;
-    border-radius: 4px;
-    background: #fff5f5;
-}
-
-.delivery-days-check-title {
-    color: #842029;
-    font-weight: 600;
-}
-
-.delivery-days-check p {
-    margin: 0.25rem 0;
-    color: #555;
-}
-
-.delivery-days-check ul {
-    margin: 0.25rem 0 0;
-    padding-left: 1.25rem;
-}
-
-.delivery-days-check-window {
+/* Grey list: areas not normally delivered on the day (their deliveries go after the day's areas) */
+.delivery-days-offday-note {
+    margin: 0.9rem 0 0.35rem;
     color: #666;
 }
 
-.delivery-days-check-fix a {
-    min-width: 0;
-    margin-left: 0.75em;
-    font-weight: normal;
-    white-space: nowrap;
+.delivery-days-offday-promise {
+    color: #842029;
 }
 
-.delivery-days-check-fix a:first-child {
-    margin-left: 0.5em;
+.delivery-days-offday-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2em;
+    height: 1.2em;
+    border: 1px solid #aaa;
+    border-radius: 999px;
+    color: #888;
+    font-size: 0.8em;
+    font-weight: 600;
+    line-height: 1;
+    cursor: help;
+}
+
+.delivery-days-list.is-offday {
+    background: #f6f6f6;
+    border-color: #e2e2e2;
+}
+
+.delivery-days-row.is-offday,
+.delivery-days-row.is-offday .delivery-days-open,
+.delivery-days-row.is-offday .delivery-days-prep,
+.delivery-days-row.is-offday .delivery-days-pos {
+    color: #999;
+}
+
+.delivery-days-row.is-offday .delivery-days-open {
+    font-weight: normal;
+}
+
+.delivery-days-row.is-offday:hover {
+    background: #eee;
+}
+
+.delivery-days-row.is-promise-gap {
+    border-left-color: #dc3545;
+}
+
+.delivery-days-row.is-promise-gap .delivery-days-open {
+    color: #842029;
+}
+
+.delivery-days-tag.is-promise-gap {
+    color: #842029;
+    background: #f8d7da;
+    border-color: #f1aeb5;
+}
+
+a.delivery-days-tag.is-promise-gap:hover {
+    text-decoration: underline;
 }
 
 .delivery-days-pick.is-all {

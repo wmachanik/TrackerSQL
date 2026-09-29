@@ -25,6 +25,12 @@ namespace TrackerSQL.Models
         public string DayName { get; set; }
         public List<AreaWeekCard> Cards { get; set; } = new List<AreaWeekCard>();
 
+        /// <summary>
+        /// Areas with prep days that are not normally delivered on this day, in delivery order. The delivery sheet
+        /// lists their deliveries on this day after the day's own areas, in this order. PromiseText = promised, not delivered.
+        /// </summary>
+        public List<AreaWeekCard> OffDayCards { get; set; } = new List<AreaWeekCard>();
+
         /// <summary>Areas the website promises for this day that have no prep-day row delivering on it.</summary>
         public List<AreaPromiseGap> PromiseGaps { get; set; } = new List<AreaPromiseGap>();
     }

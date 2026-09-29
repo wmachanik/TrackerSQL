@@ -100,7 +100,7 @@ namespace TrackerSQL.Managers
             }
             else if (_showArea)
             {
-                item.AreaPillHtml = AreaPill.Html(row.AreaName);
+                item.AreaPillHtml = AreaPill.Html(row.AreaName, row.AreaShortCode);
             }
 
             if ((row.Notes ?? string.Empty).StartsWith("+"))

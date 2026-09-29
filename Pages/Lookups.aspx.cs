@@ -2159,14 +2159,12 @@ namespace TrackerSQL.Pages
                 GridViewRow row = gvAreas.Rows[e.RowIndex];
 
                 var tbxAreaName = (TextBox)row.FindControl("tbxAreaName");
-
-                var area = new Area
-                {
-                    AreaID = areaId,
-                    AreaName = tbxAreaName?.Text ?? ""
-                };
+                var tbxAreaShortCode = (TextBox)row.FindControl("tbxAreaShortCode");
 
                 var repo = new AreasRepository();
+                var area = repo.GetById(areaId) ?? new Area { AreaID = areaId };
+                area.AreaName = tbxAreaName?.Text ?? "";
+                area.ShortCode = NormaliseAreaShortCode(tbxAreaShortCode);
                 repo.Update(area);
 
                 gvAreas.EditIndex = -1;
@@ -2586,6 +2584,7 @@ namespace TrackerSQL.Pages
                 var newArea = new Area
                 {
                     AreaName = control.Text,
+                    ShortCode = NormaliseAreaShortCode((TextBox)this.gvAreas.FooterRow.FindControl("tbxAreaShortCode")),
                 };
                 
                 var repo = new AreasRepository();
@@ -3071,6 +3070,27 @@ namespace TrackerSQL.Pages
             return _areaDeliveryOrders.TryGetValue(id, out int? order) && order.HasValue
                 ? order.Value.ToString(CultureInfo.InvariantCulture)
                 : string.Empty;
+        }
+
+        /// <summary>Areas grid: the area's own pill code, or the automatic one in grey when blank.</summary>
+        public string GetAreaCodeHtml(object areaName, object shortCode)
+        {
+            string ownCode = shortCode == null || shortCode == DBNull.Value ? string.Empty : shortCode.ToString().Trim();
+            if (ownCode.Length > 0)
+                return HttpUtility.HtmlEncode(ownCode);
+
+            string autoCode = AreaPill.Abbreviation(areaName == null || areaName == DBNull.Value ? string.Empty : areaName.ToString());
+            return autoCode.Length == 0
+                ? string.Empty
+                : "<span class=\"area-code-auto\" title=\"Automatic code (edit the area to set your own)\">" + HttpUtility.HtmlEncode(autoCode) + "</span>";
+        }
+
+        private static string NormaliseAreaShortCode(TextBox box)
+        {
+            string code = (box?.Text ?? string.Empty).Trim();
+            if (code.Length > 5)
+                code = code.Substring(0, 5);
+            return code.Length == 0 ? null : code;
         }
 
         public string GetPrepDayName(object prepDayOfWeekId)

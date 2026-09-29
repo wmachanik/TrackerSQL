@@ -793,6 +793,19 @@
                                                     <asp:TextBox ID="tbxAreaName" runat="server" Text="" Width="100%" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Code" SortExpression="ShortCode"
+                                                HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
+                                                <HeaderTemplate>
+                                                    <span title="Area pill on the delivery sheet, shown as typed (e.g. Dbn, EL). Leave blank for the automatic code, shown in grey.">Code</span>
+                                                </HeaderTemplate>
+                                                <ItemTemplate><%# GetAreaCodeHtml(Eval("AreaName"), Eval("ShortCode")) %></ItemTemplate>
+                                                <EditItemTemplate>
+                                                    <asp:TextBox ID="tbxAreaShortCode" runat="server" Text='<%# Bind("ShortCode") %>' MaxLength="5" Columns="5" />
+                                                </EditItemTemplate>
+                                                <FooterTemplate>
+                                                    <asp:TextBox ID="tbxAreaShortCode" runat="server" Text="" MaxLength="5" Columns="5" />
+                                                </FooterTemplate>
+                                            </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Dlvry Order"
                                                 HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
                                                 <HeaderTemplate>

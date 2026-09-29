@@ -174,6 +174,7 @@ namespace TrackerSQL.Repositories
                     ip.BGColour,
                     p.Abbreviation AS DeliveryByAbbreviation,
                     ar.AreaName,
+                    ar.ShortCode AS AreaShortCode,
                     COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
@@ -287,6 +288,7 @@ namespace TrackerSQL.Repositories
                 BGColour = GetString(rdr, "BGColour"),
                 DeliveryByAbbreviation = GetString(rdr, "DeliveryByAbbreviation"),
                 AreaName = GetString(rdr, "AreaName"),
+                AreaShortCode = GetString(rdr, "AreaShortCode"),
                 InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID")
             };
         }

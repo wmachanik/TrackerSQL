@@ -1,4 +1,4 @@
-﻿/* Rev: 20260929-05
+﻿/* Rev: 20260929-06
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9271,7 +9271,7 @@ a.delivery-days-tag.is-promise-gap:hover {
     margin-left: 0.75rem;
 }
 
-/* Delivery sheet area pill: three-letter area code before the name (System Preferences → General) */
+/* Delivery sheet area pill: area code before the name (System Preferences → General); own codes keep their case */
 .status-badge.area-pill {
     display: inline-block;
     padding: 0 0.3em;
@@ -9283,9 +9283,20 @@ a.delivery-days-tag.is-promise-gap:hover {
     font-size: 0.8em;
     font-weight: 600;
     line-height: 1.35;
-    text-transform: lowercase;
+    text-transform: none;
     vertical-align: middle;
     cursor: help;
+}
+
+@media print {
+    .status-badge.area-pill {
+        display: none;
+    }
+}
+
+.lookups-areas-table .area-code-auto {
+    color: #8a948a;
+    font-style: italic;
 }
 
 /* Order flag pill (Lookups → Invoice Types colour is set inline) */

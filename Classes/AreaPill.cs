@@ -7,7 +7,8 @@ namespace TrackerSQL.Classes
     /// <summary>
     /// Small pill with a three-letter area code for the delivery sheet (System Preferences → General).
     /// The code is the first three consonants of the area name (Constantia → cns); names with fewer
-    /// consonants are topped up with their other letters. The full area name is the tooltip.
+    /// consonants are topped up with their other letters. An area's own ShortCode (Lookups → Areas) replaces it
+    /// and is shown as typed (Durban → Dbn, East London → EL). The full area name is the tooltip. Screen only.
     /// </summary>
     public static class AreaPill
     {
@@ -37,14 +38,20 @@ namespace TrackerSQL.Classes
             return code.ToString();
         }
 
-        /// <summary>Pill HTML, or empty when there is no area name.</summary>
-        public static string Html(string areaName)
+        /// <summary>The area's own short code when set, else the automatic abbreviation.</summary>
+        public static string Code(string areaName, string shortCode)
         {
-            string code = Abbreviation(areaName);
+            return string.IsNullOrWhiteSpace(shortCode) ? Abbreviation(areaName) : shortCode.Trim();
+        }
+
+        /// <summary>Pill HTML, or empty when there is no area name or code.</summary>
+        public static string Html(string areaName, string shortCode = null)
+        {
+            string code = Code(areaName, shortCode);
             if (code.Length == 0)
                 return string.Empty;
 
-            string title = HttpUtility.HtmlAttributeEncode("Area: " + areaName.Trim());
+            string title = HttpUtility.HtmlAttributeEncode("Area: " + (areaName ?? string.Empty).Trim());
             return "<span class=\"status-badge area-pill\" title=\"" + title + "\" aria-label=\"" + title + "\">"
                 + HttpUtility.HtmlEncode(code) + "</span>";
         }

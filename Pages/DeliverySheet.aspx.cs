@@ -422,9 +422,8 @@ namespace TrackerSQL.Pages
 
                 if (pPrintForm)
                 {
-                    // Flags are for invoicing, not the driver — the printed sheet shows the area and name only.
-                    string contactName = currentItem.AreaPillHtml + currentItem.ContactName;
-                    cellContact.Text = currentItem.Done ? "done · " + contactName : contactName;
+                    // Flags and area pills are screen only — the printed sheet shows the name only.
+                    cellContact.Text = currentItem.Done ? "done · " + currentItem.ContactName : currentItem.ContactName;
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {

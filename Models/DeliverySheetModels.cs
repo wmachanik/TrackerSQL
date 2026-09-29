@@ -54,6 +54,9 @@ namespace TrackerSQL.Models
         /// <summary>The contact's area (empty when none).</summary>
         public string AreaName { get; set; }
 
+        /// <summary>The area's own pill code (empty = automatic).</summary>
+        public string AreaShortCode { get; set; }
+
         /// <summary>Order flag (order's own, else the contact's account type).</summary>
         public int? InvoiceTypeID { get; set; }
 
@@ -68,6 +71,7 @@ namespace TrackerSQL.Models
             BGColour = string.Empty;
             DeliveryByAbbreviation = string.Empty;
             AreaName = string.Empty;
+            AreaShortCode = string.Empty;
         }
     }
 
@@ -98,7 +102,7 @@ namespace TrackerSQL.Models
         /// <summary>Order flag pill HTML (empty when the flag has no pill, e.g. Standard).</summary>
         public string FlagPillHtml { get; set; }
 
-        /// <summary>Three-letter area pill HTML (empty when the option is off or there is no area).</summary>
+        /// <summary>Area pill HTML, screen only (empty when the option is off or there is no area).</summary>
         public string AreaPillHtml { get; set; }
 
         public DeliverySheetDisplayItem()

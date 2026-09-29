@@ -10,5 +10,8 @@ namespace TrackerSQL.Models
         public string AreaName { get; set; }
         public int? PrepDayOfWeekID { get; set; }
         public int? DeliveryDelay { get; set; }
+
+        /// <summary>Delivery sheet area pill code, shown as typed; blank uses the automatic code (AreaPill).</summary>
+        public string ShortCode { get; set; }
     }
 }

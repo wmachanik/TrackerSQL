@@ -35,6 +35,9 @@ This is the **master index** for all TrackerSQL documentation. Use this to find 
 | **Run migration tools** | [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Migration Process |
 | **WooCommerce integration (3.0.1.0)** | [WooIntegration/README.md](WooIntegration/README.md) | Plan, status, phases |
 | **See release notes** | [../CHANGELOG.md](../CHANGELOG.md) | What changed per version |
+| **Mobile REST API / Quaffee Driver app (3.0.3.0)** | [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) | Endpoints, security, settings, testing, open items |
+| **Deploy to live / config files / secrets** | [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md) | Release steps; `.example` configs; secrets exposure |
+| **Rules for secrets (repo is public)** | [HARD_PROJECT_RULES.md](HARD_PROJECT_RULES.md) | Rule #0f |
 
 ---
 
@@ -248,10 +251,9 @@ This is the **master index** for all TrackerSQL documentation. Use this to find 
 - Email templates (in source files)
 
 ? **Not Yet Documented:**
-- API documentation (if any)
-- Deployment procedures (basic only)
 - Performance tuning guidelines
-- Security best practices
+
+(API documentation, deployment and secrets handling are now in [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) and [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md).)
 
 ---
 
@@ -536,6 +538,7 @@ You now have comprehensive documentation to work effectively with TrackerSQL. Th
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-03-26 | Initial index creation |
+| 1.1 | 2026-09-29 | Mobile API / driver app, deployment and secrets docs (3.0.3.0) |
 
 ---
 

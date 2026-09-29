@@ -12,8 +12,18 @@
 1. NO Microsoft Access Database (use SQL Server only)
 2. NO SqlDataSource Controls (use Repository Pattern only)
 3. **NO references to legacy "City*" classes** (use "Area*" terminology)
+4. **NO secrets in git** — the GitHub repo is public; only `*.example` configs are committed (Rule #0f)
 
 **Violating these rules will require complete code rewrite!**
+
+---
+
+## 🆕 Current Release: 3.0.3.0 (live 2026-09-29)
+
+- Live at `https://tracker.quaffee.co.za` (also `https://quaffeetracker.co.za`). Release notes: [../CHANGELOG.md](../CHANGELOG.md).
+- **Mobile REST API + Quaffee Driver app:** [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) (app source: `C:\SRC\ASP.net\TrackerDriver`).
+- **Deploying, config files, secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md).
+- **Open items / next work:** [WorkInProgress/CURRENT_ISSUES.md](WorkInProgress/CURRENT_ISSUES.md) → "Open items after 3.0.3.0".
 
 ---
 
@@ -39,8 +49,8 @@ A systematic refactoring has replaced all "City*" terminology with "Area*" acros
 
 This folder contains **comprehensive documentation specifically designed for AI assistants** (GitHub Copilot, Claude, ChatGPT, and other LLMs) to understand and work effectively with the TrackerSQL migration project.
 
-**Last Updated:** 2026-05-11  
-**Documentation Version:** 1.2
+**Last Updated:** 2026-09-29  
+**Documentation Version:** 1.3
 
 ---
 

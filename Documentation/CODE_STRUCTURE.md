@@ -130,6 +130,19 @@ TrackerSQL\
 ??? TrackerSQL.csproj             # Project file
 ```
 
+### Current folders (3.0.x additions)
+
+The tree above is the original layout. Current code also uses:
+
+| Folder | Contents |
+|--------|----------|
+| `Repositories\`, `Models\`, `Managers\` | Repository pattern data access, POCOs, business logic (Hard Rules) |
+| `Api\` | Mobile REST API (`/api/v1`, Web API 2): config, handlers, controllers — see [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) |
+| `Portal\` | Client portal pages (own `Web.config`) |
+| `driver\` | Built web copy of the Quaffee Driver app (from `C:\SRC\ASP.net\TrackerDriver`, `npm run build:site`); do not edit by hand |
+| `Downloads\` | `QuaffeeDriver.apk` (from TrackerDriver `npm run apk`) |
+| `App_Data\SQLCommands-*.xml` | Feature schema packs (live copies in `App_Data\GoLive\`) |
+
 ### MigrationRunner Structure
 
 ```
@@ -948,16 +961,17 @@ dotnet run
 
 ### Deploying Web Application
 
-1. Build / Publish with **Release** configuration (Visual Studio applies [Web.Release.config](../Web.Release.config) XDT to `Web.config`).
-2. Confirm published `Web.config`: production `TrackerDataSQL`, `EmailTestMode=false`, HTTPS rewrite, no `compilation debug`, `DatabaseBackupFolder` set.
-3. Or overwrite live `Web.config` from [weblive.config](../weblive.config) after a manual/FTP deploy (full production snapshot; keep aligned with `Web.Release.config`).
-4. Configure IIS application pool (.NET 4.x)
+Full steps: [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md). In short:
 
-**Config roles:**
-- `Web.config` — local/dev
-- `Web.Release.config` — Release publish transforms (deltas → live)
-- `weblive.config` — full live file for manual overwrite
-- `Web.config.example` — sanitized template (no real secrets)
+1. Visual Studio → Publish → Folder with **Release**; FTP the output to myasp.net (includes `driver/` and `Downloads/`).
+2. Upload `web.live.config` **renamed to `Web.config`** (not the published `Web.config`); keep the server's `App_Data` logs.
+3. Check `https://tracker.quaffee.co.za/api/v1/ping` and sign in.
+
+**Config roles** (real files are git-ignored; only `*.example` copies with `mypassword` secrets are committed — Hard Rule #0f):
+- `Web.config` — local/dev (`Web.config.example`)
+- `web.live.config` — full live file, uploaded as `Web.config` (`web.live.config.example`)
+- `Web.Release.config` — Release publish transforms (`Web.Release.config.example`)
+- `weblive.config`, `web..back.config` — old local copies, not used
 
 ---
 
@@ -980,6 +994,7 @@ dotnet run
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-03-26 | Initial code structure documentation |
+| 1.1 | 2026-09-29 | Mobile API folders; deployment / config roles for 3.0.3.0 |
 
 ---
 

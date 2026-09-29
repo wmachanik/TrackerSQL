@@ -7,7 +7,7 @@
 ## Start here
 
 1. **MIGRATION_TODO.md** — task list  
-2. **CURRENT_ISSUES.md** — known problems  
+2. **CURRENT_ISSUES.md** — known problems, incl. **Open items after 3.0.3.0** (security rotation, driver app follow-ups)  
 3. **README.md** — folder guide  
 4. Page / controls gap docs as needed  
 

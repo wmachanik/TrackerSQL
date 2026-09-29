@@ -1,7 +1,30 @@
 # Current Migration Issues
 
-**Last Updated:** 2025-03-26  
+**Last Updated:** 2026-09-29  
 **Purpose:** Track active problems discovered during code migration
+
+---
+
+## Open items after 3.0.3.0 (2026-09-29)
+
+**Security (do first):**
+- Rotate every secret that was in public GitHub commits: live DB password, `noreply@quaffee.co.za` and `orders@quaffee.com` mailbox passwords, `DisableClientSecret`, `WooCommerceCryptoKey`, and generate a new live `machineKey` (highest priority: it can forge sign-in cookies). Then update the real configs and the live `Web.config`. See [`../DEPLOYMENT_AND_CONFIG.md`](../DEPLOYMENT_AND_CONFIG.md).
+- Consider making `github.com/wmachanik/TrackerSQL` private, and optionally scrubbing history.
+
+**Driver app / mobile API** ([`../MOBILE_API_AND_DRIVER_APP.md`](../MOBILE_API_AND_DRIVER_APP.md)):
+- Short deliveries store what is missing but do not change order quantities in Tracker.
+- Optional: admin approval of each new phone; app PIN / fingerprint lock.
+- TrackerDriver (`C:\SRC\ASP.net\TrackerDriver`) is not in git yet.
+- iPhone native build not done (web copy works on iPhone).
+
+**Contact Portal questions still open (from 3.0.2.0):**
+- Register / request-access link behaviour.
+- Next coffee date can look stale.
+- Confirmed vs unconfirmed portal orders in My Orders, and the My Orders filter.
+- Whether to CC orders@ on the Repeat Order acknowledgement.
+
+**Housekeeping:**
+- `TrackerSQL.csproj` has an uncommitted Visual Studio change (`<None Include="web.live.config" />`); decide whether to keep it.
 
 ---
 

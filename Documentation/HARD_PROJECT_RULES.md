@@ -1,7 +1,7 @@
 ﻿# HARD PROJECT RULES - MANDATORY COMPLIANCE
 
 **Date:** 2025-03-26  
-**Last Updated:** 2026-07-22  
+**Last Updated:** 2026-09-29  
 **Status:** ACTIVE - THESE ARE NON-NEGOTIABLE RULES  
 **Applies To:** ALL development on this project
 
@@ -96,6 +96,24 @@ new DBParameter {
 ### Symptom
 
 `INSERT/UPDATE ... conflicted with the FOREIGN KEY constraint "FK_..."` when the app value is `0` or an Access-era empty lookup.
+
+---
+
+## Rule #0f: NO SECRETS IN GIT (the GitHub repo is PUBLIC)
+
+**Details:** [`DEPLOYMENT_AND_CONFIG.md`](DEPLOYMENT_AND_CONFIG.md)
+
+### REQUIRED
+
+1. Real config files (`Web.config`, `web.live.config`, `Web.Release.config`, `weblive.config`) stay **git-ignored**. Only the `*.example` copies are committed.
+2. When a config changes, update the matching `.example` with **every** password / key / secret set to `mypassword` (connection strings, `EMailPassword`, SMTP `<network password>`, `DisableClientSecret`, `WooCommerceCryptoKey`, `machineKey`).
+3. Before committing, check the staged diff for real secrets. Never paste secrets into docs, code, comments or chat output.
+4. New secrets go in the real config (or the database), never in C# or JavaScript.
+
+### PROHIBITED
+
+❌ `git add -f` on a real config file  
+❌ Hard-coded passwords, API keys or tokens in source
 
 ---
 
@@ -476,6 +494,7 @@ There are **ZERO exceptions** to the Access database rule. SQL Server must be us
 4. ❌ Use ObjectDataSource with legacy `*Tbl` classes
 5. ❌ Put data access logic in ASPX markup
 6. ❌ Hardcode magic numbers/strings
+7. ❌ Commit real config files or secrets (only `*.example` copies with `mypassword`)
 
 ### DO
 

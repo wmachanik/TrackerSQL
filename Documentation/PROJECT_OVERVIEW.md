@@ -48,8 +48,14 @@
 
 ---
 
+## Current Release (2026-09-29)
+
+- **Live version:** 3.0.3.0 at **`https://tracker.quaffee.co.za`** (also `https://quaffeetracker.co.za`), myasp.net shared hosting. Branch `feature/3.0.3.0`. See [../CHANGELOG.md](../CHANGELOG.md).
+- **Quaffee Driver app** (new in 3.0.3.0): companion Vue/Capacitor app in `C:\SRC\ASP.net\TrackerDriver` using Tracker's `/api/v1` REST API. See [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md).
+- **Deploying and config secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md). The GitHub repo is public: real config files are git-ignored (Hard Rule #0f).
+
 ## Quick Reference Card
-**Last Updated:** 2025-03-26  
+**Last Updated:** 2026-09-29  
 **Project Type:** ASP.NET Web Forms Migration Project  
 **Technology Stack:**
 - **Framework:** .NET Framework 4.8
@@ -69,8 +75,8 @@ Key folders:
 •	/Styles → CSS
 
 ## AI Codebase Context (IMPORTANT)
-This project includes a full AI-readable version of the codebase:
-📄 documentation/repomix-output.xml
+An AI-readable pack of the codebase can be generated locally with repomix:
+📄 documentation/repomix-output.xml (git-ignored, may be out of date; regenerate before relying on it)
 This file allows AI tools to:
 •	Understand the full project structure
 •	Analyze dependencies
@@ -474,6 +480,7 @@ When assisting with this project, always reference:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-03-26 | Initial AI-focused documentation created |
+| 1.1 | 2026-09-29 | Current release section (3.0.3.0 live, driver app, deployment/secrets) |
 
 ---
 

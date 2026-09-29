@@ -4,6 +4,10 @@
 **Last Updated:** 2026-06-15 (page migration phase documented)  
 **Purpose:** Current migration guide for replacing legacy `TrackerSQL.Controls`, `TrackerDb`, OleDb/ObjectDataSource patterns, and old Access naming with the new SQL Server repository/model/manager/page structure.
 
+> **Current state (2026-09-29):** version **3.0.3.0** is live at `https://tracker.quaffee.co.za`. Release notes: [CHANGELOG.md](CHANGELOG.md). Deploying and config files: [Documentation/DEPLOYMENT_AND_CONFIG.md](Documentation/DEPLOYMENT_AND_CONFIG.md). Mobile API and Quaffee Driver app: [Documentation/MOBILE_API_AND_DRIVER_APP.md](Documentation/MOBILE_API_AND_DRIVER_APP.md). Rules: [Documentation/HARD_PROJECT_RULES.md](Documentation/HARD_PROJECT_RULES.md).
+>
+> **Fresh clone:** real config files are not in git (the repo is public). Copy `Web.config.example` → `Web.config` (and `web.live.config.example` / `Web.Release.config.example` if deploying) and fill in the real passwords.
+
 > **Important:** This file supersedes older migration notes that referred to `Classes/Sql`, `Classes/Poco`, `Customer*`, `Client*`, `Company*`, `TrackerDb`, or ObjectDataSource-based patterns. Those older notes may remain useful as historical context, but they are **not** the current target architecture.
 
 ---

@@ -2,7 +2,13 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.0 — 2026-09-28
+## 3.0.3.0 — 2026-09-28 (live 2026-09-29)
+
+### Deployment
+- **Live address:** `https://tracker.quaffee.co.za` (primary; `https://quaffeetracker.co.za` serves the same site). `ApplicationBaseUrl` and the driver app's default server use it.
+- **Config files and secrets:** real `Web.config`, `web.live.config` and `Web.Release.config` are no longer in git; sanitized `*.example` copies (every secret `mypassword`) are committed instead. See `Documentation/DEPLOYMENT_AND_CONFIG.md`. Secrets in older public commits must be rotated.
+- **CORS** trimmed to the app's own origins (`https://localhost`, `capacitor://localhost`).
+- New docs: `Documentation/MOBILE_API_AND_DRIVER_APP.md`, `Documentation/DEPLOYMENT_AND_CONFIG.md`; Hard Rule #0f (no secrets in git).
 
 ### Features
 - **Mobile REST API for a delivery driver app** — JSON API at `/api/v1` (ASP.NET Web API 2, inside the Tracker site) for an Android / iPhone app. Drivers sign in with their Tracker login, which must be linked to a person in Lookups → People (Security Username). Administrators can sign in without being linked.

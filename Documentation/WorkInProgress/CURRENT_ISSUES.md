@@ -14,7 +14,7 @@
 **Driver app / mobile API** ([`../MOBILE_API_AND_DRIVER_APP.md`](../MOBILE_API_AND_DRIVER_APP.md)):
 - Short deliveries store what is missing but do not change order quantities in Tracker.
 - Optional: admin approval of each new phone; app PIN / fingerprint lock.
-- TrackerDriver (`C:\SRC\ASP.net\TrackerDriver`) is not in git yet.
+- TrackerDriver (`C:\SRC\ASP.net\TrackerDriver`) is a local git repo only (no remote / backup yet).
 - iPhone native build not done (web copy works on iPhone).
 
 **Contact Portal questions still open (from 3.0.2.0):**
@@ -22,10 +22,6 @@
 - Next coffee date can look stale.
 - Confirmed vs unconfirmed portal orders in My Orders, and the My Orders filter.
 - Whether to CC orders@ on the Repeat Order acknowledgement.
-
-**Housekeeping:**
-- `TrackerSQL.csproj` has an uncommitted Visual Studio change (`<None Include="web.live.config" />`); decide whether to keep it.
-
 ---
 
 ## Active Issues

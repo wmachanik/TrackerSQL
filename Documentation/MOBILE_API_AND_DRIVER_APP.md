@@ -13,7 +13,8 @@ delivery captured offline, repairs, contacts). The app lives in a separate folde
 | Android app | `npm run apk` (~7-12 min on this PC; then `gradlew --stop`) | `Downloads/QuaffeeDriver.apk` | `https://tracker.quaffee.co.za` (changeable under "Server settings" on sign-in) |
 
 Both folders are in the csproj as `driver\**\*` and `Downloads\**\*`, so a Visual Studio publish includes them.
-TrackerDriver has its own `README.md` (dev, build, phone testing, code map). **TrackerDriver is not in git yet.**
+TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It is a **local git repo only**
+(branch `main`, first commit 0.3.0; no remote yet).
 
 ---
 
@@ -129,5 +130,5 @@ each delivery ~10-30 KB (mostly the signature, max 256 KB). A 20-30 stop day is 
 - **Short deliveries** do not change order quantities in Tracker (offered, not built).
 - **Security:** rotate the secrets that were public on GitHub (see `DEPLOYMENT_AND_CONFIG.md`), including the
   `machineKey`; consider making the GitHub repo private; optional phone approval / app PIN.
-- **TrackerDriver** has no git repository yet (`git init` + first commit as 0.3.0 was offered).
+- **TrackerDriver** git repo is local only (no remote / backup yet).
 - iPhone build (needs a Mac / Xcode) not done; the web copy works on iPhone.

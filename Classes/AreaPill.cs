@@ -1,14 +1,17 @@
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace TrackerSQL.Classes
 {
     /// <summary>
-    /// Small pill with a three-letter area code for the delivery sheet (System Preferences → General).
-    /// The code is the first three consonants of the area name (Constantia → cns); names with fewer
-    /// consonants are topped up with their other letters. An area's own ShortCode (Lookups → Areas) replaces it
-    /// and is shown as typed (Durban → Dbn, East London → EL). The full area name is the tooltip. Screen only.
+    /// Small pill with an area code for the delivery sheet (System Preferences → General).
+    /// Names of two or more words use the first letter of each word, up to three (East London → el).
+    /// One-word names keep their first letter, then the next consonants, up to three letters
+    /// (Constantia → cns, Athlone → ath); names with too few consonants are topped up with their other letters.
+    /// An area's own ShortCode (Lookups → Areas) replaces it and is shown as typed (Durban → Dbn).
+    /// The full area name is the tooltip. Screen only.
     /// </summary>
     public static class AreaPill
     {
@@ -16,11 +19,23 @@ namespace TrackerSQL.Classes
 
         public static string Abbreviation(string areaName)
         {
-            var letters = (areaName ?? string.Empty).ToLowerInvariant().Where(char.IsLetter).ToList();
+            string name = (areaName ?? string.Empty).ToLowerInvariant();
+
+            var words = Regex.Split(name, "[^\\p{L}]+").Where(w => w.Length > 0).ToList();
+            if (words.Count >= 2)
+                return new string(words.Take(3).Select(w => w[0]).ToArray());
+
+            var letters = name.Where(char.IsLetter).ToList();
             var code = new StringBuilder(3);
             var used = new bool[letters.Count];
 
-            for (int i = 0; i < letters.Count && code.Length < 3; i++)
+            if (letters.Count > 0)
+            {
+                code.Append(letters[0]);
+                used[0] = true;
+            }
+
+            for (int i = 1; i < letters.Count && code.Length < 3; i++)
             {
                 if (Vowels.IndexOf(letters[i]) < 0)
                 {

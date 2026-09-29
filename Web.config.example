@@ -2,15 +2,31 @@
 <!--
   EXAMPLE ONLY: every password and secret is 'mypassword'. Copy to the real file name and fill in the real values;
   the real config files are not in git.
+
+  SETUP: copy this file to Web.config (local / development), then replace every "mypassword" (each has a
+  SECRET comment above it). Never commit Web.config: the GitHub repo is public (Documentation/HARD_PROJECT_RULES.md #0f).
+    - TrackerDataSQL connection string Password: your local SQL Server login (e.g. sa on .\SQLExpress2019).
+    - EMailPassword: password of the EMailLogIn mailbox. Keep EmailTestMode=true locally.
+    - mailSettings <network password>: password of the orders@quaffee.com mailbox.
+    - DisableClientSecret: any long random string. Changing it breaks "disable reminders" links already emailed.
+    - WooCommerceCryptoKey: Base64 32-byte key (see PowerShell below). It encrypts the stored WooCommerce API keys:
+      after changing it, re-enter the keys in Tracker's WooCommerce settings.
+    - machineKey: validationKey = 64 random bytes as hex, decryptionKey = 32 random bytes as hex. Changing it signs everyone out.
+  PowerShell (secure random):
+    $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
+    [Convert]::ToBase64String($b)                   # WooCommerceCryptoKey / DisableClientSecret
+    ($b | ForEach-Object { $_.ToString('X2') }) -join ''   # decryptionKey (use byte[] 64 for validationKey)
 -->
 <configuration>
 	<appSettings>
 		<add key="Version" value="3.0.3.0" />
 		<!-- Base64 32-byte AES key, or any passphrase (SHA-256 derived). Do not commit production keys. -->
+		<!-- SECRET: replace mypassword (see SETUP at the top) -->
 		<add key="WooCommerceCryptoKey" value="mypassword" />
 		<add key="SysEmailFrom" value="orders@quaffee.co.za" />
 		<add key="SysCCEmailAddress" value="orders@quaffee.co.za" />
 		<add key="EMailLogIn" value="noreply@quaffee.co.za" />
+		<!-- SECRET: password of the EMailLogIn mailbox -->
 		<add key="EMailPassword" value="mypassword" />
 		<add key="EMailSMTP" value="smtp.office365.com" />
 		<add key="EMailPort" value="587" />
@@ -20,6 +36,7 @@
 		<add key="EmailSocketOption" value="StartTls" />
 		<add key="EmailTimeout" value="60000" />
 		<add key="AppTimeZoneId" value="South Africa Standard Time" />
+		<!-- SECRET: any long random string (see SETUP at the top) -->
 		<add key="DisableClientSecret" value="mypassword" />
 		<add key="ApplicationBaseUrl" value="" />
 		<add key="EmailTestMode" value="true" />
@@ -64,6 +81,7 @@
 	</appSettings>
 	<connectionStrings>
 		<!--<add name="TrackerDataSQL2022" connectionString="Data Source=.\SQLExpress;Initial Catalog=OtterDb;Persist Security Info=True;User ID=sa;Password=mypassword" providerName="System.Data.SqlClient" /> -->
+		<!-- SECRET: replace Password=mypassword with your local SQL login password -->
 		<add name="TrackerDataSQL" connectionString="Data Source=.\SQLExpress2019;Initial Catalog=OtterDb;Persist Security Info=True;User ID=sa;Password=mypassword" providerName="System.Data.SqlClient" />
 	</connectionStrings>
 	<system.web>
@@ -112,6 +130,7 @@
 		</pages>
 		<!-- Local/dev: Off shows yellow screens. Live uses RemoteOnly → HttpErrorPage (see weblive / Web.Release). -->
 		<customErrors mode="Off" />
+		<!-- SECRET: generate new hex keys (see SETUP at the top) -->
 		<machineKey decryptionKey="mypassword" validationKey="mypassword" />
 	</system.web>
 
@@ -162,6 +181,7 @@
 	<system.net>
 		<mailSettings>
 			<smtp from="orders@quaffee.co.za">
+				<!-- SECRET: password of the orders@quaffee.com mailbox -->
 				<network host="mail.quaffee.com" userName="orders@quaffee.com" password="mypassword" />
 			</smtp>
 		</mailSettings>

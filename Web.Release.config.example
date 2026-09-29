@@ -3,11 +3,15 @@
   EXAMPLE ONLY: every password and secret is 'mypassword'. Copy to the real file name and fill in the real values;
   the real config files are not in git.
 
+  SETUP: copy this file to Web.Release.config and replace "mypassword" in the TrackerDataSQL connection string
+  with the live SQL login password (myasp.net control panel > Databases). Never commit Web.Release.config:
+  the GitHub repo is public (Documentation/HARD_PROJECT_RULES.md #0f).
+
   Release XDT transform applied to Web.config when publishing/packaging with the
   Release configuration (Visual Studio / MSBuild).
 
-  Source of truth for the full production file (manual FTP overwrite): weblive.config.
-  Keep transforms here in sync with weblive production deltas.
+  Source of truth for the full production file (manual FTP overwrite): web.live.config (uploaded as Web.config).
+  Keep transforms here in sync with the web.live.config production deltas.
 
   Docs: https://go.microsoft.com/fwlink/?LinkId=125889
 -->
@@ -30,6 +34,7 @@
 
   <connectionStrings>
     <!-- Was ApplicationServices — site4now SQL; name required by TrackerSQL -->
+    <!-- SECRET: replace mypassword with the live SQL login password -->
     <add name="TrackerDataSQL"
          connectionString="Data Source=SQL8001.site4now.net;Initial Catalog=db_a8d7e2_trackersecurity;User Id=db_a8d7e2_trackersecurity_admin;Password=mypassword"
          providerName="System.Data.SqlClient"

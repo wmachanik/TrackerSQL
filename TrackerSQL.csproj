@@ -1110,6 +1110,9 @@
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
+    <None Include="Web.config.example" />
+    <None Include="web.live.config.example" />
+    <None Include="Web.Release.config.example" />
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

@@ -58,12 +58,15 @@ namespace TrackerSQL.Pages
         protected Button btnAreaReset;
         protected GridView gvAreas;
         protected GridView gvAreaDays;
-        protected HiddenField hdnAreaBoardOrder;
-        protected HiddenField hdnAreaBoardSelectAreaId;
-        protected Button btnAreaBoardSave;
-        protected Button btnAreaBoardReset;
-        protected Button btnAreaBoardSelect;
-        protected Literal ltrlAreaBoard;
+        protected HiddenField hdnOpenAreaId;
+        protected Button btnOpenArea;
+        protected TabPanel tabpnlDeliveryDays;
+        protected UpdatePanel upnlDeliveryDays;
+        protected Button btnDeliveryDaysSave;
+        protected Button btnDeliveryDaysReset;
+        protected HiddenField hdnDeliveryDaysOrder;
+        protected HiddenField hdnDeliveryDaysDay;
+        protected Literal ltrlDeliveryDays;
         protected TabPanel tabpnlPackaging;
         protected UpdatePanel upnlPackaging;
         protected UpdatePanel upnlLookupStatus;
@@ -216,8 +219,8 @@ namespace TrackerSQL.Pages
 
         protected void Page_PreRender(object sender, EventArgs e)
         {
-            // Rebuilt every request so prep-day edits below show on the board straight away.
-            BindAreaWeekBoard();
+            // Rebuilt every request so prep-day edits on the Areas tab show straight away.
+            BindDeliveryDays();
             ApplyLookupStatusUi();
 
             // Async tab edits set lblStatus outside their own UpdatePanel — include the
@@ -818,6 +821,7 @@ namespace TrackerSQL.Pages
                 var tbxNotes = (TextBox)row.FindControl("NotesTextBox");
                 var tbxPillLabel = (TextBox)row.FindControl("PillLabelTextBox");
                 var tbxPillColour = (TextBox)row.FindControl("PillColourTextBox");
+                var tbxPillIcon = (TextBox)row.FindControl("PillIconTextBox");
 
                 if (!OrderFlagPill.IsValidColour(tbxPillColour?.Text))
                 {
@@ -833,7 +837,8 @@ namespace TrackerSQL.Pages
                     Enabled = cbxEnabled != null && cbxEnabled.Checked,
                     Notes = tbxNotes?.Text ?? "",
                     PillLabel = tbxPillLabel?.Text?.Trim(),
-                    PillColour = tbxPillColour?.Text?.Trim()
+                    PillColour = tbxPillColour?.Text?.Trim(),
+                    PillIcon = tbxPillIcon?.Text?.Trim()
                 };
 
                 var repo = new InvoiceTypesRepository();
@@ -2779,106 +2784,149 @@ namespace TrackerSQL.Pages
             }
         }
 
-        private void BindAreaWeekBoard()
+        private void BindDeliveryDays()
         {
-            if (ltrlAreaBoard == null)
+            if (ltrlDeliveryDays == null)
                 return;
 
             try
             {
-                ltrlAreaBoard.Text = RenderAreaWeekBoard(new AreaWeekBoardManager().Build());
+                ltrlDeliveryDays.Text = RenderDeliveryDays(new AreaWeekBoardManager().Build());
             }
             catch (Exception ex)
             {
-                ltrlAreaBoard.Text = string.Empty;
-                SetLookupStatus("Error loading the delivery week: " + ex.Message, true);
+                ltrlDeliveryDays.Text = string.Empty;
+                SetLookupStatus("Error loading delivery days: " + ex.Message, true);
             }
         }
 
-        private string RenderAreaWeekBoard(AreaWeekBoard board)
+        /// <summary>Day shown: the one last picked, else today when it has deliveries, else the first day with deliveries.</summary>
+        private int ResolveDeliveryDaysDay(AreaWeekBoard board)
         {
-            var html = new System.Text.StringBuilder();
-            html.AppendFormat("<div class=\"area-board\" data-order-field=\"{0}\" data-select-field=\"{1}\" data-select-button=\"{2}\">",
-                hdnAreaBoardOrder.ClientID, hdnAreaBoardSelectAreaId.ClientID, btnAreaBoardSelect.ClientID);
+            if (int.TryParse(hdnDeliveryDaysDay?.Value, out int picked) && board.Days.Any(d => d.DayOfWeekID == picked))
+                return picked;
 
+            int today = (int)DateTime.Today.DayOfWeek + 1;
+            if (board.Days.Any(d => d.DayOfWeekID == today && d.Cards.Count > 0))
+                return today;
+
+            return (board.Days.FirstOrDefault(d => d.Cards.Count > 0) ?? board.Days.First()).DayOfWeekID;
+        }
+
+        private string RenderDeliveryDays(AreaWeekBoard board)
+        {
+            int activeDay = ResolveDeliveryDaysDay(board);
+            hdnDeliveryDaysDay.Value = activeDay.ToString(CultureInfo.InvariantCulture);
+
+            var html = new System.Text.StringBuilder();
+            html.AppendFormat("<div class=\"delivery-days\" data-order-field=\"{0}\" data-day-field=\"{1}\" data-open-field=\"{2}\" data-open-button=\"{3}\" data-tabs=\"{4}\" data-areas-tab=\"{5}\">",
+                hdnDeliveryDaysOrder.ClientID, hdnDeliveryDaysDay.ClientID, hdnOpenAreaId.ClientID, btnOpenArea.ClientID,
+                tabcLookup.ClientID, tabcLookup.Tabs.IndexOf(tabpnlAreas));
+
+            html.Append("<div class=\"delivery-days-picker\">");
             foreach (var day in board.Days)
             {
-                html.AppendFormat("<div class=\"area-board-col{0}\">", day.Cards.Count == 0 ? " is-empty" : string.Empty);
-                html.AppendFormat("<div class=\"area-board-col-head\"><span>{0}</span><span class=\"area-board-count\" title=\"areas delivered\">{1}</span></div>",
-                    day.DayName, day.Cards.Count);
-                html.AppendFormat("<ol class=\"area-board-list\" data-dow=\"{0}\">", day.DayOfWeekID);
-
-                int position = 0;
-                foreach (var card in day.Cards)
-                {
-                    position++;
-                    string cssClass = "area-board-card"
-                        + (card.OrderTied ? " is-tied" : string.Empty)
-                        + (card.DuplicateOnDay ? " is-duplicate" : string.Empty);
-                    string title = string.Format("{0}: prep {1} + {2} day(s) = {3}; delivery order {4}",
-                        card.AreaName, AreaWeekBoardManager.DayName(card.PrepDayOfWeekID), card.DeliveryDelayDays,
-                        day.DayName, card.DeliveryOrder?.ToString() ?? "not set");
-
-                    html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\" data-area=\"{2}\" title=\"{3}\">",
-                        cssClass, card.AreaPrepDaysID, card.AreaID, HttpUtility.HtmlAttributeEncode(title));
-                    html.AppendFormat("<span class=\"area-board-pos\">{0}</span><span class=\"area-board-name\">{1}</span>",
-                        position, HttpUtility.HtmlEncode(card.AreaName));
-                    html.Append("<span class=\"area-board-move\"><button type=\"button\" class=\"area-board-up\" title=\"Move up\">▲</button>"
-                        + "<button type=\"button\" class=\"area-board-down\" title=\"Move down\">▼</button></span>");
-                    html.AppendFormat("<span class=\"area-board-meta\">prep {0} +{1}</span>",
-                        AreaWeekBoardManager.DayName(card.PrepDayOfWeekID), card.DeliveryDelayDays);
-                    if (!string.IsNullOrEmpty(card.PromiseText))
-                        html.AppendFormat("<span class=\"area-board-tag is-promise\" title=\"Website promise: {0}\">promised</span>",
-                            HttpUtility.HtmlAttributeEncode(card.PromiseText));
-                    if (card.OrderTied)
-                        html.Append("<span class=\"area-board-tag is-warn\" title=\"Same delivery order as another area on this day — Save to renumber\">tie</span>");
-                    if (card.DuplicateOnDay)
-                        html.Append("<span class=\"area-board-tag is-error\" title=\"Two prep days of this area deliver on this day\">twice</span>");
-                    html.Append("</li>");
-                }
-
-                html.Append("</ol>");
-
-                if (day.Cards.Count == 0)
-                    html.Append("<div class=\"area-board-empty\">No deliveries</div>");
-
-                foreach (var gap in day.PromiseGaps)
-                {
-                    html.AppendFormat("<div class=\"area-board-gap\" data-area=\"{0}\" title=\"Website promises {1} ({2}) but no prep day delivers on {3}\">&#9888; {4} promised, not delivered</div>",
-                        gap.AreaID, HttpUtility.HtmlAttributeEncode(gap.AreaName), HttpUtility.HtmlAttributeEncode(gap.PromiseText),
-                        day.DayName, HttpUtility.HtmlEncode(gap.AreaName));
-                }
-
-                html.Append("</div>");
-            }
-
-            html.Append("<div class=\"area-board-col area-board-unassigned\">");
-            html.AppendFormat("<div class=\"area-board-col-head\"><span>No delivery day</span><span class=\"area-board-count\">{0}</span></div>",
-                board.Unassigned.Count);
-            if (board.Unassigned.Count == 0)
-                html.Append("<div class=\"area-board-empty\">Every area has a delivery day</div>");
-            else
-            {
-                html.Append("<ul class=\"area-board-plain\">");
-                foreach (var area in board.Unassigned)
-                    html.AppendFormat("<li class=\"area-board-card\" data-area=\"{0}\" title=\"Double-click to add prep days\"><span class=\"area-board-name\">{1}</span></li>",
-                        area.AreaID, HttpUtility.HtmlEncode(area.AreaName));
-                html.Append("</ul>");
+                string cssClass = "delivery-days-pick"
+                    + (day.DayOfWeekID == activeDay ? " is-active" : string.Empty)
+                    + (day.Cards.Count == 0 ? " is-empty" : string.Empty);
+                string warning = day.PromiseGaps.Count > 0
+                    ? "<span class=\"delivery-days-pick-warn\" title=\"Website promises not met on this day\">&#9888;</span>"
+                    : string.Empty;
+                html.AppendFormat("<button type=\"button\" class=\"{0}\" data-dow=\"{1}\">{2}<span class=\"delivery-days-pick-count\">{3}</span>{4}</button>",
+                    cssClass, day.DayOfWeekID, day.DayName, day.Cards.Count, warning);
             }
             html.Append("</div>");
+
+            if (board.Unassigned.Count > 0)
+            {
+                html.Append("<p class=\"delivery-days-note\"><strong>No delivery day:</strong> ")
+                    .Append(string.Join(", ", board.Unassigned.Select(a => DeliveryDaysOpenLink(a.AreaID, a.AreaName))))
+                    .Append(". These areas have no prep days, so they never appear on a delivery sheet.</p>");
+            }
+
+            foreach (var day in board.Days)
+                RenderDeliveryDay(html, day, day.DayOfWeekID == activeDay);
 
             html.Append("</div>");
             return html.ToString();
         }
 
-        protected void btnAreaBoardSave_Click(object sender, EventArgs e)
+        private static void RenderDeliveryDay(System.Text.StringBuilder html, AreaWeekDay day, bool active)
         {
-            string posted = hdnAreaBoardOrder?.Value ?? string.Empty;
-            hdnAreaBoardOrder.Value = string.Empty;
+            string dayName = AreaWeekBoardManager.FullDayName(day.DayOfWeekID);
+            html.AppendFormat("<section class=\"delivery-days-day{0}\" data-dow=\"{1}\">", active ? " is-active" : string.Empty, day.DayOfWeekID);
+            html.AppendFormat("<h4 class=\"delivery-days-title\">{0} <span>{1} area{2}</span></h4>",
+                dayName, day.Cards.Count, day.Cards.Count == 1 ? string.Empty : "s");
+
+            if (day.Cards.Count == 0)
+            {
+                html.AppendFormat("<p class=\"delivery-days-empty\">No areas are delivered on {0}.</p>", dayName);
+            }
+            else
+            {
+                html.AppendFormat("<ol class=\"delivery-days-list\" data-dow=\"{0}\">", day.DayOfWeekID);
+                int position = 0;
+                foreach (var card in day.Cards)
+                {
+                    position++;
+                    string cssClass = "delivery-days-row"
+                        + (card.OrderTied ? " is-tied" : string.Empty)
+                        + (card.DuplicateOnDay ? " is-duplicate" : string.Empty);
+                    string prep = card.DeliveryDelayDays == 0
+                        ? "prepped and delivered on " + dayName
+                        : string.Format("prepped {0}, {1} day{2} to deliver", AreaWeekBoardManager.FullDayName(card.PrepDayOfWeekID),
+                            card.DeliveryDelayDays, card.DeliveryDelayDays == 1 ? string.Empty : "s");
+
+                    html.AppendFormat("<li class=\"{0}\" draggable=\"true\" data-id=\"{1}\">", cssClass, card.AreaPrepDaysID);
+                    html.Append("<span class=\"delivery-days-grip\" title=\"Drag to move\">&#8942;&#8942;</span>");
+                    html.AppendFormat("<span class=\"delivery-days-pos\">{0}</span>", position);
+                    html.Append(DeliveryDaysOpenLink(card.AreaID, card.AreaName));
+                    html.AppendFormat("<span class=\"delivery-days-prep\">{0}</span>", HttpUtility.HtmlEncode(prep));
+                    html.Append("<span class=\"delivery-days-tags\">");
+                    if (!string.IsNullOrEmpty(card.PromiseText))
+                        html.AppendFormat("<span class=\"delivery-days-tag is-promise\" title=\"The website promises {0} delivery for {1}\">on website</span>",
+                            dayName, HttpUtility.HtmlAttributeEncode(card.PromiseText));
+                    if (card.OrderTied)
+                        html.Append("<span class=\"delivery-days-tag is-warn\" title=\"Same delivery order number as another area on this day. Save Delivery Order renumbers the day.\">same number</span>");
+                    if (card.DuplicateOnDay)
+                        html.AppendFormat("<span class=\"delivery-days-tag is-error\" title=\"Two of this area's prep days deliver on {0}. Check its prep days.\">twice</span>", dayName);
+                    html.Append("</span>");
+                    html.Append("<span class=\"delivery-days-move\"><button type=\"button\" class=\"delivery-days-up\" title=\"Move up\">&#9650;</button>"
+                        + "<button type=\"button\" class=\"delivery-days-down\" title=\"Move down\">&#9660;</button></span>");
+                    html.Append("</li>");
+                }
+                html.Append("</ol>");
+            }
+
+            if (day.PromiseGaps.Count > 0)
+            {
+                html.Append("<div class=\"delivery-days-check\">");
+                html.AppendFormat("<div class=\"delivery-days-check-title\">&#9888; Website promises {0} delivery, but these areas are not delivered on {0}</div>", dayName);
+                html.AppendFormat("<p>The Delivery Promise Rules (System Tools) tell customers in these areas that orders placed in the window shown arrive on {0}, "
+                    + "but none of the area's prep days deliver on {0}. Add a prep day that delivers on {0} (click the area), or change the rule.</p>", dayName);
+                html.Append("<ul>");
+                foreach (var gap in day.PromiseGaps)
+                    html.AppendFormat("<li>{0} <span class=\"delivery-days-check-window\">{1}</span></li>",
+                        DeliveryDaysOpenLink(gap.AreaID, gap.AreaName), HttpUtility.HtmlEncode(gap.PromiseText));
+                html.Append("</ul></div>");
+            }
+
+            html.Append("</section>");
+        }
+
+        private static string DeliveryDaysOpenLink(int areaId, string areaName)
+        {
+            return string.Format("<a href=\"#\" class=\"delivery-days-open\" data-area=\"{0}\" title=\"Edit this area's prep days\">{1}</a>",
+                areaId, HttpUtility.HtmlEncode(areaName));
+        }
+
+        protected void btnDeliveryDaysSave_Click(object sender, EventArgs e)
+        {
+            string posted = hdnDeliveryDaysOrder?.Value ?? string.Empty;
+            hdnDeliveryDaysOrder.Value = string.Empty;
             if (string.IsNullOrWhiteSpace(posted))
             {
                 SetLookupStatus("No delivery order changes to save.", null);
-                upnlAreas.Update();
                 return;
             }
 
@@ -2901,38 +2949,38 @@ namespace TrackerSQL.Pages
                     if (saved > 0)
                     {
                         savedRows += saved;
-                        savedDays.Add(AreaWeekBoardManager.DayName(dayOfWeekId));
+                        savedDays.Add(AreaWeekBoardManager.FullDayName(dayOfWeekId));
                     }
                 }
 
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "Lookups: area delivery order saved for " + string.Join(", ", savedDays) + " (" + savedRows + " rows).");
                 SetLookupStatus(savedDays.Count == 0
-                    ? "Nothing saved — the board may be out of date. Undo Changes to reload it."
+                    ? "Nothing saved — the list may be out of date. Undo Changes to reload it."
                     : "Delivery order saved for " + string.Join(", ", savedDays) + ".", savedDays.Count == 0 ? (bool?)true : false);
 
                 if (gvAreaDays.Visible)
+                {
                     BindAreaDaysGrid();
+                    upnlAreas.Update();
+                }
             }
             catch (Exception ex)
             {
                 SetLookupStatus("Error saving delivery order: " + ex.Message, true);
             }
-
-            upnlAreas.Update();
         }
 
-        protected void btnAreaBoardReset_Click(object sender, EventArgs e)
+        protected void btnDeliveryDaysReset_Click(object sender, EventArgs e)
         {
-            hdnAreaBoardOrder.Value = string.Empty;
-            SetLookupStatus("Delivery week reloaded.", null);
-            upnlAreas.Update();
+            hdnDeliveryDaysOrder.Value = string.Empty;
+            SetLookupStatus("Delivery days reloaded.", null);
         }
 
-        /// <summary>Double-click on a board card: select that area in the grid and show its prep days.</summary>
-        protected void btnAreaBoardSelect_Click(object sender, EventArgs e)
+        /// <summary>Area link on the Delivery Days tab: select that area on the Areas tab and show its prep days.</summary>
+        protected void btnOpenArea_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(hdnAreaBoardSelectAreaId?.Value, out int areaId) || areaId <= 0)
+            if (!int.TryParse(hdnOpenAreaId?.Value, out int areaId) || areaId <= 0)
                 return;
 
             if (tbxAreaSearch != null)
@@ -3017,6 +3065,7 @@ namespace TrackerSQL.Pages
                     TextBox controlNotes = (TextBox)namingContainer.FindControl("NotesTextBox");
                     TextBox controlPillLabel = (TextBox)namingContainer.FindControl("PillLabelTextBox");
                     TextBox controlPillColour = (TextBox)namingContainer.FindControl("PillColourTextBox");
+                    TextBox controlPillIcon = (TextBox)namingContainer.FindControl("PillIconTextBox");
 
                     if (!OrderFlagPill.IsValidColour(controlPillColour?.Text))
                     {
@@ -3031,7 +3080,8 @@ namespace TrackerSQL.Pages
                         Enabled = controlEnabled != null && controlEnabled.Checked,
                         Notes = controlNotes != null ? controlNotes.Text : string.Empty,
                         PillLabel = controlPillLabel?.Text?.Trim(),
-                        PillColour = controlPillColour?.Text?.Trim()
+                        PillColour = controlPillColour?.Text?.Trim(),
+                        PillIcon = controlPillIcon?.Text?.Trim()
                     };
 
                     new InvoiceTypesRepository().Insert(invoiceType);

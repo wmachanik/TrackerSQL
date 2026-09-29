@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   3.0.3.1 order flags (invoice type per order).
-  - InvoiceTypesTbl gets PillLabel / PillColour: the pill shown on the delivery sheet (empty label = no pill).
+  - InvoiceTypesTbl gets PillLabel / PillColour / PillIcon: the pill shown on the delivery sheet (empty label = no pill).
   - RecurringOrdersTbl.InvoiceTypeID: flag copied onto each order the recurring order creates.
   - OrdersTbl.InvoiceTypeID: the order's own flag (editable on Order Detail).
   - Backfill uses the old rule (the contact's account invoice type) for recurring orders and open orders.
@@ -31,6 +31,29 @@
                                   WHEN 5 THEN N''#198754''
                                   WHEN 6 THEN N''#fd7e14''
                               END
+              WHERE InvoiceTypeID BETWEEN 2 AND 6;');
+      END
+    ]]>
+  </command>
+
+  <!-- PillIcon: emoji or short code shown instead of the label (label becomes the tooltip / key).
+       Seeded as NCHAR surrogate pairs so the values do not depend on how the file is read: 📝 delivery note, 📦 dispatch note, 🎁 gift, 💵 cash receipt, 🧪 sample. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.InvoiceTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.InvoiceTypesTbl', N'PillIcon') IS NULL
+      BEGIN
+          ALTER TABLE dbo.InvoiceTypesTbl ADD PillIcon NVARCHAR(8) NULL;
+
+          EXEC(N'
+              UPDATE dbo.InvoiceTypesTbl
+              SET PillIcon = CASE InvoiceTypeID
+                                 WHEN 2 THEN NCHAR(0xD83D) + NCHAR(0xDCDD)
+                                 WHEN 3 THEN NCHAR(0xD83D) + NCHAR(0xDCE6)
+                                 WHEN 4 THEN NCHAR(0xD83C) + NCHAR(0xDF81)
+                                 WHEN 5 THEN NCHAR(0xD83D) + NCHAR(0xDCB5)
+                                 WHEN 6 THEN NCHAR(0xD83E) + NCHAR(0xDDEA)
+                             END
               WHERE InvoiceTypeID BETWEEN 2 AND 6;');
       END
     ]]>
@@ -99,7 +122,7 @@
 
   <command type="select">
     <![CDATA[
-      SELECT it.InvoiceTypeID, it.InvoiceTypeDesc, it.PillLabel, it.PillColour,
+      SELECT it.InvoiceTypeID, it.InvoiceTypeDesc, it.PillLabel, it.PillColour, it.PillIcon,
              (SELECT COUNT(*) FROM dbo.RecurringOrdersTbl r WHERE r.InvoiceTypeID = it.InvoiceTypeID) AS RecurringOrders,
              (SELECT COUNT(*) FROM dbo.OrdersTbl o WHERE o.InvoiceTypeID = it.InvoiceTypeID AND ISNULL(o.Done, 0) = 0) AS OpenOrders
       FROM dbo.InvoiceTypesTbl it

@@ -147,6 +147,7 @@
                     </asp:Table>
                 </div>
                 <div style="text-align: right; width: 98%" class="small">
+                    <asp:Literal ID="ltrlFlagLegend" runat="server" Mode="PassThrough" />
                     <asp:Label ID="ltrlWhichDate" Text="" runat="server" CssClass="small" />
                 </div>
 

@@ -24,7 +24,7 @@
 - **Mobile REST API + Quaffee Driver app:** [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) (app source: `C:\SRC\ASP.net\TrackerDriver`).
 - **Deploying, config files, secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md).
 - **Open items / next work:** [WorkInProgress/CURRENT_ISSUES.md](WorkInProgress/CURRENT_ISSUES.md) → "Open items after 3.0.3.0" and "3.0.3.1".
-- **Next: 3.0.3.1** (branch `feature/3.0.3.1`): order flags on recurring orders and orders, delivery sheet pills, and the Areas delivery week board. Business rules: [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) → Key Application Concepts.
+- **Next: 3.0.3.1** (branch `feature/3.0.3.1`): order flags on recurring orders and orders, delivery sheet flag icons, and the Lookups → Delivery Days tab. Business rules: [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) → Key Application Concepts.
 
 ---
 

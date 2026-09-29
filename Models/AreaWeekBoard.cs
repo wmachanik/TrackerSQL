@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace TrackerSQL.Models
 {
     /// <summary>
-    /// Lookups → Areas week board: which areas are delivered on each weekday, in delivery order.
+    /// Lookups → Delivery Days: which areas are delivered on each weekday, in delivery order.
     /// </summary>
     public class AreaWeekBoard
     {

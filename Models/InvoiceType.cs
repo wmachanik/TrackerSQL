@@ -10,5 +10,7 @@ namespace TrackerSQL.Models
         public string PillLabel { get; set; }
         /// <summary>Pill background, a CSS colour such as #6f42c1.</summary>
         public string PillColour { get; set; }
+        /// <summary>Emoji or short code shown instead of the label; the label becomes the tooltip.</summary>
+        public string PillIcon { get; set; }
     }
 }

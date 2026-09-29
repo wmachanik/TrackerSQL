@@ -29,12 +29,12 @@
             } catch (ex) { }
         }
 
-        // Areas week board. Delegated handlers — the board is re-rendered by the Areas UpdatePanel.
-        // Cards only move within their own day; hidden-field / button ids come from data-* on .area-board.
+        // Lookups → Delivery Days. Delegated handlers — the view is re-rendered by its UpdatePanel.
+        // Rows only move within their own day; field / button ids come from data-* on .delivery-days.
         (function () {
             var dragged = null;
 
-            function board() { return document.querySelector('.area-board'); }
+            function view() { return document.querySelector('.delivery-days'); }
             function closest(el, cls) {
                 while (el && el.nodeType === 1) {
                     if (el.classList.contains(cls)) return el;
@@ -42,82 +42,105 @@
                 }
                 return null;
             }
+            function byData(v, name) { return document.getElementById(v.getAttribute(name)); }
             function markDirty(list) {
                 if (!list) return;
                 list.setAttribute('data-dirty', '1');
-                var col = closest(list, 'area-board-col');
-                if (col) col.classList.add('is-dirty');
-                var cards = list.querySelectorAll('.area-board-card');
-                for (var i = 0; i < cards.length; i++) {
-                    var pos = cards[i].querySelector('.area-board-pos');
+                var v = view();
+                var pick = v ? v.querySelector('.delivery-days-pick[data-dow="' + list.getAttribute('data-dow') + '"]') : null;
+                if (pick) pick.classList.add('is-dirty');
+                var rows = list.querySelectorAll('.delivery-days-row');
+                for (var i = 0; i < rows.length; i++) {
+                    var pos = rows[i].querySelector('.delivery-days-pos');
                     if (pos) pos.textContent = String(i + 1);
                 }
             }
+            function showDay(dow) {
+                var v = view();
+                if (!v) return;
+                var picks = v.querySelectorAll('.delivery-days-pick');
+                for (var i = 0; i < picks.length; i++) picks[i].classList.toggle('is-active', picks[i].getAttribute('data-dow') === dow);
+                var days = v.querySelectorAll('.delivery-days-day');
+                for (var j = 0; j < days.length; j++) days[j].classList.toggle('is-active', days[j].getAttribute('data-dow') === dow);
+                var field = byData(v, 'data-day-field');
+                if (field) field.value = dow;
+            }
 
             document.addEventListener('dragstart', function (e) {
-                var card = closest(e.target, 'area-board-card');
-                if (!card || !closest(card, 'area-board-list')) return;
-                dragged = card;
-                card.classList.add('is-dragging');
-                try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', card.getAttribute('data-id')); } catch (ex) { }
+                var row = closest(e.target, 'delivery-days-row');
+                if (!row) return;
+                dragged = row;
+                row.classList.add('is-dragging');
+                try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', row.getAttribute('data-id')); } catch (ex) { }
             });
             document.addEventListener('dragend', function () {
                 if (dragged) dragged.classList.remove('is-dragging');
                 dragged = null;
             });
             document.addEventListener('dragover', function (e) {
-                var list = closest(e.target, 'area-board-list');
+                var list = closest(e.target, 'delivery-days-list');
                 if (!dragged || !list || dragged.parentNode !== list) return;
                 e.preventDefault();
-                var cards = list.querySelectorAll('.area-board-card:not(.is-dragging)');
+                var rows = list.querySelectorAll('.delivery-days-row:not(.is-dragging)');
                 var before = null;
-                for (var i = 0; i < cards.length; i++) {
-                    var box = cards[i].getBoundingClientRect();
-                    if (e.clientY < box.top + box.height / 2) { before = cards[i]; break; }
+                for (var i = 0; i < rows.length; i++) {
+                    var box = rows[i].getBoundingClientRect();
+                    if (e.clientY < box.top + box.height / 2) { before = rows[i]; break; }
                 }
                 if (before) list.insertBefore(dragged, before); else list.appendChild(dragged);
             });
             document.addEventListener('drop', function (e) {
-                var list = closest(e.target, 'area-board-list');
+                var list = closest(e.target, 'delivery-days-list');
                 if (!dragged || !list || dragged.parentNode !== list) return;
                 e.preventDefault();
                 markDirty(list);
             });
             document.addEventListener('click', function (e) {
-                var up = closest(e.target, 'area-board-up');
-                var down = closest(e.target, 'area-board-down');
+                var pick = closest(e.target, 'delivery-days-pick');
+                if (pick) {
+                    e.preventDefault();
+                    showDay(pick.getAttribute('data-dow'));
+                    return;
+                }
+
+                var open = closest(e.target, 'delivery-days-open');
+                if (open) {
+                    e.preventDefault();
+                    var v = view();
+                    var field = v ? byData(v, 'data-open-field') : null;
+                    var button = v ? byData(v, 'data-open-button') : null;
+                    if (!field || !button) return;
+                    var tabs = typeof $find === 'function' ? $find(v.getAttribute('data-tabs')) : null;
+                    if (tabs) tabs.set_activeTabIndex(parseInt(v.getAttribute('data-areas-tab'), 10));
+                    field.value = open.getAttribute('data-area');
+                    button.click();
+                    return;
+                }
+
+                var up = closest(e.target, 'delivery-days-up');
+                var down = closest(e.target, 'delivery-days-down');
                 if (!up && !down) return;
                 e.preventDefault();
-                var card = closest(e.target, 'area-board-card');
-                var list = card ? card.parentNode : null;
+                var row = closest(e.target, 'delivery-days-row');
+                var list = row ? row.parentNode : null;
                 if (!list) return;
-                if (up && card.previousElementSibling) list.insertBefore(card, card.previousElementSibling);
-                else if (down && card.nextElementSibling) list.insertBefore(card.nextElementSibling, card);
+                if (up && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+                else if (down && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
                 markDirty(list);
-            });
-            document.addEventListener('dblclick', function (e) {
-                var card = closest(e.target, 'area-board-card') || closest(e.target, 'area-board-gap');
-                var b = board();
-                if (!card || !b) return;
-                var field = document.getElementById(b.getAttribute('data-select-field'));
-                var button = document.getElementById(b.getAttribute('data-select-button'));
-                if (!field || !button) return;
-                field.value = card.getAttribute('data-area');
-                button.click();
             });
 
             // "dow:id,id,id|dow:id,..." for the days that were changed.
-            window.areaBoardPrepareSave = function () {
-                var b = board();
-                if (!b) return false;
-                var field = document.getElementById(b.getAttribute('data-order-field'));
+            window.deliveryDaysPrepareSave = function () {
+                var v = view();
+                if (!v) return false;
+                var field = byData(v, 'data-order-field');
                 if (!field) return false;
                 var parts = [];
-                var lists = b.querySelectorAll('.area-board-list[data-dirty="1"]');
+                var lists = v.querySelectorAll('.delivery-days-list[data-dirty="1"]');
                 for (var i = 0; i < lists.length; i++) {
                     var ids = [];
-                    var cards = lists[i].querySelectorAll('.area-board-card');
-                    for (var j = 0; j < cards.length; j++) ids.push(cards[j].getAttribute('data-id'));
+                    var rows = lists[i].querySelectorAll('.delivery-days-row');
+                    for (var j = 0; j < rows.length; j++) ids.push(rows[j].getAttribute('data-id'));
                     parts.push(lists[i].getAttribute('data-dow') + ':' + ids.join(','));
                 }
                 field.value = parts.join('|');
@@ -731,25 +754,10 @@
                                     width="32" height="32" alt="" />
                             </div>
                         </div>
-                        <div class="area-board-wrap">
-                            <div class="area-board-toolbar">
-                                <h4 class="lookups-areas-days-title">Delivery Week</h4>
-                                <span class="area-board-help">Each day lists the areas delivered on it (prep day + delay).
-                                    Drag an area, or use ▲▼, to set that day's delivery order, then Save.
-                                    Double-click an area to edit its prep days below.</span>
-                                <asp:HiddenField ID="hdnAreaBoardOrder" runat="server" />
-                                <asp:HiddenField ID="hdnAreaBoardSelectAreaId" runat="server" />
-                                <asp:Button ID="btnAreaBoardSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"
-                                    CausesValidation="false" OnClick="btnAreaBoardSave_Click"
-                                    OnClientClick="return areaBoardPrepareSave();"
-                                    ToolTip="Save the order of the days you changed (10, 20, 30 ...)" />
-                                <asp:Button ID="btnAreaBoardReset" runat="server" Text="Undo Changes" CssClass="filter-panel-btn"
-                                    CausesValidation="false" OnClick="btnAreaBoardReset_Click"
-                                    ToolTip="Reload the saved delivery order" />
-                                <asp:Button ID="btnAreaBoardSelect" runat="server" Text="Select" CausesValidation="false"
-                                    OnClick="btnAreaBoardSelect_Click" Style="display: none" />
-                            </div>
-                            <asp:Literal ID="ltrlAreaBoard" runat="server" Mode="PassThrough" />
+                        <%-- Delivery Days tab "open area": selects the area and shows its prep days. --%>
+                        <div style="display: none">
+                            <asp:HiddenField ID="hdnOpenAreaId" runat="server" />
+                            <asp:Button ID="btnOpenArea" runat="server" Text="Open" CausesValidation="false" OnClick="btnOpenArea_Click" />
                         </div>
                         <div class="lookups-areas-layout">
                             <div class="lookups-areas-list">
@@ -937,6 +945,33 @@
                                 </div>
                             </div>
                         </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
+        <ajaxToolkit:TabPanel ID="tabpnlDeliveryDays" runat="server" HeaderText="Delivery Days">
+            <ContentTemplate>
+                <%-- Always: prep-day edits on the Areas tab show here straight away. --%>
+                <asp:UpdatePanel ID="upnlDeliveryDays" runat="server" UpdateMode="Always">
+                    <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <span class="delivery-days-help">The areas delivered on each day (prep day + delivery delay), in delivery order.
+                                    Drag an area or use ▲ ▼, then Save Delivery Order. Click an area name to edit its prep days.</span>
+                            </div>
+                            <div class="filter-section admin-controls">
+                                <asp:Button ID="btnDeliveryDaysSave" runat="server" Text="Save Delivery Order" CssClass="filter-panel-btn"
+                                    CausesValidation="false" OnClick="btnDeliveryDaysSave_Click"
+                                    OnClientClick="return deliveryDaysPrepareSave();"
+                                    ToolTip="Save the order of the days you changed (10, 20, 30 ...)" />
+                                <asp:Button ID="btnDeliveryDaysReset" runat="server" Text="Undo Changes" CssClass="filter-panel-btn"
+                                    CausesValidation="false" OnClick="btnDeliveryDaysReset_Click"
+                                    ToolTip="Reload the saved delivery order" />
+                            </div>
+                        </div>
+                        <asp:HiddenField ID="hdnDeliveryDaysOrder" runat="server" />
+                        <asp:HiddenField ID="hdnDeliveryDaysDay" runat="server" />
+                        <asp:Literal ID="ltrlDeliveryDays" runat="server" Mode="PassThrough" />
                     </ContentTemplate>
                 </asp:UpdatePanel>
             </ContentTemplate>
@@ -1638,14 +1673,18 @@
                                                 placeholder="label (blank = no pill)" ToolTip="Text on the delivery sheet pill. Leave blank for no pill (e.g. Standard)." />
                                             <asp:TextBox ID="PillColourTextBox" runat="server" Text='<%# Bind("PillColour") %>' Width="6em" MaxLength="20"
                                                 placeholder="#6f42c1" ToolTip="Pill colour: #rgb, #rrggbb or a colour name" />
+                                            <asp:TextBox ID="PillIconTextBox" runat="server" Text='<%# Bind("PillIcon") %>' Width="3.5em" MaxLength="8"
+                                                placeholder="icon" ToolTip="Emoji or short code (e.g. DN) shown instead of the label; the label shows on hover. Blank = show the label. Windows: Win + . opens the emoji picker." />
                                         </EditItemTemplate>
                                         <ItemTemplate>
                                             <asp:Literal ID="PillPreviewLiteral" runat="server" Mode="PassThrough"
-                                                Text='<%# TrackerSQL.Classes.OrderFlagPill.Html(Convert.ToString(Eval("PillLabel")), Convert.ToString(Eval("PillColour"))) %>' />
+                                                Text='<%# TrackerSQL.Classes.OrderFlagPill.Html(Convert.ToString(Eval("PillLabel")), Convert.ToString(Eval("PillColour")), Convert.ToString(Eval("PillIcon"))) %>' />
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:TextBox ID="PillLabelTextBox" runat="server" Width="10em" MaxLength="20" placeholder="label (blank = no pill)" />
                                             <asp:TextBox ID="PillColourTextBox" runat="server" Width="6em" MaxLength="20" placeholder="#6f42c1" />
+                                            <asp:TextBox ID="PillIconTextBox" runat="server" Width="3.5em" MaxLength="8" placeholder="icon"
+                                                ToolTip="Emoji or short code shown instead of the label. Windows: Win + . opens the emoji picker." />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Enabled" SortExpression="Enabled">

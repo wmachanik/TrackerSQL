@@ -7,7 +7,7 @@ using TrackerSQL.Repositories;
 namespace TrackerSQL.Managers
 {
     /// <summary>
-    /// Builds the Areas week board and saves the per-day delivery order.
+    /// Builds Lookups → Delivery Days (areas per delivery weekday) and saves the per-day delivery order.
     /// Delivery weekday of a prep-day row = prep day + delivery delay, wrapping (1=Sun..7=Sat).
     /// </summary>
     public class AreaWeekBoardManager
@@ -15,6 +15,7 @@ namespace TrackerSQL.Managers
         public const short OrderStep = 10;
 
         private static readonly string[] DayNames = { "", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        private static readonly string[] FullDayNames = { "", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
         private static readonly int[] BoardDayOrder = { 2, 3, 4, 5, 6, 7, 1 };
 
         private readonly AreasRepository _areasRepository = new AreasRepository();
@@ -24,6 +25,11 @@ namespace TrackerSQL.Managers
         public static string DayName(int dayOfWeekId)
         {
             return dayOfWeekId >= 1 && dayOfWeekId <= 7 ? DayNames[dayOfWeekId] : "?";
+        }
+
+        public static string FullDayName(int dayOfWeekId)
+        {
+            return dayOfWeekId >= 1 && dayOfWeekId <= 7 ? FullDayNames[dayOfWeekId] : "?";
         }
 
         /// <summary>Delivery weekday (1=Sun..7=Sat) for a prep day and delay; null when the prep day is missing.</summary>
@@ -150,7 +156,8 @@ namespace TrackerSQL.Managers
                     continue;
 
                 int deliveryDow = rule.ResultDow.Value + 1;
-                string text = "ordered " + PromiseDowName(rule.WindowStartDow) + "–" + PromiseDowName(rule.WindowEndDow);
+                string text = "orders " + PromiseWindowPoint(rule.WindowStartDow, rule.WindowStartMinutes)
+                    + " – " + PromiseWindowPoint(rule.WindowEndDow, rule.WindowEndMinutes);
                 var key = Tuple.Create(areaId, deliveryDow);
                 lookup[key] = lookup.TryGetValue(key, out string existing) ? existing + "; " + text : text;
             }
@@ -162,6 +169,12 @@ namespace TrackerSQL.Managers
         private static string PromiseDowName(byte promiseDow)
         {
             return promiseDow <= 6 ? DayNames[promiseDow + 1] : "any";
+        }
+
+        private static string PromiseWindowPoint(byte promiseDow, short minutes)
+        {
+            int clamped = Math.Max(0, Math.Min(24 * 60, (int)minutes));
+            return PromiseDowName(promiseDow) + " " + (clamped / 60).ToString("00") + ":" + (clamped % 60).ToString("00");
         }
     }
 }

@@ -47,6 +47,7 @@ namespace TrackerSQL.Pages
         protected TableHeaderCell thcInStock;
         protected Table tblTotals;
         protected Label ltrlWhichDate;
+        protected Literal ltrlFlagLegend;
         protected System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
         protected Literal ltrlStatus;
 
@@ -276,9 +277,7 @@ namespace TrackerSQL.Pages
             else
                 ClearPageStatus();
 
-            var manager = new DeliverySheetManager(new InvoiceTypesRepository().GetAllById());
-
-
+            var manager = CreateSheetManager(pPrintForm);
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
             // UI rendering stays in the WebForms page.
@@ -933,13 +932,21 @@ namespace TrackerSQL.Pages
             else
                 ClearPageStatus();
 
-            var manager = new DeliverySheetManager(new InvoiceTypesRepository().GetAllById());
-
+            var manager = CreateSheetManager(false);
 
             // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
             var buildResult = manager.Build(queryResult.Items, false);
 
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
+        }
+
+        /// <summary>Sheet manager with the order flag lookup; also fills the flag icon key (not on the print copy).</summary>
+        private DeliverySheetManager CreateSheetManager(bool printForm)
+        {
+            var invoiceTypesById = new InvoiceTypesRepository().GetAllById();
+            if (ltrlFlagLegend != null)
+                ltrlFlagLegend.Text = printForm ? string.Empty : OrderFlagPill.LegendHtml(invoiceTypesById.Values);
+            return new DeliverySheetManager(invoiceTypesById);
         }
 
         /// <summary>

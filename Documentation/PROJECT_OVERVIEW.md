@@ -51,7 +51,7 @@
 ## Current Release (2026-09-29)
 
 - **Live version:** 3.0.3.0 at **`https://tracker.quaffee.co.za`** (also `https://quaffeetracker.co.za`), myasp.net shared hosting. See [../CHANGELOG.md](../CHANGELOG.md).
-- **Next release:** 3.0.3.1 on branch `feature/3.0.3.1`: order flags (recurring order → order, pills on the delivery sheet) and the Areas delivery week board. Go-live needs the `SQLCommands-OrderFlags-02-ResetContacts.xml` step in the CHANGELOG.
+- **Next release:** 3.0.3.1 on branch `feature/3.0.3.1`: order flags (recurring order → order, icons on the delivery sheet) and the Lookups → Delivery Days tab. Go-live needs the `SQLCommands-OrderFlags-02-ResetContacts.xml` step in the CHANGELOG.
 - **Quaffee Driver app** (new in 3.0.3.0): companion Vue/Capacitor app in `C:\SRC\ASP.net\TrackerDriver` using Tracker's `/api/v1` REST API. See [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md).
 - **Deploying and config secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md). The GitHub repo is public: real config files are git-ignored (Hard Rule #0f).
 
@@ -357,12 +357,12 @@ The migration standardizes terminology across the application:
 - `OrdersTbl.InvoiceTypeID` is the order's flag (Standard, Delivery note, Dispatch note, Gift, Cash receipt, Sample…) and tells whoever does invoicing how to invoice it. It is editable on Order Detail.
 - `RecurringOrdersTbl.InvoiceTypeID` is copied onto every order the recurring order creates (`CoffeeCheckupManager.CreateOrderForContact`).
 - A new order with no flag takes the contact's account type (`ContactsAccInfoTbl.InvoiceTypeID`), else Standard. A recurring order no longer changes the contact's account type.
-- The delivery sheet shows `COALESCE(order flag, contact account type)` as a pill; label and colour are `InvoiceTypesTbl.PillLabel` / `PillColour` (Lookups → Invoice Types; empty label = no pill).
+- The delivery sheet shows `COALESCE(order flag, contact account type)` beside the contact: the `InvoiceTypesTbl.PillIcon` in a ring of `PillColour` with `PillLabel` as the tooltip, or a coloured `PillLabel` pill when there is no icon (Lookups → Invoice Types; empty label = nothing shown). A key under the sheet lists the icons.
 
 **Delivery areas and days:**
 - Each `AreaPrepDaysTbl` row is one prep day of an area: `PrepDayOfWeekID` (1 = Sunday … 7 = Saturday) plus `DeliveryDelayDays` gives the delivery weekday. `DeliveryOrder` is the stop order **on that delivery day**.
 - The delivery sheet and driver app sort by the prep row that delivers on the order's `RequiredByDate` weekday.
-- Lookups → Areas has a Mon–Sun board for ordering each day (`AreaWeekBoardManager`). It also compares the days with the website delivery promise rules (`DeliveryPromiseRuleTbl`, days 0 = Sunday … 6 = Saturday).
+- Lookups → Delivery Days shows one day at a time for setting that day's order (`AreaWeekBoardManager`). Its "website promise check" lists areas that the Delivery Promise Rules (`DeliveryPromiseRuleTbl`, days 0 = Sunday … 6 = Saturday, `FixedDow` rules only) promise for a day on which none of the area's prep days deliver.
 
 ### Important Data Tables
 

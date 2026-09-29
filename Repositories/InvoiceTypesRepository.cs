@@ -12,29 +12,13 @@ namespace TrackerSQL.Repositories
         protected override string KeyColumn => "InvoiceTypeID";
 
         // Minimal/core columns for targeted fetches
-        protected override string CoreColumns => "InvoiceTypeID, InvoiceTypeDesc, Enabled, Notes, PillLabel, PillColour";
+        protected override string CoreColumns => "InvoiceTypeID, InvoiceTypeDesc, Enabled, Notes, PillLabel, PillColour, PillIcon";
         // Lookup (id + display text)
         protected override string LookupColumns => "InvoiceTypeID, InvoiceTypeDesc";
 
         public override int Insert(InvoiceType invoiceType)
         {
-            const string sql = "INSERT INTO InvoiceTypesTbl (InvoiceTypeDesc, Enabled, Notes, PillLabel, PillColour) VALUES (@InvoiceTypeDesc, @Enabled, @Notes, @PillLabel, @PillColour)";
-
-            var parameters = new List<DBParameter>
-            {
-                new DBParameter { ParamName = "@InvoiceTypeDesc", DataValue = invoiceType.InvoiceTypeDesc, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@Enabled", DataValue = invoiceType.Enabled ?? false, DataDbType = DbType.Boolean },
-                new DBParameter { ParamName = "@Notes", DataValue = invoiceType.Notes ?? string.Empty, DataDbType = DbType.String },
-                new DBParameter { ParamName = "@PillLabel", DataValue = TextOrDbNull(invoiceType.PillLabel), DataDbType = DbType.String },
-                new DBParameter { ParamName = "@PillColour", DataValue = TextOrDbNull(invoiceType.PillColour), DataDbType = DbType.String }
-            };
-
-            return ExecNonQuery(sql, parameters);
-        }
-
-        public override int Update(InvoiceType invoiceType)
-        {
-            const string sql = "UPDATE InvoiceTypesTbl SET InvoiceTypeDesc = @InvoiceTypeDesc, Enabled = @Enabled, Notes = @Notes, PillLabel = @PillLabel, PillColour = @PillColour WHERE InvoiceTypeID = @InvoiceTypeID";
+            const string sql = "INSERT INTO InvoiceTypesTbl (InvoiceTypeDesc, Enabled, Notes, PillLabel, PillColour, PillIcon) VALUES (@InvoiceTypeDesc, @Enabled, @Notes, @PillLabel, @PillColour, @PillIcon)";
 
             var parameters = new List<DBParameter>
             {
@@ -43,6 +27,24 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@Notes", DataValue = invoiceType.Notes ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@PillLabel", DataValue = TextOrDbNull(invoiceType.PillLabel), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@PillColour", DataValue = TextOrDbNull(invoiceType.PillColour), DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PillIcon", DataValue = TextOrDbNull(invoiceType.PillIcon), DataDbType = DbType.String }
+            };
+
+            return ExecNonQuery(sql, parameters);
+        }
+
+        public override int Update(InvoiceType invoiceType)
+        {
+            const string sql = "UPDATE InvoiceTypesTbl SET InvoiceTypeDesc = @InvoiceTypeDesc, Enabled = @Enabled, Notes = @Notes, PillLabel = @PillLabel, PillColour = @PillColour, PillIcon = @PillIcon WHERE InvoiceTypeID = @InvoiceTypeID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@InvoiceTypeDesc", DataValue = invoiceType.InvoiceTypeDesc, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@Enabled", DataValue = invoiceType.Enabled ?? false, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@Notes", DataValue = invoiceType.Notes ?? string.Empty, DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PillLabel", DataValue = TextOrDbNull(invoiceType.PillLabel), DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PillColour", DataValue = TextOrDbNull(invoiceType.PillColour), DataDbType = DbType.String },
+                new DBParameter { ParamName = "@PillIcon", DataValue = TextOrDbNull(invoiceType.PillIcon), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@InvoiceTypeID", DataValue = invoiceType.InvoiceTypeID, DataDbType = DbType.Int32 }
             };
 

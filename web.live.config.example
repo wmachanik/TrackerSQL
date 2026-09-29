@@ -25,7 +25,7 @@
 
   TrackerDataSQL = former ApplicationServices (SQL8001 / site4now).
 
-  3.0.3.1 changes (search "3.0.3.1") - order flags and Areas delivery week:
+  3.0.3.1 changes (search "3.0.3.1") - order flags and Lookups Delivery Days:
     1. Version 3.0.3.0 -> 3.0.3.1 (no other config changes)
   The order flag columns are added automatically at startup (SQLCommands-OrderFlags-01.xml).
   After the first start, run SQLCommands-OrderFlags-02-ResetContacts.xml once (System Tools > XML file to SQL)

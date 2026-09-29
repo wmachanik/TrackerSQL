@@ -11,8 +11,12 @@
 
 **Delivery days / areas:**
 - `AreasRepository.GetPrepRulesForArea` / `GetPrepRulesForContact` (used by `DateCalculator` for recurring and prediction dates) still read the old `AreasTbl.PrepDayOfWeekID` / `DeliveryDelay` instead of `AreaPrepDaysTbl`. `GetPrepRulesForArea` also selects `AreasTbl.DeliveryOrder`, which does not exist. `DateCalculator` compares the value with .NET `DayOfWeek` (0 = Sunday) while the table uses 1 = Sunday. Left unchanged in 3.0.3.1 because fixing it would move recurring delivery dates; needs a decision and testing.
-- Delivery promise gaps found by the new Areas board (dev data): Belville, Durbanville, Hout bay, Maitland/Pinelands, Milnerton, Northern Sub and Paarden Eiland are promised Mon/Wed/Thu deliveries, but their prep days deliver Tue/Fri. Simonstown is promised Monday. Either the promise rules or the prep days need changing.
-- Delivery orders were set per area, so most days show ties until each day is saved once on the board. Dubai (Tue) and Knysna (Fri) have two prep days delivering on the same day.
+- Website promises not met, found by Lookups → Delivery Days (dev data). The CapeTownGeneral promise rules promise Mon / Wed / Thu, but:
+  - Monday: Belville, Durbanville, Hout bay, Maitland/Pinelands, Milnerton, Northern Sub, Paarden Eiland and Simonstown (TokaiNoordhoek rule) are not delivered.
+  - Wednesday: Belville, Durbanville, Maitland/Pinelands, Milnerton, Northern Sub.
+  - Thursday: the same five plus Hout bay.
+  - Their prep days deliver Tue / Fri instead. Either the promise rules or the prep days need changing.
+- Delivery orders were set per area, so most days show ties ("same number") until each day is saved once on Lookups → Delivery Days. Dubai (Tue) and Knysna (Fri) have two prep days delivering on the same day.
 
 ## Open items after 3.0.3.0 (2026-09-29)
 

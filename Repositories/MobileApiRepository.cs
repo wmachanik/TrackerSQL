@@ -300,17 +300,39 @@ namespace TrackerSQL.Repositories
 
         // ---------------- Delivery proof ----------------
 
+        private static bool _proofAccuracySeen;
+
+        /// <summary>Whether the DriverGps-02 pack has added MobileDeliveryProofTbl.AccuracyM (only a yes is cached).</summary>
+        private bool ProofHasAccuracyColumn()
+        {
+            if (!_proofAccuracySeen)
+            {
+                try
+                {
+                    _proofAccuracySeen = Scalar<int>(
+                        "SELECT CASE WHEN COL_LENGTH('dbo.MobileDeliveryProofTbl', 'AccuracyM') IS NULL THEN 0 ELSE 1 END") == 1;
+                }
+                catch
+                {
+                    _proofAccuracySeen = false;
+                }
+            }
+            return _proofAccuracySeen;
+        }
+
         public long InsertProof(MobileDeliveryProof proof, byte[] signature)
         {
-            const string sql = @"
+            bool accuracy = ProofHasAccuracyColumn();
+            string sql = @"
                 INSERT INTO MobileDeliveryProofTbl
                     (ClientRef, OrderID, ContactID, PersonID, UserName, Outcome, Reason, ReceivedByName, SignatureImage, SignatureContentType,
-                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, Status, StatusMessage, ReceivedAt)
+                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, " + (accuracy ? "AccuracyM, " : "") + @"Status, StatusMessage, ReceivedAt)
                 VALUES
                     (@ClientRef, @OrderID, @ContactID, @PersonID, @UserName, @Outcome, @Reason, @ReceivedByName, @SignatureImage, @SignatureContentType,
-                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, @Status, @StatusMessage, @ReceivedAt);
+                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, " + (accuracy ? "@AccuracyM, " : "") + @"@Status, @StatusMessage, @ReceivedAt);
                 SELECT CAST(SCOPE_IDENTITY() AS BIGINT);";
             return Scalar<long>(sql,
+                P("@AccuracyM", proof.AccuracyM, DbType.Decimal),
                 P("@ClientRef", proof.ClientRef),
                 P("@OrderID", proof.OrderID, DbType.Int32),
                 P("@ContactID", proof.ContactID, DbType.Int32),

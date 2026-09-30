@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GPS delivery: Azure Maps as a second geocoder and learning customer points from deliveries
+  (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md).
+  - GpsSettingsTbl.AzureMapsKey: Azure Maps subscription key (GeocodeProvider = 'AzureMaps' uses it).
+  - CustomerLocationTbl.ExpiresDate: Azure Maps points may only be kept 6 months outside Azure; looked up again before then.
+  - CustomerLocationTbl.DriverFixes / LastDriverFixAt: deliveries whose phone position agreed with the point.
+  - MobileDeliveryProofTbl.AccuracyM: the phone's GPS accuracy (metres) for the delivery position.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GpsSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.GpsSettingsTbl', N'AzureMapsKey') IS NULL
+      BEGIN
+          ALTER TABLE dbo.GpsSettingsTbl ADD AzureMapsKey NVARCHAR(500) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CustomerLocationTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.CustomerLocationTbl', N'ExpiresDate') IS NULL
+      BEGIN
+          ALTER TABLE dbo.CustomerLocationTbl ADD ExpiresDate DATETIME NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CustomerLocationTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.CustomerLocationTbl', N'DriverFixes') IS NULL
+      BEGIN
+          ALTER TABLE dbo.CustomerLocationTbl ADD DriverFixes INT NOT NULL
+              CONSTRAINT DF_CustomerLocation_DriverFixes DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CustomerLocationTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.CustomerLocationTbl', N'LastDriverFixAt') IS NULL
+      BEGIN
+          ALTER TABLE dbo.CustomerLocationTbl ADD LastDriverFixAt DATETIME NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.MobileDeliveryProofTbl', N'AccuracyM') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD AccuracyM DECIMAL(8,1) NULL;
+      END
+    ]]>
+  </command>
+</root>

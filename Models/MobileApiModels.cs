@@ -171,6 +171,8 @@ namespace TrackerSQL.Models
         public string DeliveredAt { get; set; }
         public decimal? Lat { get; set; }
         public decimal? Lng { get; set; }
+        /// <summary>How sure the phone was of Lat/Lng, in metres (smaller is better).</summary>
+        public decimal? Accuracy { get; set; }
     }
 
     public class MobileDeliveredLine
@@ -208,6 +210,7 @@ namespace TrackerSQL.Models
         public System.DateTime DeliveredAt { get; set; }
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
+        public decimal? AccuracyM { get; set; }
         public string Status { get; set; }
         public string StatusMessage { get; set; }
         public System.DateTime ReceivedAt { get; set; }

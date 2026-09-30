@@ -10,6 +10,10 @@ namespace TrackerSQL.Repositories
     public class GpsSettingsRepository
     {
         public const string GeocodeService = "GEOCODE";
+        public const string AzureGeocodeService = "AZURE_GEOCODE";
+
+        /// <summary>The usage counter for the chosen geocoder (each has its own daily count).</summary>
+        public static string ServiceFor(GpsSettings s) => s != null && s.IsAzureMaps ? AzureGeocodeService : GeocodeService;
 
         public bool TableExists()
         {
@@ -39,6 +43,7 @@ namespace TrackerSQL.Repositories
 
                 s.GeocodeProvider = Str(r, "GeocodeProvider") ?? s.GeocodeProvider;
                 s.GeocodeApiKey = Str(r, "GeocodeApiKey");
+                s.AzureMapsKey = HasColumn(r, "AzureMapsKey") ? Str(r, "AzureMapsKey") : null;
                 s.GeocodeBaseUrl = Str(r, "GeocodeBaseUrl") ?? s.GeocodeBaseUrl;
                 s.GeocodeDailyLimit = Int(r, "GeocodeDailyLimit", s.GeocodeDailyLimit);
                 s.GeocodePerMinute = Int(r, "GeocodePerMinute", s.GeocodePerMinute);
@@ -62,8 +67,11 @@ namespace TrackerSQL.Repositories
             return s;
         }
 
-        /// <summary>Saves everything. The API key is only written when <paramref name="replaceKey"/> is true.</summary>
-        public void Save(GpsSettings s, bool replaceKey, string userName)
+        /// <summary>
+        /// Saves everything. The HeiGIT key is only written when <paramref name="replaceKey"/> is true,
+        /// the Azure Maps key only when <paramref name="replaceAzureKey"/> is true.
+        /// </summary>
+        public void Save(GpsSettings s, bool replaceKey, string userName, bool replaceAzureKey = false)
         {
             if (s == null) throw new ArgumentNullException(nameof(s));
 
@@ -73,6 +81,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.GpsSettingsTbl WHERE SettingsID = 1)
 UPDATE dbo.GpsSettingsTbl SET
     GeocodeProvider = @GeocodeProvider,
     " + (replaceKey ? "GeocodeApiKey = @GeocodeApiKey," : string.Empty) + @"
+    " + (replaceAzureKey ? "AzureMapsKey = @AzureMapsKey," : string.Empty) + @"
     GeocodeBaseUrl = @GeocodeBaseUrl,
     GeocodeDailyLimit = @GeocodeDailyLimit,
     GeocodePerMinute = @GeocodePerMinute,
@@ -120,6 +129,11 @@ WHERE SettingsID = 1;";
             {
                 string key = string.IsNullOrWhiteSpace(s.GeocodeApiKey) ? null : s.GeocodeApiKey.Trim();
                 p.Add(P("@GeocodeApiKey", key, DbType.String));
+            }
+            if (replaceAzureKey)
+            {
+                string key = string.IsNullOrWhiteSpace(s.AzureMapsKey) ? null : s.AzureMapsKey.Trim();
+                p.Add(P("@AzureMapsKey", key, DbType.String));
             }
 
             using (var db = new TrackerSQLDb())
@@ -184,6 +198,16 @@ SELECT @Counted;";
         private static DBParameter P(string name, object value, DbType type)
         {
             return new DBParameter { ParamName = name, DataValue = value, DataDbType = type };
+        }
+
+        private static bool HasColumn(IDataRecord r, string col)
+        {
+            for (int i = 0; i < r.FieldCount; i++)
+            {
+                if (string.Equals(r.GetName(i), col, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
 
         private static string Str(IDataRecord r, string col)

@@ -9,9 +9,17 @@ namespace TrackerSQL.Models
         public const string DefaultTileUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
         public const string DefaultGeocodeBaseUrl = "https://api.heigit.org";
 
-        public string GeocodeProvider { get; set; } = "HeiGIT";
-        /// <summary>Never shown back on screen or written to logs.</summary>
+        public const string ProviderHeigit = "HeiGIT";
+        public const string ProviderAzureMaps = "AzureMaps";
+        /// <summary>Azure Maps geocodes may be kept up to 6 months when stored outside Azure; looked up again before then.</summary>
+        public const int AzureMapsKeepDays = 180;
+        public const int AzureMapsRefreshDaysBefore = 30;
+
+        public string GeocodeProvider { get; set; } = ProviderHeigit;
+        /// <summary>HeiGIT key. Never shown back on screen or written to logs.</summary>
         public string GeocodeApiKey { get; set; }
+        /// <summary>Azure Maps subscription key. Never shown back on screen or written to logs.</summary>
+        public string AzureMapsKey { get; set; }
         public string GeocodeBaseUrl { get; set; } = DefaultGeocodeBaseUrl;
         public int GeocodeDailyLimit { get; set; } = 2500;
         public int GeocodePerMinute { get; set; } = 90;
@@ -36,7 +44,12 @@ namespace TrackerSQL.Models
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
 
-        public bool HasApiKey => !string.IsNullOrWhiteSpace(GeocodeApiKey);
+        public bool IsAzureMaps => string.Equals(GeocodeProvider, ProviderAzureMaps, StringComparison.OrdinalIgnoreCase);
+        public bool HasHeigitKey => !string.IsNullOrWhiteSpace(GeocodeApiKey);
+        public bool HasAzureMapsKey => !string.IsNullOrWhiteSpace(AzureMapsKey);
+        /// <summary>The chosen geocoder has its key.</summary>
+        public bool HasApiKey => IsAzureMaps ? HasAzureMapsKey : HasHeigitKey;
+        public string ProviderDisplay => IsAzureMaps ? "Azure Maps" : "HeiGIT (OpenStreetMap)";
         public bool HasDepotPoint => DepotLatitude.HasValue && DepotLongitude.HasValue;
     }
 }

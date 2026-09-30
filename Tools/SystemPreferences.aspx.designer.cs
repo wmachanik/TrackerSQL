@@ -113,6 +113,12 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnWizNext;
         protected global::System.Web.UI.WebControls.Button btnWizCancel;
         protected global::System.Web.UI.WebControls.View viewGps;
+        protected global::System.Web.UI.WebControls.DropDownList ddlGpsProvider;
+        protected global::System.Web.UI.WebControls.Label lblGpsProviderHint;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsAzureKey;
+        protected global::System.Web.UI.WebControls.Button btnToggleGpsAzureKey;
+        protected global::System.Web.UI.WebControls.Label lblGpsAzureKeyState;
+        protected global::System.Web.UI.WebControls.CheckBox chkGpsClearAzureKey;
         protected global::System.Web.UI.WebControls.TextBox txtGpsApiKey;
         protected global::System.Web.UI.WebControls.Button btnToggleGpsKey;
         protected global::System.Web.UI.WebControls.Label lblGpsKeyState;

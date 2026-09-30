@@ -219,6 +219,8 @@ namespace TrackerSQL.Managers
                 DeliveredAt = ParseDeliveredAt(item.DeliveredAt),
                 Latitude = ValidCoordinate(item.Lat, 90),
                 Longitude = ValidCoordinate(item.Lng, 180),
+                AccuracyM = item.Accuracy.HasValue && item.Accuracy.Value > 0 && item.Accuracy.Value < 100000
+                    ? Math.Round(item.Accuracy.Value, 1) : (decimal?)null,
                 Status = outcome == OutcomeDelivered && order.Done ? StatusAlreadyDone : StatusReceived,
                 StatusMessage = outcome == OutcomeDelivered && order.Done ? "The order was already marked done in Tracker." : null
             };
@@ -242,7 +244,26 @@ namespace TrackerSQL.Managers
                 + (receivedBy.Length > 0 ? " | received by '" + receivedBy + "'" : string.Empty)
                 + (signature != null ? " | signature" : string.Empty)
                 + (proof.MissingItems != null ? " | not handed over: " + proof.MissingItems : string.Empty)
-                + " | at " + proof.DeliveredAt.ToString("yyyy-MM-dd HH:mm"), user?.UserName);
+                + " | at " + proof.DeliveredAt.ToString("yyyy-MM-dd HH:mm")
+                + (proof.Latitude.HasValue && proof.Longitude.HasValue
+                    ? " | GPS " + proof.Latitude.Value.ToString("0.00000", CultureInfo.InvariantCulture) + ","
+                      + proof.Longitude.Value.ToString("0.00000", CultureInfo.InvariantCulture)
+                      + (proof.AccuracyM.HasValue ? " +/-" + proof.AccuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + "m" : string.Empty)
+                    : " | no GPS"), user?.UserName);
+
+            if (outcome == OutcomeDelivered && proof.ContactID.HasValue && proof.Latitude.HasValue && proof.Longitude.HasValue)
+            {
+                try
+                {
+                    new CustomerLocationManager().LearnFromDelivery(proof.ContactID.Value, proofId, proof.DeliveredAt,
+                        proof.Latitude.Value, proof.Longitude.Value, proof.AccuracyM, user?.UserName);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                        "GPS learn from delivery failed for order " + order.OrderID + ": " + ex.Message, user?.UserName);
+                }
+            }
 
             var result = new MobileDeliverySyncResult
             {

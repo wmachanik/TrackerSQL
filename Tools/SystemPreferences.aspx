@@ -373,12 +373,36 @@
                                 <p class="sys-prefs-phase-note">
                                     Customer GPS points are looked up once from the contact's address (only for contacts whose
                                     "Delivery By" person is set to <em>Deliver</em> on Lookups → People) and kept until the address changes.
+                                    When a driver delivers with the app, the phone's position replaces the looked-up point; a second
+                                    delivery at the same spot marks it checked. Hand-placed pins are never moved.
                                 </p>
 
-                                <h3 class="gps-settings-heading">Address lookups (HeiGIT openrouteservice)</h3>
+                                <h3 class="gps-settings-heading">Address lookups</h3>
                                 <table class="detail-form-table sys-prefs-form-table">
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Your key from account.heigit.org. Stored in the database, never shown again. Leave blank to keep the saved key.">API key</span></td>
+                                        <td class="sys-prefs-label"><span title="Which service turns an address into a GPS point. Azure Maps finds South African street addresses far better; its points are kept 6 months (Microsoft's terms) and then looked up again.">Lookup service</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:DropDownList ID="ddlGpsProvider" runat="server" CssClass="sys-prefs-input">
+                                                <asp:ListItem Value="HeiGIT" Text="HeiGIT openrouteservice (OpenStreetMap, free)" />
+                                                <asp:ListItem Value="AzureMaps" Text="Azure Maps (Microsoft, pay per use)" />
+                                            </asp:DropDownList>
+                                            <asp:Label ID="lblGpsProviderHint" runat="server" CssClass="sys-prefs-saved-hint" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Your Azure Maps account's primary key (Azure portal → your Maps account → Authentication). Stored in the database, never shown again. Leave blank to keep the saved key.">Azure Maps key</span></td>
+                                        <td class="sys-prefs-field">
+                                            <div class="sys-prefs-secret-row">
+                                                <asp:TextBox ID="txtGpsAzureKey" runat="server" CssClass="sys-prefs-input" TextMode="Password" autocomplete="off" />
+                                                <asp:Button ID="btnToggleGpsAzureKey" runat="server" CssClass="filter-panel-btn sys-prefs-toggle-secret"
+                                                    UseSubmitBehavior="false" CausesValidation="false" />
+                                            </div>
+                                            <asp:Label ID="lblGpsAzureKeyState" runat="server" CssClass="sys-prefs-saved-hint" />
+                                            <asp:CheckBox ID="chkGpsClearAzureKey" runat="server" Text="Remove the saved key" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Your key from account.heigit.org. Stored in the database, never shown again. Leave blank to keep the saved key.">HeiGIT key</span></td>
                                         <td class="sys-prefs-field">
                                             <div class="sys-prefs-secret-row">
                                                 <asp:TextBox ID="txtGpsApiKey" runat="server" CssClass="sys-prefs-input" TextMode="Password" autocomplete="off" />
@@ -390,18 +414,18 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Leave as https://api.heigit.org unless HeiGIT changes it.">Service address</span></td>
+                                        <td class="sys-prefs-label"><span title="Leave as https://api.heigit.org unless HeiGIT changes it (not used by Azure Maps).">HeiGIT address</span></td>
                                         <td class="sys-prefs-field"><asp:TextBox ID="txtGpsBaseUrl" runat="server" CssClass="sys-prefs-input" /></td>
                                     </tr>
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Stop looking up addresses after this many a day. The free Standard plan allows 3000; keep some spare.">Lookups per day (max)</span></td>
+                                        <td class="sys-prefs-label"><span title="Stop looking up addresses after this many a day (each service is counted separately). HeiGIT's free plan allows 3000; Azure Maps gives 5000 free a month, then charges per 1000.">Lookups per day (max)</span></td>
                                         <td class="sys-prefs-field">
                                             <asp:TextBox ID="txtGpsDailyLimit" runat="server" CssClass="gps-num-input" TextMode="Number" />
                                             <asp:Label ID="lblGpsUsedToday" runat="server" CssClass="sys-prefs-saved-hint" />
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="The Standard plan allows 100 a minute.">Lookups per minute (max)</span></td>
+                                        <td class="sys-prefs-label"><span title="HeiGIT's Standard plan allows 100 a minute; Azure Maps allows far more.">Lookups per minute (max)</span></td>
                                         <td class="sys-prefs-field"><asp:TextBox ID="txtGpsPerMinute" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
                                     </tr>
                                 </table>

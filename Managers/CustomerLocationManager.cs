@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TrackerSQL.Classes;
@@ -213,8 +214,9 @@ namespace TrackerSQL.Managers
             if (string.IsNullOrWhiteSpace(addressText))
                 return new LocationLookupOutcome { Skipped = true, Message = "The contact has no address." };
 
+            PurgeExpiredOncePerDay();
             CustomerLocation existing = _locations.GetByContactId(contactId);
-            if (!force && existing != null && SameAddress(existing.SourceAddress, addressText))
+            if (!force && existing != null && SameAddress(existing.SourceAddress, addressText) && !existing.RefreshDue)
                 return new LocationLookupOutcome { Success = true, Skipped = true, Location = existing };
 
             GpsSettings settings = _settingsRepo.Get();
@@ -245,13 +247,15 @@ namespace TrackerSQL.Managers
                 loc.Latitude = (decimal)result.Latitude;
                 loc.Longitude = (decimal)result.Longitude;
                 loc.GeocodedAddress = result.Label;
-                loc.Source = CustomerLocation.SourceGeocoder;
+                bool azure = result.Provider == GpsSettings.ProviderAzureMaps;
+                loc.Source = azure ? CustomerLocation.SourceAzureMaps : CustomerLocation.SourceGeocoder;
+                loc.ExpiresDate = azure ? DateTime.Now.AddDays(GpsSettings.AzureMapsKeepDays) : (DateTime?)null;
                 loc.Confidence = result.Confidence.HasValue ? (decimal?)Convert.ToDecimal(result.Confidence.Value) : null;
                 loc.LocationStatus = result.IsPrecise ? CustomerLocation.StatusApproximate : CustomerLocation.StatusReviewRequired;
             }
             else if (!TryPostcodeCentroid(contact.PostalCode, loc))
             {
-                bool dropRough = existing != null && existing.NeedsReview && existing.Source != CustomerLocation.SourceManual;
+                bool dropRough = existing != null && existing.NeedsReview && !existing.IsManual && !existing.IsFromDriver;
                 if (dropRough)
                     _locations.Delete(contactId);
                 return new LocationLookupOutcome
@@ -303,6 +307,134 @@ namespace TrackerSQL.Managers
             return loc;
         }
 
+        /// <summary>Phone fixes less sure than this (metres) are ignored.</summary>
+        public const decimal DriverMaxAccuracyM = 75;
+        /// <summary>A delivery this close to our driver point agrees with it.</summary>
+        public const double DriverMatchMetres = 60;
+        /// <summary>A hand-placed pin is only questioned when deliveries are further away than this.</summary>
+        public const double ManualMismatchMetres = 150;
+        /// <summary>Deliveries closer together in time than this are the same visit (several orders at one stop).</summary>
+        private const double SameVisitHours = 6;
+        /// <summary>Older fixes carry at most this weight when averaging, so a point can still drift to where drivers really stop.</summary>
+        private const int DriverAverageCap = 5;
+
+        /// <summary>
+        /// Called after a Delivered proof with a phone position is saved. The driver's position replaces a geocoder,
+        /// Azure Maps or postcode point; a second delivery on another visit within <see cref="DriverMatchMetres"/> marks it checked.
+        /// Hand-placed pins are never moved; two visits in a row far from the pin flag it for review.
+        /// </summary>
+        public void LearnFromDelivery(int contactId, long proofId, DateTime deliveredAt, decimal latitude, decimal longitude,
+            decimal? accuracyM, string userName)
+        {
+            string who = "GPS learn: contact " + contactId + " (proof " + proofId + ")";
+            if (contactId == SystemConstants.CustomerConstants.SundryCustomerID)
+                return;
+            if (latitude == 0 && longitude == 0)
+                return;
+            if (accuracyM.HasValue && accuracyM.Value > DriverMaxAccuracyM)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    who + ": phone position too rough (+/-" + accuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + " m), not used", userName);
+                return;
+            }
+            if (!IsReady)
+                return;
+
+            Contact contact = new ContactsRepository().GetById(contactId);
+            if (contact == null
+                || (contact.CompanyName ?? string.Empty).StartsWith(SystemConstants.CustomerConstants.SundryCustomerNamePrefix, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            CustomerLocation existing = _locations.GetByContactId(contactId);
+            bool sameVisit = existing?.LastDriverFixAt != null
+                && Math.Abs((deliveredAt - existing.LastDriverFixAt.Value).TotalHours) < SameVisitHours;
+            double distance = existing == null ? 0 : GeoDistance.Metres(existing.Latitude, existing.Longitude, latitude, longitude);
+            string away = distance.ToString("0", CultureInfo.InvariantCulture) + " m";
+
+            if (existing != null && existing.IsManual)
+            {
+                if (distance <= ManualMismatchMetres)
+                {
+                    if (!sameVisit || existing.NeedsReview)
+                    {
+                        _locations.TouchDriverFix(contactId, existing.DriverFixes + (sameVisit ? 0 : 1), deliveredAt,
+                            existing.NeedsReview ? CustomerLocation.StatusVerified : null);
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                            who + ": delivery agrees with the hand-placed pin (" + away + ")"
+                            + (existing.NeedsReview ? "; review flag cleared" : string.Empty), userName);
+                    }
+                    return;
+                }
+
+                Tuple<decimal, decimal> previous = _locations.GetPreviousDeliveryFix(contactId, proofId,
+                    deliveredAt.AddHours(-SameVisitHours), DriverMaxAccuracyM);
+                bool previousAlsoFar = previous != null
+                    && GeoDistance.Metres(existing.Latitude, existing.Longitude, previous.Item1, previous.Item2) > ManualMismatchMetres;
+                if (previousAlsoFar && !existing.NeedsReview)
+                {
+                    _locations.TouchDriverFix(contactId, existing.DriverFixes, existing.LastDriverFixAt ?? deliveredAt, CustomerLocation.StatusReviewRequired);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                        who + ": two visits in a row were far from the hand-placed pin (now " + away + "); flagged for review", userName);
+                }
+                else
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                        who + ": delivery was " + away + " from the hand-placed pin; pin kept", userName);
+                }
+                return;
+            }
+
+            var loc = new CustomerLocation
+            {
+                ContactID = contactId,
+                MapAreaID = existing?.MapAreaID,
+                SourceAddress = BuildAddressText(contact),
+                Source = CustomerLocation.SourceDriver,
+                Confidence = null,
+                GeocodedAddress = null,
+                ExpiresDate = null,
+                LastDriverFixAt = deliveredAt,
+                UpdatedBy = userName
+            };
+
+            string message;
+            if (existing != null && existing.IsFromDriver && distance <= DriverMatchMetres)
+            {
+                if (sameVisit)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                        who + ": same visit as the last delivery (" + away + " from the driver point); nothing changed", userName);
+                    return;
+                }
+                int weight = Math.Min(Math.Max(existing.DriverFixes, 1), DriverAverageCap);
+                loc.Latitude = (existing.Latitude * weight + latitude) / (weight + 1);
+                loc.Longitude = (existing.Longitude * weight + longitude) / (weight + 1);
+                loc.DriverFixes = existing.DriverFixes + 1;
+                loc.LocationStatus = loc.DriverFixes >= 2 ? CustomerLocation.StatusVerified : CustomerLocation.StatusApproximate;
+                message = "delivery agrees with the driver point (" + away + "), " + loc.DriverFixes + " visits"
+                    + (loc.IsVerified && !existing.IsVerified ? "; now checked" : string.Empty);
+            }
+            else
+            {
+                loc.Latitude = latitude;
+                loc.Longitude = longitude;
+                loc.DriverFixes = 1;
+                loc.LocationStatus = CustomerLocation.StatusApproximate;
+                message = existing == null
+                    ? "no point yet; set from the delivery"
+                    : existing.IsFromDriver
+                        ? "delivery was " + away + " from the driver point; moved to the new position"
+                        : "replaced the " + existing.SourceDisplay + " point (" + away + " away) with the delivery position";
+            }
+
+            loc.Latitude = Math.Round(loc.Latitude, 6);
+            loc.Longitude = Math.Round(loc.Longitude, 6);
+            loc.Geohash = Geohash.Encode((double)loc.Latitude, (double)loc.Longitude);
+            _locations.Upsert(loc);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                who + ": " + message + (accuracyM.HasValue ? " (+/-" + accuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + " m)" : string.Empty), userName);
+        }
+
         /// <summary>Looks up the depot address (used as the focus point and the start of every route).</summary>
         public LocationLookupOutcome LookupDepot(string userName)
         {
@@ -349,34 +481,66 @@ namespace TrackerSQL.Managers
 
         public int LookupsUsedToday()
         {
-            return _settingsRepo.GetCallsToday(GpsSettingsRepository.GeocodeService);
+            return _settingsRepo.GetCallsToday(GpsSettingsRepository.ServiceFor(_settingsRepo.Get()));
         }
 
         private GeocodeResult Geocode(string address, GpsSettings settings, out bool usedLookup, bool useFocus = true, double? radiusKm = null)
         {
             usedLookup = false;
             if (!settings.HasApiKey)
-                return GeocodeResult.Fail(GeocodeFailure.NotConfigured, "No geocoding key: add it on System Preferences → GPS & Drivers.");
+                return GeocodeResult.Fail(GeocodeFailure.NotConfigured,
+                    "No " + settings.ProviderDisplay + " key: add it on System Preferences → GPS & Drivers.");
 
             if (!TryTakeMinuteSlot(settings.GeocodePerMinute))
                 return GeocodeResult.Fail(GeocodeFailure.PerMinuteLimitReached, "Per-minute lookup limit reached; try again in a minute.");
 
-            if (!_settingsRepo.TryCountCall(GpsSettingsRepository.GeocodeService, settings.GeocodeDailyLimit))
+            string service = GpsSettingsRepository.ServiceFor(settings);
+            if (!_settingsRepo.TryCountCall(service, settings.GeocodeDailyLimit))
                 return GeocodeResult.Fail(GeocodeFailure.DailyLimitReached,
                     "Today's lookup limit (" + settings.GeocodeDailyLimit + ") is used up; the rest will be done tomorrow.");
 
             usedLookup = true;
-            IGeocoder geocoder = new HeigitGeocoder(settings.GeocodeBaseUrl, settings.GeocodeApiKey);
+            IGeocoder geocoder = settings.IsAzureMaps
+                ? (IGeocoder)new AzureMapsGeocoder(settings.AzureMapsKey)
+                : new HeigitGeocoder(settings.GeocodeBaseUrl, settings.GeocodeApiKey);
+            bool focus = useFocus && settings.HasDepotPoint;
             GeocodeResult result = geocoder.Search(address,
-                useFocus && settings.HasDepotPoint ? (double?)settings.DepotLatitude.Value : null,
-                useFocus && settings.HasDepotPoint ? (double?)settings.DepotLongitude.Value : null,
+                focus ? (double?)settings.DepotLatitude.Value : null,
+                focus ? (double?)settings.DepotLongitude.Value : null,
                 radiusKm);
+            result.Provider = settings.IsAzureMaps ? GpsSettings.ProviderAzureMaps : GpsSettings.ProviderHeigit;
+
+            if (result.Success && focus && radiusKm.HasValue
+                && GeoDistance.Metres(result.Latitude, result.Longitude, (double)settings.DepotLatitude.Value, (double)settings.DepotLongitude.Value) > radiusKm.Value * 1000)
+            {
+                result = GeocodeResult.Fail(GeocodeFailure.NotFound, "The only match was more than " + radiusKm.Value + " km from the depot.");
+            }
 
             if (result.Failure == GeocodeFailure.DailyLimitReached)
-                _settingsRepo.MarkDailyLimitReached(GpsSettingsRepository.GeocodeService, settings.GeocodeDailyLimit);
+                _settingsRepo.MarkDailyLimitReached(service, settings.GeocodeDailyLimit);
             if (!result.Success && result.Failure != GeocodeFailure.NotFound)
-                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Geocode failed: " + result.Failure + " " + result.Message);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Geocode failed (" + settings.ProviderDisplay + "): " + result.Failure + " " + result.Message);
             return result;
+        }
+
+        private static DateTime _lastPurge = DateTime.MinValue;
+
+        /// <summary>Azure Maps points past their keep date are removed (terms); runs at most once a day.</summary>
+        public void PurgeExpiredOncePerDay()
+        {
+            if (_lastPurge.Date == DateTime.Today)
+                return;
+            _lastPurge = DateTime.Today;
+            try
+            {
+                int removed = _locations.DeleteExpired();
+                if (removed > 0)
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "GPS: removed " + removed + " expired Azure Maps point(s)");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "GPS purge expired: " + ex.Message);
+            }
         }
 
         private static bool TryTakeMinuteSlot(int perMinute)

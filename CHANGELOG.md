@@ -18,9 +18,18 @@ Release notes for shipped TrackerSQL versions. Newest first.
   - **Contact Details:** new *GPS* line under Packaging with **Check / change**: a map where the pin can be confirmed, dragged or looked up again. A saved pin is marked *Checked*.
 - **System Preferences → GPS & Drivers** — new tab: geocoding key (stored in the database, never shown again), daily and per-minute lookup limits with today's count, map tiles (OpenStreetMap), depot address with *Look up depot*, driver tracking (on/off, interval, weekdays only, work hours, how long positions are kept) and arrival-time settings (average speed, minutes per stop, marker colour thresholds). Tracking and arrival times are used by later steps.
 - **User Information** — two per-user options, both off by default: *Show route order and arrival times on the Delivery Sheet* and *Show driver tracking* (used by later steps).
+- **Azure Maps address lookups** — **System Preferences → GPS & Drivers → Lookup service** chooses HeiGIT (OpenStreetMap, free) or **Azure Maps** (much better at South African street addresses; 5,000 free lookups a month, then pay per 1,000). Each service has its own key (stored in the database, never shown again, with *Remove the saved key*) and its own daily count. Azure Maps results are limited to 150 km of the depot like HeiGIT's.
+  - Azure Maps points are kept at most **180 days** (Microsoft's terms for results stored outside Azure). From 30 days before that date they are looked up again on the next order, contact save or batch, and a point past its date that could not be refreshed is removed (once a day). The GPS tooltip and popup show where each point came from and how long it is kept.
+- **Driver app: position with each proof** — the app now sends where the phone was (and how accurate that was) with every delivered / not-delivered report. It starts listening when the capture screen opens and never holds up the driver if there is no fix or location is refused. Android asks for location permission once. **New APK 0.4.0 needed**; the `/driver` web copy is rebuilt.
+- **Tracker learns customer points from deliveries** — when a *Delivered* proof arrives with a phone fix of ±75 m or better:
+  - no point yet, or a looked-up / postcode point → the driver's position becomes the point (*from the driver's phone*, no expiry, so the Azure 180-day rule no longer applies to it);
+  - a later visit (6 hours or more apart) within 60 m of the driver point → the point is averaged and marked **Checked**; further away → the point moves to the new position;
+  - pins placed by hand are never moved; if two visits in a row are more than 150 m away, the pin is flagged *Needs checking* (a later agreeing visit clears it);
+  - the sundry contact is skipped. Each decision is written to the Customers log, and the Delivery log now records the GPS and accuracy of each proof.
 
 ### Housekeeping
 - New schema pack `SQLCommands-DriverGps-01.xml` (PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, *Collected* option), run at start-up.
+- New schema pack `SQLCommands-DriverGps-02.xml` (GpsSettingsTbl.AzureMapsKey; CustomerLocationTbl.ExpiresDate, DriverFixes, LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM), run at start-up; GoLive copy and live steps in `App_Data/GoLive/README-GOLIVE.txt`. Proofs still save if the pack has not run yet (accuracy is then left out).
 
 ## 3.0.3.1 — 2026-09-29
 

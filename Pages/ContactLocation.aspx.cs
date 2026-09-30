@@ -55,9 +55,10 @@ namespace TrackerSQL.Pages
             if (loc != null)
             {
                 SetPoint(loc.Latitude, loc.Longitude, true);
-                litMatched.Text = HttpUtility.HtmlEncode(string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? "(set by hand)" : loc.GeocodedAddress);
+                litMatched.Text = HttpUtility.HtmlEncode(!string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? loc.GeocodedAddress
+                    : loc.IsFromDriver ? "(where the driver delivered)" : "(set by hand)");
                 litGeohash.Text = string.IsNullOrEmpty(loc.Geohash) ? string.Empty : "· geohash " + HttpUtility.HtmlEncode(loc.Geohash);
-                lblState.Text = CustomerLocation.BadgeHtml(loc) + HttpUtility.HtmlEncode(loc.StatusDisplay
+                lblState.Text = CustomerLocation.BadgeHtml(loc) + HttpUtility.HtmlEncode(loc.StatusDisplay + " (" + loc.OriginText + ")"
                     + (string.IsNullOrEmpty(loc.UpdatedBy) ? "" : " · " + loc.UpdatedBy + " " + loc.UpdatedDate.ToString("yyyy-MM-dd")));
                 lblState.CssClass = loc.NeedsReview ? "contact-gps-value contact-gps-review"
                     : loc.IsVerified ? "contact-gps-value contact-gps-verified" : "contact-gps-value";

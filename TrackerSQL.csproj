@@ -331,6 +331,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-AreaDeliveryOrder-01.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-01.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-02.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-02.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -553,6 +555,8 @@
     <Compile Include="Classes\DeliveryTypes.cs" />
     <Compile Include="Classes\Geo\GeocodeResult.cs" />
     <Compile Include="Classes\Geo\Geohash.cs" />
+    <Compile Include="Classes\Geo\AzureMapsGeocoder.cs" />
+    <Compile Include="Classes\Geo\GeoDistance.cs" />
     <Compile Include="Classes\Geo\HeigitGeocoder.cs" />
     <Compile Include="Classes\Geo\IGeocoder.cs" />
     <Compile Include="Classes\DiagnosticsIconHelper.cs" />

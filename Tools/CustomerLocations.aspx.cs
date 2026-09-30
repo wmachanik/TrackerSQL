@@ -71,7 +71,7 @@ namespace TrackerSQL.Tools
                 CompanyName = p.Value,
                 p.Key.SourceAddress,
                 p.Key.GeocodedAddress,
-                p.Key.Source
+                Source = p.Key.OriginText
             }).ToList();
             gvReview.DataBind();
         }

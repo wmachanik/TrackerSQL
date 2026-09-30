@@ -174,6 +174,7 @@ namespace TrackerSQL.Tools
             ConfigureToggleButton(btnToggleKeyWiz, show, hide);
             ConfigureToggleButton(btnToggleSecretWiz, show, hide);
             ConfigureToggleButton(btnToggleGpsKey, show, hide);
+            ConfigureToggleButton(btnToggleGpsAzureKey, show, hide);
         }
 
         private static void ConfigureToggleButton(Button btn, string show, string hide)
@@ -192,6 +193,7 @@ namespace TrackerSQL.Tools
             btnToggleKeyWiz.OnClientClick = string.Format(showJs, txtWizKey.ClientID);
             btnToggleSecretWiz.OnClientClick = string.Format(showJs, txtWizSecret.ClientID);
             btnToggleGpsKey.OnClientClick = string.Format(showJs, txtGpsApiKey.ClientID);
+            btnToggleGpsAzureKey.OnClientClick = string.Format(showJs, txtGpsAzureKey.ClientID);
 
             txtStoreUrl.Attributes["onblur"] =
                 "trackerFillAdminFromStore('" + txtStoreUrl.ClientID + "','" + txtAdminUrl.ClientID + "', false);";
@@ -271,15 +273,26 @@ namespace TrackerSQL.Tools
             }
 
             GpsSettings s = repo.Get();
+            ddlGpsProvider.SelectedValue = s.IsAzureMaps ? GpsSettings.ProviderAzureMaps : GpsSettings.ProviderHeigit;
+            lblGpsProviderHint.Text = s.HasApiKey
+                ? " In use: " + s.ProviderDisplay + "."
+                : " " + s.ProviderDisplay + " has no key saved: lookups are off.";
+
+            txtGpsAzureKey.Text = string.Empty;
+            txtGpsAzureKey.Attributes["placeholder"] = s.HasAzureMapsKey ? "Saved: type a new key to replace it" : "Paste your Azure Maps key";
+            lblGpsAzureKeyState.Text = s.HasAzureMapsKey ? "A key is saved." : "No key saved.";
+            chkGpsClearAzureKey.Checked = false;
+            chkGpsClearAzureKey.Visible = s.HasAzureMapsKey;
+
             txtGpsApiKey.Text = string.Empty;
-            txtGpsApiKey.Attributes["placeholder"] = s.HasApiKey ? "Saved: type a new key to replace it" : "Paste your HeiGIT key";
-            lblGpsKeyState.Text = s.HasApiKey ? "A key is saved." : "No key saved yet: lookups are off.";
+            txtGpsApiKey.Attributes["placeholder"] = s.HasHeigitKey ? "Saved: type a new key to replace it" : "Paste your HeiGIT key";
+            lblGpsKeyState.Text = s.HasHeigitKey ? "A key is saved." : "No key saved.";
             chkGpsClearKey.Checked = false;
-            chkGpsClearKey.Visible = s.HasApiKey;
+            chkGpsClearKey.Visible = s.HasHeigitKey;
             txtGpsBaseUrl.Text = s.GeocodeBaseUrl;
             txtGpsDailyLimit.Text = s.GeocodeDailyLimit.ToString();
             txtGpsPerMinute.Text = s.GeocodePerMinute.ToString();
-            lblGpsUsedToday.Text = " used today: " + repo.GetCallsToday(GpsSettingsRepository.GeocodeService);
+            lblGpsUsedToday.Text = " used today: " + repo.GetCallsToday(GpsSettingsRepository.ServiceFor(s));
             txtGpsTileUrl.Text = s.MapTileUrl;
             txtGpsDepotAddress.Text = s.DepotAddress;
             lblGpsDepotPoint.Text = s.HasDepotPoint
@@ -326,7 +339,28 @@ namespace TrackerSQL.Tools
 
             string newKey = (txtGpsApiKey.Text ?? string.Empty).Trim();
             bool replaceKey = newKey.Length > 0 || chkGpsClearKey.Checked;
-            s.GeocodeApiKey = newKey.Length > 0 ? newKey : null;
+            if (replaceKey)
+                s.GeocodeApiKey = newKey.Length > 0 ? newKey : null;
+
+            string newAzureKey = (txtGpsAzureKey.Text ?? string.Empty).Trim();
+            bool replaceAzureKey = newAzureKey.Length > 0 || chkGpsClearAzureKey.Checked;
+            if (replaceAzureKey)
+                s.AzureMapsKey = newAzureKey.Length > 0 ? newAzureKey : null;
+            if (newAzureKey.Length > 0 && (newAzureKey.Length < 20 || newAzureKey.IndexOf(' ') >= 0))
+            {
+                error = "That does not look like an Azure Maps key (copy the Primary Key from the Maps account's Authentication page).";
+                return false;
+            }
+
+            string oldProvider = s.GeocodeProvider;
+            s.GeocodeProvider = ddlGpsProvider.SelectedValue == GpsSettings.ProviderAzureMaps
+                ? GpsSettings.ProviderAzureMaps : GpsSettings.ProviderHeigit;
+            if (!string.Equals(oldProvider, s.GeocodeProvider, StringComparison.OrdinalIgnoreCase))
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "GPS lookup service changed from " + (oldProvider ?? "(none)") + " to " + s.GeocodeProvider, Context?.User?.Identity?.Name);
+            if (replaceAzureKey)
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    newAzureKey.Length > 0 ? "Azure Maps key replaced" : "Azure Maps key removed", Context?.User?.Identity?.Name);
 
             string baseUrl = (txtGpsBaseUrl.Text ?? string.Empty).Trim();
             if (baseUrl.Length > 0 && !baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -372,7 +406,7 @@ namespace TrackerSQL.Tools
                 return false;
             }
 
-            repo.Save(s, replaceKey, Context?.User?.Identity?.Name);
+            repo.Save(s, replaceKey, Context?.User?.Identity?.Name, replaceAzureKey);
             return true;
         }
 
@@ -386,7 +420,11 @@ namespace TrackerSQL.Tools
                     return;
                 }
                 BindGpsSettings();
-                SetStatus("GPS settings saved.", false);
+                GpsSettings saved = new GpsSettingsRepository().Get();
+                if (saved.HasApiKey)
+                    SetStatus("GPS settings saved. Lookups use " + saved.ProviderDisplay + ".", false);
+                else
+                    SetStatus("GPS settings saved, but " + saved.ProviderDisplay + " has no key, so address lookups are off until you add one.", true);
             }
             catch (Exception ex)
             {

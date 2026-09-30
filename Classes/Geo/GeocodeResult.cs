@@ -25,6 +25,8 @@ namespace TrackerSQL.Classes.Geo
         public string Layer { get; set; }
         /// <summary>0 to 1.</summary>
         public double? Confidence { get; set; }
+        /// <summary>GpsSettings.ProviderHeigit or ProviderAzureMaps (Azure Maps points expire).</summary>
+        public string Provider { get; set; }
 
         public static GeocodeResult Fail(GeocodeFailure failure, string message)
         {

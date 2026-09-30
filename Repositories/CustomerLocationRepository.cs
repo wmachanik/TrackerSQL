@@ -9,7 +9,10 @@ namespace TrackerSQL.Repositories
     public class CustomerLocationRepository
     {
         private const string SelectColumns = @"ContactID, Latitude, Longitude, Geohash, MapAreaID, GeocodedAddress, SourceAddress,
-            LocationStatus, Source, Confidence, CreatedDate, UpdatedDate, UpdatedBy";
+            LocationStatus, Source, Confidence, CreatedDate, UpdatedDate, UpdatedBy, ExpiresDate, DriverFixes, LastDriverFixAt";
+
+        /// <summary>Azure Maps points are looked up again this many days before they expire.</summary>
+        private static readonly string RefreshWindowSql = "DATEADD(day, " + GpsSettings.AzureMapsRefreshDaysBefore + ", GETDATE())";
 
         public bool TableExists()
         {
@@ -53,13 +56,16 @@ IF EXISTS (SELECT 1 FROM dbo.CustomerLocationTbl WHERE ContactID = @ContactID)
     UPDATE dbo.CustomerLocationTbl SET
         Latitude = @Latitude, Longitude = @Longitude, Geohash = @Geohash, MapAreaID = @MapAreaID,
         GeocodedAddress = @GeocodedAddress, SourceAddress = @SourceAddress, LocationStatus = @LocationStatus,
-        Source = @Source, Confidence = @Confidence, UpdatedDate = GETDATE(), UpdatedBy = @UpdatedBy
+        Source = @Source, Confidence = @Confidence, UpdatedDate = GETDATE(), UpdatedBy = @UpdatedBy,
+        ExpiresDate = @ExpiresDate, DriverFixes = @DriverFixes, LastDriverFixAt = @LastDriverFixAt
     WHERE ContactID = @ContactID;
 ELSE
     INSERT INTO dbo.CustomerLocationTbl
-        (ContactID, Latitude, Longitude, Geohash, MapAreaID, GeocodedAddress, SourceAddress, LocationStatus, Source, Confidence, UpdatedBy)
+        (ContactID, Latitude, Longitude, Geohash, MapAreaID, GeocodedAddress, SourceAddress, LocationStatus, Source, Confidence, UpdatedBy,
+         ExpiresDate, DriverFixes, LastDriverFixAt)
     VALUES
-        (@ContactID, @Latitude, @Longitude, @Geohash, @MapAreaID, @GeocodedAddress, @SourceAddress, @LocationStatus, @Source, @Confidence, @UpdatedBy);";
+        (@ContactID, @Latitude, @Longitude, @Geohash, @MapAreaID, @GeocodedAddress, @SourceAddress, @LocationStatus, @Source, @Confidence, @UpdatedBy,
+         @ExpiresDate, @DriverFixes, @LastDriverFixAt);";
 
             using (var db = new TrackerSQLDb())
                 db.ExecuteNonQuery(sql, new List<DBParameter>
@@ -74,7 +80,10 @@ ELSE
                     P("@LocationStatus", loc.LocationStatus ?? CustomerLocation.StatusApproximate, DbType.AnsiString),
                     P("@Source", loc.Source, DbType.AnsiString),
                     P("@Confidence", loc.Confidence.HasValue ? Math.Round(loc.Confidence.Value, 3) : (decimal?)null, DbType.Decimal),
-                    P("@UpdatedBy", Truncate(loc.UpdatedBy, 128), DbType.String)
+                    P("@UpdatedBy", Truncate(loc.UpdatedBy, 128), DbType.String),
+                    P("@ExpiresDate", loc.ExpiresDate, DbType.DateTime),
+                    P("@DriverFixes", loc.DriverFixes, DbType.Int32),
+                    P("@LastDriverFixAt", loc.LastDriverFixAt, DbType.DateTime)
                 });
         }
 
@@ -83,6 +92,60 @@ ELSE
             using (var db = new TrackerSQLDb())
                 db.ExecuteNonQuery("DELETE FROM dbo.CustomerLocationTbl WHERE ContactID = @ContactID",
                     new List<DBParameter> { P("@ContactID", contactId, DbType.Int32) });
+        }
+
+        /// <summary>Removes provider points past their keep date (Azure Maps terms). Returns how many went.</summary>
+        public int DeleteExpired()
+        {
+            using (var db = new TrackerSQLDb())
+                return db.ExecuteScalar<int>(@"
+DELETE FROM dbo.CustomerLocationTbl WHERE ExpiresDate IS NOT NULL AND ExpiresDate < GETDATE();
+SELECT @@ROWCOUNT;");
+        }
+
+        /// <summary>
+        /// Phone position of the most recent earlier Delivered proof for this contact (usable accuracy only),
+        /// or null. Used to tell a one-off bad fix from a pin that really is in the wrong place.
+        /// </summary>
+        public Tuple<decimal, decimal> GetPreviousDeliveryFix(int contactId, long excludeProofId, DateTime before, decimal maxAccuracyM)
+        {
+            using (var db = new TrackerSQLDb())
+            using (var r = db.ExecuteReader(@"
+SELECT TOP (1) Latitude, Longitude FROM dbo.MobileDeliveryProofTbl
+WHERE ContactID = @ContactID AND ProofID <> @ProofID AND Outcome = 'Delivered'
+  AND DeliveredAt < @Before
+  AND Latitude IS NOT NULL AND Longitude IS NOT NULL
+  AND (AccuracyM IS NULL OR AccuracyM <= @MaxAcc)
+ORDER BY DeliveredAt DESC, ProofID DESC",
+                new List<DBParameter>
+                {
+                    P("@ContactID", contactId, DbType.Int32),
+                    P("@ProofID", excludeProofId, DbType.Int64),
+                    P("@Before", before, DbType.DateTime),
+                    P("@MaxAcc", maxAccuracyM, DbType.Decimal)
+                }))
+            {
+                if (r == null || !r.Read())
+                    return null;
+                return Tuple.Create(Convert.ToDecimal(r["Latitude"]), Convert.ToDecimal(r["Longitude"]));
+            }
+        }
+
+        /// <summary>A delivery agreed with a hand-placed pin (or a mismatch was noted): only the fix counters change.</summary>
+        public void TouchDriverFix(int contactId, int driverFixes, DateTime fixAt, string status)
+        {
+            using (var db = new TrackerSQLDb())
+                db.ExecuteNonQuery(@"
+UPDATE dbo.CustomerLocationTbl SET DriverFixes = @DriverFixes, LastDriverFixAt = @FixAt,
+    LocationStatus = ISNULL(@Status, LocationStatus)
+WHERE ContactID = @ContactID",
+                    new List<DBParameter>
+                    {
+                        P("@ContactID", contactId, DbType.Int32),
+                        P("@DriverFixes", driverFixes, DbType.Int32),
+                        P("@FixAt", fixAt, DbType.DateTime),
+                        P("@Status", status, DbType.AnsiString)
+                    });
         }
 
         public void SetStatus(int contactId, string status, string userName)
@@ -123,14 +186,15 @@ ELSE
         }
 
         /// <summary>
-        /// No location yet and an address. Default: enabled contacts whose "Delivery By" is a DELIVER person.
-        /// Open orders only: contacts with an order not done yet that one of our drivers is to deliver.
+        /// No location yet (or an Azure Maps point close to expiry) and an address. Default: enabled contacts whose
+        /// "Delivery By" is a DELIVER person. Open orders only: contacts with an order not done yet that one of our drivers is to deliver.
         /// </summary>
         private static string NeedingLookupFromWhere(bool openOrdersOnly)
         {
-            const string common = @"
+            string common = @"
   AND LEN(LTRIM(RTRIM(ISNULL(c.BillingAddress, N'')))) > 0
-  AND NOT EXISTS (SELECT 1 FROM dbo.CustomerLocationTbl l WHERE l.ContactID = c.ContactID)";
+  AND NOT EXISTS (SELECT 1 FROM dbo.CustomerLocationTbl l WHERE l.ContactID = c.ContactID
+                  AND (l.ExpiresDate IS NULL OR l.ExpiresDate > " + RefreshWindowSql + "))";
 
             if (openOrdersOnly)
                 return @"
@@ -150,7 +214,7 @@ WHERE ISNULL(c.Enabled, 0) = 1
         public List<int> ListRoughContactIds(int max)
         {
             string sql = "SELECT TOP (" + Math.Max(1, max) + @") ContactID FROM dbo.CustomerLocationTbl
-WHERE LocationStatus = 'REVIEW_REQUIRED' AND ISNULL(Source, '') <> 'MANUAL'
+WHERE LocationStatus = 'REVIEW_REQUIRED' AND ISNULL(Source, '') NOT IN ('MANUAL', 'DRIVER')
 ORDER BY UpdatedDate, ContactID";
             var ids = new List<int>();
             using (var db = new TrackerSQLDb())
@@ -167,7 +231,7 @@ ORDER BY UpdatedDate, ContactID";
         {
             string sql = "SELECT TOP (" + Math.Max(1, max) + @") l.ContactID, l.Latitude, l.Longitude, l.Geohash,
     l.MapAreaID, l.GeocodedAddress, l.SourceAddress, l.LocationStatus, l.Source, l.Confidence,
-    l.CreatedDate, l.UpdatedDate, l.UpdatedBy, c.CompanyName
+    l.CreatedDate, l.UpdatedDate, l.UpdatedBy, l.ExpiresDate, l.DriverFixes, l.LastDriverFixAt, c.CompanyName
 FROM dbo.CustomerLocationTbl l
 INNER JOIN dbo.ContactsTbl c ON c.ContactID = l.ContactID
 WHERE l.LocationStatus = 'REVIEW_REQUIRED'
@@ -198,7 +262,10 @@ ORDER BY c.CompanyName";
                 Confidence = r["Confidence"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Confidence"]),
                 CreatedDate = Convert.ToDateTime(r["CreatedDate"]),
                 UpdatedDate = Convert.ToDateTime(r["UpdatedDate"]),
-                UpdatedBy = r["UpdatedBy"] as string
+                UpdatedBy = r["UpdatedBy"] as string,
+                ExpiresDate = r["ExpiresDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["ExpiresDate"]),
+                DriverFixes = r["DriverFixes"] == DBNull.Value ? 0 : Convert.ToInt32(r["DriverFixes"]),
+                LastDriverFixAt = r["LastDriverFixAt"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["LastDriverFixAt"])
             };
         }
 

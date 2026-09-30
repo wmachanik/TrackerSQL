@@ -180,6 +180,8 @@ This is free, needs no routing API and zig-zags less than a plain geohash sort. 
 | HeiGIT / OpenRouteService geocoding | Yes, free, at account.heigit.org | Standard plan: 3,000/day, 100/minute. Old `api.openrouteservice.org` shut down 2026-09-28; use `api.heigit.org` |
 | OpenStreetMap map tiles | **No** | Show "© OpenStreetMap contributors"; normal interactive viewing only (no bulk or offline downloads); browsers already meet the technical rules; the tile URL should be switchable (it is in settings) |
 | OSM Nominatim geocoding | No | Not used for customer addresses: max 1 request/second, bulk use discouraged, and the policy asks not to send personal data |
+| Azure Maps geocoding (Get Geocoding, api-version 2025-01-01) | Yes, Azure subscription + Maps account; key in System Preferences | Gen2 pricing: 5,000 free a month, then per 1,000. Results stored outside Azure may be kept at most 6 months (we use 180 days + refresh); only co-ordinates are kept for our own deliveries, no reusable address database; may be shown on non-Microsoft maps. `bbox` is only a hint, so Tracker also checks the 150 km limit itself |
+| Google Geocoding (not built) | Yes | 30-day caching limit and results meant for Google maps; kept as an option if Azure disappoints |
 
 ## 9. Build order
 
@@ -205,3 +207,17 @@ Each step is released and used before the next starts.
 - Pages: System Preferences → GPS & Drivers, Contact Details GPS line + `Pages/ContactLocation.aspx` popup (Leaflet), `Tools/CustomerLocations.aspx` batch, User Information options.
 - Leaflet 1.9.4 is in `Scripts/leaflet/` (the popup falls back to unpkg if it is missing).
 - To do before release: check the pages in the browser, enter the key, look up the depot, run a small batch.
+
+## Starting points and learning from drivers (2026-09-30)
+
+Decision: OpenStreetMap coverage of South African street addresses is too patchy. The *starting* point comes from a
+better geocoder (Azure Maps first; Google remains an option), and the *real* point is learned from the driver's phone
+at delivery. Once a driver point exists, the provider's data is discarded, so the provider's storage limits stop mattering.
+
+- Schema: `SQLCommands-DriverGps-02.xml` (+ GoLive copy): `GpsSettingsTbl.AzureMapsKey`, `CustomerLocationTbl.ExpiresDate / DriverFixes / LastDriverFixAt`, `MobileDeliveryProofTbl.AccuracyM`.
+- Provider: `GpsSettings.GeocodeProvider` = `HeiGIT` or `AzureMaps`; `Classes/Geo/AzureMapsGeocoder.cs` (key in the `subscription-key` header; `coordinates` = depot focus, `bbox` from the 150 km radius; type → layer and High/Medium/Low → 0.9/0.6/0.3, capped at 0.6 when Ambiguous / UpHierarchy; 401/403 = bad key, 429 = throttled). Daily counts per service (`GEOCODE` / `AZURE_GEOCODE` in `GeoApiUsageTbl`). `CustomerLocationManager.Geocode` rejects any match beyond the radius (`GeoDistance`).
+- Sources on `CustomerLocationTbl.Source`: `GEOCODER` (HeiGIT), `AZURE_MAPS` (ExpiresDate = +180 days), `POSTCODE`, `MANUAL`, `DRIVER`.
+- Expiry: `RefreshDue` (30 days before) makes `EnsureForContact` look up again even when the address is unchanged; the batch list includes those contacts; `PurgeExpiredOncePerDay` deletes points past `ExpiresDate`.
+- Driver app (TrackerDriver 0.4.0): `src/location.ts` watches the position while the capture screen is open; on save it uses a fix under 2 minutes old or tries once for 3 s. `lat`, `lng`, `accuracy` go in the outbox item and `/delivery/sync`. Android manifest has coarse + fine location (foreground only; Capacitor's WebView asks for the permission).
+- Server: `MobileDeliveryManager.SyncOne` stores `AccuracyM` (only when the column exists) and calls `CustomerLocationManager.LearnFromDelivery` after a Delivered proof with a fix. Rules: accuracy ≤ 75 m (or unknown); no point / looked-up / postcode → `DRIVER`, `APPROXIMATE`, 1 fix; driver point within 60 m on another visit (≥ 6 h apart) → weighted average (older fixes capped at weight 5), fixes + 1, `VERIFIED` from 2; further → moved, 1 fix; `MANUAL` → never moved, agreeing visits counted, two visits in a row > 150 m → `REVIEW_REQUIRED` (cleared by a later agreeing visit); sundry contact skipped. Every outcome is logged (Customers log).
+- Later: Google as a third provider (30-day expiry uses the same `ExpiresDate` path).

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Web;
 using System.Web.UI;
 using TrackerSQL.Classes;
+using TrackerSQL.Classes.Geo;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
@@ -43,7 +44,11 @@ namespace TrackerSQL.Pages
             hdnTileUrl.Value = settings.MapTileUrl;
 
             litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
-            litAddress.Text = HttpUtility.HtmlEncode(CustomerLocationManager.BuildAddressText(contact));
+            string addressText = CustomerLocationManager.BuildAddressText(contact);
+            litAddress.Text = HttpUtility.HtmlEncode(addressText);
+            if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                txtSearch.Text = addressText.Replace(", South Africa", string.Empty);
+            ViewState["SearchLabel"] = null;
 
             CustomerLocation loc = manager.Get(ContactId);
             if (loc != null)
@@ -88,7 +93,8 @@ namespace TrackerSQL.Pages
 
             try
             {
-                new CustomerLocationManager().SetManual(ContactId, lat, lng, Context?.User?.Identity?.Name);
+                new CustomerLocationManager().SetManual(ContactId, lat, lng, Context?.User?.Identity?.Name,
+                    ViewState["SearchLabel"] as string);
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + ContactId + " | GPS pin saved (checked)");
                 BindPage();
                 ShowMessage("Pin saved and marked as checked.", false);
@@ -114,6 +120,31 @@ namespace TrackerSQL.Pages
             catch (Exception ex)
             {
                 ShowMessage("Lookup failed: " + ex.Message, true);
+            }
+        }
+
+        protected void btnSearch_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                GeocodeResult result = new CustomerLocationManager().SearchAddress(txtSearch.Text);
+                if (!result.Success)
+                {
+                    ShowMessage(result.Message ?? "Not found.", true);
+                    return;
+                }
+
+                SetPoint(Math.Round((decimal)result.Latitude, 6), Math.Round((decimal)result.Longitude, 6), true);
+                ViewState["SearchLabel"] = result.Label;
+                litMatched.Text = HttpUtility.HtmlEncode((result.Label ?? txtSearch.Text) + " (from search, not saved yet)");
+                ShowMessage(result.IsPrecise
+                    ? "Pin moved to the search result. Check it, then press Save this pin."
+                    : "Only a rough match (suburb / town). Drag the pin to the right spot, then press Save this pin.",
+                    !result.IsPrecise);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Search failed: " + ex.Message, true);
             }
         }
 

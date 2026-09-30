@@ -178,8 +178,9 @@
                             ToolTip="Where our driver delivers: looked up once from the address, kept until the address changes" /></td>
                         <td>
                             <asp:Label ID="lblGpsLocation" runat="server" CssClass="contact-gps-value" />
-                            <asp:HyperLink ID="hlGpsCheck" runat="server" Text="Check / change" CssClass="contact-gps-check" Visible="false"
-                                ToolTip="Open the map: confirm the pin, drag it, or look the address up again" />
+                            <asp:Button ID="btnGpsCheck" runat="server" Text="Check" Visible="false"
+                                CssClass="filter-panel-btn contact-postal-suggest" CausesValidation="false" UseSubmitBehavior="false"
+                                ToolTip="Open the map: confirm the pin, drag it, type GPS co-ordinates or search for the address" />
                             <asp:Button ID="btnGpsRefresh" runat="server" CssClass="contact-gps-refresh" CausesValidation="false"
                                 OnClick="btnGpsRefresh_Click" UseSubmitBehavior="false" TabIndex="-1" />
                         </td>

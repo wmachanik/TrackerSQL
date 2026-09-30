@@ -997,7 +997,7 @@ namespace TrackerSQL.Pages
         /// </summary>
         protected global::System.Web.UI.WebControls.Label lblGpsCaption;
         protected global::System.Web.UI.WebControls.Label lblGpsLocation;
-        protected global::System.Web.UI.WebControls.HyperLink hlGpsCheck;
+        protected global::System.Web.UI.WebControls.Button btnGpsCheck;
         protected global::System.Web.UI.WebControls.Button btnGpsRefresh;
         protected global::AjaxControlToolkit.TabPanel tabpnlProofs;
 

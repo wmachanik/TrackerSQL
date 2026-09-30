@@ -113,7 +113,7 @@ This is free, needs no routing API and zig-zags less than a plain geohash sort. 
   - latitude and longitude
   - time
   - source: `APP_OPEN`, `PERIODIC` or `DELIVERY_COMPLETE`
-- Android uses the Capacitor geolocation plugin. Pings while the app is in the background need a background-location plugin with the standard Android "tracking active" notification.
+- Android uses **`@capacitor-community/background-geolocation`** (decided 2026-09-30: free, MIT licence, peer `@capacitor/core >= 3`, so it works with Capacitor 8). It keeps sending positions with the app in the background or the screen off. Android shows the standard "tracking active" notification while it runs, and the driver must allow location "all the time". The app starts it only when tracking is on and inside the allowed days and hours, and stops it outside them or on "Finished". (Not Transistorsoft: paid licence for Android release builds.)
 - The iPhone web copy can only ping while the page is open.
 - Pings are only sent when tracking is enabled in settings and inside the allowed days and hours.
 - New API endpoint `POST /api/v1/location` with the same token login as the app. The server also rejects pings outside the allowed days and hours.

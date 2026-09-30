@@ -1,4 +1,4 @@
-﻿/* Rev: 20260930-01
+﻿/* Rev: 20260930-02
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9345,6 +9345,10 @@ input.contact-gps-refresh { display: none !important; }
 .contact-location-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 .contact-location-state { text-align: right; }
 .contact-location-muted { color: #666; font-size: 0.9em; }
+.contact-location-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; margin: 6px 0; }
+.contact-location-tools label { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.9em; color: #555; }
+input.contact-location-input { width: 13em; }
+input.contact-location-input.contact-location-search { width: 24em; max-width: 60vw; }
 .contact-location-map { height: 400px; border: 1px solid #cfd8c6; border-radius: 4px; margin: 6px 0; }
 
 /* System Preferences → GPS & Drivers */

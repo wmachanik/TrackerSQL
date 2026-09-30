@@ -139,7 +139,7 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>A person placed or confirmed the pin on the map.</summary>
-        public CustomerLocation SetManual(int contactId, decimal latitude, decimal longitude, string userName)
+        public CustomerLocation SetManual(int contactId, decimal latitude, decimal longitude, string userName, string matchedAddress = null)
         {
             if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
                 throw new ArgumentOutOfRangeException(nameof(latitude), "Not a valid GPS point.");
@@ -153,7 +153,7 @@ namespace TrackerSQL.Managers
                 Longitude = longitude,
                 Geohash = Geohash.Encode((double)latitude, (double)longitude),
                 MapAreaID = existing?.MapAreaID,
-                GeocodedAddress = existing?.GeocodedAddress,
+                GeocodedAddress = string.IsNullOrWhiteSpace(matchedAddress) ? existing?.GeocodedAddress : matchedAddress,
                 SourceAddress = BuildAddressText(contact),
                 LocationStatus = CustomerLocation.StatusVerified,
                 Source = CustomerLocation.SourceManual,
@@ -185,6 +185,17 @@ namespace TrackerSQL.Managers
                     result.Latitude.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) + ", " +
                     result.Longitude.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) + ")."
             };
+        }
+
+        /// <summary>Looks up any typed address (uses one lookup) without saving; the Check popup moves the pin there.</summary>
+        public GeocodeResult SearchAddress(string text)
+        {
+            string query = (text ?? string.Empty).Trim();
+            if (query.Length == 0)
+                return GeocodeResult.Fail(GeocodeFailure.NotFound, "Type an address to search for.");
+            if (query.IndexOf("South Africa", StringComparison.OrdinalIgnoreCase) < 0)
+                query += ", South Africa";
+            return Geocode(query, _settingsRepo.Get(), out _);
         }
 
         public int LookupsUsedToday()

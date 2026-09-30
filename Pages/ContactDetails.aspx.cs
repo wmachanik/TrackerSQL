@@ -190,7 +190,7 @@ namespace TrackerSQL.Pages
             lblGpsCaption.Visible = false;
             lblGpsLocation.Text = string.Empty;
             lblGpsLocation.CssClass = "contact-gps-value";
-            hlGpsCheck.Visible = false;
+            btnGpsCheck.Visible = false;
             try
             {
                 if (!int.TryParse(ddlDeliveryBy.SelectedValue, out int personId)
@@ -224,9 +224,8 @@ namespace TrackerSQL.Pages
                         lblGpsLocation.CssClass = "contact-gps-value contact-gps-verified";
                 }
 
-                hlGpsCheck.Visible = true;
-                hlGpsCheck.NavigateUrl = "#";
-                hlGpsCheck.Attributes["onclick"] = "trackerOpenGps(" + contactId + "); return false;";
+                btnGpsCheck.Visible = true;
+                btnGpsCheck.OnClientClick = "trackerOpenGps(" + contactId + "); return false;";
             }
             catch (Exception ex)
             {

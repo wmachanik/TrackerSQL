@@ -1,4 +1,4 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ContactLocation.aspx.cs" Inherits="TrackerSQL.Pages.ContactLocation" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="ContactLocation.aspx.cs" Inherits="TrackerSQL.Pages.ContactLocation" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Customer GPS location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-01" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-02" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>
@@ -17,7 +17,7 @@
     </script>
 </head>
 <body class="contact-location-body">
-    <form id="frmContactLocation" runat="server">
+    <form id="frmContactLocation" runat="server" defaultbutton="btnSearch">
         <asp:HiddenField ID="hdnLat" runat="server" />
         <asp:HiddenField ID="hdnLng" runat="server" />
         <asp:HiddenField ID="hdnHasPoint" runat="server" />
@@ -37,8 +37,23 @@
 
         <asp:Label ID="lblMessage" runat="server" CssClass="status-message" Visible="false" />
 
+        <div class="contact-location-tools">
+            <label>
+                GPS co-ordinates
+                <input type="text" id="txtCoords" class="contact-location-input" placeholder="-34.02345, 18.44321"
+                    title="Type or paste latitude, longitude (or a Google Maps link) and press Go" />
+            </label>
+            <button type="button" id="btnCoordsGo" class="filter-panel-btn contact-postal-suggest">Go</button>
+            <label>
+                Search address
+                <asp:TextBox ID="txtSearch" runat="server" CssClass="contact-location-input contact-location-search"
+                    ToolTip="Search for a different address or place (uses one lookup); the pin moves there, then press Save this pin" />
+            </label>
+            <asp:Button ID="btnSearch" runat="server" CssClass="filter-panel-btn contact-postal-suggest" Text="Search" OnClick="btnSearch_Click" />
+        </div>
+
         <div id="contactLocationMap" class="contact-location-map"></div>
-        <p class="contact-location-muted">Drag the pin (or click the map) to where the driver should stop, then press <em>Save this pin</em>.</p>
+        <p class="contact-location-muted">Drag the pin, click the map, type co-ordinates or search, then press <em>Save this pin</em>.</p>
 
         <div class="button-row">
             <asp:Button ID="btnSavePin" runat="server" CssClass="filter-panel-btn" Text="Save this pin" OnClick="btnSavePin_Click"
@@ -78,6 +93,30 @@
             }
             marker.on('dragend', function () { setPoint(marker.getLatLng()); });
             map.on('click', function (e) { marker.setLatLng(e.latlng); setPoint(e.latlng); });
+
+            // "-34.02, 18.44", "-34.02 18.44", or a Google Maps link (@lat,lng / q=lat,lng / !3dlat!4dlng)
+            function parseCoords(text) {
+                var s = (text || '').trim();
+                var m = s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+                    || s.match(/[@=](-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)
+                    || s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+                if (!m) return null;
+                var la = parseFloat(m[1]), ln = parseFloat(m[2]);
+                if (isNaN(la) || isNaN(ln) || la < -90 || la > 90 || ln < -180 || ln > 180) return null;
+                return L.latLng(la, ln);
+            }
+            var coordsBox = byId('txtCoords');
+            function goToCoords() {
+                var p = parseCoords(coordsBox.value);
+                if (!p) { alert('Type latitude, longitude, e.g. -34.02345, 18.44321'); return; }
+                marker.setLatLng(p);
+                setPoint(p);
+                map.setView(p, 17);
+            }
+            byId('btnCoordsGo').addEventListener('click', goToCoords);
+            coordsBox.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); goToCoords(); }
+            });
         })();
     </script>
 </body>

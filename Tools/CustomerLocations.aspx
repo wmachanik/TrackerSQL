@@ -21,7 +21,12 @@
         <table class="detail-form-table sys-prefs-form-table">
             <tr>
                 <td class="sys-prefs-label">Still to look up</td>
-                <td class="sys-prefs-field"><asp:Label ID="lblToDo" runat="server" /></td>
+                <td class="sys-prefs-field">
+                    <asp:Label ID="lblToDo" runat="server" /><br />
+                    <asp:CheckBox ID="cbxOpenOrdersOnly" runat="server" AutoPostBack="true" OnCheckedChanged="cbxOpenOrdersOnly_CheckedChanged"
+                        Text="Only contacts with open orders for our drivers"
+                        ToolTip="Orders not done yet whose delivery person is a Deliver person (even if the contact's usual Delivery By is someone else)" />
+                </td>
             </tr>
             <tr>
                 <td class="sys-prefs-label">Lookups used today</td>

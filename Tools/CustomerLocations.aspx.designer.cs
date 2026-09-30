@@ -11,6 +11,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Panel pnlAccessDenied;
         protected global::System.Web.UI.WebControls.Panel pnlMain;
         protected global::System.Web.UI.WebControls.Label lblToDo;
+        protected global::System.Web.UI.WebControls.CheckBox cbxOpenOrdersOnly;
         protected global::System.Web.UI.WebControls.Label lblUsedToday;
         protected global::System.Web.UI.WebControls.TextBox txtBatchSize;
         protected global::System.Web.UI.WebControls.Button btnRunBatch;

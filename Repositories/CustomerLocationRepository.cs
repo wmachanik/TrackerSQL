@@ -85,17 +85,10 @@ ELSE
         /// Enabled contacts whose "Delivery By" person is one of our drivers (DELIVER) and who have no location yet
         /// or whose address changed since it was looked up (verified points are kept).
         /// </summary>
-        public List<int> ListContactIdsNeedingLookup(int max)
+        public List<int> ListContactIdsNeedingLookup(int max, bool openOrdersOnly = false)
         {
-            string sql = "SELECT TOP (" + Math.Max(1, max) + @") c.ContactID
-FROM dbo.ContactsTbl c
-INNER JOIN dbo.PeopleTbl p ON p.PersonID = c.PreferredAgentID
-LEFT JOIN dbo.CustomerLocationTbl l ON l.ContactID = c.ContactID
-WHERE ISNULL(c.Enabled, 0) = 1
-  AND p.DeliveryType = 'DELIVER'
-  AND LEN(LTRIM(RTRIM(ISNULL(c.BillingAddress, N'')))) > 0
-  AND l.ContactID IS NULL
-ORDER BY c.ContactID";
+            string sql = "SELECT TOP (" + Math.Max(1, max) + ") c.ContactID" + NeedingLookupFromWhere(openOrdersOnly)
+                + " ORDER BY c.ContactID";
             var ids = new List<int>();
             using (var db = new TrackerSQLDb())
             using (var r = db.ExecuteReader(sql))
@@ -106,19 +99,34 @@ ORDER BY c.ContactID";
             return ids;
         }
 
-        public int CountContactsNeedingLookup()
+        public int CountContactsNeedingLookup(bool openOrdersOnly = false)
         {
-            const string sql = @"
-SELECT COUNT(*)
+            using (var db = new TrackerSQLDb())
+                return db.ExecuteScalar<int>("SELECT COUNT(*)" + NeedingLookupFromWhere(openOrdersOnly));
+        }
+
+        /// <summary>
+        /// No location yet and an address. Default: enabled contacts whose "Delivery By" is a DELIVER person.
+        /// Open orders only: contacts with an order not done yet that one of our drivers is to deliver.
+        /// </summary>
+        private static string NeedingLookupFromWhere(bool openOrdersOnly)
+        {
+            const string common = @"
+  AND LEN(LTRIM(RTRIM(ISNULL(c.BillingAddress, N'')))) > 0
+  AND NOT EXISTS (SELECT 1 FROM dbo.CustomerLocationTbl l WHERE l.ContactID = c.ContactID)";
+
+            if (openOrdersOnly)
+                return @"
+FROM dbo.ContactsTbl c
+WHERE EXISTS (SELECT 1 FROM dbo.OrdersTbl o
+              INNER JOIN dbo.PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
+              WHERE o.ContactID = c.ContactID AND ISNULL(o.Done, 0) = 0 AND p.DeliveryType = 'DELIVER')" + common;
+
+            return @"
 FROM dbo.ContactsTbl c
 INNER JOIN dbo.PeopleTbl p ON p.PersonID = c.PreferredAgentID
-LEFT JOIN dbo.CustomerLocationTbl l ON l.ContactID = c.ContactID
 WHERE ISNULL(c.Enabled, 0) = 1
-  AND p.DeliveryType = 'DELIVER'
-  AND LEN(LTRIM(RTRIM(ISNULL(c.BillingAddress, N'')))) > 0
-  AND l.ContactID IS NULL";
-            using (var db = new TrackerSQLDb())
-                return db.ExecuteScalar<int>(sql);
+  AND p.DeliveryType = 'DELIVER'" + common;
         }
 
         /// <summary>Locations that still need a person to check them, with the contact name for the list.</summary>

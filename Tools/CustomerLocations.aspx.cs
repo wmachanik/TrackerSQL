@@ -59,7 +59,8 @@ namespace TrackerSQL.Tools
             }
 
             GpsSettings settings = new GpsSettingsRepository().Get();
-            lblToDo.Text = locations.CountContactsNeedingLookup().ToString();
+            lblToDo.Text = locations.CountContactsNeedingLookup(cbxOpenOrdersOnly.Checked)
+                + (cbxOpenOrdersOnly.Checked ? " with open orders" : " contacts");
             lblUsedToday.Text = new CustomerLocationManager().LookupsUsedToday() + " of " + settings.GeocodeDailyLimit
                 + (settings.HasApiKey ? string.Empty : " (no key saved: add it on System Preferences → GPS & Drivers)");
             btnRunBatch.Enabled = settings.HasApiKey;
@@ -90,14 +91,15 @@ namespace TrackerSQL.Tools
             try
             {
                 int done = 0;
-                foreach (int contactId in new CustomerLocationRepository().ListContactIdsNeedingLookup(size + MaxBatch))
+                bool openOnly = cbxOpenOrdersOnly.Checked;
+                foreach (int contactId in new CustomerLocationRepository().ListContactIdsNeedingLookup(size + MaxBatch, openOnly))
                 {
                     if (done >= size)
                         break;
                     if (FailedEarlierToday(contactId, add: false))
                         continue;
                     done++;
-                    LocationLookupOutcome outcome = manager.EnsureForContact(contactId, userName);
+                    LocationLookupOutcome outcome = manager.EnsureForContact(contactId, userName, force: openOnly);
                     if (outcome.StopBatch)
                     {
                         stopReason = outcome.Message;
@@ -127,6 +129,11 @@ namespace TrackerSQL.Tools
             BindPage();
             string summary = found + " found, " + rough + " found roughly (check below), " + notFound + " not found.";
             ShowMessage(stopReason == null ? summary : summary + " " + stopReason, stopReason != null);
+        }
+
+        protected void cbxOpenOrdersOnly_CheckedChanged(object sender, EventArgs e)
+        {
+            BindPage();
         }
 
         private void ShowMessage(string message, bool isError)

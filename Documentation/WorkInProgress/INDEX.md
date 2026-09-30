@@ -26,5 +26,6 @@
 | **REPOSITORY_PATTERN_ENFORCEMENT_IN_PROGRESS.md** | Repo enforcement still open |
 | **DELETE_SQLDATASOURCES_NOW.md** | Remaining SqlDataSource cleanup |
 | **ROASTDATE_PREPDATE_MIGRATION.md** | Roast/prep date notes |
+| **GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md** | Delivery type on People, customer locations, map areas, driver tracking, ETAs — planned |
 
 Archived LOOKUPS/COMPLETE/SUMMARY notes: `Documentation/Archive/WorkInProgress/`.

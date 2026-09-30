@@ -1,0 +1,195 @@
+# GPS delivery areas, customer locations, driver tracking and ETAs — plan
+
+**Status:** planned, not built (agreed 2026-09-30). Replaces the earlier "delivery map" idea, which was dropped before any code was written.
+**Principles:** geocode once and store; never geocode per order; delivery logic only for people whose delivery type is Deliver; location data kept out of the contacts table; the existing Areas table stays in charge of prep and delivery dates; no paid routing APIs in version 1.
+
+---
+
+## How Tracker works today (the starting point)
+
+- **Customers** are in `ContactsTbl`. **People** (`PeopleTbl`) are staff: drivers, couriers and others.
+- A contact's **default delivery person** is `ContactsTbl.PreferredAgentID` (the "Delivery By" dropdown on Contact Details), set by hand. Each order copies it into `OrdersTbl.ToBeDeliveredByID`, where it can be changed per order (a customer can ask for collection or courier on one order).
+- **Areas** (`AreasTbl` plus `AreaPrepDaysTbl`) set the prep and delivery ("prep by") dates, the Delivery Days order, promise rules, WooCommerce postcode mapping and the area pill. They stay.
+- `PeopleTbl.IsDispatched` marks courier people (Cour, Pargo); Order Done uses it for waybills.
+- The contact's address in the main table (`BillingAddress`, postcode, province) is the **shipping address**, built from WooCommerce addresses by the rules in settings.
+- The driver app (`C:\SRC\ASP.net\TrackerDriver`, Vue + Capacitor) is Android only; iPhone drivers use the web copy at `/driver`.
+
+---
+
+## 1. Delivery type on People
+
+- New column `PeopleTbl.DeliveryType`: `DELIVER`, `COURIER`, `COLLECT` or `NONE` (people who never deliver).
+- Initial values:
+  - SQ, WM, MX → `DELIVER`
+  - Cour, Pargo (and anyone with `IsDispatched = 1`) → `COURIER`
+  - The collection person, if there is one → `COLLECT`
+  - everyone else → `NONE`
+- Edited on the People lookup. `IsDispatched` stays and is kept equal to "DeliveryType = COURIER", so Order Done does not change.
+- A contact or order counts as a "delivery" when its delivery person's type is `DELIVER`.
+
+## 2. Customer locations (`CustomerLocationTbl`)
+
+One row per contact that gets our own deliveries; separate from `ContactsTbl`.
+
+| Column | Notes |
+|---|---|
+| `ContactID` | primary key, links to `ContactsTbl` |
+| `Latitude`, `Longitude` | `DECIMAL(9,6)` |
+| `Geohash` | 9 characters (about 5 m), used for grouping and sorting |
+| `MapAreaID` | area whose map shape contains the point (links to `AreasTbl`); null when outside all shapes |
+| `GeocodedAddress` | the exact address text that was looked up |
+| `LocationStatus` | `VERIFIED` (a person confirmed or moved the pin), `APPROXIMATE` (automatic lookup), `REVIEW_REQUIRED` (no good match, outside all shapes, or map area differs from the contact's area) |
+| `CreatedDate`, `UpdatedDate` | |
+
+### When a location is created or updated
+- **On contact save:** a contact is saved with a delivery person of type `DELIVER` and has no location yet.
+- **On address change:** the address changes and no longer matches `GeocodedAddress`. The pin is looked up again; if it was `VERIFIED`, it becomes `REVIEW_REQUIRED`.
+- **On order capture:** an order is captured for a `DELIVER` person and the contact has no location. The lookup happens once, not on every order.
+- Changing to a collect or courier person leaves the stored location alone. It is simply ignored while the contact is not delivered by us.
+
+### Contact Details display
+- In the Packaging column: the label **"GPS"** under "Packaging", and the value as text under the packaging dropdown, for example `APPROXIMATE · Constantia & Surrounds`.
+- The value is not editable in place. A **Check / change** button opens a popup with:
+  - a small map and a draggable pin;
+  - a "Look up from address again" button;
+  - a note when the map area differs from the contact's area, for example "Map says Bellville; contact is Northern Suburbs". Changing the contact's area stays a deliberate choice, because it changes prep dates.
+- Saving from the popup sets `VERIFIED`.
+
+### Address lookup (geocoding)
+- **Provider:** OpenRouteService / HeiGIT, via `https://api.heigit.org/pelias/v1/search`. The free Standard key allows 3,000 lookups a day and 100 a minute.
+- The lookup is behind a swappable interface, so another provider can be used later.
+- Only the address text, postcode and "South Africa" are sent — never names, phone numbers or emails.
+- The daily cap is counted in `GeoApiUsageTbl` so it survives restarts. HTTP 429 means wait and retry once; HTTP 403 means stop for the day.
+- If the lookup fails, the postcode centre from `SaPostalCodeTbl` is used, with status `REVIEW_REQUIRED`.
+
+### One-time migration
+A batch page runs the following for every contact whose default delivery person is `DELIVER` and who has no location:
+1. Read the address.
+2. Look it up.
+3. Work out the geohash.
+4. Find the map area.
+5. Save the location.
+
+It respects the daily cap, so it can take more than one day. It lists every `REVIEW_REQUIRED` contact for checking.
+
+## 3. Map areas linked to Areas
+
+- New `AreaMapShapeTbl`:
+  - `ShapeID`
+  - `AreaID` (links to `AreasTbl`)
+  - `PolygonJson` (GeoJSON)
+  - `Active`
+- An area can have **several shapes**, for example two separate pockets served on the same run.
+- `RouteSequence` is the area's existing delivery order from Lookups → Delivery Days (`AreaPrepDaysTbl.DeliveryOrder`), so there is only one order to maintain.
+- Areas that are really delivery methods (courier, collect, regional) simply have no shapes.
+- **Map editor** (admins): shows all shapes coloured by area, plus customer pins. You can draw, edit and delete shapes (Leaflet with Leaflet.draw) and assign each shape to an area.
+- After shapes change, "Recheck customers" re-runs the point-in-shape test for every stored location. Mismatches are flagged `REVIEW_REQUIRED`; contacts are never moved automatically.
+
+## 4. Stop order and ETAs
+
+### Stop order (per driver per day)
+1. Existing rule first: areas normally delivered that day, then off-day areas (as built in 3.0.3.1).
+2. Within that, by the area's `RouteSequence`.
+3. Within an area, the **nearest next stop**: start from the driver's latest position (or the depot) and repeatedly go to the closest remaining stop. Geohash breaks ties and is the fallback when there is no position.
+4. Stops without a location go last in the area, by company name as today.
+
+This is free, needs no routing API and zig-zags less than a plain geohash sort. Distances are straight-line (haversine) behind a replaceable distance service, so OSRM, GraphHopper or OpenRouteService can be plugged in later.
+
+### ETA
+- Inputs: the driver's position (latest ping, else the depot), the current time, and the remaining stops in order.
+- Travel time = distance ÷ average speed (default 30 km/h). Arrival = departure from the previous stop + travel time. Departure = arrival + service time (default 5 minutes).
+- Recalculated when a new ping arrives, a delivery is completed, or the sequence changes. In practice it is worked out whenever the sheet or tracking page loads or refreshes, from the latest data.
+
+### Delivery sheet
+- New columns: **Seq**, **Area**, **ETA**, **Status** (Pending / Delivered / Failed), in addition to the existing columns.
+- Shown only for users with the user preference **"Show route and ETA on Delivery Sheet"** (default off; intended for drivers and an admin). Screen only; the printed sheet is unchanged.
+
+## 5. Driver tracking
+
+### Driver app (Android; iPhone uses the web copy)
+- Sends a ping on app open, every 10 minutes while logged in and active, and on delivery complete:
+  - driver (person ID)
+  - latitude and longitude
+  - time
+  - source: `APP_OPEN`, `PERIODIC` or `DELIVERY_COMPLETE`
+- Android uses the Capacitor geolocation plugin. Pings while the app is in the background need a background-location plugin with the standard Android "tracking active" notification.
+- The iPhone web copy can only ping while the page is open.
+- Pings are only sent when tracking is enabled in settings and inside the allowed days and hours.
+- New API endpoint `POST /api/v1/location` with the same token login as the app. The server also rejects pings outside the allowed days and hours.
+
+### `DriverLocationPingTbl`
+- Columns: `PingID`, `PersonID`, `Latitude`, `Longitude`, `PingTime`, `Source`.
+- Old pings are deleted after the retention period set in settings.
+
+### Preparation → Driver Tracking page (new menu item under Delivery Sheet)
+- **Map of active drivers.** Each marker shows the latest ping, colour-coded:
+  - green: updated within 15 minutes
+  - orange: within 30 minutes
+  - red: older than 30 minutes
+- **Marker tooltip:** driver name, last seen, latitude and longitude, current area (from the map shapes).
+- **Driver status:**
+  - **On route:** recent ping and stops left.
+  - **Finished:** no stops left.
+  - **Offline:** no ping for 30+ minutes.
+- **Selecting a driver** shows their current position, remaining and completed deliveries, and estimated finish time. On the map it draws the driver marker, the remaining stops (numbered, with ETAs) and the planned route as straight lines between stops.
+- The page refreshes itself every minute.
+- Visible only to users with the user preference **"Driver tracking"** (default off) or to admins.
+
+## 6. Settings
+
+### System Preferences → new "GPS & Drivers" tab (admins)
+
+**Address lookup**
+- provider, API key (stored in the database, shown masked, never logged)
+- daily cap (default 2,500) and per-minute limit (default 90)
+- lookups used today
+
+**Map**
+- tile address (default `https://tile.openstreetmap.org/{z}/{x}/{y}.png`)
+
+**Depot**
+- address (default "Quaffee AT Buitenverwachting; Klein Constantia Rd; Constantia; Cape Town"), with a "Look up" button that fills in latitude and longitude
+
+**Driver tracking**
+- enabled on/off
+- ping interval (default 10 minutes)
+- weekdays only on/off
+- work hours from/to (for example 07:00–18:00)
+- ping retention in days (default 30)
+
+**ETA**
+- average speed (default 30 km/h)
+- service time per stop (default 5 minutes)
+- marker colour thresholds (15 and 30 minutes)
+
+### User preferences (`UserPreferences` table, edited on Administration → User Information)
+- "Show route and ETA on Delivery Sheet": default off
+- "Driver tracking": default off
+
+## 7. Privacy (POPIA)
+
+- Tracking runs only when enabled, only while the driver is logged in, and only within the configured weekdays and work hours. Old pings are deleted automatically.
+- Drivers should be told in writing that their location is recorded during working hours while using the app.
+- Customer addresses (not names) are sent to HeiGIT (Germany) for the one-time lookup.
+
+## 8. Third-party services
+
+| Service | Registration | Limits and rules |
+|---|---|---|
+| HeiGIT / OpenRouteService geocoding | Yes, free, at account.heigit.org | Standard plan: 3,000/day, 100/minute. Old `api.openrouteservice.org` shut down 2026-09-28; use `api.heigit.org` |
+| OpenStreetMap map tiles | **No** | Show "© OpenStreetMap contributors"; normal interactive viewing only (no bulk or offline downloads); browsers already meet the technical rules; the tile URL should be switchable (it is in settings) |
+| OSM Nominatim geocoding | No | Not used for customer addresses: max 1 request/second, bulk use discouraged, and the policy asks not to send personal data |
+
+## 9. Build order
+
+1. **People delivery type, settings tab, customer locations.** Includes geocoding, the Contact Details GPS line and popup, and the migration batch.
+2. **Map areas.** Shape editor, customer pins, point-in-shape check.
+3. **Driver pings.** API endpoint, Android app update, iPhone web copy, Driver Tracking page.
+4. **Stop order and ETA.** Delivery sheet columns (user preference), route view on the tracking page.
+
+Each step is released and used before the next starts.
+
+## Open points
+
+- Is there a "collect" person in People, or is collection only an area today?
+- Should contacts whose delivery person is `DELIVER` but whose area has no shapes (for example Durban) be skipped by the migration?

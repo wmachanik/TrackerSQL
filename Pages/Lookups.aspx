@@ -567,18 +567,19 @@
                                             <asp:CheckBox ID="cbxEnabled" runat="server" Text="Yes" Checked="true" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Dispatch" SortExpression="IsDispatched"
+                                    <asp:TemplateField HeaderText="Delivery Type" SortExpression="DeliveryType"
                                         HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight">
+                                        <HeaderTemplate>
+                                            <span title="Deliver = our own driver (gets GPS locations and routes). Courier = waybill / courier on Order Done. Collect = customer collects from the shop. None = does not deliver.">Delivery Type</span>
+                                        </HeaderTemplate>
                                         <EditItemTemplate>
-                                            <asp:CheckBox ID="cbxIsDispatched" runat="server" Checked='<%# Bind("IsDispatched") %>'
-                                                ToolTip="Require waybill / courier on Order Done" />
+                                            <asp:DropDownList ID="ddlDeliveryType" runat="server" />
                                         </EditItemTemplate>
                                         <ItemTemplate>
-                                            <asp:CheckBox ID="cbxIsDispatched" runat="server" Checked='<%# Bind("IsDispatched") %>' Enabled="false" />
+                                            <%# TrackerSQL.Classes.DeliveryTypes.Label(Eval("DeliveryType") as string) %>
                                         </ItemTemplate>
                                         <FooterTemplate>
-                                            <asp:CheckBox ID="cbxIsDispatched" runat="server"
-                                                ToolTip="Require waybill / courier on Order Done" />
+                                            <asp:DropDownList ID="ddlDeliveryType" runat="server" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Normal Delivery DoW" SortExpression="NormalDeliveryDoW">

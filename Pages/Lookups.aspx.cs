@@ -2238,9 +2238,10 @@ namespace TrackerSQL.Pages
                 var tbxPerson = (TextBox)row.FindControl("tbxPersonName");
                 var tbxAbbreviation = (TextBox)row.FindControl("tbxAbbreviation");
                 var cbxEnabled = (CheckBox)row.FindControl("cbxEnabled");
-                var cbxIsDispatched = (CheckBox)row.FindControl("cbxIsDispatched");
+                var ddlDeliveryType = (DropDownList)row.FindControl("ddlDeliveryType");
                 var ddlDayOfWeek = (DropDownList)row.FindControl("ddlDayOfWeek");
                 var ddlSecurityNames = (DropDownList)row.FindControl("ddlSecurityNames");
+                string deliveryType = DeliveryTypes.Normalise(ddlDeliveryType?.SelectedValue);
 
                 var pPerson = new Person
                 {
@@ -2248,7 +2249,8 @@ namespace TrackerSQL.Pages
                     PersonName = tbxPerson?.Text ?? "",
                     Abbreviation = tbxAbbreviation?.Text ?? "",
                     Enabled = cbxEnabled != null && cbxEnabled.Checked,
-                    IsDispatched = cbxIsDispatched != null && cbxIsDispatched.Checked,
+                    DeliveryType = deliveryType,
+                    IsDispatched = deliveryType == DeliveryTypes.Courier,
                     NormalDeliveryDoW = ddlDayOfWeek != null ? (int?)Convert.ToInt32(ddlDayOfWeek.SelectedValue) : 0,
                     SecurityUsername = ddlSecurityNames != null ? ddlSecurityNames.SelectedValue : ""
                 };
@@ -2290,9 +2292,26 @@ namespace TrackerSQL.Pages
             BindPeopleGrid();
         }
 
+        private static void FillDeliveryTypeDropDown(DropDownList ddl, string selected)
+        {
+            if (ddl == null) return;
+            ddl.Items.Clear();
+            foreach (var item in DeliveryTypes.All)
+                ddl.Items.Add(new ListItem(item.Value, item.Key));
+            ddl.SelectedValue = DeliveryTypes.Normalise(selected);
+        }
+
         protected void gvPeople_RowDataBound(object sender, GridViewRowEventArgs e)
         {
+            if (e.Row.RowType == DataControlRowType.Footer)
+            {
+                FillDeliveryTypeDropDown((DropDownList)e.Row.FindControl("ddlDeliveryType"), DeliveryTypes.Deliver);
+                return;
+            }
             if (e.Row.RowType != DataControlRowType.DataRow) return;
+
+            FillDeliveryTypeDropDown((DropDownList)e.Row.FindControl("ddlDeliveryType"),
+                DataBinder.Eval(e.Row.DataItem, "DeliveryType") as string);
 
             // ddlDayOfWeek is present in both ItemTemplate and EditItemTemplate.
             // If the bound NormalDeliveryDoW value is null/out of range, ASP.NET will throw
@@ -2369,7 +2388,8 @@ namespace TrackerSQL.Pages
                      var personTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxPersonName");
                     var abrvTbx = (TextBox)gvPeople.FooterRow.FindControl("tbxAbbreviation");
                     var enabledCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxEnabled");
-                    var dispatchCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxIsDispatched");
+                    var deliveryTypeDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlDeliveryType");
+                    string newDeliveryType = DeliveryTypes.Normalise(deliveryTypeDdl?.SelectedValue);
                     var dowDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlDayOfWeek");
                     var userDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlSecurityNames");
 
@@ -2384,7 +2404,8 @@ namespace TrackerSQL.Pages
                         PersonName = personTbx.Text,
                         Abbreviation = abrvTbx.Text,
                         Enabled = enabledCbx.Checked,
-                        IsDispatched = dispatchCbx != null && dispatchCbx.Checked,
+                        DeliveryType = newDeliveryType,
+                        IsDispatched = newDeliveryType == DeliveryTypes.Courier,
                         NormalDeliveryDoW = Convert.ToInt32(dowDdl.SelectedValue),
                         SecurityUsername = userDdl.SelectedValue
                     };

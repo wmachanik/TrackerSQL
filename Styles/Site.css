@@ -1,4 +1,4 @@
-﻿/* Rev: 20260929-06
+﻿/* Rev: 20260930-01
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9293,6 +9293,64 @@ a.delivery-days-tag.is-promise-gap:hover {
         display: none;
     }
 }
+
+/* Contact Details → Proof of Delivery */
+.contact-proof-signature {
+    max-height: 48px;
+    max-width: 160px;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 3px;
+}
+
+/* Contact Details → GPS line (under Packaging) and the Check / change popup */
+.contact-gps-value { white-space: nowrap; }
+.contact-gps-value.contact-gps-review { color: #b35c00; font-weight: 600; }
+.contact-gps-value.contact-gps-verified { color: #3f6b4f; }
+a.contact-gps-check { margin-left: 0.5em; white-space: nowrap; }
+input.contact-gps-refresh { display: none !important; }
+
+.contact-gps-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.contact-gps-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(900px, 96vw);
+    height: min(680px, 92vh);
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.contact-gps-dialog-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #eef2ea;
+    border-bottom: 1px solid #cfd8c6;
+}
+
+.contact-gps-frame { flex: 1 1 auto; width: 100%; border: 0; }
+
+.contact-location-body { margin: 0; padding: 10px 14px; background: #fff; }
+.contact-location-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.contact-location-state { text-align: right; }
+.contact-location-muted { color: #666; font-size: 0.9em; }
+.contact-location-map { height: 400px; border: 1px solid #cfd8c6; border-radius: 4px; margin: 6px 0; }
+
+/* System Preferences → GPS & Drivers */
+.gps-settings-heading { margin: 1em 0 0.3em; font-size: 1.05em; color: #3f6b4f; }
+input.gps-num-input { width: 6em !important; min-width: 0 !important; }
+input.gps-time-input { width: 7em !important; min-width: 0 !important; }
 
 .lookups-areas-table .area-code-auto {
     color: #8a948a;

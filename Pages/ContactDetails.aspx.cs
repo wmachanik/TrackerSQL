@@ -176,11 +176,91 @@ namespace TrackerSQL.Pages
             }
             phCourier.Visible = isDispatch;
             phCourierBlank.Visible = !isDispatch;
+            UpdateGpsLine();
         }
 
         protected void ddlDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdateCourierVisibility();
+        }
+
+        /// <summary>GPS point under Packaging; only for contacts delivered by one of our own drivers (DELIVER).</summary>
+        private void UpdateGpsLine()
+        {
+            lblGpsCaption.Visible = false;
+            lblGpsLocation.Text = string.Empty;
+            lblGpsLocation.CssClass = "contact-gps-value";
+            hlGpsCheck.Visible = false;
+            try
+            {
+                if (!int.TryParse(ddlDeliveryBy.SelectedValue, out int personId)
+                    || new PersonsRepository().GetDeliveryType(personId) != DeliveryTypes.Deliver)
+                    return;
+
+                var manager = new CustomerLocationManager();
+                if (!manager.IsReady)
+                    return;
+
+                lblGpsCaption.Visible = true;
+                if (!TryGetContactId(out int contactId))
+                {
+                    lblGpsLocation.Text = "found when saved";
+                    return;
+                }
+
+                CustomerLocation loc = manager.Get(contactId);
+                if (loc == null)
+                {
+                    lblGpsLocation.Text = "not found yet";
+                    lblGpsLocation.CssClass = "contact-gps-value contact-gps-review";
+                }
+                else
+                {
+                    lblGpsLocation.Text = HttpUtility.HtmlEncode(loc.CoordinatesText + " (" + loc.StatusDisplay + ")");
+                    lblGpsLocation.ToolTip = string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? null : "Matched: " + loc.GeocodedAddress;
+                    if (loc.NeedsReview)
+                        lblGpsLocation.CssClass = "contact-gps-value contact-gps-review";
+                    else if (loc.IsVerified)
+                        lblGpsLocation.CssClass = "contact-gps-value contact-gps-verified";
+                }
+
+                hlGpsCheck.Visible = true;
+                hlGpsCheck.NavigateUrl = "#";
+                hlGpsCheck.Attributes["onclick"] = "trackerOpenGps(" + contactId + "); return false;";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails UpdateGpsLine: " + ex.Message);
+            }
+        }
+
+        /// <summary>Looks up the GPS point after a save when needed; returns a short note for the save message.</summary>
+        private string EnsureGpsLocation(int contactId)
+        {
+            try
+            {
+                LocationLookupOutcome outcome = new CustomerLocationManager()
+                    .EnsureForContact(contactId, Context?.User?.Identity?.Name);
+                UpdateGpsLine();
+                if (outcome.Skipped)
+                    return string.Empty;
+                if (outcome.Success)
+                    return outcome.Location != null && outcome.Location.NeedsReview
+                        ? " GPS found roughly; please check it."
+                        : " GPS location found.";
+                return " GPS not found: " + outcome.Message;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "ContactDetails EnsureGpsLocation: " + ex.Message);
+                return string.Empty;
+            }
+        }
+
+        protected void btnGpsRefresh_Click(object sender, EventArgs e)
+        {
+            UpdateGpsLine();
+            upnlContactDetails.Update();
         }
 
         private void SetStatus(string message, bool? isError)
@@ -368,6 +448,7 @@ namespace TrackerSQL.Pages
             {
                 BindContactOrdersGrid(contactId);
                 BindContactWaybillsGrid(contactId);
+                BindContactProofsGrid(contactId);
                 BindContactChangeLogGrid(contactId);
 
                 var recurring = new RecurringOrdersRepository().GetSummariesByContactId(contactId);
@@ -388,7 +469,23 @@ namespace TrackerSQL.Pages
                 tabpnlRepairs.Visible = false;
                 if (tabpnlWaybills != null)
                     tabpnlWaybills.Visible = false;
+                if (tabpnlProofs != null)
+                    tabpnlProofs.Visible = false;
             }
+        }
+
+        private void BindContactProofsGrid(int contactId)
+        {
+            if (gvContactProofs == null || tabpnlProofs == null)
+                return;
+
+            var rows = new MobileApiRepository().ListProofsForContact(contactId) ?? new List<ContactProofRow>();
+            tabpnlProofs.Visible = rows.Count > 0;
+            if (!tabpnlProofs.Visible)
+                return;
+
+            gvContactProofs.DataSource = rows;
+            gvContactProofs.DataBind();
         }
 
         private void BindContactChangeLogGrid(int contactId)
@@ -1072,6 +1169,7 @@ namespace TrackerSQL.Pages
                 {
                     errorMessage += " Name saved as \"" + contact.CompanyName + "\" to keep dropdown names unique.";
                 }
+                errorMessage += EnsureGpsLocation(contactId);
                 LogContactAudit(
                     "Contact saved",
                     accWasSaved ? "accountInfo=yes" : "accountInfo=no",
@@ -1670,7 +1768,8 @@ namespace TrackerSQL.Pages
                 ? "Contact and account info created (ID " + newId + ")."
                 : "Contact created (ID " + newId + ").")
                 + nameNote
-                + welcomeNote, false);
+                + welcomeNote
+                + EnsureGpsLocation(newId), false);
             RefreshAfterSave();
             return true;
         }

@@ -39,6 +39,13 @@
                 <asp:Button ID="btnSaveSettings" runat="server" Text="Save settings" CssClass="filter-panel-btn" OnClick="btnSaveSettings_Click" />
                 <span class="small"><asp:Literal ID="litSettingsInfo" runat="server" /></span>
             </div>
+            <p>
+                <strong>How it was delivered</strong><br />
+                The choices the driver picks from (e.g. "Handed to the contact", "Collected", "Nobody there") are a list you can
+                add to, reword, reorder or switch off:
+                <a href="../Pages/Lookups.aspx?tab=Driver%20Options">Lookups → Driver Options</a>.
+                <span class="sys-prefs-help">Changes reach the phones the next time they have signal.</span>
+            </p>
         </asp:Panel>
 
         <div class="complex-form-section">

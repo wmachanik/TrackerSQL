@@ -334,6 +334,7 @@ namespace TrackerSQL.Managers
                         result.Error = "Failed to create order";
                         return result;
                     }
+                    EnsureCustomerLocation(orderData.CustomerID, orderData.ToBeDeliveredBy);
                 }
                 else
                 {
@@ -348,6 +349,22 @@ namespace TrackerSQL.Managers
 
             result.OrderId = orderId;
             return result;
+        }
+
+        /// <summary>First order for one of our drivers: make sure the customer has a GPS point (never blocks the order).</summary>
+        private static void EnsureCustomerLocation(long customerId, long deliveredById)
+        {
+            if (customerId <= 0 || deliveredById <= 0)
+                return;
+            try
+            {
+                new CustomerLocationManager().EnsureForContact((int)customerId,
+                    HttpContext.Current?.User?.Identity?.Name, deliverPersonId: (int)deliveredById);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders, "EnsureCustomerLocation: " + ex.Message);
+            }
         }
 
         private static void ApplyHeaderToOrderLine(OrderHeaderData header, OrderTblData line)

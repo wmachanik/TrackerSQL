@@ -145,6 +145,7 @@
           INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder) VALUES
               ('Delivered', N'Handed to the contact', 1, 10),
               ('Delivered', N'Handed to an assistant', 1, 20),
+              ('Delivered', N'Collected', 1, 25),
               ('Delivered', N'Left at reception', 1, 30),
               ('Delivered', N'Left with security', 0, 40),
               ('Delivered', N'Left at the gate', 0, 50),

@@ -2,6 +2,20 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## Unreleased — 2026-09-30
+
+### Features
+- **Contact Details → Proof of Delivery tab** — every delivery the driver app recorded for the contact: order, when, outcome, how it was delivered, who received it, signature, items not handed over, driver note, driver and a map link to where it was signed. Shown only when the contact has proofs.
+- **Driver app "how it was delivered" list** — the list is configurable on **Lookups → Driver Options** (now linked from **Tools → Driver App**). New option **Collected**, for when the driver collects something (asks for a name).
+- **Lookups → People → Delivery Type** replaces the *Dispatch* tick box: *Deliver* (our own driver), *Courier* (waybill / courier on Order Done, as Dispatch did), *Collect* (customer collects from the shop) or *None*. First run: SQ, WM and MX → Deliver, Cllct → Collect, dispatch people → Courier.
+- **Customer GPS locations** (step 1 of the GPS delivery plan) — contacts whose *Delivery By* person is a *Deliver* person get a GPS point looked up once from their address (HeiGIT openrouteservice; only the address, postcode and "South Africa" are sent). It is looked up again only when the address changes. It is looked up when the contact is saved, on the first order for one of our drivers, or in bulk on **Tools → Customer Locations**. Rough matches (suburb or postcode only) are marked *Needs checking*.
+  - **Contact Details:** new *GPS* line under Packaging with **Check / change**: a map where the pin can be confirmed, dragged or looked up again. A saved pin is marked *Checked*.
+- **System Preferences → GPS & Drivers** — new tab: geocoding key (stored in the database, never shown again), daily and per-minute lookup limits with today's count, map tiles (OpenStreetMap), depot address with *Look up depot*, driver tracking (on/off, interval, weekdays only, work hours, how long positions are kept) and arrival-time settings (average speed, minutes per stop, marker colour thresholds). Tracking and arrival times are used by later steps.
+- **User Information** — two per-user options, both off by default: *Show route order and arrival times on the Delivery Sheet* and *Show driver tracking* (used by later steps).
+
+### Housekeeping
+- New schema pack `SQLCommands-DriverGps-01.xml` (PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, *Collected* option), run at start-up.
+
 ## 3.0.3.1 — 2026-09-29
 
 ### Features

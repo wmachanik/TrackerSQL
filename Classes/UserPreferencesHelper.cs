@@ -87,8 +87,24 @@ namespace TrackerSQL.Classes
                         AppLogger.WriteLog("system", "Created UserPreferences table in TrackerDataSQL catalog.");
                     }
                 }
+
+                if (!_optionColumnsEnsured)
+                {
+                    const string addColumns = @"
+IF COL_LENGTH(N'dbo.UserPreferences', N'ShowDeliveryRouteEta') IS NULL
+    ALTER TABLE dbo.UserPreferences ADD ShowDeliveryRouteEta BIT NOT NULL
+        CONSTRAINT DF_UserPreferences_ShowRouteEta DEFAULT (0);
+IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
+    ALTER TABLE dbo.UserPreferences ADD DriverTracking BIT NOT NULL
+        CONSTRAINT DF_UserPreferences_DriverTracking DEFAULT (0);";
+                    using (SqlCommand alterCmd = new SqlCommand(addColumns, conn))
+                        alterCmd.ExecuteNonQuery();
+                    _optionColumnsEnsured = true;
+                }
             }
         }
+
+        private static bool _optionColumnsEnsured;
 
         public static UserPreferences GetCurrentPreferencesForUser(Guid userId)
         {
@@ -156,7 +172,8 @@ namespace TrackerSQL.Classes
         public static UserPreferences LoadPreferencesFromDb(Guid userId)
         {
             string connString = GetConnectionString();
-            string query = "SELECT UserId, TimeZoneId, Language FROM UserPreferences WHERE UserId = @UserId";
+            EnsureUserPreferencesTableExists();
+            string query = "SELECT UserId, TimeZoneId, Language, ShowDeliveryRouteEta, DriverTracking FROM UserPreferences WHERE UserId = @UserId";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -175,6 +192,8 @@ namespace TrackerSQL.Classes
                         UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
                         TimeZoneId = reader.GetString(reader.GetOrdinal("TimeZoneId")),
                         Language = reader.GetString(reader.GetOrdinal("Language")),
+                        ShowDeliveryRouteEta = reader.GetBoolean(reader.GetOrdinal("ShowDeliveryRouteEta")),
+                        DriverTracking = reader.GetBoolean(reader.GetOrdinal("DriverTracking")),
                         LoadedOn = DateTime.UtcNow
                     };
                 }
@@ -184,8 +203,8 @@ namespace TrackerSQL.Classes
         public static void SavePreferencesToDb(UserPreferences prefs)
         {
             string connString = GetConnectionString();
-            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, CreatedOn, UpdatedOn)
-                     VALUES (@UserId, @TimeZoneId, @Language, @CreatedOn, @UpdatedOn)";
+            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, ShowDeliveryRouteEta, DriverTracking, CreatedOn, UpdatedOn)
+                     VALUES (@UserId, @TimeZoneId, @Language, @ShowDeliveryRouteEta, @DriverTracking, @CreatedOn, @UpdatedOn)";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -193,6 +212,8 @@ namespace TrackerSQL.Classes
                 cmd.Parameters.AddWithValue("@UserId", prefs.UserId);
                 cmd.Parameters.AddWithValue("@TimeZoneId", prefs.TimeZoneId ?? "South Africa Standard Time");
                 cmd.Parameters.AddWithValue("@Language", prefs.Language ?? "en-ZA");
+                cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
+                cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
                 cmd.Parameters.AddWithValue("@CreatedOn", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
 
@@ -207,6 +228,8 @@ namespace TrackerSQL.Classes
             string query = @"UPDATE UserPreferences
                      SET TimeZoneId = @TimeZoneId,
                          Language = @Language,
+                         ShowDeliveryRouteEta = @ShowDeliveryRouteEta,
+                         DriverTracking = @DriverTracking,
                          UpdatedOn = @UpdatedOn
                      WHERE UserId = @UserId";
 
@@ -216,6 +239,8 @@ namespace TrackerSQL.Classes
                 cmd.Parameters.AddWithValue("@UserId", prefs.UserId);
                 cmd.Parameters.AddWithValue("@TimeZoneId", prefs.TimeZoneId ?? "South Africa Standard Time");
                 cmd.Parameters.AddWithValue("@Language", prefs.Language ?? "en-ZA");
+                cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
+                cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
 
                 conn.Open();

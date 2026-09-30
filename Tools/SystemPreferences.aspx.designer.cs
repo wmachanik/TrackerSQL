@@ -21,6 +21,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Literal litSectionsHeading;
         protected global::System.Web.UI.WebControls.LinkButton btnNavGeneral;
         protected global::System.Web.UI.WebControls.LinkButton btnNavWoo;
+        protected global::System.Web.UI.WebControls.LinkButton btnNavGps;
         protected global::System.Web.UI.WebControls.MultiView mvSections;
         protected global::System.Web.UI.WebControls.View viewGeneral;
         protected global::System.Web.UI.WebControls.DetailsView dvSystemData;
@@ -111,6 +112,32 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnWizBack;
         protected global::System.Web.UI.WebControls.Button btnWizNext;
         protected global::System.Web.UI.WebControls.Button btnWizCancel;
+        protected global::System.Web.UI.WebControls.View viewGps;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsApiKey;
+        protected global::System.Web.UI.WebControls.Button btnToggleGpsKey;
+        protected global::System.Web.UI.WebControls.Label lblGpsKeyState;
+        protected global::System.Web.UI.WebControls.CheckBox chkGpsClearKey;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsBaseUrl;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsDailyLimit;
+        protected global::System.Web.UI.WebControls.Label lblGpsUsedToday;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsPerMinute;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsTileUrl;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsDepotAddress;
+        protected global::System.Web.UI.WebControls.Button btnGpsLookupDepot;
+        protected global::System.Web.UI.WebControls.Label lblGpsDepotPoint;
+        protected global::System.Web.UI.WebControls.CheckBox chkGpsTrackingEnabled;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsPingInterval;
+        protected global::System.Web.UI.WebControls.CheckBox chkGpsWeekdaysOnly;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsWorkStart;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsWorkEnd;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsRetention;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsSpeed;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsServiceMinutes;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsFresh;
+        protected global::System.Web.UI.WebControls.TextBox txtGpsStale;
+        protected global::System.Web.UI.WebControls.Button btnGpsSave;
+        protected global::System.Web.UI.WebControls.HyperLink hlGpsLocations;
+        protected global::System.Web.UI.WebControls.Label lblGpsUpdated;
         protected global::System.Web.UI.WebControls.Label lblMessage;
     }
 }

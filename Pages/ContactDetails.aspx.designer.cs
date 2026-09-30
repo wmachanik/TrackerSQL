@@ -993,6 +993,20 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.GridView gvContactWaybills;
 
         /// <summary>
+        /// tabpnlProofs control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblGpsCaption;
+        protected global::System.Web.UI.WebControls.Label lblGpsLocation;
+        protected global::System.Web.UI.WebControls.HyperLink hlGpsCheck;
+        protected global::System.Web.UI.WebControls.Button btnGpsRefresh;
+        protected global::AjaxControlToolkit.TabPanel tabpnlProofs;
+
+        /// <summary>
+        /// gvContactProofs control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvContactProofs;
+
+        /// <summary>
         /// tabpnlRecurring control.
         /// </summary>
         /// <remarks>

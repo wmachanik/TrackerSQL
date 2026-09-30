@@ -174,7 +174,15 @@
                         </td>
                     </asp:PlaceHolder>
                     <asp:PlaceHolder ID="phCourierBlank" runat="server" Visible="false">
-                        <td>&nbsp;</td><td>&nbsp;</td>
+                        <td><asp:Label ID="lblGpsCaption" runat="server" Text="GPS" Visible="false"
+                            ToolTip="Where our driver delivers: looked up once from the address, kept until the address changes" /></td>
+                        <td>
+                            <asp:Label ID="lblGpsLocation" runat="server" CssClass="contact-gps-value" />
+                            <asp:HyperLink ID="hlGpsCheck" runat="server" Text="Check / change" CssClass="contact-gps-check" Visible="false"
+                                ToolTip="Open the map: confirm the pin, drag it, or look the address up again" />
+                            <asp:Button ID="btnGpsRefresh" runat="server" CssClass="contact-gps-refresh" CausesValidation="false"
+                                OnClick="btnGpsRefresh_Click" UseSubmitBehavior="false" TabIndex="-1" />
+                        </td>
                     </asp:PlaceHolder>
                 </tr>
                 <tr>
@@ -624,6 +632,52 @@
                         </div>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
+                <%-- Only visible when the driver app has captured proof of delivery for the contact --%>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Proof of Delivery" ID="tabpnlProofs" Visible="false">
+                    <HeaderTemplate>Proof of Delivery</HeaderTemplate>
+                    <ContentTemplate>
+                        <div class="pad-4">
+                            <asp:GridView ID="gvContactProofs" runat="server" CssClass="TblWhite small contact-proofs-table"
+                                AutoGenerateColumns="False" EmptyDataText="no proof of delivery">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlProofOrder" runat="server"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif"
+                                                ToolTip="Open the order"
+                                                NavigateUrl='<%# Eval("OrderNavigateUrl") %>' />
+                                        </ItemTemplate>
+                                        <ItemStyle HorizontalAlign="Center" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="OrderID" HeaderText="Order #" />
+                                    <asp:BoundField DataField="DeliveredAt" HeaderText="When" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
+                                    <asp:BoundField DataField="OutcomeDisplay" HeaderText="Outcome" />
+                                    <asp:BoundField DataField="Reason" HeaderText="How" />
+                                    <asp:BoundField DataField="ReceivedByName" HeaderText="Received by" />
+                                    <asp:TemplateField HeaderText="Signature">
+                                        <ItemTemplate>
+                                            <asp:Image ID="imgProofSignature" runat="server" CssClass="contact-proof-signature"
+                                                Visible='<%# (bool)Eval("HasSignature") %>'
+                                                ImageUrl='<%# Eval("SignatureDataUrl") %>'
+                                                AlternateText="Signature" ToolTip="Signature captured on the driver app" />
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="MissingItems" HeaderText="Not handed over" />
+                                    <asp:BoundField DataField="DriverNote" HeaderText="Driver note" />
+                                    <asp:BoundField DataField="Driver" HeaderText="Driver" />
+                                    <asp:TemplateField HeaderText="Where">
+                                        <ItemTemplate>
+                                            <asp:HyperLink ID="hlProofMap" runat="server" Text="map" Target="_blank"
+                                                Visible='<%# (bool)Eval("HasLocation") %>'
+                                                NavigateUrl='<%# Eval("MapUrl") %>'
+                                                ToolTip="Where the phone was when the proof was captured (opens OpenStreetMap)" />
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
                 <%-- Only visible when the contact has recurring orders (enabled or disabled) --%>
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Recurring Orders" ID="tabpnlRecurring" Visible="false">
                     <HeaderTemplate>Recurring Orders</HeaderTemplate>
@@ -741,5 +795,38 @@
                 wireFields: 'contactDetailsWireFields'
             }
         });
+
+        (function () {
+            var changed = false;
+            window.trackerOpenGps = function (contactId) {
+                changed = false;
+                var overlay = document.getElementById('contactGpsOverlay');
+                var frame = document.getElementById('contactGpsFrame');
+                if (!overlay || !frame) return;
+                frame.src = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
+                overlay.style.display = 'flex';
+            };
+            window.trackerGpsChanged = function () { changed = true; };
+            window.trackerCloseGps = function () {
+                var overlay = document.getElementById('contactGpsOverlay');
+                var frame = document.getElementById('contactGpsFrame');
+                if (overlay) overlay.style.display = 'none';
+                if (frame) frame.src = 'about:blank';
+                if (changed) {
+                    var btn = document.getElementById('<%= btnGpsRefresh.ClientID %>');
+                    if (btn) btn.click();
+                }
+            };
+        })();
     </script>
+
+    <div id="contactGpsOverlay" class="contact-gps-overlay" style="display:none;" role="dialog" aria-label="Customer GPS location">
+        <div class="contact-gps-dialog">
+            <div class="contact-gps-dialog-bar">
+                <strong>Customer GPS location</strong>
+                <button type="button" class="filter-panel-btn" onclick="trackerCloseGps();">Close</button>
+            </div>
+            <iframe id="contactGpsFrame" class="contact-gps-frame" src="about:blank" title="Customer GPS location"></iframe>
+        </div>
+    </div>
 </asp:Content>

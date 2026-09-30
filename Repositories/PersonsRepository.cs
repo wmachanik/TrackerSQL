@@ -40,19 +40,85 @@ WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'IsDispatched'") > 0;
         private static void InvalidateColumnCache()
         {
             _hasIsDispatched = null;
+            _hasDeliveryType = null;
+        }
+
+        private static bool? _hasDeliveryType;
+
+        /// <summary>PeopleTbl.DeliveryType comes from SQLCommands-DriverGps-01.xml (run at startup).</summary>
+        private static bool HasDeliveryTypeColumn()
+        {
+            if (_hasDeliveryType.HasValue)
+                return _hasDeliveryType.Value;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _hasDeliveryType = db.ExecuteScalar<int>(@"
+SELECT COUNT(*) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'DeliveryType'") > 0;
+                }
+            }
+            catch
+            {
+                _hasDeliveryType = false;
+            }
+            return _hasDeliveryType.Value;
         }
 
         private string SelectColumns =>
-            HasIsDispatchedColumn()
-                ? SelectColumnsBase + ", IsDispatched"
-                : SelectColumnsBase;
+            SelectColumnsBase
+            + (HasIsDispatchedColumn() ? ", IsDispatched" : string.Empty)
+            + (HasDeliveryTypeColumn() ? ", DeliveryType" : string.Empty);
 
         protected override string CoreColumns => SelectColumns;
 
         protected override string LookupColumns =>
-            HasIsDispatchedColumn()
-                ? "PersonID, Person AS PersonName, Abbreviation, Enabled, IsDispatched"
-                : "PersonID, Person AS PersonName, Abbreviation, Enabled";
+            "PersonID, Person AS PersonName, Abbreviation, Enabled"
+            + (HasIsDispatchedColumn() ? ", IsDispatched" : string.Empty)
+            + (HasDeliveryTypeColumn() ? ", DeliveryType" : string.Empty);
+
+        /// <summary>DeliveryType is the source of truth; IsDispatched mirrors COURIER. A caller that only
+        /// changes IsDispatched (Support Tables) moves the type to / from COURIER.</summary>
+        private static void ReconcileDeliveryType(Person entity)
+        {
+            string type = DeliveryTypes.Normalise(entity.DeliveryType);
+            if (entity.IsDispatched && type != DeliveryTypes.Courier)
+                type = DeliveryTypes.Courier;
+            else if (!entity.IsDispatched && type == DeliveryTypes.Courier)
+                type = DeliveryTypes.None;
+            entity.DeliveryType = type;
+            entity.IsDispatched = type == DeliveryTypes.Courier;
+        }
+
+        /// <summary>DELIVER, COURIER, COLLECT or NONE; falls back to IsDispatched before the column exists.</summary>
+        public string GetDeliveryType(int personId)
+        {
+            if (personId <= 0)
+                return DeliveryTypes.None;
+
+            if (HasDeliveryTypeColumn() && HasIsDispatchedColumn())
+            {
+                string type = ExecuteScalar<string>(@"
+SELECT CASE WHEN IsDispatched = 1 THEN 'COURIER'
+            WHEN DeliveryType = 'COURIER' THEN 'NONE'
+            ELSE DeliveryType END
+FROM PeopleTbl WHERE PersonID = @PersonID",
+                    new List<DBParameter>
+                    {
+                        new DBParameter { ParamName = "@PersonID", DataValue = personId, DataDbType = DbType.Int32 }
+                    });
+                return DeliveryTypes.Normalise(type);
+            }
+
+            return IsDispatchPerson(personId) ? DeliveryTypes.Courier : DeliveryTypes.None;
+        }
+
+        /// <summary>True when the person is one of our own drivers (needs GPS locations and routes).</summary>
+        public bool IsDeliverPerson(int? personId)
+        {
+            return personId.HasValue && GetDeliveryType(personId.Value) == DeliveryTypes.Deliver;
+        }
 
         /// <summary>
         /// Ensures IsDispatched exists, seeds Prgo/Cour, and one-shot migrates Woo CSV IDs.
@@ -221,6 +287,7 @@ ORDER BY Abbreviation";
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             EnsureIsDispatchedColumn();
+            ReconcileDeliveryType(entity);
 
             string sql;
             var parameters = new List<DBParameter>
@@ -252,6 +319,13 @@ VALUES
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
             }
 
+            if (HasDeliveryTypeColumn())
+            {
+                sql = sql.Replace("SecurityUsername, IsDispatched)", "SecurityUsername, IsDispatched, DeliveryType)")
+                         .Replace("@SecurityUsername, @IsDispatched)", "@SecurityUsername, @IsDispatched, @DeliveryType)");
+                parameters.Add(new DBParameter { ParamName = "@DeliveryType", DataValue = entity.DeliveryType, DataDbType = DbType.AnsiString });
+            }
+
             return ExecuteScalar<int>(sql, parameters);
         }
 
@@ -259,6 +333,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             EnsureIsDispatchedColumn();
+            ReconcileDeliveryType(entity);
 
             string sql;
             var parameters = new List<DBParameter>
@@ -296,6 +371,12 @@ SET Person = @PersonName,
 WHERE PersonID = @PersonID";
             }
 
+            if (HasDeliveryTypeColumn() && HasIsDispatchedColumn())
+            {
+                sql = sql.Replace("IsDispatched = @IsDispatched", "IsDispatched = @IsDispatched,\n    DeliveryType = @DeliveryType");
+                parameters.Add(new DBParameter { ParamName = "@DeliveryType", DataValue = entity.DeliveryType, DataDbType = DbType.AnsiString });
+            }
+
             return ExecNonQuery(sql, parameters);
         }
 
@@ -304,6 +385,17 @@ WHERE PersonID = @PersonID";
             var p = DbMapper.Map<Person>(rdr);
             if (p != null && DbMapper.HasColumn(rdr, "IsDispatched") && rdr["IsDispatched"] != DBNull.Value)
                 p.IsDispatched = Convert.ToBoolean(rdr["IsDispatched"]);
+            if (p != null)
+            {
+                string type = DbMapper.HasColumn(rdr, "DeliveryType") && rdr["DeliveryType"] != DBNull.Value
+                    ? DeliveryTypes.Normalise(Convert.ToString(rdr["DeliveryType"]))
+                    : DeliveryTypes.None;
+                if (p.IsDispatched)
+                    type = DeliveryTypes.Courier;
+                else if (type == DeliveryTypes.Courier)
+                    type = DeliveryTypes.None;
+                p.DeliveryType = type;
+            }
             return p;
         }
 

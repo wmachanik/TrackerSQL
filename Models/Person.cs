@@ -15,5 +15,8 @@ namespace TrackerSQL.Models
         /// (waybill / courier panel). Source of truth — not Woo settings.
         /// </summary>
         public bool IsDispatched { get; set; }
+
+        /// <summary>DELIVER, COURIER, COLLECT or NONE (DeliveryTypes). COURIER and IsDispatched are kept equal.</summary>
+        public string DeliveryType { get; set; } = "NONE";
     }
 }

@@ -224,6 +224,8 @@
     <Content Include="images\logo\QuaffeeLogoWeb.jpg" />
     <Content Include="Pages\ItemsRequired.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
+    <Content Include="Pages\ContactLocation.aspx" />
+    <Content Include="Tools\CustomerLocations.aspx" />
     <Content Include="Pages\Contacts.aspx" />
     <Content Include="Pages\ContactsAway.aspx" />
     <Content Include="Pages\ContactsAwayDetail.aspx" />
@@ -258,6 +260,13 @@
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
     <Content Include="Scripts\unsavedChanges.js" />
+    <Content Include="Scripts\leaflet\leaflet.js" />
+    <Content Include="Scripts\leaflet\leaflet.css" />
+    <Content Include="Scripts\leaflet\images\layers.png" />
+    <Content Include="Scripts\leaflet\images\layers-2x.png" />
+    <Content Include="Scripts\leaflet\images\marker-icon.png" />
+    <Content Include="Scripts\leaflet\images\marker-icon-2x.png" />
+    <Content Include="Scripts\leaflet\images\marker-shadow.png" />
     <Content Include="Scripts\comboBoxPosition.js" />
     <Content Include="Styles\MobileSite.css" />
     <Content Include="Styles\Site.css" />
@@ -320,6 +329,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-OrderFlags-02-ResetContacts.xml" />
     <Content Include="App_Data\SQLCommands-AreaDeliveryOrder-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-AreaDeliveryOrder-01.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -539,6 +550,11 @@
     <Compile Include="Classes\PackagingWeightParser.cs" />
     <Compile Include="Classes\PackagingOptionMatcher.cs" />
     <Compile Include="Classes\DateCalculator.cs" />
+    <Compile Include="Classes\DeliveryTypes.cs" />
+    <Compile Include="Classes\Geo\GeocodeResult.cs" />
+    <Compile Include="Classes\Geo\Geohash.cs" />
+    <Compile Include="Classes\Geo\HeigitGeocoder.cs" />
+    <Compile Include="Classes\Geo\IGeocoder.cs" />
     <Compile Include="Classes\DiagnosticsIconHelper.cs" />
     <Compile Include="Classes\OrderViewTokenHelper.cs" />
     <Compile Include="Managers\DeliverySheetManager.cs" />
@@ -552,6 +568,9 @@
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\ContactChangeLogEntry.cs" />
     <Compile Include="Models\ContactOrderSummary.cs" />
+    <Compile Include="Models\ContactProofRow.cs" />
+    <Compile Include="Models\CustomerLocation.cs" />
+    <Compile Include="Models\GpsSettings.cs" />
     <Compile Include="Models\CoffeeCheckupModels.cs" />
     <Compile Include="Models\ContactsAccInfo.cs" />
     <Compile Include="Models\ContactsAwayPeriod.cs" />
@@ -632,6 +651,8 @@
     <Compile Include="Repositories\ContactsAwayPeriodRepository.cs" />
     <Compile Include="Repositories\ContactsItemUsageRepository.cs" />
     <Compile Include="Repositories\ContactsRepository.cs" />
+    <Compile Include="Repositories\CustomerLocationRepository.cs" />
+    <Compile Include="Repositories\GpsSettingsRepository.cs" />
     <Compile Include="Repositories\ContactChangeLogRepository.cs" />
     <Compile Include="Repositories\ContactSummariesRepository.cs" />
     <Compile Include="Repositories\ContactsUsageRepository.cs" />
@@ -775,6 +796,20 @@
     </Compile>
     <Compile Include="Pages\ContactDetails.aspx.designer.cs">
       <DependentUpon>ContactDetails.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ContactLocation.aspx.cs">
+      <DependentUpon>ContactLocation.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Pages\ContactLocation.aspx.designer.cs">
+      <DependentUpon>ContactLocation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\CustomerLocations.aspx.cs">
+      <DependentUpon>CustomerLocations.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\CustomerLocations.aspx.designer.cs">
+      <DependentUpon>CustomerLocations.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pages\Contacts.aspx.cs">
       <DependentUpon>Contacts.aspx</DependentUpon>
@@ -1030,6 +1065,7 @@
     <Compile Include="Managers\SaPostalCodeManager.cs" />
     <Compile Include="Managers\PostalAreaSetupManager.cs" />
     <Compile Include="Managers\ContactPostalFillManager.cs" />
+    <Compile Include="Managers\CustomerLocationManager.cs" />
     <Compile Include="Models\WooCategoryFilter.cs" />
     <Compile Include="Models\WooEnabledPushPreviewRow.cs" />
     <Compile Include="Models\WooItemMapping.cs" />

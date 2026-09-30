@@ -47,6 +47,15 @@
                             <asp:DropDownList ID="ddlTimeZone" runat="server" CssClass="form-control" /></td>
                     </tr>
                     <tr>
+                        <th>Delivery options</th>
+                        <td>
+                            <asp:CheckBox ID="cbxShowDeliveryRouteEta" runat="server" Text="Show route order and arrival times on the Delivery Sheet"
+                                ToolTip="Adds the Seq / Area / ETA / Status columns (off by default)" /><br />
+                            <asp:CheckBox ID="cbxDriverTracking" runat="server" Text="Show driver tracking"
+                                ToolTip="Lets this user see where the drivers are (off by default)" />
+                        </td>
+                    </tr>
+                    <tr>
                         <th>Last Login</th>
                         <td>
                             <asp:Label runat="server" ID="LastLoginDateLabel" Text="" /></td>

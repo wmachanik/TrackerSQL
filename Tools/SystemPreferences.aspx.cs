@@ -22,6 +22,7 @@ namespace TrackerSQL.Tools
         private const string WizardCookieName = "TrackerWooWizardStep";
         private const string SectionCookieName = "TrackerSysPrefsSection";
         private const int WizardStepCount = 6;
+        private const int SectionGps = 2;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -71,9 +72,12 @@ namespace TrackerSQL.Tools
                     || string.Equals(raw, "woocommerce", StringComparison.OrdinalIgnoreCase)
                     || raw == "1")
                     section = 1;
+                else if (string.Equals(raw, "gps", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(raw, "drivers", StringComparison.OrdinalIgnoreCase))
+                    section = SectionGps;
                 else if (raw == "0" || string.Equals(raw, "general", StringComparison.OrdinalIgnoreCase))
                     section = 0;
-                else if (!int.TryParse(raw, out section) || section < 0 || section > 1)
+                else if (!int.TryParse(raw, out section) || section < 0 || section > SectionGps)
                     section = 0;
             }
 
@@ -169,6 +173,7 @@ namespace TrackerSQL.Tools
             ConfigureToggleButton(btnToggleSecretHome, show, hide);
             ConfigureToggleButton(btnToggleKeyWiz, show, hide);
             ConfigureToggleButton(btnToggleSecretWiz, show, hide);
+            ConfigureToggleButton(btnToggleGpsKey, show, hide);
         }
 
         private static void ConfigureToggleButton(Button btn, string show, string hide)
@@ -186,6 +191,7 @@ namespace TrackerSQL.Tools
             btnToggleSecretHome.OnClientClick = string.Format(showJs, txtConsumerSecret.ClientID);
             btnToggleKeyWiz.OnClientClick = string.Format(showJs, txtWizKey.ClientID);
             btnToggleSecretWiz.OnClientClick = string.Format(showJs, txtWizSecret.ClientID);
+            btnToggleGpsKey.OnClientClick = string.Format(showJs, txtGpsApiKey.ClientID);
 
             txtStoreUrl.Attributes["onblur"] =
                 "trackerFillAdminFromStore('" + txtStoreUrl.ClientID + "','" + txtAdminUrl.ClientID + "', false);";
@@ -204,13 +210,15 @@ namespace TrackerSQL.Tools
         private void ShowSection(int index)
         {
             if (index < 0) index = 0;
-            if (index > 1) index = 1;
+            if (index > SectionGps) index = SectionGps;
             ViewState[VsSection] = index;
             mvSections.ActiveViewIndex = index;
             ApplyNavHighlight(index);
             PersistSectionCookie(index);
             if (index == 1)
                 RefreshWooHome();
+            if (index == SectionGps)
+                BindGpsSettings();
         }
 
         private void PersistSectionCookie(int section)
@@ -234,7 +242,7 @@ namespace TrackerSQL.Tools
                 return false;
             if (!int.TryParse(cookie.Value.Trim(), out section))
                 return false;
-            if (section < 0 || section > 1)
+            if (section < 0 || section > SectionGps)
                 section = 0;
             return true;
         }
@@ -243,6 +251,168 @@ namespace TrackerSQL.Tools
         {
             btnNavGeneral.CssClass = index == 0 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             btnNavWoo.CssClass = index == 1 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+            btnNavGps.CssClass = index == SectionGps ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+        }
+
+        protected void btnNavGps_Click(object sender, EventArgs e)
+        {
+            ShowSection(SectionGps);
+        }
+
+        private void BindGpsSettings()
+        {
+            var repo = new GpsSettingsRepository();
+            if (!repo.TableExists())
+            {
+                SetStatus("The GPS tables are not installed yet; restart the site (or run SQLCommands-DriverGps-01.xml).", true);
+                btnGpsSave.Enabled = false;
+                btnGpsLookupDepot.Enabled = false;
+                return;
+            }
+
+            GpsSettings s = repo.Get();
+            txtGpsApiKey.Text = string.Empty;
+            txtGpsApiKey.Attributes["placeholder"] = s.HasApiKey ? "Saved: type a new key to replace it" : "Paste your HeiGIT key";
+            lblGpsKeyState.Text = s.HasApiKey ? "A key is saved." : "No key saved yet: lookups are off.";
+            chkGpsClearKey.Checked = false;
+            chkGpsClearKey.Visible = s.HasApiKey;
+            txtGpsBaseUrl.Text = s.GeocodeBaseUrl;
+            txtGpsDailyLimit.Text = s.GeocodeDailyLimit.ToString();
+            txtGpsPerMinute.Text = s.GeocodePerMinute.ToString();
+            lblGpsUsedToday.Text = " used today: " + repo.GetCallsToday(GpsSettingsRepository.GeocodeService);
+            txtGpsTileUrl.Text = s.MapTileUrl;
+            txtGpsDepotAddress.Text = s.DepotAddress;
+            lblGpsDepotPoint.Text = s.HasDepotPoint
+                ? "GPS: " + s.DepotLatitude.Value.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture)
+                    + ", " + s.DepotLongitude.Value.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture)
+                : "Not looked up yet.";
+            chkGpsTrackingEnabled.Checked = s.TrackingEnabled;
+            txtGpsPingInterval.Text = s.PingIntervalMinutes.ToString();
+            chkGpsWeekdaysOnly.Checked = s.TrackingWeekdaysOnly;
+            txtGpsWorkStart.Text = s.WorkHoursStart;
+            txtGpsWorkEnd.Text = s.WorkHoursEnd;
+            txtGpsRetention.Text = s.PingRetentionDays.ToString();
+            txtGpsSpeed.Text = s.AverageSpeedKmh.ToString();
+            txtGpsServiceMinutes.Text = s.ServiceMinutes.ToString();
+            txtGpsFresh.Text = s.FreshMinutes.ToString();
+            txtGpsStale.Text = s.StaleMinutes.ToString();
+            lblGpsUpdated.Text = s.UpdatedAt.HasValue
+                ? "Last saved " + s.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm") + (string.IsNullOrEmpty(s.UpdatedBy) ? "" : " by " + s.UpdatedBy)
+                : string.Empty;
+            btnGpsSave.Enabled = true;
+            btnGpsLookupDepot.Enabled = true;
+        }
+
+        private static int ReadInt(TextBox box, int fallback, int min, int max)
+        {
+            if (!int.TryParse((box.Text ?? string.Empty).Trim(), out int v))
+                return fallback;
+            return Math.Max(min, Math.Min(max, v));
+        }
+
+        private static string ReadTime(TextBox box, string fallback)
+        {
+            string raw = (box.Text ?? string.Empty).Trim();
+            return TimeSpan.TryParse(raw, out TimeSpan t) && t < TimeSpan.FromDays(1)
+                ? t.Hours.ToString("00") + ":" + t.Minutes.ToString("00")
+                : fallback;
+        }
+
+        private bool SaveGpsSettingsFromForm(out string error)
+        {
+            error = null;
+            var repo = new GpsSettingsRepository();
+            GpsSettings s = repo.Get();
+
+            string newKey = (txtGpsApiKey.Text ?? string.Empty).Trim();
+            bool replaceKey = newKey.Length > 0 || chkGpsClearKey.Checked;
+            s.GeocodeApiKey = newKey.Length > 0 ? newKey : null;
+
+            string baseUrl = (txtGpsBaseUrl.Text ?? string.Empty).Trim();
+            if (baseUrl.Length > 0 && !baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "The service address must start with https://";
+                return false;
+            }
+            s.GeocodeBaseUrl = baseUrl.Length > 0 ? baseUrl : GpsSettings.DefaultGeocodeBaseUrl;
+
+            string tiles = (txtGpsTileUrl.Text ?? string.Empty).Trim();
+            if (tiles.Length > 0 && (!tiles.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                || tiles.IndexOf("{z}", StringComparison.Ordinal) < 0))
+            {
+                error = "The map tiles address must start with https:// and contain {z}, {x} and {y}.";
+                return false;
+            }
+            s.MapTileUrl = tiles.Length > 0 ? tiles : GpsSettings.DefaultTileUrl;
+
+            string depot = (txtGpsDepotAddress.Text ?? string.Empty).Trim();
+            if (!string.Equals(depot, s.DepotAddress ?? string.Empty, StringComparison.Ordinal))
+            {
+                s.DepotLatitude = null;
+                s.DepotLongitude = null;
+            }
+            s.DepotAddress = depot.Length > 0 ? depot : GpsSettings.DefaultDepotAddress;
+
+            s.GeocodeDailyLimit = ReadInt(txtGpsDailyLimit, s.GeocodeDailyLimit, 0, 100000);
+            s.GeocodePerMinute = ReadInt(txtGpsPerMinute, s.GeocodePerMinute, 1, 1000);
+            s.TrackingEnabled = chkGpsTrackingEnabled.Checked;
+            s.PingIntervalMinutes = ReadInt(txtGpsPingInterval, s.PingIntervalMinutes, 1, 120);
+            s.TrackingWeekdaysOnly = chkGpsWeekdaysOnly.Checked;
+            s.WorkHoursStart = ReadTime(txtGpsWorkStart, s.WorkHoursStart);
+            s.WorkHoursEnd = ReadTime(txtGpsWorkEnd, s.WorkHoursEnd);
+            s.PingRetentionDays = ReadInt(txtGpsRetention, s.PingRetentionDays, 1, 365);
+            s.AverageSpeedKmh = ReadInt(txtGpsSpeed, s.AverageSpeedKmh, 5, 120);
+            s.ServiceMinutes = ReadInt(txtGpsServiceMinutes, s.ServiceMinutes, 0, 120);
+            s.FreshMinutes = ReadInt(txtGpsFresh, s.FreshMinutes, 1, 600);
+            s.StaleMinutes = Math.Max(s.FreshMinutes + 1, ReadInt(txtGpsStale, s.StaleMinutes, 2, 1440));
+
+            if (string.CompareOrdinal(s.WorkHoursEnd, s.WorkHoursStart) <= 0)
+            {
+                error = "Work hours must end after they start.";
+                return false;
+            }
+
+            repo.Save(s, replaceKey, Context?.User?.Identity?.Name);
+            return true;
+        }
+
+        protected void btnGpsSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!SaveGpsSettingsFromForm(out string error))
+                {
+                    SetStatus(error, true);
+                    return;
+                }
+                BindGpsSettings();
+                SetStatus("GPS settings saved.", false);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "GPS settings save failed: " + ex.Message);
+                SetStatus("Could not save the GPS settings: " + ex.Message, true);
+            }
+        }
+
+        protected void btnGpsLookupDepot_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!SaveGpsSettingsFromForm(out string error))
+                {
+                    SetStatus(error, true);
+                    return;
+                }
+                LocationLookupOutcome outcome = new CustomerLocationManager().LookupDepot(Context?.User?.Identity?.Name);
+                BindGpsSettings();
+                SetStatus(outcome.Message, !outcome.Success);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "Depot lookup failed: " + ex.Message);
+                SetStatus("Depot lookup failed: " + ex.Message, true);
+            }
         }
 
         protected void btnNavGeneral_Click(object sender, EventArgs e)

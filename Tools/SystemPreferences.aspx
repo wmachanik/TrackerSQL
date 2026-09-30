@@ -92,6 +92,7 @@
                     <nav class="sys-prefs-tabs" aria-label="Preferences sections">
                         <asp:LinkButton ID="btnNavGeneral" runat="server" CssClass="sys-prefs-tab" OnClick="btnNavGeneral_Click" CausesValidation="false" />
                         <asp:LinkButton ID="btnNavWoo" runat="server" CssClass="sys-prefs-tab" OnClick="btnNavWoo_Click" CausesValidation="false" />
+                        <asp:LinkButton ID="btnNavGps" runat="server" CssClass="sys-prefs-tab" OnClick="btnNavGps_Click" CausesValidation="false" Text="GPS &amp; Drivers" />
                     </nav>
                 </div>
 
@@ -365,6 +366,116 @@
                                         <asp:Button ID="btnWizCancel" runat="server" CssClass="filter-panel-btn" OnClick="btnWizCancel_Click" CausesValidation="false" />
                                     </div>
                                 </asp:Panel>
+                            </asp:View>
+
+                            <asp:View ID="viewGps" runat="server">
+                                <h2 class="sys-prefs-section-title">GPS &amp; Drivers</h2>
+                                <p class="sys-prefs-phase-note">
+                                    Customer GPS points are looked up once from the contact's address (only for contacts whose
+                                    "Delivery By" person is set to <em>Deliver</em> on Lookups → People) and kept until the address changes.
+                                </p>
+
+                                <h3 class="gps-settings-heading">Address lookups (HeiGIT openrouteservice)</h3>
+                                <table class="detail-form-table sys-prefs-form-table">
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Your key from account.heigit.org. Stored in the database, never shown again. Leave blank to keep the saved key.">API key</span></td>
+                                        <td class="sys-prefs-field">
+                                            <div class="sys-prefs-secret-row">
+                                                <asp:TextBox ID="txtGpsApiKey" runat="server" CssClass="sys-prefs-input" TextMode="Password" autocomplete="off" />
+                                                <asp:Button ID="btnToggleGpsKey" runat="server" CssClass="filter-panel-btn sys-prefs-toggle-secret"
+                                                    UseSubmitBehavior="false" CausesValidation="false" />
+                                            </div>
+                                            <asp:Label ID="lblGpsKeyState" runat="server" CssClass="sys-prefs-saved-hint" />
+                                            <asp:CheckBox ID="chkGpsClearKey" runat="server" Text="Remove the saved key" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Leave as https://api.heigit.org unless HeiGIT changes it.">Service address</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsBaseUrl" runat="server" CssClass="sys-prefs-input" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Stop looking up addresses after this many a day. The free Standard plan allows 3000; keep some spare.">Lookups per day (max)</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:TextBox ID="txtGpsDailyLimit" runat="server" CssClass="gps-num-input" TextMode="Number" />
+                                            <asp:Label ID="lblGpsUsedToday" runat="server" CssClass="sys-prefs-saved-hint" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="The Standard plan allows 100 a minute.">Lookups per minute (max)</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsPerMinute" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
+                                    </tr>
+                                </table>
+
+                                <h3 class="gps-settings-heading">Map and depot</h3>
+                                <table class="detail-form-table sys-prefs-form-table">
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Map picture tiles. OpenStreetMap needs no registration (fair use; no bulk downloads).">Map tiles</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsTileUrl" runat="server" CssClass="sys-prefs-input" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Where every route starts. Separate lines with ; or ,">Depot address</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:TextBox ID="txtGpsDepotAddress" runat="server" CssClass="sys-prefs-input" />
+                                            <div class="button-row">
+                                                <asp:Button ID="btnGpsLookupDepot" runat="server" CssClass="filter-panel-btn" Text="Look up depot"
+                                                    OnClick="btnGpsLookupDepot_Click" CausesValidation="false"
+                                                    ToolTip="Saves the settings, then finds the depot's GPS point (uses one lookup)" />
+                                                <asp:Label ID="lblGpsDepotPoint" runat="server" CssClass="sys-prefs-saved-hint" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <h3 class="gps-settings-heading">Driver tracking (Android driver app)</h3>
+                                <table class="detail-form-table sys-prefs-form-table">
+                                    <tr>
+                                        <td class="sys-prefs-label">Tracking</td>
+                                        <td class="sys-prefs-field"><asp:CheckBox ID="chkGpsTrackingEnabled" runat="server" Text="Drivers' phones send their position" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="How often the app sends its position while on route.">Every (minutes)</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsPingInterval" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="POPIA: only track during work time.">When</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:CheckBox ID="chkGpsWeekdaysOnly" runat="server" Text="Weekdays only" />
+                                            &nbsp; from <asp:TextBox ID="txtGpsWorkStart" runat="server" CssClass="gps-time-input" TextMode="Time" />
+                                            to <asp:TextBox ID="txtGpsWorkEnd" runat="server" CssClass="gps-time-input" TextMode="Time" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Old positions are deleted after this many days.">Keep positions (days)</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsRetention" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
+                                    </tr>
+                                </table>
+
+                                <h3 class="gps-settings-heading">Arrival times</h3>
+                                <table class="detail-form-table sys-prefs-form-table">
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Average driving speed between stops, used for the estimated arrival time.">Average speed (km/h)</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsSpeed" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Time spent at each stop.">Minutes per stop</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsServiceMinutes" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Driver marker is green when the last position is newer than this, orange up to the next value, red after that.">Position colours (minutes)</span></td>
+                                        <td class="sys-prefs-field">
+                                            green under <asp:TextBox ID="txtGpsFresh" runat="server" CssClass="gps-num-input" TextMode="Number" />
+                                            , orange under <asp:TextBox ID="txtGpsStale" runat="server" CssClass="gps-num-input" TextMode="Number" />
+                                            , then red
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <div class="button-row">
+                                    <asp:Button ID="btnGpsSave" runat="server" CssClass="filter-panel-btn" Text="Save GPS settings" OnClick="btnGpsSave_Click" />
+                                    <asp:HyperLink ID="hlGpsLocations" runat="server" NavigateUrl="~/Tools/CustomerLocations.aspx"
+                                        CssClass="filter-panel-btn sys-prefs-secondary-btn" Text="Customer locations…" />
+                                </div>
+                                <asp:Label ID="lblGpsUpdated" runat="server" CssClass="sys-prefs-saved-hint" />
                             </asp:View>
                         </asp:MultiView>
                 </div>

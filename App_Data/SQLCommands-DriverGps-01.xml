@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GPS delivery step 1 (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md).
+  - PeopleTbl.DeliveryType: DELIVER (our drivers), COURIER, COLLECT (shop collection) or NONE. IsDispatched stays and
+    mirrors COURIER. First run: IsDispatched -> COURIER, SQ / WM / MX -> DELIVER, the Collect entry -> COLLECT.
+  - CustomerLocationTbl: one GPS point per contact delivered by a DELIVER person (geocoded once, kept while the
+    address is unchanged).
+  - GeoApiUsageTbl: calls per service per day, so the daily lookup cap survives restarts.
+  - GpsSettingsTbl: System Preferences -> GPS & Drivers (single row).
+  - MobileDeliveryOptionsTbl: adds the "Collected" delivery option.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.PeopleTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'DeliveryType') IS NULL
+      BEGIN
+          ALTER TABLE dbo.PeopleTbl ADD DeliveryType VARCHAR(10) NOT NULL
+              CONSTRAINT DF_PeopleTbl_DeliveryType DEFAULT ('NONE');
+
+          EXEC (N'UPDATE dbo.PeopleTbl SET DeliveryType = ''DELIVER''
+                  WHERE UPPER(LTRIM(RTRIM(Abbreviation))) IN (N''SQ'', N''WM'', N''MX'');
+                  UPDATE dbo.PeopleTbl SET DeliveryType = ''COLLECT''
+                  WHERE UPPER(LTRIM(RTRIM(Abbreviation))) IN (N''CLLCT'', N''COLL'', N''COLLECT'')
+                     OR Person LIKE N''%collect%'';');
+
+          IF COL_LENGTH(N'dbo.PeopleTbl', N'IsDispatched') IS NOT NULL
+              EXEC (N'UPDATE dbo.PeopleTbl SET DeliveryType = ''COURIER'' WHERE IsDispatched = 1;');
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CustomerLocationTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.CustomerLocationTbl
+          (
+              ContactID INT NOT NULL
+                  CONSTRAINT PK_CustomerLocationTbl PRIMARY KEY,
+              Latitude DECIMAL(9,6) NOT NULL,
+              Longitude DECIMAL(9,6) NOT NULL,
+              Geohash VARCHAR(12) NOT NULL,
+              MapAreaID INT NULL,
+              GeocodedAddress NVARCHAR(500) NULL,
+              SourceAddress NVARCHAR(500) NULL,
+              LocationStatus VARCHAR(20) NOT NULL
+                  CONSTRAINT DF_CustomerLocation_Status DEFAULT ('APPROXIMATE'),
+              Source VARCHAR(20) NULL,
+              Confidence DECIMAL(4,3) NULL,
+              CreatedDate DATETIME NOT NULL
+                  CONSTRAINT DF_CustomerLocation_Created DEFAULT (GETDATE()),
+              UpdatedDate DATETIME NOT NULL
+                  CONSTRAINT DF_CustomerLocation_Updated DEFAULT (GETDATE()),
+              UpdatedBy NVARCHAR(128) NULL
+          );
+          CREATE INDEX IX_CustomerLocation_Geohash ON dbo.CustomerLocationTbl (Geohash);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GeoApiUsageTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.GeoApiUsageTbl
+          (
+              UsageDate DATE NOT NULL,
+              Service VARCHAR(20) NOT NULL,
+              Calls INT NOT NULL
+                  CONSTRAINT DF_GeoApiUsage_Calls DEFAULT (0),
+              CONSTRAINT PK_GeoApiUsageTbl PRIMARY KEY (UsageDate, Service)
+          );
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GpsSettingsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.GpsSettingsTbl
+          (
+              SettingsID INT NOT NULL
+                  CONSTRAINT PK_GpsSettingsTbl PRIMARY KEY,
+              GeocodeProvider VARCHAR(30) NOT NULL
+                  CONSTRAINT DF_GpsSettings_Provider DEFAULT ('HeiGIT'),
+              GeocodeApiKey NVARCHAR(500) NULL,
+              GeocodeBaseUrl NVARCHAR(200) NOT NULL
+                  CONSTRAINT DF_GpsSettings_BaseUrl DEFAULT (N'https://api.heigit.org'),
+              GeocodeDailyLimit INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_DailyLimit DEFAULT (2500),
+              GeocodePerMinute INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_PerMinute DEFAULT (90),
+              MapTileUrl NVARCHAR(300) NOT NULL
+                  CONSTRAINT DF_GpsSettings_TileUrl DEFAULT (N'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              DepotAddress NVARCHAR(300) NOT NULL
+                  CONSTRAINT DF_GpsSettings_DepotAddress DEFAULT (N'Quaffee AT Buitenverwachting; Klein Constantia Rd; Constantia; Cape Town'),
+              DepotLatitude DECIMAL(9,6) NULL,
+              DepotLongitude DECIMAL(9,6) NULL,
+              TrackingEnabled BIT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Tracking DEFAULT (0),
+              PingIntervalMinutes INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_PingInterval DEFAULT (10),
+              TrackingWeekdaysOnly BIT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Weekdays DEFAULT (1),
+              WorkHoursStart VARCHAR(5) NOT NULL
+                  CONSTRAINT DF_GpsSettings_WorkStart DEFAULT ('07:00'),
+              WorkHoursEnd VARCHAR(5) NOT NULL
+                  CONSTRAINT DF_GpsSettings_WorkEnd DEFAULT ('18:00'),
+              PingRetentionDays INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Retention DEFAULT (30),
+              AverageSpeedKmh INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Speed DEFAULT (30),
+              ServiceMinutes INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Service DEFAULT (5),
+              FreshMinutes INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Fresh DEFAULT (15),
+              StaleMinutes INT NOT NULL
+                  CONSTRAINT DF_GpsSettings_Stale DEFAULT (30),
+              UpdatedAt DATETIME NULL,
+              UpdatedBy NVARCHAR(128) NULL
+          );
+          INSERT INTO dbo.GpsSettingsTbl (SettingsID) VALUES (1);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryOptionsTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.MobileDeliveryOptionsTbl WHERE OptionText = N'Collected')
+      BEGIN
+          INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled)
+          VALUES ('Delivered', N'Collected', 1, 25, 1);
+      END
+    ]]>
+  </command>
+</root>

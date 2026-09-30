@@ -22,10 +22,11 @@
 - Initial values:
   - SQ, WM, MX → `DELIVER`
   - Cour, Pargo (and anyone with `IsDispatched = 1`) → `COURIER`
-  - The collection person, if there is one → `COLLECT`
+  - the Collect entry (customers collecting from the shop) → `COLLECT`
   - everyone else → `NONE`
 - Edited on the People lookup. `IsDispatched` stays and is kept equal to "DeliveryType = COURIER", so Order Done does not change.
-- A contact or order counts as a "delivery" when its delivery person's type is `DELIVER`.
+- Courier, Pargo and Collect are not real people but are entries in `PeopleTbl` so they can be chosen as "Delivery By". The delivery type is what makes them behave differently.
+- A contact or order counts as a "delivery" when its delivery person's type is `DELIVER`. This is why GPS follows the delivery person, not the area. Durban, for example, is served by courier today, so its contacts get no location. If we ever deliver there ourselves (for example from a branch), choosing a `DELIVER` person for those contacts makes them get a location with no other change.
 
 ## 2. Customer locations (`CustomerLocationTbl`)
 
@@ -189,7 +190,18 @@ This is free, needs no routing API and zig-zags less than a plain geohash sort. 
 
 Each step is released and used before the next starts.
 
-## Open points
+## Resolved points (2026-09-30)
 
-- Is there a "collect" person in People, or is collection only an area today?
-- Should contacts whose delivery person is `DELIVER` but whose area has no shapes (for example Durban) be skipped by the migration?
+- **Collect:** "Collect" is an entry in People for customers collecting from the shop, so its type is `COLLECT`.
+- **Courier-served areas (Durban, Gauteng and so on):** no special rule. Their contacts have a courier as delivery person, so the migration and lookups skip them automatically. This changes on its own if a `DELIVER` person is chosen later.
+- **API key:** registered at HeiGIT. It is entered on System Preferences → GPS & Drivers once step 1 is built, and is never put in code, docs or git.
+
+## Step 1 status (2026-09-30): builds and pages compile; not yet tested in the browser
+
+- Schema: `SQLCommands-DriverGps-01.xml` (+ GoLive copy), run by `OrderFlagsSchemaInstaller`. `CustomerLocationTbl` also has `SourceAddress` (the address text that was looked up, to spot address changes) and `UpdatedBy`.
+- The `UserPreferences` table is in the membership database (`TrackerDataSQL`), so its two new columns are added by `UserPreferencesHelper.EnsureUserPreferencesTableExists`, not by the pack.
+- People: `PersonsRepository` keeps `IsDispatched` equal to `DeliveryType = COURIER` (Support Tables still edits only the tick box, which moves the type to or from Courier).
+- Geocoding: `Classes/Geo` (`IGeocoder`, `HeigitGeocoder`, `Geohash`), `CustomerLocationManager` (daily cap in `GeoApiUsageTbl`, per-minute throttle in memory, postcode centroid fallback marked `REVIEW_REQUIRED`).
+- Pages: System Preferences → GPS & Drivers, Contact Details GPS line + `Pages/ContactLocation.aspx` popup (Leaflet), `Tools/CustomerLocations.aspx` batch, User Information options.
+- Leaflet 1.9.4 is in `Scripts/leaflet/` (the popup falls back to unpkg if it is missing).
+- To do before release: check the pages in the browser, enter the key, look up the depot, run a small batch.

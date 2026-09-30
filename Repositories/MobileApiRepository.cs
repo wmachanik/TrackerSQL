@@ -384,6 +384,37 @@ namespace TrackerSQL.Repositories
             return Query(sql, MapProof, ps.ToArray());
         }
 
+        /// <summary>Contact Details: the contact's proofs of delivery, newest first, with signatures.</summary>
+        public List<ContactProofRow> ListProofsForContact(int contactId, int max = 100)
+        {
+            string sql = "SELECT TOP (" + Math.Max(1, Math.Min(max, 500)) + @")
+                    m.ProofID, m.OrderID, m.DeliveredAt, m.Outcome, m.Reason, m.ReceivedByName, m.DriverNote, m.MissingItems,
+                    m.Status, m.Latitude, m.Longitude, m.SignatureImage, m.SignatureContentType,
+                    COALESCE(p.Person, m.UserName) AS Driver
+                FROM MobileDeliveryProofTbl m
+                LEFT JOIN OrdersTbl o ON o.OrderID = m.OrderID
+                LEFT JOIN PeopleTbl p ON p.PersonID = m.PersonID
+                WHERE m.ContactID = @ContactID OR (m.ContactID IS NULL AND o.ContactID = @ContactID)
+                ORDER BY m.DeliveredAt DESC, m.ProofID DESC";
+            return Query(sql, r => new ContactProofRow
+            {
+                ProofID = Convert.ToInt64(r["ProofID"]),
+                OrderID = Convert.ToInt32(r["OrderID"]),
+                DeliveredAt = Convert.ToDateTime(r["DeliveredAt"]),
+                Outcome = Str(r, "Outcome"),
+                Reason = Str(r, "Reason"),
+                ReceivedByName = Str(r, "ReceivedByName"),
+                DriverNote = Str(r, "DriverNote"),
+                MissingItems = Str(r, "MissingItems"),
+                Status = Str(r, "Status"),
+                Driver = Str(r, "Driver"),
+                Latitude = r["Latitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Latitude"]),
+                Longitude = r["Longitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Longitude"]),
+                SignatureImage = r["SignatureImage"] == DBNull.Value ? null : (byte[])r["SignatureImage"],
+                SignatureContentType = Str(r, "SignatureContentType")
+            }, P("@ContactID", contactId, DbType.Int32));
+        }
+
         public bool TryGetSignature(long proofId, out byte[] image, out string contentType)
         {
             image = null;

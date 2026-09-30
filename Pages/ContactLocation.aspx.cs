@@ -44,7 +44,7 @@ namespace TrackerSQL.Pages
             hdnTileUrl.Value = settings.MapTileUrl;
 
             litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
-            string addressText = CustomerLocationManager.BuildAddressText(contact);
+            string addressText = CustomerLocationManager.BuildLookupText(contact, CustomerLocationManager.AreaSuburbForLookup(contact));
             litAddress.Text = HttpUtility.HtmlEncode(addressText);
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
                 txtSearch.Text = addressText.Replace(", South Africa", string.Empty);

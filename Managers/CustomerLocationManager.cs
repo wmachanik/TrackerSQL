@@ -52,10 +52,74 @@ namespace TrackerSQL.Managers
             return string.Join(", ", parts);
         }
 
+        private static string Norm(string s) => Regex.Replace((s ?? string.Empty).ToLowerInvariant(), @"[^a-z0-9]+", " ").Trim();
+
         private static bool SameAddress(string a, string b)
         {
-            string Norm(string s) => Regex.Replace((s ?? string.Empty).ToLowerInvariant(), @"[^a-z0-9]+", " ").Trim();
             return Norm(a) == Norm(b);
+        }
+
+        /// <summary>
+        /// The contact's delivery area as a suburb for the lookup, or null when there is none or the address already
+        /// names it. "Constantia &amp; Surrounds" → "Constantia", "Rondebosch / Newlands" → "Rondebosch".
+        /// </summary>
+        public static string AreaSuburbForLookup(Contact contact)
+        {
+            if (contact?.AreaID == null || contact.AreaID.Value <= 0)
+                return null;
+            string name;
+            try
+            {
+                name = new AreasRepository().GetAreaName(contact.AreaID.Value);
+            }
+            catch
+            {
+                return null;
+            }
+
+            name = Regex.Replace(name ?? string.Empty, @"\([^)]*\)", " ");
+            name = Regex.Split(name, @"\s*(?:/|&|,|\+|\band\b)\s*", RegexOptions.IgnoreCase)[0];
+            name = Regex.Replace(name, @"\b(surrounds|surrounding|area|areas|region)\b", " ", RegexOptions.IgnoreCase).Trim();
+            if (name.Length < 3)
+                return null;
+
+            string address = " " + Norm(contact.BillingAddress) + " ";
+            return address.Contains(" " + Norm(name) + " ") ? null : name;
+        }
+
+        /// <summary>Address, then the area suburb when <paramref name="suburb"/> is given, then postcode and country.</summary>
+        public static string BuildLookupText(Contact contact, string suburb)
+        {
+            if (contact == null) return string.Empty;
+            var parts = new List<string>();
+            string address = Regex.Replace(contact.BillingAddress ?? string.Empty, @"\s*[\r\n]+\s*", ", ").Trim(' ', ',');
+            if (address.Length > 0) parts.Add(address);
+            if (!string.IsNullOrWhiteSpace(suburb)) parts.Add(suburb.Trim());
+            string postal = (contact.PostalCode ?? string.Empty).Trim();
+            if (postal.Length > 0 && address.IndexOf(postal, StringComparison.OrdinalIgnoreCase) < 0) parts.Add(postal);
+            if (parts.Count > 0) parts.Add("South Africa");
+            return string.Join(", ", parts);
+        }
+
+        /// <summary>
+        /// With the area suburb first (when the address lacks it); if that finds only a rough match or nothing,
+        /// tries the plain address too and keeps the better answer (the second try uses another lookup).
+        /// </summary>
+        private GeocodeResult GeocodeContact(Contact contact, GpsSettings settings, out bool usedLookup)
+        {
+            string suburb = AreaSuburbForLookup(contact);
+            string plain = BuildLookupText(contact, null);
+            if (suburb == null)
+                return Geocode(plain, settings, out usedLookup);
+
+            GeocodeResult first = Geocode(BuildLookupText(contact, suburb), settings, out usedLookup);
+            bool worthRetry = (first.Success && !first.IsPrecise) || first.Failure == GeocodeFailure.NotFound;
+            if (!worthRetry)
+                return first;
+
+            GeocodeResult second = Geocode(plain, settings, out bool usedSecond);
+            usedLookup |= usedSecond;
+            return second.Success && (second.IsPrecise || !first.Success) ? second : first;
         }
 
         /// <summary>
@@ -83,7 +147,7 @@ namespace TrackerSQL.Managers
                 return new LocationLookupOutcome { Success = true, Skipped = true, Location = existing };
 
             GpsSettings settings = _settingsRepo.Get();
-            GeocodeResult result = Geocode(addressText, settings, out bool usedLookup);
+            GeocodeResult result = GeocodeContact(contact, settings, out bool usedLookup);
             if (!result.Success && result.Failure != GeocodeFailure.NotFound)
             {
                 return new LocationLookupOutcome

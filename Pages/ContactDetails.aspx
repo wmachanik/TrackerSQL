@@ -799,14 +799,44 @@
 
         (function () {
             var changed = false;
+            var dx = 0, dy = 0;
+            function dialog() { return document.querySelector('#contactGpsOverlay .contact-gps-dialog'); }
+            function place() { var d = dialog(); if (d) d.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)'; }
+
             window.trackerOpenGps = function (contactId) {
                 changed = false;
                 var overlay = document.getElementById('contactGpsOverlay');
                 var frame = document.getElementById('contactGpsFrame');
                 if (!overlay || !frame) return;
+                dx = 0; dy = 0; place();
                 frame.src = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
                 overlay.style.display = 'flex';
             };
+
+            document.addEventListener('mousedown', function (e) {
+                var bar = e.target.closest ? e.target.closest('#contactGpsDialogBar') : null;
+                if (!bar || e.button !== 0 || e.target.closest('button')) return;
+                e.preventDefault();
+                var overlay = document.getElementById('contactGpsOverlay');
+                var startX = e.clientX - dx, startY = e.clientY - dy;
+                overlay.classList.add('is-dragging');
+                function move(ev) {
+                    var d = dialog(), r = d.getBoundingClientRect();
+                    var nx = ev.clientX - startX, ny = ev.clientY - startY;
+                    var minVisible = 80;
+                    var baseLeft = r.left - dx, baseTop = r.top - dy;
+                    nx = Math.min(Math.max(nx, minVisible - baseLeft - r.width), window.innerWidth - minVisible - baseLeft);
+                    ny = Math.min(Math.max(ny, -baseTop), window.innerHeight - 40 - baseTop);
+                    dx = nx; dy = ny; place();
+                }
+                function up() {
+                    overlay.classList.remove('is-dragging');
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                }
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            });
             window.trackerGpsChanged = function () { changed = true; };
             window.trackerCloseGps = function () {
                 var overlay = document.getElementById('contactGpsOverlay');
@@ -823,8 +853,8 @@
 
     <div id="contactGpsOverlay" class="contact-gps-overlay" style="display:none;" role="dialog" aria-label="Customer GPS location">
         <div class="contact-gps-dialog">
-            <div class="contact-gps-dialog-bar">
-                <strong>Customer GPS location</strong>
+            <div class="contact-gps-dialog-bar" id="contactGpsDialogBar" title="Drag to move this window">
+                <span><strong>Customer GPS location</strong><span class="contact-location-muted">drag this bar to move the window</span></span>
                 <button type="button" class="filter-panel-btn" onclick="trackerCloseGps();">Close</button>
             </div>
             <iframe id="contactGpsFrame" class="contact-gps-frame" src="about:blank" title="Customer GPS location"></iframe>

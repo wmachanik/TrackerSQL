@@ -96,12 +96,60 @@ namespace TrackerSQL.Managers
             return address.Contains(" " + Norm(name) + " ") ? null : name;
         }
 
-        /// <summary>Address, then the area suburb when <paramref name="suburb"/> is given, then postcode and country.</summary>
-        public static string BuildLookupText(Contact contact, string suburb)
+        private const string StreetWords = @"road|rd|street|str|st|avenue|ave|av|drive|dr|crescent|cres|close|cl|lane|ln|way|boulevard|blvd"
+            + @"|circle|terrace|tce|walk|square|sq|highway|hwy|link|grove|rise|loop|pass|path|place|pl";
+        private const string ComplexWords = @"estate|est|complex|village|court|crt|ct|mansions|lodge|manor|residence|residences"
+            + @"|towers?|block|building|bldg|flats|apartments|house|centre|center|mall|office park|business park|chambers";
+
+        /// <summary>"3 Kingfisher Close Kenrock Estate Tokai" → "3 Kingfisher Close Tokai", only when a street name is left.</summary>
+        private static string WithoutInlineEstate(string line)
+        {
+            string stripped = Regex.Replace(line,
+                @"\b[\w']+(\s+(mountain|vineyard|marina|residential|business|office|golf|country|eco|wine|security|lifestyle))*\s+(estate|est|complex)\b\.?",
+                " ", RegexOptions.IgnoreCase);
+            return stripped != line && Regex.IsMatch(stripped, @"\b(" + StreetWords + @")\b", RegexOptions.IgnoreCase) ? stripped : line;
+        }
+
+        /// <summary>
+        /// Address lines the geocoder can match: drops "c/o …", shop / unit / flat numbers and, when a street line is present,
+        /// estate / complex / building names ("Shop 1, Cascades 4, Tyger Waterfront" → "Cascades 4, Tyger Waterfront";
+        /// "33 Darter Rd, Blue Water Est, Kommetjie" → "33 Darter Rd, Kommetjie"; "No 12 Main Rd" → "12 Main Rd").
+        /// </summary>
+        public static string CleanAddressForLookup(string billingAddress)
+        {
+            var lines = new List<string>();
+            foreach (string raw in AddressLines(billingAddress).Split(','))
+            {
+                string line = raw.Trim();
+                if (line.Length == 0 || Regex.IsMatch(line, @"^(c/o|care of|attn|attention|p\.?\s*o\.?\s*box|postnet)\b", RegexOptions.IgnoreCase))
+                    continue;
+                line = Regex.Replace(line, @"^.*?\b(\(pty\)\s*ltd|pty\s*ltd|ltd|\(pty\))\.?(?=\s|$)", " ", RegexOptions.IgnoreCase);
+                line = Regex.Replace(line, @"\b(ground|first|second|third|fourth|fifth|\d+(st|nd|rd|th))\s+(floor|level)\b", " ", RegexOptions.IgnoreCase);
+                line = Regex.Replace(line,
+                    @"\b(shop|unit|flat|suite|office|apt|apartment|room|door|stand|erf|section|floor|level)\s*(no\.?|nr\.?|#)?\s*[a-z]?\d+[a-z]?(\s*(&|and|-|/)\s*[a-z]?\d+[a-z]?)*\b",
+                    " ", RegexOptions.IgnoreCase);
+                line = Regex.Replace(line, @"^\s*(no|nr|number)\.?\s*(?=\d)", string.Empty, RegexOptions.IgnoreCase);
+                line = Regex.Replace(line, @"^\s*#\s*\d+\w*\s*", string.Empty);
+                line = WithoutInlineEstate(line);
+                line = Regex.Replace(line, @"\s{2,}", " ").Trim(' ', '-', ',', '&');
+                if (line.Length > 0)
+                    lines.Add(line);
+            }
+
+            bool IsComplex(string l) => Regex.IsMatch(l, @"\b(" + ComplexWords + @")\b", RegexOptions.IgnoreCase);
+            bool IsStreet(string l) => Regex.IsMatch(l, @"\b(" + StreetWords + @")\b", RegexOptions.IgnoreCase)
+                || (Regex.IsMatch(l, @"^\d+[a-z]?\s+\S") && !IsComplex(l));
+            if (lines.Any(IsStreet))
+                lines = lines.Where(l => IsStreet(l) || !IsComplex(l)).ToList();
+            return string.Join(", ", lines);
+        }
+
+        /// <summary>Address (cleaned unless <paramref name="clean"/> is false), the area suburb when given, then postcode and country.</summary>
+        public static string BuildLookupText(Contact contact, string suburb, bool clean = true)
         {
             if (contact == null) return string.Empty;
             var parts = new List<string>();
-            string address = AddressLines(contact.BillingAddress);
+            string address = clean ? CleanAddressForLookup(contact.BillingAddress) : AddressLines(contact.BillingAddress);
             if (address.Length > 0) parts.Add(address);
             if (!string.IsNullOrWhiteSpace(suburb)) parts.Add(suburb.Trim());
             string postal = (contact.PostalCode ?? string.Empty).Trim();
@@ -111,24 +159,38 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// With the area suburb first (when the address lacks it); if that finds only a rough match or nothing,
-        /// tries the plain address too and keeps the better answer (the second try uses another lookup).
+        /// Tries, until one matches the address itself: cleaned address + area suburb (when the address lacks it),
+        /// cleaned address, then the address as typed. Keeps the first rough match when none is exact (at most 3 lookups).
         /// </summary>
         private GeocodeResult GeocodeContact(Contact contact, GpsSettings settings, out bool usedLookup)
         {
+            usedLookup = false;
             string suburb = AreaSuburbForLookup(contact);
-            string plain = BuildLookupText(contact, null);
-            if (suburb == null)
-                return Geocode(plain, settings, out usedLookup, radiusKm: AutoLookupRadiusKm);
+            var queries = new List<string>();
+            foreach (string q in new[]
+            {
+                suburb == null ? null : BuildLookupText(contact, suburb),
+                BuildLookupText(contact, null),
+                BuildLookupText(contact, null, clean: false)
+            })
+            {
+                if (!string.IsNullOrWhiteSpace(q) && !queries.Any(x => Norm(x) == Norm(q)))
+                    queries.Add(q);
+            }
 
-            GeocodeResult first = Geocode(BuildLookupText(contact, suburb), settings, out usedLookup, radiusKm: AutoLookupRadiusKm);
-            bool worthRetry = (first.Success && !first.IsPrecise) || first.Failure == GeocodeFailure.NotFound;
-            if (!worthRetry)
-                return first;
-
-            GeocodeResult second = Geocode(plain, settings, out bool usedSecond, radiusKm: AutoLookupRadiusKm);
-            usedLookup |= usedSecond;
-            return second.Success && (second.IsPrecise || !first.Success) ? second : first;
+            GeocodeResult best = null;
+            foreach (string query in queries)
+            {
+                GeocodeResult result = Geocode(query, settings, out bool used, radiusKm: AutoLookupRadiusKm);
+                usedLookup |= used;
+                if (!result.Success && result.Failure != GeocodeFailure.NotFound)
+                    return best ?? result;
+                if (result.Success && result.IsPrecise)
+                    return result;
+                if (best == null || (!best.Success && result.Success))
+                    best = result;
+            }
+            return best ?? GeocodeResult.Fail(GeocodeFailure.NotFound, "No address to look up.");
         }
 
         /// <summary>
@@ -272,7 +334,17 @@ namespace TrackerSQL.Managers
                 return GeocodeResult.Fail(GeocodeFailure.NotFound, "Type an address to search for.");
             if (query.IndexOf("South Africa", StringComparison.OrdinalIgnoreCase) < 0)
                 query += ", South Africa";
-            return Geocode(query, _settingsRepo.Get(), out _);
+
+            GpsSettings settings = _settingsRepo.Get();
+            string cleaned = CleanAddressForLookup(query);
+            if (cleaned.Length == 0 || Norm(cleaned) == Norm(query))
+                return Geocode(query, settings, out _);
+
+            GeocodeResult first = Geocode(cleaned, settings, out _);
+            if ((first.Success && first.IsPrecise) || (!first.Success && first.Failure != GeocodeFailure.NotFound))
+                return first;
+            GeocodeResult second = Geocode(query, settings, out _);
+            return second.Success && (second.IsPrecise || !first.Success) ? second : first;
         }
 
         public int LookupsUsedToday()

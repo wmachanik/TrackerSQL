@@ -49,5 +49,18 @@ namespace TrackerSQL.Models
         public string CoordinatesText =>
             Latitude.ToString("0.00000", CultureInfo.InvariantCulture) + ", "
             + Longitude.ToString("0.00000", CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Small CSS-drawn status badge (no icon font): filled tick = checked, outlined tick = looked up,
+        /// "?" = needs checking or no point (<paramref name="loc"/> null).
+        /// </summary>
+        public static string BadgeHtml(CustomerLocation loc)
+        {
+            if (loc == null || loc.NeedsReview)
+                return "<span class=\"gps-badge gps-badge-unsure\" aria-hidden=\"true\">?</span>";
+            return loc.IsVerified
+                ? "<span class=\"gps-badge gps-badge-ok\" aria-hidden=\"true\"></span>"
+                : "<span class=\"gps-badge gps-badge-found\" aria-hidden=\"true\"></span>";
+        }
     }
 }

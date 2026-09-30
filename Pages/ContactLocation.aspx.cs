@@ -55,7 +55,8 @@ namespace TrackerSQL.Pages
             {
                 SetPoint(loc.Latitude, loc.Longitude, true);
                 litMatched.Text = HttpUtility.HtmlEncode(string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? "(set by hand)" : loc.GeocodedAddress);
-                lblState.Text = HttpUtility.HtmlEncode(loc.StatusDisplay
+                litGeohash.Text = string.IsNullOrEmpty(loc.Geohash) ? string.Empty : "· geohash " + HttpUtility.HtmlEncode(loc.Geohash);
+                lblState.Text = CustomerLocation.BadgeHtml(loc) + HttpUtility.HtmlEncode(loc.StatusDisplay
                     + (string.IsNullOrEmpty(loc.UpdatedBy) ? "" : " · " + loc.UpdatedBy + " " + loc.UpdatedDate.ToString("yyyy-MM-dd")));
                 lblState.CssClass = loc.NeedsReview ? "contact-gps-value contact-gps-review"
                     : loc.IsVerified ? "contact-gps-value contact-gps-verified" : "contact-gps-value";
@@ -67,7 +68,8 @@ namespace TrackerSQL.Pages
                 else
                     SetPoint(-34.02m, 18.44m, false);
                 litMatched.Text = "not looked up yet";
-                lblState.Text = "No pin yet";
+                litGeohash.Text = string.Empty;
+                lblState.Text = CustomerLocation.BadgeHtml(null) + "No pin yet";
                 lblState.CssClass = "contact-gps-value contact-gps-review";
             }
         }
@@ -98,7 +100,8 @@ namespace TrackerSQL.Pages
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + ContactId + " | GPS pin saved (checked)");
                 BindPage();
                 ShowMessage("Pin saved and marked as checked.", false);
-                NotifyParent();
+                ClientScript.RegisterStartupScript(GetType(), "gpsSavedClose",
+                    "if (window.parent && window.parent.trackerGpsChanged) { window.parent.trackerGpsChanged(); window.parent.trackerCloseGps(); }", true);
             }
             catch (Exception ex)
             {

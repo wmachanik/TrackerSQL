@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Customer GPS location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-02" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-03" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>
@@ -31,7 +31,8 @@
             </div>
             <div class="contact-location-state">
                 <asp:Label ID="lblState" runat="server" CssClass="contact-gps-value" /><br />
-                <span class="contact-location-muted">Pin: <span id="pinText"><asp:Literal ID="litPoint" runat="server" /></span></span>
+                <span class="contact-location-muted">Pin: <span id="pinText"><asp:Literal ID="litPoint" runat="server" /></span>
+                    <asp:Literal ID="litGeohash" runat="server" /></span>
             </div>
         </div>
 
@@ -53,13 +54,15 @@
         </div>
 
         <div id="contactLocationMap" class="contact-location-map"></div>
-        <p class="contact-location-muted">Drag the pin, click the map, type co-ordinates or search, then press <em>Save this pin</em>.</p>
 
-        <div class="button-row">
+        <div class="contact-location-actions">
             <asp:Button ID="btnSavePin" runat="server" CssClass="filter-panel-btn" Text="Save this pin" OnClick="btnSavePin_Click"
-                ToolTip="Marks the location as checked" />
+                ToolTip="Marks the location as checked and closes this window" />
             <asp:Button ID="btnLookupAgain" runat="server" CssClass="filter-panel-btn sys-prefs-secondary-btn" Text="Look up again"
-                OnClick="btnLookupAgain_Click" ToolTip="Looks the address up again (uses one of today's lookups)" />
+                OnClick="btnLookupAgain_Click" ToolTip="Looks the address up again (uses up to three of today's lookups)" />
+            <span class="contact-location-muted">Drag the pin, click the map, type co-ordinates or search, then press <em>Save this pin</em>.</span>
+            <button type="button" class="filter-panel-btn sys-prefs-secondary-btn"
+                onclick="if (window.parent && window.parent.trackerCloseGps) window.parent.trackerCloseGps();">Close</button>
         </div>
     </form>
 

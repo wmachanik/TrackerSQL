@@ -1,4 +1,4 @@
-﻿/* Rev: 20260930-03
+﻿/* Rev: 20260930-04
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9353,8 +9353,8 @@ input.contact-gps-refresh { display: none !important; }
 .contact-gps-dialog {
     display: flex;
     flex-direction: column;
-    width: min(1100px, 96vw);
-    height: min(860px, 94vh);
+    width: min(1200px, 98vw);
+    height: 96vh;
     background: #fff;
     border-radius: 6px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
@@ -9376,7 +9376,8 @@ input.contact-gps-refresh { display: none !important; }
 .contact-gps-frame { flex: 1 1 auto; width: 100%; border: 0; }
 .contact-gps-overlay.is-dragging .contact-gps-frame { pointer-events: none; }
 
-.contact-location-body { margin: 0; height: 100vh; overflow: hidden; background: #fff; }
+/* The popup page sits in an iframe: cancel the site's body margin and the mobile header padding-top (!important) */
+html body.contact-location-body { margin: 0 !important; padding: 0 !important; height: 100vh; overflow: hidden; background: #fff; }
 .contact-location-body form { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; padding: 8px 14px 0; }
 .contact-location-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-bottom: 4px; }
 .contact-location-state { text-align: right; }
@@ -9385,7 +9386,7 @@ input.contact-gps-refresh { display: none !important; }
 .contact-location-tools label { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.9em; color: #555; }
 input.contact-location-input { width: 13em; }
 input.contact-location-input.contact-location-search { width: 30em; max-width: 60vw; }
-.contact-location-map { flex: 1 1 auto; min-height: 220px; border: 1px solid #cfd8c6; border-radius: 4px; margin: 4px 0; }
+.contact-location-map { flex: 1 1 auto; min-height: 160px; border: 1px solid #cfd8c6; border-radius: 4px; margin: 4px 0; }
 .contact-location-actions {
     display: flex;
     flex-wrap: wrap;
@@ -9397,6 +9398,17 @@ input.contact-location-input.contact-location-search { width: 30em; max-width: 6
     border-top: 1px solid #cfd8c6;
 }
 .contact-location-actions .contact-location-muted { flex: 1 1 auto; }
+.contact-location-unsaved {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+}
+.contact-location-unsaved-box { padding: 12px 16px; background: #fff; border: 1px solid #cfd8c6; border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+.contact-location-unsaved-box p { margin: 0 0 10px; }
+.contact-location-unsaved-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* System Preferences → GPS & Drivers */
 .gps-settings-heading { margin: 1em 0 0.3em; font-size: 1.05em; color: #3f6b4f; }

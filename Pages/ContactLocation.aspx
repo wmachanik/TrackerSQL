@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Customer GPS location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-03" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-04" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>
@@ -22,6 +22,7 @@
         <asp:HiddenField ID="hdnLng" runat="server" />
         <asp:HiddenField ID="hdnHasPoint" runat="server" />
         <asp:HiddenField ID="hdnTileUrl" runat="server" />
+        <asp:HiddenField ID="hdnDirty" runat="server" Value="0" />
 
         <div class="contact-location-head">
             <div>
@@ -64,11 +65,40 @@
             <button type="button" class="filter-panel-btn sys-prefs-secondary-btn"
                 onclick="if (window.parent && window.parent.trackerCloseGps) window.parent.trackerCloseGps();">Close</button>
         </div>
+
+        <div id="gpsUnsaved" class="contact-location-unsaved" style="display:none;" role="alertdialog" aria-label="Pin not saved">
+            <div class="contact-location-unsaved-box">
+                <p><strong>The pin was moved but not saved.</strong></p>
+                <div class="contact-location-unsaved-buttons">
+                    <button type="button" class="filter-panel-btn" id="btnUnsavedSave">Save and close</button>
+                    <button type="button" class="filter-panel-btn sys-prefs-secondary-btn" id="btnUnsavedDiscard">Close without saving</button>
+                    <button type="button" class="filter-panel-btn sys-prefs-secondary-btn" id="btnUnsavedStay">Keep editing</button>
+                </div>
+            </div>
+        </div>
     </form>
 
     <script>
         (function () {
             function byId(id) { return document.getElementById(id); }
+            var dirtyField = byId('<%= hdnDirty.ClientID %>');
+            function markDirty() { dirtyField.value = '1'; }
+            var unsaved = byId('gpsUnsaved');
+            window.gpsRequestClose = function () {
+                if (dirtyField.value !== '1') return true;
+                unsaved.style.display = 'flex';
+                return false;
+            };
+            byId('btnUnsavedSave').addEventListener('click', function () {
+                unsaved.style.display = 'none';
+                byId('<%= btnSavePin.ClientID %>').click();
+            });
+            byId('btnUnsavedDiscard').addEventListener('click', function () {
+                dirtyField.value = '0';
+                if (window.parent && window.parent.trackerCloseGps) window.parent.trackerCloseGps(true);
+            });
+            byId('btnUnsavedStay').addEventListener('click', function () { unsaved.style.display = 'none'; });
+
             var latField = byId('<%= hdnLat.ClientID %>');
             var lngField = byId('<%= hdnLng.ClientID %>');
             var hasPoint = byId('<%= hdnHasPoint.ClientID %>').value === '1';
@@ -94,8 +124,8 @@
                 var t = byId('pinText');
                 if (t) t.textContent = p.lat.toFixed(5) + ', ' + p.lng.toFixed(5);
             }
-            marker.on('dragend', function () { setPoint(marker.getLatLng()); });
-            map.on('click', function (e) { marker.setLatLng(e.latlng); setPoint(e.latlng); });
+            marker.on('dragend', function () { setPoint(marker.getLatLng()); markDirty(); });
+            map.on('click', function (e) { marker.setLatLng(e.latlng); setPoint(e.latlng); markDirty(); });
 
             // "-34.02, 18.44", "-34.02 18.44", or a Google Maps link (@lat,lng / q=lat,lng / !3dlat!4dlng)
             function parseCoords(text) {
@@ -114,6 +144,7 @@
                 if (!p) { alert('Type latitude, longitude, e.g. -34.02345, 18.44321'); return; }
                 marker.setLatLng(p);
                 setPoint(p);
+                markDirty();
                 map.setView(p, 17);
             }
             byId('btnCoordsGo').addEventListener('click', goToCoords);

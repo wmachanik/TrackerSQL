@@ -49,6 +49,7 @@ namespace TrackerSQL.Pages
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
                 txtSearch.Text = addressText.Replace(", South Africa", string.Empty);
             ViewState["SearchLabel"] = null;
+            hdnDirty.Value = "0";
 
             CustomerLocation loc = manager.Get(ContactId);
             if (loc != null)
@@ -101,7 +102,7 @@ namespace TrackerSQL.Pages
                 BindPage();
                 ShowMessage("Pin saved and marked as checked.", false);
                 ClientScript.RegisterStartupScript(GetType(), "gpsSavedClose",
-                    "if (window.parent && window.parent.trackerGpsChanged) { window.parent.trackerGpsChanged(); window.parent.trackerCloseGps(); }", true);
+                    "if (window.parent && window.parent.trackerGpsChanged) { window.parent.trackerGpsChanged(); window.parent.trackerCloseGps(true); }", true);
             }
             catch (Exception ex)
             {
@@ -139,6 +140,7 @@ namespace TrackerSQL.Pages
 
                 SetPoint(Math.Round((decimal)result.Latitude, 6), Math.Round((decimal)result.Longitude, 6), true);
                 ViewState["SearchLabel"] = result.Label;
+                hdnDirty.Value = "1";
                 litMatched.Text = HttpUtility.HtmlEncode((result.Label ?? txtSearch.Text) + " (from search, not saved yet)");
                 ShowMessage(result.IsPrecise
                     ? "Pin moved to the search result. Check it, then press Save this pin."

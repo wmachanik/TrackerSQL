@@ -188,6 +188,7 @@ namespace TrackerSQL.Pages
         private void UpdateGpsLine()
         {
             lblGpsCaption.Visible = false;
+            lblGpsCaption.Text = "GPS";
             lblGpsLocation.Text = string.Empty;
             lblGpsLocation.CssClass = "contact-gps-value";
             btnGpsCheck.Visible = false;
@@ -211,14 +212,15 @@ namespace TrackerSQL.Pages
                 CustomerLocation loc = manager.Get(contactId);
                 if (loc == null)
                 {
-                    lblGpsLocation.Text = CustomerLocation.BadgeHtml(null) + "not found yet";
+                    lblGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(null);
+                    lblGpsLocation.Text = "not found yet";
                     lblGpsLocation.ToolTip = "No GPS point yet: press Check to place it";
                     lblGpsLocation.CssClass = "contact-gps-value contact-gps-review";
                 }
                 else
                 {
-                    lblGpsLocation.Text = CustomerLocation.BadgeHtml(loc)
-                        + HttpUtility.HtmlEncode(string.IsNullOrEmpty(loc.Geohash) ? loc.CoordinatesText : loc.Geohash);
+                    lblGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc);
+                    lblGpsLocation.Text = HttpUtility.HtmlEncode(string.IsNullOrEmpty(loc.Geohash) ? loc.CoordinatesText : loc.Geohash);
                     lblGpsLocation.ToolTip = loc.StatusDisplay + " · " + loc.CoordinatesText
                         + (string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? string.Empty : " · Matched: " + loc.GeocodedAddress);
                 }

@@ -838,9 +838,15 @@
                 document.addEventListener('mouseup', up);
             });
             window.trackerGpsChanged = function () { changed = true; };
-            window.trackerCloseGps = function () {
+            window.trackerCloseGps = function (force) {
                 var overlay = document.getElementById('contactGpsOverlay');
                 var frame = document.getElementById('contactGpsFrame');
+                if (!force) {
+                    try {
+                        var w = frame && frame.contentWindow;
+                        if (w && w.gpsRequestClose && !w.gpsRequestClose()) return;
+                    } catch (e) { }
+                }
                 if (overlay) overlay.style.display = 'none';
                 if (frame) frame.src = 'about:blank';
                 if (changed) {

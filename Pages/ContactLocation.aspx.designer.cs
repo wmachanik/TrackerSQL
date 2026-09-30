@@ -19,6 +19,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Label lblState;
         protected global::System.Web.UI.WebControls.Literal litPoint;
         protected global::System.Web.UI.WebControls.Literal litGeohash;
+        protected global::System.Web.UI.WebControls.HiddenField hdnDirty;
         protected global::System.Web.UI.WebControls.TextBox txtSearch;
         protected global::System.Web.UI.WebControls.Button btnSearch;
         protected global::System.Web.UI.WebControls.Label lblMessage;

@@ -114,7 +114,7 @@ namespace TrackerSQL.Pages
                     .EnsureForContact(ContactId, Context?.User?.Identity?.Name, force: true);
                 BindPage();
                 ShowMessage(outcome.Message ?? (outcome.Success ? "Location found." : "Not found."), !outcome.Success);
-                if (outcome.Success)
+                if (outcome.Success || outcome.UsedLookup)
                     NotifyParent();
             }
             catch (Exception ex)

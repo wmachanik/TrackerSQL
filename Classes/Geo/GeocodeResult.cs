@@ -31,6 +31,27 @@ namespace TrackerSQL.Classes.Geo
             return new GeocodeResult { Failure = failure, Message = message };
         }
 
+        /// <summary>Province / country level matches: too rough to deliver to or to group stops by.</summary>
+        public static bool IsCoarseLayer(string layer)
+        {
+            switch ((layer ?? string.Empty).ToLowerInvariant())
+            {
+                case "country":
+                case "dependency":
+                case "macroregion":
+                case "region":
+                case "macrocounty":
+                case "county":
+                case "continent":
+                case "empire":
+                case "ocean":
+                case "marinearea":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>True when the match is a real address or place, not just a suburb / town / postcode.</summary>
         public bool IsPrecise
         {

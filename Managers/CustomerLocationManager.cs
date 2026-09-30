@@ -27,6 +27,9 @@ namespace TrackerSQL.Managers
     /// </summary>
     public class CustomerLocationManager
     {
+        /// <summary>Automatic contact lookups only accept matches this close to the depot (when the depot point is set).</summary>
+        private const double AutoLookupRadiusKm = 150;
+
         private static readonly Queue<DateTime> RecentCalls = new Queue<DateTime>();
         private static readonly object RecentCallsLock = new object();
 
@@ -44,12 +47,18 @@ namespace TrackerSQL.Managers
         {
             if (contact == null) return string.Empty;
             var parts = new List<string>();
-            string address = Regex.Replace(contact.BillingAddress ?? string.Empty, @"\s*[\r\n]+\s*", ", ").Trim(' ', ',');
+            string address = AddressLines(contact.BillingAddress);
             if (address.Length > 0) parts.Add(address);
             string postal = (contact.PostalCode ?? string.Empty).Trim();
             if (postal.Length > 0 && address.IndexOf(postal, StringComparison.OrdinalIgnoreCase) < 0) parts.Add(postal);
             if (parts.Count > 0) parts.Add("South Africa");
             return string.Join(", ", parts);
+        }
+
+        /// <summary>Address lines (new lines or ";") joined with ", ".</summary>
+        private static string AddressLines(string billingAddress)
+        {
+            return Regex.Replace(billingAddress ?? string.Empty, @"\s*(?:[\r\n]+|;)\s*", ", ").Trim(' ', ',');
         }
 
         private static string Norm(string s) => Regex.Replace((s ?? string.Empty).ToLowerInvariant(), @"[^a-z0-9]+", " ").Trim();
@@ -92,7 +101,7 @@ namespace TrackerSQL.Managers
         {
             if (contact == null) return string.Empty;
             var parts = new List<string>();
-            string address = Regex.Replace(contact.BillingAddress ?? string.Empty, @"\s*[\r\n]+\s*", ", ").Trim(' ', ',');
+            string address = AddressLines(contact.BillingAddress);
             if (address.Length > 0) parts.Add(address);
             if (!string.IsNullOrWhiteSpace(suburb)) parts.Add(suburb.Trim());
             string postal = (contact.PostalCode ?? string.Empty).Trim();
@@ -110,14 +119,14 @@ namespace TrackerSQL.Managers
             string suburb = AreaSuburbForLookup(contact);
             string plain = BuildLookupText(contact, null);
             if (suburb == null)
-                return Geocode(plain, settings, out usedLookup);
+                return Geocode(plain, settings, out usedLookup, radiusKm: AutoLookupRadiusKm);
 
-            GeocodeResult first = Geocode(BuildLookupText(contact, suburb), settings, out usedLookup);
+            GeocodeResult first = Geocode(BuildLookupText(contact, suburb), settings, out usedLookup, radiusKm: AutoLookupRadiusKm);
             bool worthRetry = (first.Success && !first.IsPrecise) || first.Failure == GeocodeFailure.NotFound;
             if (!worthRetry)
                 return first;
 
-            GeocodeResult second = Geocode(plain, settings, out bool usedSecond);
+            GeocodeResult second = Geocode(plain, settings, out bool usedSecond, radiusKm: AutoLookupRadiusKm);
             usedLookup |= usedSecond;
             return second.Success && (second.IsPrecise || !first.Success) ? second : first;
         }
@@ -180,11 +189,15 @@ namespace TrackerSQL.Managers
             }
             else if (!TryPostcodeCentroid(contact.PostalCode, loc))
             {
+                bool dropRough = existing != null && existing.NeedsReview && existing.Source != CustomerLocation.SourceManual;
+                if (dropRough)
+                    _locations.Delete(contactId);
                 return new LocationLookupOutcome
                 {
                     UsedLookup = usedLookup,
-                    Location = existing,
+                    Location = dropRough ? null : existing,
                     Message = "Address not found and no postcode point to fall back on; set the pin by hand."
+                        + (dropRough ? " The old rough point was removed." : string.Empty)
                 };
             }
 
@@ -267,7 +280,7 @@ namespace TrackerSQL.Managers
             return _settingsRepo.GetCallsToday(GpsSettingsRepository.GeocodeService);
         }
 
-        private GeocodeResult Geocode(string address, GpsSettings settings, out bool usedLookup, bool useFocus = true)
+        private GeocodeResult Geocode(string address, GpsSettings settings, out bool usedLookup, bool useFocus = true, double? radiusKm = null)
         {
             usedLookup = false;
             if (!settings.HasApiKey)
@@ -284,7 +297,8 @@ namespace TrackerSQL.Managers
             IGeocoder geocoder = new HeigitGeocoder(settings.GeocodeBaseUrl, settings.GeocodeApiKey);
             GeocodeResult result = geocoder.Search(address,
                 useFocus && settings.HasDepotPoint ? (double?)settings.DepotLatitude.Value : null,
-                useFocus && settings.HasDepotPoint ? (double?)settings.DepotLongitude.Value : null);
+                useFocus && settings.HasDepotPoint ? (double?)settings.DepotLongitude.Value : null,
+                radiusKm);
 
             if (result.Failure == GeocodeFailure.DailyLimitReached)
                 _settingsRepo.MarkDailyLimitReached(GpsSettingsRepository.GeocodeService, settings.GeocodeDailyLimit);

@@ -22,7 +22,7 @@ namespace TrackerSQL.Classes.Geo
             _apiKey = apiKey?.Trim();
         }
 
-        public GeocodeResult Search(string addressText, double? focusLatitude, double? focusLongitude)
+        public GeocodeResult Search(string addressText, double? focusLatitude, double? focusLongitude, double? radiusKm = null)
         {
             if (string.IsNullOrWhiteSpace(_apiKey))
                 return GeocodeResult.Fail(GeocodeFailure.NotConfigured, "No geocoding key: add it on System Preferences → GPS & Drivers.");
@@ -33,8 +33,14 @@ namespace TrackerSQL.Classes.Geo
                 + "&boundary.country=ZA&size=1";
             if (focusLatitude.HasValue && focusLongitude.HasValue)
             {
-                url += "&focus.point.lat=" + focusLatitude.Value.ToString("0.######", CultureInfo.InvariantCulture)
-                    + "&focus.point.lon=" + focusLongitude.Value.ToString("0.######", CultureInfo.InvariantCulture);
+                string lat = focusLatitude.Value.ToString("0.######", CultureInfo.InvariantCulture);
+                string lon = focusLongitude.Value.ToString("0.######", CultureInfo.InvariantCulture);
+                url += "&focus.point.lat=" + lat + "&focus.point.lon=" + lon;
+                if (radiusKm.HasValue && radiusKm.Value > 0)
+                {
+                    url += "&boundary.circle.lat=" + lat + "&boundary.circle.lon=" + lon
+                        + "&boundary.circle.radius=" + radiusKm.Value.ToString("0.#", CultureInfo.InvariantCulture);
+                }
             }
 
             string body;
@@ -84,13 +90,16 @@ namespace TrackerSQL.Classes.Geo
                     return GeocodeResult.Fail(GeocodeFailure.NotFound, "The geocoder returned no point for this address.");
 
                 JToken props = feature["properties"];
+                string layer = props?["layer"]?.Value<string>();
+                if (GeocodeResult.IsCoarseLayer(layer))
+                    return GeocodeResult.Fail(GeocodeFailure.NotFound, "The geocoder only matched the province or country, not the address.");
                 return new GeocodeResult
                 {
                     Failure = GeocodeFailure.None,
                     Longitude = coords[0].Value<double>(),
                     Latitude = coords[1].Value<double>(),
                     Label = props?["label"]?.Value<string>(),
-                    Layer = props?["layer"]?.Value<string>(),
+                    Layer = layer,
                     Confidence = props?["confidence"]?.Type == JTokenType.Float || props?["confidence"]?.Type == JTokenType.Integer
                         ? props["confidence"].Value<double>()
                         : (double?)null

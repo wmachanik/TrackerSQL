@@ -51,6 +51,10 @@
         <asp:Label ID="lblMessage" runat="server" CssClass="status-message" Visible="false" />
 
         <h3 class="gps-settings-heading">Needs checking</h3>
+        <p>
+            <asp:Button ID="btnRedoRough" runat="server" CssClass="filter-panel-btn" Text="Look up rough ones again" OnClick="btnRedoRough_Click"
+                ToolTip="Looks these up again (up to the batch size) with the area as suburb, only near the depot. Pins placed by hand are not touched." />
+        </p>
         <asp:GridView ID="gvReview" runat="server" AutoGenerateColumns="false" CssClass="TblWhite small"
             EmptyDataText="Nothing to check.">
             <Columns>

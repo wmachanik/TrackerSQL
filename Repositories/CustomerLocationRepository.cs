@@ -24,6 +24,16 @@ namespace TrackerSQL.Repositories
             }
         }
 
+        private static bool _tableSeen;
+
+        /// <summary>Whether sorting queries can join CustomerLocationTbl; only a positive answer is cached.</summary>
+        public static bool TableSeen()
+        {
+            if (!_tableSeen)
+                _tableSeen = new CustomerLocationRepository().TableExists();
+            return _tableSeen;
+        }
+
         public CustomerLocation GetByContactId(int contactId)
         {
             using (var db = new TrackerSQLDb())
@@ -66,6 +76,13 @@ ELSE
                     P("@Confidence", loc.Confidence.HasValue ? Math.Round(loc.Confidence.Value, 3) : (decimal?)null, DbType.Decimal),
                     P("@UpdatedBy", Truncate(loc.UpdatedBy, 128), DbType.String)
                 });
+        }
+
+        public void Delete(int contactId)
+        {
+            using (var db = new TrackerSQLDb())
+                db.ExecuteNonQuery("DELETE FROM dbo.CustomerLocationTbl WHERE ContactID = @ContactID",
+                    new List<DBParameter> { P("@ContactID", contactId, DbType.Int32) });
         }
 
         public void SetStatus(int contactId, string status, string userName)
@@ -127,6 +144,22 @@ FROM dbo.ContactsTbl c
 INNER JOIN dbo.PeopleTbl p ON p.PersonID = c.PreferredAgentID
 WHERE ISNULL(c.Enabled, 0) = 1
   AND p.DeliveryType = 'DELIVER'" + common;
+        }
+
+        /// <summary>Rough points from the geocoder or a postcode (not placed by hand), oldest first.</summary>
+        public List<int> ListRoughContactIds(int max)
+        {
+            string sql = "SELECT TOP (" + Math.Max(1, max) + @") ContactID FROM dbo.CustomerLocationTbl
+WHERE LocationStatus = 'REVIEW_REQUIRED' AND ISNULL(Source, '') <> 'MANUAL'
+ORDER BY UpdatedDate, ContactID";
+            var ids = new List<int>();
+            using (var db = new TrackerSQLDb())
+            using (var r = db.ExecuteReader(sql))
+            {
+                while (r != null && r.Read())
+                    ids.Add(Convert.ToInt32(r["ContactID"]));
+            }
+            return ids;
         }
 
         /// <summary>Locations that still need a person to check them, with the contact name for the list.</summary>

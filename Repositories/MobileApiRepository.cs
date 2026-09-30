@@ -176,7 +176,7 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN AreasTbl a ON a.AreaID = c.AreaID
                 LEFT JOIN PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
                 LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
-                LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID
+                LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID{GEO_JOIN}
                 OUTER APPLY (SELECT TOP 1 d.DeliveryOrder,
                                     CASE WHEN ((d.PrepDayOfWeekID - 1 + ISNULL(d.DeliveryDelayDays, 0)) % 7) + 1
                                               = (DATEDIFF(day, '19000107', o.RequiredByDate) % 7) + 1
@@ -187,6 +187,8 @@ namespace TrackerSQL.Repositories
                                     CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
+            bool geo = CustomerLocationRepository.TableSeen();
+            sql = sql.Replace("{GEO_JOIN}", geo ? " LEFT JOIN dbo.CustomerLocationTbl gl ON gl.ContactID = o.ContactID" : string.Empty);
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
@@ -199,6 +201,8 @@ namespace TrackerSQL.Repositories
                 ps.Add(P("@OrderID", orderId.Value, DbType.Int32));
             }
             sql += " ORDER BY o.Done, CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
+                 + " a.AreaName,"
+                 + (geo ? " CASE WHEN ISNULL(gl.Geohash, '') = '' THEN 1 ELSE 0 END, gl.Geohash," : string.Empty)
                  + " c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
 
             return Query(sql, r => new SheetRow

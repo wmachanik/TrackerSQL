@@ -76,13 +76,30 @@ namespace TrackerSQL.Tools
             gvReview.DataBind();
         }
 
-        protected void btnRunBatch_Click(object sender, EventArgs e)
+        private int BatchSize()
         {
             int size;
             if (!int.TryParse(txtBatchSize.Text, out size) || size < 1)
                 size = 50;
-            size = Math.Min(size, MaxBatch);
+            return Math.Min(size, MaxBatch);
+        }
 
+        protected void btnRunBatch_Click(object sender, EventArgs e)
+        {
+            int size = BatchSize();
+            bool openOnly = cbxOpenOrdersOnly.Checked;
+            RunLookups(new CustomerLocationRepository().ListContactIdsNeedingLookup(size + MaxBatch, openOnly), size, openOnly, false);
+        }
+
+        protected void btnRedoRough_Click(object sender, EventArgs e)
+        {
+            int size = BatchSize();
+            RunLookups(new CustomerLocationRepository().ListRoughContactIds(size + MaxBatch), size, true, true);
+        }
+
+        /// <param name="onceToday">Also skip contacts already redone today, even when still rough.</param>
+        private void RunLookups(System.Collections.Generic.IEnumerable<int> contactIds, int size, bool force, bool onceToday)
+        {
             var manager = new CustomerLocationManager();
             string userName = Context?.User?.Identity?.Name;
             int found = 0, rough = 0, notFound = 0;
@@ -91,15 +108,14 @@ namespace TrackerSQL.Tools
             try
             {
                 int done = 0;
-                bool openOnly = cbxOpenOrdersOnly.Checked;
-                foreach (int contactId in new CustomerLocationRepository().ListContactIdsNeedingLookup(size + MaxBatch, openOnly))
+                foreach (int contactId in contactIds)
                 {
                     if (done >= size)
                         break;
                     if (FailedEarlierToday(contactId, add: false))
                         continue;
                     done++;
-                    LocationLookupOutcome outcome = manager.EnsureForContact(contactId, userName, force: openOnly);
+                    LocationLookupOutcome outcome = manager.EnsureForContact(contactId, userName, force: force);
                     if (outcome.StopBatch)
                     {
                         stopReason = outcome.Message;
@@ -113,8 +129,9 @@ namespace TrackerSQL.Tools
                     else if (!outcome.Success)
                     {
                         notFound++;
-                        FailedEarlierToday(contactId, add: true);
                     }
+                    if (!outcome.Success || (onceToday && outcome.Location != null && outcome.Location.NeedsReview))
+                        FailedEarlierToday(contactId, add: true);
                 }
             }
             catch (Exception ex)

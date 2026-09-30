@@ -17,6 +17,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnRunBatch;
         protected global::System.Web.UI.WebControls.HyperLink hlSettings;
         protected global::System.Web.UI.WebControls.Label lblMessage;
+        protected global::System.Web.UI.WebControls.Button btnRedoRough;
         protected global::System.Web.UI.WebControls.GridView gvReview;
     }
 }

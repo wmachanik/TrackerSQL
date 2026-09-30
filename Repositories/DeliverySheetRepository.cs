@@ -57,6 +57,9 @@ namespace TrackerSQL.Repositories
                     o.ToBeDeliveredByID,
                     OffDay,
                     DeliveryOrder,
+                    ar.AreaName,
+                    NoGeo,
+                    GeoSortKey,
                     c.CompanyName,
                     i.SortOrder";
 
@@ -118,6 +121,9 @@ namespace TrackerSQL.Repositories
                     o.ToBeDeliveredByID,
                     OffDay,
                     DeliveryOrder,
+                    ar.AreaName,
+                    NoGeo,
+                    GeoSortKey,
                     c.CompanyName,
                     i.SortOrder";
 
@@ -142,11 +148,13 @@ namespace TrackerSQL.Repositories
         /// <summary>
         /// One row per order line. Delivery order is the area's order (Lookups → Delivery Days).
         /// OffDay = 0 when one of the area's prep days (prep day + delay, 1=Sun..7=Sat) delivers on the
-        /// order's weekday; off-day areas and contacts without an area / prep days (OffDay 1) sort after them. The flag is the order's own, or the
+        /// order's weekday; off-day areas and contacts without an area / prep days (OffDay 1) sort after them. Within an area, contacts
+        /// with a GPS point sort by geohash (NoGeo 0, GeoSortKey) so neighbours are together; the rest follow by name. The flag is the order's own, or the
         /// contact's account type for orders created before flags were stored on orders.
         /// </summary>
         private static string BaseDeliverySheetSql()
         {
+            bool geo = CustomerLocationRepository.TableSeen();
             return @"
                 SELECT DISTINCT
                     o.OrderID,
@@ -175,7 +183,10 @@ namespace TrackerSQL.Repositories
                     p.Abbreviation AS DeliveryByAbbreviation,
                     ar.AreaName,
                     ar.ShortCode AS AreaShortCode,
-                    COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID
+                    COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID,
+                    " + (geo
+                        ? "CASE WHEN ISNULL(gl.Geohash, '') = '' THEN 1 ELSE 0 END AS NoGeo, gl.Geohash AS GeoSortKey"
+                        : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @"
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
                     ON o.OrderID = ol.OrderID
@@ -188,7 +199,9 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i
-                    ON ol.ItemID = i.ItemID
+                    ON ol.ItemID = i.ItemID" + (geo ? @"
+                LEFT JOIN dbo.CustomerLocationTbl gl
+                    ON gl.ContactID = o.ContactID" : string.Empty) + @"
                 OUTER APPLY (
                     SELECT TOP 1 a.DeliveryOrder,
                         CASE WHEN ((a.PrepDayOfWeekID - 1 + ISNULL(a.DeliveryDelayDays, 0)) % 7) + 1

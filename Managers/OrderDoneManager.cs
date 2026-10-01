@@ -121,6 +121,27 @@ namespace TrackerSQL.Managers
                 usedOn);
         }
 
+        /// <summary>
+        /// Null when the waybill fits the courier's usual formats (Lookups → Couriers) or the courier has none;
+        /// otherwise an "are you sure?" message saying what that courier's waybills normally look like.
+        /// </summary>
+        public static string GetWaybillFormatWarning(string trackingNumber, int? courierServiceId)
+        {
+            if (string.IsNullOrWhiteSpace(trackingNumber) || !courierServiceId.HasValue)
+                return null;
+            CourierService courier = new CourierServicesRepository().GetByIdSafe(courierServiceId.Value);
+            if (courier == null || courier.IsNone || WaybillFormat.Matches(trackingNumber, courier.WaybillFormats))
+                return null;
+            return "'" + trackingNumber.Trim() + "' doesn't look like a " + (courier.ServiceName ?? courier.ServiceCode)
+                + " waybill (usually " + WaybillFormat.Describe(courier.WaybillFormats) + "). Check the number and the courier.";
+        }
+
+        /// <summary>Key for "the user confirmed this waybill for this courier", so a changed number is checked again.</summary>
+        public static string WaybillConfirmKey(string trackingNumber, int? courierServiceId)
+        {
+            return (courierServiceId ?? 0) + "|" + WaybillFormat.Normalise(trackingNumber);
+        }
+
         private static string ResolveWaybillCustomerName(OrderWaybill waybill)
         {
             if (waybill == null)

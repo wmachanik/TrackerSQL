@@ -128,6 +128,12 @@
                                     ErrorMessage="Tracking / waybill number is required for Pargo and courier." />
                             </div>
                         </div>
+                        <asp:Panel ID="pnlWaybillFormat" runat="server" Visible="false" CssClass="status-message status-error">
+                            <asp:Literal ID="ltrlWaybillFormat" runat="server" />
+                            <br />
+                            <asp:CheckBox ID="cbxWaybillFormatOk" runat="server" TextAlign="Right"
+                                Text="Yes, this waybill is right - use it" />
+                        </asp:Panel>
                     </asp:Panel>
 
                     <table class="TblCoffee detail-form-table detail-form-table-spaced">

@@ -78,9 +78,32 @@
     ]]>
   </command>
 
+  <!-- Usual waybill formats per courier (Order Done / waybill edit ask "are you sure?" when a number doesn't fit).
+       @ = letter, # = digit, ? = letter or digit, * = anything, {n} = n of the one before, + = one or more; ; between formats.
+       Only rows never set (NULL) get these defaults; edit them on Lookups → Couriers. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.CourierServicesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.CourierServicesTbl', N'WaybillFormats') IS NULL
+          ALTER TABLE dbo.CourierServicesTbl ADD WaybillFormats NVARCHAR(500) NULL;
+    ]]>
+  </command>
+
+  <command type="update">
+    <![CDATA[
+      IF COL_LENGTH(N'dbo.CourierServicesTbl', N'WaybillFormats') IS NOT NULL
+          EXEC(N'UPDATE dbo.CourierServicesTbl SET WaybillFormats =
+              CASE ServiceCode WHEN N''Pargo'' THEN N''PAR*''
+                               WHEN N''Fastway'' THEN N''@?#{10}; #@#{10}''
+                               WHEN N''CourierGuy'' THEN N''@+''
+                               ELSE N'''' END
+          WHERE WaybillFormats IS NULL;');
+    ]]>
+  </command>
+
   <command type="select">
     <![CDATA[
-      SELECT CourierServiceID, ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder
+      SELECT CourierServiceID, ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, WaybillFormats, IsDefault, IsEnabled, SortOrder
       FROM dbo.CourierServicesTbl
       ORDER BY SortOrder, ServiceName;
     ]]>

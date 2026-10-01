@@ -1255,6 +1255,7 @@
                         <p class="page-tone-subtitle" style="margin:0.6rem 0;">
                             Parcel courier services for waybills. Tracking URL is sent to the customer with the waybill number.
                             Fastway is the system default. Code must stay unique (None / Fastway / Pargo / CourierGuy).
+                            <em>Waybill format</em> is what the courier's numbers usually look like (hover the heading for how to write it).
                         </p>
                         <div class="results-container scrollable-table-container">
                             <asp:GridView ID="gvCouriers" runat="server" DataKeyNames="CourierServiceID"
@@ -1330,6 +1331,23 @@
                                         <FooterTemplate>
                                             <asp:TextBox ID="tbxCsUrlParamFooter" runat="server" Width="6em"
                                                 ToolTip="Optional, e.g. ?l= for Fastway" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField>
+                                        <HeaderTemplate>
+                                            <span title="What this courier's waybill numbers usually look like. Order Done and Update waybill ask 'are you sure?' when a number doesn't fit. @ = a letter, # = a digit, ? = a letter or digit, * = anything, {10} = ten of the one before, + = one or more; separate several formats with ; (e.g. Pargo PAR*, Fastway @?#{10}; #@#{10}). Leave empty for no check.">Waybill format</span>
+                                        </HeaderTemplate>
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxCsFormats" runat="server" Text='<%# Bind("WaybillFormats") %>' Width="12em"
+                                                ToolTip="@ = letter, # = digit, ? = letter or digit, * = anything, {10} = ten of the one before, + = one or more; ; between formats" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblCsFormats" runat="server" Text='<%# Eval("WaybillFormats") %>'
+                                                ToolTip='<%# TrackerSQL.Classes.WaybillFormat.Describe(Eval("WaybillFormats") as string) %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxCsFormatsFooter" runat="server" Width="12em"
+                                                ToolTip="e.g. PAR* or @?#{10}" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Default" SortExpression="IsDefault">

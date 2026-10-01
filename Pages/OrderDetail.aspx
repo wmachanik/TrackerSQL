@@ -287,6 +287,12 @@
                                     Text="Notify customer by email" Checked="true"
                                     ToolTip="Email the contact the corrected waybill number" />
                             </div>
+                            <asp:Panel ID="pnlWaybillEditFormat" runat="server" Visible="false" CssClass="status-message status-error">
+                                <asp:Literal ID="ltrlWaybillEditFormat" runat="server" />
+                                <br />
+                                <asp:CheckBox ID="cbxWaybillEditFormatOk" runat="server" TextAlign="Right"
+                                    Text="Yes, this waybill is right - use it" />
+                            </asp:Panel>
                             <div class="button-row confirm-modal-buttons">
                                 <asp:Button ID="btnUpdateWaybill" runat="server" Text="Update waybill"
                                     CssClass="filter-panel-btn"

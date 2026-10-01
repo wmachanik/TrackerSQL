@@ -64,6 +64,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Label lblWaybillEditCourier;
         protected global::System.Web.UI.WebControls.DropDownList ddlWaybillCourier;
         protected global::System.Web.UI.WebControls.CheckBox cbxNotifyWaybillChange;
+        protected global::System.Web.UI.WebControls.Panel pnlWaybillEditFormat;
+        protected global::System.Web.UI.WebControls.Literal ltrlWaybillEditFormat;
+        protected global::System.Web.UI.WebControls.CheckBox cbxWaybillEditFormatOk;
         protected global::System.Web.UI.WebControls.Button btnUpdateWaybill;
         protected global::System.Web.UI.WebControls.Button btnCancelWaybillEdit;
         protected global::System.Web.UI.WebControls.TextBox tbxNotes;

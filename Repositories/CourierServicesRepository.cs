@@ -16,7 +16,7 @@ namespace TrackerSQL.Repositories
         protected override string KeyColumn => "CourierServiceID";
 
         protected override string CoreColumns =>
-            "CourierServiceID, ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder";
+            "CourierServiceID, ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, WaybillFormats, IsDefault, IsEnabled, SortOrder";
 
         protected override string LookupColumns => CoreColumns;
 
@@ -41,9 +41,9 @@ namespace TrackerSQL.Repositories
 
             const string sql = @"
 INSERT INTO CourierServicesTbl
-(ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder)
+(ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, WaybillFormats, IsDefault, IsEnabled, SortOrder)
 VALUES
-(@ServiceCode, @ServiceName, @TrackingUrl, @TrackingUrlParam, @IsDefault, @IsEnabled, @SortOrder)";
+(@ServiceCode, @ServiceName, @TrackingUrl, @TrackingUrlParam, @WaybillFormats, @IsDefault, @IsEnabled, @SortOrder)";
             int n = ExecNonQuery(sql, BuildParams(entity, includeId: false));
             if (n > 0 && entity.IsDefault)
                 ClearOtherDefaults(0);
@@ -63,6 +63,7 @@ UPDATE CourierServicesTbl SET
     ServiceName = @ServiceName,
     TrackingUrl = @TrackingUrl,
     TrackingUrlParam = @TrackingUrlParam,
+    WaybillFormats = @WaybillFormats,
     IsDefault = @IsDefault,
     IsEnabled = @IsEnabled,
     SortOrder = @SortOrder
@@ -221,6 +222,9 @@ WHEN NOT MATCHED THEN
     INSERT (ServiceCode, ServiceName, TrackingUrl, TrackingUrlParam, IsDefault, IsEnabled, SortOrder)
     VALUES (s.ServiceCode, s.ServiceName, s.TrackingUrl, s.TrackingUrlParam, s.IsDefault, s.IsEnabled, s.SortOrder);");
 
+            ExecNonQuery(SchemaWaybillFormatsColumn);
+            ExecNonQuery(SchemaWaybillFormatsSeed);
+
             // Contact preference column
             ExecNonQuery(@"
 IF COL_LENGTH(N'dbo.ContactsTbl', N'PreferredCourierServiceID') IS NULL
@@ -234,6 +238,21 @@ IF OBJECT_ID(N'dbo.OrderWaybillTbl', N'U') IS NOT NULL
 
             InvalidateCache();
         }
+
+        private const string SchemaWaybillFormatsColumn = @"
+IF OBJECT_ID(N'dbo.CourierServicesTbl', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.CourierServicesTbl', N'WaybillFormats') IS NULL
+    ALTER TABLE dbo.CourierServicesTbl ADD WaybillFormats NVARCHAR(500) NULL;";
+
+        // Same seed as SQLCommands-CourierServices-01.xml; only rows never set (NULL) get the defaults.
+        private const string SchemaWaybillFormatsSeed = @"
+IF COL_LENGTH(N'dbo.CourierServicesTbl', N'WaybillFormats') IS NOT NULL
+    EXEC(N'UPDATE dbo.CourierServicesTbl SET WaybillFormats =
+        CASE ServiceCode WHEN N''Pargo'' THEN N''PAR*''
+                         WHEN N''Fastway'' THEN N''@?#{10}; #@#{10}''
+                         WHEN N''CourierGuy'' THEN N''@+''
+                         ELSE N'''' END
+    WHERE WaybillFormats IS NULL;');";
 
         private void ClearOtherDefaults(int keepId)
         {
@@ -254,6 +273,8 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
                 new DBParameter { ParamName = "@ServiceName", DataValue = (entity.ServiceName ?? string.Empty).Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@TrackingUrl", DataValue = string.IsNullOrWhiteSpace(entity.TrackingUrl) ? (object)DBNull.Value : entity.TrackingUrl.Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@TrackingUrlParam", DataValue = string.IsNullOrWhiteSpace(entity.TrackingUrlParam) ? (object)DBNull.Value : entity.TrackingUrlParam.Trim(), DataDbType = DbType.String },
+                // Empty string (not NULL) when cleared, so the start-up seed doesn't put the default formats back.
+                new DBParameter { ParamName = "@WaybillFormats", DataValue = (entity.WaybillFormats ?? string.Empty).Trim(), DataDbType = DbType.String },
                 new DBParameter { ParamName = "@IsDefault", DataValue = entity.IsDefault, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@IsEnabled", DataValue = entity.IsEnabled, DataDbType = DbType.Boolean },
                 new DBParameter { ParamName = "@SortOrder", DataValue = entity.SortOrder, DataDbType = DbType.Int32 }
@@ -318,6 +339,9 @@ WHERE CourierServiceID <> @KeepId AND IsDefault = 1";
                 TrackingUrl = rdr["TrackingUrl"] as string,
                 TrackingUrlParam = DbMapper.HasColumn(rdr, "TrackingUrlParam")
                     ? rdr["TrackingUrlParam"] as string
+                    : null,
+                WaybillFormats = DbMapper.HasColumn(rdr, "WaybillFormats")
+                    ? rdr["WaybillFormats"] as string
                     : null,
                 IsDefault = rdr["IsDefault"] != DBNull.Value && Convert.ToBoolean(rdr["IsDefault"]),
                 IsEnabled = rdr["IsEnabled"] == DBNull.Value || Convert.ToBoolean(rdr["IsEnabled"]),

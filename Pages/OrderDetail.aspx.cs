@@ -716,6 +716,8 @@ namespace TrackerSQL.Pages
             if (pnlWaybillEdit == null)
                 return;
             BindWaybillRow();
+            if (pnlWaybillEditFormat != null)
+                pnlWaybillEditFormat.Visible = false;
             pnlWaybillEdit.Visible = true;
             if (upnlWaybillEdit != null)
                 upnlWaybillEdit.Update();
@@ -762,6 +764,26 @@ namespace TrackerSQL.Pages
                 SetStatusMessage(duplicateWarning, isError: true);
                 return;
             }
+
+            string formatWarning = OrderDoneManager.GetWaybillFormatWarning(newNumber, courierId);
+            string confirmKey = OrderDoneManager.WaybillConfirmKey(newNumber, courierId);
+            if (!string.IsNullOrEmpty(formatWarning))
+            {
+                bool confirmed = pnlWaybillEditFormat.Visible && cbxWaybillEditFormatOk.Checked
+                    && string.Equals(ViewState["WaybillEditWarned"] as string, confirmKey, StringComparison.Ordinal);
+                if (!confirmed)
+                {
+                    ViewState["WaybillEditWarned"] = confirmKey;
+                    ltrlWaybillEditFormat.Text = HttpUtility.HtmlEncode(formatWarning + " Tick the box and press Update waybill again to use it.");
+                    cbxWaybillEditFormatOk.Checked = false;
+                    pnlWaybillEditFormat.Visible = true;
+                    upnlWaybillEdit?.Update();
+                    return;
+                }
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    $"Order {OrderId}: waybill '{newNumber}' kept after the format warning: {formatWarning}");
+            }
+            pnlWaybillEditFormat.Visible = false;
 
             bool notify = cbxNotifyWaybillChange == null || cbxNotifyWaybillChange.Checked;
             string result = OrderDoneManager.UpdateWaybillAndNotify(OrderId, newNumber, courierId, notify);

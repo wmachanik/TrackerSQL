@@ -17,6 +17,8 @@ namespace TrackerSQL.Models
         /// Leave blank until the courier's query/path pattern is known.
         /// </summary>
         public string TrackingUrlParam { get; set; }
+        /// <summary>Usual waybill formats (see <see cref="TrackerSQL.Classes.WaybillFormat"/>); empty = not checked.</summary>
+        public string WaybillFormats { get; set; }
         public bool IsDefault { get; set; }
         public bool IsEnabled { get; set; } = true;
         public int SortOrder { get; set; }

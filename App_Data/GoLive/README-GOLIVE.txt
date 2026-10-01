@@ -51,6 +51,8 @@ SQLCommands-WooCommerce-02.xml
 SQLCommands-WooCommerce-03.xml   ← includes OrdersTbl.Notes → NVARCHAR(MAX) + OrderWaybillTbl
 SQLCommands-Postal-01.xml        ← only if live lacks SaPostalCodeTbl
 SQLCommands-CourierServices-01.xml ← courier track URLs + deep-link params (Fastway ?l=, Pargo ?code=, Courier Guy ?ref=)
+                                     + WaybillFormats column with defaults (Pargo PAR*, Fastway @?#{10}; #@#{10}, Courier Guy @+).
+                                     Tracker also adds it the first time couriers are used; safe to run again.
 
 GPS & DRIVERS (customer locations, Azure Maps, learning from deliveries)
 Both packs run automatically at site start-up (OrderFlagsSchemaInstaller); the copies here are for XMLtoSQL

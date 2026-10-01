@@ -1499,12 +1499,22 @@ namespace TrackerSQL.Pages
                 var tbxName = (TextBox)row.FindControl("tbxCsName");
                 var tbxUrl = (TextBox)row.FindControl("tbxCsUrl");
                 var tbxUrlParam = (TextBox)row.FindControl("tbxCsUrlParam");
+                var tbxFormats = (TextBox)row.FindControl("tbxCsFormats");
                 var cbxDefault = (CheckBox)row.FindControl("cbxCsDefault");
                 var cbxEnabled = (CheckBox)row.FindControl("cbxCsEnabled");
                 var tbxSort = (TextBox)row.FindControl("tbxCsSort");
                 int sort = 0;
                 if (tbxSort != null)
                     int.TryParse(tbxSort.Text, out sort);
+
+                string formats = tbxFormats?.Text?.Trim() ?? string.Empty;
+                string formatError = WaybillFormat.Check(formats);
+                if (formatError != null)
+                {
+                    SetLookupStatus("Waybill format not saved - " + formatError + ". " + WaybillFormat.Help, true);
+                    return;
+                }
+                CourierService before = GetCouriersRepo().GetByIdSafe(id);
 
                 GetCouriersRepo().Update(new CourierService
                 {
@@ -1513,10 +1523,14 @@ namespace TrackerSQL.Pages
                     ServiceName = tbxName?.Text?.Trim(),
                     TrackingUrl = tbxUrl?.Text?.Trim(),
                     TrackingUrlParam = tbxUrlParam?.Text?.Trim(),
+                    WaybillFormats = formats,
                     IsDefault = cbxDefault != null && cbxDefault.Checked,
                     IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
                     SortOrder = sort
                 });
+                if (!string.Equals(before?.WaybillFormats ?? string.Empty, formats, StringComparison.Ordinal))
+                    AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                        $"Courier {tbxCode?.Text?.Trim()} waybill formats changed from '{before?.WaybillFormats}' to '{formats}'");
                 gvCouriers.EditIndex = -1;
                 BindCouriersGrid();
                 upnlCouriers?.Update();
@@ -1576,6 +1590,7 @@ namespace TrackerSQL.Pages
                 var tbxName = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsNameFooter");
                 var tbxUrl = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsUrlFooter");
                 var tbxUrlParam = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsUrlParamFooter");
+                var tbxFormats = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsFormatsFooter");
                 var cbxDefault = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsDefaultFooter");
                 var cbxEnabled = (CheckBox)gvCouriers.FooterRow.FindControl("cbxCsEnabledFooter");
                 var tbxSort = (TextBox)gvCouriers.FooterRow.FindControl("tbxCsSortFooter");
@@ -1589,6 +1604,13 @@ namespace TrackerSQL.Pages
                 int sort = 100;
                 if (tbxSort != null)
                     int.TryParse(tbxSort.Text, out sort);
+                string formats = tbxFormats?.Text?.Trim() ?? string.Empty;
+                string formatError = WaybillFormat.Check(formats);
+                if (formatError != null)
+                {
+                    SetLookupStatus("Waybill format not saved - " + formatError + ". " + WaybillFormat.Help, true);
+                    return;
+                }
 
                 GetCouriersRepo().Insert(new CourierService
                 {
@@ -1596,6 +1618,7 @@ namespace TrackerSQL.Pages
                     ServiceName = name,
                     TrackingUrl = tbxUrl?.Text?.Trim(),
                     TrackingUrlParam = tbxUrlParam?.Text?.Trim(),
+                    WaybillFormats = formats,
                     IsDefault = cbxDefault != null && cbxDefault.Checked,
                     IsEnabled = cbxEnabled == null || cbxEnabled.Checked,
                     SortOrder = sort

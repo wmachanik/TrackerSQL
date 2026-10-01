@@ -152,6 +152,27 @@ namespace TrackerSQL.Pages
                 BindCourierDropdown();
         }
 
+        /// <summary>
+        /// True when there is no format warning, or the user ticked "Yes, this waybill is right" for this same number
+        /// and courier. Otherwise shows the warning with an unticked box (a changed number is asked about again).
+        /// </summary>
+        private bool WaybillFormatConfirmed(string warning, string trackingNumber, int? courierServiceId)
+        {
+            string key = OrderDoneManager.WaybillConfirmKey(trackingNumber, courierServiceId);
+            if (string.IsNullOrEmpty(warning))
+            {
+                pnlWaybillFormat.Visible = false;
+                return true;
+            }
+            if (pnlWaybillFormat.Visible && cbxWaybillFormatOk.Checked && string.Equals(ViewState["WaybillWarned"] as string, key, StringComparison.Ordinal))
+                return true;
+            ViewState["WaybillWarned"] = key;
+            ltrlWaybillFormat.Text = HttpUtility.HtmlEncode(warning);
+            cbxWaybillFormatOk.Checked = false;
+            pnlWaybillFormat.Visible = true;
+            return false;
+        }
+
         private int? GetSelectedCourierServiceId()
         {
             if (ddlCourierService == null || string.IsNullOrEmpty(ddlCourierService.SelectedValue))
@@ -251,6 +272,17 @@ namespace TrackerSQL.Pages
                         updtpnlOrderDone.Update();
                         return;
                     }
+
+                    string formatWarning = OrderDoneManager.GetWaybillFormatWarning(trackingNumber, courierServiceId);
+                    if (!WaybillFormatConfirmed(formatWarning, trackingNumber, courierServiceId))
+                    {
+                        SetStatus("Check the waybill: fix the number or courier, or tick 'Yes, this waybill is right' and press Done again.", isError: true);
+                        updtpnlOrderDone.Update();
+                        return;
+                    }
+                    if (!string.IsNullOrEmpty(formatWarning))
+                        AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                            $"Order Done: contact {customerId} | waybill '{trackingNumber}' kept after the format warning: {formatWarning}");
                 }
 
                 string statusKey = null;

@@ -27,6 +27,9 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Label lblTracking;
         protected global::System.Web.UI.WebControls.TextBox tbxTrackingNumber;
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvTracking;
+        protected global::System.Web.UI.WebControls.Panel pnlWaybillFormat;
+        protected global::System.Web.UI.WebControls.Literal ltrlWaybillFormat;
+        protected global::System.Web.UI.WebControls.CheckBox cbxWaybillFormatOk;
         protected global::System.Web.UI.WebControls.Button btnDone;
         protected global::System.Web.UI.WebControls.ImageButton btnCancel;
         protected global::System.Web.UI.WebControls.Panel pnlCustomerDetailsUpdated;

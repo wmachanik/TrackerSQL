@@ -437,15 +437,19 @@
                                         <td class="sys-prefs-field"><asp:TextBox ID="txtGpsTileUrl" runat="server" CssClass="sys-prefs-input" /></td>
                                     </tr>
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Where every route starts. Separate lines with ; or , — or type the depot's GPS co-ordinates (e.g. -34.03530, 18.41530) to set the point exactly.">Depot address</span></td>
+                                        <td class="sys-prefs-label"><span title="Where every route starts. The point only changes with Set on map, typed co-ordinates or Look up depot; editing the address alone keeps it.">Depot address</span></td>
                                         <td class="sys-prefs-field">
                                             <asp:TextBox ID="txtGpsDepotAddress" runat="server" CssClass="sys-prefs-input" />
                                             <div class="button-row">
-                                                <asp:Button ID="btnGpsLookupDepot" runat="server" CssClass="filter-panel-btn" Text="Look up depot"
+                                                <button type="button" class="filter-panel-btn" onclick="trackerOpenDepot();"
+                                                    title="Opens a map: drag the pin to the depot (or type co-ordinates / search), then Save depot point">Set on map</button>
+                                                <asp:Button ID="btnGpsLookupDepot" runat="server" CssClass="filter-panel-btn sys-prefs-secondary-btn" Text="Look up depot"
                                                     OnClick="btnGpsLookupDepot_Click" CausesValidation="false"
-                                                    ToolTip="Saves the settings, then finds the depot's GPS point (uses one lookup)" />
+                                                    ToolTip="Saves the settings, then finds the depot's GPS point from the address (uses one lookup)" />
                                                 <asp:Label ID="lblGpsDepotPoint" runat="server" CssClass="sys-prefs-saved-hint" />
                                             </div>
+                                            <span class="sys-prefs-saved-hint">Best: <em>Set on map</em> and drag the pin to the depot. Or type GPS co-ordinates
+                                                (e.g. -34.03530, 18.41530) here and press Save, or type the address and press <em>Look up depot</em>.</span>
                                         </td>
                                     </tr>
                                 </table>
@@ -510,4 +514,73 @@
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+
+    <script type="text/javascript">
+        (function () {
+            var dx = 0, dy = 0;
+            function dialog() { return document.querySelector('#depotGpsOverlay .contact-gps-dialog'); }
+            function place() { var d = dialog(); if (d) d.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)'; }
+
+            window.trackerOpenDepot = function () {
+                var overlay = document.getElementById('depotGpsOverlay');
+                var frame = document.getElementById('depotGpsFrame');
+                if (!overlay || !frame) return;
+                dx = 0; dy = 0; place();
+                frame.src = '<%= ResolveUrl("~/Tools/DepotLocation.aspx") %>';
+                overlay.style.display = 'flex';
+            };
+
+            document.addEventListener('mousedown', function (e) {
+                var bar = e.target.closest ? e.target.closest('#depotGpsDialogBar') : null;
+                if (!bar || e.button !== 0 || e.target.closest('button')) return;
+                e.preventDefault();
+                var overlay = document.getElementById('depotGpsOverlay');
+                var startX = e.clientX - dx, startY = e.clientY - dy;
+                overlay.classList.add('is-dragging');
+                function move(ev) {
+                    var d = dialog(), r = d.getBoundingClientRect();
+                    var nx = ev.clientX - startX, ny = ev.clientY - startY;
+                    var minVisible = 80;
+                    var baseLeft = r.left - dx, baseTop = r.top - dy;
+                    nx = Math.min(Math.max(nx, minVisible - baseLeft - r.width), window.innerWidth - minVisible - baseLeft);
+                    ny = Math.min(Math.max(ny, -baseTop), window.innerHeight - 40 - baseTop);
+                    dx = nx; dy = ny; place();
+                }
+                function up() {
+                    overlay.classList.remove('is-dragging');
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                }
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            });
+
+            window.trackerDepotSaved = function (text) {
+                var label = document.getElementById('<%= lblGpsDepotPoint.ClientID %>');
+                if (label) label.textContent = text;
+            };
+            window.trackerCloseDepot = function (force) {
+                var overlay = document.getElementById('depotGpsOverlay');
+                var frame = document.getElementById('depotGpsFrame');
+                if (!force) {
+                    try {
+                        var w = frame && frame.contentWindow;
+                        if (w && w.depotRequestClose && !w.depotRequestClose()) return;
+                    } catch (e) { }
+                }
+                if (overlay) overlay.style.display = 'none';
+                if (frame) frame.src = 'about:blank';
+            };
+        })();
+    </script>
+
+    <div id="depotGpsOverlay" class="contact-gps-overlay" style="display:none;" role="dialog" aria-label="Depot location">
+        <div class="contact-gps-dialog">
+            <div class="contact-gps-dialog-bar" id="depotGpsDialogBar" title="Drag to move this window">
+                <span><strong>Depot location</strong><span class="contact-location-muted">drag this bar to move the window</span></span>
+                <button type="button" class="filter-panel-btn" onclick="trackerCloseDepot();">Close</button>
+            </div>
+            <iframe id="depotGpsFrame" class="contact-gps-frame" src="about:blank" title="Depot location"></iframe>
+        </div>
+    </div>
 </asp:Content>

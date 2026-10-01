@@ -323,6 +323,7 @@
     <Content Include="Tools\DriverApp.aspx" />
     <Content Include="Tools\DeliveryOrder.aspx" />
     <Content Include="Tools\DriverTracking.aspx" />
+    <Content Include="Tools\DepotLocation.aspx" />
     <Content Include="Tools\Deliveries.aspx" />
     <Content Include="App_Data\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
@@ -481,6 +482,13 @@
     </Compile>
     <Compile Include="Tools\DeliveryOrder.aspx.designer.cs">
       <DependentUpon>DeliveryOrder.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\DepotLocation.aspx.cs">
+      <DependentUpon>DepotLocation.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\DepotLocation.aspx.designer.cs">
+      <DependentUpon>DepotLocation.aspx</DependentUpon>
     </Compile>
     <Compile Include="Tools\DriverTracking.aspx.cs">
       <DependentUpon>DriverTracking.aspx</DependentUpon>

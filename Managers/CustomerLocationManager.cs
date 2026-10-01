@@ -527,8 +527,8 @@ namespace TrackerSQL.Managers
                 Message = "Depot found: " + (result.Label ?? "") + " (" + PointText(result.Latitude, result.Longitude) + ")."
                     + (result.IsPrecise
                         ? string.Empty
-                        : " This is only a rough match (" + (result.Layer ?? "area") + "). For an exact depot point, type its GPS co-ordinates "
-                          + "(e.g. -34.03530, 18.41530 from Google Maps) in the depot address box and click Look up depot again.")
+                        : " This is only a rough match (" + (result.Layer ?? "area") + "). For an exact depot point, press Set on map "
+                          + "and drag the pin to the depot.")
             };
         }
 

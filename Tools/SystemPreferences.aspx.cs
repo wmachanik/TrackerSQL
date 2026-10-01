@@ -392,10 +392,12 @@ namespace TrackerSQL.Tools
                     "GPS map changed from " + (oldMap ?? "(none)") + " to " + s.MapProvider, Context?.User?.Identity?.Name);
 
             string depot = (txtGpsDepotAddress.Text ?? string.Empty).Trim();
-            if (!string.Equals(depot, s.DepotAddress ?? string.Empty, StringComparison.Ordinal))
+            if (CustomerLocationManager.TryParseCoordinates(depot, out decimal depotLat, out decimal depotLng))
             {
-                s.DepotLatitude = null;
-                s.DepotLongitude = null;
+                if (s.DepotLatitude != depotLat || s.DepotLongitude != depotLng)
+                    AppLogger.WriteLog(SystemConstants.LogTypes.System, "GPS depot point set from typed co-ordinates " + depot, Context?.User?.Identity?.Name);
+                s.DepotLatitude = depotLat;
+                s.DepotLongitude = depotLng;
             }
             s.DepotAddress = depot.Length > 0 ? depot : GpsSettings.DefaultDepotAddress;
 

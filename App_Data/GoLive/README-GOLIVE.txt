@@ -78,7 +78,8 @@ SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes whe
 New files to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup), Tools/DeliveryOrder.aspx
 (the order deliveries were made) and Tools/Deliveries.aspx (the new Deliveries & Areas page; top menu "Deliveries");
 the bin DLL holds their code. Site.Master and Default.aspx changed (new menu and home card).
-Also new: Tools/DriverTracking.aspx and Handlers/DriverTrackingData.ashx (driver tracking map); Styles/Site.css changed.
+Also new: Tools/DriverTracking.aspx and Handlers/DriverTrackingData.ashx (driver tracking map), Tools/DepotLocation.aspx
+(depot map popup); Styles/Site.css and Tools/SystemPreferences.aspx changed.
 Live steps:
 1. Deploy; open the site once so the packs run. Check Tools → XMLtoSQL / the system log if a pack failed.
 2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2), open Authentication, copy the Primary Key.
@@ -87,8 +88,8 @@ Live steps:
    Put a spending alert on the subscription (low volume: about 50 lookups a day stays inside the 5,000 free a month).
 3. System Preferences → GPS & Drivers: Lookup service = Azure Maps, paste the key, Save (the key is stored in the
    database and never shown again; it is NOT in Web.config). Map = Azure Maps for the road / satellite popup map
-   (optional; up to 15,000 tiles a day). Depot address: type the depot's GPS co-ordinates (e.g. -34.03530, 18.41530)
-   and press Look up depot so every route starts at the right place.
+   (optional; up to 15,000 tiles a day). Depot: press Set on map, drag the pin onto the depot (Satellite helps),
+   then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
 5. Driver app: install the new APK (0.5.0, asks for location permission on the first delivery or when tracking

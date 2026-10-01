@@ -113,6 +113,7 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnWizNext;
         protected global::System.Web.UI.WebControls.Button btnWizCancel;
         protected global::System.Web.UI.WebControls.View viewGps;
+        protected global::System.Web.UI.WebControls.Label lblGpsMessage;
         protected global::System.Web.UI.WebControls.DropDownList ddlGpsProvider;
         protected global::System.Web.UI.WebControls.Label lblGpsProviderHint;
         protected global::System.Web.UI.WebControls.TextBox txtGpsAzureKey;
@@ -127,6 +128,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.TextBox txtGpsDailyLimit;
         protected global::System.Web.UI.WebControls.Label lblGpsUsedToday;
         protected global::System.Web.UI.WebControls.TextBox txtGpsPerMinute;
+        protected global::System.Web.UI.WebControls.DropDownList ddlGpsMapProvider;
+        protected global::System.Web.UI.WebControls.Label lblGpsMapHint;
         protected global::System.Web.UI.WebControls.TextBox txtGpsTileUrl;
         protected global::System.Web.UI.WebControls.TextBox txtGpsDepotAddress;
         protected global::System.Web.UI.WebControls.Button btnGpsLookupDepot;

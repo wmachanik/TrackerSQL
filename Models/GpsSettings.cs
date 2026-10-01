@@ -11,6 +11,7 @@ namespace TrackerSQL.Models
 
         public const string ProviderHeigit = "HeiGIT";
         public const string ProviderAzureMaps = "AzureMaps";
+        public const string MapOsm = "OSM";
         /// <summary>Azure Maps geocodes may be kept up to 6 months when stored outside Azure; looked up again before then.</summary>
         public const int AzureMapsKeepDays = 180;
         public const int AzureMapsRefreshDaysBefore = 30;
@@ -25,6 +26,8 @@ namespace TrackerSQL.Models
         public int GeocodePerMinute { get; set; } = 90;
 
         public string MapTileUrl { get; set; } = DefaultTileUrl;
+        /// <summary>Map shown in the GPS popup: <see cref="MapOsm"/> (MapTileUrl) or <see cref="ProviderAzureMaps"/>.</summary>
+        public string MapProvider { get; set; } = MapOsm;
         public string DepotAddress { get; set; } = DefaultDepotAddress;
         public decimal? DepotLatitude { get; set; }
         public decimal? DepotLongitude { get; set; }
@@ -50,6 +53,9 @@ namespace TrackerSQL.Models
         /// <summary>The chosen geocoder has its key.</summary>
         public bool HasApiKey => IsAzureMaps ? HasAzureMapsKey : HasHeigitKey;
         public string ProviderDisplay => IsAzureMaps ? "Azure Maps" : "HeiGIT (OpenStreetMap)";
+        public bool IsAzureMap => string.Equals(MapProvider, ProviderAzureMaps, StringComparison.OrdinalIgnoreCase);
+        /// <summary>Azure Maps chosen for the map and its key is saved; otherwise the popup uses MapTileUrl.</summary>
+        public bool UseAzureMap => IsAzureMap && HasAzureMapsKey;
         public bool HasDepotPoint => DepotLatitude.HasValue && DepotLongitude.HasValue;
     }
 }

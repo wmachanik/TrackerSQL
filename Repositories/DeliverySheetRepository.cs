@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using TrackerSQL.Classes;
+using TrackerSQL.Classes.Geo;
 using TrackerSQL.Models;
 
 namespace TrackerSQL.Repositories
@@ -55,12 +57,13 @@ namespace TrackerSQL.Repositories
                     o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
+                    NoGeo,
+                    GeoSortKey,
                     OffDay,
                     DeliveryOrder,
                     ar.AreaName,
-                    NoGeo,
-                    GeoSortKey,
                     c.CompanyName,
+                    o.OrderID,
                     i.SortOrder";
 
             return ExecuteDeliverySheetQuery(sql, parameters, "DeliverySheetRepository.GetDeliverySheetRows");
@@ -119,12 +122,13 @@ namespace TrackerSQL.Repositories
                     o.Done,
                     o.RequiredByDate,
                     o.ToBeDeliveredByID,
+                    NoGeo,
+                    GeoSortKey,
                     OffDay,
                     DeliveryOrder,
                     ar.AreaName,
-                    NoGeo,
-                    GeoSortKey,
                     c.CompanyName,
+                    o.OrderID,
                     i.SortOrder";
 
             return ExecuteDeliverySheetQuery(sql, parameters, "DeliverySheetRepository.SearchDeliverySheetRowsByContact");
@@ -146,10 +150,10 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// One row per order line. Delivery order is the area's order (Lookups → Delivery Days).
-        /// OffDay = 0 when one of the area's prep days (prep day + delay, 1=Sun..7=Sat) delivers on the
-        /// order's weekday; off-day areas and contacts without an area / prep days (OffDay 1) sort after them. Within an area, contacts
-        /// with a GPS point sort by geohash (NoGeo 0, GeoSortKey) so neighbours are together; the rest follow by name. The flag is the order's own, or the
+        /// One row per order line. Each driver's stops are in geohash order (GeoSortKey: the contact's GPS point, or for a contact
+        /// without one yet its area's busiest geohash cell), then PlanRoutes puts them in driving order from the depot. Stops with neither (NoGeo 1) follow in the
+        /// old area order: OffDay = 0 when one of the area's prep days (prep day + delay, 1=Sun..7=Sat) delivers on the order's
+        /// weekday, then the area's delivery order (Lookups → Delivery Days), then name. The flag is the order's own, or the
         /// contact's account type for orders created before flags were stored on orders.
         /// </summary>
         private static string BaseDeliverySheetSql()
@@ -185,7 +189,8 @@ namespace TrackerSQL.Repositories
                     ar.ShortCode AS AreaShortCode,
                     COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID,
                     " + (geo
-                        ? "CASE WHEN ISNULL(gl.Geohash, '') = '' THEN 1 ELSE 0 END AS NoGeo, gl.Geohash AS GeoSortKey"
+                        ? "CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
+                            + CustomerLocationRepository.RouteHashSql + " AS GeoSortKey"
                         : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @"
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
@@ -199,9 +204,7 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i
-                    ON ol.ItemID = i.ItemID" + (geo ? @"
-                LEFT JOIN dbo.CustomerLocationTbl gl
-                    ON gl.ContactID = o.ContactID" : string.Empty) + @"
+                    ON ol.ItemID = i.ItemID" + (geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty) + @"
                 OUTER APPLY (
                     SELECT TOP 1 a.DeliveryOrder,
                         CASE WHEN ((a.PrepDayOfWeekID - 1 + ISNULL(a.DeliveryDelayDays, 0)) % 7) + 1
@@ -253,6 +256,7 @@ namespace TrackerSQL.Repositories
             string context)
         {
             var result = new List<DeliverySheetOrderRow>();
+            var routeHash = new Dictionary<int, string>();
 
             try
             {
@@ -261,16 +265,60 @@ namespace TrackerSQL.Repositories
                 {
                     while (rdr != null && rdr.Read())
                     {
-                        result.Add(MapDeliverySheetRow(rdr));
+                        DeliverySheetOrderRow row = MapDeliverySheetRow(rdr);
+                        result.Add(row);
+                        if (!routeHash.ContainsKey(row.OrderID))
+                            routeHash[row.OrderID] = rdr["GeoSortKey"] == DBNull.Value ? null : rdr["GeoSortKey"].ToString();
                     }
                 }
 
-                return RepositoryListResult<DeliverySheetOrderRow>.Ok(result);
+                return RepositoryListResult<DeliverySheetOrderRow>.Ok(PlanRoutes(result, routeHash));
             }
             catch (Exception ex)
             {
                 return RepositoryListResult<DeliverySheetOrderRow>.Fail(context, ex);
             }
+        }
+
+        /// <summary>The depot's GPS point (System Preferences → GPS), where every route starts; null when not set.</summary>
+        public static void DepotPoint(out double? latitude, out double? longitude)
+        {
+            latitude = longitude = null;
+            try
+            {
+                GpsSettings settings = new GpsSettingsRepository().Get();
+                if (!settings.HasDepotPoint)
+                    return;
+                latitude = (double)settings.DepotLatitude.Value;
+                longitude = (double)settings.DepotLongitude.Value;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "Route planning: depot point not read: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Each driver's orders for a day (open and delivered separately, as the SQL groups them) in driving order from
+        /// the depot (RoutePlanner); an order's lines stay together.
+        /// </summary>
+        private static List<DeliverySheetOrderRow> PlanRoutes(List<DeliverySheetOrderRow> rows, Dictionary<int, string> routeHash)
+        {
+            if (rows.Count < 2)
+                return rows;
+            DepotPoint(out double? depotLat, out double? depotLng);
+
+            var planned = new List<DeliverySheetOrderRow>(rows.Count);
+            foreach (var run in rows.GroupBy(r => new { r.Done, Day = r.RequiredByDate.Date, r.ToBeDeliveredByID }))
+            {
+                List<List<DeliverySheetOrderRow>> orders = run.GroupBy(r => r.OrderID).Select(g => g.ToList()).ToList();
+                foreach (List<DeliverySheetOrderRow> order in RoutePlanner.Order(orders,
+                    o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng))
+                {
+                    planned.AddRange(order);
+                }
+            }
+            return planned;
         }
 
         private static DeliverySheetOrderRow MapDeliverySheetRow(IDataRecord rdr)

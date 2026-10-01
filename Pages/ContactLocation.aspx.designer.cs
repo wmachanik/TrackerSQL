@@ -13,6 +13,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.HiddenField hdnLng;
         protected global::System.Web.UI.WebControls.HiddenField hdnHasPoint;
         protected global::System.Web.UI.WebControls.HiddenField hdnTileUrl;
+        protected global::System.Web.UI.WebControls.HiddenField hdnAzureTiles;
         protected global::System.Web.UI.WebControls.Literal litContactName;
         protected global::System.Web.UI.WebControls.Literal litAddress;
         protected global::System.Web.UI.WebControls.Literal litMatched;

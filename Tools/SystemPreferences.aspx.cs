@@ -293,6 +293,11 @@ namespace TrackerSQL.Tools
             txtGpsDailyLimit.Text = s.GeocodeDailyLimit.ToString();
             txtGpsPerMinute.Text = s.GeocodePerMinute.ToString();
             lblGpsUsedToday.Text = " used today: " + repo.GetCallsToday(GpsSettingsRepository.ServiceFor(s));
+            ddlGpsMapProvider.SelectedValue = s.IsAzureMap ? GpsSettings.ProviderAzureMaps : GpsSettings.MapOsm;
+            lblGpsMapHint.Text = s.IsAzureMap && !s.HasAzureMapsKey
+                ? " No Azure Maps key saved: the popup shows OpenStreetMap until you add one."
+                : " Map tiles today: " + repo.GetCallsToday(GpsSettingsRepository.AzureTileService) + " of " + GpsSettingsRepository.AzureTileDailyLimit + " Azure tiles (15 tiles = 1 transaction).";
+            lblGpsMapHint.Visible = s.IsAzureMap;
             txtGpsTileUrl.Text = s.MapTileUrl;
             txtGpsDepotAddress.Text = s.DepotAddress;
             lblGpsDepotPoint.Text = s.HasDepotPoint
@@ -379,6 +384,13 @@ namespace TrackerSQL.Tools
             }
             s.MapTileUrl = tiles.Length > 0 ? tiles : GpsSettings.DefaultTileUrl;
 
+            string oldMap = s.MapProvider;
+            s.MapProvider = ddlGpsMapProvider.SelectedValue == GpsSettings.ProviderAzureMaps
+                ? GpsSettings.ProviderAzureMaps : GpsSettings.MapOsm;
+            if (!string.Equals(oldMap, s.MapProvider, StringComparison.OrdinalIgnoreCase))
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "GPS map changed from " + (oldMap ?? "(none)") + " to " + s.MapProvider, Context?.User?.Identity?.Name);
+
             string depot = (txtGpsDepotAddress.Text ?? string.Empty).Trim();
             if (!string.Equals(depot, s.DepotAddress ?? string.Empty, StringComparison.Ordinal))
             {
@@ -421,7 +433,9 @@ namespace TrackerSQL.Tools
                 }
                 BindGpsSettings();
                 GpsSettings saved = new GpsSettingsRepository().Get();
-                if (saved.HasApiKey)
+                if (saved.IsAzureMap && !saved.HasAzureMapsKey)
+                    SetStatus("GPS settings saved, but the Azure Maps map needs the Azure Maps key; the popup shows OpenStreetMap until it is added.", true);
+                else if (saved.HasApiKey)
                     SetStatus("GPS settings saved. Lookups use " + saved.ProviderDisplay + ".", false);
                 else
                     SetStatus("GPS settings saved, but " + saved.ProviderDisplay + " has no key, so address lookups are off until you add one.", true);
@@ -445,6 +459,7 @@ namespace TrackerSQL.Tools
                 LocationLookupOutcome outcome = new CustomerLocationManager().LookupDepot(Context?.User?.Identity?.Name);
                 BindGpsSettings();
                 SetStatus(outcome.Message, !outcome.Success);
+                lblGpsDepotPoint.Text = HttpUtility.HtmlEncode(outcome.Message);
             }
             catch (Exception ex)
             {
@@ -863,16 +878,20 @@ namespace TrackerSQL.Tools
 
         private void SetStatus(string message, bool? isError)
         {
+            // The GPS tab is long, so its messages go at the top of the tab rather than in the footer below the fold.
+            bool gps = mvSections.ActiveViewIndex == SectionGps;
+            Label target = gps ? lblGpsMessage : lblMessage;
+            (gps ? lblMessage : lblGpsMessage).Visible = false;
             if (string.IsNullOrWhiteSpace(message))
             {
-                lblMessage.Visible = false;
-                lblMessage.Text = string.Empty;
+                target.Visible = false;
+                target.Text = string.Empty;
                 return;
             }
 
-            lblMessage.Visible = true;
-            lblMessage.Text = message;
-            lblMessage.CssClass = isError == true
+            target.Visible = true;
+            target.Text = message;
+            target.CssClass = isError == true
                 ? "status-message status-error"
                 : isError == false
                     ? "status-message status-success"

@@ -37,6 +37,27 @@ namespace TrackerSQL.Repositories
             return _tableSeen;
         }
 
+        /// <summary>
+        /// Route sorting for the delivery sheets: joins the contact's point (gl) and its area's busiest 5-character geohash cell (gah)
+        /// for contacts without a point yet. <paramref name="contactAlias"/> is the ContactsTbl alias in the outer query.
+        /// </summary>
+        public static string RouteJoinSql(string contactAlias)
+        {
+            return @"
+                LEFT JOIN dbo.CustomerLocationTbl gl ON gl.ContactID = " + contactAlias + @".ContactID
+                OUTER APPLY (
+                    SELECT TOP 1 LEFT(l2.Geohash, 5) AS AreaHash
+                    FROM dbo.CustomerLocationTbl l2
+                    INNER JOIN dbo.ContactsTbl c2 ON c2.ContactID = l2.ContactID
+                    WHERE c2.AreaID = " + contactAlias + @".AreaID AND ISNULL(l2.Geohash, '') <> ''
+                    GROUP BY LEFT(l2.Geohash, 5)
+                    ORDER BY COUNT(*) DESC, LEFT(l2.Geohash, 5)
+                ) gah";
+        }
+
+        /// <summary>The geohash a stop is routed by: its own point, else its area's cell (sorts just before the located neighbours there).</summary>
+        public const string RouteHashSql = "COALESCE(NULLIF(gl.Geohash, ''), gah.AreaHash)";
+
         public CustomerLocation GetByContactId(int contactId)
         {
             using (var db = new TrackerSQLDb())
@@ -187,7 +208,8 @@ WHERE ContactID = @ContactID",
 
         /// <summary>
         /// No location yet (or an Azure Maps point close to expiry) and an address. Default: enabled contacts whose
-        /// "Delivery By" is a DELIVER person. Open orders only: contacts with an order not done yet that one of our drivers is to deliver.
+        /// "Delivery By" is a DELIVER person. Open orders only: contacts with an order not done yet that one of our drivers is to deliver,
+        /// unless the contact's own "Delivery By" is a courier or collection.
         /// </summary>
         private static string NeedingLookupFromWhere(bool openOrdersOnly)
         {
@@ -201,7 +223,9 @@ WHERE ContactID = @ContactID",
 FROM dbo.ContactsTbl c
 WHERE EXISTS (SELECT 1 FROM dbo.OrdersTbl o
               INNER JOIN dbo.PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
-              WHERE o.ContactID = c.ContactID AND ISNULL(o.Done, 0) = 0 AND p.DeliveryType = 'DELIVER')" + common;
+              WHERE o.ContactID = c.ContactID AND ISNULL(o.Done, 0) = 0 AND p.DeliveryType = 'DELIVER')
+  AND NOT EXISTS (SELECT 1 FROM dbo.PeopleTbl cp WHERE cp.PersonID = c.PreferredAgentID
+                  AND cp.DeliveryType IN ('COURIER', 'COLLECT'))" + common;
 
             return @"
 FROM dbo.ContactsTbl c

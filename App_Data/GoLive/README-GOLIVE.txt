@@ -56,16 +56,20 @@ GPS & DRIVERS (customer locations, Azure Maps, learning from deliveries)
 Both packs run automatically at site start-up (OrderFlagsSchemaInstaller); the copies here are for XMLtoSQL
 if start-up could not run them. Run 01 before 02.
 SQLCommands-DriverGps-01.xml   ← PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, Collected option
-SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey; CustomerLocationTbl.ExpiresDate / DriverFixes / LastDriverFixAt;
-                                 MobileDeliveryProofTbl.AccuracyM
+SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; CustomerLocationTbl.ExpiresDate / DriverFixes /
+                                 LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM
+New file to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup; the bin DLL holds its code).
 Live steps:
 1. Deploy; open the site once so the packs run. Check Tools → XMLtoSQL / the system log if a pack failed.
 2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2; region any), open Authentication, copy the Primary Key.
    Put a spending alert on the subscription (low volume: about 50 lookups a day stays inside the 5,000 free a month).
 3. System Preferences → GPS & Drivers: Lookup service = Azure Maps, paste the key, Save (the key is stored in the
-   database and never shown again; it is NOT in Web.config). Look up depot. Keep the HeiGIT key as a fallback if wanted.
+   database and never shown again; it is NOT in Web.config). Map = Azure Maps for the road / satellite popup map
+   (optional; up to 15,000 tiles a day). Depot address: type the depot's GPS co-ordinates (e.g. -34.03530, 18.41530)
+   and press Look up depot so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
-5. Driver app: install the new APK (0.4.0, asks for location permission on the first delivery). The web copy at
+   Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
+5. Driver app: install the new APK (0.4.1, asks for location permission on the first delivery). The web copy at
    /driver is already rebuilt in this release. Drivers must allow location, or proofs simply arrive without GPS.
 6. Tell drivers in writing that the phone's position is saved with each proof of delivery (POPIA).
 Rules to know:
@@ -74,6 +78,9 @@ Rules to know:
 - A Delivered proof with a phone fix of ±75 m or better replaces a looked-up point with the driver's position
   (no expiry). A second visit within 60 m marks it checked. Hand-placed pins are never moved; two visits in a row more
   than 150 m away flag them "Needs checking". The sundry contact is skipped. Every change is in the Customers log.
+- Contacts whose own Delivery By is a Courier (Pargo, Cour) or Collect person are never looked up or learnt.
+- Route order: each driver's stops go from the depot to the nearest next stop (geohash points), then crossings are
+  removed. Areas only matter for stops with no point (they use the area's busiest geohash cell, or go last).
 
 ================================================================================
 */

@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using TrackerSQL.Classes;
+using TrackerSQL.Classes.Geo;
 using TrackerSQL.Models;
 using TrackerSQL.Repositories;
 
@@ -46,12 +47,14 @@ namespace TrackerSQL.Managers
             };
 
             MobileDeliveryStop stop = null;
+            var routeHash = new Dictionary<int, string>();
             foreach (var row in _repo.GetSheetRows(date, personId))
             {
                 if (stop == null || stop.OrderId != row.OrderID)
                 {
                     stop = BuildStop(row);
                     sheet.Orders.Add(stop);
+                    routeHash[row.OrderID] = row.RouteHash;
                 }
 
                 stop.Items.Add(new MobileDeliveryItem
@@ -64,6 +67,8 @@ namespace TrackerSQL.Managers
                              || row.ItemID == SystemConstants.ItemConstants.RepairCheckItemID
                 });
             }
+
+            sheet.Orders = PlanRoutes(sheet.Orders, routeHash);
 
             if (sheet.Orders.Count > 0)
             {
@@ -78,6 +83,28 @@ namespace TrackerSQL.Managers
                 }
             }
             return sheet;
+        }
+
+        /// <summary>
+        /// Each driver's stops (already grouped by driver, in geohash order) in driving order from the depot, numbered 1, 2, 3...
+        /// Delivered stops stay in the route so the numbers do not shift during the day.
+        /// </summary>
+        private static List<MobileDeliveryStop> PlanRoutes(List<MobileDeliveryStop> stops, Dictionary<int, string> routeHash)
+        {
+            if (stops.Count == 0)
+                return stops;
+            DeliverySheetRepository.DepotPoint(out double? depotLat, out double? depotLng);
+
+            var result = new List<MobileDeliveryStop>(stops.Count);
+            foreach (var driverStops in stops.GroupBy(s => s.DeliveryById ?? 0))
+            {
+                List<MobileDeliveryStop> route = RoutePlanner.Order(driverStops.ToList(),
+                    s => routeHash.TryGetValue(s.OrderId, out string hash) ? hash : null, depotLat, depotLng);
+                for (int i = 0; i < route.Count; i++)
+                    route[i].Seq = i + 1;
+                result.AddRange(route);
+            }
+            return result;
         }
 
         private static MobileDeliveryStop BuildStop(MobileApiRepository.SheetRow row)
@@ -103,7 +130,6 @@ namespace TrackerSQL.Managers
                 Po = NullIfEmpty(row.PurchaseOrder),
                 Done = row.Done,
                 Confirmed = row.Confirmed,
-                Seq = row.DeliveryOrder,
                 DeliveryById = row.DeliveryById,
                 DeliveryBy = NullIfEmpty(row.DeliveryBy),
                 Proof = row.ProofID.HasValue

@@ -371,11 +371,14 @@
                             <asp:View ID="viewGps" runat="server">
                                 <h2 class="sys-prefs-section-title">GPS &amp; Drivers</h2>
                                 <p class="sys-prefs-phase-note">
-                                    Customer GPS points are looked up once from the contact's address (only for contacts whose
-                                    "Delivery By" person is set to <em>Deliver</em> on Lookups → People) and kept until the address changes.
+                                    Customer GPS points are looked up once from the contact's address and kept until the address changes,
+                                    only for contacts our own drivers deliver to ("Delivery By" person set to <em>Deliver</em> on
+                                    Lookups &rarr; People). Contacts that collect or go by courier (e.g. Pargo) are never looked up.
+                                    Each driver's stops on the delivery sheet and in the app are put in route order by geohash.
                                     When a driver delivers with the app, the phone's position replaces the looked-up point; a second
                                     delivery at the same spot marks it checked. Hand-placed pins are never moved.
                                 </p>
+                                <asp:Label ID="lblGpsMessage" runat="server" CssClass="status-message" Visible="false" />
 
                                 <h3 class="gps-settings-heading">Address lookups</h3>
                                 <table class="detail-form-table sys-prefs-form-table">
@@ -433,11 +436,21 @@
                                 <h3 class="gps-settings-heading">Map and depot</h3>
                                 <table class="detail-form-table sys-prefs-form-table">
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Map picture tiles. OpenStreetMap needs no registration (fair use; no bulk downloads).">Map tiles</span></td>
+                                        <td class="sys-prefs-label"><span title="The map shown in the GPS popup. Azure Maps has a Road / Satellite switch and uses the Azure Maps key above (the key stays on the server). Without a saved Azure key the OpenStreetMap tiles below are used.">Map</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:DropDownList ID="ddlGpsMapProvider" runat="server" CssClass="sys-prefs-input">
+                                                <asp:ListItem Value="OSM" Text="OpenStreetMap (free, the tiles address below)" />
+                                                <asp:ListItem Value="AzureMaps" Text="Azure Maps road + satellite (uses the Azure Maps key)" />
+                                            </asp:DropDownList>
+                                            <asp:Label ID="lblGpsMapHint" runat="server" CssClass="sys-prefs-saved-hint" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="OpenStreetMap map picture tiles (used when Map is OpenStreetMap). No registration needed (fair use; no bulk downloads).">Map tiles</span></td>
                                         <td class="sys-prefs-field"><asp:TextBox ID="txtGpsTileUrl" runat="server" CssClass="sys-prefs-input" /></td>
                                     </tr>
                                     <tr>
-                                        <td class="sys-prefs-label"><span title="Where every route starts. Separate lines with ; or ,">Depot address</span></td>
+                                        <td class="sys-prefs-label"><span title="Where every route starts. Separate lines with ; or , — or type the depot's GPS co-ordinates (e.g. -34.03530, 18.41530) to set the point exactly.">Depot address</span></td>
                                         <td class="sys-prefs-field">
                                             <asp:TextBox ID="txtGpsDepotAddress" runat="server" CssClass="sys-prefs-input" />
                                             <div class="button-row">

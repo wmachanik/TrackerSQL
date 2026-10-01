@@ -88,6 +88,7 @@ namespace TrackerSQL.Models
         public string Po { get; set; }
         public bool Done { get; set; }
         public bool Confirmed { get; set; }
+        /// <summary>Position in the driver's route for the day (1, 2, 3...), in geohash order.</summary>
         public int Seq { get; set; }
         public int? DeliveryById { get; set; }
         public string DeliveryBy { get; set; }

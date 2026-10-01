@@ -1,4 +1,4 @@
-﻿/* Rev: 20260930-04
+﻿/* Rev: 20261001-01
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -9310,7 +9310,8 @@ a.delivery-days-tag.is-promise-gap:hover {
 a.contact-gps-check { margin-left: 0.5em; white-space: nowrap; }
 input.contact-gps-refresh { display: none !important; }
 
-/* Status badge drawn in CSS (tick is a rotated border, "?" is plain Arial) so it does not depend on icon fonts */
+/* Status badge drawn in CSS (tick is a rotated border, "?" is plain Arial) so it does not depend on icon fonts.
+   All three are empty spans so they share the same baseline; text inside the span would sit lower. */
 .gps-badge {
     display: inline-block;
     position: relative;
@@ -9325,6 +9326,14 @@ input.contact-gps-refresh { display: none !important; }
     color: #fff;
 }
 .gps-badge-unsure { background: #d98c1f; }
+.gps-badge-unsure::after {
+    content: "?";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    line-height: 14px;
+}
 .gps-badge-ok { background: #3f8f5a; }
 .gps-badge-found { background: #fff; border: 1px solid #3f8f5a; }
 .gps-badge-ok::after,

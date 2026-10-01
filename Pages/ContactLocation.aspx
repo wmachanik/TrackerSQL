@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Customer GPS location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20260930-04" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20261001-01" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>
@@ -22,6 +22,7 @@
         <asp:HiddenField ID="hdnLng" runat="server" />
         <asp:HiddenField ID="hdnHasPoint" runat="server" />
         <asp:HiddenField ID="hdnTileUrl" runat="server" />
+        <asp:HiddenField ID="hdnAzureTiles" runat="server" />
         <asp:HiddenField ID="hdnDirty" runat="server" Value="0" />
 
         <div class="contact-location-head">
@@ -112,10 +113,35 @@
             var lat = parseFloat(latField.value) || -34.02;
             var lng = parseFloat(lngField.value) || 18.44;
             var map = L.map(mapEl).setView([lat, lng], hasPoint ? 17 : 12);
-            L.tileLayer(tileUrl, {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-            }).addTo(map);
+            function addOsm() {
+                L.tileLayer(tileUrl, {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+            var azureTiles = byId('<%= hdnAzureTiles.ClientID %>').value;
+            if (azureTiles) {
+                var azureAttribution = '&copy; ' + new Date().getFullYear() + ' Microsoft Azure Maps, TomTom';
+                function azureLayer(style) {
+                    return L.tileLayer(azureTiles + '?style=' + style + '&z={z}&x={x}&y={y}', { maxZoom: 19, attribution: azureAttribution });
+                }
+                var road = azureLayer('road').addTo(map);
+                var satellite = L.layerGroup([azureLayer('satellite'), azureLayer('labels')]);
+                var layers = L.control.layers({ 'Road': road, 'Satellite': satellite }, null, { collapsed: false }).addTo(map);
+                // Azure refused (key, daily cap): show OpenStreetMap instead of a blank map.
+                var loaded = 0, failed = 0;
+                road.on('tileload', function () { loaded++; });
+                road.on('tileerror', function () {
+                    if (++failed < 4 || loaded > 0) return;
+                    road.off('tileerror');
+                    map.removeLayer(road);
+                    map.removeLayer(satellite);
+                    map.removeControl(layers);
+                    addOsm();
+                });
+            } else {
+                addOsm();
+            }
 
             var marker = L.marker([lat, lng], { draggable: true }).addTo(map);
             function setPoint(p) {

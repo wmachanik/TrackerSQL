@@ -42,5 +42,40 @@ namespace TrackerSQL.Classes.Geo
             }
             return hash.ToString();
         }
+
+        /// <summary>Centre of the geohash cell; false for an empty or invalid hash.</summary>
+        public static bool TryDecode(string hash, out double latitude, out double longitude)
+        {
+            latitude = longitude = 0;
+            if (string.IsNullOrWhiteSpace(hash))
+                return false;
+
+            double latMin = -90, latMax = 90, lngMin = -180, lngMax = 180;
+            bool evenBit = true;
+            foreach (char ch in hash.Trim().ToLowerInvariant())
+            {
+                int index = Base32.IndexOf(ch);
+                if (index < 0)
+                    return false;
+                for (int bit = 4; bit >= 0; bit--)
+                {
+                    bool set = ((index >> bit) & 1) == 1;
+                    if (evenBit)
+                    {
+                        double mid = (lngMin + lngMax) / 2;
+                        if (set) lngMin = mid; else lngMax = mid;
+                    }
+                    else
+                    {
+                        double mid = (latMin + latMax) / 2;
+                        if (set) latMin = mid; else latMax = mid;
+                    }
+                    evenBit = !evenBit;
+                }
+            }
+            latitude = (latMin + latMax) / 2;
+            longitude = (lngMin + lngMax) / 2;
+            return true;
+        }
     }
 }

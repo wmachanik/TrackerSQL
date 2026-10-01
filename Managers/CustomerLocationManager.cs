@@ -207,6 +207,8 @@ namespace TrackerSQL.Managers
             if (contact == null)
                 return new LocationLookupOutcome { Skipped = true, Message = "Contact not found." };
 
+            if (!force && CollectsOrCourier(contact))
+                return new LocationLookupOutcome { Skipped = true, Message = "Collects or goes by courier: no GPS point needed." };
             if (!force && !new PersonsRepository().IsDeliverPerson(deliverPersonId ?? contact.PreferredAgentID))
                 return new LocationLookupOutcome { Skipped = true, Message = "Not delivered by one of our drivers." };
 
@@ -281,6 +283,15 @@ namespace TrackerSQL.Managers
             };
         }
 
+        /// <summary>The contact's own "Delivery By" person is a courier (e.g. Pargo) or collection: never looked up or learnt automatically.</summary>
+        private static bool CollectsOrCourier(Contact contact)
+        {
+            if (contact?.PreferredAgentID == null)
+                return false;
+            string type = new PersonsRepository().GetDeliveryType(contact.PreferredAgentID.Value);
+            return type == DeliveryTypes.Courier || type == DeliveryTypes.Collect;
+        }
+
         /// <summary>A person placed or confirmed the pin on the map.</summary>
         public CustomerLocation SetManual(int contactId, decimal latitude, decimal longitude, string userName, string matchedAddress = null)
         {
@@ -344,6 +355,12 @@ namespace TrackerSQL.Managers
             if (contact == null
                 || (contact.CompanyName ?? string.Empty).StartsWith(SystemConstants.CustomerConstants.SundryCustomerNamePrefix, StringComparison.OrdinalIgnoreCase))
                 return;
+            if (CollectsOrCourier(contact))
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    who + ": contact collects or goes by courier, phone position not kept", userName);
+                return;
+            }
 
             CustomerLocation existing = _locations.GetByContactId(contactId);
             bool sameVisit = existing?.LastDriverFixAt != null
@@ -439,7 +456,19 @@ namespace TrackerSQL.Managers
         public LocationLookupOutcome LookupDepot(string userName)
         {
             GpsSettings settings = _settingsRepo.Get();
-            string address = (settings.DepotAddress ?? string.Empty).Replace(';', ',');
+            string typed = (settings.DepotAddress ?? string.Empty).Trim();
+            if (TryParseCoordinates(typed, out decimal typedLat, out decimal typedLng))
+            {
+                _settingsRepo.SaveDepotPoint(typedLat, typedLng);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "GPS depot point set from typed co-ordinates " + typed, userName);
+                return new LocationLookupOutcome
+                {
+                    Success = true,
+                    Message = "Depot point set to the co-ordinates typed (" + PointText((double)typedLat, (double)typedLng) + ")."
+                };
+            }
+
+            string address = typed.Replace(';', ',');
             if (address.IndexOf("South Africa", StringComparison.OrdinalIgnoreCase) < 0)
                 address += ", South Africa";
 
@@ -448,14 +477,38 @@ namespace TrackerSQL.Managers
                 return new LocationLookupOutcome { UsedLookup = usedLookup, Message = result.Message };
 
             _settingsRepo.SaveDepotPoint(Math.Round((decimal)result.Latitude, 6), Math.Round((decimal)result.Longitude, 6));
+            AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                "GPS depot looked up: " + (result.Label ?? "") + " (" + PointText(result.Latitude, result.Longitude) + ")"
+                + (result.IsPrecise ? string.Empty : " - rough match"), userName);
             return new LocationLookupOutcome
             {
                 Success = true,
                 UsedLookup = usedLookup,
-                Message = "Depot found: " + (result.Label ?? "") + " (" +
-                    result.Latitude.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) + ", " +
-                    result.Longitude.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) + ")."
+                Message = "Depot found: " + (result.Label ?? "") + " (" + PointText(result.Latitude, result.Longitude) + ")."
+                    + (result.IsPrecise
+                        ? string.Empty
+                        : " This is only a rough match (" + (result.Layer ?? "area") + "). For an exact depot point, type its GPS co-ordinates "
+                          + "(e.g. -34.03530, 18.41530 from Google Maps) in the depot address box and click Look up depot again.")
             };
+        }
+
+        private static string PointText(double lat, double lng)
+        {
+            return lat.ToString("0.00000", CultureInfo.InvariantCulture) + ", " + lng.ToString("0.00000", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>"-34.0353, 18.4153" (comma, semicolon or space between) inside South Africa's rough box.</summary>
+        public static bool TryParseCoordinates(string text, out decimal latitude, out decimal longitude)
+        {
+            latitude = longitude = 0;
+            Match m = Regex.Match(text ?? string.Empty, @"^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$");
+            if (!m.Success
+                || !decimal.TryParse(m.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out latitude)
+                || !decimal.TryParse(m.Groups[2].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out longitude))
+                return false;
+            latitude = Math.Round(latitude, 6);
+            longitude = Math.Round(longitude, 6);
+            return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
         }
 
         /// <summary>Looks up any typed address (uses one lookup) without saving; the Check popup moves the pin there.</summary>

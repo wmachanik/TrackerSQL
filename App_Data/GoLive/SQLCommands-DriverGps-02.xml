@@ -3,6 +3,7 @@
   GPS delivery: Azure Maps as a second geocoder and learning customer points from deliveries
   (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md).
   - GpsSettingsTbl.AzureMapsKey: Azure Maps subscription key (GeocodeProvider = 'AzureMaps' uses it).
+  - GpsSettingsTbl.MapProvider: map shown in the GPS popup ('OSM' or 'AzureMaps'; Azure tiles go through ~/Handlers/MapTile.ashx so the key stays on the server).
   - CustomerLocationTbl.ExpiresDate: Azure Maps points may only be kept 6 months outside Azure; looked up again before then.
   - CustomerLocationTbl.DriverFixes / LastDriverFixAt: deliveries whose phone position agreed with the point.
   - MobileDeliveryProofTbl.AccuracyM: the phone's GPS accuracy (metres) for the delivery position.
@@ -52,6 +53,15 @@
          AND COL_LENGTH(N'dbo.MobileDeliveryProofTbl', N'AccuracyM') IS NULL
       BEGIN
           ALTER TABLE dbo.MobileDeliveryProofTbl ADD AccuracyM DECIMAL(8,1) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GpsSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.GpsSettingsTbl', N'MapProvider') IS NULL
+      BEGIN
+          ALTER TABLE dbo.GpsSettingsTbl ADD MapProvider VARCHAR(20) NULL;
       END
     ]]>
   </command>

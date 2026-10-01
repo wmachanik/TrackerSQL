@@ -88,13 +88,14 @@ It respects the daily cap, so it can take more than one day. It lists every `REV
 
 ## 4. Stop order and ETAs
 
-### Stop order (per driver per day)
-1. Existing rule first: areas normally delivered that day, then off-day areas (as built in 3.0.3.1).
-2. Within that, by the area's `RouteSequence`.
-3. Within an area, the **nearest next stop**: start from the driver's latest position (or the depot) and repeatedly go to the closest remaining stop. Geohash breaks ties and is the fallback when there is no position.
-4. Stops without a location go last in the area, by company name as today.
+### Stop order (per driver per day) — built 2026-10-01
+Areas no longer decide the order (the owner's decision: "it should be using the geohash").
+1. SQL sorts each driver's stops by geohash: the contact's point, or for a contact without one its area's busiest 5-character cell (`CustomerLocationRepository.RouteJoinSql` / `RouteHashSql`).
+2. `Classes/Geo/RoutePlanner` then walks from the **depot** to the **nearest next stop** each time and removes crossings (2-opt on the open route). Ties keep the geohash order. Used by `DeliverySheetRepository` (per driver, per day, open and delivered separately) and `MobileDeliveryManager` (per driver; delivered stops keep their place, `Seq` = 1, 2, 3…).
+3. Stops with no point and no located contact in their area go last, in the old order (off-day, area delivery order, area, company).
 
-This is free, needs no routing API and zig-zags less than a plain geohash sort. Distances are straight-line (haversine) behind a replaceable distance service, so OSRM, GraphHopper or OpenRouteService can be plugged in later.
+A plain geohash sort was tried first and zig-zagged (Hout Bay → Constantia → Sea Point → CBD → Plumstead → Pinelands → UCT on 30 Sep). The nearest-next walk is free, needs no routing API and zig-zags much less.
+Starting from the driver's latest position instead of the depot is left for the tracking step. Distances are straight-line (haversine) behind a replaceable distance service, so OSRM, GraphHopper or OpenRouteService can be plugged in later.
 
 ### ETA
 - Inputs: the driver's position (latest ping, else the depot), the current time, and the remaining stops in order.
@@ -147,6 +148,7 @@ This is free, needs no routing API and zig-zags less than a plain geohash sort. 
 
 **Map**
 - tile address (default `https://tile.openstreetmap.org/{z}/{x}/{y}.png`)
+- map: OpenStreetMap or Azure Maps (`GpsSettingsTbl.MapProvider`, built 2026-10-01). Azure road / satellite tiles go through `Handlers/MapTile.ashx` (signed-in users, key stays on the server, 15,000 tiles a day, counted as `AZURE_TILES`); the popup falls back to OpenStreetMap when there is no key or Azure refuses
 
 **Depot**
 - address (default "Quaffee AT Buitenverwachting; Klein Constantia Rd; Constantia; Cape Town"), with a "Look up" button that fills in latitude and longitude
@@ -195,6 +197,7 @@ Each step is released and used before the next starts.
 ## Resolved points (2026-09-30)
 
 - **Collect:** "Collect" is an entry in People for customers collecting from the shop, so its type is `COLLECT`.
+- **Courier / collect contacts (2026-10-01):** a contact whose own Delivery By is a `COURIER` or `COLLECT` person is never looked up automatically, even when an order for one of our drivers is captured, and delivery fixes for them are not kept. Contacts with `NONE` (e.g. Q, PS) are still looked up when an order for a driver is captured.
 - **Courier-served areas (Durban, Gauteng and so on):** no special rule. Their contacts have a courier as delivery person, so the migration and lookups skip them automatically. This changes on its own if a `DELIVER` person is chosen later.
 - **API key:** registered at HeiGIT. It is entered on System Preferences → GPS & Drivers once step 1 is built, and is never put in code, docs or git.
 

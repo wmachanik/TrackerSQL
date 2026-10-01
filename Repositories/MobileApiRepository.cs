@@ -154,9 +154,14 @@ namespace TrackerSQL.Repositories
             public DateTime? ProofDeliveredAt;
             public string ProofStatus;
             public bool ProofHasSignature;
+            /// <summary>The contact's geohash, or its area's busiest cell when it has no point yet.</summary>
+            public string RouteHash;
         }
 
-        /// <summary>One row per order line for the date (optionally one driver), with contact and latest proof.</summary>
+        /// <summary>
+        /// One row per order line for the date (optionally one driver), with contact and latest proof. Rows are in route order
+        /// per driver: geohash (the contact's point or its area's cell), then the old area order for stops with neither.
+        /// </summary>
         public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null)
         {
             string sql = @"
@@ -169,7 +174,8 @@ namespace TrackerSQL.Repositories
                        ol.QtyOrdered, i.ItemDesc, ip.ItemPrepDescription AS PackDesc,
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
                        pr.MissingItems AS ProofMissingItems,
-                       pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature
+                       pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
+                       {GEO_HASH} AS RouteHash
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
@@ -188,7 +194,8 @@ namespace TrackerSQL.Repositories
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
             bool geo = CustomerLocationRepository.TableSeen();
-            sql = sql.Replace("{GEO_JOIN}", geo ? " LEFT JOIN dbo.CustomerLocationTbl gl ON gl.ContactID = o.ContactID" : string.Empty);
+            sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
+                     .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))");
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
@@ -200,10 +207,12 @@ namespace TrackerSQL.Repositories
                 sql += " AND o.OrderID = @OrderID";
                 ps.Add(P("@OrderID", orderId.Value, DbType.Int32));
             }
-            sql += " ORDER BY o.Done, CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
-                 + " a.AreaName,"
-                 + (geo ? " CASE WHEN ISNULL(gl.Geohash, '') = '' THEN 1 ELSE 0 END, gl.Geohash," : string.Empty)
-                 + " c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
+            // Delivered stops keep their place so the route numbers do not shift during the day.
+            sql += " ORDER BY o.ToBeDeliveredByID,"
+                 + (geo ? " CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END, "
+                        + CustomerLocationRepository.RouteHashSql + "," : string.Empty)
+                 + " CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
+                 + " a.AreaName, c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
 
             return Query(sql, r => new SheetRow
             {
@@ -238,7 +247,8 @@ namespace TrackerSQL.Repositories
                 ProofMissingItems = Str(r, "ProofMissingItems"),
                 ProofDeliveredAt = NDate(r, "ProofDeliveredAt"),
                 ProofStatus = Str(r, "ProofStatus"),
-                ProofHasSignature = Bool(r, "ProofHasSignature")
+                ProofHasSignature = Bool(r, "ProofHasSignature"),
+                RouteHash = Str(r, "RouteHash")
             }, ps.ToArray());
         }
 

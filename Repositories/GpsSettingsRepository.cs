@@ -15,6 +15,23 @@ namespace TrackerSQL.Repositories
         /// <summary>The usage counter for the chosen geocoder (each has its own daily count).</summary>
         public static string ServiceFor(GpsSettings s) => s != null && s.IsAzureMaps ? AzureGeocodeService : GeocodeService;
 
+        /// <summary>Azure Maps map tiles fetched through ~/Handlers/MapTile.ashx (15 tiles = 1 billed transaction).</summary>
+        public const string AzureTileService = "AZURE_TILES";
+        public const int AzureTileDailyLimit = 15000;
+
+        private bool MapProviderColumnExists()
+        {
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                    return db.ExecuteScalar<int>("SELECT CASE WHEN COL_LENGTH(N'dbo.GpsSettingsTbl', N'MapProvider') IS NULL THEN 0 ELSE 1 END") == 1;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public bool TableExists()
         {
             try
@@ -48,6 +65,7 @@ namespace TrackerSQL.Repositories
                 s.GeocodeDailyLimit = Int(r, "GeocodeDailyLimit", s.GeocodeDailyLimit);
                 s.GeocodePerMinute = Int(r, "GeocodePerMinute", s.GeocodePerMinute);
                 s.MapTileUrl = Str(r, "MapTileUrl") ?? s.MapTileUrl;
+                s.MapProvider = (HasColumn(r, "MapProvider") ? Str(r, "MapProvider") : null) ?? s.MapProvider;
                 s.DepotAddress = Str(r, "DepotAddress") ?? s.DepotAddress;
                 s.DepotLatitude = Dec(r, "DepotLatitude");
                 s.DepotLongitude = Dec(r, "DepotLongitude");
@@ -86,6 +104,7 @@ UPDATE dbo.GpsSettingsTbl SET
     GeocodeDailyLimit = @GeocodeDailyLimit,
     GeocodePerMinute = @GeocodePerMinute,
     MapTileUrl = @MapTileUrl,
+    " + (MapProviderColumnExists() ? "MapProvider = @MapProvider," : string.Empty) + @"
     DepotAddress = @DepotAddress,
     DepotLatitude = @DepotLatitude,
     DepotLongitude = @DepotLongitude,
@@ -110,6 +129,7 @@ WHERE SettingsID = 1;";
                 P("@GeocodeDailyLimit", s.GeocodeDailyLimit, DbType.Int32),
                 P("@GeocodePerMinute", s.GeocodePerMinute, DbType.Int32),
                 P("@MapTileUrl", s.MapTileUrl ?? GpsSettings.DefaultTileUrl, DbType.String),
+                P("@MapProvider", s.IsAzureMap ? GpsSettings.ProviderAzureMaps : GpsSettings.MapOsm, DbType.AnsiString),
                 P("@DepotAddress", s.DepotAddress ?? GpsSettings.DefaultDepotAddress, DbType.String),
                 P("@DepotLatitude", s.DepotLatitude, DbType.Decimal),
                 P("@DepotLongitude", s.DepotLongitude, DbType.Decimal),

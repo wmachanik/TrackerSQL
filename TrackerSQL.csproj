@@ -225,6 +225,7 @@
     <Content Include="Pages\ItemsRequired.aspx" />
     <Content Include="Pages\ContactDetails.aspx" />
     <Content Include="Pages\ContactLocation.aspx" />
+    <Content Include="Handlers\MapTile.ashx" />
     <Content Include="Tools\CustomerLocations.aspx" />
     <Content Include="Pages\Contacts.aspx" />
     <Content Include="Pages\ContactsAway.aspx" />
@@ -559,6 +560,7 @@
     <Compile Include="Classes\Geo\GeoDistance.cs" />
     <Compile Include="Classes\Geo\HeigitGeocoder.cs" />
     <Compile Include="Classes\Geo\IGeocoder.cs" />
+    <Compile Include="Classes\Geo\RoutePlanner.cs" />
     <Compile Include="Classes\DiagnosticsIconHelper.cs" />
     <Compile Include="Classes\OrderViewTokenHelper.cs" />
     <Compile Include="Managers\DeliverySheetManager.cs" />
@@ -807,6 +809,9 @@
     </Compile>
     <Compile Include="Pages\ContactLocation.aspx.designer.cs">
       <DependentUpon>ContactLocation.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Handlers\MapTile.ashx.cs">
+      <DependentUpon>MapTile.ashx</DependentUpon>
     </Compile>
     <Compile Include="Tools\CustomerLocations.aspx.cs">
       <DependentUpon>CustomerLocations.aspx</DependentUpon>

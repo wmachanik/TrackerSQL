@@ -42,6 +42,7 @@ namespace TrackerSQL.Pages
 
             GpsSettings settings = new GpsSettingsRepository().Get();
             hdnTileUrl.Value = settings.MapTileUrl;
+            hdnAzureTiles.Value = settings.UseAzureMap ? ResolveUrl("~/Handlers/MapTile.ashx") : string.Empty;
 
             litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
             string addressText = CustomerLocationManager.BuildLookupText(contact, CustomerLocationManager.AreaSuburbForLookup(contact));

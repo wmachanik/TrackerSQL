@@ -58,12 +58,17 @@ if start-up could not run them. Run 01 before 02.
 SQLCommands-DriverGps-01.xml   ← PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, Collected option
 SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; CustomerLocationTbl.ExpiresDate / DriverFixes /
                                  LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM; DeliveryVisitTbl (the order drivers
-                                 really deliver in; filled once from existing proofs)
-New files to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup) and Tools/DeliveryOrder.aspx
-(the order deliveries were made); the bin DLL holds their code.
+                                 really deliver in; filled once from existing proofs); DeliveryRouteTbl (the order a
+                                 driver set in the app for a day); MobileApiSettingsTbl.LandlinePrefixes
+SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes when it is missing (either pack may run first).
+New files to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup), Tools/DeliveryOrder.aspx
+(the order deliveries were made) and Tools/Deliveries.aspx (the new Deliveries & Areas page; top menu "Deliveries");
+the bin DLL holds their code. Site.Master and Default.aspx changed (new menu and home card).
 Live steps:
 1. Deploy; open the site once so the packs run. Check Tools → XMLtoSQL / the system log if a pack failed.
-2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2; region any), open Authentication, copy the Primary Key.
+2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2), open Authentication, copy the Primary Key.
+   The account's region / "data location" list has no South Africa: that is only where Azure keeps the account,
+   not which maps it has. Pick any (e.g. West Europe); South African addresses and maps work the same.
    Put a spending alert on the subscription (low volume: about 50 lookups a day stays inside the 5,000 free a month).
 3. System Preferences → GPS & Drivers: Lookup service = Azure Maps, paste the key, Save (the key is stored in the
    database and never shown again; it is NOT in Web.config). Map = Azure Maps for the road / satellite popup map
@@ -71,7 +76,7 @@ Live steps:
    and press Look up depot so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK (0.4.1, asks for location permission on the first delivery). The web copy at
+5. Driver app: install the new APK (0.4.2, asks for location permission on the first delivery). The web copy at
    /driver is already rebuilt in this release. Drivers must allow location, or proofs simply arrive without GPS.
 6. Tell drivers in writing that the phone's position is saved with each proof of delivery (POPIA).
 Rules to know:
@@ -86,6 +91,10 @@ Rules to know:
 - The driver's own order comes first: each proof sent from the app records which stop it was that day, and the next
   sheets move the contact towards where the driver usually delivers it (one visit counts half, four 80%). See
   Tools → Delivery order. Nothing to set up; it starts learning with the first deliveries.
+- A driver can set the day's order in the app (Change order, ▲ ▼, Save order) before leaving. That order then comes
+  first, also on the office delivery sheet, until the driver taps Suggested order. Logged in the Delivery log.
+- Tools → Driver App → "Landline numbers start with" (default 021): the app offers no WhatsApp for those numbers.
+  Add others (e.g. 011, 087) there; +27 21… numbers count as 021.
 
 ================================================================================
 */

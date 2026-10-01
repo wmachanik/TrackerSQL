@@ -321,6 +321,7 @@
     <Content Include="Downloads\**\*" />
     <Content Include="Tools\DriverApp.aspx" />
     <Content Include="Tools\DeliveryOrder.aspx" />
+    <Content Include="Tools\Deliveries.aspx" />
     <Content Include="App_Data\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\SQLCommands-MobileApi-01.xml" />
@@ -476,6 +477,13 @@
     </Compile>
     <Compile Include="Tools\DeliveryOrder.aspx.designer.cs">
       <DependentUpon>DeliveryOrder.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Deliveries.aspx.cs">
+      <DependentUpon>Deliveries.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\Deliveries.aspx.designer.cs">
+      <DependentUpon>Deliveries.aspx</DependentUpon>
     </Compile>
     <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
     <Compile Include="Managers\MobileApiSchemaInstaller.cs" />
@@ -667,6 +675,7 @@
     <Compile Include="Repositories\ContactsRepository.cs" />
     <Compile Include="Repositories\CustomerLocationRepository.cs" />
     <Compile Include="Repositories\DeliveryVisitRepository.cs" />
+    <Compile Include="Repositories\DeliveryRouteRepository.cs" />
     <Compile Include="Repositories\GpsSettingsRepository.cs" />
     <Compile Include="Repositories\ContactChangeLogRepository.cs" />
     <Compile Include="Repositories\ContactSummariesRepository.cs" />

@@ -183,4 +183,13 @@
       END
     ]]>
   </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'LandlinePrefixes') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileApiSettingsTbl ADD LandlinePrefixes NVARCHAR(200) NULL;
+      END
+    ]]>
+  </command>
 </root>

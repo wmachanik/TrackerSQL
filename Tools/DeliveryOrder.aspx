@@ -24,7 +24,8 @@
             </tr>
         </table>
         <p class="sys-prefs-phase-note">
-            The suggested order on the delivery sheet and in the app comes first from where each driver usually delivers a contact
+            When a driver sets the order in the app before leaving (<em>Driver's plan</em>), that order is used for the day.
+            Otherwise the suggested order on the delivery sheet and in the app comes first from where each driver usually delivers a contact
             (their last <asp:Literal ID="litVisits" runat="server" /> visits; one visit counts half, four visits 80%), then from the GPS
             route from the depot, then from the area order. Days with fewer than <asp:Literal ID="litMinStops" runat="server" /> stops are
             not learnt from. <em>Suggested now</em> is where the stop would be on that day's sheet today.
@@ -41,6 +42,7 @@
                 <asp:HyperLinkField HeaderText="Contact" DataTextField="Contact"
                     DataNavigateUrlFields="ContactID" DataNavigateUrlFormatString="~/Pages/ContactDetails.aspx?ID={0}" />
                 <asp:BoundField HeaderText="Area" DataField="Area" />
+                <asp:BoundField HeaderText="Driver's plan" DataField="PlanText" />
                 <asp:BoundField HeaderText="Suggested now" DataField="SuggestedText" />
             </Columns>
         </asp:GridView>

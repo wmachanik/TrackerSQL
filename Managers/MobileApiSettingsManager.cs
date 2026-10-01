@@ -78,8 +78,40 @@ namespace TrackerSQL.Managers
             {
                 RunDoneOnDelivery = s.RunDoneOnDelivery,
                 SendConfirmation = s.SendDeliveryConfirmation,
-                NotesToOffice = s.AllowNotesToOffice && !string.IsNullOrWhiteSpace(OfficeEmail(s))
+                NotesToOffice = s.AllowNotesToOffice && !string.IsNullOrWhiteSpace(OfficeEmail(s)),
+                LandlinePrefixes = ParsePrefixes(s.LandlinePrefixes ?? DefaultLandlinePrefixes)
             };
+        }
+
+        /// <summary>Used until the setting is saved: Cape Town landlines.</summary>
+        public const string DefaultLandlinePrefixes = "021";
+
+        /// <summary>
+        /// "021, +27 21; 2711" → ["021", "011"]: digits only, a leading +27 / 0027 / 27 becomes 0, duplicates dropped.
+        /// </summary>
+        public static System.Collections.Generic.List<string> ParsePrefixes(string text)
+        {
+            var list = new System.Collections.Generic.List<string>();
+            foreach (string raw in (text ?? string.Empty).Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string p = LocalNumber(raw);
+                if (p.Length >= 2 && !list.Contains(p))
+                    list.Add(p);
+            }
+            return list;
+        }
+
+        /// <summary>A phone number or prefix in local form: "+27 21 555" → "021555", "0027 82" → "082".</summary>
+        public static string LocalNumber(string number)
+        {
+            string s = (number ?? string.Empty).Trim();
+            bool plus = s.StartsWith("+");
+            string digits = new string(Array.FindAll(s.ToCharArray(), char.IsDigit));
+            if (digits.StartsWith("0027"))
+                return "0" + digits.Substring(4);
+            if ((plus || digits.Length != 0 && !digits.StartsWith("0")) && digits.StartsWith("27"))
+                return "0" + digits.Substring(2);
+            return digits;
         }
 
         private static MobileApiSettings Defaults()

@@ -104,6 +104,8 @@ namespace TrackerSQL.Models
         public double Qty { get; set; }
         public string Item { get; set; }
         public string Pack { get; set; }
+        /// <summary>The packaging's background colour from Lookups → Packaging ("#RRGGBB"), as on the delivery sheet.</summary>
+        public string PackColour { get; set; }
         /// <summary>A repair (Service) line: nothing is handed over, the linked repair says what to do.</summary>
         public bool Repair { get; set; }
     }
@@ -324,6 +326,13 @@ namespace TrackerSQL.Models
         public MobileDriverSettings Settings { get; set; }
     }
 
+    /// <summary>POST /api/v1/delivery/route: the driver's own stop order for a day (empty = back to the suggested order).</summary>
+    public class MobileRouteRequest
+    {
+        public string Date { get; set; }
+        public List<int> OrderIds { get; set; }
+    }
+
     /// <summary>System → Driver App settings (MobileApiSettingsTbl, one row).</summary>
     public class MobileApiSettings
     {
@@ -335,6 +344,8 @@ namespace TrackerSQL.Models
         public bool AllowNotesToOffice { get; set; } = true;
         /// <summary>Where driver notes go; empty means the orders address (SysCCEmailAddress).</summary>
         public string OfficeEmail { get; set; }
+        /// <summary>Comma-separated starts of landline numbers (e.g. "021, 011"); the app offers no WhatsApp for them.</summary>
+        public string LandlinePrefixes { get; set; }
         public System.DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }
@@ -345,6 +356,8 @@ namespace TrackerSQL.Models
         public bool RunDoneOnDelivery { get; set; }
         public bool SendConfirmation { get; set; }
         public bool NotesToOffice { get; set; }
+        /// <summary>Local-format starts of landline numbers ("021"); +27 21 and 27 21 match them too.</summary>
+        public System.Collections.Generic.List<string> LandlinePrefixes { get; set; }
     }
 
     public class MobileContact

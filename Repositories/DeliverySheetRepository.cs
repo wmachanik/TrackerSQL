@@ -160,6 +160,7 @@ namespace TrackerSQL.Repositories
         {
             bool geo = CustomerLocationRepository.TableSeen();
             bool learn = DeliveryVisitRepository.TableSeen();
+            bool plan = DeliveryRouteRepository.TableSeen();
             return @"
                 SELECT DISTINCT
                     o.OrderID,
@@ -193,7 +194,8 @@ namespace TrackerSQL.Repositories
                         ? "CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
                             + CustomerLocationRepository.RouteHashSql + " AS GeoSortKey"
                         : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @",
-                    " + (learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits") + @"
+                    " + (learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits") + @",
+                    " + (plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops") + @"
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
                     ON o.OrderID = ol.OrderID
@@ -220,7 +222,8 @@ namespace TrackerSQL.Repositories
                     SELECT TOP 1 ai.InvoiceTypeID
                     FROM ContactsAccInfoTbl ai
                     WHERE ai.ContactID = o.ContactID
-                ) acc" + (learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty);
+                ) acc" + (learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
+                + (plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty);
         }
 
         private RepositoryListResult<ActiveDeliveryDate> ExecuteActiveDeliveryDateQuery(
@@ -260,6 +263,7 @@ namespace TrackerSQL.Repositories
             var result = new List<DeliverySheetOrderRow>();
             var routeHash = new Dictionary<int, string>();
             var learned = new Dictionary<int, Tuple<double, int>>();
+            var plans = new Dictionary<int, Tuple<int, int>>();
 
             try
             {
@@ -275,10 +279,12 @@ namespace TrackerSQL.Repositories
                         routeHash[row.OrderID] = rdr["GeoSortKey"] == DBNull.Value ? null : rdr["GeoSortKey"].ToString();
                         if (rdr["LearnedPos"] != DBNull.Value)
                             learned[row.OrderID] = Tuple.Create(Convert.ToDouble(rdr["LearnedPos"]), Convert.ToInt32(rdr["LearnedVisits"]));
+                        if (rdr["PlanSeq"] != DBNull.Value)
+                            plans[row.OrderID] = Tuple.Create(Convert.ToInt32(rdr["PlanSeq"]), Convert.ToInt32(rdr["PlanStops"]));
                     }
                 }
 
-                return RepositoryListResult<DeliverySheetOrderRow>.Ok(PlanRoutes(result, routeHash, learned));
+                return RepositoryListResult<DeliverySheetOrderRow>.Ok(PlanRoutes(result, routeHash, learned, plans));
             }
             catch (Exception ex)
             {
@@ -305,12 +311,12 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// Each driver's orders for a day (open and delivered separately, as the SQL groups them): the order the driver
-        /// really delivers in first, then the driving order from the depot (RoutePlanner), then the area order;
-        /// an order's lines stay together.
+        /// Each driver's orders for a day (open and delivered separately, as the SQL groups them): the order the driver set
+        /// in the app for the day, else the order the driver really delivers in, then the driving order from the depot
+        /// (RoutePlanner), then the area order; an order's lines stay together.
         /// </summary>
         private static List<DeliverySheetOrderRow> PlanRoutes(List<DeliverySheetOrderRow> rows, Dictionary<int, string> routeHash,
-            Dictionary<int, Tuple<double, int>> learned)
+            Dictionary<int, Tuple<double, int>> learned, Dictionary<int, Tuple<int, int>> plans)
         {
             if (rows.Count < 2)
                 return rows;
@@ -324,6 +330,7 @@ namespace TrackerSQL.Repositories
                     o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng);
                 route = RoutePlanner.ApplyLearned(route, o => o[0].ContactID,
                     o => learned.TryGetValue(o[0].OrderID, out var l) ? l : null);
+                route = RoutePlanner.ApplyPlan(route, o => plans.TryGetValue(o[0].OrderID, out var p) ? p : null);
                 foreach (List<DeliverySheetOrderRow> order in route)
                     planned.AddRange(order);
             }

@@ -17,8 +17,8 @@ namespace TrackerSQL.Classes
         /// <summary>Value → label, in dropdown order.</summary>
         public static readonly IList<KeyValuePair<string, string>> All = new List<KeyValuePair<string, string>>
         {
-            new KeyValuePair<string, string>(Deliver, "Deliver (our driver)"),
-            new KeyValuePair<string, string>(Courier, "Courier"),
+            new KeyValuePair<string, string>(Deliver, "Does deliveries"),
+            new KeyValuePair<string, string>(Courier, "Courier (waybill)"),
             new KeyValuePair<string, string>(Collect, "Collect (shop)"),
             new KeyValuePair<string, string>(None, "None")
         };

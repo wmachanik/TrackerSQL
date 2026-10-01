@@ -20,6 +20,8 @@ namespace TrackerSQL.Tools
 
         protected global::System.Web.UI.WebControls.TextBox txtOfficeEmail;
 
+        protected global::System.Web.UI.WebControls.TextBox txtLandlines;
+
         protected global::System.Web.UI.WebControls.Literal litOrdersEmail;
 
         protected global::System.Web.UI.WebControls.Button btnSaveSettings;

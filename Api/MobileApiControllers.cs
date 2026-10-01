@@ -115,6 +115,20 @@ namespace TrackerSQL.Api
             return JsonResponse(HttpStatusCode.OK, new { results, autoComplete = MobileAuthManager.AutoCompleteDeliveries });
         }
 
+        /// <summary>
+        /// The driver's own stop order for a day: { date: "yyyy-MM-dd", orderIds: [first, second, ...] }. It comes first in
+        /// the route (app and delivery sheet); an empty list goes back to the suggested order.
+        /// </summary>
+        [HttpPost, Route("route")]
+        public HttpResponseMessage SetRoute([FromBody] MobileRouteRequest request)
+        {
+            int stops = new MobileDeliveryManager().SaveRoute(request, CurrentUser, out string error);
+            if (error != null)
+                return Error(HttpStatusCode.BadRequest, error);
+            LogNote(stops == 0 ? "Route for " + request.Date + " back to the suggested order" : "Route for " + request.Date + " set: " + stops + " stops");
+            return JsonResponse(HttpStatusCode.OK, new { ok = true, stops });
+        }
+
         /// <summary>Proof captured for a date (orders due that day or delivered that day) or for one order. Administrators only.</summary>
         [HttpGet, Route("proofs"), MobileAuthorize(AdminOnly = true)]
         public HttpResponseMessage Proofs(string date = null, int? orderId = null)

@@ -372,7 +372,7 @@
                                 <h2 class="sys-prefs-section-title">GPS &amp; Drivers</h2>
                                 <p class="sys-prefs-phase-note">
                                     Customer GPS points are looked up once from the contact's address and kept until the address changes,
-                                    only for contacts our own drivers deliver to ("Delivery By" person set to <em>Deliver</em> on
+                                    only for contacts our own drivers deliver to ("Delivery By" person set to <em>Does deliveries</em> on
                                     Lookups &rarr; People). Contacts that collect or go by courier (e.g. Pargo) are never looked up.
                                     Each driver's stops on the delivery sheet and in the app are put in route order by geohash.
                                     When a driver delivers with the app, the phone's position replaces the looked-up point; a second

@@ -63,6 +63,7 @@ namespace TrackerSQL.Managers
                     Qty = Math.Round(row.Qty, SystemConstants.DatabaseConstants.NumDecimalPoints),
                     Item = NullIfEmpty(row.ItemDesc),
                     Pack = NullIfEmpty(row.PackDesc),
+                    PackColour = HexColour(row.PackColour),
                     Repair = row.ItemServiceTypeID == SystemConstants.ServiceTypeConstants.Service
                              || row.ItemID == SystemConstants.ItemConstants.RepairCheckItemID
                 });
@@ -112,8 +113,9 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Each driver's stops (already grouped by driver, in geohash order): the order the driver really delivers in first
-        /// (DeliveryVisitTbl), then the driving order from the depot, then the area order; numbered 1, 2, 3...
+        /// Each driver's stops (already grouped by driver, in geohash order): the order the driver set in the app for the day
+        /// (DeliveryRouteTbl), else the order the driver really delivers in (DeliveryVisitTbl), then the driving order from
+        /// the depot, then the area order; numbered 1, 2, 3...
         /// Delivered stops stay in the route so the numbers do not shift during the day.
         /// </summary>
         private static List<MobileDeliveryStop> PlanRoutes(List<MobileDeliveryStop> stops, Dictionary<int, MobileApiRepository.SheetRow> routeRows)
@@ -130,6 +132,9 @@ namespace TrackerSQL.Managers
                 route = RoutePlanner.ApplyLearned(route, s => s.ContactId,
                     s => routeRows.TryGetValue(s.OrderId, out var row) && row.LearnedPos.HasValue
                         ? Tuple.Create(row.LearnedPos.Value, row.LearnedVisits) : null);
+                route = RoutePlanner.ApplyPlan(route,
+                    s => routeRows.TryGetValue(s.OrderId, out var row) && row.PlanSeq.HasValue
+                        ? Tuple.Create(row.PlanSeq.Value, row.PlanStops) : null);
                 for (int i = 0; i < route.Count; i++)
                     route[i].Seq = i + 1;
                 result.AddRange(route);
@@ -176,6 +181,61 @@ namespace TrackerSQL.Managers
                     }
                     : null
             };
+        }
+
+        /// <summary>"#RRGGBB" (or "#RGB") from Lookups → Packaging, else null.</summary>
+        private static string HexColour(string value)
+        {
+            string v = (value ?? string.Empty).Trim();
+            return System.Text.RegularExpressions.Regex.IsMatch(v, "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$") ? v.ToUpperInvariant() : null;
+        }
+
+        /// <summary>
+        /// The driver's own order for the day, set in the app before leaving (orders first to last; several orders at one
+        /// client count once). It comes first in the route on the app and the delivery sheet; an empty list goes back to
+        /// the suggested order. Returns the number of stops saved.
+        /// </summary>
+        public int SaveRoute(MobileRouteRequest request, MobileTokenUser user, out string error)
+        {
+            error = null;
+            if (user?.PersonId == null)
+            {
+                error = "Your Tracker login is not linked to a person (Lookups → People), so there is no route to set.";
+                return 0;
+            }
+            if (request == null || !DateTime.TryParseExact(request.Date ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out DateTime day))
+            {
+                error = "date must be yyyy-MM-dd.";
+                return 0;
+            }
+            List<int> orderIds = request.OrderIds ?? new List<int>();
+            if (orderIds.Count > 500)
+            {
+                error = "Send at most 500 orders.";
+                return 0;
+            }
+            if (!DeliveryRouteRepository.TableSeen())
+            {
+                error = "Tracker is not ready for driver routes yet (SQLCommands-DriverGps-02.xml).";
+                return 0;
+            }
+
+            var repo = new DeliveryRouteRepository();
+            Dictionary<int, int> contactOf = repo.ContactsForOrders(day, orderIds);
+            List<int> contacts = orderIds.Where(contactOf.ContainsKey).Select(id => contactOf[id]).Distinct().ToList();
+            if (orderIds.Count > 0 && contacts.Count == 0)
+            {
+                error = "None of those orders are due on " + day.ToString("yyyy-MM-dd") + ".";
+                return 0;
+            }
+            repo.Save(day, user.PersonId.Value, contacts, user.UserName);
+
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, contacts.Count == 0
+                ? "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " went back to the suggested order"
+                : "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " set " + contacts.Count + " stops: contacts "
+                  + string.Join(", ", contacts), user.UserName);
+            return contacts.Count;
         }
 
         /// <summary>ZZName walk-in orders carry the person's name in the notes before the first colon.</summary>

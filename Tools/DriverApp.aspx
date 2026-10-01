@@ -35,6 +35,12 @@
                 <asp:TextBox ID="txtOfficeEmail" runat="server" MaxLength="200" TextMode="Email" Columns="40" />
                 <span class="sys-prefs-help">Leave empty to use the orders address (<asp:Literal ID="litOrdersEmail" runat="server" />).</span>
             </p>
+            <p>
+                <label for="<%= txtLandlines.ClientID %>">Landline numbers start with</label><br />
+                <asp:TextBox ID="txtLandlines" runat="server" MaxLength="200" Columns="40" />
+                <span class="sys-prefs-help">Separate with commas, e.g. <code>021, 011, 087</code>. The app offers no WhatsApp for these numbers
+                    (only Call). Written the local way: <code>021</code> also covers +27 21 and 27 21. Empty = every number may use WhatsApp.</span>
+            </p>
             <div class="button-row">
                 <asp:Button ID="btnSaveSettings" runat="server" Text="Save settings" CssClass="filter-panel-btn" OnClick="btnSaveSettings_Click" />
                 <span class="small"><asp:Literal ID="litSettingsInfo" runat="server" /></span>

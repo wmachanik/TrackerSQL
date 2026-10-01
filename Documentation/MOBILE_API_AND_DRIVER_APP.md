@@ -36,7 +36,7 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Repositories/MobileApiRepository.cs` | All mobile SQL (tokens, proofs, sync refs, log, options, sheet rows, lookups). |
 | `Models/MobileApiModels.cs` | Request/response models. |
 | `Tools/ApiTester.aspx` | Admin page to call every endpoint, view the request log and devices, and "Check API tables". |
-| `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, confirmation email, notes to office, office email). |
+| `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, confirmation email, notes to office, office email, landline prefixes). |
 | `Pages/Lookups.aspx` → Driver Options tab | The delivered / not-delivered choices shown in the app. |
 
 ## 2. Endpoints (`/api/v1`)
@@ -51,9 +51,10 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST auth/logout`, `GET auth/me` | device | |
 | `GET delivery/dates`, `GET delivery/sheet?date=&person=me\|all\|id` | device | ETag / 304 |
 | `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice` |
+| `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
-| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings) |
+| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers) |
 | `GET devices`, `POST devices/{id}/revoke`, `GET log` | **admin** | |
 
 ## 3. Security (as built)

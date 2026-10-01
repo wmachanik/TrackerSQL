@@ -22,6 +22,7 @@ namespace TrackerSQL.Tools
             public int ContactID { get; set; }
             public string Contact { get; set; }
             public string Area { get; set; }
+            public string PlanText { get; set; }
             public string SuggestedText { get; set; }
         }
 
@@ -89,6 +90,7 @@ namespace TrackerSQL.Tools
             {
                 List<DeliveryVisitRepository.Visit> visits = new DeliveryVisitRepository().ListDay(date, personId);
                 Dictionary<string, int> suggested = SuggestedStops(date);
+                Dictionary<string, int> plan = new DeliveryRouteRepository().GetDay(date);
                 gvVisits.DataSource = visits.Select(v => new VisitRow
                 {
                     Driver = v.DriverAbbreviation ?? ("Person " + v.PersonID),
@@ -98,6 +100,7 @@ namespace TrackerSQL.Tools
                     ContactID = v.ContactID,
                     Contact = v.CompanyName ?? ("Contact " + v.ContactID),
                     Area = v.AreaName,
+                    PlanText = plan.TryGetValue(v.PersonID + ":" + v.ContactID, out int planned) ? planned.ToString(CultureInfo.InvariantCulture) : "-",
                     SuggestedText = suggested.TryGetValue(v.PersonID + ":" + v.ContactID, out int seq)
                         || suggested.TryGetValue("*:" + v.ContactID, out seq) ? seq.ToString(CultureInfo.InvariantCulture) : "-"
                 }).ToList();

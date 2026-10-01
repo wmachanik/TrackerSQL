@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Mail;
 using System.Web;
 using System.Web.UI;
+using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 using TrackerSQL.Models;
 
@@ -48,6 +49,7 @@ namespace TrackerSQL.Tools
             chkSendConfirmation.Checked = settings.SendDeliveryConfirmation;
             chkNotesToOffice.Checked = settings.AllowNotesToOffice;
             txtOfficeEmail.Text = settings.OfficeEmail ?? string.Empty;
+            txtLandlines.Text = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(settings.LandlinePrefixes ?? MobileApiSettingsManager.DefaultLandlinePrefixes));
             litOrdersEmail.Text = HttpUtility.HtmlEncode(MobileApiSettingsManager.OrdersEmail);
             litSettingsInfo.Text = saved && settings.UpdatedAt.HasValue
                 ? HttpUtility.HtmlEncode("Last saved " + settings.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm", CultureInfo.InvariantCulture)
@@ -67,18 +69,26 @@ namespace TrackerSQL.Tools
                 return;
             }
 
+            MobileApiSettings before = MobileApiSettingsManager.Load(out _);
+            string landlines = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(txtLandlines.Text));
             var settings = new MobileApiSettings
             {
                 RunDoneOnDelivery = chkRunDone.Checked,
                 SendDeliveryConfirmation = chkSendConfirmation.Checked,
                 AllowNotesToOffice = chkNotesToOffice.Checked,
-                OfficeEmail = office
+                OfficeEmail = office,
+                LandlinePrefixes = landlines
             };
 
             try
             {
                 if (MobileApiSettingsManager.Save(settings, User.Identity.Name))
+                {
+                    string old = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(before.LandlinePrefixes ?? MobileApiSettingsManager.DefaultLandlinePrefixes));
+                    if (old != landlines)
+                        AppLogger.WriteLog(SystemConstants.LogTypes.System, "Driver App landline prefixes changed from '" + old + "' to '" + landlines + "'", User.Identity.Name);
                     SetMsg("Settings saved. Drivers' apps pick them up the next time they refresh.", false);
+                }
                 else
                     SetMsg("Could not save the settings.", true);
             }

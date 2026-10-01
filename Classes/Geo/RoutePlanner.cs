@@ -125,5 +125,27 @@ namespace TrackerSQL.Classes.Geo
             }
             return keyed.OrderBy(k => k.Item3).ThenBy(k => k.Item2).Select(k => k.Item1).ToList();
         }
+
+        /// <summary>
+        /// The order the driver set in the app comes first: stops in the plan (<paramref name="planOf"/>: place 1..stops) go
+        /// in that order; stops added after the plan was made keep their place in <paramref name="route"/> between them.
+        /// </summary>
+        public static List<T> ApplyPlan<T>(IList<T> route, Func<T, Tuple<int, int>> planOf)
+        {
+            int n = route.Count;
+            if (n < 2)
+                return route.ToList();
+
+            var keyed = new List<Tuple<T, int, double>>(n);
+            for (int i = 0; i < n; i++)
+            {
+                Tuple<int, int> plan = planOf(route[i]);
+                double place = plan != null
+                    ? (plan.Item2 > 1 ? (double)(plan.Item1 - 1) / (plan.Item2 - 1) : 0)
+                    : (double)i / (n - 1);
+                keyed.Add(Tuple.Create(route[i], i, place));
+            }
+            return keyed.OrderBy(k => k.Item3).ThenBy(k => k.Item2).Select(k => k.Item1).ToList();
+        }
     }
 }

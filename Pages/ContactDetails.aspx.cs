@@ -220,8 +220,9 @@ namespace TrackerSQL.Pages
                 else
                 {
                     lblGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc);
-                    lblGpsLocation.Text = HttpUtility.HtmlEncode(string.IsNullOrEmpty(loc.Geohash) ? loc.CoordinatesText : loc.Geohash);
-                    lblGpsLocation.ToolTip = loc.StatusDisplay + " (" + loc.OriginText + ") · " + loc.CoordinatesText
+                    lblGpsLocation.Text = HttpUtility.HtmlEncode(loc.CoordinatesText);
+                    lblGpsLocation.ToolTip = loc.StatusDisplay + " (" + loc.OriginText + ")"
+                        + (string.IsNullOrEmpty(loc.Geohash) ? string.Empty : " · geohash " + loc.Geohash)
                         + (string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? string.Empty : " · Matched: " + loc.GeocodedAddress);
                 }
 

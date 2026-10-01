@@ -570,7 +570,7 @@
                                     <asp:TemplateField HeaderText="Delivery Type" SortExpression="DeliveryType"
                                         HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight">
                                         <HeaderTemplate>
-                                            <span title="Deliver = our own driver (gets GPS locations and routes). Courier = waybill / courier on Order Done. Collect = customer collects from the shop. None = does not deliver.">Delivery Type</span>
+                                            <span title="Does deliveries = one of our own drivers: their customers get GPS points, a route and the driver app. Courier (waybill) = sent with a courier such as Pargo: when the order is marked Done, Tracker asks for the courier company and waybill number, and Contact Details shows the Courier list. Collect (shop) = the customer collects from the shop. None = not used for deliveries.">Delivery Type</span>
                                         </HeaderTemplate>
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlDeliveryType" runat="server" />

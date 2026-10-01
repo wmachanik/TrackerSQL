@@ -159,6 +159,10 @@ namespace TrackerSQL.Repositories
             /// <summary>Where drivers really delivered this contact (0 = first stop .. 1 = last) over <see cref="LearnedVisits"/> earlier days.</summary>
             public double? LearnedPos;
             public int LearnedVisits;
+            public string PackColour;
+            /// <summary>Where the driver put this contact in the app for the day (1 = first), of <see cref="PlanStops"/>.</summary>
+            public int? PlanSeq;
+            public int PlanStops;
         }
 
         /// <summary>
@@ -174,11 +178,11 @@ namespace TrackerSQL.Repositories
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        o.ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
                        ol.OrderLineID, ol.ItemID, i.ItemServiceTypeID,
-                       ol.QtyOrdered, i.ItemDesc, ip.ItemPrepDescription AS PackDesc,
+                       ol.QtyOrdered, i.ItemDesc, ip.ItemPrepDescription AS PackDesc, ip.BGColour AS PackColour,
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
                        pr.MissingItems AS ProofMissingItems,
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
-                       {GEO_HASH} AS RouteHash, {LEARN_COLS}
+                       {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
@@ -194,8 +198,11 @@ namespace TrackerSQL.Repositories
                              ORDER BY OffDay, d.DeliveryOrder) apd
                 OUTER APPLY (SELECT TOP 1 m.ProofID, m.Outcome, m.Reason, m.ReceivedByName, m.MissingItems, m.DeliveredAt, m.Status,
                                     CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
-                             FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}
+                             FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}{PLAN_JOIN}
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
+            bool plan = DeliveryRouteRepository.TableSeen();
+            sql = sql.Replace("{PLAN_JOIN}", plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
+                     .Replace("{PLAN_COLS}", plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops");
             bool geo = CustomerLocationRepository.TableSeen();
             sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
                      .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))");
@@ -256,7 +263,10 @@ namespace TrackerSQL.Repositories
                 ProofHasSignature = Bool(r, "ProofHasSignature"),
                 RouteHash = Str(r, "RouteHash"),
                 LearnedPos = r["LearnedPos"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["LearnedPos"]),
-                LearnedVisits = NInt(r, "LearnedVisits") ?? 0
+                LearnedVisits = NInt(r, "LearnedVisits") ?? 0,
+                PackColour = Str(r, "PackColour"),
+                PlanSeq = NInt(r, "PlanSeq"),
+                PlanStops = NInt(r, "PlanStops") ?? 0
             }, ps.ToArray());
         }
 

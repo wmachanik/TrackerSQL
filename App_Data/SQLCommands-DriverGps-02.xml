@@ -4,6 +4,8 @@
   (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md).
   - GpsSettingsTbl.AzureMapsKey: Azure Maps subscription key (GeocodeProvider = 'AzureMaps' uses it).
   - DeliveryVisitTbl: the order drivers really deliver in (one row per day, driver and contact; Position = nth stop of Stops). Filled once from existing proofs.
+  - DeliveryRouteTbl: the order a driver set in the app before leaving (one row per day, driver and contact); it comes first in the route.
+  - MobileApiSettingsTbl.LandlinePrefixes: numbers starting with these are landlines; the driver app offers no WhatsApp for them.
   - GpsSettingsTbl.MapProvider: map shown in the GPS popup ('OSM' or 'AzureMaps'; Azure tiles go through ~/Handlers/MapTile.ashx so the key stays on the server).
   - CustomerLocationTbl.ExpiresDate: Azure Maps points may only be kept 6 months outside Azure; looked up again before then.
   - CustomerLocationTbl.DriverFixes / LastDriverFixAt: deliveries whose phone position agreed with the point.
@@ -110,6 +112,31 @@
                        WHERE v2.VisitDate = v.VisitDate AND v2.PersonID = v.PersonID) vc
           OUTER APPLY (SELECT COUNT(DISTINCT o.ContactID) AS n FROM dbo.OrdersTbl o
                        WHERE o.ToBeDeliveredByID = v.PersonID AND CAST(o.RequiredByDate AS DATE) = v.VisitDate) pl;
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryRouteTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.DeliveryRouteTbl (
+              RouteDate DATE NOT NULL,
+              PersonID INT NOT NULL,
+              ContactID INT NOT NULL,
+              Seq INT NOT NULL,
+              SetAt DATETIME NOT NULL CONSTRAINT DF_DeliveryRoute_SetAt DEFAULT (GETDATE()),
+              SetBy NVARCHAR(100) NULL,
+              CONSTRAINT PK_DeliveryRouteTbl PRIMARY KEY (RouteDate, PersonID, ContactID)
+          );
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'LandlinePrefixes') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileApiSettingsTbl ADD LandlinePrefixes NVARCHAR(200) NULL;
       END
     ]]>
   </command>

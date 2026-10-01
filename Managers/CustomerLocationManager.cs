@@ -97,6 +97,25 @@ namespace TrackerSQL.Managers
             return address.Contains(" " + Norm(name) + " ") ? null : name;
         }
 
+        /// <summary>
+        /// The address names its own suburb or town after the street ("No.20 Birchwood lane, tokai"). The area added after
+        /// it then reads as the town to the geocoder ("…, Tokai, Constantia" matched Constantia in the Northern Cape).
+        /// </summary>
+        public static bool AddressHasOwnSuburb(Contact contact)
+        {
+            return CleanAddressForLookup(contact?.BillingAddress).Split(',')
+                .Select(p => p.Trim())
+                .Skip(1)
+                .Any(p => p.Length > 0 && !Regex.IsMatch(p, @"^\d{4}$") && !p.Equals("South Africa", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>Text for the map popup's search box: the area is only added when the address has no suburb of its own.</summary>
+        public static string SearchTextFor(Contact contact)
+        {
+            string suburb = AddressHasOwnSuburb(contact) ? null : AreaSuburbForLookup(contact);
+            return BuildLookupText(contact, suburb).Replace(", South Africa", string.Empty);
+        }
+
         private const string StreetWords = @"road|rd|street|str|st|avenue|ave|av|drive|dr|crescent|cres|close|cl|lane|ln|way|boulevard|blvd"
             + @"|circle|terrace|tce|walk|square|sq|highway|hwy|link|grove|rise|loop|pass|path|place|pl";
         private const string ComplexWords = @"estate|est|complex|village|court|crt|ct|mansions|lodge|manor|residence|residences"
@@ -161,17 +180,21 @@ namespace TrackerSQL.Managers
 
         /// <summary>
         /// Tries, until one matches the address itself: cleaned address + area suburb (when the address lacks it),
-        /// cleaned address, then the address as typed. Keeps the first rough match when none is exact (at most 3 lookups).
+        /// cleaned address, then the address as typed. When the address names its own suburb, the area is only tried
+        /// after the cleaned address. Keeps the first rough match when none is exact (at most 3 lookups).
         /// </summary>
         private GeocodeResult GeocodeContact(Contact contact, GpsSettings settings, out bool usedLookup)
         {
             usedLookup = false;
             string suburb = AreaSuburbForLookup(contact);
+            string withArea = suburb == null ? null : BuildLookupText(contact, suburb);
+            bool ownSuburb = AddressHasOwnSuburb(contact);
             var queries = new List<string>();
             foreach (string q in new[]
             {
-                suburb == null ? null : BuildLookupText(contact, suburb),
+                ownSuburb ? null : withArea,
                 BuildLookupText(contact, null),
+                ownSuburb ? withArea : null,
                 BuildLookupText(contact, null, clean: false)
             })
             {
@@ -199,6 +222,23 @@ namespace TrackerSQL.Managers
         /// by one of our drivers and has no point yet, or the address changed. <paramref name="force"/> = "look up again".
         /// </summary>
         public LocationLookupOutcome EnsureForContact(int contactId, string userName, bool force = false, int? deliverPersonId = null)
+        {
+            LocationLookupOutcome outcome = LookUpContact(contactId, userName, force, deliverPersonId);
+            if (outcome.UsedLookup)
+            {
+                CustomerLocation loc = outcome.Location;
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + contactId + " | GPS looked up"
+                    + (force ? " again" : string.Empty) + ": "
+                    + (outcome.Success && loc != null
+                        ? (loc.NeedsReview ? "rough" : "found") + " " + loc.CoordinatesText
+                          + (string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? string.Empty : " '" + loc.GeocodedAddress + "'")
+                          + " from '" + loc.SourceAddress + "'"
+                        : "not found - " + outcome.Message), userName);
+            }
+            return outcome;
+        }
+
+        private LocationLookupOutcome LookUpContact(int contactId, string userName, bool force, int? deliverPersonId)
         {
             if (!IsReady)
                 return new LocationLookupOutcome { Skipped = true, Message = "GPS tables are not installed yet." };
@@ -511,25 +551,68 @@ namespace TrackerSQL.Managers
             return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
         }
 
-        /// <summary>Looks up any typed address (uses one lookup) without saving; the Check popup moves the pin there.</summary>
+        /// <summary>
+        /// Looks up any typed address without saving; the Check popup moves the pin there. Tries, until one matches the
+        /// address itself: tidied, as typed, without the last place name, then street and suburb only, all within
+        /// <see cref="AutoLookupRadiusKm"/> of the depot. Only when nothing at all is found nearby is the whole country
+        /// searched (the popup then says how far away the match is).
+        /// </summary>
         public GeocodeResult SearchAddress(string text)
         {
-            string query = (text ?? string.Empty).Trim();
-            if (query.Length == 0)
+            string typed = Regex.Replace((text ?? string.Empty).Trim(), @",?\s*South Africa\s*$", string.Empty, RegexOptions.IgnoreCase).Trim(' ', ',');
+            if (typed.Length == 0)
                 return GeocodeResult.Fail(GeocodeFailure.NotFound, "Type an address to search for.");
-            if (query.IndexOf("South Africa", StringComparison.OrdinalIgnoreCase) < 0)
-                query += ", South Africa";
+
+            var queries = new List<string>();
+            void Add(string q)
+            {
+                q = (q ?? string.Empty).Trim(' ', ',');
+                if (q.Length > 0 && !queries.Any(x => Norm(x) == Norm(q)))
+                    queries.Add(q);
+            }
+            string cleaned = CleanAddressForLookup(typed);
+            Add(cleaned);
+            Add(typed);
+            List<string> parts = (cleaned.Length > 0 ? cleaned : typed).Split(',').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+            string postcode = parts.LastOrDefault(p => Regex.IsMatch(p, @"^\d{4}$"));
+            List<string> places = parts.Where(p => !Regex.IsMatch(p, @"^\d{4}$")).ToList();
+            string WithPostcode(IEnumerable<string> ps) => string.Join(", ", postcode == null ? ps : ps.Concat(new[] { postcode }));
+            if (places.Count >= 3)
+                Add(WithPostcode(places.Take(places.Count - 1)));
+            if (places.Count >= 4)
+                Add(WithPostcode(places.Take(2)));
 
             GpsSettings settings = _settingsRepo.Get();
-            string cleaned = CleanAddressForLookup(query);
-            if (cleaned.Length == 0 || Norm(cleaned) == Norm(query))
-                return Geocode(query, settings, out _);
+            double? radius = settings.HasDepotPoint ? AutoLookupRadiusKm : (double?)null;
+            GeocodeResult best = null;
+            foreach (string query in queries)
+            {
+                GeocodeResult result = Geocode(query + ", South Africa", settings, out _, radiusKm: radius);
+                if (!result.Success && result.Failure != GeocodeFailure.NotFound)
+                    return best ?? result;
+                if (result.Success && result.IsPrecise)
+                    return result;
+                if (best == null || (!best.Success && result.Success))
+                    best = result;
+            }
+            if (best != null && best.Success)
+                return best;
+            if (radius.HasValue)
+            {
+                GeocodeResult anywhere = Geocode(queries[0] + ", South Africa", settings, out _);
+                if (anywhere.Success)
+                    return anywhere;
+            }
+            return best ?? GeocodeResult.Fail(GeocodeFailure.NotFound, "The geocoder could not find this address.");
+        }
 
-            GeocodeResult first = Geocode(cleaned, settings, out _);
-            if ((first.Success && first.IsPrecise) || (!first.Success && first.Failure != GeocodeFailure.NotFound))
-                return first;
-            GeocodeResult second = Geocode(query, settings, out _);
-            return second.Success && (second.IsPrecise || !first.Success) ? second : first;
+        /// <summary>Straight-line km from the depot, or null when the depot point is not set.</summary>
+        public double? KmFromDepot(double latitude, double longitude)
+        {
+            GpsSettings settings = _settingsRepo.Get();
+            if (!settings.HasDepotPoint)
+                return null;
+            return GeoDistance.Metres(latitude, longitude, (double)settings.DepotLatitude.Value, (double)settings.DepotLongitude.Value) / 1000.0;
         }
 
         public int LookupsUsedToday()

@@ -215,11 +215,20 @@
                                         <asp:MenuItem NavigateUrl="~/Pages/PreperationSummary.aspx" Text="Preperation Summary"
                                             Value="Preperation Summary"></asp:MenuItem>
                                     </asp:MenuItem>
+                                    <asp:MenuItem NavigateUrl="~/Tools/Deliveries.aspx" Text="Deliveries" Value="Deliveries" ToolTip="Deliveries and Areas">
+                                        <asp:MenuItem NavigateUrl="~/Tools/Deliveries.aspx" Text="All delivery tools" Value="DeliveriesHub" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/DeliverySheet.aspx" Text="Delivery Sheet" Value="DeliverySheetD" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DeliveryOrder.aspx" Text="Delivery Order" Value="DeliveryOrder" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DriverApp.aspx" Text="Driver App" Value="DriverApp" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/CustomerLocations.aspx" Text="Customer Locations" Value="CustomerLocations" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Areas" Text="Areas" Value="Areas" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=People" Text="People" Value="PeopleD" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx?section=gps" Text="GPS Settings" Value="GpsSettings" />
+                                    </asp:MenuItem>
                                     <asp:MenuItem NavigateUrl="#" Text="System" Value="System">
                                         <asp:MenuItem NavigateUrl="~/Pages/ItemGroups.aspx" Text="Item Groups" Value="Item Groups" />
                                         <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx" Text="Lookup Tables" Value="Lookup Tables" />
                                         <asp:MenuItem NavigateUrl="~/Tools/LogViewer.aspx" Text="Log Viewer" Value="Logs" />
-                                        <asp:MenuItem NavigateUrl="~/Tools/DriverApp.aspx" Text="Driver App" Value="DriverApp" />
                                         <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="System Tools" Value="System Tools">
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemTools.aspx" Text="All Tools" Value="All Tools" />
                                             <asp:MenuItem NavigateUrl="~/Tools/MoveDeliveryDate.aspx" Text="Move Del. Dt" Value="Move Delivery Date" />
@@ -292,6 +301,7 @@
                 <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">Deliveries</a></li>
                 <li><a href="/Pages/Repairs.aspx">Repairs</a></li>
+                <li><a href="/Tools/Deliveries.aspx">Deliveries &amp; Areas</a></li>
                 <li><a href="/Tools/DriverApp.aspx">Driver App</a></li>
                 <li><a href="/Pages/Lookups.aspx">Lookup Tables</a></li>
                 <li>

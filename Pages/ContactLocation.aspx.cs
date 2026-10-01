@@ -45,10 +45,10 @@ namespace TrackerSQL.Pages
             hdnAzureTiles.Value = settings.UseAzureMap ? ResolveUrl("~/Handlers/MapTile.ashx") : string.Empty;
 
             litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
-            string addressText = CustomerLocationManager.BuildLookupText(contact, CustomerLocationManager.AreaSuburbForLookup(contact));
+            string addressText = CustomerLocationManager.SearchTextFor(contact);
             litAddress.Text = HttpUtility.HtmlEncode(addressText);
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
-                txtSearch.Text = addressText.Replace(", South Africa", string.Empty);
+                txtSearch.Text = addressText;
             ViewState["SearchLabel"] = null;
             hdnDirty.Value = "0";
 
@@ -133,7 +133,8 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                GeocodeResult result = new CustomerLocationManager().SearchAddress(txtSearch.Text);
+                var manager = new CustomerLocationManager();
+                GeocodeResult result = manager.SearchAddress(txtSearch.Text);
                 if (!result.Success)
                 {
                     ShowMessage(result.Message ?? "Not found.", true);
@@ -143,11 +144,17 @@ namespace TrackerSQL.Pages
                 SetPoint(Math.Round((decimal)result.Latitude, 6), Math.Round((decimal)result.Longitude, 6), true);
                 ViewState["SearchLabel"] = result.Label;
                 hdnDirty.Value = "1";
-                litMatched.Text = HttpUtility.HtmlEncode((result.Label ?? txtSearch.Text) + " (from search, not saved yet)");
-                ShowMessage(result.IsPrecise
-                    ? "Pin moved to the search result. Check it, then press Save this pin."
-                    : "Only a rough match (suburb / town). Drag the pin to the right spot, then press Save this pin.",
-                    !result.IsPrecise);
+                double? km = manager.KmFromDepot(result.Latitude, result.Longitude);
+                string distance = km.HasValue ? " (" + km.Value.ToString(km.Value < 10 ? "0.0" : "0", CultureInfo.InvariantCulture) + " km from the depot)" : string.Empty;
+                litMatched.Text = HttpUtility.HtmlEncode((result.Label ?? txtSearch.Text) + distance + " (from search, not saved yet)");
+                bool far = km.HasValue && km.Value > 150;
+                ShowMessage(far
+                    ? "The only match is " + km.Value.ToString("0", CultureInfo.InvariantCulture) + " km from the depot: " + result.Label
+                      + ". Check the address (a wrong suburb or town can send it elsewhere) before saving."
+                    : result.IsPrecise
+                        ? "Pin moved to the search result" + distance + ". Check it, then press Save this pin."
+                        : "Only a rough match (suburb / town)" + distance + ". Drag the pin to the right spot, then press Save this pin.",
+                    far || !result.IsPrecise);
             }
             catch (Exception ex)
             {

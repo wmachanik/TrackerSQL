@@ -25,7 +25,7 @@
                     <asp:Label ID="lblToDo" runat="server" /><br />
                     <asp:CheckBox ID="cbxOpenOrdersOnly" runat="server" AutoPostBack="true" OnCheckedChanged="cbxOpenOrdersOnly_CheckedChanged"
                         Text="Only contacts with open orders for our drivers"
-                        ToolTip="Orders not done yet whose delivery person is a Deliver person (even if the contact's usual Delivery By is someone else)" />
+                        ToolTip="Orders not done yet whose delivery person is set to Does deliveries (even if the contact's usual Delivery By is someone else)" />
                 </td>
             </tr>
             <tr>
@@ -43,7 +43,7 @@
             </tr>
         </table>
         <p class="sys-prefs-phase-note">
-            Only contacts whose "Delivery By" person is set to <em>Deliver</em> (Lookups → People) are looked up.
+            Only contacts whose "Delivery By" person is set to <em>Does deliveries</em> (Lookups → People) are looked up.
             Rough matches (suburb or postcode only) are listed below for checking.
             <asp:HyperLink ID="hlSettings" runat="server" NavigateUrl="~/Tools/SystemPreferences.aspx?section=gps" Text="GPS settings" />
         </p>

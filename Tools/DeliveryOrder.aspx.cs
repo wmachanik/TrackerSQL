@@ -1,0 +1,135 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using TrackerSQL.Classes;
+using TrackerSQL.Managers;
+using TrackerSQL.Models;
+using TrackerSQL.Repositories;
+
+namespace TrackerSQL.Tools
+{
+    /// <summary>The order drivers really delivered in (DeliveryVisitTbl), next to where today's route suggestion puts each stop.</summary>
+    public partial class DeliveryOrder : Page
+    {
+        public class VisitRow
+        {
+            public string Driver { get; set; }
+            public string StopText { get; set; }
+            public string TimeText { get; set; }
+            public int ContactID { get; set; }
+            public string Contact { get; set; }
+            public string Area { get; set; }
+            public string SuggestedText { get; set; }
+        }
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            litVisits.Text = DeliveryVisitRepository.LearnFromVisits.ToString(CultureInfo.InvariantCulture);
+            litMinStops.Text = DeliveryVisitRepository.MinStopsToLearn.ToString(CultureInfo.InvariantCulture);
+            if (IsPostBack)
+                return;
+
+            if (!DeliveryVisitRepository.TableSeen())
+            {
+                ShowMessage("The delivery order table is not installed yet; restart the site (SQLCommands-DriverGps-02.xml).", true);
+                return;
+            }
+            foreach (DateTime d in new DeliveryVisitRepository().ListDates(90))
+                ddlDate.Items.Add(new ListItem(d.ToString("ddd dd MMM yyyy", CultureInfo.InvariantCulture), d.ToString("yyyy-MM-dd")));
+            string wanted = Request.QueryString["date"];
+            if (!string.IsNullOrEmpty(wanted) && ddlDate.Items.FindByValue(wanted) != null)
+                ddlDate.SelectedValue = wanted;
+            BindDrivers();
+            BindVisits();
+        }
+
+        protected void Filter_Changed(object sender, EventArgs e)
+        {
+            if (sender == ddlDate)
+                BindDrivers();
+            BindVisits();
+        }
+
+        private bool TryGetDate(out DateTime date)
+        {
+            return DateTime.TryParseExact(ddlDate.SelectedValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+        }
+
+        private void BindDrivers()
+        {
+            string selected = ddlDriver.SelectedValue;
+            ddlDriver.Items.Clear();
+            ddlDriver.Items.Add(new ListItem("All drivers", string.Empty));
+            if (!TryGetDate(out DateTime date))
+                return;
+            foreach (var driver in new DeliveryVisitRepository().ListDay(date, null)
+                .GroupBy(v => v.PersonID).Select(g => g.First()))
+            {
+                ddlDriver.Items.Add(new ListItem(driver.DriverAbbreviation ?? ("Person " + driver.PersonID),
+                    driver.PersonID.ToString(CultureInfo.InvariantCulture)));
+            }
+            if (ddlDriver.Items.FindByValue(selected) != null)
+                ddlDriver.SelectedValue = selected;
+        }
+
+        private void BindVisits()
+        {
+            if (!TryGetDate(out DateTime date))
+            {
+                gvVisits.DataSource = new List<VisitRow>();
+                gvVisits.DataBind();
+                return;
+            }
+            int? personId = int.TryParse(ddlDriver.SelectedValue, out int p) ? p : (int?)null;
+
+            try
+            {
+                List<DeliveryVisitRepository.Visit> visits = new DeliveryVisitRepository().ListDay(date, personId);
+                Dictionary<string, int> suggested = SuggestedStops(date);
+                gvVisits.DataSource = visits.Select(v => new VisitRow
+                {
+                    Driver = v.DriverAbbreviation ?? ("Person " + v.PersonID),
+                    StopText = v.Position.HasValue ? v.Position.Value + " of " + v.Stops : "-",
+                    TimeText = v.FirstAt.ToString("HH:mm", CultureInfo.InvariantCulture)
+                        + (v.LastAt > v.FirstAt.AddMinutes(1) ? " (again " + v.LastAt.ToString("HH:mm", CultureInfo.InvariantCulture) + ")" : string.Empty),
+                    ContactID = v.ContactID,
+                    Contact = v.CompanyName ?? ("Contact " + v.ContactID),
+                    Area = v.AreaName,
+                    SuggestedText = suggested.TryGetValue(v.PersonID + ":" + v.ContactID, out int seq)
+                        || suggested.TryGetValue("*:" + v.ContactID, out seq) ? seq.ToString(CultureInfo.InvariantCulture) : "-"
+                }).ToList();
+                gvVisits.DataBind();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "Delivery order page: " + ex.Message);
+                ShowMessage("Could not load the delivery order: " + ex.Message, true);
+            }
+        }
+
+        /// <summary>Stop numbers on that day's sheet as suggested today, keyed "driver:contact" (and "*:contact").</summary>
+        private static Dictionary<string, int> SuggestedStops(DateTime date)
+        {
+            var map = new Dictionary<string, int>();
+            foreach (MobileDeliveryStop stop in new MobileDeliveryManager().GetSheet(date, null).Orders)
+            {
+                string key = (stop.DeliveryById ?? 0) + ":" + stop.ContactId;
+                if (!map.ContainsKey(key))
+                    map[key] = stop.Seq;
+                if (!map.ContainsKey("*:" + stop.ContactId))
+                    map["*:" + stop.ContactId] = stop.Seq;
+            }
+            return map;
+        }
+
+        private void ShowMessage(string text, bool isError)
+        {
+            lblMessage.Text = System.Web.HttpUtility.HtmlEncode(text);
+            lblMessage.CssClass = "status-message " + (isError ? "status-error" : "status-success");
+            lblMessage.Visible = true;
+        }
+    }
+}

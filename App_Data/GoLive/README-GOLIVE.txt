@@ -57,8 +57,10 @@ Both packs run automatically at site start-up (OrderFlagsSchemaInstaller); the c
 if start-up could not run them. Run 01 before 02.
 SQLCommands-DriverGps-01.xml   ← PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, Collected option
 SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; CustomerLocationTbl.ExpiresDate / DriverFixes /
-                                 LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM
-New file to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup; the bin DLL holds its code).
+                                 LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM; DeliveryVisitTbl (the order drivers
+                                 really deliver in; filled once from existing proofs)
+New files to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup) and Tools/DeliveryOrder.aspx
+(the order deliveries were made); the bin DLL holds their code.
 Live steps:
 1. Deploy; open the site once so the packs run. Check Tools → XMLtoSQL / the system log if a pack failed.
 2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2; region any), open Authentication, copy the Primary Key.
@@ -81,6 +83,9 @@ Rules to know:
 - Contacts whose own Delivery By is a Courier (Pargo, Cour) or Collect person are never looked up or learnt.
 - Route order: each driver's stops go from the depot to the nearest next stop (geohash points), then crossings are
   removed. Areas only matter for stops with no point (they use the area's busiest geohash cell, or go last).
+- The driver's own order comes first: each proof sent from the app records which stop it was that day, and the next
+  sheets move the contact towards where the driver usually delivers it (one visit counts half, four 80%). See
+  Tools → Delivery order. Nothing to set up; it starts learning with the first deliveries.
 
 ================================================================================
 */

@@ -159,6 +159,7 @@ namespace TrackerSQL.Repositories
         private static string BaseDeliverySheetSql()
         {
             bool geo = CustomerLocationRepository.TableSeen();
+            bool learn = DeliveryVisitRepository.TableSeen();
             return @"
                 SELECT DISTINCT
                     o.OrderID,
@@ -191,7 +192,8 @@ namespace TrackerSQL.Repositories
                     " + (geo
                         ? "CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
                             + CustomerLocationRepository.RouteHashSql + " AS GeoSortKey"
-                        : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @"
+                        : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @",
+                    " + (learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits") + @"
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol
                     ON o.OrderID = ol.OrderID
@@ -218,7 +220,7 @@ namespace TrackerSQL.Repositories
                     SELECT TOP 1 ai.InvoiceTypeID
                     FROM ContactsAccInfoTbl ai
                     WHERE ai.ContactID = o.ContactID
-                ) acc";
+                ) acc" + (learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty);
         }
 
         private RepositoryListResult<ActiveDeliveryDate> ExecuteActiveDeliveryDateQuery(
@@ -257,6 +259,7 @@ namespace TrackerSQL.Repositories
         {
             var result = new List<DeliverySheetOrderRow>();
             var routeHash = new Dictionary<int, string>();
+            var learned = new Dictionary<int, Tuple<double, int>>();
 
             try
             {
@@ -267,12 +270,15 @@ namespace TrackerSQL.Repositories
                     {
                         DeliverySheetOrderRow row = MapDeliverySheetRow(rdr);
                         result.Add(row);
-                        if (!routeHash.ContainsKey(row.OrderID))
-                            routeHash[row.OrderID] = rdr["GeoSortKey"] == DBNull.Value ? null : rdr["GeoSortKey"].ToString();
+                        if (routeHash.ContainsKey(row.OrderID))
+                            continue;
+                        routeHash[row.OrderID] = rdr["GeoSortKey"] == DBNull.Value ? null : rdr["GeoSortKey"].ToString();
+                        if (rdr["LearnedPos"] != DBNull.Value)
+                            learned[row.OrderID] = Tuple.Create(Convert.ToDouble(rdr["LearnedPos"]), Convert.ToInt32(rdr["LearnedVisits"]));
                     }
                 }
 
-                return RepositoryListResult<DeliverySheetOrderRow>.Ok(PlanRoutes(result, routeHash));
+                return RepositoryListResult<DeliverySheetOrderRow>.Ok(PlanRoutes(result, routeHash, learned));
             }
             catch (Exception ex)
             {
@@ -299,10 +305,12 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>
-        /// Each driver's orders for a day (open and delivered separately, as the SQL groups them) in driving order from
-        /// the depot (RoutePlanner); an order's lines stay together.
+        /// Each driver's orders for a day (open and delivered separately, as the SQL groups them): the order the driver
+        /// really delivers in first, then the driving order from the depot (RoutePlanner), then the area order;
+        /// an order's lines stay together.
         /// </summary>
-        private static List<DeliverySheetOrderRow> PlanRoutes(List<DeliverySheetOrderRow> rows, Dictionary<int, string> routeHash)
+        private static List<DeliverySheetOrderRow> PlanRoutes(List<DeliverySheetOrderRow> rows, Dictionary<int, string> routeHash,
+            Dictionary<int, Tuple<double, int>> learned)
         {
             if (rows.Count < 2)
                 return rows;
@@ -312,11 +320,12 @@ namespace TrackerSQL.Repositories
             foreach (var run in rows.GroupBy(r => new { r.Done, Day = r.RequiredByDate.Date, r.ToBeDeliveredByID }))
             {
                 List<List<DeliverySheetOrderRow>> orders = run.GroupBy(r => r.OrderID).Select(g => g.ToList()).ToList();
-                foreach (List<DeliverySheetOrderRow> order in RoutePlanner.Order(orders,
-                    o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng))
-                {
+                List<List<DeliverySheetOrderRow>> route = RoutePlanner.Order(orders,
+                    o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng);
+                route = RoutePlanner.ApplyLearned(route, o => o[0].ContactID,
+                    o => learned.TryGetValue(o[0].OrderID, out var l) ? l : null);
+                foreach (List<DeliverySheetOrderRow> order in route)
                     planned.AddRange(order);
-                }
             }
             return planned;
         }

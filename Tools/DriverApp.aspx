@@ -80,5 +80,11 @@
             <p class="small">It opens full screen with its own icon and keeps working with no signal once it has been opened once.
                 Phones only offer to install it from an https:// address.</p>
         </div>
+
+        <div class="complex-form-section">
+            <h3>Delivery order</h3>
+            <p>Each delivery sent from the app records which stop it was that day, and the suggested route learns from it.
+                <a href="DeliveryOrder.aspx">See the order deliveries were made</a>.</p>
+        </div>
     </div>
 </asp:Content>

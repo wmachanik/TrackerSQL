@@ -47,14 +47,14 @@ namespace TrackerSQL.Managers
             };
 
             MobileDeliveryStop stop = null;
-            var routeHash = new Dictionary<int, string>();
+            var routeRows = new Dictionary<int, MobileApiRepository.SheetRow>();
             foreach (var row in _repo.GetSheetRows(date, personId))
             {
                 if (stop == null || stop.OrderId != row.OrderID)
                 {
                     stop = BuildStop(row);
                     sheet.Orders.Add(stop);
-                    routeHash[row.OrderID] = row.RouteHash;
+                    routeRows[row.OrderID] = row;
                 }
 
                 stop.Items.Add(new MobileDeliveryItem
@@ -68,7 +68,7 @@ namespace TrackerSQL.Managers
                 });
             }
 
-            sheet.Orders = PlanRoutes(sheet.Orders, routeHash);
+            sheet.Orders = PlanRoutes(sheet.Orders, routeRows);
 
             if (sheet.Orders.Count > 0)
             {
@@ -86,10 +86,37 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Each driver's stops (already grouped by driver, in geohash order) in driving order from the depot, numbered 1, 2, 3...
+        /// Logs which stop of the day this was (delivered or not: the driver went there), so the route can learn the driver's
+        /// own order. Never fails the sync.
+        /// </summary>
+        private static void RecordDeliveryOrder(MobileApiRepository.OrderBrief order, MobileDeliveryProof proof, MobileTokenUser user)
+        {
+            if (!proof.ContactID.HasValue || proof.ContactID.Value == SystemConstants.CustomerConstants.SundryCustomerID)
+                return;
+            int driver = user?.PersonId ?? order.DeliveryById ?? 0;
+            try
+            {
+                if (!DeliveryVisitRepository.TableSeen())
+                    return;
+                Tuple<int, int> stop = new DeliveryVisitRepository().RecordVisit(proof.DeliveredAt.Date, driver, proof.ContactID.Value, proof.DeliveredAt);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                    "Delivery order: driver " + driver + " " + proof.DeliveredAt.ToString("yyyy-MM-dd HH:mm")
+                    + " | contact " + proof.ContactID.Value + " was stop " + stop.Item1 + " of " + stop.Item2
+                    + " (order " + order.OrderID + ", " + proof.Outcome + ")", user?.UserName);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                    "Delivery order not recorded for order " + order.OrderID + ": " + ex.Message, user?.UserName);
+            }
+        }
+
+        /// <summary>
+        /// Each driver's stops (already grouped by driver, in geohash order): the order the driver really delivers in first
+        /// (DeliveryVisitTbl), then the driving order from the depot, then the area order; numbered 1, 2, 3...
         /// Delivered stops stay in the route so the numbers do not shift during the day.
         /// </summary>
-        private static List<MobileDeliveryStop> PlanRoutes(List<MobileDeliveryStop> stops, Dictionary<int, string> routeHash)
+        private static List<MobileDeliveryStop> PlanRoutes(List<MobileDeliveryStop> stops, Dictionary<int, MobileApiRepository.SheetRow> routeRows)
         {
             if (stops.Count == 0)
                 return stops;
@@ -99,7 +126,10 @@ namespace TrackerSQL.Managers
             foreach (var driverStops in stops.GroupBy(s => s.DeliveryById ?? 0))
             {
                 List<MobileDeliveryStop> route = RoutePlanner.Order(driverStops.ToList(),
-                    s => routeHash.TryGetValue(s.OrderId, out string hash) ? hash : null, depotLat, depotLng);
+                    s => routeRows.TryGetValue(s.OrderId, out var row) ? row.RouteHash : null, depotLat, depotLng);
+                route = RoutePlanner.ApplyLearned(route, s => s.ContactId,
+                    s => routeRows.TryGetValue(s.OrderId, out var row) && row.LearnedPos.HasValue
+                        ? Tuple.Create(row.LearnedPos.Value, row.LearnedVisits) : null);
                 for (int i = 0; i < route.Count; i++)
                     route[i].Seq = i + 1;
                 result.AddRange(route);
@@ -290,6 +320,8 @@ namespace TrackerSQL.Managers
                         "GPS learn from delivery failed for order " + order.OrderID + ": " + ex.Message, user?.UserName);
                 }
             }
+
+            RecordDeliveryOrder(order, proof, user);
 
             var result = new MobileDeliverySyncResult
             {

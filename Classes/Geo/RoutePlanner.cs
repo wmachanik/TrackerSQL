@@ -8,6 +8,7 @@ namespace TrackerSQL.Classes.Geo
     /// Puts a driver's stops in driving order without a routing service: from the start (the depot) always go to the
     /// nearest stop not visited yet, then undo any crossings (2-opt) in the open route. Stops are positioned by their
     /// geohash; ties keep the incoming (geohash) order. Stops without a position keep their order at the end.
+    /// <see cref="ApplyLearned"/> then moves stops towards where drivers really deliver them (DeliveryVisitTbl).
     /// </summary>
     public static class RoutePlanner
     {
@@ -95,6 +96,34 @@ namespace TrackerSQL.Classes.Geo
             return path.Select(node => stops[located[node - 1]])
                 .Concat(unlocated.Select(i => stops[i]))
                 .ToList();
+        }
+
+        /// <summary>
+        /// Puts the driver's own habits first: each stop's place in <paramref name="route"/> (0 = first .. 1 = last) is blended
+        /// with where the driver really delivered it (<paramref name="learnedOf"/>: average place 0..1 and how many visits),
+        /// weighting the learned place by its visits (1 visit = half, 4 visits = 80%). Stops never delivered with the app keep
+        /// their route place. A contact's stops share the place of its first one so they stay together.
+        /// </summary>
+        public static List<T> ApplyLearned<T>(IList<T> route, Func<T, int> contactOf, Func<T, Tuple<double, int>> learnedOf)
+        {
+            int n = route.Count;
+            if (n < 2)
+                return route.ToList();
+
+            var firstIndex = new Dictionary<int, int>();
+            var keyed = new List<Tuple<T, int, double>>(n);
+            for (int i = 0; i < n; i++)
+            {
+                int contact = contactOf(route[i]);
+                if (!firstIndex.TryGetValue(contact, out int first))
+                    firstIndex[contact] = first = i;
+                double place = (double)first / (n - 1);
+                Tuple<double, int> learned = learnedOf(route[i]);
+                if (learned != null && learned.Item2 > 0)
+                    place = (learned.Item2 * Math.Max(0, Math.Min(1, learned.Item1)) + place) / (learned.Item2 + 1);
+                keyed.Add(Tuple.Create(route[i], i, place));
+            }
+            return keyed.OrderBy(k => k.Item3).ThenBy(k => k.Item2).Select(k => k.Item1).ToList();
         }
     }
 }

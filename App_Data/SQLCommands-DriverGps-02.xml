@@ -3,6 +3,7 @@
   GPS delivery: Azure Maps as a second geocoder and learning customer points from deliveries
   (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md).
   - GpsSettingsTbl.AzureMapsKey: Azure Maps subscription key (GeocodeProvider = 'AzureMaps' uses it).
+  - DeliveryVisitTbl: the order drivers really deliver in (one row per day, driver and contact; Position = nth stop of Stops). Filled once from existing proofs.
   - GpsSettingsTbl.MapProvider: map shown in the GPS popup ('OSM' or 'AzureMaps'; Azure tiles go through ~/Handlers/MapTile.ashx so the key stays on the server).
   - CustomerLocationTbl.ExpiresDate: Azure Maps points may only be kept 6 months outside Azure; looked up again before then.
   - CustomerLocationTbl.DriverFixes / LastDriverFixAt: deliveries whose phone position agreed with the point.
@@ -62,6 +63,53 @@
          AND COL_LENGTH(N'dbo.GpsSettingsTbl', N'MapProvider') IS NULL
       BEGIN
           ALTER TABLE dbo.GpsSettingsTbl ADD MapProvider VARCHAR(20) NULL;
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryVisitTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.DeliveryVisitTbl (
+              VisitDate DATE NOT NULL,
+              PersonID INT NOT NULL,
+              ContactID INT NOT NULL,
+              FirstAt DATETIME NOT NULL,
+              LastAt DATETIME NOT NULL,
+              Position INT NULL,
+              Stops INT NOT NULL CONSTRAINT DF_DeliveryVisit_Stops DEFAULT (0),
+              CONSTRAINT PK_DeliveryVisitTbl PRIMARY KEY (VisitDate, PersonID, ContactID)
+          );
+          CREATE INDEX IX_DeliveryVisit_Contact ON dbo.DeliveryVisitTbl (ContactID, VisitDate DESC) INCLUDE (PersonID, Position, Stops);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DeliveryVisitTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.DeliveryVisitTbl)
+         AND EXISTS (SELECT 1 FROM dbo.MobileDeliveryProofTbl WHERE ContactID IS NOT NULL)
+      BEGIN
+          INSERT INTO dbo.DeliveryVisitTbl (VisitDate, PersonID, ContactID, FirstAt, LastAt, Stops)
+          SELECT CAST(p.DeliveredAt AS DATE), COALESCE(p.PersonID, o.ToBeDeliveredByID, 0), p.ContactID,
+                 MIN(p.DeliveredAt), MAX(p.DeliveredAt), 0
+          FROM dbo.MobileDeliveryProofTbl p
+          INNER JOIN dbo.OrdersTbl o ON o.OrderID = p.OrderID
+          WHERE p.ContactID IS NOT NULL AND p.ContactID <> 9  -- 9 = sundry (walk-in) contact
+          GROUP BY CAST(p.DeliveredAt AS DATE), COALESCE(p.PersonID, o.ToBeDeliveredByID, 0), p.ContactID;
+
+          ;WITH r AS (
+              SELECT Position, ROW_NUMBER() OVER (PARTITION BY VisitDate, PersonID ORDER BY FirstAt, ContactID) AS rn
+              FROM dbo.DeliveryVisitTbl)
+          UPDATE r SET Position = rn;
+
+          UPDATE v SET Stops = CASE WHEN ISNULL(pl.n, 0) > vc.n THEN pl.n ELSE vc.n END
+          FROM dbo.DeliveryVisitTbl v
+          CROSS APPLY (SELECT COUNT(*) AS n FROM dbo.DeliveryVisitTbl v2
+                       WHERE v2.VisitDate = v.VisitDate AND v2.PersonID = v.PersonID) vc
+          OUTER APPLY (SELECT COUNT(DISTINCT o.ContactID) AS n FROM dbo.OrdersTbl o
+                       WHERE o.ToBeDeliveredByID = v.PersonID AND CAST(o.RequiredByDate AS DATE) = v.VisitDate) pl;
       END
     ]]>
   </command>

@@ -156,6 +156,9 @@ namespace TrackerSQL.Repositories
             public bool ProofHasSignature;
             /// <summary>The contact's geohash, or its area's busiest cell when it has no point yet.</summary>
             public string RouteHash;
+            /// <summary>Where drivers really delivered this contact (0 = first stop .. 1 = last) over <see cref="LearnedVisits"/> earlier days.</summary>
+            public double? LearnedPos;
+            public int LearnedVisits;
         }
 
         /// <summary>
@@ -175,7 +178,7 @@ namespace TrackerSQL.Repositories
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
                        pr.MissingItems AS ProofMissingItems,
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
-                       {GEO_HASH} AS RouteHash
+                       {GEO_HASH} AS RouteHash, {LEARN_COLS}
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
@@ -191,11 +194,14 @@ namespace TrackerSQL.Repositories
                              ORDER BY OffDay, d.DeliveryOrder) apd
                 OUTER APPLY (SELECT TOP 1 m.ProofID, m.Outcome, m.Reason, m.ReceivedByName, m.MissingItems, m.DeliveredAt, m.Status,
                                     CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
-                             FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr
+                             FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
             bool geo = CustomerLocationRepository.TableSeen();
             sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
                      .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))");
+            bool learn = DeliveryVisitRepository.TableSeen();
+            sql = sql.Replace("{LEARN_JOIN}", learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
+                     .Replace("{LEARN_COLS}", learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits");
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
@@ -248,7 +254,9 @@ namespace TrackerSQL.Repositories
                 ProofDeliveredAt = NDate(r, "ProofDeliveredAt"),
                 ProofStatus = Str(r, "ProofStatus"),
                 ProofHasSignature = Bool(r, "ProofHasSignature"),
-                RouteHash = Str(r, "RouteHash")
+                RouteHash = Str(r, "RouteHash"),
+                LearnedPos = r["LearnedPos"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["LearnedPos"]),
+                LearnedVisits = NInt(r, "LearnedVisits") ?? 0
             }, ps.ToArray());
         }
 

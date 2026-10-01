@@ -27,6 +27,8 @@
 
   3.0.3.1 changes (search "3.0.3.1") - order flags and Lookups Delivery Days:
     1. Version 3.0.3.0 -> 3.0.3.1 (no other config changes)
+    The GPS / driver tracking work in 3.0.3.1 needs no config changes either: the Azure Maps / HeiGIT keys are
+    entered on System Preferences > GPS & Drivers (stored in the database), and the new pages sign in like the rest.
   The order flag columns are added automatically at startup (SQLCommands-OrderFlags-01.xml).
   After the first start, run SQLCommands-OrderFlags-02-ResetContacts.xml once (System Tools > XML file to SQL)
   to put subscription contacts back to a standard account type (the flag is now on the recurring order).

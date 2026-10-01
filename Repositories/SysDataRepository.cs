@@ -15,7 +15,7 @@ namespace TrackerSQL.Repositories
         protected override string KeyColumn => "ID";
 
         protected override string CoreColumns =>
-            "ID, DoRecurringOrders, LastRecurringDate, DateLastPrepDateCalcd, MinReminderDate, GroupReferenceItemID, InternalContactIDs, ShowAreaOnDeliverySheet";
+            "ID, DoRecurringOrders, LastRecurringDate, DateLastPrepDateCalcd, MinReminderDate, GroupReferenceItemID, InternalContactIDs";
 
         /// <summary>
         /// Gets the singleton system data record.
@@ -44,11 +44,6 @@ namespace TrackerSQL.Repositories
         {
             var data = GetSystemData();
             return data?.MinReminderDate ?? DateTime.MinValue;
-        }
-
-        public bool GetShowAreaOnDeliverySheet()
-        {
-            return GetSystemData()?.ShowAreaOnDeliverySheet ?? true;
         }
 
         public int? GetGroupReferenceItemId()

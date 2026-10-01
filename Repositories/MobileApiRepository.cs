@@ -625,7 +625,7 @@ namespace TrackerSQL.Repositories
             };
         }
 
-        // ---------------- Delivery options (Lookups > Driver options) ----------------
+        // ---------------- Delivery options (Lookups > Delivery Outcomes) ----------------
 
         public List<MobileDeliveryOption> GetDeliveryOptions(bool enabledOnly)
         {

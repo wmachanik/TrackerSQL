@@ -11,14 +11,11 @@ namespace TrackerSQL.Managers
         private const string CONST_ZZNAME_PREFIX = "_*:";
 
         private readonly IDictionary<int, InvoiceType> _invoiceTypesById;
-        private readonly bool _showArea;
 
         /// <param name="invoiceTypesById">Order flag lookup (InvoiceTypesTbl) for the pills.</param>
-        /// <param name="showArea">Show the three-letter area pill (System Preferences → General).</param>
-        public DeliverySheetManager(IDictionary<int, InvoiceType> invoiceTypesById, bool showArea = false)
+        public DeliverySheetManager(IDictionary<int, InvoiceType> invoiceTypesById)
         {
             _invoiceTypesById = invoiceTypesById ?? new Dictionary<int, InvoiceType>();
-            _showArea = showArea;
         }
 
         public DeliverySheetBuildResult Build(List<DeliverySheetOrderRow> rows, bool includeDeliveryPeople)
@@ -97,10 +94,6 @@ namespace TrackerSQL.Managers
                 string strippedNotes = StripEmailOut(walkInName);
 
                 item.ContactName = CONST_ZZNAME_PREFIX + " " + strippedNotes;
-            }
-            else if (_showArea)
-            {
-                item.AreaPillHtml = AreaPill.Html(row.AreaName, row.AreaShortCode);
             }
 
             if ((row.Notes ?? string.Empty).StartsWith("+"))

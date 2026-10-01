@@ -102,9 +102,6 @@ namespace TrackerSQL.Models
         /// <summary>Order flag pill HTML (empty when the flag has no pill, e.g. Standard).</summary>
         public string FlagPillHtml { get; set; }
 
-        /// <summary>Area pill HTML, screen only (empty when the option is off or there is no area).</summary>
-        public string AreaPillHtml { get; set; }
-
         public DeliverySheetDisplayItem()
         {
             ContactID = string.Empty;
@@ -114,7 +111,6 @@ namespace TrackerSQL.Models
             Items = string.Empty;
             Notes = string.Empty;
             FlagPillHtml = string.Empty;
-            AreaPillHtml = string.Empty;
         }
     }
 

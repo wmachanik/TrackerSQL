@@ -1391,7 +1391,7 @@
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
 
-        <ajaxToolkit:TabPanel ID="tabpnlDriverOptions" runat="server" HeaderText="Driver Options">
+        <ajaxToolkit:TabPanel ID="tabpnlDriverOptions" runat="server" HeaderText="Delivery Outcomes">
             <ContentTemplate>
                 <asp:UpdatePanel ID="upnlDriverOptions" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                     <Triggers>
@@ -1399,7 +1399,7 @@
                     </Triggers>
                     <ContentTemplate>
                         <p class="page-tone-subtitle" style="margin:0.6rem 0;">
-                            Choices the driver app offers when a delivery is captured, e.g. "Left at reception" or "Nobody there".
+                            How it was delivered, or why not: the choices the driver app offers when a delivery is captured, e.g. "Left at reception" or "Nobody there".
                             Tick <strong>Needs name</strong> when the driver must type who received it or get a signature.
                             Changes reach the phones the next time they have signal.
                         </p>
@@ -1425,7 +1425,7 @@
                                                 AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
                                             <asp:ImageButton ID="btnDoDelete" runat="server" CausesValidation="False" CommandName="Delete"
                                                 AlternateText="Delete" ImageUrl="~/images/imgButtons/Trashcan.gif"
-                                                OnClientClick="return confirm('Delete this driver option? Untick On to hide it instead.');" />
+                                                OnClientClick="return confirm('Delete this delivery outcome? Untick On to hide it instead.');" />
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:ImageButton ID="btnDoAdd" runat="server" CausesValidation="False" CommandName="AddItem"

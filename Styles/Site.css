@@ -1402,6 +1402,22 @@ div.simpleLightBrownForm {
     background: linear-gradient(135deg, #e8edf5 0%, #fff 70%);
 }
 
+/* Deliveries & areas page: one accent per card */
+.home-dashboard .home-tone-dlv-sheet { border-left-color: #9a6b1f; background: linear-gradient(135deg, #f6edd9 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-tracking { border-left-color: #2d7a6f; background: linear-gradient(135deg, #dff2ee 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-order { border-left-color: #4e664d; background: linear-gradient(135deg, #e5f0d4 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-app { border-left-color: #3d5a80; background: linear-gradient(135deg, #e4ebf4 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-move { border-left-color: #c47a2c; background: linear-gradient(135deg, #f8ebda 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-locations { border-left-color: #8b3a3a; background: linear-gradient(135deg, #f5e4e4 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-gps { border-left-color: #2f6f8f; background: linear-gradient(135deg, #e8f3f8 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-areas { border-left-color: #4a6b3a; background: linear-gradient(135deg, #e6f0df 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-days { border-left-color: #b89218; background: linear-gradient(135deg, #faf4c4 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-people { border-left-color: #3f6b4f; background: linear-gradient(135deg, #e2f0e7 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-couriers { border-left-color: #7a3e2e; background: linear-gradient(135deg, #f3e4de 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-outcomes { border-left-color: #1f6f8a; background: linear-gradient(135deg, #dceef4 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-packaging { border-left-color: #7b4ea3; background: linear-gradient(135deg, #f1e8f8 0%, #fff 70%); }
+.home-dashboard .home-tone-dlv-holiday { border-left-color: #8f3d5c; background: linear-gradient(135deg, #f5e0e8 0%, #fff 70%); }
+
 .home-dashboard .dashboard-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -10890,3 +10906,51 @@ a.driver-app-download:hover { background: var(--secondary-brown); color: #fff; }
 .driver-app-settings .sys-prefs-help { display: block; margin: 0.2em 0 0 1.6em; color: #666; font-size: 0.9em; }
 .driver-app-settings label { font-weight: 600; }
 .driver-app-settings input[type=checkbox] + label { font-weight: 600; margin-left: 0.3em; }
+
+/* Delivery pages: headings in normal mixed case ("Delivery sheet"), not the site-wide small capitals */
+.deliveries-hub h3, .deliveries-hub h4, .driver-tracking-page h3 { font-variant: normal; }
+
+/* Tools/DriverTracking.aspx: drivers list beside the map */
+.driver-tracking-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0; }
+.driver-tracking-bar .driver-tracking-warning { color: #8b3a3a; font-weight: 600; }
+.driver-tracking-layout { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+.driver-tracking-side { flex: 1 1 320px; max-width: 460px; min-width: 280px; }
+.driver-tracking-map { flex: 3 1 480px; min-height: 560px; border: 1px solid #cfd8c6; border-radius: 4px; }
+.driver-tracking-list { width: 100%; }
+.driver-tracking-list tbody tr { cursor: pointer; }
+.driver-tracking-list tbody tr.selected td { background: #e6f0df; }
+.driver-tracking-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0, 0, 0, 0.35); }
+.driver-tracking-dot.green { background: #2e9d4f; }
+.driver-tracking-dot.orange { background: #e8902a; }
+.driver-tracking-dot.red { background: #c83a32; }
+.driver-tracking-dot.grey { background: #9a9a9a; }
+.driver-tracking-muted { color: #666; font-size: 0.9em; }
+.driver-tracking-stops { margin-top: 10px; }
+.driver-tracking-stops h3 { margin: 0 0 4px; font-size: 1em; }
+.driver-tracking-stops table { width: 100%; }
+.driver-tracking-stops tr.done td { color: #888; text-decoration: line-through; }
+.driver-tracking-stop-icon span {
+    display: block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    background: #3d5a80;
+    color: #fff;
+    font: bold 11px/22px Arial, sans-serif;
+    text-align: center;
+    border: 2px solid #fff;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.driver-tracking-stop-icon.done span { background: #9a9a9a; }
+.driver-tracking-depot-icon span {
+    display: block;
+    padding: 1px 4px;
+    background: #4e664d;
+    color: #fff;
+    font: bold 10px/16px Arial, sans-serif;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.driver-tracking-legend { margin-top: 6px; }
+.driver-tracking-legend span { margin-right: 14px; white-space: nowrap; }

@@ -129,7 +129,7 @@
          AND NOT EXISTS (SELECT 1 FROM dbo.MobileDeliveryOptionsTbl WHERE OptionText = N'Collected')
       BEGIN
           INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled)
-          VALUES ('Delivered', N'Collected', 1, 25, 1);
+          VALUES ('Delivered', N'Collected', 0, 25, 1);
       END
     ]]>
   </command>

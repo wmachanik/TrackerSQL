@@ -79,7 +79,8 @@ namespace TrackerSQL.Managers
                 RunDoneOnDelivery = s.RunDoneOnDelivery,
                 SendConfirmation = s.SendDeliveryConfirmation,
                 NotesToOffice = s.AllowNotesToOffice && !string.IsNullOrWhiteSpace(OfficeEmail(s)),
-                LandlinePrefixes = ParsePrefixes(s.LandlinePrefixes ?? DefaultLandlinePrefixes)
+                LandlinePrefixes = ParsePrefixes(s.LandlinePrefixes ?? DefaultLandlinePrefixes),
+                Tracking = DriverTrackingManager.ForApp()
             };
         }
 

@@ -382,6 +382,7 @@ namespace TrackerSQL.Managers
             }
 
             RecordDeliveryOrder(order, proof, user);
+            DriverTrackingManager.RecordDelivery(user?.PersonId, proof.Latitude, proof.Longitude, proof.AccuracyM, proof.DeliveredAt, user?.UserName);
 
             var result = new MobileDeliverySyncResult
             {

@@ -8,7 +8,7 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20261001-01" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20261001-04" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -215,15 +215,23 @@
                                         <asp:MenuItem NavigateUrl="~/Pages/PreperationSummary.aspx" Text="Preperation Summary"
                                             Value="Preperation Summary"></asp:MenuItem>
                                     </asp:MenuItem>
-                                    <asp:MenuItem NavigateUrl="~/Tools/Deliveries.aspx" Text="Deliveries" Value="Deliveries" ToolTip="Deliveries and Areas">
+                                    <asp:MenuItem NavigateUrl="~/Tools/Deliveries.aspx" Text="Deliveries" Value="Deliveries" ToolTip="Deliveries and areas">
                                         <asp:MenuItem NavigateUrl="~/Tools/Deliveries.aspx" Text="All delivery tools" Value="DeliveriesHub" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/DeliverySheet.aspx" Text="Delivery Sheet" Value="DeliverySheetD" />
-                                        <asp:MenuItem NavigateUrl="~/Tools/DeliveryOrder.aspx" Text="Delivery Order" Value="DeliveryOrder" />
-                                        <asp:MenuItem NavigateUrl="~/Tools/DriverApp.aspx" Text="Driver App" Value="DriverApp" />
-                                        <asp:MenuItem NavigateUrl="~/Tools/CustomerLocations.aspx" Text="Customer Locations" Value="CustomerLocations" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Areas" Text="Areas" Value="Areas" />
-                                        <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=People" Text="People" Value="PeopleD" />
-                                        <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx?section=gps" Text="GPS Settings" Value="GpsSettings" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/DeliverySheet.aspx" Text="Delivery sheet" Value="DeliverySheetD" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DriverTracking.aspx" Text="Driver tracking" Value="DriverTracking" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DeliveryOrder.aspx" Text="Delivery order" Value="DeliveryOrder" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DriverApp.aspx" Text="Driver app" Value="DriverApp" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/CustomerLocations.aspx" Text="Customer locations" Value="CustomerLocations" />
+                                        <asp:MenuItem Selectable="False" Text="Settings" Value="DeliverySettings">
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Areas" Text="Areas" Value="Areas" />
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Delivery%20Days" Text="Delivery days" Value="DeliveryDays" />
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=People" Text="People" Value="PeopleD" />
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Couriers" Text="Couriers" Value="CouriersD" />
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Delivery%20Outcomes" Text="Delivery outcomes" Value="DeliveryOutcomes" />
+                                            <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Packaging" Text="Packaging" Value="PackagingD" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx?section=gps" Text="GPS and driver settings" Value="GpsSettings" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/HolidayClosures.aspx" Text="Holiday closures" Value="HolidayClosuresD" />
+                                        </asp:MenuItem>
                                     </asp:MenuItem>
                                     <asp:MenuItem NavigateUrl="#" Text="System" Value="System">
                                         <asp:MenuItem NavigateUrl="~/Pages/ItemGroups.aspx" Text="Item Groups" Value="Item Groups" />
@@ -301,8 +309,9 @@
                 <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
                 <li><a href="/Pages/DeliverySheet.aspx">Deliveries</a></li>
                 <li><a href="/Pages/Repairs.aspx">Repairs</a></li>
-                <li><a href="/Tools/Deliveries.aspx">Deliveries &amp; Areas</a></li>
-                <li><a href="/Tools/DriverApp.aspx">Driver App</a></li>
+                <li><a href="/Tools/Deliveries.aspx">Deliveries &amp; areas</a></li>
+                <li><a href="/Tools/DriverTracking.aspx">Driver tracking</a></li>
+                <li><a href="/Tools/DriverApp.aspx">Driver app</a></li>
                 <li><a href="/Pages/Lookups.aspx">Lookup Tables</a></li>
                 <li>
                     <asp:LoginView ID="MobileLoginView" runat="server">

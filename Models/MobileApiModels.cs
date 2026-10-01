@@ -358,6 +358,37 @@ namespace TrackerSQL.Models
         public bool NotesToOffice { get; set; }
         /// <summary>Local-format starts of landline numbers ("021"); +27 21 and 27 21 match them too.</summary>
         public System.Collections.Generic.List<string> LandlinePrefixes { get; set; }
+        /// <summary>Driver tracking (System Preferences → GPS &amp; Drivers): when the app sends its position.</summary>
+        public MobileTrackingSettings Tracking { get; set; }
+    }
+
+    public class MobileTrackingSettings
+    {
+        public bool Enabled { get; set; }
+        /// <summary>Minutes between positions while tracking.</summary>
+        public int Minutes { get; set; }
+        public bool WeekdaysOnly { get; set; }
+        /// <summary>Work hours "HH:mm" (South African time); no positions are sent outside them.</summary>
+        public string From { get; set; }
+        public string To { get; set; }
+    }
+
+    /// <summary>POST api/v1/location: positions queued on the phone (oldest first).</summary>
+    public class MobileLocationRequest
+    {
+        public List<MobileLocationPoint> Points { get; set; }
+    }
+
+    public class MobileLocationPoint
+    {
+        public decimal? Lat { get; set; }
+        public decimal? Lng { get; set; }
+        /// <summary>GPS accuracy in metres.</summary>
+        public decimal? Accuracy { get; set; }
+        /// <summary>When the phone took the position (ISO 8601, with offset or Z).</summary>
+        public string At { get; set; }
+        /// <summary>APP_OPEN or PERIODIC.</summary>
+        public string Source { get; set; }
     }
 
     public class MobileContact

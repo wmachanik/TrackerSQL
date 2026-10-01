@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Customer GPS location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20261001-01" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20261001-04" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>

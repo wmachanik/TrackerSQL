@@ -192,6 +192,15 @@ namespace TrackerSQL.Pages
                 }
             }
 
+            if (string.Equals(key, "Driver Options", StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 0; i < tabcLookup.Tabs.Count; i++)
+                {
+                    if (tabcLookup.Tabs[i] == tabpnlDriverOptions)
+                        return i;
+                }
+            }
+
             return 0;
         }
 
@@ -1644,7 +1653,7 @@ namespace TrackerSQL.Pages
             }
             catch (Exception ex)
             {
-                SetLookupStatus("Error loading driver options: " + ex.Message, true);
+                SetLookupStatus("Error loading delivery outcomes: " + ex.Message, true);
             }
         }
 
@@ -1699,11 +1708,11 @@ namespace TrackerSQL.Pages
                 gvDriverOptions.EditIndex = -1;
                 BindDriverOptionsGrid();
                 upnlDriverOptions?.Update();
-                SetLookupStatus("Driver option updated.", false);
+                SetLookupStatus("Delivery outcome updated.", false);
             }
             catch (Exception ex)
             {
-                SetLookupStatus("Error updating driver option: " + ex.Message, true);
+                SetLookupStatus("Error updating delivery outcome: " + ex.Message, true);
             }
         }
 
@@ -1715,11 +1724,11 @@ namespace TrackerSQL.Pages
                 gvDriverOptions.EditIndex = -1;
                 BindDriverOptionsGrid();
                 upnlDriverOptions?.Update();
-                SetLookupStatus("Driver option deleted.", false);
+                SetLookupStatus("Delivery outcome deleted.", false);
             }
             catch (Exception ex)
             {
-                SetLookupStatus("Error deleting driver option: " + ex.Message, true);
+                SetLookupStatus("Error deleting delivery outcome: " + ex.Message, true);
             }
         }
 
@@ -1754,11 +1763,11 @@ namespace TrackerSQL.Pages
                 gvDriverOptions.EditIndex = -1;
                 BindDriverOptionsGrid();
                 upnlDriverOptions?.Update();
-                SetLookupStatus("Driver option added.", false);
+                SetLookupStatus("Delivery outcome added.", false);
             }
             catch (Exception ex)
             {
-                SetLookupStatus("Error adding driver option: " + ex.Message, true);
+                SetLookupStatus("Error adding delivery outcome: " + ex.Message, true);
             }
         }
 

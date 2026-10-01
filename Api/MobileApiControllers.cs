@@ -233,6 +233,25 @@ namespace TrackerSQL.Api
         }
     }
 
+    [RoutePrefix("api/v1"), MobileAuthorize]
+    public class LocationController : MobileApiController
+    {
+        /// <summary>
+        /// The driver's positions queued on the phone: { points: [{ lat, lng, accuracy, at, source }] }. Only stored while
+        /// driver tracking is on and inside the work days and hours; trackingEnabled = false tells the app to stop.
+        /// </summary>
+        [HttpPost, Route("location")]
+        public HttpResponseMessage Location([FromBody] MobileLocationRequest request)
+        {
+            var result = new DriverTrackingManager().Receive(request, CurrentUser, out string error);
+            if (error != null)
+                return Error(HttpStatusCode.BadRequest, error);
+            if (result.Skipped > 0 || !result.TrackingEnabled)
+                LogNote("Positions: " + result.Saved + " saved, " + result.Skipped + " skipped" + (result.TrackingEnabled ? "" : " (tracking is off)"));
+            return JsonResponse(HttpStatusCode.OK, new { ok = true, saved = result.Saved, skipped = result.Skipped, trackingEnabled = result.TrackingEnabled });
+        }
+    }
+
     [RoutePrefix("api/v1/devices"), MobileAuthorize(AdminOnly = true)]
     public class DevicesController : MobileApiController
     {

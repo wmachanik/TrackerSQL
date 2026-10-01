@@ -18,9 +18,17 @@
             <tr>
                 <td class="sys-prefs-label">Day</td>
                 <td class="sys-prefs-field">
-                    <asp:DropDownList ID="ddlDate" runat="server" AutoPostBack="true" OnSelectedIndexChanged="Filter_Changed" />
+                    <asp:Button ID="btnPrevDay" runat="server" Text="&#9664;" ToolTip="Day before" CssClass="filter-panel-btn"
+                        OnClick="btnPrevDay_Click" CausesValidation="false" />
+                    <asp:TextBox ID="txtDate" runat="server" TextMode="Date" AutoPostBack="true" OnTextChanged="Date_Changed" />
+                    <asp:Button ID="btnNextDay" runat="server" Text="&#9654;" ToolTip="Day after" CssClass="filter-panel-btn"
+                        OnClick="btnNextDay_Click" CausesValidation="false" />
                     <asp:DropDownList ID="ddlDriver" runat="server" AutoPostBack="true" OnSelectedIndexChanged="Filter_Changed" />
                 </td>
+            </tr>
+            <tr>
+                <td class="sys-prefs-label">Recent days</td>
+                <td class="sys-prefs-field"><asp:Literal ID="litRecentDays" runat="server" /></td>
             </tr>
         </table>
         <p class="sys-prefs-phase-note">

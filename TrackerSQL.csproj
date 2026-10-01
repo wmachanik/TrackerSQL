@@ -226,6 +226,7 @@
     <Content Include="Pages\ContactDetails.aspx" />
     <Content Include="Pages\ContactLocation.aspx" />
     <Content Include="Handlers\MapTile.ashx" />
+    <Content Include="Handlers\DriverTrackingData.ashx" />
     <Content Include="Tools\CustomerLocations.aspx" />
     <Content Include="Pages\Contacts.aspx" />
     <Content Include="Pages\ContactsAway.aspx" />
@@ -321,6 +322,7 @@
     <Content Include="Downloads\**\*" />
     <Content Include="Tools\DriverApp.aspx" />
     <Content Include="Tools\DeliveryOrder.aspx" />
+    <Content Include="Tools\DriverTracking.aspx" />
     <Content Include="Tools\Deliveries.aspx" />
     <Content Include="App_Data\SQLCommands-ContactPortal-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactPortal-01.xml" />
@@ -336,6 +338,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-01.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-02.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-02.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-03.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-03.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -477,6 +481,13 @@
     </Compile>
     <Compile Include="Tools\DeliveryOrder.aspx.designer.cs">
       <DependentUpon>DeliveryOrder.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\DriverTracking.aspx.cs">
+      <DependentUpon>DriverTracking.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\DriverTracking.aspx.designer.cs">
+      <DependentUpon>DriverTracking.aspx</DependentUpon>
     </Compile>
     <Compile Include="Tools\Deliveries.aspx.cs">
       <DependentUpon>Deliveries.aspx</DependentUpon>
@@ -676,6 +687,9 @@
     <Compile Include="Repositories\CustomerLocationRepository.cs" />
     <Compile Include="Repositories\DeliveryVisitRepository.cs" />
     <Compile Include="Repositories\DeliveryRouteRepository.cs" />
+    <Compile Include="Repositories\DriverLocationRepository.cs" />
+    <Compile Include="Managers\DriverTrackingManager.cs" />
+    <Compile Include="Models\DriverTrackingModels.cs" />
     <Compile Include="Classes\WaybillFormat.cs" />
     <Compile Include="Repositories\GpsSettingsRepository.cs" />
     <Compile Include="Repositories\ContactChangeLogRepository.cs" />
@@ -831,6 +845,9 @@
     </Compile>
     <Compile Include="Handlers\MapTile.ashx.cs">
       <DependentUpon>MapTile.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="Handlers\DriverTrackingData.ashx.cs">
+      <DependentUpon>DriverTrackingData.ashx</DependentUpon>
     </Compile>
     <Compile Include="Tools\CustomerLocations.aspx.cs">
       <DependentUpon>CustomerLocations.aspx</DependentUpon>

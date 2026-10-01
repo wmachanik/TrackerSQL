@@ -37,8 +37,5 @@ namespace TrackerSQL.Models
         /// Column name in database: InternalContactIDs
         /// </summary>
         public string InternalContactIDs { get; set; }
-
-        /// <summary>Delivery sheet shows the area as a three-letter pill before the contact name.</summary>
-        public bool? ShowAreaOnDeliverySheet { get; set; }
     }
 }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Driver tracking (see Documentation/WorkInProgress/GPS_DELIVERY_AND_DRIVER_TRACKING_PLAN.md section 5).
+  - DriverLocationPingTbl: the driver app's positions (POST api/v1/location) and the position of each delivery.
+    Source = APP_OPEN, PERIODIC or DELIVERY_COMPLETE. PingTime is the phone's time in South African time.
+    Kept for GpsSettingsTbl.PingRetentionDays days (deleted by the site once a day).
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.DriverLocationPingTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.DriverLocationPingTbl (
+              PingID BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DriverLocationPingTbl PRIMARY KEY,
+              PersonID INT NOT NULL,
+              Latitude DECIMAL(9,6) NOT NULL,
+              Longitude DECIMAL(9,6) NOT NULL,
+              AccuracyM DECIMAL(8,1) NULL,
+              PingTime DATETIME NOT NULL,
+              ReceivedAt DATETIME NOT NULL CONSTRAINT DF_DriverLocationPing_ReceivedAt DEFAULT (GETDATE()),
+              Source VARCHAR(20) NOT NULL,
+              UserName NVARCHAR(256) NULL
+          );
+          CREATE INDEX IX_DriverLocationPing_Person ON dbo.DriverLocationPingTbl (PersonID, PingTime DESC)
+              INCLUDE (Latitude, Longitude, AccuracyM, Source);
+          CREATE INDEX IX_DriverLocationPing_Time ON dbo.DriverLocationPingTbl (PingTime);
+      END
+    ]]>
+  </command>
+</root>

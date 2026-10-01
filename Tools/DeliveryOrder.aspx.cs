@@ -38,25 +38,52 @@ namespace TrackerSQL.Tools
                 ShowMessage("The delivery order table is not installed yet; restart the site (SQLCommands-DriverGps-02.xml).", true);
                 return;
             }
-            foreach (DateTime d in new DeliveryVisitRepository().ListDates(90))
-                ddlDate.Items.Add(new ListItem(d.ToString("ddd dd MMM yyyy", CultureInfo.InvariantCulture), d.ToString("yyyy-MM-dd")));
-            string wanted = Request.QueryString["date"];
-            if (!string.IsNullOrEmpty(wanted) && ddlDate.Items.FindByValue(wanted) != null)
-                ddlDate.SelectedValue = wanted;
+            List<DateTime> recent = new DeliveryVisitRepository().ListDates(10);
+            litRecentDays.Text = recent.Count == 0
+                ? "No days from the driver app yet."
+                : string.Join(" · ", recent.Select(d => string.Format(CultureInfo.InvariantCulture,
+                    "<a href=\"?date={0:yyyy-MM-dd}\">{0:ddd dd MMM}</a>", d)));
+
+            DateTime day = recent.Count > 0 ? recent[0] : TimeZoneUtils.Now().Date;
+            if (DateTime.TryParseExact(Request.QueryString["date"], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime wanted))
+                day = wanted.Date;
+            txtDate.Text = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             BindDrivers();
             BindVisits();
         }
 
         protected void Filter_Changed(object sender, EventArgs e)
         {
-            if (sender == ddlDate)
-                BindDrivers();
+            BindVisits();
+        }
+
+        protected void Date_Changed(object sender, EventArgs e)
+        {
+            BindDrivers();
+            BindVisits();
+        }
+
+        protected void btnPrevDay_Click(object sender, EventArgs e)
+        {
+            MoveDay(-1);
+        }
+
+        protected void btnNextDay_Click(object sender, EventArgs e)
+        {
+            MoveDay(1);
+        }
+
+        private void MoveDay(int days)
+        {
+            DateTime date = TryGetDate(out DateTime current) ? current : TimeZoneUtils.Now().Date;
+            txtDate.Text = date.AddDays(days).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            BindDrivers();
             BindVisits();
         }
 
         private bool TryGetDate(out DateTime date)
         {
-            return DateTime.TryParseExact(ddlDate.SelectedValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+            return DateTime.TryParseExact(txtDate.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
         }
 
         private void BindDrivers()

@@ -54,18 +54,31 @@ SQLCommands-CourierServices-01.xml ← courier track URLs + deep-link params (Fa
                                      + WaybillFormats column with defaults (Pargo PAR*, Fastway @?#{10}; #@#{10}, Courier Guy @+).
                                      Tracker also adds it the first time couriers are used; safe to run again.
 
+3.0.3.1 RELEASE (order flags + GPS & drivers), in order
+a. Back up the live database and the server's Web.config.
+b. Publish Release; upload bin/, pages, Handlers/, Scripts/leaflet/, Styles/, driver/, Downloads/QuaffeeDriver.apk
+   and the new App_Data/SQLCommands-*.xml (OrderFlags-01/02, AreaDeliveryOrder-01, CourierServices-01, MobileApi-01,
+   DriverGps-01/02/03). Upload web.live.config as Web.config. Never overwrite the App_Data log files.
+c. Open https://tracker.quaffee.co.za/api/v1/ping (version 3.0.3.1) and sign in; the packs run at start-up.
+d. XMLtoSQL: run SQLCommands-OrderFlags-02-ResetContacts.xml once (CHANGELOG 3.0.3.1 go-live notes).
+e. Check Lookups -> Delivery Days -> All areas, then follow the GPS & DRIVERS steps below.
+
 GPS & DRIVERS (customer locations, Azure Maps, learning from deliveries)
-Both packs run automatically at site start-up (OrderFlagsSchemaInstaller); the copies here are for XMLtoSQL
-if start-up could not run them. Run 01 before 02.
+The packs run automatically at site start-up (OrderFlagsSchemaInstaller); the copies here are for XMLtoSQL
+if start-up could not run them. Run 01, then 02, then 03.
 SQLCommands-DriverGps-01.xml   ← PeopleTbl.DeliveryType, CustomerLocationTbl, GeoApiUsageTbl, GpsSettingsTbl, Collected option
 SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; CustomerLocationTbl.ExpiresDate / DriverFixes /
                                  LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM; DeliveryVisitTbl (the order drivers
                                  really deliver in; filled once from existing proofs); DeliveryRouteTbl (the order a
                                  driver set in the app for a day); MobileApiSettingsTbl.LandlinePrefixes
+SQLCommands-DriverGps-03.xml   ← DriverLocationPingTbl (driver tracking positions)
+The Collected delivery outcome is now created with "needs a name" off (01 and MobileApi-01). Live already has the
+row: untick "Needs name" for Collected on Lookups → Delivery Outcomes if the drivers should not be asked for one.
 SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes when it is missing (either pack may run first).
 New files to upload: Handlers/MapTile.ashx (Azure Maps tiles for the GPS popup), Tools/DeliveryOrder.aspx
 (the order deliveries were made) and Tools/Deliveries.aspx (the new Deliveries & Areas page; top menu "Deliveries");
 the bin DLL holds their code. Site.Master and Default.aspx changed (new menu and home card).
+Also new: Tools/DriverTracking.aspx and Handlers/DriverTrackingData.ashx (driver tracking map); Styles/Site.css changed.
 Live steps:
 1. Deploy; open the site once so the packs run. Check Tools → XMLtoSQL / the system log if a pack failed.
 2. Azure portal: create an "Azure Maps Account" (pricing tier Gen2), open Authentication, copy the Primary Key.
@@ -78,9 +91,15 @@ Live steps:
    and press Look up depot so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK (0.4.2, asks for location permission on the first delivery). The web copy at
-   /driver is already rebuilt in this release. Drivers must allow location, or proofs simply arrive without GPS.
-6. Tell drivers in writing that the phone's position is saved with each proof of delivery (POPIA).
+5. Driver app: install the new APK (0.5.0, asks for location permission on the first delivery or when tracking
+   starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
+   simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work
+   hours; drivers should allow notifications and not "optimise" the app's battery use, or positions stop.
+6. Tell drivers in writing that the phone's position is saved with each proof of delivery and, when driver tracking
+   is on, every few minutes during work hours while they are signed in (POPIA). The app's More screen says so too.
+7. Driver tracking: System Preferences → GPS & Drivers → tick "Drivers' phones send their position", check the
+   interval, days and hours. Tick "Show driver tracking" on Administration → User Information for non-admin users
+   who may see Deliveries → Driver tracking.
 Rules to know:
 - Azure Maps points are kept at most 180 days (Microsoft terms outside Azure). They are looked up again from 30 days
   before expiry (on the next order / contact save / batch) and removed once past expiry if not refreshed.

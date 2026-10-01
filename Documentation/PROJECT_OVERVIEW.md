@@ -51,7 +51,7 @@
 ## Current Release (2026-09-29)
 
 - **Live version:** 3.0.3.0 at **`https://tracker.quaffee.co.za`** (also `https://quaffeetracker.co.za`), myasp.net shared hosting. See [../CHANGELOG.md](../CHANGELOG.md).
-- **Next release:** 3.0.3.1 on branch `feature/3.0.3.1`: order flags (recurring order → order, icons on the delivery sheet) and the Lookups → Delivery Days tab. Go-live needs the `SQLCommands-OrderFlags-02-ResetContacts.xml` step in the CHANGELOG.
+- **Next release:** 3.0.3.1 on branch `feature/3.0.3.1`: order flags (recurring order → order, icons on the delivery sheet), the Lookups → Delivery Days tab, GPS customer locations and route order, the Deliveries menu, driver tracking and Quaffee Driver 0.5.0. Go-live needs the `SQLCommands-OrderFlags-02-ResetContacts.xml` step in the CHANGELOG.
 - **Quaffee Driver app** (new in 3.0.3.0): companion Vue/Capacitor app in `C:\SRC\ASP.net\TrackerDriver` using Tracker's `/api/v1` REST API. See [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md).
 - **Deploying and config secrets:** [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md). The GitHub repo is public: real config files are git-ignored (Hard Rule #0f).
 

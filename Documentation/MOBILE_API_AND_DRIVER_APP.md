@@ -37,7 +37,8 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Models/MobileApiModels.cs` | Request/response models. |
 | `Tools/ApiTester.aspx` | Admin page to call every endpoint, view the request log and devices, and "Check API tables". |
 | `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, confirmation email, notes to office, office email, landline prefixes). |
-| `Pages/Lookups.aspx` → Driver Options tab | The delivered / not-delivered choices shown in the app. |
+| `Pages/Lookups.aspx` → Delivery Outcomes tab (was Driver Options) | The delivered / not-delivered choices shown in the app. |
+| `Managers/DriverTrackingManager.cs` + `Repositories/DriverLocationRepository.cs` | Driver tracking: `POST location`, positions with deliveries, daily clean-up, the Driver tracking page's data (`Handlers/DriverTrackingData.ashx`, `Tools/DriverTracking.aspx`). |
 
 ## 2. Endpoints (`/api/v1`)
 
@@ -54,7 +55,8 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
-| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers) |
+| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, and `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`) |
+| `POST location` | device | `{ points: [{ lat, lng, accuracy, at, source }] }` (oldest first, at most 200; `source` APP_OPEN or PERIODIC). Stored only while tracking is on and inside the work days and hours; future or day-old points are skipped. Needs a sign-in linked to a person (400 otherwise). Returns `{ ok, saved, skipped, trackingEnabled }` (`DriverLocationPingTbl`) |
 | `GET devices`, `POST devices/{id}/revoke`, `GET log` | **admin** | |
 
 ## 3. Security (as built)
@@ -107,6 +109,12 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
 - **Save everything on this phone** (More): sends the outbox and saves the day's sheets (mine + everyone's), repairs, lookups.
 - On 401 the app clears cached data but **keeps the outbox** (sent after the next sign-in).
 - ZZName (contact 9) is never matched as a client for "new repairs for this client".
+- **Driver tracking** (0.5.0, `src/tracking.ts`): runs while `settings.tracking.enabled`, the user has a `personId` and the
+  phone's clock is inside the work days and hours. Android uses `@capacitor-community/background-geolocation` (foreground
+  service with a notification; `android.useLegacyBridge` in `capacitor.config.ts`; positions only after 30 m of movement,
+  so a parked phone re-sends its last position) and posts with native `CapacitorHttp` because Android throttles web-view
+  requests in the background. The web copy uses `watchPosition` while open. Up to 300 positions wait in IndexedDB
+  (`tracking.queue`); they are dropped on sign-out so they are never sent under the next driver's name.
 
 ## 8. Data use (measured)
 

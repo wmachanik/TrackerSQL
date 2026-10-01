@@ -11,8 +11,11 @@ namespace TrackerSQL.Tools
 {
     public partial class DeliveryOrder
     {
-        protected global::System.Web.UI.WebControls.DropDownList ddlDate;
+        protected global::System.Web.UI.WebControls.Button btnPrevDay;
+        protected global::System.Web.UI.WebControls.TextBox txtDate;
+        protected global::System.Web.UI.WebControls.Button btnNextDay;
         protected global::System.Web.UI.WebControls.DropDownList ddlDriver;
+        protected global::System.Web.UI.WebControls.Literal litRecentDays;
         protected global::System.Web.UI.WebControls.Literal litVisits;
         protected global::System.Web.UI.WebControls.Literal litMinStops;
         protected global::System.Web.UI.WebControls.Label lblMessage;

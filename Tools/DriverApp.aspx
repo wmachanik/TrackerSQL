@@ -49,7 +49,7 @@
                 <strong>How it was delivered</strong><br />
                 The choices the driver picks from (e.g. "Handed to the contact", "Collected", "Nobody there") are a list you can
                 add to, reword, reorder or switch off:
-                <a href="../Pages/Lookups.aspx?tab=Driver%20Options">Lookups → Driver Options</a>.
+                <a href="../Pages/Lookups.aspx?tab=Delivery%20Outcomes">Lookups → Delivery Outcomes</a>.
                 <span class="sys-prefs-help">Changes reach the phones the next time they have signal.</span>
             </p>
         </asp:Panel>

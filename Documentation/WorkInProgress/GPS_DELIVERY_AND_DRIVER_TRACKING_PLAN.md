@@ -127,7 +127,7 @@ Starting from the driver's latest position instead of the depot is left for the 
 - Columns: `PingID`, `PersonID`, `Latitude`, `Longitude`, `PingTime`, `Source`.
 - Old pings are deleted after the retention period set in settings.
 
-### Preparation → Driver Tracking page (new menu item under Delivery Sheet)
+### Deliveries → Driver tracking page (built 2026-10-01, see "Step 3 status" below)
 - **Map of active drivers.** Each marker shows the latest ping, colour-coded:
   - green: updated within 15 minutes
   - orange: within 30 minutes
@@ -228,3 +228,11 @@ at delivery. Once a driver point exists, the provider's data is discarded, so th
 - Driver app (TrackerDriver 0.4.0): `src/location.ts` watches the position while the capture screen is open; on save it uses a fix under 2 minutes old or tries once for 3 s. `lat`, `lng`, `accuracy` go in the outbox item and `/delivery/sync`. Android manifest has coarse + fine location (foreground only; Capacitor's WebView asks for the permission).
 - Server: `MobileDeliveryManager.SyncOne` stores `AccuracyM` (only when the column exists) and calls `CustomerLocationManager.LearnFromDelivery` after a Delivered proof with a fix. Rules: accuracy ≤ 75 m (or unknown); no point / looked-up / postcode → `DRIVER`, `APPROXIMATE`, 1 fix; driver point within 60 m on another visit (≥ 6 h apart) → weighted average (older fixes capped at weight 5), fixes + 1, `VERIFIED` from 2; further → moved, 1 fix; `MANUAL` → never moved, agreeing visits counted, two visits in a row > 150 m → `REVIEW_REQUIRED` (cleared by a later agreeing visit); sundry contact skipped. Every outcome is logged (Customers log).
 - Later: Google as a third provider (30-day expiry uses the same `ExpiresDate` path).
+
+## Step 3 status (2026-10-01): driver tracking built and tested on dev (not live)
+
+- Schema: `SQLCommands-DriverGps-03.xml` (+ GoLive copy): `DriverLocationPingTbl` (PingID, PersonID, Latitude, Longitude, AccuracyM, PingTime in SA time, ReceivedAt, Source, UserName; indexes on PersonID + PingTime and on PingTime).
+- Server: `POST /api/v1/location` (`LocationController`) → `DriverTrackingManager.Receive` (tracking on, sign-in linked to a person, inside the work days and hours by the point's own time, not in the future or older than 24 h, at most 200 per call). A Delivered / Not delivered proof with a fix adds a `DELIVERY_COMPLETE` position (same rules). Positions older than `PingRetentionDays` are deleted at most once a day (on the first position or page load of the day). The app gets the tracking settings in `GET lookups` → `settings.tracking`.
+- Page: **Deliveries → Driver tracking** (`Tools/DriverTracking.aspx`, data from `Handlers/DriverTrackingData.ashx`; admins or *Show driver tracking*). Drivers = anyone with a position today plus *Does deliveries* people with stops today. Stops come from the same route as the app (`MobileDeliveryManager.GetSheet`), one per contact; points from `CustomerLocationTbl`. ETA = straight line × 1.3 at the average speed, plus the minutes per stop, from the latest position (else the depot), stops without a point skipped. Today only; refreshes every minute.
+- Driver app 0.5.0: `src/tracking.ts` (see `Documentation/MOBILE_API_AND_DRIVER_APP.md` section 7). Android shows the plugin's foreground notification while tracking runs; "Allow all the time" is not needed because the service starts while the app is open.
+- Not built: current area from map shapes in the marker tooltip (map shapes are step 2, not built); starting the route order from the driver's position (the route still starts at the depot); history / trail of the day's positions.

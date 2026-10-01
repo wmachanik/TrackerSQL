@@ -169,19 +169,6 @@
                                                 </EditItemTemplate>
                                             </asp:TemplateField>
                                             <asp:BoundField DataField="InternalContactIDs" HeaderText="Internal Contact IDs" NullDisplayText="(none)" />
-                                            <asp:TemplateField HeaderText="Show Area on Delivery Sheet">
-                                                <HeaderTemplate>
-                                                    <span title="Screen only: a small area code pill before the contact name, e.g. cns = Constantia. Set your own codes on Lookups → Areas." style="cursor: help;">Show Area on Delivery Sheet</span>
-                                                </HeaderTemplate>
-                                                <ItemTemplate>
-                                                    <asp:CheckBox ID="chkShowAreaOnDeliverySheet" runat="server" Enabled="false"
-                                                        Checked='<%# Eval("ShowAreaOnDeliverySheet") as bool? ?? true %>' />
-                                                </ItemTemplate>
-                                                <EditItemTemplate>
-                                                    <asp:CheckBox ID="chkShowAreaOnDeliverySheet" runat="server"
-                                                        Checked='<%# Bind("ShowAreaOnDeliverySheet") %>' />
-                                                </EditItemTemplate>
-                                            </asp:TemplateField>
                                             <asp:CommandField ShowEditButton="True" ButtonType="Image"
                                                 EditImageUrl="~/images/imgButtons/EditItem.gif"
                                                 UpdateImageUrl="~/images/imgButtons/UpdateItem.gif"

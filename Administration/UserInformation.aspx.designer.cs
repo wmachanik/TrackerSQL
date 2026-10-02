@@ -22,7 +22,6 @@ namespace TrackerSQL.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlTimeZone;
-        protected global::System.Web.UI.WebControls.CheckBox cbxShowDeliveryRouteEta;
         protected global::System.Web.UI.WebControls.CheckBox cbxDriverTracking;
     }
 }

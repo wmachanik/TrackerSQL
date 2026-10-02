@@ -42,6 +42,8 @@ namespace TrackerSQL.Managers
             public bool Started;
             public DateTime? LeftAt;
             public int Left;
+            /// <summary>The phone's latest position today (tracking or a delivery).</summary>
+            public DateTime? LastSeen;
         }
 
         public class DayTimes
@@ -75,14 +77,19 @@ namespace TrackerSQL.Managers
         /// <summary>Times for every driver's stops on the day (delivered times on any day; next and expected only today).</summary>
         public DayTimes ForDay(DateTime day)
         {
+            return ForDay(day, new MobileDeliveryManager().GetSheet(day, null).Orders);
+        }
+
+        /// <summary>As <see cref="ForDay(DateTime)"/> for a sheet already read (every driver's stops for the day).</summary>
+        public DayTimes ForDay(DateTime day, IEnumerable<MobileDeliveryStop> sheetOrders)
+        {
             DateTime now = TimeZoneUtils.Now();
             var result = new DayTimes { Today = day.Date == now.Date };
             GpsSettings settings = new GpsSettingsRepository().Get();
             double? depotLat = settings.HasDepotPoint ? (double?)settings.DepotLatitude.Value : null;
             double? depotLng = settings.HasDepotPoint ? (double?)settings.DepotLongitude.Value : null;
 
-            List<MobileDeliveryStop> stops = new MobileDeliveryManager().GetSheet(day, null).Orders
-                .Where(o => o.DeliveryById.HasValue).ToList();
+            List<MobileDeliveryStop> stops = sheetOrders.Where(o => o.DeliveryById.HasValue).ToList();
             Dictionary<int, List<DriverLocationRepository.Ping>> pings = result.Today && DriverLocationRepository.TableSeen()
                 ? new DriverLocationRepository().ForDay(day).GroupBy(p => p.PersonID).ToDictionary(g => g.Key, g => g.ToList())
                 : new Dictionary<int, List<DriverLocationRepository.Ping>>();
@@ -120,13 +127,14 @@ namespace TrackerSQL.Managers
 
                 List<List<MobileDeliveryStop>> open = visits.Where(v => !v.All(Finished)).ToList();
                 state.Left = open.Count;
+                pings.TryGetValue(personId, out List<DriverLocationRepository.Ping> driverPings);
+                DriverLocationRepository.Ping latest = driverPings?.LastOrDefault();
+                state.LastSeen = latest?.PingTime;
                 if (!result.Today || open.Count == 0)
                     continue;
                 foreach (MobileDeliveryStop stop in open[0])
                     result.Stops[stop.OrderId].Next = true;
 
-                pings.TryGetValue(personId, out List<DriverLocationRepository.Ping> driverPings);
-                DriverLocationRepository.Ping latest = driverPings?.LastOrDefault();
                 if (depotLat.HasValue && driverPings != null)
                     state.LeftAt = driverPings.FirstOrDefault(p =>
                         GeoDistance.Metres(depotLat.Value, depotLng.Value, (double)p.Latitude, (double)p.Longitude) > LeftDepotMetres)?.PingTime;

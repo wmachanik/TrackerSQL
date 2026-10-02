@@ -285,18 +285,16 @@ namespace TrackerSQL.Pages
             this.BuildDeliveryTable(buildResult, pPrintForm, pOnlyDeliveryBy);
         }
 
-        private RouteTimesManager.DayTimes _routeTimes;
         private bool _canOrder;
         /// <summary>People on the sheet who drive for us (not couriers or collections).</summary>
         private readonly HashSet<int> _ownDrivers = new HashSet<int>();
 
         /// <summary>
-        /// Drag-to-order (open stops, today or later) and, for users with "Show route order and arrival times" ticked,
-        /// stop numbers with delivered / next / expected times; a line per driver says who set the order.
+        /// Drag-to-order (open stops, today or later) and, under the sheet, a line per driver saying who set the order.
+        /// Delivered / next / expected times are on Deliveries → Delivery order, not here.
         /// </summary>
         private void PrepareRouteExtras(DateTime day, bool printForm, DeliverySheetBuildResult buildResult)
         {
-            _routeTimes = null;
             _canOrder = false;
             _ownDrivers.Clear();
             if (ltrlRouteInfo != null)
@@ -316,16 +314,6 @@ namespace TrackerSQL.Pages
             bool mobile = Session["RunningOnMoble"] != null && (bool)Session["RunningOnMoble"];
             bool routes = DeliveryRouteRepository.TableSeen();
             _canOrder = !printForm && !mobile && routes && day.Date >= TimeZoneUtils.Now().Date;
-
-            try
-            {
-                if (UserPreferencesHelper.GetCurrentPreferences().ShowDeliveryRouteEta)
-                    _routeTimes = new RouteTimesManager().ForDay(day);
-            }
-            catch (Exception ex)
-            {
-                AppLogger.WriteLog("deliverysheet", "Route times not worked out: " + ex.Message);
-            }
             if (printForm)
                 return;
 
@@ -358,20 +346,6 @@ namespace TrackerSQL.Pages
                     if (_canOrder)
                         parts.Add("<a href='#' onclick=\"return dlvSuggested(" + driver.Id + ");\">use the suggested order</a>");
                 }
-                if (_routeTimes != null && _routeTimes.Today && _routeTimes.Drivers.TryGetValue(driver.Id, out RouteTimesManager.DriverState state))
-                {
-                    if (state.Left == 0)
-                        parts.Add("all stops done");
-                    else if (!state.Started)
-                        parts.Add("not left the depot yet (times start when they leave or deliver)");
-                    else
-                    {
-                        DateTime? last = _routeTimes.Stops.Values.Where(s => s.PersonId == driver.Id && s.Expected.HasValue && !s.DeliveredAt.HasValue)
-                            .Select(s => s.Expected).DefaultIfEmpty(null).Max();
-                        parts.Add(state.Left + (state.Left == 1 ? " stop" : " stops") + " left"
-                            + (last.HasValue ? ", last one about " + last.Value.ToString("HH:mm") : string.Empty));
-                    }
-                }
                 if (parts.Count > 0)
                     lines.Add("<div class='dlv-route-line'><strong>" + name + "</strong>: " + string.Join(" · ", parts) + "</div>");
             }
@@ -379,38 +353,13 @@ namespace TrackerSQL.Pages
             if (_canOrder)
             {
                 lines.Insert(0, "<div class='dlv-route-line muted'>Drag a stop by its <span class='dlv-handle-sample'>&#x2807;</span> handle to change the "
-                    + "order of a driver's stops, then save. The driver's app picks it up on its next refresh.</div>");
+                    + "order of a driver's stops, then save. The driver's app picks it up on its next refresh. What is done and what is next: "
+                    + "<a href='" + ResolveUrl("~/Tools/DeliveryOrder.aspx") + "?date=" + day.ToString("yyyy-MM-dd") + "'>Delivery order</a>.</div>");
                 tblDeliveries.Attributes["data-day"] = day.ToString("yyyy-MM-dd");
                 tblDeliveries.Attributes["data-driver-plans"] = Newtonsoft.Json.JsonConvert.SerializeObject(driverPlans);
             }
             if (ltrlRouteInfo != null)
                 ltrlRouteInfo.Text = string.Join(string.Empty, lines);
-        }
-
-        /// <summary>Contact cell prefix: the stop number; suffix: delivered at, or next / expected at.</summary>
-        private void AddRouteTime(DeliverySheetDisplayItem item, TableCell cellContact, bool printForm)
-        {
-            if (_routeTimes == null || !_routeTimes.Stops.TryGetValue(item.OrderID, out RouteTimesManager.StopTime time))
-                return;
-            string seq = "<span class='dlv-seq' title='Stop " + time.Seq + " on the route'>" + time.Seq + "</span> ";
-            if (printForm)
-            {
-                cellContact.Text = seq + cellContact.Text;
-                return;
-            }
-
-            string badge = string.Empty;
-            if (time.DeliveredAt.HasValue)
-                badge = "<span class='dlv-time is-done' title='When the driver captured it in the app'>"
-                    + (time.NotDelivered ? "not delivered " : "delivered ") + time.DeliveredAt.Value.ToString("HH:mm") + "</span>";
-            else if (time.Expected.HasValue)
-                badge = "<span class='dlv-time" + (time.Next ? " is-next" : string.Empty) + "' title='Expected"
-                    + (time.Rough ? " (rough: no GPS point for this stop or the one before)" : string.Empty)
-                    + "'>" + (time.Next ? "next · " : string.Empty) + (time.Rough ? "~" : string.Empty)
-                    + time.Expected.Value.ToString("HH:mm") + "</span>";
-            else if (time.Next)
-                badge = "<span class='dlv-time is-next'>next</span>";
-            cellContact.Text = seq + cellContact.Text + (badge.Length > 0 ? " " + badge : string.Empty);
         }
 
         protected void btnSaveRouteOrder_Click(object sender, EventArgs e)
@@ -627,7 +576,6 @@ namespace TrackerSQL.Pages
                     cellContact.CssClass = "wordwrap";
                 }
 
-                AddRouteTime(currentItem, cellContact, pPrintForm);
                 row.Cells.Add(cellContact);
 
                 // ReceivedBy/Signature cells for print

@@ -128,7 +128,7 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   localStorage `route.left`) or something was delivered today. They chain from the latest of the last delivery (that
   stop's point) and the last position: straight line × 1.3 at `speedKmh`, plus `serviceMinutes` per stop; consecutive
   orders for one client are one stop; the first time is never before now. `RouteTimesManager` does the same for the
-  office Delivery Sheet, using the tracking pings.
+  office board on Tools → Delivery order (`ForDay(day, sheetOrders)`), using the tracking pings.
 - **Office order note:** when the office dragged the driver's stops on the Delivery Sheet (`DeliveryRouteTbl.SetBy` ends
   in " (office)"), the sheet's `routeNote` says who and when; it goes once the driver saves their own order. The sheet
   ETag includes it.

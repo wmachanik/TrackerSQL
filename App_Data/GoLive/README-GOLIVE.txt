@@ -104,9 +104,9 @@ Live steps:
 7. Driver tracking: System Preferences → GPS & Drivers → tick "Drivers' phones send their position", check the
    interval, days and hours. Tick "Show driver tracking" on Administration → User Information for non-admin users
    who may see Deliveries → Driver tracking.
-8. 3.0.3.2: tick "Show route order and arrival times on the Delivery Sheet" (User Information) for users who should
-   see route numbers, delivered times and expected times on the Delivery Sheet. Dragging stops into a new order works
-   for everyone (no setting).
+8. 3.0.3.2: Deliveries → Delivery order shows each driver's stops for today, done / next / expected times, and
+   refreshes every minute (no setting). The Delivery Sheet shows no route numbers or times any more; dragging stops
+   into a new order works for everyone (no setting).
    SQLCommands-DriverGps-04.xml (upload it to App_Data; runs at start-up) adds the "Not at client" tick to Lookups →
    Delivery Outcomes and the options "Collected by the client" and "Dropped off by the supplier". Proofs captured with
    them never change the client's GPS point or the driver's delivery order. Check the list on Lookups → Delivery

@@ -131,9 +131,6 @@
                     </div>
                 </asp:Panel>
 
-                <div class="dlv-route-info small">
-                    <asp:Literal ID="ltrlRouteInfo" runat="server" EnableViewState="false" />
-                </div>
                 <div id="dlvOrderBar" class="dlv-order-bar" hidden="hidden">
                     <span id="dlvOrderText"></span>
                     <button type="button" class="filter-panel-btn" onclick="dlvSaveOrder();">Save order</button>
@@ -160,6 +157,9 @@
                 </div>
                 <div style="text-align: right; width: 98%" class="small">
                     <asp:Label ID="ltrlWhichDate" Text="" runat="server" CssClass="small" />
+                </div>
+                <div class="dlv-route-info small">
+                    <asp:Literal ID="ltrlRouteInfo" runat="server" EnableViewState="false" />
                 </div>
 
                 <div class="status-message" id="pnlStatus" runat="server" style="margin-top: 12px;" visible="false">

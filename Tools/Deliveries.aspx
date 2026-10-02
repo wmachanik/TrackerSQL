@@ -37,7 +37,7 @@
                             <img class="tool-card-icon" src="../images/imgButtons/icons8-order-completed-16.png" alt="" />
                             <h4><a href="DeliveryOrder.aspx">Delivery order</a></h4>
                         </div>
-                        <p>The order drivers really delivered in; the route learns from it</p>
+                        <p>Each driver's stops: what is done, what is next and when the rest are expected (live)</p>
                     </div>
                     <div class="dashboard-card home-tone-dlv-app">
                         <div class="tool-card-header">

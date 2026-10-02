@@ -85,7 +85,6 @@ namespace TrackerSQL.Administration
                 else
                     ddlTimeZone.SelectedIndex = 0;
 
-                cbxShowDeliveryRouteEta.Checked = prefs.ShowDeliveryRouteEta;
                 cbxDriverTracking.Checked = prefs.DriverTracking;
             }
             catch (Exception ex)
@@ -140,7 +139,6 @@ namespace TrackerSQL.Administration
 
                 var prefs = TrackerSQL.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
                 prefs.TimeZoneId = ddlTimeZone.SelectedValue;
-                prefs.ShowDeliveryRouteEta = cbxShowDeliveryRouteEta.Checked;
                 prefs.DriverTracking = cbxDriverTracking.Checked;
 
                 TrackerSQL.Classes.UserPreferencesHelper.SaveOrUpdatePreferences(prefs); 
@@ -148,7 +146,7 @@ namespace TrackerSQL.Administration
                     Session?.Remove("UserPreferences");
 
                 AppLogger.WriteLog("userprefs", $"Updated preferences for user '{username}': zone '{prefs.TimeZoneId}', " +
-                    $"routeEta={prefs.ShowDeliveryRouteEta}, driverTracking={prefs.DriverTracking}");
+                    $"driverTracking={prefs.DriverTracking}");
             }
 
             Response.Redirect("~/Administration/ManageUsers.aspx");

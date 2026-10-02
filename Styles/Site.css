@@ -9006,11 +9006,7 @@ table.grouping-table .image-button > a {
     border-color: #e8c4a0;
 }
 
-/* Delivery Sheet: drag a driver's stops into order; stop numbers and delivered / next / expected times */
-.dlv-route-info {
-    margin: 0.35rem 0 0.5rem;
-}
-
+/* Delivery Sheet: drag a driver's stops into order (who set the order is listed under the sheet) */
 .dlv-route-line {
     margin: 0.15rem 0;
 }
@@ -9060,40 +9056,100 @@ tr.dlv-dragging {
     display: none;
 }
 
-.dlv-seq {
-    display: inline-block;
-    min-width: 1.5em;
-    padding: 0 4px;
-    margin-right: 2px;
-    border-radius: 999px;
-    background: #eef3ee;
-    color: var(--primary-green);
-    font-weight: 600;
-    text-align: center;
+.dlv-route-info {
+    margin-top: 0.75rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid #e3e3e3;
 }
 
-.dlv-time {
-    display: inline-block;
-    padding: 0 6px;
-    border-radius: 999px;
-    border: 1px solid #cfd8e3;
-    background: #f3f6fa;
-    color: #3b5878;
-    font-size: 0.85em;
+/* Deliveries → Delivery order: each driver's stops, done / next / expected, refreshed every minute */
+.dorder-board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.dorder-driver {
+    flex: 1 1 26rem;
+    max-width: 44rem;
+    border: 1px solid #dfe6df;
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem 0.6rem;
+    background: #fff;
+}
+
+.dorder-driver h2 {
+    margin: 0 0 0.15rem;
+    font-size: 1.05rem;
+}
+
+.dorder-summary {
+    margin: 0 0 0.4rem;
+    color: #555;
+}
+
+.dorder-progress {
+    height: 6px;
+    margin: 0 0 0.5rem;
+    border-radius: 3px;
+    background: #eceff1;
+    overflow: hidden;
+}
+
+.dorder-progress span {
+    display: block;
+    height: 100%;
+    background: var(--primary-green);
+}
+
+.dorder-table {
+    width: 100%;
+}
+
+.dorder-table td.dorder-seq {
+    width: 2em;
+    text-align: center;
+    color: #777;
+}
+
+.dorder-table tr.is-done td {
+    color: #888;
+}
+
+.dorder-table tr.is-next td {
+    background: #e7f4ea;
+    font-weight: 600;
+}
+
+.dorder-status {
     white-space: nowrap;
 }
 
-.dlv-time.is-next {
-    border-color: #b7d9c0;
-    background: #e7f4ea;
+.dorder-status.is-done {
     color: #2f5d3a;
+}
+
+.dorder-status.is-bad {
+    color: #9a4a1f;
     font-weight: 600;
 }
 
-.dlv-time.is-done {
-    border-color: #e8c4a0;
-    background: #fdf0e6;
-    color: #9a4a1f;
+.dorder-status.is-next {
+    color: #2f5d3a;
+}
+
+.dorder-status.is-away {
+    color: #3b5878;
+}
+
+.dorder-status.is-missing {
+    color: #888;
+    font-style: italic;
+}
+
+.dorder-updated {
+    color: #777;
 }
 
 /* Contact Details → Proof of Delivery: phone position vs the client's GPS point */

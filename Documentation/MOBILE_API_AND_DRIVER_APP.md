@@ -53,7 +53,7 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST auth/login` | anyone | Tracker login; must be linked to a person (Lookups → People, Security Username) or be an admin. 429 when throttled. |
 | `POST auth/logout`, `GET auth/me` | device | |
 | `GET delivery/dates`, `GET delivery/sheet?date=&person=me\|all\|id` | device | ETag / 304 |
-| `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice`; `termsAccepted` and `terms` (the wording shown) for signed deliveries (0.5.3) |
+| `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice`; `termsAccepted` and `terms` (the wording shown) for signed deliveries (0.5.3+) |
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
@@ -147,7 +147,8 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   are skipped (the tracking ping is still stored: it is where the driver really was). The sheet's `proof.notAtClient`
   stops it being used as the last delivery point for expected times; the capture screen says the position is not used.
 - **Terms tick box** (0.5.3, DriverGps-05): with Delivered chosen, the capture screen shows `settings.terms` with a tick
-  box and **Read the terms** (`settings.termsUrl`). A signature can't be sent until it is ticked. The proof stores
+  box and **Read the terms** (`settings.termsUrl`). A signature can't be sent until it is ticked, and (0.5.4) not
+  without the signer's name in *Received by*. The proof stores
   `TermsAccepted` and `TermsText` (the wording shown, or the current setting for older apps, whose `termsAccepted` is
   null). Defaults in `MobileApiSettingsManager` (`DefaultDeliveryTerms`, `DefaultTermsUrl`).
 - **Walk-in stops:** for ZZName orders the sheet's `company` / `contactName` is the walk-in name from the notes and

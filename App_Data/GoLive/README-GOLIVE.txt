@@ -56,7 +56,7 @@ SQLCommands-CourierServices-01.xml ← courier track URLs + deep-link params (Fa
 
 3.0.3.1 RELEASE (order flags + GPS & drivers), in order
 a. Back up the live database and the server's Web.config.
-b. Publish Release; upload bin/, pages, Handlers/, Scripts/leaflet/, Styles/, driver/, Downloads/QuaffeeDriver.apk
+b. Publish Release; upload bin/, pages, Handlers/, Scripts/leaflet/, Styles/, driver/, Downloads/ (QuaffeeDriver.apk + .json)
    and the new App_Data/SQLCommands-*.xml (OrderFlags-01/02, AreaDeliveryOrder-01, CourierServices-01, MobileApi-01,
    DriverGps-01/02/03). Upload web.live.config as Web.config. Never overwrite the App_Data log files.
 c. Open https://tracker.quaffee.co.za/api/v1/ping (version 3.0.3.1) and sign in; the packs run at start-up.
@@ -92,7 +92,8 @@ Live steps:
    then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK (0.5.0, asks for location permission on the first delivery or when tracking
+5. Driver app: install the new APK once from Tools -> Driver App (0.5.1; upload Downloads/QuaffeeDriver.apk AND
+   Downloads/QuaffeeDriver.json; from 0.5.1 on the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
    starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
    simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work
    hours; drivers should allow notifications and not "optimise" the app's battery use, or positions stop.

@@ -360,6 +360,17 @@ namespace TrackerSQL.Models
         public System.Collections.Generic.List<string> LandlinePrefixes { get; set; }
         /// <summary>Driver tracking (System Preferences → GPS &amp; Drivers): when the app sends its position.</summary>
         public MobileTrackingSettings Tracking { get; set; }
+        /// <summary>The Android app on this site (Downloads/QuaffeeDriver.json from "npm run apk"); null when there is none.</summary>
+        public MobileAppRelease App { get; set; }
+    }
+
+    public class MobileAppRelease
+    {
+        /// <summary>"0.5.1" (package.json version).</summary>
+        public string Version { get; set; }
+        public int VersionCode { get; set; }
+        /// <summary>Site-relative download address, e.g. "/Downloads/QuaffeeDriver.apk?v=0.5.1".</summary>
+        public string Url { get; set; }
     }
 
     public class MobileTrackingSettings

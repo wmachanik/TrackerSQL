@@ -55,7 +55,9 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
-| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, and `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`) |
+| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`, and `app`: `{ version, versionCode, url }` from `Downloads/QuaffeeDriver.json`, missing when there is none) |
+| `GET app/download` | device | `{ version, url }`: a download link for the APK valid 30 minutes (`MachineKey.Protect`, purpose `DriverApkDownload`) |
+| `GET app/apk?t=` | none (the link is the permission) | The APK as `QuaffeeDriver-<version>.apk`; 403 text when the link expired. The request log keeps the path without the link |
 | `POST location` | device | `{ points: [{ lat, lng, accuracy, at, source }] }` (oldest first, at most 200; `source` APP_OPEN or PERIODIC). Stored only while tracking is on and inside the work days and hours; future or day-old points are skipped. Needs a sign-in linked to a person (400 otherwise). Returns `{ ok, saved, skipped, trackingEnabled }` (`DriverLocationPingTbl`) |
 | `GET devices`, `POST devices/{id}/revoke`, `GET log` | **admin** | |
 
@@ -115,6 +117,11 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   so a parked phone re-sends its last position) and posts with native `CapacitorHttp` because Android throttles web-view
   requests in the background. The web copy uses `watchPosition` while open. Up to 300 positions wait in IndexedDB
   (`tracking.queue`); they are dropped on sign-out so they are never sent under the next driver's name.
+- **Update** (0.5.1, `src/appUpdate.ts`): when `settings.app.version` is newer than the app (Android only; the web copy
+  updates itself), the delivery list and More show Update. It calls `GET app/download` and navigates to the link, which
+  Capacitor opens in the phone's browser; Android downloads the APK and the driver taps Install. Android only installs
+  over the old app when the APK is signed with the same key (the debug keystore in `%USERPROFILE%\.android` on the build
+  PC; back it up) and `versionCode` is higher.
 
 ## 8. Data use (measured)
 

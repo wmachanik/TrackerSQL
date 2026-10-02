@@ -254,7 +254,7 @@ namespace TrackerSQL.Api
             {
                 At = TimeZoneUtils.Now(),
                 Method = request.Method.Method,
-                Path = request.RequestUri.PathAndQuery,
+                Path = path.EndsWith("/api/v1/app/apk", StringComparison.OrdinalIgnoreCase) ? path : request.RequestUri.PathAndQuery,
                 RequestBytes = (int?)request.Content?.Headers.ContentLength,
                 Ip = HttpContext.Current?.Request.UserHostAddress,
                 Agent = request.Headers.UserAgent.ToString()

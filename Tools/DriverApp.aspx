@@ -68,7 +68,9 @@
                     <li>If Play Protect warns that it doesn't recognise the app, tap <strong>Install anyway</strong> (it is not from the Play Store).</li>
                     <li>Open <strong>Quaffee Driver</strong> and sign in with the Tracker login.</li>
                 </ol>
-                <p class="small">To update, download and install again over the old one; deliveries waiting to send are kept.</p>
+                <p class="small">Updates: from version 0.5.1 the app shows <strong>Update</strong> (on the delivery list and under More) when a newer
+                    version is on this page; tapping it downloads the new version, then open the download and tap <strong>Install</strong>.
+                    Older versions: download and install again over the old one. Deliveries waiting to send are kept.</p>
             </asp:Panel>
             <asp:Panel ID="pnlNoApk" runat="server" Visible="false" CssClass="status-message status-info">
                 The Android app has not been built yet. In the TrackerDriver project run <code>npm run apk</code>;

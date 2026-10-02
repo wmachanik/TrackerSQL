@@ -252,6 +252,83 @@ namespace TrackerSQL.Api
         }
     }
 
+    /// <summary>
+    /// App updates: the signed-in app asks for a download link (valid 30 minutes) and opens it in the phone's browser,
+    /// which is not signed in to Tracker; the link itself is the permission.
+    /// </summary>
+    [RoutePrefix("api/v1/app")]
+    public class AppController : MobileApiController
+    {
+        private const string Purpose = "DriverApkDownload";
+        private static readonly TimeSpan LinkLife = TimeSpan.FromMinutes(30);
+
+        [HttpGet, Route("download"), MobileAuthorize]
+        public HttpResponseMessage Download()
+        {
+            MobileAppRelease release = DriverAppReleaseManager.Latest();
+            if (release == null)
+                return Error(HttpStatusCode.NotFound, "There is no app to download on this site.");
+
+            byte[] expires = System.Text.Encoding.UTF8.GetBytes(DateTime.UtcNow.Add(LinkLife).Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            string token = Convert.ToBase64String(System.Web.Security.MachineKey.Protect(expires, Purpose))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            LogNote("app " + release.Version + " download link");
+            return JsonResponse(HttpStatusCode.OK, new
+            {
+                version = release.Version,
+                url = System.Web.VirtualPathUtility.ToAbsolute("~/api/v1/app/apk") + "?t=" + token
+            });
+        }
+
+        [HttpGet, Route("apk")]
+        public HttpResponseMessage Apk(string t = null)
+        {
+            if (!LinkValid(t))
+                return new HttpResponseMessage(HttpStatusCode.Forbidden)
+                {
+                    Content = new StringContent("This download link has expired. Tap Update in the Quaffee Driver app again.",
+                        System.Text.Encoding.UTF8, "text/plain")
+                };
+
+            MobileAppRelease release = DriverAppReleaseManager.Latest();
+            string path = System.Web.Hosting.HostingEnvironment.MapPath(DriverAppReleaseManager.ApkVirtualPath);
+            if (release == null || path == null || !System.IO.File.Exists(path))
+                return Error(HttpStatusCode.NotFound, "There is no app to download on this site.");
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new System.IO.FileStream(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            };
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.android.package-archive");
+            response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = "QuaffeeDriver-" + release.Version + ".apk"
+            };
+            response.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
+            LogNote("app " + release.Version + " downloaded");
+            return response;
+        }
+
+        private static bool LinkValid(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token) || token.Length > 500)
+                return false;
+            try
+            {
+                string b64 = token.Replace('-', '+').Replace('_', '/');
+                b64 = b64.PadRight(b64.Length + (4 - b64.Length % 4) % 4, '=');
+                byte[] plain = System.Web.Security.MachineKey.Unprotect(Convert.FromBase64String(b64), Purpose);
+                return plain != null
+                    && long.TryParse(System.Text.Encoding.UTF8.GetString(plain), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out long ticks)
+                    && DateTime.UtcNow.Ticks < ticks;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
+
     [RoutePrefix("api/v1/devices"), MobileAuthorize(AdminOnly = true)]
     public class DevicesController : MobileApiController
     {

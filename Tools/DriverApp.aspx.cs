@@ -38,8 +38,9 @@ namespace TrackerSQL.Tools
                 return;
             }
 
-            litApkInfo.Text = string.Format(CultureInfo.InvariantCulture, "{0:0.0} MB, built {1:dd MMM yyyy HH:mm}",
-                apk.Length / 1048576.0, apk.LastWriteTime);
+            MobileAppRelease release = DriverAppReleaseManager.Latest();
+            litApkInfo.Text = HttpUtility.HtmlEncode(string.Format(CultureInfo.InvariantCulture, "{0}{1:0.0} MB, built {2:dd MMM yyyy HH:mm}",
+                release != null ? "version " + release.Version + ", " : string.Empty, apk.Length / 1048576.0, apk.LastWriteTime));
         }
 
         private void BindSettings()

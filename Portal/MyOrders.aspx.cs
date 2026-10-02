@@ -44,5 +44,10 @@ namespace TrackerSQL.Portal
             string encoded = HttpUtility.HtmlEncode(text ?? string.Empty);
             return "<span class=\"portal-ellipsis\" title=\"" + encoded + "\">" + encoded + "</span>";
         }
+
+        protected string ProofLinksHtml(ContactOrderSummary order)
+        {
+            return order?.ProofID == null ? string.Empty : ProofOfDeliveryLinksHtml(order.ProofID.Value);
+        }
     }
 }

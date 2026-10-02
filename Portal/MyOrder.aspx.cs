@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Web;
 using System.Web.UI.WebControls;
 using TrackerSQL.Models;
@@ -9,7 +10,8 @@ namespace TrackerSQL.Portal
     {
         protected Literal litOrderDate, litDelivery, litPO, litStatus, litNotes, litMessage;
         protected Literal litCourier, litWaybill, litDispatched;
-        protected PlaceHolder phCourier, phTrack, phShop, phShopView;
+        protected PlaceHolder phCourier, phTrack, phShop, phShopView, phProofs;
+        protected Literal litProofs;
         protected HyperLink hlTrack, hlShopView;
         protected Literal litShopOrder;
         protected GridView gvLines;
@@ -52,6 +54,7 @@ namespace TrackerSQL.Portal
 
             BindCourier();
             BindShopOrder();
+            BindProofs();
 
             gvLines.DataSource = Portal.GetOwnOrderLinesForDisplay(OrderId);
             gvLines.DataBind();
@@ -93,6 +96,27 @@ namespace TrackerSQL.Portal
             phShopView.Visible = canView;
             if (canView)
                 hlShopView.NavigateUrl = shop.ViewUrl;
+        }
+
+        private void BindProofs()
+        {
+            var proofs = Portal.GetOwnOrderProofs(OrderId);
+            phProofs.Visible = proofs.Count > 0;
+            if (proofs.Count == 0)
+                return;
+
+            var html = new StringBuilder("<table class=\"results-table portal-table\"><thead><tr>"
+                + "<th class=\"portal-col-nowrap\">Delivered</th><th>Received By</th><th class=\"portal-col-nowrap\">Proof of Delivery (PDF)</th>"
+                + "</tr></thead><tbody>");
+            foreach (var proof in proofs)
+            {
+                html.Append("<tr><td class=\"portal-col-nowrap\">")
+                    .Append(HttpUtility.HtmlEncode(proof.DeliveredAt.ToString("dd MMM yyyy HH:mm")))
+                    .Append("</td><td>").Append(Display(proof.ReceivedByName))
+                    .Append("</td><td class=\"portal-col-nowrap\">").Append(ProofOfDeliveryLinksHtml(proof.ProofID))
+                    .Append("</td></tr>");
+            }
+            litProofs.Text = html.Append("</tbody></table>").ToString();
         }
 
         private static string Display(string value)

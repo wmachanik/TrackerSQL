@@ -142,6 +142,16 @@ namespace TrackerSQL.Portal
                 + "</div>";
         }
 
+        /// <summary>View (opens the PDF in a new tab) and Download links for a proof of delivery.</summary>
+        protected string ProofOfDeliveryLinksHtml(long proofId)
+        {
+            string url = ResolveUrl("~/Handlers/ProofOfDelivery.ashx?id=" + proofId);
+            return "<span class=\"portal-pod-links\"><a href=\"" + HttpUtility.HtmlAttributeEncode(url)
+                + "\" target=\"_blank\" rel=\"noopener\" title=\"Open the proof of delivery (PDF)\">View</a>"
+                + "<a href=\"" + HttpUtility.HtmlAttributeEncode(url + "&download=1")
+                + "\" title=\"Save the proof of delivery (PDF)\">Download</a></span>";
+        }
+
         private string ButtonHtml(string appRelativeUrl, string text, string title)
         {
             return "<span class=\"image-button\" title=\"" + HttpUtility.HtmlAttributeEncode(title) + "\"><img src=\""

@@ -30,7 +30,7 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Managers/MobileApiSecurity.cs` | In-memory throttles: failed sign-ins per IP, calls per device, 5-minute account check cache. |
 | `Managers/MobileDeliveryManager.cs` | Sheet, offline delivery sync (`clientRef` de-duplication), proofs, auto Order Done, emails. |
 | `Managers/MobileDeliveryEmailManager.cs` | Proof of delivery email (hands over to `ProofOfDeliveryManager`) and driver note to the office. |
-| `Managers/ProofOfDeliveryManager.cs` + `Classes/SimplePdf.cs` | Proof of delivery PDF (details, items, terms tick, signature) and sending it; `Handlers/ProofOfDelivery.ashx?id=` serves it to staff. |
+| `Managers/ProofOfDeliveryManager.cs` + `Classes/SimplePdf.cs` | Proof of delivery PDF (details, items, terms tick, signature) and sending it; `Handlers/ProofOfDelivery.ashx?id=` serves it to staff (any proof) and to Contact Portal logins (only their own delivered proofs, `ContactPortalManager.CanViewProof`; otherwise 404). The portal links it from My Orders and Order Details. |
 | `Classes/SundryNotes.cs` | Walk-in (ZZName) order notes: name before the `:`, details after it, `[#email#]`. |
 | `Managers/MobileRepairManager.cs` | Repairs list/get/create/update (same rules as Repair Detail). |
 | `Managers/MobileApiSettingsManager.cs` + `Repositories/MobileApiSettingsRepository.cs` | System → Driver App settings (`MobileApiSettingsTbl`, 1-minute cache). |

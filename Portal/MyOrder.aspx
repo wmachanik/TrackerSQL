@@ -77,6 +77,13 @@
             </div>
         </asp:PlaceHolder>
 
+        <asp:PlaceHolder ID="phProofs" runat="server" Visible="false">
+            <h2 class="sys-prefs-section-title">Proof of Delivery</h2>
+            <div class="portal-table-wrap">
+                <asp:Literal ID="litProofs" runat="server" />
+            </div>
+        </asp:PlaceHolder>
+
         <h2 class="sys-prefs-section-title">Order Items</h2>
         <div class="portal-table-wrap">
             <asp:GridView ID="gvLines" runat="server" CssClass="results-table portal-table"

@@ -567,6 +567,27 @@ namespace TrackerSQL.Repositories
             }, P("@ContactID", contactId, DbType.Int32));
         }
 
+        /// <summary>Contact Portal: the contact's delivered proofs (no signatures), newest first.</summary>
+        public List<ContactProofRow> ListDeliveredProofsForContact(int contactId, int max = 500)
+        {
+            string sql = "SELECT TOP (" + Math.Max(1, Math.Min(max, 2000)) + @")
+                    m.ProofID, m.OrderID, m.DeliveredAt, m.Outcome, m.Reason, m.ReceivedByName
+                FROM MobileDeliveryProofTbl m
+                LEFT JOIN OrdersTbl o ON o.OrderID = m.OrderID
+                WHERE (m.ContactID = @ContactID OR (m.ContactID IS NULL AND o.ContactID = @ContactID))
+                  AND ISNULL(m.Outcome, '') <> 'NotDelivered'
+                ORDER BY m.DeliveredAt DESC, m.ProofID DESC";
+            return Query(sql, r => new ContactProofRow
+            {
+                ProofID = Convert.ToInt64(r["ProofID"]),
+                OrderID = Convert.ToInt32(r["OrderID"]),
+                DeliveredAt = Convert.ToDateTime(r["DeliveredAt"]),
+                Outcome = Str(r, "Outcome"),
+                Reason = Str(r, "Reason"),
+                ReceivedByName = Str(r, "ReceivedByName")
+            }, P("@ContactID", contactId, DbType.Int32));
+        }
+
         public bool TryGetSignature(long proofId, out byte[] image, out string contentType)
         {
             image = null;

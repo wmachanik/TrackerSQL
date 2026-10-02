@@ -9533,6 +9533,9 @@ a.delivery-days-tag.is-promise-gap:hover {
 .pod-terms { color: #3f6b4f; white-space: nowrap; }
 .pod-terms.is-missing { color: #b00020; font-weight: 600; }
 
+/* Contact Portal: proof of delivery View / Download */
+.portal-pod-links a + a { margin-left: 0.9em; }
+
 /* System → Driver App: delivery terms */
 textarea.driver-app-terms { width: 100%; max-width: 46em; box-sizing: border-box; }
 

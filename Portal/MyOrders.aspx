@@ -31,6 +31,9 @@
                     <asp:TemplateField HeaderText="Status">
                         <ItemTemplate><%# StatusBadgeHtml((string)Eval("CustomerStatusDisplay"), (bool)Eval("Done")) %></ItemTemplate>
                     </asp:TemplateField>
+                    <asp:TemplateField HeaderText="Proof of Delivery" ItemStyle-CssClass="portal-col-nowrap" HeaderStyle-CssClass="portal-col-nowrap">
+                        <ItemTemplate><%# ProofLinksHtml((ContactOrderSummary)Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
                     <asp:TemplateField HeaderText="" ItemStyle-CssClass="portal-col-action" HeaderStyle-CssClass="portal-col-action">
                         <ItemTemplate>
                             <span class="image-button" title="View this order">

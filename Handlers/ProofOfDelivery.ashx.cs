@@ -7,7 +7,7 @@ namespace TrackerSQL.Handlers
 {
     /// <summary>
     /// The proof of delivery PDF for a driver-app delivery: ProofOfDelivery.ashx?id=ProofID (add &amp;download=1 to save it).
-    /// Tracker staff only; contact-portal logins are refused.
+    /// Tracker staff see any proof; contact-portal logins only their own delivered ones.
     /// </summary>
     public class ProofOfDelivery : IHttpHandler
     {
@@ -23,14 +23,14 @@ namespace TrackerSQL.Handlers
                 context.Response.StatusCode = 401;
                 return;
             }
-            if (ContactPortalManager.IsContactRole(user))
-            {
-                context.Response.StatusCode = 403;
-                return;
-            }
             if (!long.TryParse(context.Request.QueryString["id"], out long proofId) || proofId <= 0)
             {
                 Fail(context, 400, "Which proof? Use ?id=ProofID.");
+                return;
+            }
+            if (ContactPortalManager.IsContactRole(user) && !new ContactPortalManager().CanViewProof(proofId))
+            {
+                Fail(context, 404, "Proof of delivery not found.");
                 return;
             }
 

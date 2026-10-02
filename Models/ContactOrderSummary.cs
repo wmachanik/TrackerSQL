@@ -30,6 +30,9 @@ namespace TrackerSQL.Models
         public System.Collections.Generic.List<string> ItemLines { get; set; }
             = new System.Collections.Generic.List<string>();
 
+        /// <summary>Latest delivered proof of delivery from the driver app, when loaded (Contact Portal).</summary>
+        public long? ProofID { get; set; }
+
         public string StatusDisplay
         {
             get

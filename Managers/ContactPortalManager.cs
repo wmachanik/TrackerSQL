@@ -884,12 +884,46 @@ namespace TrackerSQL.Managers
                 .GroupBy(l => l.OrderID)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
+            var latestProof = GetOwnProofs()
+                .GroupBy(p => p.OrderID)
+                .ToDictionary(g => g.Key, g => g.First().ProofID);
+
             foreach (var order in orders)
             {
                 if (linesByOrder.TryGetValue(order.OrderID, out var lines))
                     order.ItemLines = lines.Select(l => l.Display).ToList();
+                if (latestProof.TryGetValue(order.OrderID, out long proofId))
+                    order.ProofID = proofId;
             }
             return orders;
+        }
+
+        /// <summary>The signed-in contact's delivered proofs of delivery (driver app), newest first.</summary>
+        public List<ContactProofRow> GetOwnProofs()
+        {
+            int id = GetCurrentContactId();
+            if (id <= 0)
+                return new List<ContactProofRow>();
+            try
+            {
+                return new MobileApiRepository().ListDeliveredProofsForContact(id);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Portal proof of delivery list failed for contact " + id + ": " + ex.Message);
+                return new List<ContactProofRow>();
+            }
+        }
+
+        public List<ContactProofRow> GetOwnOrderProofs(int orderId)
+        {
+            return GetOwnProofs().Where(p => p.OrderID == orderId).ToList();
+        }
+
+        /// <summary>True when the proof is a delivered one for the signed-in contact (portal PDF access).</summary>
+        public bool CanViewProof(long proofId)
+        {
+            return proofId > 0 && GetOwnProofs().Any(p => p.ProofID == proofId);
         }
 
         public OrderHeaderData GetOwnOrderHeader(int orderId)

@@ -49,8 +49,8 @@
                     <tr>
                         <th>Delivery options</th>
                         <td>
-                            <asp:CheckBox ID="cbxDriverTracking" runat="server" Text="Show driver tracking"
-                                ToolTip="Lets this user see where the drivers are (off by default)" />
+                            <asp:CheckBox ID="cbxDriverTracking" runat="server" Text="May see driver tracking"
+                                ToolTip="Lets this user open Deliveries → Driver tracking (where the drivers are now). Administrators always can; off by default for everyone else." />
                         </td>
                     </tr>
                     <tr>

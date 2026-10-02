@@ -4,13 +4,12 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.Data.SqlClient;
 using System.Web;
 using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
-using TrackerSQL.Repositories;
+using TrackerSQL.Managers;
 
 //- only form later versions #nullable disable
 namespace TrackerSQL.Administration
@@ -165,69 +164,29 @@ namespace TrackerSQL.Administration
                 return;
             }
 
+            if (string.Equals(username, User?.Identity?.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                lblStatusMessage.Text = "You cannot delete the login you are signed in with.";
+                return;
+            }
+
             try
             {
-                bool deleted = Membership.DeleteUser(username, deleteAllRelatedData: true);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Login,
-                    deleted
-                        ? "UserInformation: deleted user '" + username + "'."
-                        : "UserInformation: Membership.DeleteUser returned false for '" + username + "'.");
-
-                if (deleted)
+                if (new UserAccountManager().DeleteUser(username, User?.Identity?.Name, out string error))
                 {
                     Response.Redirect("~/Administration/ManageUsers.aspx", endResponse: false);
                     Context.ApplicationInstance.CompleteRequest();
                     return;
                 }
 
-                lblStatusMessage.Text = "Could not delete user '" + Server.HtmlEncode(username) + "'.";
+                lblStatusMessage.Text = Server.HtmlEncode(error);
             }
             catch (Exception ex)
             {
-                if (IsForeignKeyDeleteConflict(ex))
-                {
-                    try
-                    {
-                        string applicationName = Membership.Provider?.ApplicationName ?? "/";
-                        bool fallbackDeleted = new MembershipRepository()
-                            .DeleteUserAndRelatedData(username, applicationName);
-                        if (fallbackDeleted)
-                        {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.Login,
-                                "UserInformation: deleted migrated membership user '" + username
-                                + "' using transactional FK-safe cleanup.");
-                            Response.Redirect("~/Administration/ManageUsers.aspx", endResponse: false);
-                            Context.ApplicationInstance.CompleteRequest();
-                            return;
-                        }
-                    }
-                    catch (Exception fallbackEx)
-                    {
-                        AppLogger.WriteLog(SystemConstants.LogTypes.Login,
-                            "UserInformation: fallback delete for '" + username + "' failed: "
-                            + fallbackEx.Message);
-                        lblStatusMessage.Text = "Could not delete user. "
-                            + Server.HtmlEncode(fallbackEx.Message);
-                        return;
-                    }
-                }
-
                 AppLogger.WriteLog(SystemConstants.LogTypes.Login,
                     "UserInformation: delete user '" + username + "' failed: " + ex.Message);
                 lblStatusMessage.Text = "Could not delete user. " + Server.HtmlEncode(ex.Message);
             }
-        }
-
-        private static bool IsForeignKeyDeleteConflict(Exception exception)
-        {
-            for (Exception current = exception; current != null; current = current.InnerException)
-            {
-                var sqlException = current as SqlException;
-                if (sqlException != null && sqlException.Number == 547)
-                    return true;
-            }
-
-            return false;
         }
     }
 }

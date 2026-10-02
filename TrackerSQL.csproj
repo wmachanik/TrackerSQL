@@ -612,6 +612,7 @@
     <Compile Include="Models\ContactChangeLogEntry.cs" />
     <Compile Include="Models\ContactOrderSummary.cs" />
     <Compile Include="Models\ContactProofRow.cs" />
+    <Compile Include="Models\UserAccountRow.cs" />
     <Compile Include="Models\CustomerLocation.cs" />
     <Compile Include="Models\GpsSettings.cs" />
     <Compile Include="Models\CoffeeCheckupModels.cs" />
@@ -700,6 +701,7 @@
     <Compile Include="Repositories\DriverLocationRepository.cs" />
     <Compile Include="Managers\DriverTrackingManager.cs" />
     <Compile Include="Managers\RouteTimesManager.cs" />
+    <Compile Include="Managers\UserAccountManager.cs" />
     <Compile Include="Managers\DriverAppReleaseManager.cs" />
     <Compile Include="Models\DriverTrackingModels.cs" />
     <Compile Include="Classes\WaybillFormat.cs" />

@@ -9152,6 +9152,57 @@ tr.dlv-dragging {
     color: #777;
 }
 
+/* Administration → Manage Users */
+.users-unused-bar {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #fff6e0;
+    border: 1px solid #e8cf8f;
+    border-radius: 4px;
+}
+
+.users-unused-bar .filter-panel-btn {
+    margin-left: 6px;
+}
+
+.users-unused-bar input[type="submit"].users-delete-btn {
+    background-color: #9a4a1f !important;
+    border-color: #9a4a1f !important;
+}
+
+.users-unused-bar input[type="submit"].users-delete-btn:hover {
+    background-color: #7d3b18 !important;
+    border-color: #7d3b18 !important;
+}
+
+.users-type {
+    display: inline-block;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: #e6eee6;
+    color: #2f5d3a;
+    font-size: .85em;
+    white-space: nowrap;
+}
+
+.users-type.is-contact {
+    background: #e3ebf5;
+    color: #3b5878;
+}
+
+.users-last {
+    white-space: nowrap;
+}
+
+.users-last.is-unused {
+    color: #9a4a1f;
+}
+
+.users-note {
+    color: #777;
+    margin-top: 6px;
+}
+
 /* Contact Details → Proof of Delivery: phone position vs the client's GPS point */
 .gps-check {
     color: #2f5d3a;

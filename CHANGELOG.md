@@ -2,6 +2,10 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.3 — in progress
+
+Not released yet. 3.0.3.2 went live on 2026-10-02.
+
 ## 3.0.3.2 — 2026-10-02
 
 ### Features

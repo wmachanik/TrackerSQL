@@ -21,9 +21,12 @@
     ($b | ForEach-Object { $_.ToString('X2') }) -join ''   # decryptionKey (use byte[] 64 for validationKey)
 
   Live production Web.config for TrackerSQL on tracker.quaffee.co.za (primary; quaffeetracker.co.za is the same site)
-  (v3.0.3.2 binaries). Upload as Web.config on the host (backup the server copy first).
+  (v3.0.3.3 binaries). Upload as Web.config on the host (backup the server copy first).
 
   TrackerDataSQL = former ApplicationServices (SQL8001 / site4now).
+
+  3.0.3.3 changes (search "3.0.3.3"):
+    1. Version 3.0.3.2 -> 3.0.3.3
 
   3.0.3.2 changes (search "3.0.3.2") - depot map popup, driver app Update button:
     1. Version 3.0.3.1 -> 3.0.3.2 (no other config changes; the APK download goes through /api, already anonymous)
@@ -60,8 +63,8 @@
 -->
 <configuration>
 	<appSettings>
-		<!-- 3.0.3.2: was 3.0.3.1 -->
-		<add key="Version" value="3.0.3.2" />
+		<!-- 3.0.3.3: was 3.0.3.2 -->
+		<add key="Version" value="3.0.3.3" />
 		<!-- SECRET: live Base64 32-byte key (see SETUP at the top) -->
 		<add key="WooCommerceCryptoKey" value="mypassword" />
 		<add key="SysEmailFrom" value="orders@quaffee.co.za" />

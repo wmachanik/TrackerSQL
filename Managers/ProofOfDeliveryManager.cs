@@ -166,7 +166,7 @@ namespace TrackerSQL.Managers
                     pdf.Image(pdf.AddJpeg(logo, w, h), Left, 34f, logoHeight * w / h, logoHeight);
                 }
             }
-            pdf.TextRight(Right, 58f, "PROOF OF DELIVERY", 18f, true, accent);
+            pdf.TextRight(Right, 58f, "Proof of Delivery", 18f, true, accent);
             pdf.TextRight(Right, 76f, "Order " + proof.OrderID.ToString(CultureInfo.InvariantCulture)
                 + "    POD " + proof.ProofID.ToString(CultureInfo.InvariantCulture), 10f, false, muted);
             pdf.Line(Left, 100f, Right, 100f, 1.2f, accent);

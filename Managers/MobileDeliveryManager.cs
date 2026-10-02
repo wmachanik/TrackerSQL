@@ -70,6 +70,8 @@ namespace TrackerSQL.Managers
             }
 
             sheet.Orders = PlanRoutes(sheet.Orders, routeRows);
+            if (personId.HasValue)
+                sheet.RouteNote = OfficeRouteNote(date, personId.Value);
 
             if (sheet.Orders.Count > 0)
             {
@@ -179,7 +181,20 @@ namespace TrackerSQL.Managers
                         Status = row.ProofStatus,
                         HasSignature = row.ProofHasSignature
                     }
-                    : null
+                    : null,
+                Gps = sundry ? null
+                    : row.GpsLat.HasValue && row.GpsLng.HasValue
+                        ? new MobileStopGps
+                        {
+                            Lat = Math.Round(row.GpsLat.Value, 6),
+                            Lng = Math.Round(row.GpsLng.Value, 6),
+                            Kind = row.GpsSource == CustomerLocation.SourceManual ? "pin"
+                                : row.GpsSource == CustomerLocation.SourceDriver ? "driver" : "lookup",
+                            Checked = row.GpsStatus == CustomerLocation.StatusVerified,
+                            Review = row.GpsStatus == CustomerLocation.StatusReviewRequired
+                        }
+                        : new MobileStopGps { Kind = "none" },
+                NoGpsLearning = sundry || row.CollectsOrCourier ? true : (bool?)null
             };
         }
 
@@ -236,6 +251,82 @@ namespace TrackerSQL.Managers
                 : "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " set " + contacts.Count + " stops: contacts "
                   + string.Join(", ", contacts), user.UserName);
             return contacts.Count;
+        }
+
+        /// <summary>"The office (warren) changed your order at 10:15" when the day's order was last set on the delivery sheet.</summary>
+        private static string OfficeRouteNote(DateTime day, int personId)
+        {
+            try
+            {
+                if (!new DeliveryRouteRepository().GetPlanInfo(day).TryGetValue(personId, out DeliveryRouteRepository.PlanInfo plan) || !plan.ByOffice)
+                    return null;
+                string at = plan.SetAt.ToString(plan.SetAt.Date == TimeZoneUtils.Now().Date ? "HH:mm" : "HH:mm 'on' ddd d MMM", CultureInfo.InvariantCulture);
+                return "The office (" + plan.UserName + ") set your order at " + at + ". You can still change it.";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Route note not read: " + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The office delivery sheet: the driver's stops still to do, dragged into a new order (contacts first to last).
+        /// Stops already delivered keep their place, so the route numbers do not shift. Returns the number of stops saved.
+        /// </summary>
+        public int SaveOfficeRoute(DateTime day, int personId, IList<int> openContactOrder, string userName, out string error)
+        {
+            error = null;
+            if (!DeliveryRouteRepository.TableSeen())
+            {
+                error = "Tracker is not ready for route orders yet (SQLCommands-DriverGps-02.xml).";
+                return 0;
+            }
+            if (!new PersonsRepository().IsDeliverPerson(personId))
+            {
+                error = "Only our own drivers have a route order (not couriers or collections).";
+                return 0;
+            }
+
+            List<int> route = new List<int>();
+            var done = new HashSet<int>();
+            foreach (MobileDeliveryStop stop in GetSheet(day, personId).Orders.OrderBy(o => o.Seq))
+            {
+                if (stop.ContactId <= 0 || route.Contains(stop.ContactId))
+                    continue;
+                route.Add(stop.ContactId);
+                if (stop.Done || stop.Proof != null)
+                    done.Add(stop.ContactId);
+            }
+
+            var wanted = (openContactOrder ?? new List<int>()).Where(c => route.Contains(c) && !done.Contains(c)).Distinct().ToList();
+            wanted.AddRange(route.Where(c => !done.Contains(c) && !wanted.Contains(c)));
+            if (wanted.Count == 0)
+            {
+                error = "There are no stops left to put in order.";
+                return 0;
+            }
+
+            var contacts = new List<int>(route.Count);
+            int next = 0;
+            foreach (int contactId in route)
+                contacts.Add(done.Contains(contactId) ? contactId : wanted[next++]);
+
+            new DeliveryRouteRepository().Save(day, personId, contacts, userName + DeliveryRouteRepository.OfficeSuffix);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " to " + contacts.Count + " stops: contacts "
+                + string.Join(", ", contacts), userName);
+            return contacts.Count;
+        }
+
+        /// <summary>The office delivery sheet: back to the suggested order for the driver's day.</summary>
+        public void ClearRoute(DateTime day, int personId, string userName)
+        {
+            if (!DeliveryRouteRepository.TableSeen())
+                return;
+            new DeliveryRouteRepository().Save(day, personId, new List<int>(), userName + DeliveryRouteRepository.OfficeSuffix);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " back to the suggested order", userName);
         }
 
         /// <summary>ZZName walk-in orders carry the person's name in the notes before the first colon.</summary>

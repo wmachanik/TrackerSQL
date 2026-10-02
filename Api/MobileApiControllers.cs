@@ -97,7 +97,7 @@ namespace TrackerSQL.Api
                 LogNote(personId.HasValue ? "Viewed person " + personId + "'s deliveries" : "Viewed everyone's deliveries");
 
             var sheet = new MobileDeliveryManager().GetSheet(day, personId);
-            return JsonWithETag(sheet, new { sheet.Date, sheet.PersonId, sheet.Orders });
+            return JsonWithETag(sheet, new { sheet.Date, sheet.PersonId, sheet.Orders, sheet.RouteNote });
         }
 
         /// <summary>Upload deliveries captured offline (received-by name, signature, outcome). Safe to retry: clientRef de-duplicates.</summary>

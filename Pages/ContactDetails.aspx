@@ -674,6 +674,12 @@
                                                 ToolTip="Where the phone was when the proof was captured (opens OpenStreetMap)" />
                                         </ItemTemplate>
                                     </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="GPS point">
+                                        <ItemTemplate>
+                                            <span class='<%# Eval("GpsCheckCss") %>'
+                                                title="The phone position at delivery compared with the client's GPS point now"><%#: Eval("GpsCheck") %></span>
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
                                 </Columns>
                             </asp:GridView>
                         </div>

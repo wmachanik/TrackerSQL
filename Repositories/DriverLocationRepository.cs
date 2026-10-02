@@ -95,6 +95,37 @@ WHERE rn = 1";
             return list;
         }
 
+        /// <summary>Every position on the day, oldest first.</summary>
+        public List<Ping> ForDay(DateTime day)
+        {
+            var list = new List<Ping>();
+            using (var db = new TrackerSQLDb())
+            using (var r = db.ExecuteReader(@"
+SELECT PersonID, Latitude, Longitude, AccuracyM, PingTime, Source
+FROM dbo.DriverLocationPingTbl
+WHERE PingTime >= @From AND PingTime < @To
+ORDER BY PingTime, PingID", new List<DBParameter>
+            {
+                P("@From", day.Date, DbType.DateTime),
+                P("@To", day.Date.AddDays(1), DbType.DateTime)
+            }))
+            {
+                while (r != null && r.Read())
+                {
+                    list.Add(new Ping
+                    {
+                        PersonID = Convert.ToInt32(r["PersonID"]),
+                        Latitude = Convert.ToDecimal(r["Latitude"]),
+                        Longitude = Convert.ToDecimal(r["Longitude"]),
+                        AccuracyM = r["AccuracyM"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["AccuracyM"]),
+                        PingTime = Convert.ToDateTime(r["PingTime"]),
+                        Source = r["Source"].ToString()
+                    });
+                }
+            }
+            return list;
+        }
+
         /// <summary>Deletes positions older than the given number of days. Returns the rows deleted.</summary>
         public int DeleteOlderThan(int days)
         {

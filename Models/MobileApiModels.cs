@@ -68,7 +68,22 @@ namespace TrackerSQL.Models
         public string Date { get; set; }
         public int? PersonId { get; set; }
         public string GeneratedAt { get; set; }
+        /// <summary>One driver's sheet: who last set the route order when it was not the driver ("The office changed your order at 10:15").</summary>
+        public string RouteNote { get; set; }
         public List<MobileDeliveryStop> Orders { get; set; } = new List<MobileDeliveryStop>();
+    }
+
+    /// <summary>The client's GPS point in Tracker, so the app can work out arrival times and say whether a delivery will update it.</summary>
+    public class MobileStopGps
+    {
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+        /// <summary>"pin" (placed by hand), "driver" (from deliveries), "lookup" (address lookup) or "none" (no point yet).</summary>
+        public string Kind { get; set; }
+        /// <summary>Checked: two deliveries agreed, or a person confirmed it.</summary>
+        public bool Checked { get; set; }
+        /// <summary>Flagged for the office to check.</summary>
+        public bool Review { get; set; }
     }
 
     public class MobileDeliveryStop
@@ -96,6 +111,10 @@ namespace TrackerSQL.Models
         /// <summary>Repairs linked to this order (collect from or return to the client).</summary>
         public List<MobileStopRepair> Repairs { get; set; }
         public MobileDeliveryProofSummary Proof { get; set; }
+        /// <summary>The client's GPS point (Kind "none" when Tracker has none yet; null for walk-in orders).</summary>
+        public MobileStopGps Gps { get; set; }
+        /// <summary>True when deliveries never change the client's point (walk-in, collects or goes by courier).</summary>
+        public bool? NoGpsLearning { get; set; }
     }
 
     public class MobileDeliveryItem
@@ -362,6 +381,19 @@ namespace TrackerSQL.Models
         public MobileTrackingSettings Tracking { get; set; }
         /// <summary>The Android app on this site (Downloads/QuaffeeDriver.json from "npm run apk"); null when there is none.</summary>
         public MobileAppRelease App { get; set; }
+        /// <summary>Arrival times on the route (System Preferences → GPS &amp; Drivers).</summary>
+        public MobileRouteTimesSettings Route { get; set; }
+    }
+
+    public class MobileRouteTimesSettings
+    {
+        public int SpeedKmh { get; set; }
+        /// <summary>Minutes spent at each stop.</summary>
+        public int ServiceMinutes { get; set; }
+        public double? DepotLat { get; set; }
+        public double? DepotLng { get; set; }
+        /// <summary>Times are worked out once the phone is this far from the depot (or after the first delivery).</summary>
+        public int LeftDepotMetres { get; set; }
     }
 
     public class MobileAppRelease

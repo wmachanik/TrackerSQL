@@ -131,6 +131,18 @@
                     </div>
                 </asp:Panel>
 
+                <div class="dlv-route-info small">
+                    <asp:Literal ID="ltrlRouteInfo" runat="server" EnableViewState="false" />
+                </div>
+                <div id="dlvOrderBar" class="dlv-order-bar" hidden="hidden">
+                    <span id="dlvOrderText"></span>
+                    <button type="button" class="filter-panel-btn" onclick="dlvSaveOrder();">Save order</button>
+                    <button type="button" class="filter-panel-btn" onclick="dlvCancelOrder();">Cancel</button>
+                </div>
+                <asp:HiddenField ID="hdnRouteOrder" runat="server" />
+                <asp:Button ID="btnSaveRouteOrder" runat="server" Text="Save order" Style="display: none"
+                    OnClick="btnSaveRouteOrder_Click" CausesValidation="false" UseSubmitBehavior="false" />
+
                 <asp:Table ID="tblDeliveries" runat="server" EnableViewState="false" CssClass="TblZebra" Width="100%" CellPadding="0">
                     <asp:TableHeaderRow TableSection="TableHeader">
                         <asp:TableHeaderCell>By</asp:TableHeaderCell>
@@ -156,4 +168,116 @@
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+
+    <script type="text/javascript">
+        // Drag-to-order: rows carry data-person / data-contact; only a driver's own open stops move among each other.
+        (function () {
+            var dragRow = null, changed = null, start = null;
+
+            function rowOf(el) { return el && el.closest ? el.closest('tr[data-person]') : null; }
+            function table() { return document.getElementById('<%= tblDeliveries.ClientID %>'); }
+            function rowsOf(person) {
+                var t = table();
+                return t ? Array.prototype.slice.call(t.querySelectorAll('tr[data-person="' + person + '"]')) : [];
+            }
+            function contactsOf(person) {
+                var seen = [];
+                rowsOf(person).forEach(function (r) {
+                    var c = parseInt(r.getAttribute('data-contact'), 10);
+                    if (seen.indexOf(c) < 0) seen.push(c);
+                });
+                return seen;
+            }
+            function bar(show, text) {
+                var b = document.getElementById('dlvOrderBar');
+                if (!b) return;
+                b.hidden = !show;
+                document.getElementById('dlvOrderText').textContent = text || '';
+            }
+            function post(request) {
+                document.getElementById('<%= hdnRouteOrder.ClientID %>').value = JSON.stringify(request);
+                document.getElementById('<%= btnSaveRouteOrder.ClientID %>').click();
+            }
+
+            document.addEventListener('mousedown', function (e) {
+                var handle = e.target.closest ? e.target.closest('.dlv-handle') : null;
+                var tr = rowOf(handle);
+                if (tr) tr.setAttribute('draggable', 'true');
+            });
+            document.addEventListener('mouseup', function (e) {
+                var tr = rowOf(e.target);
+                if (tr && !dragRow) tr.removeAttribute('draggable');
+            });
+            document.addEventListener('dragstart', function (e) {
+                var tr = rowOf(e.target);
+                if (!tr || tr.getAttribute('draggable') !== 'true') return;
+                var person = tr.getAttribute('data-person');
+                if (changed && changed !== person) {
+                    e.preventDefault();
+                    alert('Save or cancel the order you changed first.');
+                    return;
+                }
+                if (!changed) {
+                    var rows = rowsOf(person);
+                    start = { person: person, rows: rows, after: rows[rows.length - 1].nextSibling, contacts: contactsOf(person).join(',') };
+                }
+                dragRow = tr;
+                tr.classList.add('dlv-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                try { e.dataTransfer.setData('text/plain', tr.getAttribute('data-order')); } catch (x) { }
+            });
+            document.addEventListener('dragover', function (e) {
+                if (!dragRow) return;
+                var tr = rowOf(e.target);
+                if (!tr || tr.getAttribute('data-person') !== dragRow.getAttribute('data-person')) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (tr === dragRow) return;
+                var box = tr.getBoundingClientRect();
+                tr.parentNode.insertBefore(dragRow, e.clientY > box.top + box.height / 2 ? tr.nextSibling : tr);
+            });
+            document.addEventListener('drop', function (e) { if (dragRow) e.preventDefault(); });
+            document.addEventListener('dragend', function () {
+                if (!dragRow) return;
+                var person = dragRow.getAttribute('data-person');
+                var name = dragRow.getAttribute('data-driver') || 'this driver';
+                dragRow.classList.remove('dlv-dragging');
+                dragRow.removeAttribute('draggable');
+                dragRow = null;
+                if (start && contactsOf(person).join(',') !== start.contacts) {
+                    changed = person;
+                    bar(true, 'You changed the order of ' + name + "'s stops.");
+                } else {
+                    changed = null;
+                    bar(false);
+                }
+            });
+
+            window.dlvSaveOrder = function () {
+                if (!changed) return;
+                var t = table();
+                var plans = {};
+                try { plans = JSON.parse(t.getAttribute('data-driver-plans') || '{}'); } catch (x) { }
+                if (plans[changed] && !confirm(plans[changed] + "\n\nThe driver's own order normally comes first. Only change it when you need to, "
+                    + 'for example when a client asked to be delivered first.\n\nSave your order anyway?')) return;
+                post({ day: t.getAttribute('data-day'), person: parseInt(changed, 10), contacts: contactsOf(changed) });
+            };
+            window.dlvCancelOrder = function () {
+                if (start) start.rows.forEach(function (r) { start.after ? start.after.parentNode.insertBefore(r, start.after) : r.parentNode.appendChild(r); });
+                changed = null;
+                start = null;
+                bar(false);
+            };
+            window.dlvSuggested = function (person) {
+                var t = table();
+                if (!t || !confirm('Go back to the suggested order for this driver (learned and GPS route)?')) return false;
+                post({ day: t.getAttribute('data-day'), person: person, reset: true });
+                return false;
+            };
+
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () { changed = null; start = null; });
+            }
+        })();
+    </script>
 </asp:Content>

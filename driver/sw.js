@@ -2,8 +2,8 @@
 // vite.config.ts writes this file into the build with FILES (every built file) and BUILD filled in.
 // The screen itself: network first, falling back to the saved copy. App files: saved copy first.
 // API calls are not touched; the app keeps its own data offline.
-const FILES = ["index.html","manifest.json","favicon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","assets/index-BZmz5OQl.js","assets/base-C3ayGsuC.js","assets/native-BaES9jFh.js","assets/web-B1pzc8jO.js","assets/web-UXSciXGb.js","assets/web-uxDC_GWo.js","assets/web-x3Dqt15v.js","assets/index-eYbBMG6r.css"]
-const CACHE = 'quaffee-driver-' + "0.5.1-1790907079217"
+const FILES = ["index.html","manifest.json","favicon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","assets/index-DArSURJt.js","assets/base-B7tHbOsT.js","assets/native-o8Lih2Lz.js","assets/web-DW4LNLrV.js","assets/web-kZEZFg4C.js","assets/web-vzYNYKUj.js","assets/web-z3HORoQw.js","assets/index-CYv1VUSu.css"]
+const CACHE = 'quaffee-driver-' + "0.5.2-1790939529391"
 const scope = self.registration.scope
 
 self.addEventListener('install', (event) => {

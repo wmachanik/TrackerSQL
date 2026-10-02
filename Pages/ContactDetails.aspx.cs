@@ -485,6 +485,21 @@ namespace TrackerSQL.Pages
             if (!tabpnlProofs.Visible)
                 return;
 
+            try
+            {
+                CustomerLocation point = CustomerLocationRepository.TableSeen() ? new CustomerLocationRepository().GetByContactId(contactId) : null;
+                foreach (ContactProofRow row in rows.Where(r => r.Latitude.HasValue && r.Longitude.HasValue
+                             && !string.Equals(r.Outcome, MobileDeliveryManager.OutcomeNotDelivered, StringComparison.OrdinalIgnoreCase)))
+                {
+                    row.GpsCheck = CustomerLocationManager.DescribeDeliveryFix(point, row.Latitude.Value, row.Longitude.Value, row.AccuracyM, out bool warn);
+                    row.GpsCheckWarn = warn;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Proof GPS check failed for contact " + contactId + ": " + ex.Message);
+            }
+
             gvContactProofs.DataSource = rows;
             gvContactProofs.DataBind();
         }

@@ -122,6 +122,21 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   Capacitor opens in the phone's browser; Android downloads the APK and the driver taps Install. Android only installs
   over the old app when the APK is signed with the same key (the debug keystore in `%USERPROFILE%\.android` on the build
   PC; back it up) and `versionCode` is higher.
+- **Times and Next** (0.5.2, `src/routeTimes.ts`): the list marks the first unfinished stop **Next** (today) and shows the
+  delivered time. On "Mine", expected times ("about HH:mm"; "roughly" when the stop or the one before has no point) start
+  once a position is more than `settings.route.leftDepotMetres` (300) from the depot (remembered for the day in
+  localStorage `route.left`) or something was delivered today. They chain from the latest of the last delivery (that
+  stop's point) and the last position: straight line × 1.3 at `speedKmh`, plus `serviceMinutes` per stop; consecutive
+  orders for one client are one stop; the first time is never before now. `RouteTimesManager` does the same for the
+  office Delivery Sheet, using the tracking pings.
+- **Office order note:** when the office dragged the driver's stops on the Delivery Sheet (`DeliveryRouteTbl.SetBy` ends
+  in " (office)"), the sheet's `routeNote` says who and when; it goes once the driver saves their own order. The sheet
+  ETag includes it.
+- **GPS check on delivery** (0.5.2): with Delivered chosen, the capture screen compares the phone's fix with the stop's
+  `gps` (`kind` pin / driver / lookup / none, `checked`, `review`): too rough (worse than ±75 m), will set it (none),
+  pin within 150 m OK / far (kept, flagged), lookup will be replaced, driver point within 60 m confirms / will move,
+  and over 1 km a warning to capture at the client. Nothing for `noGpsLearning` stops (collects / courier) or ZZName.
+  Contact Details → Proof of Delivery shows the same check per proof (`CustomerLocationManager.DescribeDeliveryFix`).
 
 ## 8. Data use (measured)
 

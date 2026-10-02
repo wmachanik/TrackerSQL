@@ -492,6 +492,37 @@ namespace TrackerSQL.Managers
                 who + ": " + message + (accuracyM.HasValue ? " (+/-" + accuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + " m)" : string.Empty), userName);
         }
 
+        /// <summary>
+        /// Proof of Delivery tab: how a delivery's phone position compares with the contact's point now, using the same
+        /// limits as <see cref="LearnFromDelivery"/>. <paramref name="warn"/> is set when the point may need updating or checking.
+        /// </summary>
+        public static string DescribeDeliveryFix(CustomerLocation point, decimal latitude, decimal longitude, decimal? accuracyM, out bool warn)
+        {
+            warn = false;
+            if (accuracyM.HasValue && accuracyM.Value > DriverMaxAccuracyM)
+                return "phone too rough (+/-" + accuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + " m) to check the point";
+            if (point == null)
+            {
+                warn = true;
+                return "no GPS point for this client";
+            }
+            double distance = GeoDistance.Metres(point.Latitude, point.Longitude, latitude, longitude);
+            string away = distance < 1000
+                ? distance.ToString("0", CultureInfo.InvariantCulture) + " m"
+                : (distance / 1000).ToString("0.0", CultureInfo.InvariantCulture) + " km";
+            if (point.IsManual)
+            {
+                if (distance <= ManualMismatchMetres)
+                    return "matches the pin (" + away + ")";
+                warn = true;
+                return away + " from the hand-placed pin" + (point.NeedsReview ? "; flagged for checking" : "; check the pin");
+            }
+            if (distance <= DriverMatchMetres)
+                return "matches the point (" + away + ")";
+            warn = true;
+            return away + " from the " + (point.IsFromDriver ? "driver" : point.SourceDisplay) + " point; it may need updating";
+        }
+
         /// <summary>Looks up the depot address (used as the focus point and the start of every route).</summary>
         public LocationLookupOutcome LookupDepot(string userName)
         {

@@ -81,7 +81,8 @@ namespace TrackerSQL.Managers
                 NotesToOffice = s.AllowNotesToOffice && !string.IsNullOrWhiteSpace(OfficeEmail(s)),
                 LandlinePrefixes = ParsePrefixes(s.LandlinePrefixes ?? DefaultLandlinePrefixes),
                 Tracking = DriverTrackingManager.ForApp(),
-                App = DriverAppReleaseManager.Latest()
+                App = DriverAppReleaseManager.Latest(),
+                Route = RouteTimesManager.ForApp()
             };
         }
 

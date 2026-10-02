@@ -46,7 +46,7 @@ WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'IsDispatched'") > 0;
         private static bool? _hasDeliveryType;
 
         /// <summary>PeopleTbl.DeliveryType comes from SQLCommands-DriverGps-01.xml (run at startup).</summary>
-        private static bool HasDeliveryTypeColumn()
+        internal static bool HasDeliveryTypeColumn()
         {
             if (_hasDeliveryType.HasValue)
                 return _hasDeliveryType.Value;

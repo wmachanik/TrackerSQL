@@ -279,8 +279,184 @@ namespace TrackerSQL.Pages
             var manager = CreateSheetManager();
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
+            PrepareRouteExtras(requiredDate, pPrintForm, buildResult);
+
             // UI rendering stays in the WebForms page.
             this.BuildDeliveryTable(buildResult, pPrintForm, pOnlyDeliveryBy);
+        }
+
+        private RouteTimesManager.DayTimes _routeTimes;
+        private bool _canOrder;
+        /// <summary>People on the sheet who drive for us (not couriers or collections).</summary>
+        private readonly HashSet<int> _ownDrivers = new HashSet<int>();
+
+        /// <summary>
+        /// Drag-to-order (open stops, today or later) and, for users with "Show route order and arrival times" ticked,
+        /// stop numbers with delivered / next / expected times; a line per driver says who set the order.
+        /// </summary>
+        private void PrepareRouteExtras(DateTime day, bool printForm, DeliverySheetBuildResult buildResult)
+        {
+            _routeTimes = null;
+            _canOrder = false;
+            _ownDrivers.Clear();
+            if (ltrlRouteInfo != null)
+                ltrlRouteInfo.Text = string.Empty;
+            tblDeliveries.Attributes.Remove("data-day");
+            tblDeliveries.Attributes.Remove("data-driver-plans");
+            if (buildResult?.Items == null || buildResult.Items.Count == 0)
+                return;
+
+            var people = new PersonsRepository();
+            foreach (int personId in buildResult.Items.Where(i => i.DeliveryById.HasValue).Select(i => i.DeliveryById.Value).Distinct())
+                if (people.IsDeliverPerson(personId))
+                    _ownDrivers.Add(personId);
+            if (_ownDrivers.Count == 0)
+                return;
+
+            bool mobile = Session["RunningOnMoble"] != null && (bool)Session["RunningOnMoble"];
+            bool routes = DeliveryRouteRepository.TableSeen();
+            _canOrder = !printForm && !mobile && routes && day.Date >= TimeZoneUtils.Now().Date;
+
+            try
+            {
+                if (UserPreferencesHelper.GetCurrentPreferences().ShowDeliveryRouteEta)
+                    _routeTimes = new RouteTimesManager().ForDay(day);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("deliverysheet", "Route times not worked out: " + ex.Message);
+            }
+            if (printForm)
+                return;
+
+            Dictionary<int, DeliveryRouteRepository.PlanInfo> plans = new Dictionary<int, DeliveryRouteRepository.PlanInfo>();
+            try
+            {
+                if (routes)
+                    plans = new DeliveryRouteRepository().GetPlanInfo(day);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("deliverysheet", "Route orders not read: " + ex.Message);
+            }
+
+            var lines = new List<string>();
+            var driverPlans = new Dictionary<string, string>();
+            foreach (var driver in buildResult.Items.Where(i => i.DeliveryById.HasValue && _ownDrivers.Contains(i.DeliveryById.Value))
+                         .GroupBy(i => i.DeliveryById.Value).Select(g => new { Id = g.Key, Name = g.First().DeliveryBy }))
+            {
+                string name = HttpUtility.HtmlEncode(string.IsNullOrWhiteSpace(driver.Name) ? "Person " + driver.Id : driver.Name);
+                var parts = new List<string>();
+                if (plans.TryGetValue(driver.Id, out DeliveryRouteRepository.PlanInfo plan))
+                {
+                    string at = plan.SetAt.ToString(plan.SetAt.Date == TimeZoneUtils.Now().Date ? "HH:mm" : "HH:mm 'on' ddd d MMM");
+                    parts.Add(plan.ByOffice
+                        ? "order set by the office (" + HttpUtility.HtmlEncode(plan.UserName) + ") at " + at
+                        : "the driver set their own order in the app at " + at);
+                    if (!plan.ByOffice)
+                        driverPlans[driver.Id.ToString()] = (driver.Name ?? "The driver") + " set their own order in the app at " + at + ".";
+                    if (_canOrder)
+                        parts.Add("<a href='#' onclick=\"return dlvSuggested(" + driver.Id + ");\">use the suggested order</a>");
+                }
+                if (_routeTimes != null && _routeTimes.Today && _routeTimes.Drivers.TryGetValue(driver.Id, out RouteTimesManager.DriverState state))
+                {
+                    if (state.Left == 0)
+                        parts.Add("all stops done");
+                    else if (!state.Started)
+                        parts.Add("not left the depot yet (times start when they leave or deliver)");
+                    else
+                    {
+                        DateTime? last = _routeTimes.Stops.Values.Where(s => s.PersonId == driver.Id && s.Expected.HasValue && !s.DeliveredAt.HasValue)
+                            .Select(s => s.Expected).DefaultIfEmpty(null).Max();
+                        parts.Add(state.Left + (state.Left == 1 ? " stop" : " stops") + " left"
+                            + (last.HasValue ? ", last one about " + last.Value.ToString("HH:mm") : string.Empty));
+                    }
+                }
+                if (parts.Count > 0)
+                    lines.Add("<div class='dlv-route-line'><strong>" + name + "</strong>: " + string.Join(" · ", parts) + "</div>");
+            }
+
+            if (_canOrder)
+            {
+                lines.Insert(0, "<div class='dlv-route-line muted'>Drag a stop by its <span class='dlv-handle-sample'>&#x2807;</span> handle to change the "
+                    + "order of a driver's stops, then save. The driver's app picks it up on its next refresh.</div>");
+                tblDeliveries.Attributes["data-day"] = day.ToString("yyyy-MM-dd");
+                tblDeliveries.Attributes["data-driver-plans"] = Newtonsoft.Json.JsonConvert.SerializeObject(driverPlans);
+            }
+            if (ltrlRouteInfo != null)
+                ltrlRouteInfo.Text = string.Join(string.Empty, lines);
+        }
+
+        /// <summary>Contact cell prefix: the stop number; suffix: delivered at, or next / expected at.</summary>
+        private void AddRouteTime(DeliverySheetDisplayItem item, TableCell cellContact, bool printForm)
+        {
+            if (_routeTimes == null || !_routeTimes.Stops.TryGetValue(item.OrderID, out RouteTimesManager.StopTime time))
+                return;
+            string seq = "<span class='dlv-seq' title='Stop " + time.Seq + " on the route'>" + time.Seq + "</span> ";
+            if (printForm)
+            {
+                cellContact.Text = seq + cellContact.Text;
+                return;
+            }
+
+            string badge = string.Empty;
+            if (time.DeliveredAt.HasValue)
+                badge = "<span class='dlv-time is-done' title='When the driver captured it in the app'>"
+                    + (time.NotDelivered ? "not delivered " : "delivered ") + time.DeliveredAt.Value.ToString("HH:mm") + "</span>";
+            else if (time.Expected.HasValue)
+                badge = "<span class='dlv-time" + (time.Next ? " is-next" : string.Empty) + "' title='Expected"
+                    + (time.Rough ? " (rough: no GPS point for this stop or the one before)" : string.Empty)
+                    + "'>" + (time.Next ? "next · " : string.Empty) + (time.Rough ? "~" : string.Empty)
+                    + time.Expected.Value.ToString("HH:mm") + "</span>";
+            else if (time.Next)
+                badge = "<span class='dlv-time is-next'>next</span>";
+            cellContact.Text = seq + cellContact.Text + (badge.Length > 0 ? " " + badge : string.Empty);
+        }
+
+        protected void btnSaveRouteOrder_Click(object sender, EventArgs e)
+        {
+            string message;
+            bool isError = false;
+            try
+            {
+                var request = Newtonsoft.Json.Linq.JObject.Parse(hdnRouteOrder.Value ?? "{}");
+                hdnRouteOrder.Value = string.Empty;
+                if (!DateTime.TryParseExact((string)request["day"] ?? string.Empty, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out DateTime day) || day.Date < TimeZoneUtils.Now().Date)
+                    throw new InvalidOperationException("Only today's or a later delivery sheet can be put in order.");
+                int personId = (int?)request["person"] ?? 0;
+                if (personId <= 0)
+                    throw new InvalidOperationException("No driver was chosen.");
+                string driver = new PersonsRepository().GetPersonNameById(personId) ?? ("person " + personId);
+                var manager = new MobileDeliveryManager();
+                if ((bool?)request["reset"] == true)
+                {
+                    manager.ClearRoute(day, personId, User.Identity.Name);
+                    message = driver + " is back on the suggested order for " + day.ToString("dd MMM") + ".";
+                }
+                else
+                {
+                    List<int> contacts = (request["contacts"] as Newtonsoft.Json.Linq.JArray)?.Select(t => (int)t).ToList() ?? new List<int>();
+                    int saved = manager.SaveOfficeRoute(day, personId, contacts, User.Identity.Name, out string error);
+                    if (error != null)
+                        throw new InvalidOperationException(error);
+                    message = "Saved " + driver + "'s order (" + saved + " stops). Their app picks it up on its next refresh.";
+                }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is Newtonsoft.Json.JsonException || ex is FormatException)
+            {
+                message = "The order was not saved: " + ex.Message;
+                isError = true;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("deliverysheet", "Route order save failed: " + ex.Message, User.Identity.Name);
+                message = "The order was not saved: " + ex.Message;
+                isError = true;
+            }
+
+            BuildDeliverySheet();
+            ShowPageStatus(message, isError);
         }
 
         /*
@@ -415,6 +591,17 @@ namespace TrackerSQL.Pages
                         $"<a class='plain' href='{orderDetailUrl}'>{cellDetails.Text.Trim()}</a>";
                 }
 
+                if (_canOrder && !currentItem.Done && currentItem.DeliveryById.HasValue && currentItem.ContactIDValue > 0
+                    && _ownDrivers.Contains(currentItem.DeliveryById.Value))
+                {
+                    row.Attributes["data-order"] = currentItem.OrderID.ToString();
+                    row.Attributes["data-contact"] = currentItem.ContactIDValue.ToString();
+                    row.Attributes["data-person"] = currentItem.DeliveryById.Value.ToString();
+                    row.Attributes["data-driver"] = currentItem.DeliveryBy ?? string.Empty;
+                    cellDetails.Text = "<span class='dlv-handle' title='Drag to change the order of this driver&#39;s stops'>&#x2807;</span>"
+                        + cellDetails.Text;
+                }
+
                 row.Cells.Add(cellDetails);
 
                 // Contact cell
@@ -440,6 +627,7 @@ namespace TrackerSQL.Pages
                     cellContact.CssClass = "wordwrap";
                 }
 
+                AddRouteTime(currentItem, cellContact, pPrintForm);
                 row.Cells.Add(cellContact);
 
                 // ReceivedBy/Signature cells for print

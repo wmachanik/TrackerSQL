@@ -80,7 +80,9 @@ namespace TrackerSQL.Managers
                 PurchaseOrder = row.PurchaseOrder ?? string.Empty,
                 Items = string.Empty,
                 RequiredByDate = row.RequiredByDate,
-                Notes = row.Notes ?? string.Empty
+                Notes = row.Notes ?? string.Empty,
+                DeliveryById = row.ToBeDeliveredByID,
+                DeliveryBy = row.DeliveryByAbbreviation
             };
 
             // Sundry / ZZName: walk-in name is in Notes — match ContactID as well as CompanyName.

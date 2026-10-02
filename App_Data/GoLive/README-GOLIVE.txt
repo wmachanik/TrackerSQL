@@ -92,8 +92,8 @@ Live steps:
    then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK once from Tools -> Driver App (0.5.1; upload Downloads/QuaffeeDriver.apk AND
-   Downloads/QuaffeeDriver.json; from 0.5.1 on the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
+5. Driver app: install the new APK once from Tools -> Driver App (0.5.2; upload Downloads/QuaffeeDriver.apk AND
+   Downloads/QuaffeeDriver.json; from 0.5.1 on (so after this install) the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
    starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
    simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work
    hours; drivers should allow notifications and not "optimise" the app's battery use, or positions stop.
@@ -102,6 +102,9 @@ Live steps:
 7. Driver tracking: System Preferences → GPS & Drivers → tick "Drivers' phones send their position", check the
    interval, days and hours. Tick "Show driver tracking" on Administration → User Information for non-admin users
    who may see Deliveries → Driver tracking.
+8. 3.0.3.2: tick "Show route order and arrival times on the Delivery Sheet" (User Information) for users who should
+   see route numbers, delivered times and expected times on the Delivery Sheet. Dragging stops into a new order works
+   for everyone (no setting); no new SQL packs.
 Rules to know:
 - Azure Maps points are kept at most 180 days (Microsoft terms outside Azure). They are looked up again from 30 days
   before expiry (on the next order / contact save / batch) and removed once past expiry if not refreshed.

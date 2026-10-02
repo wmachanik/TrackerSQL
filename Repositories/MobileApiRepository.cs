@@ -163,6 +163,12 @@ namespace TrackerSQL.Repositories
             /// <summary>Where the driver put this contact in the app for the day (1 = first), of <see cref="PlanStops"/>.</summary>
             public int? PlanSeq;
             public int PlanStops;
+            public double? GpsLat;
+            public double? GpsLng;
+            public string GpsSource;
+            public string GpsStatus;
+            /// <summary>The contact's usual delivery person collects or is a courier.</summary>
+            public bool CollectsOrCourier;
         }
 
         /// <summary>
@@ -182,7 +188,7 @@ namespace TrackerSQL.Repositories
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
                        pr.MissingItems AS ProofMissingItems,
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
-                       {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}
+                       {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}, {GPS_COLS}, {AGENT_COL}
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
@@ -205,7 +211,13 @@ namespace TrackerSQL.Repositories
                      .Replace("{PLAN_COLS}", plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops");
             bool geo = CustomerLocationRepository.TableSeen();
             sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
-                     .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))");
+                     .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))")
+                     .Replace("{GPS_COLS}", geo
+                         ? "gl.Latitude AS GpsLat, gl.Longitude AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus"
+                         : "CAST(NULL AS FLOAT) AS GpsLat, CAST(NULL AS FLOAT) AS GpsLng, CAST(NULL AS VARCHAR(20)) AS GpsSource, CAST(NULL AS VARCHAR(20)) AS GpsStatus");
+            sql = sql.Replace("{AGENT_COL}", PersonsRepository.HasDeliveryTypeColumn()
+                ? "(SELECT TOP 1 ag.DeliveryType FROM PeopleTbl ag WHERE ag.PersonID = c.PreferredAgentID) AS AgentDeliveryType"
+                : "CAST(NULL AS VARCHAR(20)) AS AgentDeliveryType");
             bool learn = DeliveryVisitRepository.TableSeen();
             sql = sql.Replace("{LEARN_JOIN}", learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
                      .Replace("{LEARN_COLS}", learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits");
@@ -266,7 +278,12 @@ namespace TrackerSQL.Repositories
                 LearnedVisits = NInt(r, "LearnedVisits") ?? 0,
                 PackColour = Str(r, "PackColour"),
                 PlanSeq = NInt(r, "PlanSeq"),
-                PlanStops = NInt(r, "PlanStops") ?? 0
+                PlanStops = NInt(r, "PlanStops") ?? 0,
+                GpsLat = r["GpsLat"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["GpsLat"]),
+                GpsLng = r["GpsLng"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["GpsLng"]),
+                GpsSource = Str(r, "GpsSource"),
+                GpsStatus = Str(r, "GpsStatus"),
+                CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect
             }, ps.ToArray());
         }
 
@@ -443,7 +460,8 @@ namespace TrackerSQL.Repositories
         {
             string sql = "SELECT TOP (" + Math.Max(1, Math.Min(max, 500)) + @")
                     m.ProofID, m.OrderID, m.DeliveredAt, m.Outcome, m.Reason, m.ReceivedByName, m.DriverNote, m.MissingItems,
-                    m.Status, m.Latitude, m.Longitude, m.SignatureImage, m.SignatureContentType,
+                    m.Status, m.Latitude, m.Longitude, " + (ProofHasAccuracyColumn() ? "m.AccuracyM" : "CAST(NULL AS DECIMAL(9,1)) AS AccuracyM") + @",
+                    m.SignatureImage, m.SignatureContentType,
                     COALESCE(p.Person, m.UserName) AS Driver
                 FROM MobileDeliveryProofTbl m
                 LEFT JOIN OrdersTbl o ON o.OrderID = m.OrderID
@@ -464,6 +482,7 @@ namespace TrackerSQL.Repositories
                 Driver = Str(r, "Driver"),
                 Latitude = r["Latitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Latitude"]),
                 Longitude = r["Longitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Longitude"]),
+                AccuracyM = r["AccuracyM"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["AccuracyM"]),
                 SignatureImage = r["SignatureImage"] == DBNull.Value ? null : (byte[])r["SignatureImage"],
                 SignatureContentType = Str(r, "SignatureContentType")
             }, P("@ContactID", contactId, DbType.Int32));

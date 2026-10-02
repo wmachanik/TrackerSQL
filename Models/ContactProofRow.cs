@@ -20,6 +20,12 @@ namespace TrackerSQL.Models
         public string Status { get; set; }
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
+        public decimal? AccuracyM { get; set; }
+        /// <summary>How the phone position compares with the contact's GPS point now (empty when no position).</summary>
+        public string GpsCheck { get; set; }
+        /// <summary>The point may need updating or checking.</summary>
+        public bool GpsCheckWarn { get; set; }
+        public string GpsCheckCss => GpsCheckWarn ? "gps-check is-warn" : "gps-check";
         public byte[] SignatureImage { get; set; }
         public string SignatureContentType { get; set; }
 

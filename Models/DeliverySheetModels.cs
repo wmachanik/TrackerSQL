@@ -102,6 +102,10 @@ namespace TrackerSQL.Models
         /// <summary>Order flag pill HTML (empty when the flag has no pill, e.g. Standard).</summary>
         public string FlagPillHtml { get; set; }
 
+        public int? DeliveryById { get; set; }
+
+        public string DeliveryBy { get; set; }
+
         public DeliverySheetDisplayItem()
         {
             ContactID = string.Empty;

@@ -15,5 +15,8 @@ namespace TrackerSQL.Pages
        protected global::System.Web.UI.WebControls.ImageButton btnCalendar;
        protected global::System.Web.UI.WebControls.TextBox tbCalendarDate; 
        protected global::AjaxControlToolkit.CalendarExtender calExtender;
+       protected global::System.Web.UI.WebControls.Literal ltrlRouteInfo;
+       protected global::System.Web.UI.WebControls.HiddenField hdnRouteOrder;
+       protected global::System.Web.UI.WebControls.Button btnSaveRouteOrder;
     }
 }

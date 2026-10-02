@@ -697,6 +697,7 @@
     <Compile Include="Repositories\DeliveryRouteRepository.cs" />
     <Compile Include="Repositories\DriverLocationRepository.cs" />
     <Compile Include="Managers\DriverTrackingManager.cs" />
+    <Compile Include="Managers\RouteTimesManager.cs" />
     <Compile Include="Managers\DriverAppReleaseManager.cs" />
     <Compile Include="Models\DriverTrackingModels.cs" />
     <Compile Include="Classes\WaybillFormat.cs" />

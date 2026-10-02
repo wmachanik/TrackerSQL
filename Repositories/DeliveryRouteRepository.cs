@@ -12,6 +12,19 @@ namespace TrackerSQL.Repositories
     /// </summary>
     public class DeliveryRouteRepository
     {
+        /// <summary>SetBy ends with this when the order was set on the office delivery sheet (not by the driver in the app).</summary>
+        public const string OfficeSuffix = " (office)";
+
+        public class PlanInfo
+        {
+            public int PersonID;
+            public string SetBy;
+            public DateTime SetAt;
+            public bool ByOffice => (SetBy ?? string.Empty).EndsWith(OfficeSuffix, StringComparison.Ordinal);
+            /// <summary>The user name without the office suffix.</summary>
+            public string UserName => ByOffice ? SetBy.Substring(0, SetBy.Length - OfficeSuffix.Length) : SetBy;
+        }
+
         private static bool _tableSeen;
 
         /// <summary>Whether DeliveryRouteTbl exists; only a positive answer is cached.</summary>
@@ -52,12 +65,13 @@ namespace TrackerSQL.Repositories
             {
                 P("@Day", day.Date, DbType.Date),
                 P("@PersonID", personId, DbType.Int32),
-                P("@SetBy", (object)setBy ?? DBNull.Value, DbType.String)
+                P("@SetBy", (object)setBy ?? DBNull.Value, DbType.String),
+                P("@SetAt", TimeZoneUtils.Now(), DbType.DateTime)
             };
             var values = new List<string>();
             for (int i = 0; i < contacts.Count; i++)
             {
-                values.Add("(@Day, @PersonID, @C" + i + ", " + (i + 1) + ", @SetBy)");
+                values.Add("(@Day, @PersonID, @C" + i + ", " + (i + 1) + ", @SetAt, @SetBy)");
                 ps.Add(P("@C" + i, contacts[i], DbType.Int32));
             }
             string sql = @"
@@ -65,7 +79,7 @@ SET XACT_ABORT ON;
 BEGIN TRAN;
 DELETE FROM dbo.DeliveryRouteTbl WHERE RouteDate = @Day AND PersonID = @PersonID;"
                 + (values.Count > 0
-                    ? "\nINSERT INTO dbo.DeliveryRouteTbl (RouteDate, PersonID, ContactID, Seq, SetBy) VALUES " + string.Join(", ", values) + ";"
+                    ? "\nINSERT INTO dbo.DeliveryRouteTbl (RouteDate, PersonID, ContactID, Seq, SetAt, SetBy) VALUES " + string.Join(", ", values) + ";"
                     : string.Empty) + @"
 COMMIT;";
             using (var db = new TrackerSQLDb())
@@ -103,6 +117,31 @@ WHERE CAST(o.RequiredByDate AS DATE) = @Day AND o.ContactID IS NOT NULL AND o.Or
             {
                 while (r != null && r.Read())
                     map[Convert.ToInt32(r["PersonID"]) + ":" + Convert.ToInt32(r["ContactID"])] = Convert.ToInt32(r["Seq"]);
+            }
+            return map;
+        }
+
+        /// <summary>Who set each driver's order for the day, and when (drivers without one are left out).</summary>
+        public Dictionary<int, PlanInfo> GetPlanInfo(DateTime day)
+        {
+            var map = new Dictionary<int, PlanInfo>();
+            if (!TableSeen())
+                return map;
+            using (var db = new TrackerSQLDb())
+            using (var r = db.ExecuteReader(
+                "SELECT PersonID, MAX(SetBy) AS SetBy, MAX(SetAt) AS SetAt FROM dbo.DeliveryRouteTbl WHERE RouteDate = @Day GROUP BY PersonID",
+                new List<DBParameter> { P("@Day", day.Date, DbType.Date) }))
+            {
+                while (r != null && r.Read())
+                {
+                    int personId = Convert.ToInt32(r["PersonID"]);
+                    map[personId] = new PlanInfo
+                    {
+                        PersonID = personId,
+                        SetBy = r["SetBy"] == DBNull.Value ? null : r["SetBy"].ToString(),
+                        SetAt = Convert.ToDateTime(r["SetAt"])
+                    };
+                }
             }
             return map;
         }

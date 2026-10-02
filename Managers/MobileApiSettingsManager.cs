@@ -82,8 +82,29 @@ namespace TrackerSQL.Managers
                 LandlinePrefixes = ParsePrefixes(s.LandlinePrefixes ?? DefaultLandlinePrefixes),
                 Tracking = DriverTrackingManager.ForApp(),
                 App = DriverAppReleaseManager.Latest(),
-                Route = RouteTimesManager.ForApp()
+                Route = RouteTimesManager.ForApp(),
+                Terms = DeliveryTerms(s),
+                TermsUrl = TermsUrl(s)
             };
+        }
+
+        /// <summary>Used until System → Driver App has its own wording (from the old printed delivery sheet).</summary>
+        public const string DefaultDeliveryTerms =
+            "I acknowledge receipt of the items listed and am authorised to sign for this delivery. "
+            + "The items are charged as per the invoice, and this delivery is subject to Quaffee's standard terms and conditions available at quaffee.co.za.";
+
+        public const string DefaultTermsUrl = "https://quaffee.co.za/quaffee-home/quaffee/terms-and-conditions/";
+
+        public static string DeliveryTerms(MobileApiSettings settings)
+        {
+            string text = settings?.DeliveryTerms;
+            return string.IsNullOrWhiteSpace(text) ? DefaultDeliveryTerms : text.Trim();
+        }
+
+        public static string TermsUrl(MobileApiSettings settings)
+        {
+            string url = settings?.TermsUrl;
+            return string.IsNullOrWhiteSpace(url) ? DefaultTermsUrl : url.Trim();
         }
 
         /// <summary>Used until the setting is saved: Cape Town landlines.</summary>

@@ -10,32 +10,47 @@ namespace TrackerSQL.Repositories
     public class MobileApiSettingsRepository
     {
         private static bool _landlineSeen;
+        private static bool _termsSeen;
 
         /// <summary>MobileApiSettingsTbl.LandlinePrefixes (SQLCommands-DriverGps-02.xml); only a positive answer is cached.</summary>
         private static bool LandlineColumnExists()
         {
-            if (_landlineSeen)
-                return true;
+            if (!_landlineSeen)
+                _landlineSeen = ColumnExists("LandlinePrefixes");
+            return _landlineSeen;
+        }
+
+        /// <summary>MobileApiSettingsTbl.DeliveryTerms / TermsUrl (SQLCommands-DriverGps-05.xml); only a positive answer is cached.</summary>
+        private static bool TermsColumnsExist()
+        {
+            if (!_termsSeen)
+                _termsSeen = ColumnExists("DeliveryTerms");
+            return _termsSeen;
+        }
+
+        private static bool ColumnExists(string column)
+        {
             try
             {
                 using (var db = new TrackerSQLDb())
-                    _landlineSeen = db.ExecuteScalar<int>(
-                        "SELECT CASE WHEN COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'LandlinePrefixes') IS NULL THEN 0 ELSE 1 END") == 1;
+                    return db.ExecuteScalar<int>(
+                        "SELECT CASE WHEN COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'" + column + "') IS NULL THEN 0 ELSE 1 END") == 1;
             }
             catch
             {
-                _landlineSeen = false;
+                return false;
             }
-            return _landlineSeen;
         }
 
         /// <summary>The saved row, or null when the settings have never been saved.</summary>
         public MobileApiSettings Get()
         {
             bool landline = LandlineColumnExists();
+            bool terms = TermsColumnsExist();
             string sql = @"
 SELECT RunDoneOnDelivery, SendDeliveryConfirmation, AllowNotesToOffice, OfficeEmail, UpdatedAt, UpdatedBy"
-                + (landline ? ", LandlinePrefixes" : string.Empty) + @"
+                + (landline ? ", LandlinePrefixes" : string.Empty)
+                + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty) + @"
 FROM MobileApiSettingsTbl WHERE SettingsID = 1";
 
             using (var db = new TrackerSQLDb())
@@ -51,6 +66,8 @@ FROM MobileApiSettingsTbl WHERE SettingsID = 1";
                     AllowNotesToOffice = Convert.ToBoolean(rdr["AllowNotesToOffice"]),
                     OfficeEmail = rdr["OfficeEmail"] == DBNull.Value ? null : rdr["OfficeEmail"].ToString(),
                     LandlinePrefixes = landline && rdr["LandlinePrefixes"] != DBNull.Value ? rdr["LandlinePrefixes"].ToString() : null,
+                    DeliveryTerms = terms && rdr["DeliveryTerms"] != DBNull.Value ? rdr["DeliveryTerms"].ToString() : null,
+                    TermsUrl = terms && rdr["TermsUrl"] != DBNull.Value ? rdr["TermsUrl"].ToString() : null,
                     UpdatedAt = Convert.ToDateTime(rdr["UpdatedAt"]),
                     UpdatedBy = rdr["UpdatedBy"] == DBNull.Value ? null : rdr["UpdatedBy"].ToString()
                 };
@@ -60,16 +77,21 @@ FROM MobileApiSettingsTbl WHERE SettingsID = 1";
         public bool Save(MobileApiSettings settings, string updatedBy)
         {
             bool landline = LandlineColumnExists();
+            bool terms = TermsColumnsExist();
+            string extraSet = (landline ? ", LandlinePrefixes = @Landline" : string.Empty)
+                + (terms ? ", DeliveryTerms = @Terms, TermsUrl = @TermsUrl" : string.Empty);
+            string extraCols = (landline ? ", LandlinePrefixes" : string.Empty) + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty);
+            string extraVals = (landline ? ", @Landline" : string.Empty) + (terms ? ", @Terms, @TermsUrl" : string.Empty);
             string sql = @"
 IF EXISTS (SELECT 1 FROM MobileApiSettingsTbl WHERE SettingsID = 1)
     UPDATE MobileApiSettingsTbl
     SET RunDoneOnDelivery = @RunDone, SendDeliveryConfirmation = @SendConfirm, AllowNotesToOffice = @NotesToOffice,
-        OfficeEmail = @OfficeEmail, UpdatedAt = GETDATE(), UpdatedBy = @UpdatedBy" + (landline ? ", LandlinePrefixes = @Landline" : string.Empty) + @"
+        OfficeEmail = @OfficeEmail, UpdatedAt = GETDATE(), UpdatedBy = @UpdatedBy" + extraSet + @"
     WHERE SettingsID = 1
 ELSE
     INSERT INTO MobileApiSettingsTbl (SettingsID, RunDoneOnDelivery, SendDeliveryConfirmation, AllowNotesToOffice, OfficeEmail, UpdatedBy"
-                + (landline ? ", LandlinePrefixes" : string.Empty) + @")
-    VALUES (1, @RunDone, @SendConfirm, @NotesToOffice, @OfficeEmail, @UpdatedBy" + (landline ? ", @Landline" : string.Empty) + ")";
+                + extraCols + @")
+    VALUES (1, @RunDone, @SendConfirm, @NotesToOffice, @OfficeEmail, @UpdatedBy" + extraVals + ")";
 
             string office = string.IsNullOrWhiteSpace(settings.OfficeEmail) ? null : settings.OfficeEmail.Trim();
             var ps = new List<DBParameter>
@@ -82,8 +104,21 @@ ELSE
             };
             if (landline)
                 ps.Add(new DBParameter { ParamName = "@Landline", DataValue = (object)settings.LandlinePrefixes ?? DBNull.Value, DataDbType = DbType.String });
+            if (terms)
+            {
+                ps.Add(new DBParameter { ParamName = "@Terms", DataValue = (object)NullIfEmpty(settings.DeliveryTerms, 1000) ?? DBNull.Value, DataDbType = DbType.String });
+                ps.Add(new DBParameter { ParamName = "@TermsUrl", DataValue = (object)NullIfEmpty(settings.TermsUrl, 300) ?? DBNull.Value, DataDbType = DbType.String });
+            }
             using (var db = new TrackerSQLDb())
                 return db.ExecuteNonQuery(sql, ps) > 0;
+        }
+
+        private static string NullIfEmpty(string value, int max)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+            string text = value.Trim();
+            return text.Length > max ? text.Substring(0, max) : text;
         }
     }
 }

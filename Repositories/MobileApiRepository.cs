@@ -389,6 +389,18 @@ namespace TrackerSQL.Repositories
             return _optionNotAtClientSeen;
         }
 
+        private static bool _proofPodSeen;
+
+        /// <summary>Whether the DriverGps-05 pack has added TermsAccepted, TermsText, HandedOver, PodSentAt and PodSentTo (only a yes is cached).</summary>
+        public bool ProofHasPodColumns()
+        {
+            if (!_proofPodSeen)
+                _proofPodSeen = HasColumn("MobileDeliveryProofTbl", "TermsAccepted")
+                    && HasColumn("MobileDeliveryProofTbl", "HandedOver")
+                    && HasColumn("MobileDeliveryProofTbl", "PodSentAt");
+            return _proofPodSeen;
+        }
+
         private bool HasColumn(string table, string column)
         {
             try
@@ -405,17 +417,23 @@ namespace TrackerSQL.Repositories
         {
             bool accuracy = ProofHasAccuracyColumn();
             bool away = ProofHasNotAtClientColumn();
+            bool pod = ProofHasPodColumns();
             string sql = @"
                 INSERT INTO MobileDeliveryProofTbl
                     (ClientRef, OrderID, ContactID, PersonID, UserName, Outcome, Reason, ReceivedByName, SignatureImage, SignatureContentType,
-                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, " + (accuracy ? "AccuracyM, " : "") + (away ? "NotAtClient, " : "") + @"Status, StatusMessage, ReceivedAt)
+                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, " + (accuracy ? "AccuracyM, " : "") + (away ? "NotAtClient, " : "")
+                     + (pod ? "TermsAccepted, TermsText, HandedOver, " : "") + @"Status, StatusMessage, ReceivedAt)
                 VALUES
                     (@ClientRef, @OrderID, @ContactID, @PersonID, @UserName, @Outcome, @Reason, @ReceivedByName, @SignatureImage, @SignatureContentType,
-                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, " + (accuracy ? "@AccuracyM, " : "") + (away ? "@NotAtClient, " : "") + @"@Status, @StatusMessage, @ReceivedAt);
+                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, " + (accuracy ? "@AccuracyM, " : "") + (away ? "@NotAtClient, " : "")
+                     + (pod ? "@TermsAccepted, @TermsText, @HandedOver, " : "") + @"@Status, @StatusMessage, @ReceivedAt);
                 SELECT CAST(SCOPE_IDENTITY() AS BIGINT);";
             return Scalar<long>(sql,
                 P("@AccuracyM", proof.AccuracyM, DbType.Decimal),
                 P("@NotAtClient", proof.NotAtClient, DbType.Boolean),
+                P("@TermsAccepted", proof.TermsAccepted, DbType.Boolean),
+                P("@TermsText", Trunc(proof.TermsText, 1000)),
+                P("@HandedOver", Trunc(proof.HandedOver, 2000)),
                 P("@ClientRef", proof.ClientRef),
                 P("@OrderID", proof.OrderID, DbType.Int32),
                 P("@ContactID", proof.ContactID, DbType.Int32),
@@ -448,11 +466,26 @@ namespace TrackerSQL.Repositories
                 P("@By", completedBy), P("@ProofID", proofId, DbType.Int64));
         }
 
-        private const string ProofColumns = @"
+        private string ProofColumns => @"
             m.ProofID, m.ClientRef, m.OrderID, m.ContactID, m.PersonID, m.UserName, m.Outcome, m.Reason, m.ReceivedByName,
             m.SignatureContentType, CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature,
             m.DriverNote, m.MissingItems, m.DeliveredAt, m.Latitude, m.Longitude, m.Status, m.StatusMessage, m.ReceivedAt,
-            m.CompletedAt, m.CompletedBy, c.CompanyName";
+            m.CompletedAt, m.CompletedBy, c.CompanyName, "
+            + (ProofHasAccuracyColumn() ? "m.AccuracyM" : "CAST(NULL AS DECIMAL(9,1)) AS AccuracyM") + ", "
+            + (ProofHasNotAtClientColumn() ? "ISNULL(m.NotAtClient, 0) AS NotAtClient" : "CAST(0 AS BIT) AS NotAtClient") + ", "
+            + (ProofHasPodColumns()
+                ? "m.TermsAccepted, m.TermsText, m.HandedOver, m.PodSentAt, m.PodSentTo"
+                : "CAST(NULL AS BIT) AS TermsAccepted, CAST(NULL AS NVARCHAR(1)) AS TermsText, CAST(NULL AS NVARCHAR(1)) AS HandedOver, "
+                  + "CAST(NULL AS DATETIME) AS PodSentAt, CAST(NULL AS NVARCHAR(1)) AS PodSentTo");
+
+        /// <summary>The POD PDF was emailed (Contact Details or the delivery sync).</summary>
+        public void MarkPodSent(long proofId, string sentTo)
+        {
+            if (!ProofHasPodColumns())
+                return;
+            Exec("UPDATE MobileDeliveryProofTbl SET PodSentAt = @Now, PodSentTo = @To WHERE ProofID = @ProofID",
+                P("@Now", TimeZoneUtils.Now(), DbType.DateTime), P("@To", Trunc(sentTo, 200)), P("@ProofID", proofId, DbType.Int64));
+        }
 
         public MobileDeliveryProof GetProofByClientRef(string clientRef)
         {
@@ -500,7 +533,9 @@ namespace TrackerSQL.Repositories
                     m.ProofID, m.OrderID, m.DeliveredAt, m.Outcome, m.Reason, m.ReceivedByName, m.DriverNote, m.MissingItems,
                     m.Status, m.Latitude, m.Longitude, " + (ProofHasAccuracyColumn() ? "m.AccuracyM" : "CAST(NULL AS DECIMAL(9,1)) AS AccuracyM") + @",
                     " + (ProofHasNotAtClientColumn() ? "m.NotAtClient" : "CAST(0 AS BIT) AS NotAtClient") + @",
-                    m.SignatureImage, m.SignatureContentType,
+                    " + (ProofHasPodColumns() ? "m.TermsAccepted, m.PodSentAt, m.PodSentTo"
+                        : "CAST(NULL AS BIT) AS TermsAccepted, CAST(NULL AS DATETIME) AS PodSentAt, CAST(NULL AS NVARCHAR(1)) AS PodSentTo") + @",
+                    m.SignatureImage, m.SignatureContentType, o.Notes AS OrderNotes,
                     COALESCE(p.Person, m.UserName) AS Driver
                 FROM MobileDeliveryProofTbl m
                 LEFT JOIN OrdersTbl o ON o.OrderID = m.OrderID
@@ -523,6 +558,10 @@ namespace TrackerSQL.Repositories
                 Longitude = r["Longitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Longitude"]),
                 AccuracyM = r["AccuracyM"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["AccuracyM"]),
                 NotAtClient = Bool(r, "NotAtClient"),
+                TermsAccepted = r["TermsAccepted"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["TermsAccepted"]),
+                PodSentAt = NDate(r, "PodSentAt"),
+                PodSentTo = NullIfEmpty(Str(r, "PodSentTo")),
+                OrderNotes = Str(r, "OrderNotes"),
                 SignatureImage = r["SignatureImage"] == DBNull.Value ? null : (byte[])r["SignatureImage"],
                 SignatureContentType = Str(r, "SignatureContentType")
             }, P("@ContactID", contactId, DbType.Int32));
@@ -570,7 +609,14 @@ namespace TrackerSQL.Repositories
                 ReceivedAt = Convert.ToDateTime(r["ReceivedAt"]),
                 CompletedAt = NDate(r, "CompletedAt"),
                 CompletedBy = Str(r, "CompletedBy"),
-                CompanyName = Str(r, "CompanyName")
+                CompanyName = Str(r, "CompanyName"),
+                AccuracyM = r["AccuracyM"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["AccuracyM"]),
+                NotAtClient = Bool(r, "NotAtClient"),
+                TermsAccepted = r["TermsAccepted"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["TermsAccepted"]),
+                TermsText = NullIfEmpty(Str(r, "TermsText")),
+                HandedOver = NullIfEmpty(Str(r, "HandedOver")),
+                PodSentAt = NDate(r, "PodSentAt"),
+                PodSentTo = NullIfEmpty(Str(r, "PodSentTo"))
             };
         }
 

@@ -16,6 +16,10 @@ namespace TrackerSQL.Tools
 
         protected global::System.Web.UI.WebControls.CheckBox chkSendConfirmation;
 
+        protected global::System.Web.UI.WebControls.TextBox txtTerms;
+
+        protected global::System.Web.UI.WebControls.TextBox txtTermsUrl;
+
         protected global::System.Web.UI.WebControls.CheckBox chkNotesToOffice;
 
         protected global::System.Web.UI.WebControls.TextBox txtOfficeEmail;

@@ -202,6 +202,10 @@ namespace TrackerSQL.Models
         public decimal? Lng { get; set; }
         /// <summary>How sure the phone was of Lat/Lng, in metres (smaller is better).</summary>
         public decimal? Accuracy { get; set; }
+        /// <summary>The person receiving it ticked that they accept our terms (null from app versions without the box).</summary>
+        public bool? TermsAccepted { get; set; }
+        /// <summary>The terms wording the app showed when it was ticked.</summary>
+        public string Terms { get; set; }
     }
 
     public class MobileDeliveredLine
@@ -247,6 +251,13 @@ namespace TrackerSQL.Models
         public string CompletedBy { get; set; }
         public string CompanyName { get; set; }
         public bool NotAtClient { get; set; }
+        /// <summary>Null when captured by an app version without the terms box.</summary>
+        public bool? TermsAccepted { get; set; }
+        public string TermsText { get; set; }
+        /// <summary>What was handed over, one "2 × Kenya AA (1kg)" per line (null on proofs from before 3.0.3.2).</summary>
+        public string HandedOver { get; set; }
+        public System.DateTime? PodSentAt { get; set; }
+        public string PodSentTo { get; set; }
     }
 
     public class MobileProofView
@@ -268,6 +279,7 @@ namespace TrackerSQL.Models
         public bool HasSignature { get; set; }
         public decimal? Lat { get; set; }
         public decimal? Lng { get; set; }
+        public bool? TermsAccepted { get; set; }
     }
 
     public class MobileRepair
@@ -373,6 +385,10 @@ namespace TrackerSQL.Models
         public string OfficeEmail { get; set; }
         /// <summary>Comma-separated starts of landline numbers (e.g. "021, 011"); the app offers no WhatsApp for them.</summary>
         public string LandlinePrefixes { get; set; }
+        /// <summary>What the person receiving a delivery ticks on the app; empty means the built-in wording.</summary>
+        public string DeliveryTerms { get; set; }
+        /// <summary>Where the full terms are; empty means the built-in quaffee.co.za page.</summary>
+        public string TermsUrl { get; set; }
         public System.DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }
@@ -391,6 +407,10 @@ namespace TrackerSQL.Models
         public MobileAppRelease App { get; set; }
         /// <summary>Arrival times on the route (System Preferences → GPS &amp; Drivers).</summary>
         public MobileRouteTimesSettings Route { get; set; }
+        /// <summary>The statement the person receiving a delivery ticks before signing (System → Driver App).</summary>
+        public string Terms { get; set; }
+        /// <summary>The full terms and conditions on the web.</summary>
+        public string TermsUrl { get; set; }
     }
 
     public class MobileRouteTimesSettings

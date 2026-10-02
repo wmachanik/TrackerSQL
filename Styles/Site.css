@@ -9525,6 +9525,16 @@ a.delivery-days-tag.is-promise-gap:hover {
     border: 1px solid #d8d8d8;
     border-radius: 3px;
 }
+.pod-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 2px 0 8px; }
+.pod-toolbar label { font-weight: 600; }
+.pod-actions { white-space: nowrap; }
+.pod-actions a + a { margin-left: 0.6em; }
+.pod-sent { display: block; color: #3f6b4f; font-size: 0.9em; white-space: nowrap; }
+.pod-terms { color: #3f6b4f; white-space: nowrap; }
+.pod-terms.is-missing { color: #b00020; font-weight: 600; }
+
+/* System → Driver App: delivery terms */
+textarea.driver-app-terms { width: 100%; max-width: 46em; box-sizing: border-box; }
 
 /* Contact Details → GPS line (under Packaging) and the Check / change popup */
 .contact-gps-value { white-space: nowrap; }

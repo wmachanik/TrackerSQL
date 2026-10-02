@@ -227,6 +227,7 @@
     <Content Include="Pages\ContactLocation.aspx" />
     <Content Include="Handlers\MapTile.ashx" />
     <Content Include="Handlers\DriverTrackingData.ashx" />
+    <Content Include="Handlers\ProofOfDelivery.ashx" />
     <Content Include="Tools\CustomerLocations.aspx" />
     <Content Include="Pages\Contacts.aspx" />
     <Content Include="Pages\ContactsAway.aspx" />
@@ -343,6 +344,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-03.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-04.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-04.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-05.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-05.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -518,6 +521,7 @@
     <Compile Include="Managers\MobileRepairManager.cs" />
     <Compile Include="Managers\MobileApiSettingsManager.cs" />
     <Compile Include="Managers\MobileDeliveryEmailManager.cs" />
+    <Compile Include="Managers\ProofOfDeliveryManager.cs" />
     <Compile Include="Managers\MobileApiSecurity.cs" />
     <Compile Include="Repositories\MobileApiRepository.cs" />
     <Compile Include="Repositories\MobileApiSettingsRepository.cs" />
@@ -750,6 +754,8 @@
     <Compile Include="Repositories\UsedItemGroupRepository.cs" />
     <Compile Include="Classes\GridPager.cs" />
     <Compile Include="Classes\SignInNameResolver.cs" />
+    <Compile Include="Classes\SimplePdf.cs" />
+    <Compile Include="Classes\SundryNotes.cs" />
     <Compile Include="Classes\SystemConstants.cs" />
     <Compile Include="Classes\PersonDefaults.cs" />
     <Compile Include="Classes\TrackerSQLDb.cs" />
@@ -862,6 +868,9 @@
     </Compile>
     <Compile Include="Handlers\DriverTrackingData.ashx.cs">
       <DependentUpon>DriverTrackingData.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="Handlers\ProofOfDelivery.ashx.cs">
+      <DependentUpon>ProofOfDelivery.ashx</DependentUpon>
     </Compile>
     <Compile Include="Tools\CustomerLocations.aspx.cs">
       <DependentUpon>CustomerLocations.aspx</DependentUpon>

@@ -22,9 +22,21 @@
                     are always left for the office. When off, the office completes orders from the delivery sheet.</span>
             </p>
             <p>
-                <asp:CheckBox ID="chkSendConfirmation" runat="server" Text="Email the client a delivery confirmation" />
-                <span class="sys-prefs-help">Says who received it, when, and what was delivered or is still to follow, with the signature attached.
-                    Copied to the orders address. It replaces the "delivered" email Done would send, so the client gets one email.</span>
+                <asp:CheckBox ID="chkSendConfirmation" runat="server" Text="Email the client the proof of delivery" />
+                <span class="sys-prefs-help">A PDF with the order, what was delivered or is still to follow, who received it, when, whether they
+                    accepted the terms, and the signature. Copied to the orders address. It replaces the "delivered" email Done would send, so the
+                    client gets one email. The office can also email it later from Contact Details → Proof of Delivery.</span>
+            </p>
+            <p>
+                <label for="<%= txtTerms.ClientID %>">Terms the person receiving the delivery accepts</label><br />
+                <asp:TextBox ID="txtTerms" runat="server" TextMode="MultiLine" Rows="4" Columns="80" MaxLength="1000" CssClass="driver-app-terms" />
+                <span class="sys-prefs-help">Shown with a tick box above the signature on the app; a signature needs the box ticked. The wording
+                    they accepted is kept with the proof and printed on the proof of delivery.</span>
+            </p>
+            <p>
+                <label for="<%= txtTermsUrl.ClientID %>">Link to the full terms and conditions</label><br />
+                <asp:TextBox ID="txtTermsUrl" runat="server" MaxLength="300" Columns="80" TextMode="Url" />
+                <span class="sys-prefs-help">Opens from the app ("Read the terms") and is printed on the proof of delivery.</span>
             </p>
             <p>
                 <asp:CheckBox ID="chkNotesToOffice" runat="server" Text="Drivers may email their delivery note to the office" />

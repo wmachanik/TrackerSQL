@@ -74,6 +74,8 @@ SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; Cu
 SQLCommands-DriverGps-03.xml   ← DriverLocationPingTbl (driver tracking positions)
 SQLCommands-DriverGps-04.xml   ← MobileDeliveryOptionsTbl.NotAtClient / MobileDeliveryProofTbl.NotAtClient; options
                                  "Collected by the client" and "Dropped off by the supplier" (3.0.3.2)
+SQLCommands-DriverGps-05.xml   ← MobileDeliveryProofTbl.TermsAccepted / TermsText / HandedOver / PodSentAt / PodSentTo;
+                                 MobileApiSettingsTbl.DeliveryTerms / TermsUrl (terms tick box, POD PDF; 3.0.3.2)
 The Collected delivery outcome is now created with "needs a name" off (01 and MobileApi-01). Live already has the
 row: untick "Needs name" for Collected on Lookups → Delivery Outcomes if the drivers should not be asked for one.
 SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes when it is missing (either pack may run first).
@@ -94,7 +96,7 @@ Live steps:
    then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK once from Tools -> Driver App (0.5.2; upload Downloads/QuaffeeDriver.apk AND
+5. Driver app: install the new APK once from Tools -> Driver App (0.5.3; upload Downloads/QuaffeeDriver.apk AND
    Downloads/QuaffeeDriver.json; from 0.5.1 on (so after this install) the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
    starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
    simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work
@@ -111,6 +113,9 @@ Live steps:
    Delivery Outcomes and the options "Collected by the client" and "Dropped off by the supplier". Proofs captured with
    them never change the client's GPS point or the driver's delivery order. Check the list on Lookups → Delivery
    Outcomes after deploying (rename or untick as you like; the tick is what counts, not the wording).
+9. 3.0.3.2: upload SQLCommands-DriverGps-05.xml and Handlers/ProofOfDelivery.ashx. Tools -> Driver App: check the
+   terms wording and link the person signing must tick (app 0.5.3), and tick "Email the client the proof of
+   delivery" to email the POD PDF automatically. Contact Details -> Proof of Delivery: PDF / Email per delivery.
 Rules to know:
 - Azure Maps points are kept at most 180 days (Microsoft terms outside Azure). They are looked up again from 30 days
   before expiry (on the next order / contact save / batch) and removed once past expiry if not refreshed.

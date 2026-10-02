@@ -505,8 +505,42 @@ namespace TrackerSQL.Pages
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Proof GPS check failed for contact " + contactId + ": " + ex.Message);
             }
 
+            foreach (DataControlField column in gvContactProofs.Columns)
+            {
+                if (column.HeaderText == "Walk-in")
+                    column.Visible = contactId == SystemConstants.CustomerConstants.SundryCustomerID;
+            }
             gvContactProofs.DataSource = rows;
             gvContactProofs.DataBind();
+        }
+
+        protected void gvContactProofs_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (e.CommandName != "SendPod" || !long.TryParse(Convert.ToString(e.CommandArgument), out long proofId))
+                return;
+
+            string to = txtPodEmail.Text.Trim();
+            string message;
+            bool error;
+            try
+            {
+                string why = new ProofOfDeliveryManager().Send(proofId, User.Identity.Name, to.Length > 0 ? to : null, out string sentTo);
+                error = why != null;
+                message = error ? "Proof of delivery not emailed: " + why + "." : "Proof of delivery emailed to " + sentTo + ".";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Email, "Proof of delivery " + proofId + " email failed: " + ex.Message, User.Identity.Name);
+                error = true;
+                message = "Proof of delivery not emailed: " + ex.Message;
+            }
+
+            litProofMessage.Text = "<p class=\"status-message " + (error ? "status-error" : "status-info") + "\">"
+                + HttpUtility.HtmlEncode(message) + "</p>";
+            int contactId = GetLoadedContactId();
+            if (contactId > 0)
+                BindContactProofsGrid(contactId);
+            upnlContactProofs.Update();
         }
 
         private void BindContactChangeLogGrid(int contactId)

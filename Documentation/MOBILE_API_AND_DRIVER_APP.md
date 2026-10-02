@@ -29,14 +29,16 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Managers/MobileAuthManager.cs` | Sign-in, token issue/validate/revoke (SHA-256 hash stored), idle timeout, appSettings. |
 | `Managers/MobileApiSecurity.cs` | In-memory throttles: failed sign-ins per IP, calls per device, 5-minute account check cache. |
 | `Managers/MobileDeliveryManager.cs` | Sheet, offline delivery sync (`clientRef` de-duplication), proofs, auto Order Done, emails. |
-| `Managers/MobileDeliveryEmailManager.cs` | Delivery confirmation email (signature attached) and driver note to the office. |
+| `Managers/MobileDeliveryEmailManager.cs` | Proof of delivery email (hands over to `ProofOfDeliveryManager`) and driver note to the office. |
+| `Managers/ProofOfDeliveryManager.cs` + `Classes/SimplePdf.cs` | Proof of delivery PDF (details, items, terms tick, signature) and sending it; `Handlers/ProofOfDelivery.ashx?id=` serves it to staff. |
+| `Classes/SundryNotes.cs` | Walk-in (ZZName) order notes: name before the `:`, details after it, `[#email#]`. |
 | `Managers/MobileRepairManager.cs` | Repairs list/get/create/update (same rules as Repair Detail). |
 | `Managers/MobileApiSettingsManager.cs` + `Repositories/MobileApiSettingsRepository.cs` | System → Driver App settings (`MobileApiSettingsTbl`, 1-minute cache). |
 | `Managers/MobileApiSchemaInstaller.cs` | Runs `App_Data/SQLCommands-MobileApi-01.xml` once per app start (idempotent). |
 | `Repositories/MobileApiRepository.cs` | All mobile SQL (tokens, proofs, sync refs, log, options, sheet rows, lookups). |
 | `Models/MobileApiModels.cs` | Request/response models. |
 | `Tools/ApiTester.aspx` | Admin page to call every endpoint, view the request log and devices, and "Check API tables". |
-| `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, confirmation email, notes to office, office email, landline prefixes). |
+| `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, proof of delivery email, delivery terms and link, notes to office, office email, landline prefixes). |
 | `Pages/Lookups.aspx` → Delivery Outcomes tab (was Driver Options) | The delivered / not-delivered choices shown in the app. |
 | `Managers/DriverTrackingManager.cs` + `Repositories/DriverLocationRepository.cs` | Driver tracking: `POST location`, positions with deliveries, daily clean-up, the Driver tracking page's data (`Handlers/DriverTrackingData.ashx`, `Tools/DriverTracking.aspx`). |
 
@@ -51,11 +53,11 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST auth/login` | anyone | Tracker login; must be linked to a person (Lookups → People, Security Username) or be an admin. 429 when throttled. |
 | `POST auth/logout`, `GET auth/me` | device | |
 | `GET delivery/dates`, `GET delivery/sheet?date=&person=me\|all\|id` | device | ETag / 304 |
-| `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice` |
+| `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice`; `termsAccepted` and `terms` (the wording shown) for signed deliveries (0.5.3) |
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
-| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`, and `app`: `{ version, versionCode, url }` from `Downloads/QuaffeeDriver.json`, missing when there is none) |
+| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, `terms` and `termsUrl` for the tick box above the signature, `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`, and `app`: `{ version, versionCode, url }` from `Downloads/QuaffeeDriver.json`, missing when there is none) |
 | `GET app/download` | device | `{ version, url }`: a download link for the APK valid 30 minutes (`MachineKey.Protect`, purpose `DriverApkDownload`) |
 | `GET app/apk?t=` | none (the link is the permission) | The APK as `QuaffeeDriver-<version>.apk`; 403 text when the link expired. The request log keeps the path without the link |
 | `POST location` | device | `{ points: [{ lat, lng, accuracy, at, source }] }` (oldest first, at most 200; `source` APP_OPEN or PERIODIC). Stored only while tracking is on and inside the work days and hours; future or day-old points are skipped. Needs a sign-in linked to a person (400 otherwise). Returns `{ ok, saved, skipped, trackingEnabled }` (`DriverLocationPingTbl`) |
@@ -97,8 +99,10 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
 2. App queues it in its outbox and sends it with `POST delivery/sync` when allowed (see section 7).
 3. Server stores the proof. If System → Driver App **Run Order Done** is on and nothing is short, it runs
    `OrderDoneManager.CompleteOrder` (statusKey null when the confirmation email is sent, so the client gets one email).
-4. **Confirmation email** (if on): to the contact (ZZName orders: address from the order notes), CC orders@,
-   signature attached. **Office note** (if allowed and ticked): to the office email (default `SysCCEmailAddress`).
+4. **Proof of delivery email** (if on): to the contact (ZZName orders: the `[#email#]` in the order notes), CC orders@,
+   with the POD PDF attached (order, PO, delivered to, when / how, received by, driver, items handed over from the
+   stored `HandedOver`, still to follow, the terms with the tick and link, the signature). Staff can open or (re)send it
+   from Contact Details → Proof of Delivery (**PDF** / **Email**; `PodSentAt` / `PodSentTo`). **Office note** (if allowed and ticked): to the office email (default `SysCCEmailAddress`).
 5. Short deliveries store `MissingItems` text only; **order quantities in Tracker are not changed** (open item).
 
 ## 7. App behaviour worth knowing
@@ -142,6 +146,12 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   stores `MobileDeliveryProofTbl.NotAtClient`: the position is kept but `LearnFromDelivery` and the delivery-order visit
   are skipped (the tracking ping is still stored: it is where the driver really was). The sheet's `proof.notAtClient`
   stops it being used as the last delivery point for expected times; the capture screen says the position is not used.
+- **Terms tick box** (0.5.3, DriverGps-05): with Delivered chosen, the capture screen shows `settings.terms` with a tick
+  box and **Read the terms** (`settings.termsUrl`). A signature can't be sent until it is ticked. The proof stores
+  `TermsAccepted` and `TermsText` (the wording shown, or the current setting for older apps, whose `termsAccepted` is
+  null). Defaults in `MobileApiSettingsManager` (`DefaultDeliveryTerms`, `DefaultTermsUrl`).
+- **Walk-in stops:** for ZZName orders the sheet's `company` / `contactName` is the walk-in name from the notes and
+  `notes` is the address / goods after the `:` without `[#…#]` tags (`SundryNotes`).
 
 ## 8. Data use (measured)
 

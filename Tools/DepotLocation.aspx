@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Depot location</title>
-    <link rel="stylesheet" href="../Styles/Site.css?v=20261002-01" />
+    <link rel="stylesheet" href="../Styles/Site.css?v=20261002-02" />
     <link rel="stylesheet" href="../Scripts/leaflet/leaflet.css" />
     <script src="../Scripts/leaflet/leaflet.js"></script>
     <script>

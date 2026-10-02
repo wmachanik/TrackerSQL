@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Proof of delivery (POD) with the client's acceptance of our terms (3.0.3.2).
+  - MobileDeliveryProofTbl.TermsAccepted: the person signing ticked the terms box on the driver app
+    (NULL = captured by an app version without the box).
+  - MobileDeliveryProofTbl.TermsText: the exact wording they accepted.
+  - MobileDeliveryProofTbl.HandedOver: what was handed over ("2 x Kenya AA (1kg)", one per line), kept for the POD PDF.
+  - MobileDeliveryProofTbl.PodSentAt / PodSentTo: when and to whom the POD PDF was last emailed.
+  - MobileApiSettingsTbl.DeliveryTerms / TermsUrl: the terms wording and link shown on the app (System -> Driver App).
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileDeliveryProofTbl', 'TermsAccepted') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD TermsAccepted BIT NULL, TermsText NVARCHAR(1000) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileDeliveryProofTbl', 'HandedOver') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD HandedOver NVARCHAR(2000) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileDeliveryProofTbl', 'PodSentAt') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD PodSentAt DATETIME NULL, PodSentTo NVARCHAR(200) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileApiSettingsTbl', 'DeliveryTerms') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileApiSettingsTbl ADD DeliveryTerms NVARCHAR(1000) NULL, TermsUrl NVARCHAR(300) NULL;
+      END
+    ]]>
+  </command>
+</root>

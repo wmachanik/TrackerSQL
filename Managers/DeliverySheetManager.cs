@@ -254,27 +254,10 @@ namespace TrackerSQL.Managers
             return notes;
         }
 
-        /// <summary>
-        /// Walk-in name from sundry (ZZName) order notes. Uses text before [RepairStatus: …]
-        /// so the colon inside that tag is not mistaken for the name delimiter.
-        /// </summary>
+        /// <summary>Walk-in name from sundry (ZZName) order notes (shared with the driver app sheet).</summary>
         private static string ExtractSundryWalkInName(string notes)
         {
-            if (string.IsNullOrWhiteSpace(notes))
-                return string.Empty;
-
-            string value = notes.Trim();
-            string statusStart = SystemConstants.RepairConstants.OrderNotesRepairStatusStartTag;
-            int statusIdx = value.IndexOf(statusStart, StringComparison.OrdinalIgnoreCase);
-            if (statusIdx >= 0)
-                value = value.Substring(0, statusIdx).Trim();
-
-            if (value.EndsWith(":"))
-                value = value.Substring(0, value.Length - 1).TrimEnd();
-            else if (value.Contains(":"))
-                value = value.Substring(0, value.IndexOf(':')).Trim();
-
-            return value;
+            return SundryNotes.Name(notes);
         }
     }
 }

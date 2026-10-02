@@ -165,15 +165,14 @@ namespace TrackerSQL.Managers
         private static MobileDeliveryStop BuildStop(MobileApiRepository.SheetRow row)
         {
             bool sundry = row.ContactID == SystemConstants.CustomerConstants.SundryCustomerID;
-            string contactName = sundry
-                ? SundryNameFromNotes(row.Notes)
-                : (row.FirstName + " " + row.LastName).Trim();
+            string walkIn = sundry ? SundryNotes.Name(row.Notes) : null;
+            string contactName = sundry ? walkIn : (row.FirstName + " " + row.LastName).Trim();
 
             return new MobileDeliveryStop
             {
                 OrderId = row.OrderID,
                 ContactId = row.ContactID,
-                Company = row.CompanyName,
+                Company = sundry ? (string.IsNullOrWhiteSpace(walkIn) ? "Walk-in client" : walkIn) : row.CompanyName,
                 ContactName = NullIfEmpty(contactName),
                 Phone = NullIfEmpty(row.Phone),
                 Cell = NullIfEmpty(row.Cell),
@@ -181,7 +180,7 @@ namespace TrackerSQL.Managers
                 Province = NullIfEmpty(row.Province),
                 PostalCode = NullIfEmpty(row.PostalCode),
                 Area = NullIfEmpty(row.AreaName),
-                Notes = NullIfEmpty(row.Notes),
+                Notes = NullIfEmpty(sundry ? SundryNotes.Details(row.Notes) : row.Notes),
                 Po = NullIfEmpty(row.PurchaseOrder),
                 Done = row.Done,
                 Confirmed = row.Confirmed,
@@ -348,14 +347,6 @@ namespace TrackerSQL.Managers
                 "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " back to the suggested order", userName);
         }
 
-        /// <summary>ZZName walk-in orders carry the person's name in the notes before the first colon.</summary>
-        private static string SundryNameFromNotes(string notes)
-        {
-            string text = (notes ?? string.Empty).Trim();
-            int colon = text.IndexOf(':');
-            return colon > 0 ? text.Substring(0, colon).Trim() : text;
-        }
-
         public List<MobileDeliverySyncResult> Sync(MobileDeliverySyncRequest request, MobileTokenUser user, out string error)
         {
             error = null;
@@ -429,6 +420,13 @@ namespace TrackerSQL.Managers
             if (outcome == OutcomeNotDelivered && reason.Length == 0 && string.IsNullOrWhiteSpace(item.Note))
                 return Fail(item, "Say why it was not delivered.");
             bool notAtClient = outcome == OutcomeDelivered && IsNotAtClientOption(reason);
+            bool? termsAccepted = outcome == OutcomeDelivered ? item.TermsAccepted : null;
+            string handedOver = null;
+            if (outcome == OutcomeDelivered && order.RequiredByDate.HasValue)
+            {
+                var rows = _repo.GetSheetRows(order.RequiredByDate.Value.Date, null, order.OrderID);
+                handedOver = NullIfEmpty(string.Join("\n", ProofOfDeliveryManager.HandedOverLines(rows, item.Lines)));
+            }
 
             var proof = new MobileDeliveryProof
             {
@@ -449,6 +447,11 @@ namespace TrackerSQL.Managers
                 AccuracyM = item.Accuracy.HasValue && item.Accuracy.Value > 0 && item.Accuracy.Value < 100000
                     ? Math.Round(item.Accuracy.Value, 1) : (decimal?)null,
                 NotAtClient = notAtClient,
+                TermsAccepted = termsAccepted,
+                TermsText = termsAccepted.HasValue
+                    ? NullIfEmpty(item.Terms) ?? MobileApiSettingsManager.DeliveryTerms(Settings)
+                    : null,
+                HandedOver = handedOver,
                 Status = outcome == OutcomeDelivered && order.Done ? StatusAlreadyDone : StatusReceived,
                 StatusMessage = outcome == OutcomeDelivered && order.Done ? "The order was already marked done in Tracker." : null
             };
@@ -471,6 +474,7 @@ namespace TrackerSQL.Managers
                 + (reason.Length > 0 ? " | " + reason : string.Empty)
                 + (receivedBy.Length > 0 ? " | received by '" + receivedBy + "'" : string.Empty)
                 + (signature != null ? " | signature" : string.Empty)
+                + (termsAccepted.HasValue ? (termsAccepted.Value ? " | terms accepted" : " | terms NOT ticked") : string.Empty)
                 + (proof.MissingItems != null ? " | not handed over: " + proof.MissingItems : string.Empty)
                 + " | at " + proof.DeliveredAt.ToString("yyyy-MM-dd HH:mm")
                 + (proof.Latitude.HasValue && proof.Longitude.HasValue
@@ -529,8 +533,8 @@ namespace TrackerSQL.Managers
             var emails = new MobileDeliveryEmailManager();
             if (sendConfirmation)
             {
-                string why = TrySend(() => emails.SendConfirmation(order, proof, signature, signatureType, item.Lines));
-                result.Message += why == null ? " Confirmation emailed to the client." : " No confirmation email: " + why + ".";
+                string why = TrySend(() => emails.SendConfirmation(proofId, user?.UserName));
+                result.Message += why == null ? " Proof of delivery emailed to the client." : " Proof of delivery not emailed: " + why + ".";
             }
 
             if (item.NoteToOffice && !string.IsNullOrWhiteSpace(proof.DriverNote))
@@ -626,7 +630,8 @@ namespace TrackerSQL.Managers
                     StatusMessage = NullIfEmpty(p.StatusMessage),
                     HasSignature = p.HasSignature,
                     Lat = p.Latitude,
-                    Lng = p.Longitude
+                    Lng = p.Longitude,
+                    TermsAccepted = p.TermsAccepted
                 };
             }).ToList();
         }

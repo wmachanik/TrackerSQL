@@ -1284,27 +1284,11 @@ namespace TrackerSQL.Managers
             public string Notes { get; set; }
         }
         /// <summary>
-        /// Extracts email address from notes using delimiters
+        /// The email in a [#name@example.com#] tag in the notes; Woo references such as [#41405: Yoco] are skipped.
         /// </summary>
         public string ExtractEmailFromNotes(string notes)
         {
-            if (string.IsNullOrEmpty(notes)) return string.Empty;
-
-            const string startDelimiter = "[#";
-            const string endDelimiter = "#]";
-
-            int startIndex = notes.IndexOf(startDelimiter);
-            if (startIndex >= 0)
-            {
-                int endIndex = notes.IndexOf(endDelimiter, startIndex);
-                if (endIndex > startIndex)
-                {
-                    return notes.Substring(startIndex + startDelimiter.Length,
-                                         endIndex - startIndex - startDelimiter.Length);
-                }
-            }
-
-            return string.Empty;
+            return SundryNotes.Email(notes);
         }
 
         // Helper DTO classes

@@ -637,9 +637,19 @@
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Proof of Delivery" ID="tabpnlProofs" Visible="false">
                     <HeaderTemplate>Proof of Delivery</HeaderTemplate>
                     <ContentTemplate>
+                        <asp:UpdatePanel ID="upnlContactProofs" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                        <ContentTemplate>
                         <div class="pad-4">
+                            <div class="pod-toolbar">
+                                <label for="<%= txtPodEmail.ClientID %>">Email the proof of delivery to</label>
+                                <asp:TextBox ID="txtPodEmail" runat="server" TextMode="Email" MaxLength="200" Columns="34"
+                                    placeholder="the client's email address" />
+                                <span class="small muted">Leave empty for the client's address (a walk-in's [#email#] in the order notes).</span>
+                            </div>
+                            <asp:Literal ID="litProofMessage" runat="server" />
                             <asp:GridView ID="gvContactProofs" runat="server" CssClass="TblWhite small contact-proofs-table"
-                                AutoGenerateColumns="False" EmptyDataText="no proof of delivery">
+                                AutoGenerateColumns="False" EmptyDataText="no proof of delivery"
+                                OnRowCommand="gvContactProofs_RowCommand">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <ItemTemplate>
@@ -651,10 +661,33 @@
                                         <ItemStyle HorizontalAlign="Center" />
                                     </asp:TemplateField>
                                     <asp:BoundField DataField="OrderID" HeaderText="Order #" />
+                                    <asp:BoundField DataField="WalkInName" HeaderText="Walk-in" Visible="false" />
                                     <asp:BoundField DataField="DeliveredAt" HeaderText="When" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
                                     <asp:BoundField DataField="OutcomeDisplay" HeaderText="Outcome" />
                                     <asp:BoundField DataField="Reason" HeaderText="How" />
                                     <asp:BoundField DataField="ReceivedByName" HeaderText="Received by" />
+                                    <asp:TemplateField HeaderText="POD">
+                                        <ItemTemplate>
+                                            <span class="pod-actions">
+                                                <asp:HyperLink ID="hlPodPdf" runat="server" Text="PDF" Target="_blank"
+                                                    Visible='<%# (bool)Eval("IsDelivered") %>'
+                                                    NavigateUrl='<%# Eval("PodUrl") %>'
+                                                    ToolTip="Open the proof of delivery (PDF)" />
+                                                <asp:LinkButton ID="lbSendPod" runat="server" Text="Email"
+                                                    Visible='<%# (bool)Eval("IsDelivered") %>'
+                                                    CommandName="SendPod" CommandArgument='<%# Eval("ProofID") %>'
+                                                    ToolTip="Email the proof of delivery PDF to the client (or the address above)"
+                                                    OnClientClick="return confirm('Email the proof of delivery for this order?');" />
+                                            </span>
+                                            <span class="pod-sent"><%#: Eval("PodSentDisplay") %></span>
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Terms">
+                                        <ItemTemplate>
+                                            <span class='<%# (bool?)Eval("TermsAccepted") == false ? "pod-terms is-missing" : "pod-terms" %>'
+                                                title="The person receiving it ticked our terms on the driver app (blank: app version without the box)"><%#: Eval("TermsDisplay") %></span>
+                                        </ItemTemplate>
+                                    </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Signature">
                                         <ItemTemplate>
                                             <asp:Image ID="imgProofSignature" runat="server" CssClass="contact-proof-signature"
@@ -683,6 +716,8 @@
                                 </Columns>
                             </asp:GridView>
                         </div>
+                        </ContentTemplate>
+                        </asp:UpdatePanel>
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
                 <%-- Only visible when the contact has recurring orders (enabled or disabled) --%>

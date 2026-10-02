@@ -30,6 +30,27 @@ namespace TrackerSQL.Models
         public string GpsCheckCss => GpsCheckWarn ? "gps-check is-warn" : "gps-check";
         public byte[] SignatureImage { get; set; }
         public string SignatureContentType { get; set; }
+        /// <summary>The person receiving it ticked our terms; null when the app had no terms box yet.</summary>
+        public bool? TermsAccepted { get; set; }
+        public DateTime? PodSentAt { get; set; }
+        public string PodSentTo { get; set; }
+        /// <summary>The order's notes (a ZZName walk-in's name and email are in them).</summary>
+        public string OrderNotes { get; set; }
+
+        /// <summary>A ZZName walk-in's name from the order notes.</summary>
+        public string WalkInName => TrackerSQL.Classes.SundryNotes.Name(OrderNotes);
+
+        public bool IsDelivered => !string.Equals(Outcome, "NotDelivered", StringComparison.OrdinalIgnoreCase);
+
+        public string TermsDisplay => TermsAccepted == true ? "accepted" : TermsAccepted == false ? "not ticked" : string.Empty;
+
+        public string PodUrl => "~/Handlers/ProofOfDelivery.ashx?id=" + ProofID.ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>"emailed 2 Oct 10:15 to a@b.co.za" once the POD has been sent.</summary>
+        public string PodSentDisplay => PodSentAt.HasValue
+            ? "emailed " + PodSentAt.Value.ToString("d MMM HH:mm", CultureInfo.InvariantCulture)
+              + (string.IsNullOrWhiteSpace(PodSentTo) ? string.Empty : " to " + PodSentTo)
+            : string.Empty;
 
         public string OutcomeDisplay =>
             string.Equals(Outcome, "NotDelivered", StringComparison.OrdinalIgnoreCase) ? "Not delivered" : "Delivered";

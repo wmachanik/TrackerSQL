@@ -1001,6 +1001,10 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnGpsRefresh;
         protected global::AjaxControlToolkit.TabPanel tabpnlProofs;
 
+        protected global::System.Web.UI.UpdatePanel upnlContactProofs;
+        protected global::System.Web.UI.WebControls.TextBox txtPodEmail;
+        protected global::System.Web.UI.WebControls.Literal litProofMessage;
+
         /// <summary>
         /// gvContactProofs control.
         /// </summary>

@@ -51,6 +51,8 @@ namespace TrackerSQL.Tools
             chkNotesToOffice.Checked = settings.AllowNotesToOffice;
             txtOfficeEmail.Text = settings.OfficeEmail ?? string.Empty;
             txtLandlines.Text = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(settings.LandlinePrefixes ?? MobileApiSettingsManager.DefaultLandlinePrefixes));
+            txtTerms.Text = MobileApiSettingsManager.DeliveryTerms(settings);
+            txtTermsUrl.Text = MobileApiSettingsManager.TermsUrl(settings);
             litOrdersEmail.Text = HttpUtility.HtmlEncode(MobileApiSettingsManager.OrdersEmail);
             litSettingsInfo.Text = saved && settings.UpdatedAt.HasValue
                 ? HttpUtility.HtmlEncode("Last saved " + settings.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm", CultureInfo.InvariantCulture)
@@ -70,6 +72,14 @@ namespace TrackerSQL.Tools
                 return;
             }
 
+            string terms = txtTerms.Text.Trim();
+            string termsUrl = txtTermsUrl.Text.Trim();
+            if (termsUrl.Length > 0 && !(Uri.TryCreate(termsUrl, UriKind.Absolute, out Uri link) && (link.Scheme == Uri.UriSchemeHttps || link.Scheme == Uri.UriSchemeHttp)))
+            {
+                SetMsg("The terms link must be a full web address, e.g. https://quaffee.co.za/...", true);
+                return;
+            }
+
             MobileApiSettings before = MobileApiSettingsManager.Load(out _);
             string landlines = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(txtLandlines.Text));
             var settings = new MobileApiSettings
@@ -78,7 +88,9 @@ namespace TrackerSQL.Tools
                 SendDeliveryConfirmation = chkSendConfirmation.Checked,
                 AllowNotesToOffice = chkNotesToOffice.Checked,
                 OfficeEmail = office,
-                LandlinePrefixes = landlines
+                LandlinePrefixes = landlines,
+                DeliveryTerms = terms == MobileApiSettingsManager.DefaultDeliveryTerms ? null : terms,
+                TermsUrl = termsUrl == MobileApiSettingsManager.DefaultTermsUrl ? null : termsUrl
             };
 
             try
@@ -88,6 +100,10 @@ namespace TrackerSQL.Tools
                     string old = string.Join(", ", MobileApiSettingsManager.ParsePrefixes(before.LandlinePrefixes ?? MobileApiSettingsManager.DefaultLandlinePrefixes));
                     if (old != landlines)
                         AppLogger.WriteLog(SystemConstants.LogTypes.System, "Driver App landline prefixes changed from '" + old + "' to '" + landlines + "'", User.Identity.Name);
+                    if (MobileApiSettingsManager.DeliveryTerms(before) != MobileApiSettingsManager.DeliveryTerms(settings)
+                        || MobileApiSettingsManager.TermsUrl(before) != MobileApiSettingsManager.TermsUrl(settings))
+                        AppLogger.WriteLog(SystemConstants.LogTypes.System, "Driver App delivery terms changed to '" + MobileApiSettingsManager.DeliveryTerms(settings)
+                            + "' (" + MobileApiSettingsManager.TermsUrl(settings) + ")", User.Identity.Name);
                     SetMsg("Settings saved. Drivers' apps pick them up the next time they refresh.", false);
                 }
                 else

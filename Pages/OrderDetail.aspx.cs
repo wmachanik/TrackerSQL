@@ -557,16 +557,16 @@ namespace TrackerSQL.Pages
         private OrderHeaderData ReadHeaderFromControls()
         {
             long contactId = GetEffectiveContactId();
-            int? deliveryBy = PreferredDeliveryPersonId;
-            if (!deliveryBy.HasValue || deliveryBy.Value <= 0)
+            int? deliveryBy = null;
+            if (TryGetListControlValue(ddlToBeDeliveredBy, out string deliveryValue)
+                && int.TryParse(deliveryValue, out int ddlDelivery)
+                && ddlDelivery > 0)
             {
-                if (TryGetListControlValue(ddlToBeDeliveredBy, out string deliveryValue)
-                    && int.TryParse(deliveryValue, out int ddlDelivery)
-                    && ddlDelivery > 0)
-                {
-                    deliveryBy = ddlDelivery;
-                }
+                deliveryBy = ddlDelivery;
             }
+
+            if (!deliveryBy.HasValue)
+                deliveryBy = PreferredDeliveryPersonId;
 
             if (!deliveryBy.HasValue || deliveryBy.Value <= 0)
                 deliveryBy = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
@@ -615,7 +615,10 @@ namespace TrackerSQL.Pages
             {
                 ListItem deliveryItem = ddlToBeDeliveredBy.Items.FindByValue(header.ToBeDeliveredBy.ToString());
                 if (deliveryItem != null)
+                {
+                    ddlToBeDeliveredBy.ClearSelection();
                     deliveryItem.Selected = true;
+                }
             }
 
             BindInvoiceTypeDropdown(header.CustomerID, header.InvoiceTypeID);
@@ -1352,6 +1355,7 @@ namespace TrackerSQL.Pages
             if (item == null)
                 return;
 
+            cboContacts.ClearSelection();
             item.Selected = true;
             cboContacts.Text = item.Text;
         }
@@ -3234,6 +3238,7 @@ namespace TrackerSQL.Pages
                 cboContacts.Items.Add(item);
             }
 
+            cboContacts.ClearSelection();
             item.Selected = true;
             if (!IsPostBack)
                 cboContacts.Text = item.Text;
@@ -3746,7 +3751,10 @@ namespace TrackerSQL.Pages
             BindDeliveryPersonDropdown(forceRebind: false);
             ListItem item = ddlToBeDeliveredBy.Items.FindByValue(personId.ToString());
             if (item != null)
+            {
+                ddlToBeDeliveredBy.ClearSelection();
                 item.Selected = true;
+            }
         }
 
         private bool ShouldEnableNewItemButton()

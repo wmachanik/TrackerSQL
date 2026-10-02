@@ -23,6 +23,7 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 ### Go-live notes
 - Upload `bin/`, `Tools/DepotLocation.aspx` (new), `Tools/SystemPreferences.aspx`, `Tools/DriverApp.aspx`, `Pages/DeliverySheet.aspx`, `Pages/ContactDetails.aspx`, `Pages/Lookups.aspx`, `Tools/DriverTracking.aspx`, `Tools/DeliveryOrder.aspx`, `Tools/Deliveries.aspx`, `Administration/UserInformation.aspx`, `Styles/Site.css`, `App_Data/SQLCommands-DriverGps-04.xml` (new), the whole `driver/` folder and `Downloads/` (`QuaffeeDriver.apk` **and** `QuaffeeDriver.json`). In the live `Web.config` change only `Version` to 3.0.3.2. The DriverGps-04 pack runs by itself at start-up.
+- After deploying, press **Calc Next Required** on **Orders → Recurring Orders** so stored next dates use the monthly fix (on dev only Ridwaan's lines moved, 1 Oct → 1 Nov). Delete any extra order it already made (Ridwaan's 2 Oct order).
 - Drivers install 0.5.2 once from **Deliveries → Driver App**; later versions are offered by the app's Update button.
 
 ## 3.0.3.1 — 2026-10-01

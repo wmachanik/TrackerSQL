@@ -2,6 +2,19 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.2 — 2026-10-02
+
+### Features
+- **Depot: Set on map** — **System Preferences → GPS & Drivers → Set on map** opens a map popup (`Tools/DepotLocation.aspx`, administrators) with the depot pin: drag it or click the map, type or paste co-ordinates (or a Google Maps link), or search an address, then *Save depot point*. Road / Satellite with Azure Maps. Typing co-ordinates in *Depot address* and pressing *Save* also sets the point. Editing the address text alone no longer clears the point (it changes only with Set on map, typed co-ordinates or Look up depot). Changes go to the System log.
+- **Driver app updates itself (Android)** — `npm run apk` now writes `Downloads/QuaffeeDriver.json` (version) next to the APK, and the app's lookups carry it (`settings.app`). When Tracker has a newer version, the app shows **Update** on the delivery list and under **More**: it asks for a download link (`GET /api/v1/app/download`, valid 30 minutes, signed with the site's machine key) and opens it in the phone's browser (`GET /api/v1/app/apk?t=…`, no Tracker sign-in needed in the browser), then the driver taps Install. **Tools → Driver App** shows the version. Works from 0.5.1 on; older apps are updated by downloading once from the Driver App page.
+
+### Housekeeping
+- **Quaffee Driver 0.5.1** (APK versionCode 6): the Update button. The `/driver` web copy is rebuilt.
+
+### Go-live notes
+- Upload `bin/`, `Tools/DepotLocation.aspx` (new), `Tools/SystemPreferences.aspx`, `Tools/DriverApp.aspx`, the whole `driver/` folder and `Downloads/` (`QuaffeeDriver.apk` **and** `QuaffeeDriver.json`). In the live `Web.config` change only `Version` to 3.0.3.2. No schema packs.
+- Drivers install 0.5.1 once from **Deliveries → Driver App**; later versions are offered by the app's Update button.
+
 ## 3.0.3.1 — 2026-10-01
 
 Includes the GPS delivery work, driver tracking and Quaffee Driver 0.5.0 on top of the order flags release prepared on 2026-09-29 (never deployed separately).
@@ -34,8 +47,6 @@ Includes the GPS delivery work, driver tracking and Quaffee Driver 0.5.0 on top 
 - **No GPS for courier / collect contacts** — a contact whose own *Delivery By* person is a *Courier* (e.g. Pargo, Cour) or *Collect* person is never looked up automatically (not on contact save, not when an order for one of our drivers is captured, not in the open-orders batch), and phone positions from deliveries to them are not kept (logged). *Look up again* in the popup still works on request.
 - **Azure Maps map** — **System Preferences → GPS & Drivers → Map** chooses OpenStreetMap or **Azure Maps** for the GPS popup. Azure Maps has a *Road / Satellite* switch (satellite with street names). The tiles come through Tracker (`Handlers/MapTile.ashx`, signed-in users only), so the Azure key never reaches the browser; at most 15,000 tiles a day (1,000 transactions), with today's count next to the setting. Without a saved key, or if Azure refuses the tiles, the popup shows OpenStreetMap. Map changes and tile failures (at most once a minute) go to the System log.
 - **Look up depot** — the result now shows at the top of the GPS tab and next to the button (it used to appear at the bottom of the page).
-- **Driver app updates itself (Android)** — `npm run apk` now writes `Downloads/QuaffeeDriver.json` (version) next to the APK, and the app's lookups carry it (`settings.app`). When Tracker has a newer version, the app shows **Update** on the delivery list and under **More**: it asks for a download link (`GET /api/v1/app/download`, valid 30 minutes, signed with the site's machine key) and opens it in the phone's browser (`GET /api/v1/app/apk?t=…`, no Tracker sign-in needed in the browser), then the driver taps Install. **Tools → Driver App** shows the version. Works from 0.5.1 on; older apps are updated by downloading once from the Driver App page.
-- **Depot: Set on map** — **System Preferences → GPS & Drivers → Set on map** opens a map popup (`Tools/DepotLocation.aspx`, administrators) with the depot pin: drag it or click the map, type or paste co-ordinates (or a Google Maps link), or search an address, then *Save depot point*. Road / Satellite with Azure Maps. Typing co-ordinates in *Depot address* and pressing *Save* also sets the point. Editing the address text alone no longer clears the point (it changes only with Set on map, typed co-ordinates or Look up depot). Changes go to the System log.
 - **Contact Details:** the "?" badge (needs checking) now lines up with the *GPS* caption like the tick does.
 - **Deliveries & Areas** — new top menu **Deliveries** and page `Tools/Deliveries.aspx` (also a card on the home page) with everything for deliveries in one place: Delivery Sheet, Delivery order, Driver App, Move delivery date, Customer Locations, GPS & driver settings, and the Lookups tabs Areas, Delivery Days, People, Couriers, Delivery Outcomes and Packaging (each opens on its tab), plus Holiday closures. Driver App moved here from the System menu.
 - **Driver sets the route order** — in the driver app (*Mine*), **Change order** shows the day's stops with ▲ ▼ buttons; **Save order** sends it to Tracker (`POST /api/v1/delivery/route`). That order then comes before the learned and GPS order, in the app and on the office Delivery Sheet, until the driver taps **Suggested order**. With no signal it is kept on the phone and sent when there is signal. Stored in the new `DeliveryRouteTbl`; each change is in the Delivery log. **Tools → Delivery order** has a *Driver's plan* column next to the order really delivered.
@@ -77,7 +88,7 @@ Includes the GPS delivery work, driver tracking and Quaffee Driver 0.5.0 on top 
 - New schema pack `SQLCommands-DriverGps-02.xml` (GpsSettingsTbl.AzureMapsKey, MapProvider; CustomerLocationTbl.ExpiresDate, DriverFixes, LastDriverFixAt; MobileDeliveryProofTbl.AccuracyM), run at start-up. Proofs still save if the pack has not run yet (accuracy is then left out). It also creates `DeliveryVisitTbl`, `DeliveryRouteTbl` and `MobileApiSettingsTbl.LandlinePrefixes` (the last also in `SQLCommands-MobileApi-01.xml`).
 - New schema pack `SQLCommands-DriverGps-03.xml` (`DriverLocationPingTbl`), run at start-up.
 - `SQLCommands-CourierServices-01.xml` adds `CourierServicesTbl.WaybillFormats` and fills the defaults where it is empty (also done automatically the first time couriers are used).
-- **Quaffee Driver 0.5.1** (APK versionCode 6; 0.4.0–0.5.0 were test builds of this release): position with each proof, route order with ▲ ▼, packaging colours, no WhatsApp for landlines, driver tracking, and an **Update** button. Android project: `android.useLegacyBridge` (positions keep coming with the screen off) and foreground-service location / notification permissions. The `/driver` web copy is rebuilt.
+- **Quaffee Driver 0.5.0** (APK versionCode 5; 0.4.0–0.4.2 were test builds of this release): position with each proof, route order with ▲ ▼, packaging colours, no WhatsApp for landlines, driver tracking. Android project: `android.useLegacyBridge` (positions keep coming with the screen off) and foreground-service location / notification permissions. The `/driver` web copy is rebuilt.
 
 ### Go-live notes
 - `SQLCommands-OrderFlags-01.xml` runs automatically at startup: it adds the pill columns (label, colour, icon) and the flag columns, and sets the flag on recurring orders and open orders from the contact's current account type (the old rule).

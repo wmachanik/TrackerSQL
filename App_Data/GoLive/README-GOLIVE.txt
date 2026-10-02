@@ -116,6 +116,7 @@ Live steps:
 9. 3.0.3.2: upload SQLCommands-DriverGps-05.xml and Handlers/ProofOfDelivery.ashx. Tools -> Driver App: check the
    terms wording and link the person signing must tick and their name (app 0.5.4), and tick "Email the client the proof of
    delivery" to email the POD PDF automatically. Contact Details -> Proof of Delivery: PDF / Email per delivery.
+   Also upload Portal/MyOrders.aspx and Portal/MyOrder.aspx: clients get View / Download for their own POD PDFs.
 Rules to know:
 - Azure Maps points are kept at most 180 days (Microsoft terms outside Azure). They are looked up again from 30 days
   before expiry (on the next order / contact save / batch) and removed once past expiry if not refreshed.

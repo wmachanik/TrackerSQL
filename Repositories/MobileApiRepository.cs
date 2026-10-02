@@ -154,6 +154,7 @@ namespace TrackerSQL.Repositories
             public DateTime? ProofDeliveredAt;
             public string ProofStatus;
             public bool ProofHasSignature;
+            public bool ProofNotAtClient;
             /// <summary>The contact's geohash, or its area's busiest cell when it has no point yet.</summary>
             public string RouteHash;
             /// <summary>Where drivers really delivered this contact (0 = first stop .. 1 = last) over <see cref="LearnedVisits"/> earlier days.</summary>
@@ -188,6 +189,7 @@ namespace TrackerSQL.Repositories
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
                        pr.MissingItems AS ProofMissingItems,
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
+                       pr.NotAtClient AS ProofNotAtClient,
                        {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}, {GPS_COLS}, {AGENT_COL}
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
@@ -203,9 +205,11 @@ namespace TrackerSQL.Repositories
                              FROM AreaPrepDaysTbl d WHERE d.AreaID = c.AreaID
                              ORDER BY OffDay, d.DeliveryOrder) apd
                 OUTER APPLY (SELECT TOP 1 m.ProofID, m.Outcome, m.Reason, m.ReceivedByName, m.MissingItems, m.DeliveredAt, m.Status,
-                                    CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature
+                                    CAST(CASE WHEN m.SignatureImage IS NULL THEN 0 ELSE 1 END AS BIT) AS HasSignature,
+                                    {PROOF_AWAY} AS NotAtClient
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}{PLAN_JOIN}
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
+            sql = sql.Replace("{PROOF_AWAY}", ProofHasNotAtClientColumn() ? "ISNULL(m.NotAtClient, 0)" : "CAST(0 AS BIT)");
             bool plan = DeliveryRouteRepository.TableSeen();
             sql = sql.Replace("{PLAN_JOIN}", plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
                      .Replace("{PLAN_COLS}", plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops");
@@ -273,6 +277,7 @@ namespace TrackerSQL.Repositories
                 ProofDeliveredAt = NDate(r, "ProofDeliveredAt"),
                 ProofStatus = Str(r, "ProofStatus"),
                 ProofHasSignature = Bool(r, "ProofHasSignature"),
+                ProofNotAtClient = Bool(r, "ProofNotAtClient"),
                 RouteHash = Str(r, "RouteHash"),
                 LearnedPos = r["LearnedPos"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["LearnedPos"]),
                 LearnedVisits = NInt(r, "LearnedVisits") ?? 0,
@@ -365,19 +370,52 @@ namespace TrackerSQL.Repositories
             return _proofAccuracySeen;
         }
 
+        private static bool _proofNotAtClientSeen;
+        private static bool _optionNotAtClientSeen;
+
+        /// <summary>Whether the DriverGps-04 pack has added MobileDeliveryProofTbl.NotAtClient (only a yes is cached).</summary>
+        private bool ProofHasNotAtClientColumn()
+        {
+            if (!_proofNotAtClientSeen)
+                _proofNotAtClientSeen = HasColumn("MobileDeliveryProofTbl", "NotAtClient");
+            return _proofNotAtClientSeen;
+        }
+
+        /// <summary>Whether the DriverGps-04 pack has added MobileDeliveryOptionsTbl.NotAtClient (only a yes is cached).</summary>
+        private bool OptionHasNotAtClientColumn()
+        {
+            if (!_optionNotAtClientSeen)
+                _optionNotAtClientSeen = HasColumn("MobileDeliveryOptionsTbl", "NotAtClient");
+            return _optionNotAtClientSeen;
+        }
+
+        private bool HasColumn(string table, string column)
+        {
+            try
+            {
+                return Scalar<int>("SELECT CASE WHEN COL_LENGTH('dbo." + table + "', '" + column + "') IS NULL THEN 0 ELSE 1 END") == 1;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public long InsertProof(MobileDeliveryProof proof, byte[] signature)
         {
             bool accuracy = ProofHasAccuracyColumn();
+            bool away = ProofHasNotAtClientColumn();
             string sql = @"
                 INSERT INTO MobileDeliveryProofTbl
                     (ClientRef, OrderID, ContactID, PersonID, UserName, Outcome, Reason, ReceivedByName, SignatureImage, SignatureContentType,
-                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, " + (accuracy ? "AccuracyM, " : "") + @"Status, StatusMessage, ReceivedAt)
+                     DriverNote, MissingItems, DeliveredAt, Latitude, Longitude, " + (accuracy ? "AccuracyM, " : "") + (away ? "NotAtClient, " : "") + @"Status, StatusMessage, ReceivedAt)
                 VALUES
                     (@ClientRef, @OrderID, @ContactID, @PersonID, @UserName, @Outcome, @Reason, @ReceivedByName, @SignatureImage, @SignatureContentType,
-                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, " + (accuracy ? "@AccuracyM, " : "") + @"@Status, @StatusMessage, @ReceivedAt);
+                     @DriverNote, @MissingItems, @DeliveredAt, @Latitude, @Longitude, " + (accuracy ? "@AccuracyM, " : "") + (away ? "@NotAtClient, " : "") + @"@Status, @StatusMessage, @ReceivedAt);
                 SELECT CAST(SCOPE_IDENTITY() AS BIGINT);";
             return Scalar<long>(sql,
                 P("@AccuracyM", proof.AccuracyM, DbType.Decimal),
+                P("@NotAtClient", proof.NotAtClient, DbType.Boolean),
                 P("@ClientRef", proof.ClientRef),
                 P("@OrderID", proof.OrderID, DbType.Int32),
                 P("@ContactID", proof.ContactID, DbType.Int32),
@@ -461,6 +499,7 @@ namespace TrackerSQL.Repositories
             string sql = "SELECT TOP (" + Math.Max(1, Math.Min(max, 500)) + @")
                     m.ProofID, m.OrderID, m.DeliveredAt, m.Outcome, m.Reason, m.ReceivedByName, m.DriverNote, m.MissingItems,
                     m.Status, m.Latitude, m.Longitude, " + (ProofHasAccuracyColumn() ? "m.AccuracyM" : "CAST(NULL AS DECIMAL(9,1)) AS AccuracyM") + @",
+                    " + (ProofHasNotAtClientColumn() ? "m.NotAtClient" : "CAST(0 AS BIT) AS NotAtClient") + @",
                     m.SignatureImage, m.SignatureContentType,
                     COALESCE(p.Person, m.UserName) AS Driver
                 FROM MobileDeliveryProofTbl m
@@ -483,6 +522,7 @@ namespace TrackerSQL.Repositories
                 Latitude = r["Latitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Latitude"]),
                 Longitude = r["Longitude"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["Longitude"]),
                 AccuracyM = r["AccuracyM"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(r["AccuracyM"]),
+                NotAtClient = Bool(r, "NotAtClient"),
                 SignatureImage = r["SignatureImage"] == DBNull.Value ? null : (byte[])r["SignatureImage"],
                 SignatureContentType = Str(r, "SignatureContentType")
             }, P("@ContactID", contactId, DbType.Int32));
@@ -648,7 +688,8 @@ namespace TrackerSQL.Repositories
 
         public List<MobileDeliveryOption> GetDeliveryOptions(bool enabledOnly)
         {
-            return Query(@"SELECT OptionID, Outcome, OptionText, NeedsName, SortOrder, IsEnabled
+            return Query(@"SELECT OptionID, Outcome, OptionText, NeedsName, SortOrder, IsEnabled, "
+                           + (OptionHasNotAtClientColumn() ? "NotAtClient" : "CAST(0 AS BIT) AS NotAtClient") + @"
                            FROM MobileDeliveryOptionsTbl"
                            + (enabledOnly ? " WHERE IsEnabled = 1" : string.Empty)
                            + " ORDER BY CASE WHEN Outcome = 'Delivered' THEN 0 ELSE 1 END, SortOrder, OptionText",
@@ -659,27 +700,31 @@ namespace TrackerSQL.Repositories
                     Text = Str(r, "OptionText"),
                     NeedsName = Bool(r, "NeedsName"),
                     SortOrder = Convert.ToInt32(r["SortOrder"]),
-                    Enabled = Bool(r, "IsEnabled")
+                    Enabled = Bool(r, "IsEnabled"),
+                    NotAtClient = Bool(r, "NotAtClient")
                 });
         }
 
         public void InsertDeliveryOption(MobileDeliveryOption option)
         {
-            Exec(@"INSERT INTO MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled)
-                   VALUES (@Outcome, @Text, @NeedsName, @SortOrder, @Enabled)",
+            bool away = OptionHasNotAtClientColumn();
+            Exec(@"INSERT INTO MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled" + (away ? ", NotAtClient" : "") + @")
+                   VALUES (@Outcome, @Text, @NeedsName, @SortOrder, @Enabled" + (away ? ", @NotAtClient" : "") + ")",
                 P("@Outcome", option.Outcome), P("@Text", Trunc(option.Text, 100)),
                 P("@NeedsName", option.NeedsName, DbType.Boolean), P("@SortOrder", option.SortOrder, DbType.Int32),
-                P("@Enabled", option.Enabled, DbType.Boolean));
+                P("@Enabled", option.Enabled, DbType.Boolean), P("@NotAtClient", option.NotAtClient, DbType.Boolean));
         }
 
         public void UpdateDeliveryOption(MobileDeliveryOption option)
         {
             Exec(@"UPDATE MobileDeliveryOptionsTbl
-                   SET Outcome = @Outcome, OptionText = @Text, NeedsName = @NeedsName, SortOrder = @SortOrder, IsEnabled = @Enabled
+                   SET Outcome = @Outcome, OptionText = @Text, NeedsName = @NeedsName, SortOrder = @SortOrder, IsEnabled = @Enabled"
+                   + (OptionHasNotAtClientColumn() ? ", NotAtClient = @NotAtClient" : "") + @"
                    WHERE OptionID = @Id",
                 P("@Outcome", option.Outcome), P("@Text", Trunc(option.Text, 100)),
                 P("@NeedsName", option.NeedsName, DbType.Boolean), P("@SortOrder", option.SortOrder, DbType.Int32),
-                P("@Enabled", option.Enabled, DbType.Boolean), P("@Id", option.Id, DbType.Int32));
+                P("@Enabled", option.Enabled, DbType.Boolean), P("@NotAtClient", option.NotAtClient, DbType.Boolean),
+                P("@Id", option.Id, DbType.Int32));
         }
 
         public void DeleteDeliveryOption(int optionId)

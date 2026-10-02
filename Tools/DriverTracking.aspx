@@ -159,7 +159,7 @@
                         + d.stops.map(function (s) {
                             return '<tr' + (s.done ? ' class="done"' : '') + '><td>' + s.seq + '</td><td>' + esc(s.company)
                                 + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td>' + esc(s.area || '') + '</td><td>'
-                                + (s.done ? 'done' : esc(s.eta || '-')) + '</td></tr>';
+                                + (s.done ? (s.notAtClient ? esc(s.notAtClient) : 'done') : esc(s.eta || '-')) + '</td></tr>';
                         }).join('') + '</tbody></table>';
                 }
                 el.innerHTML = html;
@@ -205,7 +205,7 @@
                     sel.stops.forEach(function (s) {
                         if (s.lat == null) return;
                         L.marker([s.lat, s.lng], { icon: stopIcon(s) })
-                            .bindTooltip(esc(s.seq + '. ' + s.company) + (s.done ? ' (done)' : s.eta ? ' - ETA ' + esc(s.eta) : ''))
+                            .bindTooltip(esc(s.seq + '. ' + s.company) + (s.done ? ' (' + esc(s.notAtClient || 'done') + ')' : s.eta ? ' - ETA ' + esc(s.eta) : ''))
                             .addTo(routeLayer);
                         selBounds.push([s.lat, s.lng]);
                         if (!s.done) line.push([s.lat, s.lng]);

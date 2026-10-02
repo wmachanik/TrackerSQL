@@ -137,6 +137,11 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   pin within 150 m OK / far (kept, flagged), lookup will be replaced, driver point within 60 m confirms / will move,
   and over 1 km a warning to capture at the client. Nothing for `noGpsLearning` stops (collects / courier) or ZZName.
   Contact Details → Proof of Delivery shows the same check per proof (`CustomerLocationManager.DescribeDeliveryFix`).
+- **Not at the client** (DriverGps-04): delivery options with `notAtClient` (Lookups → Delivery Outcomes, e.g. "Collected
+  by the client", "Dropped off by the supplier"). On sync the server matches the proof's `reason` to such an option and
+  stores `MobileDeliveryProofTbl.NotAtClient`: the position is kept but `LearnFromDelivery` and the delivery-order visit
+  are skipped (the tracking ping is still stored: it is where the driver really was). The sheet's `proof.notAtClient`
+  stops it being used as the last delivery point for expected times; the capture screen says the position is not used.
 
 ## 8. Data use (measured)
 

@@ -249,6 +249,7 @@ namespace TrackerSQL.Managers
                         Area = g.First().Area,
                         Orders = g.Count(),
                         Done = g.All(o => o.Done || o.Proof != null),
+                        NotAtClient = g.All(o => o.Proof?.NotAtClient == true) ? (g.First().Proof.Reason ?? "not at the client") : null,
                         Lat = points.TryGetValue(g.Key, out Tuple<double, double> pt) ? (double?)pt.Item1 : null,
                         Lng = pt?.Item2
                     })

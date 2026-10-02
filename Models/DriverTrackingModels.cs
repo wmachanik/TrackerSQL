@@ -53,6 +53,8 @@ namespace TrackerSQL.Models
         public string Area { get; set; }
         public int Orders { get; set; }
         public bool Done { get; set; }
+        /// <summary>Done without the driver going there, e.g. "Collected by the client".</summary>
+        public string NotAtClient { get; set; }
         public double? Lat { get; set; }
         public double? Lng { get; set; }
         public string Eta { get; set; }

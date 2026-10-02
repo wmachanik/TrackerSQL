@@ -88,6 +88,24 @@ namespace TrackerSQL.Managers
             return sheet;
         }
 
+        /// <summary>The driver picked a "how it was delivered" choice ticked "Not at the client" (e.g. collected by the client).</summary>
+        private bool IsNotAtClientOption(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return false;
+            try
+            {
+                return _repo.GetDeliveryOptions(enabledOnly: false).Any(o => o.NotAtClient
+                    && string.Equals(o.Outcome, OutcomeDelivered, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals((o.Text ?? string.Empty).Trim(), reason.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Delivery options not read: " + ex.Message);
+                return false;
+            }
+        }
+
         /// <summary>
         /// Logs which stop of the day this was (delivered or not: the driver went there), so the route can learn the driver's
         /// own order. Never fails the sync.
@@ -179,7 +197,8 @@ namespace TrackerSQL.Managers
                         MissingItems = NullIfEmpty(row.ProofMissingItems),
                         DeliveredAt = row.ProofDeliveredAt?.ToString("yyyy-MM-ddTHH:mm:ss"),
                         Status = row.ProofStatus,
-                        HasSignature = row.ProofHasSignature
+                        HasSignature = row.ProofHasSignature,
+                        NotAtClient = row.ProofNotAtClient ? true : (bool?)null
                     }
                     : null,
                 Gps = sundry ? null
@@ -409,6 +428,7 @@ namespace TrackerSQL.Managers
                 return Fail(item, "A delivered order needs how it was delivered, the received-by name or a signature.");
             if (outcome == OutcomeNotDelivered && reason.Length == 0 && string.IsNullOrWhiteSpace(item.Note))
                 return Fail(item, "Say why it was not delivered.");
+            bool notAtClient = outcome == OutcomeDelivered && IsNotAtClientOption(reason);
 
             var proof = new MobileDeliveryProof
             {
@@ -428,6 +448,7 @@ namespace TrackerSQL.Managers
                 Longitude = ValidCoordinate(item.Lng, 180),
                 AccuracyM = item.Accuracy.HasValue && item.Accuracy.Value > 0 && item.Accuracy.Value < 100000
                     ? Math.Round(item.Accuracy.Value, 1) : (decimal?)null,
+                NotAtClient = notAtClient,
                 Status = outcome == OutcomeDelivered && order.Done ? StatusAlreadyDone : StatusReceived,
                 StatusMessage = outcome == OutcomeDelivered && order.Done ? "The order was already marked done in Tracker." : null
             };
@@ -456,9 +477,11 @@ namespace TrackerSQL.Managers
                     ? " | GPS " + proof.Latitude.Value.ToString("0.00000", CultureInfo.InvariantCulture) + ","
                       + proof.Longitude.Value.ToString("0.00000", CultureInfo.InvariantCulture)
                       + (proof.AccuracyM.HasValue ? " +/-" + proof.AccuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + "m" : string.Empty)
-                    : " | no GPS"), user?.UserName);
+                    : " | no GPS")
+                + (notAtClient ? " | not at the client: position not used for the client's GPS point or the delivery order" : string.Empty),
+                user?.UserName);
 
-            if (outcome == OutcomeDelivered && proof.ContactID.HasValue && proof.Latitude.HasValue && proof.Longitude.HasValue)
+            if (outcome == OutcomeDelivered && !notAtClient && proof.ContactID.HasValue && proof.Latitude.HasValue && proof.Longitude.HasValue)
             {
                 try
                 {
@@ -472,7 +495,8 @@ namespace TrackerSQL.Managers
                 }
             }
 
-            RecordDeliveryOrder(order, proof, user);
+            if (!notAtClient)
+                RecordDeliveryOrder(order, proof, user);
             DriverTrackingManager.RecordDelivery(user?.PersonId, proof.Latitude, proof.Longitude, proof.AccuracyM, proof.DeliveredAt, user?.UserName);
 
             var result = new MobileDeliverySyncResult

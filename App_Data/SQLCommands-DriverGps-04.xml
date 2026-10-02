@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliveries that do not happen at the client's address (3.0.3.2).
+  - MobileDeliveryOptionsTbl.NotAtClient: the "how it was delivered" choice means the driver was not at the client
+    (the client collected from us, or a supplier dropped it off), so the phone's position says nothing about the client.
+  - MobileDeliveryProofTbl.NotAtClient: set on proofs captured with such a choice. Their position is kept (where the
+    driver signed) but never teaches the client's GPS point or the driver's delivery order.
+  - Adds the options "Collected by the client" and "Dropped off by the supplier".
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryOptionsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileDeliveryOptionsTbl', 'NotAtClient') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryOptionsTbl
+              ADD NotAtClient BIT NOT NULL CONSTRAINT DF_MobileDeliveryOptions_NotAtClient DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileDeliveryProofTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.MobileDeliveryProofTbl', 'NotAtClient') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileDeliveryProofTbl ADD NotAtClient BIT NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF COL_LENGTH('dbo.MobileDeliveryOptionsTbl', 'NotAtClient') IS NOT NULL
+      BEGIN
+          EXEC(N'
+          IF NOT EXISTS (SELECT 1 FROM dbo.MobileDeliveryOptionsTbl WHERE OptionText = N''Collected by the client'')
+              INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled, NotAtClient)
+              VALUES (''Delivered'', N''Collected by the client'', 1, 26, 1, 1);
+          IF NOT EXISTS (SELECT 1 FROM dbo.MobileDeliveryOptionsTbl WHERE OptionText = N''Dropped off by the supplier'')
+              INSERT INTO dbo.MobileDeliveryOptionsTbl (Outcome, OptionText, NeedsName, SortOrder, IsEnabled, NotAtClient)
+              VALUES (''Delivered'', N''Dropped off by the supplier'', 0, 27, 1, 1);');
+      END
+    ]]>
+  </command>
+</root>

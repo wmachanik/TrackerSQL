@@ -491,6 +491,11 @@ namespace TrackerSQL.Pages
                 foreach (ContactProofRow row in rows.Where(r => r.Latitude.HasValue && r.Longitude.HasValue
                              && !string.Equals(r.Outcome, MobileDeliveryManager.OutcomeNotDelivered, StringComparison.OrdinalIgnoreCase)))
                 {
+                    if (row.NotAtClient)
+                    {
+                        row.GpsCheck = "not at the client (" + (row.Reason ?? "collected / dropped off") + "); position not used";
+                        continue;
+                    }
                     row.GpsCheck = CustomerLocationManager.DescribeDeliveryFix(point, row.Latitude.Value, row.Longitude.Value, row.AccuracyM, out bool warn);
                     row.GpsCheckWarn = warn;
                 }

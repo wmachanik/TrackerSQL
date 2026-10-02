@@ -21,6 +21,8 @@ namespace TrackerSQL.Models
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
         public decimal? AccuracyM { get; set; }
+        /// <summary>Handed over away from the client's address (collected by the client, dropped off by a supplier).</summary>
+        public bool NotAtClient { get; set; }
         /// <summary>How the phone position compares with the contact's GPS point now (empty when no position).</summary>
         public string GpsCheck { get; set; }
         /// <summary>The point may need updating or checking.</summary>

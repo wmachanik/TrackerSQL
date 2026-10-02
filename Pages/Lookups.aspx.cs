@@ -1677,6 +1677,7 @@ namespace TrackerSQL.Pages
             var tbxText = (TextBox)row.FindControl("tbxDoText" + suffix);
             var cbxNeedsName = (CheckBox)row.FindControl("cbxDoNeedsName" + suffix);
             var cbxEnabled = (CheckBox)row.FindControl("cbxDoEnabled" + suffix);
+            var cbxNotAtClient = (CheckBox)row.FindControl("cbxDoNotAtClient" + suffix);
             var tbxSort = (TextBox)row.FindControl("tbxDoSort" + suffix);
             int sort = 100;
             if (tbxSort != null)
@@ -1689,6 +1690,8 @@ namespace TrackerSQL.Pages
                 Text = tbxText?.Text?.Trim() ?? string.Empty,
                 NeedsName = cbxNeedsName != null && cbxNeedsName.Checked,
                 Enabled = cbxEnabled == null || cbxEnabled.Checked,
+                NotAtClient = cbxNotAtClient != null && cbxNotAtClient.Checked
+                    && ddlOutcome?.SelectedValue != MobileDeliveryManager.OutcomeNotDelivered,
                 SortOrder = sort
             };
         }

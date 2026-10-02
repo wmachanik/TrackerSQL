@@ -150,6 +150,8 @@ namespace TrackerSQL.Models
         public string DeliveredAt { get; set; }
         public string Status { get; set; }
         public bool HasSignature { get; set; }
+        /// <summary>True when it was not handed over at the client's address (collected by the client, dropped off by a supplier).</summary>
+        public bool? NotAtClient { get; set; }
     }
 
     /// <summary>Configurable choices on the phone ("Left at reception", "Nobody there"), edited in Lookups.</summary>
@@ -163,6 +165,11 @@ namespace TrackerSQL.Models
         public bool NeedsName { get; set; }
         public int SortOrder { get; set; }
         public bool Enabled { get; set; }
+        /// <summary>
+        /// The driver was not at the client's address (the client collected, a supplier dropped it off): the phone's
+        /// position is kept with the proof but never used for the client's GPS point or the delivery order.
+        /// </summary>
+        public bool NotAtClient { get; set; }
     }
 
     public class MobileDeliverySyncRequest
@@ -239,6 +246,7 @@ namespace TrackerSQL.Models
         public System.DateTime? CompletedAt { get; set; }
         public string CompletedBy { get; set; }
         public string CompanyName { get; set; }
+        public bool NotAtClient { get; set; }
     }
 
     public class MobileProofView

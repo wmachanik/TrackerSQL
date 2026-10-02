@@ -108,7 +108,7 @@ namespace TrackerSQL.Managers
                         {
                             time.DeliveredAt = at;
                             time.NotDelivered = stop.Proof.Outcome == MobileDeliveryManager.OutcomeNotDelivered;
-                            if (at.Date == day.Date && (!lastDelivered.HasValue || at > lastDelivered.Value))
+                            if (at.Date == day.Date && stop.Proof.NotAtClient != true && (!lastDelivered.HasValue || at > lastDelivered.Value))
                             {
                                 lastDelivered = at;
                                 lastVisit = visit;

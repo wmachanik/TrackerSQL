@@ -1401,6 +1401,8 @@
                         <p class="page-tone-subtitle" style="margin:0.6rem 0;">
                             How it was delivered, or why not: the choices the driver app offers when a delivery is captured, e.g. "Left at reception" or "Nobody there".
                             Tick <strong>Needs name</strong> when the driver must type who received it or get a signature.
+                            Tick <strong>Not at client</strong> when it is handed over somewhere else (e.g. "Collected by the client", "Dropped off by the supplier"):
+                            the phone's position is then never used for the client's GPS point or the driver's delivery order.
                             Changes reach the phones the next time they have signal.
                         </p>
                         <div class="results-container scrollable-table-container">
@@ -1470,6 +1472,20 @@
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:CheckBox ID="cbxDoNeedsNameFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Not at client">
+                                        <HeaderTemplate>
+                                            <span title="Handed over away from the client's address (e.g. the client collected, or a supplier dropped it off). The phone's position is kept with the proof but never moves the client's GPS point or counts towards the driver's delivery order.">Not at client</span>
+                                        </HeaderTemplate>
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxDoNotAtClient" runat="server" Checked='<%# Bind("NotAtClient") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxDoNotAtClient" runat="server" Checked='<%# Eval("NotAtClient") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxDoNotAtClientFooter" runat="server" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="On">

@@ -72,6 +72,8 @@ SQLCommands-DriverGps-02.xml   ← GpsSettingsTbl.AzureMapsKey / MapProvider; Cu
                                  really deliver in; filled once from existing proofs); DeliveryRouteTbl (the order a
                                  driver set in the app for a day); MobileApiSettingsTbl.LandlinePrefixes
 SQLCommands-DriverGps-03.xml   ← DriverLocationPingTbl (driver tracking positions)
+SQLCommands-DriverGps-04.xml   ← MobileDeliveryOptionsTbl.NotAtClient / MobileDeliveryProofTbl.NotAtClient; options
+                                 "Collected by the client" and "Dropped off by the supplier" (3.0.3.2)
 The Collected delivery outcome is now created with "needs a name" off (01 and MobileApi-01). Live already has the
 row: untick "Needs name" for Collected on Lookups → Delivery Outcomes if the drivers should not be asked for one.
 SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes when it is missing (either pack may run first).
@@ -104,7 +106,11 @@ Live steps:
    who may see Deliveries → Driver tracking.
 8. 3.0.3.2: tick "Show route order and arrival times on the Delivery Sheet" (User Information) for users who should
    see route numbers, delivered times and expected times on the Delivery Sheet. Dragging stops into a new order works
-   for everyone (no setting); no new SQL packs.
+   for everyone (no setting).
+   SQLCommands-DriverGps-04.xml (upload it to App_Data; runs at start-up) adds the "Not at client" tick to Lookups →
+   Delivery Outcomes and the options "Collected by the client" and "Dropped off by the supplier". Proofs captured with
+   them never change the client's GPS point or the driver's delivery order. Check the list on Lookups → Delivery
+   Outcomes after deploying (rename or untick as you like; the tick is what counts, not the wording).
 Rules to know:
 - Azure Maps points are kept at most 180 days (Microsoft terms outside Azure). They are looked up again from 30 days
   before expiry (on the next order / contact save / batch) and removed once past expiry if not refreshed.

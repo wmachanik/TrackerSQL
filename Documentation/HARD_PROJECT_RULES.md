@@ -118,6 +118,21 @@ new DBParameter {
 
 ---
 
+## Rule #0g: TITLE CASE FOR TITLES — NEVER ALL CAPS
+
+Applies to Tracker and the Quaffee Driver app: page and section headings, document titles (PDFs, printed sheets), email subjects and headings, and the names of documents and features.
+
+### REQUIRED
+
+1. Title Case with the small words in lower case (a, an, and, as, at, by, for, in, of, on, or, the, to, with) unless the word comes first: **Proof of Delivery**, **Delivery Sheet**, **Terms and Conditions**, **Driver App**.
+2. Short codes keep their capitals (POD, PO, GPS, APK).
+
+### PROHIBITED
+
+❌ ALL CAPS titles or headings (`PROOF OF DELIVERY`), including via CSS `text-transform: uppercase`
+
+---
+
 ## Rule #1: NO MICROSOFT ACCESS DATABASE
 
 ### The Problem
@@ -513,6 +528,7 @@ There are **ZERO exceptions** to the Access database rule. SQL Server must be us
 1. ❌ Place result status above the form fields
 2. ❌ Use HyperLink styled as Back instead of a Button
 3. ❌ Add new interactive pages without UpdatePanel/UpdateProgress when async feedback is expected
+4. ❌ Write titles or headings in ALL CAPS — use Title Case (**Proof of Delivery**), see Rule #0g
 
 ---
 

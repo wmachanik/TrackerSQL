@@ -38,6 +38,7 @@ This is the **master index** for all TrackerSQL documentation. Use this to find 
 | **Mobile REST API / Quaffee Driver app (3.0.3.0)** | [MOBILE_API_AND_DRIVER_APP.md](MOBILE_API_AND_DRIVER_APP.md) | Endpoints, security, settings, testing, open items |
 | **Deploy to live / config files / secrets** | [DEPLOYMENT_AND_CONFIG.md](DEPLOYMENT_AND_CONFIG.md) | Release steps; `.example` configs; secrets exposure |
 | **Rules for secrets (repo is public)** | [HARD_PROJECT_RULES.md](HARD_PROJECT_RULES.md) | Rule #0f |
+| **Title Case for titles and headings** | [HARD_PROJECT_RULES.md](HARD_PROJECT_RULES.md) | Rule #0g |
 
 ---
 

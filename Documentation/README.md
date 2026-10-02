@@ -13,6 +13,7 @@
 2. NO SqlDataSource Controls (use Repository Pattern only)
 3. **NO references to legacy "City*" classes** (use "Area*" terminology)
 4. **NO secrets in git** — the GitHub repo is public; only `*.example` configs are committed (Rule #0f)
+5. **Title Case for titles, never ALL CAPS** — e.g. "Proof of Delivery", in Tracker and the driver app (Rule #0g)
 
 **Violating these rules will require complete code rewrite!**
 

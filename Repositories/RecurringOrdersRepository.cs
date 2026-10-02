@@ -1085,8 +1085,8 @@ namespace TrackerSQL.Repositories
 
         /// <summary>
         /// Cycle next date from last-done + type/value. Weekly = last + (weeks * 7).
-        /// Monthly = day-of-month in the following month (skip if same Monday week or
-        /// same calendar month within the minimum interval). Does not floor to today
+        /// Monthly = the day-of-month after the one the last delivery was for (the nearest one, so an
+        /// early delivery counts for the coming month). Does not floor to today
         /// or snap onto the area delivery calendar — that is send-time only.
         /// </summary>
         private DateTime? CalculateNextDateRequired(
@@ -1153,22 +1153,7 @@ namespace TrackerSQL.Repositories
                 return BuildMonthlyTargetDate(today.AddMonths(1), targetDay);
             }
 
-            DateTime cycleMonth = lastDoneDate.AddMonths(1);
-            DateTime targetDate = BuildMonthlyTargetDate(cycleMonth, targetDay);
-
-            if (AreInSameMondayWeek(lastDoneDate, targetDate))
-                return BuildMonthlyTargetDate(cycleMonth.AddMonths(1), targetDay);
-
-            int daysSinceLast = (targetDate - lastDoneDate).Days;
-            bool sameCalendarMonth = targetDate.Year == lastDoneDate.Year
-                && targetDate.Month == lastDoneDate.Month;
-            if (sameCalendarMonth
-                && daysSinceLast < SystemConstants.CheckupConstants.DefaultMinimumMonthlyRecurringDays)
-            {
-                return BuildMonthlyTargetDate(cycleMonth.AddMonths(1), targetDay);
-            }
-
-            return targetDate;
+            return DateCalculator.NextMonthlyCycleAfter(lastDoneDate, targetDay);
         }
 
         private static DateTime BuildMonthlyTargetDate(DateTime anyDayInTargetMonth, int targetDayOfMonth)
@@ -1176,17 +1161,6 @@ namespace TrackerSQL.Repositories
             int daysInMonth = DateTime.DaysInMonth(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month);
             int day = Math.Min(Math.Max(1, targetDayOfMonth), daysInMonth);
             return new DateTime(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month, day);
-        }
-
-        private static bool AreInSameMondayWeek(DateTime fiPreperationDate, DateTime secondDate)
-        {
-            return StartOfWeekMonday(fiPreperationDate) == StartOfWeekMonday(secondDate);
-        }
-
-        private static DateTime StartOfWeekMonday(DateTime value)
-        {
-            int diff = (7 + (value.DayOfWeek - DayOfWeek.Monday)) % 7;
-            return value.AddDays(-diff).Date;
         }
 
         private RecurringOrder Map(IDataReader reader)

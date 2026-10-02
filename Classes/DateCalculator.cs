@@ -169,8 +169,8 @@ namespace TrackerSQL.Classes
         /// Rules (revised):
         /// - If lastOrderDate is "first time" (system min) OR older than one month ago,  then IGNORE lastOrderDate and use THIS month's target 
         ///   day (clamped to month length). If that day is already past this month, we clamp forward to today (so we don't schedule in the past).
-        /// - Otherwise (normal cycle), take lastOrderDate + 1 month and build the target day. If that computed date is still not in the 
-        ///   future (<= today), keep advancing by whole months until we are strictly >= today.
+        /// - Otherwise (normal cycle), the occurrence after the one the last order was for (<see cref="NextMonthlyCycleAfter"/>),
+        ///   advanced by whole months until it is not before today.
         /// </summary>
         private DateTime CalculateNextMonthlyOccurrence(int targetDayOfMonth, DateTime lastOrderDate)
         {
@@ -192,44 +192,13 @@ namespace TrackerSQL.Classes
                 return candidate;
             }
 
-            // Base month (one month after last order)
-            DateTime cycleMonth = lastOrderDate.AddMonths(1);
-            DateTime nextOccurrence = BuildMonthlyTargetDate(cycleMonth, targetDayOfMonth);
-
-            // Only apply the 20-day minimum if next occurrence is in the SAME month as last order
-            // This prevents legitimate next-month orders from being incorrectly skipped
-            int daysSinceLastOrder = (nextOccurrence - lastOrderDate).Days;
-            int minMonthlyInterval = SystemConstants.CheckupConstants.DefaultMinimumMonthlyRecurringDays; // 20 days default
-
-            // Only apply minimum interval check if nextOccurrence is in the same month as lastOrderDate
-            // This catches cases where targetDayOfMonth is earlier in month than lastOrderDate.Day
-            bool isSameMonthAndYear = (nextOccurrence.Year == lastOrderDate.Year &&
-                                       nextOccurrence.Month == lastOrderDate.Month);
-
-            if (isSameMonthAndYear && daysSinceLastOrder < minMonthlyInterval)
-            {
-                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    $"Monthly recurrence: Same month and interval too short ({daysSinceLastOrder} days). Skipping to next month. " +
-                    $"Last: {lastOrderDate:yyyy-MM-dd}, Calculated: {nextOccurrence:yyyy-MM-dd}");
-
-                cycleMonth = cycleMonth.AddMonths(1);
-                nextOccurrence = BuildMonthlyTargetDate(cycleMonth, targetDayOfMonth);
-            }
-            else if (!isSameMonthAndYear && daysSinceLastOrder < minMonthlyInterval)
-            {
-                // Already moved to next month, but interval is short (e.g., March 23 -> April 1 = 9 days)
-                // This is VALID - it's a legitimate next-month occurrence, don't skip it
-                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
-                    $"Monthly recurrence: Next month occurrence accepted despite short interval ({daysSinceLastOrder} days). " +
-                    $"Last: {lastOrderDate:yyyy-MM-dd}, Next: {nextOccurrence:yyyy-MM-dd}");
-            }
+            DateTime nextOccurrence = NextMonthlyCycleAfter(lastOrderDate, targetDayOfMonth);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                $"Monthly recurrence: last {lastOrderDate:yyyy-MM-dd} counted for {ServedMonthlyCycle(lastOrderDate, targetDayOfMonth):yyyy-MM-dd}, next {nextOccurrence:yyyy-MM-dd}");
 
             // Still ensure we never return a past date relative to today
             while (nextOccurrence < today)
-            {
-                cycleMonth = cycleMonth.AddMonths(1);
-                nextOccurrence = BuildMonthlyTargetDate(cycleMonth, targetDayOfMonth);
-            }
+                nextOccurrence = BuildMonthlyTargetDate(nextOccurrence.AddMonths(1), targetDayOfMonth);
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
                 MessageProvider.Format(MessageKeys.DeliveryCalculation.NextOccurrenceCalculated,
@@ -240,11 +209,31 @@ namespace TrackerSQL.Classes
         /// <summary>
         /// Helper: builds a target day within the bounds of a given month.
         /// </summary>
-        private DateTime BuildMonthlyTargetDate(DateTime anyDayInTargetMonth, int targetDayOfMonth)
+        private static DateTime BuildMonthlyTargetDate(DateTime anyDayInTargetMonth, int targetDayOfMonth)
         {
             int days = DateTime.DaysInMonth(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month);
             int day = Math.Min(Math.Max(1, targetDayOfMonth), days);
             return new DateTime(anyDayInTargetMonth.Year, anyDayInTargetMonth.Month, day);
+        }
+
+        /// <summary>
+        /// The monthly occurrence a delivery on <paramref name="doneDate"/> was for: the target day nearest to it
+        /// (early deliveries count for the coming one, late ones for the past one; a tie counts for the past one).
+        /// </summary>
+        public static DateTime ServedMonthlyCycle(DateTime doneDate, int targetDayOfMonth)
+        {
+            DateTime done = doneDate.Date;
+            DateTime onOrBefore = BuildMonthlyTargetDate(done, targetDayOfMonth);
+            if (onOrBefore > done)
+                onOrBefore = BuildMonthlyTargetDate(done.AddMonths(-1), targetDayOfMonth);
+            DateTime after = BuildMonthlyTargetDate(onOrBefore.AddMonths(1), targetDayOfMonth);
+            return (after - done).Days < (done - onOrBefore).Days ? after : onOrBefore;
+        }
+
+        /// <summary>The monthly occurrence after the one a delivery on <paramref name="doneDate"/> was for.</summary>
+        public static DateTime NextMonthlyCycleAfter(DateTime doneDate, int targetDayOfMonth)
+        {
+            return BuildMonthlyTargetDate(ServedMonthlyCycle(doneDate, targetDayOfMonth).AddMonths(1), targetDayOfMonth);
         }
         /// <summary>
         /// Finds the optimal delivery date based on customer's area delivery schedule

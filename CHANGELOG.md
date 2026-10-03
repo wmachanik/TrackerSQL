@@ -2,9 +2,11 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.4 — in progress
+## 3.0.3.5 — in progress
 
-Not released yet. 3.0.3.3 went live on 2026-10-03.
+Not released yet. 3.0.3.4 went live on 2026-10-03.
+
+## 3.0.3.4 — 2026-10-03
 
 ### Features
 - **Driver deliveries no longer wait for Order Done** — when the driver app sends a delivery, Tracker saves the proof (with the GPS point and delivery order) and replies straight away (about 0.1–0.5 s instead of 5–15 s or more). Order Done, the Woo "Completed" update and the emails (proof of delivery, note to the office) then run in the background on the server, as the driver (logs show the driver's login). The proof's status goes *Pending* → *Completed* (or *Order Done failed*, or *already done*). Work cut off by an app restart is picked up at the next start, delivery upload or visit to **System → Driver App**. No new app or APK needed: the app already shows the server's reply as is.

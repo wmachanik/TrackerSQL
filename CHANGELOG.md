@@ -6,6 +6,15 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 Not released yet. 3.0.3.3 went live on 2026-10-03.
 
+### Features
+- **Driver deliveries no longer wait for Order Done** — when the driver app sends a delivery, Tracker saves the proof (with the GPS point and delivery order) and replies straight away (about 0.1–0.5 s instead of 5–15 s or more). Order Done, the Woo "Completed" update and the emails (proof of delivery, note to the office) then run in the background on the server, as the driver (logs show the driver's login). The proof's status goes *Pending* → *Completed* (or *Order Done failed*, or *already done*). Work cut off by an app restart is picked up at the next start, delivery upload or visit to **System → Driver App**. No new app or APK needed: the app already shows the server's reply as is.
+- **System → Driver App → Deliveries Waiting for Order Done** (administrators) — every delivery from the app whose order is still not done in Tracker: still being completed, left for the office ("run Done" off), failed (with the reason), or with items to follow (link to the order). **Complete Now** runs Order Done for it again and shows the result; the proof of delivery is not emailed twice. Older deliveries saved before "run Done" was on show up here too, so the office can finish them in one click. Each retry is logged (Delivery log) with who asked.
+- A Woo order that could not be marked Completed does not stop Order Done; the reason is kept in the proof's status message and the Woo log.
+
+### Go-live notes
+- Upload `bin/` and `Tools/DriverApp.aspx`. No schema change and no `Web.config` change other than `Version`.
+- After the first start open **System → Driver App** and check **Deliveries Waiting for Order Done**: older driver deliveries whose order was never done are listed; use **Complete Now** for those that really were delivered, or finish them from the order as before.
+
 ## 3.0.3.3 — 2026-10-03
 
 ### Features

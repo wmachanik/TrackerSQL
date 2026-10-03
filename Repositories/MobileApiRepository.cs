@@ -503,6 +503,41 @@ namespace TrackerSQL.Repositories
             return list.Count > 0 ? list[0] : null;
         }
 
+        /// <summary>The oldest proof waiting for the background Order Done (status Pending), or null.</summary>
+        public MobileDeliveryProof NextPendingProof()
+        {
+            var list = Query("SELECT TOP (1) " + ProofColumns + @" FROM MobileDeliveryProofTbl m
+                              LEFT JOIN ContactsTbl c ON c.ContactID = m.ContactID
+                              WHERE m.Status = 'Pending' ORDER BY m.ProofID",
+                MapProof);
+            return list.Count > 0 ? list[0] : null;
+        }
+
+        /// <summary>
+        /// Driver deliveries whose order is still not done in Tracker (received, waiting or failed), newest proof per
+        /// order, oldest delivery first. With the driver's name in UserName.
+        /// </summary>
+        public List<MobileDeliveryProof> ListAwaitingDone(int max = 200)
+        {
+            string sql = "SELECT TOP (" + Math.Max(1, Math.Min(max, 1000)) + ") * FROM (SELECT " + ProofColumns + @",
+                    COALESCE(p.Person, m.UserName) AS Driver,
+                    ROW_NUMBER() OVER (PARTITION BY m.OrderID ORDER BY m.ProofID DESC) AS Nth
+                FROM MobileDeliveryProofTbl m
+                JOIN OrdersTbl o ON o.OrderID = m.OrderID
+                LEFT JOIN ContactsTbl c ON c.ContactID = COALESCE(m.ContactID, o.ContactID)
+                LEFT JOIN PeopleTbl p ON p.PersonID = m.PersonID
+                WHERE m.Outcome = 'Delivered' AND ISNULL(o.Done, 0) = 0
+                  AND m.Status IN ('Received', 'Pending', 'CompleteFailed')) x
+                WHERE x.Nth = 1
+                ORDER BY x.DeliveredAt, x.ProofID";
+            return Query(sql, r =>
+            {
+                var proof = MapProof(r);
+                proof.UserName = Str(r, "Driver");
+                return proof;
+            });
+        }
+
         /// <summary>Proof captured for orders due on the date, or (when orderId is given) for that order.</summary>
         public List<MobileDeliveryProof> ListProofs(DateTime? date, int? orderId, int max = 500)
         {

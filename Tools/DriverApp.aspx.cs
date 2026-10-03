@@ -26,9 +26,13 @@ namespace TrackerSQL.Tools
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            pnlSettings.Visible = SecurityManager.IsAdmin();
+            pnlSettings.Visible = pnlAwaiting.Visible = SecurityManager.IsAdmin();
             if (pnlSettings.Visible && !IsPostBack)
+            {
                 BindSettings();
+                MobileDeliveryCompletionQueue.Kick();
+                BindAwaiting();
+            }
 
             var apk = new FileInfo(Server.MapPath(ApkPath));
             if (!apk.Exists)
@@ -114,6 +118,92 @@ namespace TrackerSQL.Tools
                 SetMsg("Could not save the settings: " + ex.Message, true);
             }
             BindSettings();
+        }
+
+        private void BindAwaiting()
+        {
+            try
+            {
+                gvAwaiting.DataSource = new MobileDeliveryManager().ListAwaitingDone();
+                gvAwaiting.DataBind();
+            }
+            catch (Exception ex)
+            {
+                SetAwaitingMsg("Could not list the deliveries: " + ex.Message, true);
+            }
+        }
+
+        protected void btnRefreshAwaiting_Click(object sender, EventArgs e)
+        {
+            if (!SecurityManager.IsAdmin())
+                return;
+            MobileDeliveryCompletionQueue.Kick();
+            BindAwaiting();
+        }
+
+        protected void gvAwaiting_RowCommand(object sender, System.Web.UI.WebControls.GridViewCommandEventArgs e)
+        {
+            if (e.CommandName != "CompleteNow" || !SecurityManager.IsAdmin() || !long.TryParse(Convert.ToString(e.CommandArgument), out long proofId))
+                return;
+
+            string why = new MobileDeliveryManager().RetryCompletion(proofId, User.Identity.Name);
+            if (why != null)
+                SetAwaitingMsg(why, true);
+            else
+            {
+                var repo = new Repositories.MobileApiRepository();
+                MobileDeliveryProof proof = repo.GetProof(proofId);
+                for (int i = 0; i < 30 && proof?.Status == MobileDeliveryManager.StatusPending; i++)
+                {
+                    System.Threading.Thread.Sleep(500);
+                    proof = repo.GetProof(proofId);
+                }
+                string order = "Order " + proof?.OrderID;
+                switch (proof?.Status)
+                {
+                    case MobileDeliveryManager.StatusCompleted:
+                    case MobileDeliveryManager.StatusAlreadyDone:
+                        SetAwaitingMsg(order + " is done. " + proof.StatusMessage, false);
+                        break;
+                    case MobileDeliveryManager.StatusPending:
+                        SetAwaitingMsg(order + " is still being completed; press Refresh in a moment.", false);
+                        break;
+                    default:
+                        SetAwaitingMsg(order + ": " + proof?.StatusMessage, true);
+                        break;
+                }
+            }
+            BindAwaiting();
+        }
+
+        protected static string StatusText(object item)
+        {
+            var proof = (MobileDeliveryProof)item;
+            if (!string.IsNullOrWhiteSpace(proof.MissingItems))
+                return "Items to follow: " + proof.MissingItems.Trim();
+            switch (proof.Status)
+            {
+                case MobileDeliveryManager.StatusPending: return "Being completed";
+                case MobileDeliveryManager.StatusCompleteFailed: return "Order Done failed";
+                default: return "Left for the office";
+            }
+        }
+
+        protected static bool HasItemsToFollow(object item)
+        {
+            return !string.IsNullOrWhiteSpace(((MobileDeliveryProof)item).MissingItems);
+        }
+
+        protected static bool CanComplete(object item)
+        {
+            var proof = (MobileDeliveryProof)item;
+            return string.IsNullOrWhiteSpace(proof.MissingItems) && proof.Status != MobileDeliveryManager.StatusPending;
+        }
+
+        private void SetAwaitingMsg(string text, bool error)
+        {
+            litAwaitingMessage.Text = "<p class=\"status-message " + (error ? "status-error" : "status-info") + "\">"
+                + HttpUtility.HtmlEncode(text) + "</p>";
         }
 
         private static bool IsEmail(string value)

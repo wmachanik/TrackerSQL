@@ -29,6 +29,7 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Managers/MobileAuthManager.cs` | Sign-in, token issue/validate/revoke (SHA-256 hash stored), idle timeout, appSettings. |
 | `Managers/MobileApiSecurity.cs` | In-memory throttles: failed sign-ins per IP, calls per device, 5-minute account check cache. |
 | `Managers/MobileDeliveryManager.cs` | Sheet, offline delivery sync (`clientRef` de-duplication), proofs, auto Order Done, emails. |
+| `Managers/MobileDeliveryCompletionQueue.cs` | Runs Order Done and the emails for synced deliveries after the reply (Pending proofs), as the driver. |
 | `Managers/MobileDeliveryEmailManager.cs` | Proof of delivery email (hands over to `ProofOfDeliveryManager`) and driver note to the office. |
 | `Managers/ProofOfDeliveryManager.cs` + `Classes/SimplePdf.cs` | Proof of delivery PDF (details, items, terms tick, signature) and sending it; `Handlers/ProofOfDelivery.ashx?id=` serves it to staff (any proof) and to Contact Portal logins (only their own delivered proofs, `ContactPortalManager.CanViewProof`; otherwise 404). The portal links it from My Orders and Order Details. |
 | `Classes/SundryNotes.cs` | Walk-in (ZZName) order notes: name before the `:`, details after it, `[#email#]`. |
@@ -97,8 +98,14 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
 1. Driver captures delivered / not delivered offline: how (driver option), received-by name, signature, note,
    items handed over (qty per line when short), optional "email this note to the office".
 2. App queues it in its outbox and sends it with `POST delivery/sync` when allowed (see section 7).
-3. Server stores the proof. If System → Driver App **Run Order Done** is on and nothing is short, it runs
-   `OrderDoneManager.CompleteOrder` (statusKey null when the confirmation email is sent, so the client gets one email).
+3. Server stores the proof and replies at once. If System → Driver App **Run Order Done** is on and nothing is short,
+   the proof is stored as `Pending` and `MobileDeliveryCompletionQueue` runs `OrderDoneManager.CompleteOrder` in the
+   background (`HostingEnvironment.QueueBackgroundWorkItem`, one proof at a time, as the driver's login), statusKey null
+   when the confirmation email is sent so the client gets one email; the proof then becomes `Completed`,
+   `CompleteFailed` or `AlreadyDone` with the result in `StatusMessage`. Emails (POD, office note) are also sent after
+   the reply. Pending proofs left by an app restart are picked up at start-up, on the next sync, or when System →
+   Driver App is opened; its **Deliveries Waiting for Order Done** list shows what is not done and **Complete Now**
+   queues a proof again.
 4. **Proof of delivery email** (if on): to the contact (ZZName orders: the `[#email#]` in the order notes), CC orders@,
    with the POD PDF attached (order, PO, delivered to, when / how, received by, driver, items handed over from the
    stored `HandedOver`, still to follow, the terms with the tick and link, the signature). Staff can open or (re)send it

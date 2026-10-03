@@ -29,6 +29,11 @@ Also ignored: `weblive.config`, `web..back.config` (old copies), `Documentation/
 
 **Fresh clone:** copy each `.example` to its real name and fill in the real values.
 
+**Old branches still track `Web.config` and `Web.Release.config`.** Branches from before the config files were
+ignored (older than `feature/3.0.3.1`) have them committed with old contents. Checking such a branch out, or
+merging from one, overwrites the local real files, and coming back deletes them. Copy both files somewhere safe
+first, or don't check those branches out; afterwards restore them from the copy (or rebuild from the `.example`).
+
 **When a config changes:** edit the real file, then regenerate the matching `.example` with secrets replaced
 (keys `EMailPassword`, `DisableClientSecret`, `WooCommerceCryptoKey`, connection-string `Password=`,
 `<network password>`, `<machineKey decryptionKey/validationKey>`). Check no real secret remains before committing.
@@ -78,7 +83,7 @@ to upload are in `CHANGELOG.md`.
 
 | Version | Config changes |
 |---------|----------------|
-| 3.0.3.4 | In progress: `Version` 3.0.3.3 → 3.0.3.4 so far. |
+| 3.0.3.4 | In progress: `Version` 3.0.3.3 → 3.0.3.4 so far (no other change). |
 | 3.0.3.3 | `Version` 3.0.3.2 → 3.0.3.3 only. |
 | 3.0.3.2 | `Version` 3.0.3.1 → 3.0.3.2 only (the APK download goes through `/api`, already anonymous). |
 | 3.0.3.1 | `Version` 3.0.3.0 → 3.0.3.1 only. The Azure Maps / HeiGIT keys are entered on System Preferences → GPS & Drivers (database). After the first start, run `SQLCommands-OrderFlags-02-ResetContacts.xml` once (System Tools → XML to SQL) to put subscription contacts back to a standard account type. |

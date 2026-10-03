@@ -521,6 +521,7 @@
     <Compile Include="Managers\AreaWeekBoardManager.cs" />
     <Compile Include="Models\AreaWeekBoard.cs" />
     <Compile Include="Managers\MobileAuthManager.cs" />
+    <Compile Include="Managers\MobileDeliveryCompletionQueue.cs" />
     <Compile Include="Managers\MobileDeliveryManager.cs" />
     <Compile Include="Managers\MobileRepairManager.cs" />
     <Compile Include="Managers\MobileApiSettingsManager.cs" />

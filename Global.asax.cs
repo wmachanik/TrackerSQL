@@ -22,6 +22,8 @@ namespace TrackerSQL
             if (schemaError != null)
                 WriteStartupLog("Order flag schema failed: " + schemaError);
 
+            TrackerSQL.Managers.MobileDeliveryCompletionQueue.Kick();
+
             // Force-disable unobtrusive validation
             System.Web.UI.ValidationSettings.UnobtrusiveValidationMode =
                 System.Web.UI.UnobtrusiveValidationMode.None;

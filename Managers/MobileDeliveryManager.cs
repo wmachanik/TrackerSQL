@@ -12,8 +12,8 @@ namespace TrackerSQL.Managers
 {
     /// <summary>
     /// Delivery sheet for the driver app and offline delivery sync (received-by name, signature, outcome).
-    /// By default a synced delivery is stored as proof for the office to complete (Order Done) in the web app;
-    /// System → Driver App can run the Order Done steps immediately and email the client a confirmation.
+    /// A synced delivery is stored as proof; when System → Driver App runs Order Done on delivery it is stored as Pending
+    /// and completed in the background (MobileDeliveryCompletionQueue), otherwise the office completes it in the web app.
     /// </summary>
     public class MobileDeliveryManager
     {
@@ -21,6 +21,7 @@ namespace TrackerSQL.Managers
         public const string OutcomeNotDelivered = "NotDelivered";
 
         public const string StatusReceived = "Received";
+        public const string StatusPending = "Pending";
         public const string StatusCompleted = "Completed";
         public const string StatusCompleteFailed = "CompleteFailed";
         public const string StatusAlreadyDone = "AlreadyDone";
@@ -380,6 +381,8 @@ namespace TrackerSQL.Managers
                 }
                 results.Add(result);
             }
+            if (results.Any(r => r.Status == StatusPending))
+                MobileDeliveryCompletionQueue.Kick();
             return results;
         }
 
@@ -422,6 +425,10 @@ namespace TrackerSQL.Managers
                 return Fail(item, "Say why it was not delivered.");
             bool notAtClient = outcome == OutcomeDelivered && IsNotAtClientOption(reason);
             bool? termsAccepted = outcome == OutcomeDelivered ? item.TermsAccepted : null;
+            var settings = Settings;
+            // A short delivery is left for the office: Order Done would close items that are still to follow.
+            bool runDone = outcome == OutcomeDelivered && !order.Done && settings.RunDoneOnDelivery
+                && string.IsNullOrWhiteSpace(missingItems);
             string handedOver = null;
             if (outcome == OutcomeDelivered && order.RequiredByDate.HasValue)
             {
@@ -450,11 +457,12 @@ namespace TrackerSQL.Managers
                 NotAtClient = notAtClient,
                 TermsAccepted = termsAccepted,
                 TermsText = termsAccepted.HasValue
-                    ? NullIfEmpty(item.Terms) ?? MobileApiSettingsManager.DeliveryTerms(Settings)
+                    ? NullIfEmpty(item.Terms) ?? MobileApiSettingsManager.DeliveryTerms(settings)
                     : null,
                 HandedOver = handedOver,
-                Status = outcome == OutcomeDelivered && order.Done ? StatusAlreadyDone : StatusReceived,
-                StatusMessage = outcome == OutcomeDelivered && order.Done ? "The order was already marked done in Tracker." : null
+                Status = outcome == OutcomeDelivered && order.Done ? StatusAlreadyDone : runDone ? StatusPending : StatusReceived,
+                StatusMessage = outcome == OutcomeDelivered && order.Done ? "The order was already marked done in Tracker."
+                    : runDone ? "Delivery received; Tracker is completing the order." : null
             };
 
             long proofId;
@@ -518,36 +526,109 @@ namespace TrackerSQL.Managers
                     : "Not-delivered report received.")
             };
 
-            var settings = Settings;
-            bool sendConfirmation = outcome == OutcomeDelivered && settings.SendDeliveryConfirmation;
-
-            // A short delivery is left for the office: Order Done would close items that are still to follow.
-            if (outcome == OutcomeDelivered && !order.Done && proof.MissingItems == null && settings.RunDoneOnDelivery)
+            // Order Done, the Woo update and the emails run after the reply so the phone is not kept waiting; a Pending
+            // proof also sends its proof of delivery once the order is done (see CompletePending).
+            string userName = user?.UserName;
+            if (outcome == OutcomeDelivered && !runDone && settings.SendDeliveryConfirmation)
             {
-                bool completed = TryCompleteOrder(order, proof.DeliveredAt, !sendConfirmation, out string message);
-                string status = completed ? StatusCompleted : StatusCompleteFailed;
-                _repo.UpdateProofStatus(proofId, status, message, user?.UserName);
-                result.Status = status;
-                result.Message = message;
-            }
-
-            var emails = new MobileDeliveryEmailManager();
-            if (sendConfirmation)
-            {
-                string why = TrySend(() => emails.SendConfirmation(proofId, user?.UserName));
-                result.Message += why == null ? " Proof of delivery emailed to the client." : " Proof of delivery not emailed: " + why + ".";
+                MobileDeliveryCompletionQueue.Run(userName, "Proof of delivery email for order " + order.OrderID,
+                    () => LogEmail(order.OrderID, "Proof of delivery", new MobileDeliveryEmailManager().SendConfirmation(proofId, userName), userName));
+                result.Message += " Proof of delivery is being emailed to the client.";
             }
 
             if (item.NoteToOffice && !string.IsNullOrWhiteSpace(proof.DriverNote))
             {
-                string driver = user?.PersonId != null ? new PersonsRepository().GetPersonNameById(user.PersonId.Value) : null;
-                string why = TrySend(() => emails.SendNoteToOffice(order, proof, string.IsNullOrWhiteSpace(driver) ? user?.UserName : driver));
-                result.Message += why == null ? " Note emailed to the office." : " Note not emailed: " + why + ".";
+                int? personId = user?.PersonId;
+                MobileDeliveryCompletionQueue.Run(userName, "Note to the office for order " + order.OrderID, () =>
+                {
+                    string driver = personId.HasValue ? new PersonsRepository().GetPersonNameById(personId.Value) : null;
+                    LogEmail(order.OrderID, "Note to the office",
+                        new MobileDeliveryEmailManager().SendNoteToOffice(order, proof, string.IsNullOrWhiteSpace(driver) ? userName : driver), userName);
+                });
+                result.Message += " Note is being emailed to the office.";
             }
 
             return result;
         }
 
+        /// <summary>
+        /// Background Order Done for a Pending proof (run by MobileDeliveryCompletionQueue as the driver), then the proof
+        /// of delivery email when that is switched on. Always moves the proof off Pending so it is not tried again.
+        /// </summary>
+        internal void CompletePending(MobileDeliveryProof proof)
+        {
+            string status = StatusCompleteFailed;
+            string message;
+            try
+            {
+                var settings = Settings;
+                var order = _repo.GetOrderBrief(proof.OrderID);
+                bool sendConfirmation = settings.SendDeliveryConfirmation;
+                if (order == null)
+                {
+                    message = "Order " + proof.OrderID + " no longer exists.";
+                    sendConfirmation = false;
+                }
+                else if (order.Done)
+                {
+                    status = StatusAlreadyDone;
+                    message = "The order was already marked done in Tracker.";
+                }
+                else if (TryCompleteOrder(order, proof.DeliveredAt, !sendConfirmation, out message))
+                {
+                    status = StatusCompleted;
+                }
+
+                if (sendConfirmation && status != StatusCompleteFailed && !proof.PodSentAt.HasValue)
+                {
+                    string why = TrySend(() => new MobileDeliveryEmailManager().SendConfirmation(proof.ProofID, proof.UserName));
+                    message += why == null ? " Proof of delivery emailed to the client." : " Proof of delivery not emailed: " + why + ".";
+                }
+            }
+            catch (Exception ex)
+            {
+                message = "Delivery saved, but Order Done failed: " + ex.Message;
+            }
+
+            _repo.UpdateProofStatus(proof.ProofID, status, message, proof.UserName);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Order " + proof.OrderID + " | Background Order Done for the driver delivery: " + status
+                + (string.IsNullOrWhiteSpace(message) ? string.Empty : " | " + message), proof.UserName);
+        }
+
+        /// <summary>Driver deliveries whose order is not done yet (newest proof per order), driver name in UserName.</summary>
+        public List<MobileDeliveryProof> ListAwaitingDone()
+        {
+            MobileApiSchemaInstaller.EnsureReady();
+            return _repo.ListAwaitingDone();
+        }
+
+        /// <summary>Queues the background Order Done again for a proof (System → Driver App). Returns why not, or null.</summary>
+        public string RetryCompletion(long proofId, string userName)
+        {
+            MobileApiSchemaInstaller.EnsureReady();
+            var proof = _repo.GetProof(proofId);
+            if (proof == null)
+                return "That delivery was not found.";
+            if (proof.Outcome != OutcomeDelivered)
+                return "Only a delivered order can be completed.";
+            if (!string.IsNullOrWhiteSpace(proof.MissingItems))
+                return "Items are still to follow for order " + proof.OrderID + "; open the order and complete it there.";
+            if (proof.Status == StatusCompleted || proof.Status == StatusAlreadyDone)
+                return "Order " + proof.OrderID + " is already done.";
+
+            _repo.UpdateProofStatus(proofId, StatusPending, "Queued again by " + (userName ?? "the office") + ".", null);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Order " + proof.OrderID + " | Background Order Done queued again for proof " + proofId, userName);
+            MobileDeliveryCompletionQueue.Kick();
+            return null;
+        }
+
+        private static void LogEmail(int orderId, string what, string why, string userName)
+        {
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Order " + orderId + " | " + what + (why == null ? " emailed." : " not emailed: " + why), userName);
+        }
         /// <summary>Overridable for tests; System → Driver App settings.</summary>
         protected virtual MobileApiSettings Settings => MobileApiSettingsManager.Current;
 

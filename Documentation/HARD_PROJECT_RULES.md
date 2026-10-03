@@ -133,6 +133,23 @@ Applies to Tracker and the Quaffee Driver app: page and section headings, docume
 
 ---
 
+## Rule #0h: NO RELEASE NOTES IN CONFIG FILES
+
+Applies to every `Web.config` / `web.live.config` / `Web.Release.config` and their `.example` copies.
+
+### REQUIRED
+
+1. Release notes and change history go in `CHANGELOG.md`, `App_Data/GoLive/README-GOLIVE.txt` and
+   `Documentation/DEPLOYMENT_AND_CONFIG.md` (section "Live Web.config changes by version").
+2. Comments in config files only say what a setting does or why it has that value (e.g. "IIS does not know .apk").
+
+### PROHIBITED
+
+❌ Version change lists in a config header ("3.0.3.3 changes: …")  
+❌ History comments on settings (`<!-- 3.0.3.3: was 3.0.3.2 -->`, "added in …", "removed the … block that was here")
+
+---
+
 ## Rule #1: NO MICROSOFT ACCESS DATABASE
 
 ### The Problem

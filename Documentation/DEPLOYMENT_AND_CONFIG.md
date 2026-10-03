@@ -33,8 +33,9 @@ Also ignored: `weblive.config`, `web..back.config` (old copies), `Documentation/
 (keys `EMailPassword`, `DisableClientSecret`, `WooCommerceCryptoKey`, connection-string `Password=`,
 `<network password>`, `<machineKey decryptionKey/validationKey>`). Check no real secret remains before committing.
 
-`web.live.config` has a header listing each version's changes (search "3.0.3.0"). It must stay a copy of the
-**actual live Web.config** plus the new version's changes; when in doubt, get the current file from the server first.
+`web.live.config` must stay a copy of the **actual live Web.config** plus the new version's changes; when in doubt,
+get the current file from the server first. Config files hold settings and short comments on what a setting does,
+never release notes or change history (Hard Rule #0h): those go in `CHANGELOG.md` and section 6 below.
 
 ### Secrets exposure (2026-09-28)
 
@@ -69,3 +70,33 @@ WebDAV removed and the extensionless handler allows every verb (PUT/OPTIONS for 
 `driver` locations; `driver` default document `index.html` and CSP headers; `.apk` MIME type; Web API binding
 redirects; `enableVersionHeader="false"`. If the host ever returns 405 on PUT, ask myasp.net support to allow
 PUT/OPTIONS.
+
+## 6. Live Web.config changes by version
+
+What changed in `web.live.config` (uploaded as the live `Web.config`) in each release. Feature changes and the files
+to upload are in `CHANGELOG.md`.
+
+| Version | Config changes |
+|---------|----------------|
+| 3.0.3.3 | `Version` 3.0.3.2 → 3.0.3.3 only. |
+| 3.0.3.2 | `Version` 3.0.3.1 → 3.0.3.2 only (the APK download goes through `/api`, already anonymous). |
+| 3.0.3.1 | `Version` 3.0.3.0 → 3.0.3.1 only. The Azure Maps / HeiGIT keys are entered on System Preferences → GPS & Drivers (database). After the first start, run `SQLCommands-OrderFlags-02-ResetContacts.xml` once (System Tools → XML to SQL) to put subscription contacts back to a standard account type. |
+| 3.0.3.0 | See below. |
+| 3.0.2.0 | `Version` 3.0.1.14 → 3.0.2.0; removed the anonymous `<location path="Default.aspx">` (home page needs sign-in); added anonymous `<location path="Styles">` and `<location path="images">` (login pages need CSS and logo). Also upload the new `Portal/Web.config`. |
+
+**3.0.3.0 (mobile REST API at `/api/v1`):**
+
+1. `Version` 3.0.2.0 → 3.0.3.0.
+2. `MobileApi.*` appSettings.
+3. `system.webServer`: WebDAV removed; the extensionless handler allows every verb (PUT / OPTIONS for the app).
+4. Binding redirects for Newtonsoft.Json, System.Web.Http, System.Net.Http.Formatting,
+   System.Threading.Tasks.Extensions and System.Runtime.CompilerServices.Unsafe.
+5. Anonymous `<location path="api">` (the API checks its own Bearer tokens).
+6. Anonymous `<location path="driver">` with `index.html` as its default page (upload the `driver` folder).
+7. `staticContent` MIME type for `.apk` (upload the `Downloads` folder).
+8. Content-Security-Policy, nosniff and no-referrer headers on `/driver`.
+9. `ApplicationBaseUrl` `https://quaffeetracker.co.za/` → `https://tracker.quaffee.co.za/`.
+10. `httpRuntime enableVersionHeader="false"`.
+
+Upload the whole `bin` folder (new DLLs: System.Web.Http, System.Web.Http.WebHost, System.Net.Http.Formatting,
+Newtonsoft.Json.Bson, System.Threading.Tasks.Extensions).

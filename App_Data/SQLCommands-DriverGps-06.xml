@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Route order by road driving times (3.0.3.3).
+  - GpsSettingsTbl.UseRoadTimes: put each driver's stops in order by HeiGIT road driving times instead of straight lines
+    (System Preferences -> GPS & Drivers -> Route order). On by default; needs the HeiGIT key.
+  - RoadLegTbl: driving time and distance from one geohash point to another (HeiGIT matrix), so a pair is fetched once and
+    reused on later days. Seconds / Metres = -1 when HeiGIT found no road between them. Legs older than 180 days are
+    fetched again.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GpsSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH('dbo.GpsSettingsTbl', 'UseRoadTimes') IS NULL
+      BEGIN
+          ALTER TABLE dbo.GpsSettingsTbl ADD UseRoadTimes BIT NOT NULL
+              CONSTRAINT DF_GpsSettings_UseRoadTimes DEFAULT (1);
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.RoadLegTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.RoadLegTbl (
+              FromHash VARCHAR(12) NOT NULL,
+              ToHash VARCHAR(12) NOT NULL,
+              Seconds INT NOT NULL,
+              Metres INT NOT NULL,
+              FetchedAt DATETIME NOT NULL CONSTRAINT DF_RoadLeg_FetchedAt DEFAULT (GETDATE()),
+              CONSTRAINT PK_RoadLegTbl PRIMARY KEY (FromHash, ToHash)
+          );
+      END
+    ]]>
+  </command>
+</root>

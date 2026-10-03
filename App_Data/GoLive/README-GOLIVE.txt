@@ -76,6 +76,8 @@ SQLCommands-DriverGps-04.xml   ← MobileDeliveryOptionsTbl.NotAtClient / Mobile
                                  "Collected by the client" and "Dropped off by the supplier" (3.0.3.2)
 SQLCommands-DriverGps-05.xml   ← MobileDeliveryProofTbl.TermsAccepted / TermsText / HandedOver / PodSentAt / PodSentTo;
                                  MobileApiSettingsTbl.DeliveryTerms / TermsUrl (terms tick box, POD PDF; 3.0.3.2)
+SQLCommands-DriverGps-06.xml   ← GpsSettingsTbl.UseRoadTimes; RoadLegTbl (HeiGIT road driving times between route
+                                 points, kept 180 days; route order by road times; 3.0.3.3)
 The Collected delivery outcome is now created with "needs a name" off (01 and MobileApi-01). Live already has the
 row: untick "Needs name" for Collected on Lookups → Delivery Outcomes if the drivers should not be asked for one.
 SQLCommands-MobileApi-01.xml also adds MobileApiSettingsTbl.LandlinePrefixes when it is missing (either pack may run first).

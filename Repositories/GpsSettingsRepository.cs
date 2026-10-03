@@ -19,12 +19,19 @@ namespace TrackerSQL.Repositories
         public const string AzureTileService = "AZURE_TILES";
         public const int AzureTileDailyLimit = 15000;
 
-        private bool MapProviderColumnExists()
+        /// <summary>HeiGIT road time matrices for the route order (Standard plan: 500 a day, 40 a minute).</summary>
+        public const string RoadMatrixService = "HEIGIT_MATRIX";
+        public const int RoadMatrixDailyLimit = 450;
+
+        private bool MapProviderColumnExists() => ColumnExists("MapProvider");
+
+        private bool ColumnExists(string column)
         {
             try
             {
                 using (var db = new TrackerSQLDb())
-                    return db.ExecuteScalar<int>("SELECT CASE WHEN COL_LENGTH(N'dbo.GpsSettingsTbl', N'MapProvider') IS NULL THEN 0 ELSE 1 END") == 1;
+                    return db.ExecuteScalar<int>("SELECT CASE WHEN COL_LENGTH(N'dbo.GpsSettingsTbl', @Col) IS NULL THEN 0 ELSE 1 END",
+                        new List<DBParameter> { P("@Col", column, DbType.String) }) == 1;
             }
             catch
             {
@@ -75,6 +82,8 @@ namespace TrackerSQL.Repositories
                 s.WorkHoursStart = Str(r, "WorkHoursStart") ?? s.WorkHoursStart;
                 s.WorkHoursEnd = Str(r, "WorkHoursEnd") ?? s.WorkHoursEnd;
                 s.PingRetentionDays = Int(r, "PingRetentionDays", s.PingRetentionDays);
+                if (HasColumn(r, "UseRoadTimes"))
+                    s.UseRoadTimes = Bool(r, "UseRoadTimes");
                 s.AverageSpeedKmh = Int(r, "AverageSpeedKmh", s.AverageSpeedKmh);
                 s.ServiceMinutes = Int(r, "ServiceMinutes", s.ServiceMinutes);
                 s.FreshMinutes = Int(r, "FreshMinutes", s.FreshMinutes);
@@ -114,6 +123,7 @@ UPDATE dbo.GpsSettingsTbl SET
     WorkHoursStart = @WorkHoursStart,
     WorkHoursEnd = @WorkHoursEnd,
     PingRetentionDays = @PingRetentionDays,
+    " + (ColumnExists("UseRoadTimes") ? "UseRoadTimes = @UseRoadTimes," : string.Empty) + @"
     AverageSpeedKmh = @AverageSpeedKmh,
     ServiceMinutes = @ServiceMinutes,
     FreshMinutes = @FreshMinutes,
@@ -139,6 +149,7 @@ WHERE SettingsID = 1;";
                 P("@WorkHoursStart", s.WorkHoursStart ?? "07:00", DbType.AnsiString),
                 P("@WorkHoursEnd", s.WorkHoursEnd ?? "18:00", DbType.AnsiString),
                 P("@PingRetentionDays", s.PingRetentionDays, DbType.Int32),
+                P("@UseRoadTimes", s.UseRoadTimes, DbType.Boolean),
                 P("@AverageSpeedKmh", s.AverageSpeedKmh, DbType.Int32),
                 P("@ServiceMinutes", s.ServiceMinutes, DbType.Int32),
                 P("@FreshMinutes", s.FreshMinutes, DbType.Int32),

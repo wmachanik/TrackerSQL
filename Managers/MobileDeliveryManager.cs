@@ -143,12 +143,13 @@ namespace TrackerSQL.Managers
             if (stops.Count == 0)
                 return stops;
             DeliverySheetRepository.DepotPoint(out double? depotLat, out double? depotLng);
+            Func<IList<string>, double[,]> roadSeconds = RoadTimesManager.ForRouting();
 
             var result = new List<MobileDeliveryStop>(stops.Count);
             foreach (var driverStops in stops.GroupBy(s => s.DeliveryById ?? 0))
             {
                 List<MobileDeliveryStop> route = RoutePlanner.Order(driverStops.ToList(),
-                    s => routeRows.TryGetValue(s.OrderId, out var row) ? row.RouteHash : null, depotLat, depotLng);
+                    s => routeRows.TryGetValue(s.OrderId, out var row) ? row.RouteHash : null, depotLat, depotLng, roadSeconds);
                 route = RoutePlanner.ApplyLearned(route, s => s.ContactId,
                     s => routeRows.TryGetValue(s.OrderId, out var row) && row.LearnedPos.HasValue
                         ? Tuple.Create(row.LearnedPos.Value, row.LearnedVisits) : null);

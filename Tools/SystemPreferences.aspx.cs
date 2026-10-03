@@ -310,6 +310,8 @@ namespace TrackerSQL.Tools
             txtGpsWorkStart.Text = s.WorkHoursStart;
             txtGpsWorkEnd.Text = s.WorkHoursEnd;
             txtGpsRetention.Text = s.PingRetentionDays.ToString();
+            chkGpsRoadTimes.Checked = s.UseRoadTimes;
+            lblGpsRoadTimes.Text = RoadTimesHint(s, repo);
             txtGpsSpeed.Text = s.AverageSpeedKmh.ToString();
             txtGpsServiceMinutes.Text = s.ServiceMinutes.ToString();
             txtGpsFresh.Text = s.FreshMinutes.ToString();
@@ -319,6 +321,20 @@ namespace TrackerSQL.Tools
                 : string.Empty;
             btnGpsSave.Enabled = true;
             btnGpsLookupDepot.Enabled = true;
+        }
+
+        private static string RoadTimesHint(GpsSettings s, GpsSettingsRepository repo)
+        {
+            if (!RoadLegRepository.TableSeen())
+                return " Not ready: the DriverGps-06 schema pack has not run yet.";
+            if (!s.HasHeigitKey)
+                return " Needs the HeiGIT key above; straight lines until then.";
+            string usage = " Calls today: " + repo.GetCallsToday(GpsSettingsRepository.RoadMatrixService) + " of "
+                + GpsSettingsRepository.RoadMatrixDailyLimit + "; " + new RoadLegRepository().Count().ToString("N0") + " road legs kept.";
+            DateTime? paused = RoadTimesManager.PausedUntil();
+            if (paused.HasValue)
+                usage += " Paused until " + paused.Value.ToString("dd MMM HH:mm") + " (see the System log); straight lines meanwhile.";
+            return usage;
         }
 
         private static int ReadInt(TextBox box, int fallback, int min, int max)
@@ -409,6 +425,10 @@ namespace TrackerSQL.Tools
             s.WorkHoursStart = ReadTime(txtGpsWorkStart, s.WorkHoursStart);
             s.WorkHoursEnd = ReadTime(txtGpsWorkEnd, s.WorkHoursEnd);
             s.PingRetentionDays = ReadInt(txtGpsRetention, s.PingRetentionDays, 1, 365);
+            if (s.UseRoadTimes != chkGpsRoadTimes.Checked)
+                AppLogger.WriteLog(SystemConstants.LogTypes.System,
+                    "Route order by road driving times turned " + (chkGpsRoadTimes.Checked ? "on" : "off"), Context?.User?.Identity?.Name);
+            s.UseRoadTimes = chkGpsRoadTimes.Checked;
             s.AverageSpeedKmh = ReadInt(txtGpsSpeed, s.AverageSpeedKmh, 5, 120);
             s.ServiceMinutes = ReadInt(txtGpsServiceMinutes, s.ServiceMinutes, 0, 120);
             s.FreshMinutes = ReadInt(txtGpsFresh, s.FreshMinutes, 1, 600);

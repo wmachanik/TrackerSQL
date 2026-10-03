@@ -140,6 +140,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.TextBox txtGpsWorkStart;
         protected global::System.Web.UI.WebControls.TextBox txtGpsWorkEnd;
         protected global::System.Web.UI.WebControls.TextBox txtGpsRetention;
+        protected global::System.Web.UI.WebControls.CheckBox chkGpsRoadTimes;
+        protected global::System.Web.UI.WebControls.Label lblGpsRoadTimes;
         protected global::System.Web.UI.WebControls.TextBox txtGpsSpeed;
         protected global::System.Web.UI.WebControls.TextBox txtGpsServiceMinutes;
         protected global::System.Web.UI.WebControls.TextBox txtGpsFresh;

@@ -39,6 +39,9 @@ namespace TrackerSQL.Models
         public string WorkHoursEnd { get; set; } = "18:00";
         public int PingRetentionDays { get; set; } = 30;
 
+        /// <summary>Order each driver's stops by HeiGIT road driving times (needs the HeiGIT key); off = straight lines.</summary>
+        public bool UseRoadTimes { get; set; } = true;
+
         public int AverageSpeedKmh { get; set; } = 30;
         public int ServiceMinutes { get; set; } = 5;
         public int FreshMinutes { get; set; } = 15;
@@ -57,5 +60,7 @@ namespace TrackerSQL.Models
         /// <summary>Azure Maps chosen for the map and its key is saved; otherwise the popup uses MapTileUrl.</summary>
         public bool UseAzureMap => IsAzureMap && HasAzureMapsKey;
         public bool HasDepotPoint => DepotLatitude.HasValue && DepotLongitude.HasValue;
+        /// <summary>Road driving times are switched on and the HeiGIT key is saved.</summary>
+        public bool RoadTimesAvailable => UseRoadTimes && HasHeigitKey;
     }
 }

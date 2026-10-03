@@ -17,6 +17,7 @@ namespace TrackerSQL.Managers
         public const string DriverGps3XmlFileName = "SQLCommands-DriverGps-03.xml";
         public const string DriverGps4XmlFileName = "SQLCommands-DriverGps-04.xml";
         public const string DriverGps5XmlFileName = "SQLCommands-DriverGps-05.xml";
+        public const string DriverGps6XmlFileName = "SQLCommands-DriverGps-06.xml";
 
         private static readonly object Sync = new object();
         private static bool _ready;
@@ -42,7 +43,7 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName, AreaDeliveryOrderXmlFileName, DriverGpsXmlFileName, DriverGps2XmlFileName, DriverGps3XmlFileName, DriverGps4XmlFileName, DriverGps5XmlFileName }, out string error);
+                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName, AreaDeliveryOrderXmlFileName, DriverGpsXmlFileName, DriverGps2XmlFileName, DriverGps3XmlFileName, DriverGps4XmlFileName, DriverGps5XmlFileName, DriverGps6XmlFileName }, out string error);
                 if (!string.IsNullOrEmpty(error))
                     return error;
                 _ready = true;

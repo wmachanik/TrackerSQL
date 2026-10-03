@@ -346,6 +346,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-04.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-05.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-05.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-06.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-06.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />
@@ -600,6 +602,7 @@
     <Compile Include="Classes\Geo\AzureMapsGeocoder.cs" />
     <Compile Include="Classes\Geo\GeoDistance.cs" />
     <Compile Include="Classes\Geo\HeigitGeocoder.cs" />
+    <Compile Include="Classes\Geo\HeigitMatrixClient.cs" />
     <Compile Include="Classes\Geo\IGeocoder.cs" />
     <Compile Include="Classes\Geo\RoutePlanner.cs" />
     <Compile Include="Classes\DiagnosticsIconHelper.cs" />
@@ -701,10 +704,12 @@
     <Compile Include="Repositories\ContactsRepository.cs" />
     <Compile Include="Repositories\CustomerLocationRepository.cs" />
     <Compile Include="Repositories\DeliveryVisitRepository.cs" />
+    <Compile Include="Repositories\RoadLegRepository.cs" />
     <Compile Include="Repositories\DeliveryRouteRepository.cs" />
     <Compile Include="Repositories\DriverLocationRepository.cs" />
     <Compile Include="Managers\DriverTrackingManager.cs" />
     <Compile Include="Managers\RouteTimesManager.cs" />
+    <Compile Include="Managers\RoadTimesManager.cs" />
     <Compile Include="Managers\UserAccountManager.cs" />
     <Compile Include="Managers\DriverAppReleaseManager.cs" />
     <Compile Include="Models\DriverTrackingModels.cs" />

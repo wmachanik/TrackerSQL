@@ -6,6 +6,16 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 Not released yet. 3.0.3.2 went live on 2026-10-02.
 
+### Features
+- **Route order by road driving times** — each driver's suggested order (Delivery Sheet, driver app, Delivery order) is now worked out on real road driving times from HeiGIT (openrouteservice matrix, the same HeiGIT key as the address lookups) instead of straight lines, so Table Mountain, the M3 / N2 and one-way streets count. Up to 13 stops the quickest order is found exactly; above that the nearest-stop route is improved by reversing stretches and moving one to three stops until nothing gets quicker. The driver's own order and the order they usually deliver in still come first, as before. On dev: Sibusiso's 30 Sep stops 99 → 95 minutes of driving, 1 Oct 122 → 118.
+  - Each pair of points is fetched once (one call for the whole day's set of a driver, at most 59 points) and kept 180 days in `RoadLegTbl`, so regular clients cost nothing after the first time. At most 450 calls a day (HeiGIT's free plan allows 500).
+  - **System Preferences → GPS & Drivers → Route Order → Road driving times** (on by default) shows today's calls and how many legs are kept. Without the HeiGIT key, when it is off, or when HeiGIT can't be reached, the route uses straight lines as before; after an error no call is made for 15 minutes (2 after the per-minute limit, until tomorrow after the daily limit). Each call and each pause is logged (Delivery / System log).
+  - Expected arrival times are not changed (still straight line × 1.3 at the average speed, as in the driver app).
+
+### Go-live notes
+- Upload `bin/`, `Tools/SystemPreferences.aspx` and `App_Data/SQLCommands-DriverGps-06.xml` (new; runs at start-up: `GpsSettingsTbl.UseRoadTimes`, `RoadLegTbl`). In the live `Web.config` change only `Version` to 3.0.3.3.
+- Live already has the HeiGIT key; check **System Preferences → GPS & Drivers → Route Order** shows "Calls today" after the first Delivery Sheet of the day.
+
 ## 3.0.3.2 — 2026-10-02
 
 ### Features

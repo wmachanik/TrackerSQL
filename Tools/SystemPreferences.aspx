@@ -478,6 +478,17 @@
                                     </tr>
                                 </table>
 
+                                <h3 class="gps-settings-heading">Route Order</h3>
+                                <table class="detail-form-table sys-prefs-form-table">
+                                    <tr>
+                                        <td class="sys-prefs-label"><span title="Puts each driver's stops in the quickest order by real road driving times (HeiGIT, uses the HeiGIT key above, also when Azure Maps does the address lookups). Each pair of points is fetched once and kept 180 days. Off, or when HeiGIT can't be reached: straight lines. The driver's own order and the order they usually deliver in still come first.">Road driving times</span></td>
+                                        <td class="sys-prefs-field">
+                                            <asp:CheckBox ID="chkGpsRoadTimes" runat="server" Text="Order stops by road driving times (HeiGIT)" />
+                                            <asp:Label ID="lblGpsRoadTimes" runat="server" CssClass="sys-prefs-saved-hint" />
+                                        </td>
+                                    </tr>
+                                </table>
+
                                 <h3 class="gps-settings-heading">Arrival times</h3>
                                 <table class="detail-form-table sys-prefs-form-table">
                                     <tr>

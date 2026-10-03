@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Classes.Geo;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 
 namespace TrackerSQL.Repositories
@@ -321,13 +322,14 @@ namespace TrackerSQL.Repositories
             if (rows.Count < 2)
                 return rows;
             DepotPoint(out double? depotLat, out double? depotLng);
+            Func<IList<string>, double[,]> roadSeconds = RoadTimesManager.ForRouting();
 
             var planned = new List<DeliverySheetOrderRow>(rows.Count);
             foreach (var run in rows.GroupBy(r => new { r.Done, Day = r.RequiredByDate.Date, r.ToBeDeliveredByID }))
             {
                 List<List<DeliverySheetOrderRow>> orders = run.GroupBy(r => r.OrderID).Select(g => g.ToList()).ToList();
                 List<List<DeliverySheetOrderRow>> route = RoutePlanner.Order(orders,
-                    o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng);
+                    o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng, roadSeconds);
                 route = RoutePlanner.ApplyLearned(route, o => o[0].ContactID,
                     o => learned.TryGetValue(o[0].OrderID, out var l) ? l : null);
                 route = RoutePlanner.ApplyPlan(route, o => plans.TryGetValue(o[0].OrderID, out var p) ? p : null);

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Order Done from the driver app and WooCommerce (3.0.3.3).
+  - WooCommerceSettingsTbl.CompleteWooOrderOnDone: Order Done (office or driver app) sets the Woo order to Completed.
+    Courier / dispatch orders stay open. On by default (Tools -> WooCommerce Mapping -> General).
+  - Turns on System -> Driver App "Complete the order in Tracker (run Done) when the driver sends a delivery" once,
+    so driver deliveries update the cup count and close the order. Later changes on that page are kept.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'CompleteWooOrderOnDone') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD CompleteWooOrderOnDone BIT NOT NULL
+              CONSTRAINT DF_WooSet_CompleteOnDone DEFAULT (1);
+      END
+    ]]>
+  </command>
+
+  <!-- One-shot: turn on run Done for driver deliveries. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (
+             SELECT 1
+             FROM sys.extended_properties ep
+             WHERE ep.major_id = OBJECT_ID(N'dbo.MobileApiSettingsTbl')
+               AND ep.minor_id = 0
+               AND ep.name = N'RunDoneOnDeliveryOn_v1')
+      BEGIN
+          IF EXISTS (SELECT 1 FROM dbo.MobileApiSettingsTbl WHERE SettingsID = 1)
+              UPDATE dbo.MobileApiSettingsTbl
+              SET RunDoneOnDelivery = 1, UpdatedAt = GETDATE(), UpdatedBy = N'3.0.3.3 update'
+              WHERE SettingsID = 1;
+          ELSE
+              INSERT INTO dbo.MobileApiSettingsTbl (SettingsID, RunDoneOnDelivery, UpdatedBy)
+              VALUES (1, 1, N'3.0.3.3 update');
+
+          EXEC sys.sp_addextendedproperty
+              @name = N'RunDoneOnDeliveryOn_v1',
+              @value = N'1',
+              @level0type = N'SCHEMA', @level0name = N'dbo',
+              @level1type = N'TABLE',  @level1name = N'MobileApiSettingsTbl';
+      END
+    ]]>
+  </command>
+</root>

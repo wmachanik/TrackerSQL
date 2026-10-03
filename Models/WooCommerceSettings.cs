@@ -80,6 +80,11 @@ namespace TrackerSQL.Models
         /// When true (default), opening New Order checks Woo for orders newer than the max imported Woo ID.
         /// </summary>
         public bool CheckNewOrdersOnNewOrder { get; set; } = true;
+        /// <summary>
+        /// When true (default), Order Done (office or driver app) sets the Woo order to Completed.
+        /// Courier / dispatch orders stay open (waybill note only).
+        /// </summary>
+        public bool CompleteWooOrderOnDone { get; set; } = true;
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

@@ -58,6 +58,39 @@ namespace TrackerSQL.Managers
             }
         }
 
+        /// <summary>
+        /// Sets the Woo order status (e.g. "completed"). Woo sends its own email for some statuses,
+        /// such as the "order complete" email to the customer.
+        /// </summary>
+        public bool SetOrderStatus(ApiCredentials creds, long orderId, string status, out string detail)
+        {
+            detail = null;
+            if (orderId <= 0)
+            {
+                detail = "Invalid Woo order id.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                detail = "Status is empty.";
+                return false;
+            }
+
+            string path = "/wp-json/wc/v3/orders/" + orderId.ToString(CultureInfo.InvariantCulture);
+            string body = new JObject { ["status"] = status.Trim() }.ToString(Formatting.None);
+
+            try
+            {
+                SendJson(creds, HttpMethod.Put, path, body);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                detail = ex.Message;
+                return false;
+            }
+        }
+
         public List<WooOrderDto> GetLatestOrders(ApiCredentials creds, int count = 1)
         {
             int take = Math.Max(1, Math.Min(count, 100));

@@ -297,6 +297,9 @@ namespace TrackerSQL.Managers
 
             string wooNoteStatus = ApplyDispatchTracking(
                 orderId, customerId, trackingNumber, !string.IsNullOrEmpty(statusKey), emailSent, courierServiceId);
+            string wooCompleteStatus = CompleteWooOrder(orderId, tempHeader.ToBeDeliveredByID, statusKey, trackingNumber);
+            if (!string.IsNullOrWhiteSpace(wooCompleteStatus))
+                wooNoteStatus = string.IsNullOrWhiteSpace(wooNoteStatus) ? wooCompleteStatus : wooNoteStatus + " " + wooCompleteStatus;
 
             var recurringNotes = SyncRecurringOrderLastDone(customerId, tempHeaderId, deliveryDate);
             TempOrderSession.CleanupCompletedOrder(orderId, tempHeaderId);
@@ -664,6 +667,60 @@ namespace TrackerSQL.Managers
             else
             {
                 email.AddToBody(MessageProvider.Format(MessageKeys.Order.StatusTrackingLine, HttpUtility.HtmlEncode(track)));
+            }
+        }
+
+        /// <summary>
+        /// Sets the linked Woo order to Completed when the setting is on. Courier / dispatch orders
+        /// (waybill, "dispatched" message or a dispatch delivery person) stay open. Null when nothing was done.
+        /// </summary>
+        private static string CompleteWooOrder(int orderId, int? deliveredByPersonId, string statusKey, string trackingNumber)
+        {
+            if (orderId <= 0)
+                return null;
+            if (!string.IsNullOrWhiteSpace(trackingNumber)
+                || string.Equals(statusKey, MessageKeys.Order.StatusDispatched, StringComparison.Ordinal)
+                || IsDispatchDeliveryPerson(deliveredByPersonId))
+                return null;
+
+            try
+            {
+                var wooRepo = new WooOrderInfoRepository();
+                WooOrderInfo info = wooRepo.GetByTrackerOrderId(orderId);
+                if (info == null || info.WooOrderId <= 0)
+                    return null;
+                string wooNumber = info.WooOrderNumber ?? info.WooOrderId.ToString();
+                string current = (info.WooStatus ?? string.Empty).Trim().ToLowerInvariant();
+                if (current == "completed" || current == "cancelled" || current == "refunded")
+                    return null;
+
+                var settingsManager = new WooCommerceSettingsManager();
+                settingsManager.EnsureSchemaOnce();
+                WooCommerceSettings settings = settingsManager.GetSettings();
+                if (settings == null || !settings.CompleteWooOrderOnDone)
+                    return null;
+
+                if (!settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out string credError))
+                {
+                    AppLogger.WriteLog("woo", "Order Done: Woo #" + wooNumber + " not completed (" + (credError ?? "no credentials") + ")");
+                    return "The Woo order was not marked Completed (" + (credError ?? "no credentials") + ").";
+                }
+
+                if (!new WooCommerceApiClient().SetOrderStatus(creds, info.WooOrderId, "completed", out string detail))
+                {
+                    AppLogger.WriteLog("woo", "Order Done: Woo #" + wooNumber + " could not be marked completed: " + (detail ?? "unknown"));
+                    return "The Woo order could not be marked Completed: " + (detail ?? "unknown").TrimEnd('.') + ".";
+                }
+
+                info.WooStatus = "completed";
+                wooRepo.Upsert(info);
+                AppLogger.WriteLog("woo", "Order Done: Woo #" + wooNumber + " marked completed (Tracker order " + orderId + ")");
+                return "Woo order #" + wooNumber + " marked Completed.";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("woo", "Order Done: Woo complete failed for Tracker order " + orderId + ": " + ex.Message);
+                return "The Woo order could not be marked Completed: " + ex.Message;
             }
         }
 

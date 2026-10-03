@@ -348,6 +348,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-05.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-06.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-06.xml" />
+    <Content Include="App_Data\SQLCommands-OrderDone-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-OrderDone-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="Web.config" />

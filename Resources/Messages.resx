@@ -1153,6 +1153,12 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapGeneralCheckNewOrdersNote" xml:space="preserve">
     <value>When on (default), opening New Order asks Woo for orders newer than the last imported Woo ID. If any are found, you can jump to Order Import or continue adding a manual order. Turn off to skip the check (faster).</value>
   </data>
+  <data name="WooCommerce.MapGeneralCompleteWooOnDoneLbl" xml:space="preserve">
+    <value>Mark the Woo order Completed on Order Done</value>
+  </data>
+  <data name="WooCommerce.MapGeneralCompleteWooOnDoneNote" xml:space="preserve">
+    <value>When on (default), finishing an order in Tracker (Order Done, or the driver app when it runs Done) sets the Woo order to Completed, and Woo sends the customer its order completed email. Courier and dispatch orders stay open; they only get the waybill note.</value>
+  </data>
   <data name="WooCommerce.MapSaveGeneralSettings" xml:space="preserve">
     <value>Save general settings</value>
   </data>

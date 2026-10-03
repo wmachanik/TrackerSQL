@@ -186,6 +186,9 @@ namespace TrackerSQL.Tools
             lblGeneralAppendTracking.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingLbl);
             lblGeneralAppendTracking.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralAppendTrackingNote);
             chkGeneralAppendTracking.ToolTip = lblGeneralAppendTracking.ToolTip;
+            lblGeneralCompleteWooOnDone.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompleteWooOnDoneLbl);
+            lblGeneralCompleteWooOnDone.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralCompleteWooOnDoneNote);
+            chkGeneralCompleteWooOnDone.ToolTip = lblGeneralCompleteWooOnDone.ToolTip;
             lblGeneralWriteExpectedDelivery.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryLbl);
             lblGeneralWriteExpectedDelivery.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralWriteExpectedDeliveryNote);
             chkGeneralWriteExpectedDelivery.ToolTip = lblGeneralWriteExpectedDelivery.ToolTip;
@@ -3505,6 +3508,7 @@ namespace TrackerSQL.Tools
             BindNotePartOrderList(settings.ImportNotePartOrder);
 
             chkGeneralAppendTracking.Checked = settings.AppendTrackingToOrderNotes;
+            chkGeneralCompleteWooOnDone.Checked = settings.CompleteWooOrderOnDone;
             chkGeneralWriteExpectedDelivery.Checked = settings.WriteExpectedDeliveryToWoo;
             chkGeneralCheckNewOrders.Checked = settings.CheckNewOrdersOnNewOrder;
 
@@ -3531,6 +3535,7 @@ namespace TrackerSQL.Tools
             MarkOriginal(ddlGeneralNoteLineFormat);
             MarkOriginal(ddlGeneralAutoPull);
             MarkOriginal(chkGeneralAppendTracking, chkGeneralAppendTracking.Checked);
+            MarkOriginal(chkGeneralCompleteWooOnDone, chkGeneralCompleteWooOnDone.Checked);
             MarkOriginal(chkGeneralWriteExpectedDelivery, chkGeneralWriteExpectedDelivery.Checked);
             MarkOriginal(chkGeneralCheckNewOrders, chkGeneralCheckNewOrders.Checked);
             if (lstGeneralNotePartOrder != null)
@@ -3544,17 +3549,18 @@ namespace TrackerSQL.Tools
             bool appendTracking = chkGeneralAppendTracking.Checked;
             bool writeExpectedDelivery = chkGeneralWriteExpectedDelivery.Checked;
             bool checkNewOrders = chkGeneralCheckNewOrders.Checked;
+            bool completeWooOnDone = chkGeneralCompleteWooOnDone.Checked;
             string autoPull = ddlGeneralAutoPull.SelectedValue;
             string noteOrder = GetNotePartOrderFromList();
             _settings.SaveGeneralImportSettings(
                 companyMode, noteFmt, appendTracking, autoPull, noteOrder,
-                writeExpectedDelivery, checkNewOrders, UserName());
+                writeExpectedDelivery, checkNewOrders, completeWooOnDone, UserName());
             BindGeneralTab();
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralSettingsSaved), false);
             WooCommerceUserLog.Write("Mapping general settings saved",
                 string.Format(CultureInfo.InvariantCulture,
-                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}, checkNewOnNewOrder={6}",
-                    companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, checkNewOrders),
+                    "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}, checkNewOnNewOrder={6}, completeWooOnDone={7}",
+                    companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, checkNewOrders, completeWooOnDone),
                 UserName());
         }
 

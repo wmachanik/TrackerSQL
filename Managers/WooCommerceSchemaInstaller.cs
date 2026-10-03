@@ -22,7 +22,8 @@ namespace TrackerSQL.Managers
             XmlFileNameAreas,
             XmlFileNameAddress,
             XmlFileNameGeneral,
-            XmlFileNameDeliveryPromise
+            XmlFileNameDeliveryPromise,
+            OrderFlagsSchemaInstaller.OrderDoneXmlFileName
         };
 
         public class EnsureResult

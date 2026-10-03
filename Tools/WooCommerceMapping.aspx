@@ -220,6 +220,7 @@
                 || window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralNoteLineFormat.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= ddlGeneralAutoPull.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralAppendTracking.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralCompleteWooOnDone.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralWriteExpectedDelivery.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralCheckNewOrders.ClientID %>'))
                 || noteOrderDirty;
@@ -1583,6 +1584,14 @@
                                 </td>
                                 <td class="sys-prefs-field">
                                     <asp:CheckBox ID="chkGeneralAppendTracking" runat="server" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblGeneralCompleteWooOnDone" runat="server" AssociatedControlID="chkGeneralCompleteWooOnDone" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:CheckBox ID="chkGeneralCompleteWooOnDone" runat="server" />
                                 </td>
                             </tr>
                             <tr>

@@ -432,6 +432,8 @@ namespace TrackerSQL.Classes
             public const string MapGeneralAutoPullThisWeek = "WooCommerce.MapGeneralAutoPullThisWeek";
             public const string MapGeneralCheckNewOrdersLbl = "WooCommerce.MapGeneralCheckNewOrdersLbl";
             public const string MapGeneralCheckNewOrdersNote = "WooCommerce.MapGeneralCheckNewOrdersNote";
+            public const string MapGeneralCompleteWooOnDoneLbl = "WooCommerce.MapGeneralCompleteWooOnDoneLbl";
+            public const string MapGeneralCompleteWooOnDoneNote = "WooCommerce.MapGeneralCompleteWooOnDoneNote";
             public const string MapSaveGeneralSettings = "WooCommerce.MapSaveGeneralSettings";
             public const string MapGeneralSettingsSaved = "WooCommerce.MapGeneralSettingsSaved";
             public const string MapCatHelp = "WooCommerce.MapCatHelp";

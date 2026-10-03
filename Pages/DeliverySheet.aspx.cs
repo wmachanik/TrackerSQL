@@ -280,6 +280,7 @@ namespace TrackerSQL.Pages
             var buildResult = manager.Build(queryResult.Items, !pPrintForm);
 
             PrepareRouteExtras(requiredDate, pPrintForm, buildResult);
+            LoadAwaitingDone(pPrintForm);
 
             // UI rendering stays in the WebForms page.
             this.BuildDeliveryTable(buildResult, pPrintForm, pOnlyDeliveryBy);
@@ -360,6 +361,43 @@ namespace TrackerSQL.Pages
             }
             if (ltrlRouteInfo != null)
                 ltrlRouteInfo.Text = string.Join(string.Empty, lines);
+        }
+
+        /// <summary>Orders the driver delivered from the app that are still not done (flagged red on screen, not on the printed sheet).</summary>
+        private Dictionary<int, MobileDeliveryProof> _awaitingDone = new Dictionary<int, MobileDeliveryProof>();
+
+        private void LoadAwaitingDone(bool printForm)
+        {
+            _awaitingDone = new Dictionary<int, MobileDeliveryProof>();
+            if (printForm)
+                return;
+            try
+            {
+                _awaitingDone = new MobileDeliveryManager().AwaitingDoneByOrder();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("deliverysheet", "Deliveries waiting for Order Done not read: " + ex.Message);
+            }
+        }
+
+        private string AwaitingDoneFlag(DeliverySheetDisplayItem item, string orderDetailUrl)
+        {
+            if (item.Done || !_awaitingDone.TryGetValue(item.OrderID, out MobileDeliveryProof proof))
+                return string.Empty;
+
+            string status = MobileDeliveryManager.AwaitingStatusText(proof);
+            string tip = "The driver delivered this order at " + proof.DeliveredAt.ToString("HH:mm 'on' ddd d MMM")
+                + (string.IsNullOrWhiteSpace(proof.UserName) ? string.Empty : " (" + proof.UserName + ")")
+                + " but it is not done in Tracker: " + status + "."
+                + (string.IsNullOrWhiteSpace(proof.StatusMessage) ? string.Empty : " " + proof.StatusMessage);
+            string url = SecurityManager.IsAdmin()
+                ? ResolveUrl("~/Tools/DeliveriesAwaitingDone.aspx") + "?OrderID=" + item.OrderID
+                : orderDetailUrl;
+            string css = proof.Status == MobileDeliveryManager.StatusPending && string.IsNullOrWhiteSpace(proof.MissingItems)
+                ? "dlv-await-flag is-pending" : "dlv-await-flag";
+            return "<a class='" + css + "' href='" + url + "' title='" + HttpUtility.HtmlAttributeEncode(tip) + "'>&#x2691; "
+                + HttpUtility.HtmlEncode(status) + "</a> ";
         }
 
         protected void btnSaveRouteOrder_Click(object sender, EventArgs e)
@@ -563,13 +601,14 @@ namespace TrackerSQL.Pages
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {
-                    cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done)
+                    cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done) + AwaitingDoneFlag(currentItem, orderDetailUrl)
                         + currentItem.FlagPillHtml + currentItem.ContactName;
                 }
                 else
                 {
                     cellContact.Text =
                         FormatDeliveryStatusBadge(currentItem.Done) +
+                        AwaitingDoneFlag(currentItem, orderDetailUrl) +
                         currentItem.FlagPillHtml +
                         $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{currentItem.ContactName}</a>";
 
@@ -1070,6 +1109,7 @@ namespace TrackerSQL.Pages
 
             // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
             var buildResult = manager.Build(queryResult.Items, false);
+            LoadAwaitingDone(false);
 
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
         }

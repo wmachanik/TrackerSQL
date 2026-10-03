@@ -603,7 +603,29 @@ namespace TrackerSQL.Managers
             return _repo.ListAwaitingDone();
         }
 
-        /// <summary>Queues the background Order Done again for a proof (System → Driver App). Returns why not, or null.</summary>
+        /// <summary>The same list keyed by order, for flagging rows on the Delivery Sheet.</summary>
+        public Dictionary<int, MobileDeliveryProof> AwaitingDoneByOrder()
+        {
+            var byOrder = new Dictionary<int, MobileDeliveryProof>();
+            foreach (var proof in ListAwaitingDone())
+                byOrder[proof.OrderID] = proof;
+            return byOrder;
+        }
+
+        /// <summary>Short status for a delivery whose order is not done yet.</summary>
+        public static string AwaitingStatusText(MobileDeliveryProof proof)
+        {
+            if (!string.IsNullOrWhiteSpace(proof.MissingItems))
+                return "Items to follow: " + proof.MissingItems.Trim();
+            switch (proof.Status)
+            {
+                case StatusPending: return "Being completed";
+                case StatusCompleteFailed: return "Order Done failed";
+                default: return "Left for the office";
+            }
+        }
+
+        /// <summary>Queues the background Order Done again for a proof (Deliveries Waiting for Order Done). Returns why not, or null.</summary>
         public string RetryCompletion(long proofId, string userName)
         {
             MobileApiSchemaInstaller.EnsureReady();

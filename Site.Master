@@ -8,7 +8,7 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20261003-03" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20261003-05" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -221,6 +221,7 @@
                                         <asp:MenuItem NavigateUrl="~/Tools/DriverTracking.aspx" Text="Driver tracking" Value="DriverTracking" />
                                         <asp:MenuItem NavigateUrl="~/Tools/DeliveryOrder.aspx" Text="Delivery order" Value="DeliveryOrder" />
                                         <asp:MenuItem NavigateUrl="~/Tools/DriverApp.aspx" Text="Driver app" Value="DriverApp" />
+                                        <asp:MenuItem NavigateUrl="~/Tools/DeliveriesAwaitingDone.aspx" Text="Waiting for Order Done" Value="DeliveriesAwaitingDone" />
                                         <asp:MenuItem NavigateUrl="~/Tools/CustomerLocations.aspx" Text="Customer locations" Value="CustomerLocations" />
                                         <asp:MenuItem Selectable="False" Text="Settings" Value="DeliverySettings">
                                             <asp:MenuItem NavigateUrl="~/Pages/Lookups.aspx?tab=Areas" Text="Areas" Value="Areas" />

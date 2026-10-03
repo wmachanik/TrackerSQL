@@ -9,10 +9,8 @@ namespace TrackerSQL.Tools
     public partial class DriverApp
     {
         protected global::System.Web.UI.WebControls.Panel pnlSettings;
-        protected global::System.Web.UI.WebControls.Panel pnlAwaiting;
-        protected global::System.Web.UI.WebControls.Literal litAwaitingMessage;
-        protected global::System.Web.UI.WebControls.GridView gvAwaiting;
-        protected global::System.Web.UI.WebControls.Button btnRefreshAwaiting;
+        protected global::System.Web.UI.WebControls.Panel pnlRelated;
+        protected global::System.Web.UI.WebControls.Literal litAwaitingCount;
 
         protected global::System.Web.UI.WebControls.Literal litMessage;
 

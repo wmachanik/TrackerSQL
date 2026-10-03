@@ -46,6 +46,13 @@
                         </div>
                         <p>Install the app and its settings<br /><a href="../driver/">Open the web app</a></p>
                     </div>
+                    <div class="dashboard-card home-tone-dlv-app">
+                        <div class="tool-card-header">
+                            <img class="tool-card-icon" src="../images/imgButtons/Red%20mark.gif" alt="" />
+                            <h4><a href="DeliveriesAwaitingDone.aspx">Waiting for Order Done</a></h4>
+                        </div>
+                        <p>Deliveries the driver sent whose order is not done yet; Complete Now (administrators)</p>
+                    </div>
                     <div class="dashboard-card home-tone-dlv-move">
                         <div class="tool-card-header">
                             <img class="tool-card-icon" src="../images/imgButtons/icons8-move-date.png" alt="" />

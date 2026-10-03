@@ -321,6 +321,7 @@
     <Content Include="Tools\ApiTester.aspx" />
     <Content Include="driver\**\*" />
     <Content Include="Downloads\**\*" />
+    <Content Include="Tools\DeliveriesAwaitingDone.aspx" />
     <Content Include="Tools\DriverApp.aspx" />
     <Content Include="Tools\DeliveryOrder.aspx" />
     <Content Include="Tools\DriverTracking.aspx" />
@@ -522,6 +523,13 @@
     <Compile Include="Models\AreaWeekBoard.cs" />
     <Compile Include="Managers\MobileAuthManager.cs" />
     <Compile Include="Managers\MobileDeliveryCompletionQueue.cs" />
+    <Compile Include="Tools\DeliveriesAwaitingDone.aspx.cs">
+      <DependentUpon>DeliveriesAwaitingDone.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\DeliveriesAwaitingDone.aspx.designer.cs">
+      <DependentUpon>DeliveriesAwaitingDone.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Managers\MobileDeliveryManager.cs" />
     <Compile Include="Managers\MobileRepairManager.cs" />
     <Compile Include="Managers\MobileApiSettingsManager.cs" />

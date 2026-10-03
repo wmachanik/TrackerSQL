@@ -11133,6 +11133,31 @@ textarea.driver-app-terms { font-family: inherit; font-size: inherit; line-heigh
 .driver-app-save { margin-top: 0.8em; display: flex; align-items: center; gap: 0.8em; }
 .driver-app-save .sys-prefs-saved-hint { margin: 0; }
 .driver-app-awaiting .results-table { width: 100%; }
+.driver-app-awaiting tr.awaiting-highlight td { background: #fdecea !important; }
+.awaiting-buttons { display: flex; align-items: center; gap: 1.2em; }
+.driver-app-related ul { margin: 0.3em 0 0 1.2em; padding: 0; }
+.driver-app-related li { margin-bottom: 0.6em; }
+.driver-app-related .driver-app-help { display: block; }
+.status-badge.dlv-await-count { background: #c0392b; border-color: #a93226; color: #fff; }
+.driver-app-install-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1em; }
+.driver-app-install-card { padding: 0.8em 1em; border: 1px solid #d8d2c2; border-radius: 6px; background: #fffdf8; }
+.driver-app-install-card h4 { margin: 0 0 0.6em; font-size: 1.05em; color: #3f6b4f; }
+
+/* Delivery Sheet: driver delivered from the app but the order is not done (links to Deliveries Waiting for Order Done) */
+a.dlv-await-flag {
+    display: inline-block;
+    margin-right: 0.3em;
+    padding: 0.05em 0.5em;
+    border-radius: 3px;
+    background: #c0392b;
+    color: #fff !important;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+a.dlv-await-flag:hover { background: #962d22; }
+a.dlv-await-flag.is-pending { background: #d68910; }
 
 /* Delivery pages: headings in normal mixed case ("Delivery sheet"), not the site-wide small capitals */
 .deliveries-hub h3, .deliveries-hub h4, .driver-tracking-page h3 { font-variant: normal; }

@@ -6,11 +6,16 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 Not released yet. 3.0.3.4 went live on 2026-10-03.
 
+### Features
+- **Deliveries Waiting for Order Done is its own page** — **Deliveries → Waiting for Order Done** (also a card on **All delivery tools**; administrators). Same list and **Complete Now** as before, with a Refresh button. Opened from a red flag it highlights that order's row.
+- **Red flag on the Delivery Sheet** — an order the driver delivered from the app that is still not done in Tracker shows a red flag next to the client: *Order Done failed*, *Items to follow: …* or *Left for the office* (orange *Being completed* while the background run is busy). Hover shows when and by whom it was delivered and the reason; clicking opens the Waiting for Order Done page on that order (non-administrators go to the order). Not shown on the printed sheet.
+
 ### Changes
 - **System → Driver App settings tidied** — laid out like System Preferences (label on the left, setting and a short help line on the right) in three groups: *Completing Deliveries* (Order Done, proof of delivery email, link to Delivery Outcomes), *Signature and Terms* and *Notes and Calls*. The terms box uses the normal font, the email and landline boxes are a sensible width, and **Save settings** is at the bottom with when it was last saved. Page headings in Title Case. No setting changed.
+- **Driver App page panels** — the waiting list moved to its own page; a *Deliveries From the App* panel links to it (with how many are waiting) and to Delivery Order. The phone set-up is in its own *Install the App on a Phone or Tablet* panel, with Android and "Any Phone, Including iPhone" side by side.
 
 ### Go-live notes
-- Upload `Tools/DriverApp.aspx`, `Site.Master` and `Styles/Site.css` (stylesheet version `20261003-03`, so browsers load the new one). In the live `Web.config` change only `Version` to 3.0.3.5.
+- Upload `bin/`, `Tools/DeliveriesAwaitingDone.aspx` (new), `Tools/DriverApp.aspx`, `Tools/Deliveries.aspx`, `Site.Master` and `Styles/Site.css` (stylesheet version `20261003-05`, so browsers load the new one). No schema change. In the live `Web.config` change only `Version` to 3.0.3.5.
 
 ## 3.0.3.4 — 2026-10-03
 

@@ -98,95 +98,55 @@
             </div>
         </asp:Panel>
 
-        <asp:Panel ID="pnlAwaiting" runat="server" Visible="false" CssClass="complex-form-section driver-app-awaiting">
-            <h3>Deliveries Waiting for Order Done</h3>
-            <p class="sys-prefs-help">The driver gets a reply as soon as the delivery is saved; Tracker then completes the order (Order Done,
-                the Woo order and the emails) in the background. Deliveries the driver sent whose order is still not done are listed here:
-                still being completed, left for the office, or failed. <strong>Complete Now</strong> runs Order Done for it again.</p>
-            <asp:Literal ID="litAwaitingMessage" runat="server" />
-            <div class="results-container">
-                <asp:GridView ID="gvAwaiting" runat="server" CssClass="results-table"
-                    AutoGenerateColumns="false" DataKeyNames="ProofID"
-                    EmptyDataText="Every delivery sent from the app has its order done."
-                    OnRowCommand="gvAwaiting_RowCommand">
-                    <Columns>
-                        <asp:TemplateField HeaderText="Order" ItemStyle-CssClass="col-tight">
-                            <ItemTemplate>
-                                <asp:HyperLink runat="server" Text='<%# Eval("OrderID") %>'
-                                    NavigateUrl='<%# "~/Pages/OrderDetail.aspx?OrderID=" + Eval("OrderID") %>' />
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:TemplateField HeaderText="Client">
-                            <ItemTemplate><%# HttpUtility.HtmlEncode(Eval("CompanyName")) %></ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:TemplateField HeaderText="Driver" ItemStyle-CssClass="col-tight">
-                            <ItemTemplate><%# HttpUtility.HtmlEncode(Eval("UserName")) %></ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:BoundField DataField="DeliveredAt" HeaderText="Delivered" DataFormatString="{0:dd MMM HH:mm}" ItemStyle-CssClass="col-tight" />
-                        <asp:TemplateField HeaderText="Status">
-                            <ItemTemplate>
-                                <strong><%# HttpUtility.HtmlEncode(StatusText(Container.DataItem)) %></strong>
-                                <div class="sys-prefs-help"><%# HttpUtility.HtmlEncode(Eval("StatusMessage")) %></div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        <asp:TemplateField HeaderText="Action" ItemStyle-CssClass="col-tight">
-                            <ItemTemplate>
-                                <asp:Button runat="server" Text="Complete Now" CssClass="filter-panel-btn"
-                                    Visible='<%# CanComplete(Container.DataItem) %>'
-                                    CommandName="CompleteNow" CommandArgument='<%# Eval("ProofID") %>' CausesValidation="false"
-                                    OnClientClick="return confirm('Run Order Done for this delivery now?');" />
-                                <asp:HyperLink runat="server" Text="Open the order" Visible='<%# HasItemsToFollow(Container.DataItem) %>'
-                                    NavigateUrl='<%# "~/Pages/OrderDetail.aspx?OrderID=" + Eval("OrderID") %>' />
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
-                </asp:GridView>
-            </div>
-            <div class="button-row">
-                <asp:Button ID="btnRefreshAwaiting" runat="server" Text="Refresh" CssClass="filter-panel-btn"
-                    OnClick="btnRefreshAwaiting_Click" CausesValidation="false" />
-            </div>
+        <asp:Panel ID="pnlRelated" runat="server" Visible="false" CssClass="complex-form-section driver-app-related">
+            <h3>Deliveries From the App</h3>
+            <ul>
+                <li><a href="DeliveriesAwaitingDone.aspx">Deliveries Waiting for Order Done</a>
+                    <asp:Literal ID="litAwaitingCount" runat="server" />
+                    <span class="driver-app-help">Deliveries the driver sent whose order is still not done: being completed, left for the
+                        office or failed, with <strong>Complete Now</strong>. They are also flagged in red on the Delivery Sheet.</span></li>
+                <li><a href="DeliveryOrder.aspx">Delivery Order</a>
+                    <span class="driver-app-help">Each delivery records which stop it was that day, and the suggested route learns from it.</span></li>
+            </ul>
         </asp:Panel>
 
-        <div class="complex-form-section">
-            <h3>Android Phone or Tablet</h3>
-            <asp:Panel ID="pnlApk" runat="server">
-                <p>
-                    <a class="driver-app-download" href="<%= ApkUrl %>" download="QuaffeeDriver.apk">Download the app</a>
-                    <span class="small"><asp:Literal ID="litApkInfo" runat="server" /></span>
-                </p>
-                <ol>
-                    <li>Open this page on the phone or tablet (address: <code><%= PageUrl %></code>) and tap <strong>Download the app</strong>.</li>
-                    <li>Open the downloaded file. Android asks to allow the browser to install apps: tap <strong>Settings</strong>, turn on
-                        <strong>Allow from this source</strong>, go back and tap <strong>Install</strong>.</li>
-                    <li>If Play Protect warns that it doesn't recognise the app, tap <strong>Install anyway</strong> (it is not from the Play Store).</li>
-                    <li>Open <strong>Quaffee Driver</strong> and sign in with the Tracker login.</li>
-                </ol>
-                <p class="small">Updates: from version 0.5.1 the app shows <strong>Update</strong> (on the delivery list and under More) when a newer
-                    version is on this page; tapping it downloads the new version, then open the download and tap <strong>Install</strong>.
-                    Older versions: download and install again over the old one. Deliveries waiting to send are kept.</p>
-            </asp:Panel>
-            <asp:Panel ID="pnlNoApk" runat="server" Visible="false" CssClass="status-message status-info">
-                The Android app has not been built yet. In the TrackerDriver project run <code>npm run apk</code>;
-                it saves the app as <code>Downloads\QuaffeeDriver.apk</code> in this site.
-            </asp:Panel>
-        </div>
-
-        <div class="complex-form-section">
-            <h3>Any Phone, Including iPhone (Web App)</h3>
-            <p>Open <a href="<%= WebAppUrl %>"><%= WebAppUrl %></a> on the phone, then:</p>
-            <ul>
-                <li><strong>Android (Chrome):</strong> menu ⋮ → <strong>Install app</strong> (or Add to Home screen).</li>
-                <li><strong>iPhone (Safari):</strong> Share → <strong>Add to Home Screen</strong>.</li>
-            </ul>
-            <p class="small">It opens full screen with its own icon and keeps working with no signal once it has been opened once.
-                Phones only offer to install it from an https:// address.</p>
-        </div>
-
-        <div class="complex-form-section">
-            <h3>Delivery Order</h3>
-            <p>Each delivery sent from the app records which stop it was that day, and the suggested route learns from it.
-                <a href="DeliveryOrder.aspx">See the order deliveries were made</a>.</p>
+        <div class="complex-form-section driver-app-install">
+            <h3>Install the App on a Phone or Tablet</h3>
+            <div class="driver-app-install-grid">
+                <div class="driver-app-install-card">
+                    <h4>Android</h4>
+                    <asp:Panel ID="pnlApk" runat="server">
+                        <p>
+                            <a class="driver-app-download" href="<%= ApkUrl %>" download="QuaffeeDriver.apk">Download the app</a>
+                            <span class="small"><asp:Literal ID="litApkInfo" runat="server" /></span>
+                        </p>
+                        <ol>
+                            <li>Open this page on the phone or tablet (address: <code><%= PageUrl %></code>) and tap <strong>Download the app</strong>.</li>
+                            <li>Open the downloaded file. Android asks to allow the browser to install apps: tap <strong>Settings</strong>, turn on
+                                <strong>Allow from this source</strong>, go back and tap <strong>Install</strong>.</li>
+                            <li>If Play Protect warns that it doesn't recognise the app, tap <strong>Install anyway</strong> (it is not from the Play Store).</li>
+                            <li>Open <strong>Quaffee Driver</strong> and sign in with the Tracker login.</li>
+                        </ol>
+                        <p class="small">Updates: from version 0.5.1 the app shows <strong>Update</strong> (on the delivery list and under More) when a newer
+                            version is on this page; tapping it downloads the new version, then open the download and tap <strong>Install</strong>.
+                            Older versions: download and install again over the old one. Deliveries waiting to send are kept.</p>
+                    </asp:Panel>
+                    <asp:Panel ID="pnlNoApk" runat="server" Visible="false" CssClass="status-message status-info">
+                        The Android app has not been built yet. In the TrackerDriver project run <code>npm run apk</code>;
+                        it saves the app as <code>Downloads\QuaffeeDriver.apk</code> in this site.
+                    </asp:Panel>
+                </div>
+                <div class="driver-app-install-card">
+                    <h4>Any Phone, Including iPhone (Web App)</h4>
+                    <p>Open <a href="<%= WebAppUrl %>"><%= WebAppUrl %></a> on the phone, then:</p>
+                    <ul>
+                        <li><strong>Android (Chrome):</strong> menu ⋮ → <strong>Install app</strong> (or Add to Home screen).</li>
+                        <li><strong>iPhone (Safari):</strong> Share → <strong>Add to Home Screen</strong>.</li>
+                    </ul>
+                    <p class="small">It opens full screen with its own icon and keeps working with no signal once it has been opened once.
+                        Phones only offer to install it from an https:// address.</p>
+                </div>
+            </div>
         </div>
     </div>
 </asp:Content>

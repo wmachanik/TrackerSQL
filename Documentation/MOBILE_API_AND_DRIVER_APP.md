@@ -40,6 +40,7 @@ TrackerDriver has its own `README.md` (dev, build, phone testing, code map). It 
 | `Models/MobileApiModels.cs` | Request/response models. |
 | `Tools/ApiTester.aspx` | Admin page to call every endpoint, view the request log and devices, and "Check API tables". |
 | `Tools/DriverApp.aspx` | App download page + admin settings (run Order Done, proof of delivery email, delivery terms and link, notes to office, office email, landline prefixes). |
+| `Tools/DeliveriesAwaitingDone.aspx` | Admin list of app deliveries whose order is not done, with **Complete Now**; `?OrderID=` highlights a row (Delivery Sheet red flag). |
 | `Pages/Lookups.aspx` → Delivery Outcomes tab (was Driver Options) | The delivered / not-delivered choices shown in the app. |
 | `Managers/DriverTrackingManager.cs` + `Repositories/DriverLocationRepository.cs` | Driver tracking: `POST location`, positions with deliveries, daily clean-up, the Driver tracking page's data (`Handlers/DriverTrackingData.ashx`, `Tools/DriverTracking.aspx`). |
 
@@ -104,8 +105,9 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
    when the confirmation email is sent so the client gets one email; the proof then becomes `Completed`,
    `CompleteFailed` or `AlreadyDone` with the result in `StatusMessage`. Emails (POD, office note) are also sent after
    the reply. Pending proofs left by an app restart are picked up at start-up, on the next sync, or when System →
-   Driver App is opened; its **Deliveries Waiting for Order Done** list shows what is not done and **Complete Now**
-   queues a proof again.
+   Driver App or Waiting for Order Done is opened. `Tools/DeliveriesAwaitingDone.aspx` lists what is not done
+   (`MobileApiRepository.ListAwaitingDone`) and **Complete Now** queues a proof again; the Delivery Sheet shows a red
+   flag (`a.dlv-await-flag`) on those orders linking to that page with `?OrderID=`.
 4. **Proof of delivery email** (if on): to the contact (ZZName orders: the `[#email#]` in the order notes), CC orders@,
    with the POD PDF attached (order, PO, delivered to, when / how, received by, driver, items handed over from the
    stored `HandedOver`, still to follow, the terms with the tick and link, the signature). Staff can open or (re)send it

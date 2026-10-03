@@ -2,9 +2,11 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.3 — in progress
+## 3.0.3.4 — in progress
 
-Not released yet. 3.0.3.2 went live on 2026-10-02.
+Not released yet. 3.0.3.3 went live on 2026-10-03.
+
+## 3.0.3.3 — 2026-10-03
 
 ### Features
 - **Route order by road driving times** — each driver's suggested order (Delivery Sheet, driver app, Delivery order) is now worked out on real road driving times from HeiGIT (openrouteservice matrix, the same HeiGIT key as the address lookups) instead of straight lines, so Table Mountain, the M3 / N2 and one-way streets count. Up to 13 stops the quickest order is found exactly; above that the nearest-stop route is improved by reversing stretches and moving one to three stops until nothing gets quicker. The driver's own order and the order they usually deliver in still come first, as before. On dev: Sibusiso's 30 Sep stops 99 → 95 minutes of driving, 1 Oct 122 → 118.

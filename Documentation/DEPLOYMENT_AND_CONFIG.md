@@ -1,6 +1,6 @@
 # Deployment and Configuration
 
-**Last Updated:** 2026-09-29 (3.0.3.0 live)
+**Last Updated:** 2026-10-03 (3.0.3.3 live)
 
 ## 1. Live environment
 
@@ -78,6 +78,7 @@ to upload are in `CHANGELOG.md`.
 
 | Version | Config changes |
 |---------|----------------|
+| 3.0.3.4 | In progress: `Version` 3.0.3.3 → 3.0.3.4 so far. |
 | 3.0.3.3 | `Version` 3.0.3.2 → 3.0.3.3 only. |
 | 3.0.3.2 | `Version` 3.0.3.1 → 3.0.3.2 only (the APK download goes through `/api`, already anonymous). |
 | 3.0.3.1 | `Version` 3.0.3.0 → 3.0.3.1 only. The Azure Maps / HeiGIT keys are entered on System Preferences → GPS & Drivers (database). After the first start, run `SQLCommands-OrderFlags-02-ResetContacts.xml` once (System Tools → XML to SQL) to put subscription contacts back to a standard account type. |

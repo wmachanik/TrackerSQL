@@ -28,7 +28,7 @@
 -->
 <configuration>
 	<appSettings>
-		<add key="Version" value="3.0.3.3" />
+		<add key="Version" value="3.0.3.4" />
 		<!-- SECRET: live Base64 32-byte key (see SETUP at the top) -->
 		<add key="WooCommerceCryptoKey" value="mypassword" />
 		<add key="SysEmailFrom" value="orders@quaffee.co.za" />

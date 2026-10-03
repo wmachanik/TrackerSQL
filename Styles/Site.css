@@ -9537,8 +9537,6 @@ a.delivery-days-tag.is-promise-gap:hover {
 .portal-pod-links a + a { margin-left: 0.9em; }
 
 /* System → Driver App: delivery terms */
-textarea.driver-app-terms { width: 100%; max-width: 46em; box-sizing: border-box; }
-
 /* Contact Details → GPS line (under Packaging) and the Check / change popup */
 .contact-gps-value { white-space: nowrap; }
 .contact-gps-value.contact-gps-review { color: #b35c00; font-weight: 600; }
@@ -11123,9 +11121,18 @@ a.driver-app-download {
     text-decoration: none;
 }
 a.driver-app-download:hover { background: var(--secondary-brown); color: #fff; }
-.driver-app-settings .sys-prefs-help { display: block; margin: 0.2em 0 0 1.6em; color: #666; font-size: 0.9em; }
-.driver-app-settings label { font-weight: 600; }
-.driver-app-settings input[type=checkbox] + label { font-weight: 600; margin-left: 0.3em; }
+.driver-app-page h3, .driver-app-page h4 { font-variant: normal; }
+.driver-app-form td.sys-prefs-label { vertical-align: top !important; padding-top: 0.45em; font-weight: 600; }
+.driver-app-form input.sys-prefs-input { font-size: inherit; padding: 0.25em 0.4em; }
+.driver-app-form .sys-prefs-label label { font-weight: 600; }
+.driver-app-form .sys-prefs-field { padding-bottom: 0.35em; }
+.driver-app-form input[type=checkbox] + label { margin-left: 0.35em; font-weight: 600; }
+.driver-app-help { margin-top: 0.25em; color: #666; font-size: 0.9em; line-height: 1.4; }
+.driver-app-form input.driver-app-short { max-width: 24rem !important; }
+textarea.driver-app-terms { font-family: inherit; font-size: inherit; line-height: 1.4; resize: vertical; }
+.driver-app-save { margin-top: 0.8em; display: flex; align-items: center; gap: 0.8em; }
+.driver-app-save .sys-prefs-saved-hint { margin: 0; }
+.driver-app-awaiting .results-table { width: 100%; }
 
 /* Delivery pages: headings in normal mixed case ("Delivery sheet"), not the site-wide small capitals */
 .deliveries-hub h3, .deliveries-hub h4, .driver-tracking-page h3 { font-variant: normal; }

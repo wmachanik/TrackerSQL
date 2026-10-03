@@ -6,6 +6,12 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 Not released yet. 3.0.3.4 went live on 2026-10-03.
 
+### Changes
+- **System → Driver App settings tidied** — laid out like System Preferences (label on the left, setting and a short help line on the right) in three groups: *Completing Deliveries* (Order Done, proof of delivery email, link to Delivery Outcomes), *Signature and Terms* and *Notes and Calls*. The terms box uses the normal font, the email and landline boxes are a sensible width, and **Save settings** is at the bottom with when it was last saved. Page headings in Title Case. No setting changed.
+
+### Go-live notes
+- Upload `Tools/DriverApp.aspx`, `Site.Master` and `Styles/Site.css` (stylesheet version `20261003-03`, so browsers load the new one). In the live `Web.config` change only `Version` to 3.0.3.5.
+
 ## 3.0.3.4 — 2026-10-03
 
 ### Features

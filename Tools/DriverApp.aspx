@@ -1,4 +1,4 @@
-<%@ Page Title="Driver app" Language="C#" MasterPageFile="~/Site.Master"
+<%@ Page Title="Driver App" Language="C#" MasterPageFile="~/Site.Master"
     AutoEventWireup="true" CodeBehind="DriverApp.aspx.cs" Inherits="TrackerSQL.Tools.DriverApp" %>
 
 <asp:Content ID="Head" ContentPlaceHolderID="HeadContent" runat="server" />
@@ -7,7 +7,7 @@
         <div class="page-tone-header tool-card-header">
             <img class="tool-card-icon" src="../images/imgButtons/icons8-delivery-16.png" alt="" />
             <div>
-                <h1 class="page-tone-title">Quaffee Driver app</h1>
+                <h1 class="page-tone-title">Quaffee Driver App</h1>
                 <p class="page-tone-subtitle">Deliveries, proof of delivery and repairs on the driver's phone or tablet, also with no signal.
                     Drivers sign in with their normal Tracker login, which must be linked to a person in Lookups → People.</p>
             </div>
@@ -16,54 +16,86 @@
         <asp:Panel ID="pnlSettings" runat="server" Visible="false" CssClass="complex-form-section driver-app-settings">
             <h3>Settings</h3>
             <asp:Literal ID="litMessage" runat="server" />
-            <p>
-                <asp:CheckBox ID="chkRunDone" runat="server" Text="Complete the order in Tracker (run Done) when the driver sends a delivery" />
-                <span class="sys-prefs-help">Runs the same steps as the Done button on the delivery sheet. Deliveries with items still to follow
-                    are always left for the office. When off, the office completes orders from the delivery sheet.</span>
-            </p>
-            <p>
-                <asp:CheckBox ID="chkSendConfirmation" runat="server" Text="Email the client the proof of delivery" />
-                <span class="sys-prefs-help">A PDF with the order, what was delivered or is still to follow, who received it, when, whether they
-                    accepted the terms, and the signature. Copied to the orders address. It replaces the "delivered" email Done would send, so the
-                    client gets one email. The office can also email it later from Contact Details → Proof of Delivery.</span>
-            </p>
-            <p>
-                <label for="<%= txtTerms.ClientID %>">Terms the person receiving the delivery accepts</label><br />
-                <asp:TextBox ID="txtTerms" runat="server" TextMode="MultiLine" Rows="4" Columns="80" MaxLength="1000" CssClass="driver-app-terms" />
-                <span class="sys-prefs-help">Shown with a tick box above the signature on the app; a signature needs the box ticked. The wording
-                    they accepted is kept with the proof and printed on the proof of delivery.</span>
-            </p>
-            <p>
-                <label for="<%= txtTermsUrl.ClientID %>">Link to the full terms and conditions</label><br />
-                <asp:TextBox ID="txtTermsUrl" runat="server" MaxLength="300" Columns="80" TextMode="Url" />
-                <span class="sys-prefs-help">Opens from the app ("Read the terms") and is printed on the proof of delivery.</span>
-            </p>
-            <p>
-                <asp:CheckBox ID="chkNotesToOffice" runat="server" Text="Drivers may email their delivery note to the office" />
-                <span class="sys-prefs-help">For example when the client asks for a change to their order.</span>
-            </p>
-            <p>
-                <label for="<%= txtOfficeEmail.ClientID %>">Office email for driver notes</label><br />
-                <asp:TextBox ID="txtOfficeEmail" runat="server" MaxLength="200" TextMode="Email" Columns="40" />
-                <span class="sys-prefs-help">Leave empty to use the orders address (<asp:Literal ID="litOrdersEmail" runat="server" />).</span>
-            </p>
-            <p>
-                <label for="<%= txtLandlines.ClientID %>">Landline numbers start with</label><br />
-                <asp:TextBox ID="txtLandlines" runat="server" MaxLength="200" Columns="40" />
-                <span class="sys-prefs-help">Separate with commas, e.g. <code>021, 011, 087</code>. The app offers no WhatsApp for these numbers
-                    (only Call). Written the local way: <code>021</code> also covers +27 21 and 27 21. Empty = every number may use WhatsApp.</span>
-            </p>
-            <div class="button-row">
+
+            <h4 class="gps-settings-heading">Completing Deliveries</h4>
+            <table class="detail-form-table sys-prefs-form-table driver-app-form">
+                <tr>
+                    <td class="sys-prefs-label">Order Done</td>
+                    <td class="sys-prefs-field">
+                        <asp:CheckBox ID="chkRunDone" runat="server" Text="Complete the order in Tracker (run Done) when the driver sends a delivery" />
+                        <div class="driver-app-help">Runs the same steps as the Done button on the delivery sheet, in the background once the
+                            delivery is saved. Deliveries with items still to follow are always left for the office. When off, the office
+                            completes orders from the delivery sheet.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="sys-prefs-label">Proof of delivery</td>
+                    <td class="sys-prefs-field">
+                        <asp:CheckBox ID="chkSendConfirmation" runat="server" Text="Email the client the proof of delivery" />
+                        <div class="driver-app-help">A PDF with the order, what was delivered or is still to follow, who received it, when,
+                            whether they accepted the terms, and the signature; copied to the orders address. It replaces the "delivered" email
+                            Done would send, so the client gets one email. The office can also email it later from Contact Details → Proof of Delivery.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="sys-prefs-label">How it was delivered</td>
+                    <td class="sys-prefs-field">
+                        <a href="../Pages/Lookups.aspx?tab=Delivery%20Outcomes">Lookups → Delivery Outcomes</a>
+                        <div class="driver-app-help">The choices the driver picks from (e.g. "Handed to the contact", "Collected", "Nobody there"):
+                            add to, reword, reorder or switch off. Changes reach the phones the next time they have signal.</div>
+                    </td>
+                </tr>
+            </table>
+
+            <h4 class="gps-settings-heading">Signature and Terms</h4>
+            <table class="detail-form-table sys-prefs-form-table driver-app-form">
+                <tr>
+                    <td class="sys-prefs-label"><label for="<%= txtTerms.ClientID %>">Terms accepted on signing</label></td>
+                    <td class="sys-prefs-field">
+                        <asp:TextBox ID="txtTerms" runat="server" TextMode="MultiLine" Rows="4" MaxLength="1000" CssClass="sys-prefs-input driver-app-terms" />
+                        <div class="driver-app-help">Shown with a tick box above the signature on the app; a signature needs the box ticked.
+                            The wording they accepted is kept with the proof and printed on the proof of delivery.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="sys-prefs-label"><label for="<%= txtTermsUrl.ClientID %>">Full terms link</label></td>
+                    <td class="sys-prefs-field">
+                        <asp:TextBox ID="txtTermsUrl" runat="server" MaxLength="300" TextMode="Url" CssClass="sys-prefs-input" />
+                        <div class="driver-app-help">Opens from the app ("Read the terms") and is printed on the proof of delivery.</div>
+                    </td>
+                </tr>
+            </table>
+
+            <h4 class="gps-settings-heading">Notes and Calls</h4>
+            <table class="detail-form-table sys-prefs-form-table driver-app-form">
+                <tr>
+                    <td class="sys-prefs-label">Notes to the office</td>
+                    <td class="sys-prefs-field">
+                        <asp:CheckBox ID="chkNotesToOffice" runat="server" Text="Drivers may email their delivery note to the office" />
+                        <div class="driver-app-help">For example when the client asks for a change to their order.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="sys-prefs-label"><label for="<%= txtOfficeEmail.ClientID %>">Office email</label></td>
+                    <td class="sys-prefs-field">
+                        <asp:TextBox ID="txtOfficeEmail" runat="server" MaxLength="200" TextMode="Email" CssClass="sys-prefs-input driver-app-short" />
+                        <div class="driver-app-help">Where driver notes go. Leave empty to use the orders address (<asp:Literal ID="litOrdersEmail" runat="server" />).</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="sys-prefs-label"><label for="<%= txtLandlines.ClientID %>">Landline numbers start with</label></td>
+                    <td class="sys-prefs-field">
+                        <asp:TextBox ID="txtLandlines" runat="server" MaxLength="200" CssClass="sys-prefs-input driver-app-short" />
+                        <div class="driver-app-help">Separate with commas, e.g. <code>021, 011, 087</code>. The app offers only Call (no WhatsApp)
+                            for these numbers. Written the local way: <code>021</code> also covers +27 21 and 27 21. Empty = every number may use WhatsApp.</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="button-row driver-app-save">
                 <asp:Button ID="btnSaveSettings" runat="server" Text="Save settings" CssClass="filter-panel-btn" OnClick="btnSaveSettings_Click" />
-                <span class="small"><asp:Literal ID="litSettingsInfo" runat="server" /></span>
+                <span class="sys-prefs-saved-hint"><asp:Literal ID="litSettingsInfo" runat="server" /></span>
             </div>
-            <p>
-                <strong>How it was delivered</strong><br />
-                The choices the driver picks from (e.g. "Handed to the contact", "Collected", "Nobody there") are a list you can
-                add to, reword, reorder or switch off:
-                <a href="../Pages/Lookups.aspx?tab=Delivery%20Outcomes">Lookups → Delivery Outcomes</a>.
-                <span class="sys-prefs-help">Changes reach the phones the next time they have signal.</span>
-            </p>
         </asp:Panel>
 
         <asp:Panel ID="pnlAwaiting" runat="server" Visible="false" CssClass="complex-form-section driver-app-awaiting">
@@ -117,7 +149,7 @@
         </asp:Panel>
 
         <div class="complex-form-section">
-            <h3>Android phone or tablet</h3>
+            <h3>Android Phone or Tablet</h3>
             <asp:Panel ID="pnlApk" runat="server">
                 <p>
                     <a class="driver-app-download" href="<%= ApkUrl %>" download="QuaffeeDriver.apk">Download the app</a>
@@ -141,7 +173,7 @@
         </div>
 
         <div class="complex-form-section">
-            <h3>Any phone, including iPhone (web app)</h3>
+            <h3>Any Phone, Including iPhone (Web App)</h3>
             <p>Open <a href="<%= WebAppUrl %>"><%= WebAppUrl %></a> on the phone, then:</p>
             <ul>
                 <li><strong>Android (Chrome):</strong> menu ⋮ → <strong>Install app</strong> (or Add to Home screen).</li>
@@ -152,7 +184,7 @@
         </div>
 
         <div class="complex-form-section">
-            <h3>Delivery order</h3>
+            <h3>Delivery Order</h3>
             <p>Each delivery sent from the app records which stop it was that day, and the suggested route learns from it.
                 <a href="DeliveryOrder.aspx">See the order deliveries were made</a>.</p>
         </div>

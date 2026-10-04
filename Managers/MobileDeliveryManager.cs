@@ -31,24 +31,19 @@ namespace TrackerSQL.Managers
 
         private readonly MobileApiRepository _repo = new MobileApiRepository();
 
-        /// <param name="collections">The app lists depot collections too (0.5.5+); only used when the person hands them over.</param>
-        public List<MobileDeliveryDate> GetDates(MobileTokenUser user, bool collections = false)
+        /// <summary>Dates with counts; "collections" only for people ticked Collections in Lookups → People.</summary>
+        public List<MobileDeliveryDate> GetDates(MobileTokenUser user)
         {
             MobileApiSchemaInstaller.EnsureReady();
-            return _repo.GetDeliveryDates(TimeZoneUtils.Now().Date, user?.PersonId, WithCollections(user?.PersonId, collections));
+            int? personId = user?.PersonId;
+            bool withCollections = personId.HasValue && new PersonsRepository().HandsOverCollections(personId.Value);
+            return _repo.GetDeliveryDates(TimeZoneUtils.Now().Date, personId, withCollections);
         }
 
-        /// <summary>The person is ticked "Collections" in Lookups → People and the app asked for them.</summary>
-        private static bool WithCollections(int? personId, bool asked)
-        {
-            return asked && personId.HasValue && new PersonsRepository().HandsOverCollections(personId.Value);
-        }
-
-        /// <param name="collections">Also the day's depot collections when this person hands them over (Lookups → People).</param>
-        public MobileDeliverySheet GetSheet(DateTime date, int? personId, bool collections = false)
+        /// <param name="collectionsOnly">Only the day's depot collections (orders for "Collect (shop)" people).</param>
+        public MobileDeliverySheet GetSheet(DateTime date, int? personId, bool collectionsOnly = false)
         {
             MobileApiSchemaInstaller.EnsureReady();
-            bool withCollections = WithCollections(personId, collections);
             var sheet = new MobileDeliverySheet
             {
                 Date = date.ToString("yyyy-MM-dd"),
@@ -58,7 +53,7 @@ namespace TrackerSQL.Managers
 
             MobileDeliveryStop stop = null;
             var routeRows = new Dictionary<int, MobileApiRepository.SheetRow>();
-            foreach (var row in _repo.GetSheetRows(date, personId, null, withCollections))
+            foreach (var row in _repo.GetSheetRows(date, personId, null, collectionsOnly))
             {
                 if (stop == null || stop.OrderId != row.OrderID)
                 {
@@ -86,7 +81,7 @@ namespace TrackerSQL.Managers
             if (sheet.Orders.Count > 0)
             {
                 var stops = sheet.Orders.ToDictionary(o => o.OrderId);
-                foreach (var pair in _repo.GetSheetRepairs(date, personId, withCollections))
+                foreach (var pair in _repo.GetSheetRepairs(date, personId, collectionsOnly))
                 {
                     if (!stops.TryGetValue(pair.Key, out MobileDeliveryStop owner))
                         continue;

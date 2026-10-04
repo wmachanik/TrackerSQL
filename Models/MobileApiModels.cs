@@ -61,6 +61,8 @@ namespace TrackerSQL.Models
         public int Open { get; set; }
         /// <summary>Orders on this date for the signed-in driver (null when not linked to a person).</summary>
         public int? Mine { get; set; }
+        /// <summary>Depot collections on this date; only for people ticked Collections in Lookups → People (else null).</summary>
+        public int? Collections { get; set; }
     }
 
     public class MobileDeliverySheet

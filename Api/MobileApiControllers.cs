@@ -67,37 +67,44 @@ namespace TrackerSQL.Api
     {
         /// <summary>Delivery dates with order counts ("mine" = orders for the signed-in driver).</summary>
         [HttpGet, Route("dates")]
-        public HttpResponseMessage Dates(bool collections = false)
+        public HttpResponseMessage Dates()
         {
-            return JsonWithETag(new MobileDeliveryManager().GetDates(CurrentUser, collections));
+            return JsonWithETag(new MobileDeliveryManager().GetDates(CurrentUser));
         }
 
         /// <summary>
-        /// The day's delivery sheet for offline use. person = "me" (default), "all" or a PersonID.
-        /// collections = true adds the day's depot collections to "me" when the person hands them over (Lookups → People).
+        /// The day's delivery sheet for offline use. person = "me" (default), "all", "collections" (depot collections only) or a PersonID.
         /// Send the last ETag in If-None-Match to get 304 when nothing changed.
         /// </summary>
         [HttpGet, Route("sheet")]
-        public HttpResponseMessage Sheet(string date = null, string person = "me", bool collections = false)
+        public HttpResponseMessage Sheet(string date = null, string person = "me")
         {
             if (!TryParseDate(date, out DateTime day))
                 return Error(HttpStatusCode.BadRequest, "date must be yyyy-MM-dd.");
 
             int? personId;
+            bool collectionsOnly = false;
             string p = (person ?? "me").Trim();
             if (p.Equals("all", StringComparison.OrdinalIgnoreCase))
                 personId = null;
+            else if (p.Equals("collections", StringComparison.OrdinalIgnoreCase))
+            {
+                personId = null;
+                collectionsOnly = true;
+            }
             else if (p.Equals("me", StringComparison.OrdinalIgnoreCase) || p.Length == 0)
                 personId = CurrentUser.PersonId;
             else if (int.TryParse(p, out int id) && id > 0)
                 personId = id;
             else
-                return Error(HttpStatusCode.BadRequest, "person must be \"me\", \"all\" or a person id.");
+                return Error(HttpStatusCode.BadRequest, "person must be \"me\", \"all\", \"collections\" or a person id.");
 
-            if (personId != CurrentUser.PersonId)
+            if (collectionsOnly)
+                LogNote("Viewed the depot collections");
+            else if (personId != CurrentUser.PersonId)
                 LogNote(personId.HasValue ? "Viewed person " + personId + "'s deliveries" : "Viewed everyone's deliveries");
 
-            var sheet = new MobileDeliveryManager().GetSheet(day, personId, collections && personId.HasValue && personId == CurrentUser.PersonId);
+            var sheet = new MobileDeliveryManager().GetSheet(day, personId, collectionsOnly);
             return JsonWithETag(sheet, new { sheet.Date, sheet.PersonId, sheet.Orders, sheet.RouteNote });
         }
 

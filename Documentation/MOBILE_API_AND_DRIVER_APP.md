@@ -54,7 +54,7 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `GET ping` | anyone | `{ ok, api, version, serverTime }` |
 | `POST auth/login` | anyone | Tracker login; must be linked to a person (Lookups → People, Security Username) or be an admin. 429 when throttled. |
 | `POST auth/logout`, `GET auth/me` | device | |
-| `GET delivery/dates`, `GET delivery/sheet?date=&person=me\|all\|id` | device | ETag / 304. `collections=true` (0.5.5+) adds depot collections to "me" / "mine" for people ticked Collections in Lookups → People |
+| `GET delivery/dates`, `GET delivery/sheet?date=&person=me\|all\|collections\|id` | device | ETag / 304. `person=collections`: depot collections only; dates carry `collections` for people ticked Collections in Lookups → People |
 | `POST delivery/sync` | device | Up to 100 deliveries; `clientRef` makes retries safe; `lines` for short deliveries; `noteToOffice`; `termsAccepted` and `terms` (the wording shown) for signed deliveries (0.5.3+) |
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
@@ -160,12 +160,12 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   without the signer's name in *Received by*. The proof stores
   `TermsAccepted` and `TermsText` (the wording shown, or the current setting for older apps, whose `termsAccepted` is
   null). Defaults in `MobileApiSettingsManager` (`DefaultDeliveryTerms`, `DefaultTermsUrl`).
-- **Depot collections** (0.5.5, DriverGps-07): people ticked **Collections** in Lookups → People
-  (`PeopleTbl.HandsOverCollections`) also get the day's orders whose Delivered by person is *Collect (shop)*
-  (`DeliveryType` COLLECT) on "Mine", when the app asks with `collections=true` on `delivery/sheet` and
-  `delivery/dates` (older apps don't, so their list is unchanged). Those stops carry `collection: true`, are numbered by
-  client name (no route planning or road times) and show under **Collections at the Depot**, outside the route,
-  expected times and Change order. Collected / Not collected preselects the "collected by the client" outcome (Not at
+- **Depot collections** (0.5.5, DriverGps-07): `delivery/sheet?person=collections` returns only the day's orders whose
+  Delivered by person is *Collect (shop)* (`DeliveryType` COLLECT). For people ticked **Collections** in Lookups → People
+  (`PeopleTbl.HandsOverCollections`) `delivery/dates` also sends `collections` (that count per date; otherwise it is left
+  out), and the app then shows a third view next to Mine (person icon) and Everyone (people icon): **Collections** (hand
+  icon; labels show on wider screens, icons only on a phone). Collection stops carry `collection: true`, are numbered by
+  client name (no route planning, road times or expected times). Collected / Not collected preselects the "collected by the client" outcome (Not at
   client, needs a name) so the name, terms tick and signature are ready. On sync an order delivered by a COLLECT person
   is always stored Not at the client and never records a delivery-order visit, whatever outcome was chosen.
 - **Walk-in stops:** for ZZName orders the sheet's `company` / `contactName` is the walk-in name from the notes and

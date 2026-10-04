@@ -94,27 +94,21 @@ namespace TrackerSQL.Repositories
         // ---------------- Delivery sheet ----------------
 
         /// <summary>Orders delivered by a "Collect (shop)" person: collected by the client at the depot.</summary>
-        private static string CollectionPeopleSql(string personColumn)
+        private static string CollectionsOnlySql()
         {
-            return personColumn + " IN (SELECT cp.PersonID FROM PeopleTbl cp WHERE cp.DeliveryType = '" + DeliveryTypes.Collect + "')";
-        }
-
-        /// <summary>The driver's own orders, plus depot collections when they hand those over.</summary>
-        private static string PersonFilterSql(bool withCollections)
-        {
-            return withCollections && PersonsRepository.HasDeliveryTypeColumn()
-                ? "(o.ToBeDeliveredByID = @PersonID OR " + CollectionPeopleSql("o.ToBeDeliveredByID") + ")"
-                : "o.ToBeDeliveredByID = @PersonID";
+            return "o.ToBeDeliveredByID IN (SELECT cp.PersonID FROM PeopleTbl cp WHERE cp.DeliveryType = '" + DeliveryTypes.Collect + "')";
         }
 
         /// <summary>Dates that still have open orders (as the web Delivery Sheet), plus today.</summary>
+        /// <param name="withCollections">Also count each date's depot collections (people who hand them over).</param>
         public List<MobileDeliveryDate> GetDeliveryDates(DateTime today, int? personId, bool withCollections = false)
         {
             string sql = @"
                 SELECT CAST(o.RequiredByDate AS DATE) AS DeliveryDate,
                        COUNT(*) AS Orders,
                        SUM(CASE WHEN o.Done = 0 THEN 1 ELSE 0 END) AS OpenOrders,
-                       SUM(CASE WHEN {MINE} THEN 1 ELSE 0 END) AS Mine
+                       SUM(CASE WHEN o.ToBeDeliveredByID = @PersonID THEN 1 ELSE 0 END) AS Mine,
+                       {COLLECTIONS} AS Collections
                 FROM OrdersTbl o{BY_JOIN}
                 WHERE o.RequiredByDate IS NOT NULL
                   AND EXISTS (SELECT 1 FROM OrderLinesTbl ol WHERE ol.OrderID = o.OrderID)
@@ -128,15 +122,16 @@ namespace TrackerSQL.Repositories
             // A subquery is not allowed inside SUM, so the Delivered by person is joined.
             bool collections = withCollections && PersonsRepository.HasDeliveryTypeColumn();
             sql = sql.Replace("{BY_JOIN}", collections ? "\n                LEFT JOIN PeopleTbl bp ON bp.PersonID = o.ToBeDeliveredByID" : string.Empty)
-                     .Replace("{MINE}", collections
-                         ? "(o.ToBeDeliveredByID = @PersonID OR bp.DeliveryType = '" + DeliveryTypes.Collect + "')"
-                         : "o.ToBeDeliveredByID = @PersonID");
+                     .Replace("{COLLECTIONS}", collections
+                         ? "SUM(CASE WHEN bp.DeliveryType = '" + DeliveryTypes.Collect + "' THEN 1 ELSE 0 END)"
+                         : "0");
             return Query(sql, r => new MobileDeliveryDate
             {
                 Date = Convert.ToDateTime(r["DeliveryDate"]).ToString("yyyy-MM-dd"),
                 Orders = Convert.ToInt32(r["Orders"]),
                 Open = Convert.ToInt32(r["OpenOrders"]),
-                Mine = personId.HasValue ? Convert.ToInt32(r["Mine"]) : (int?)null
+                Mine = personId.HasValue ? Convert.ToInt32(r["Mine"]) : (int?)null,
+                Collections = collections ? Convert.ToInt32(r["Collections"]) : (int?)null
             }, P("@Today", today.Date, DbType.Date), P("@PersonID", personId ?? -1, DbType.Int32));
         }
 
@@ -198,7 +193,7 @@ namespace TrackerSQL.Repositories
         /// One row per order line for the date (optionally one driver), with contact and latest proof. Rows are in route order
         /// per driver: geohash (the contact's point or its area's cell), then the old area order for stops with neither.
         /// </summary>
-        public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null, bool withCollections = false)
+        public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null, bool collectionsOnly = false)
         {
             string sql = @"
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
@@ -251,9 +246,11 @@ namespace TrackerSQL.Repositories
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
-                sql += " AND " + PersonFilterSql(withCollections);
+                sql += " AND o.ToBeDeliveredByID = @PersonID";
                 ps.Add(P("@PersonID", personId.Value, DbType.Int32));
             }
+            if (collectionsOnly && PersonsRepository.HasDeliveryTypeColumn())
+                sql += " AND " + CollectionsOnlySql();
             if (orderId.HasValue)
             {
                 sql += " AND o.OrderID = @OrderID";
@@ -317,7 +314,7 @@ namespace TrackerSQL.Repositories
         }
 
         /// <summary>Repairs whose related order line is on an order due on the date (optionally one driver), keyed by OrderID.</summary>
-        public List<KeyValuePair<int, MobileStopRepair>> GetSheetRepairs(DateTime date, int? personId, bool withCollections = false)
+        public List<KeyValuePair<int, MobileStopRepair>> GetSheetRepairs(DateTime date, int? personId, bool collectionsOnly = false)
         {
             string sql = @"
                 SELECT ol.OrderID, r.RepairID, r.JobCardNumber, e.EquipTypeName, r.EquipSerialNumber,
@@ -332,9 +329,11 @@ namespace TrackerSQL.Repositories
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
-                sql += " AND " + PersonFilterSql(withCollections);
+                sql += " AND o.ToBeDeliveredByID = @PersonID";
                 ps.Add(P("@PersonID", personId.Value, DbType.Int32));
             }
+            if (collectionsOnly && PersonsRepository.HasDeliveryTypeColumn())
+                sql += " AND " + CollectionsOnlySql();
             sql += " ORDER BY ol.OrderID, r.RepairID";
 
             return Query(sql, r => new KeyValuePair<int, MobileStopRepair>(Convert.ToInt32(r["OrderID"]), new MobileStopRepair

@@ -93,15 +93,29 @@ namespace TrackerSQL.Repositories
 
         // ---------------- Delivery sheet ----------------
 
-        /// <summary>Dates that still have open orders (as the web Delivery Sheet), plus today.</summary>
-        public List<MobileDeliveryDate> GetDeliveryDates(DateTime today, int? personId)
+        /// <summary>Orders delivered by a "Collect (shop)" person: collected by the client at the depot.</summary>
+        private static string CollectionPeopleSql(string personColumn)
         {
-            const string sql = @"
+            return personColumn + " IN (SELECT cp.PersonID FROM PeopleTbl cp WHERE cp.DeliveryType = '" + DeliveryTypes.Collect + "')";
+        }
+
+        /// <summary>The driver's own orders, plus depot collections when they hand those over.</summary>
+        private static string PersonFilterSql(bool withCollections)
+        {
+            return withCollections && PersonsRepository.HasDeliveryTypeColumn()
+                ? "(o.ToBeDeliveredByID = @PersonID OR " + CollectionPeopleSql("o.ToBeDeliveredByID") + ")"
+                : "o.ToBeDeliveredByID = @PersonID";
+        }
+
+        /// <summary>Dates that still have open orders (as the web Delivery Sheet), plus today.</summary>
+        public List<MobileDeliveryDate> GetDeliveryDates(DateTime today, int? personId, bool withCollections = false)
+        {
+            string sql = @"
                 SELECT CAST(o.RequiredByDate AS DATE) AS DeliveryDate,
                        COUNT(*) AS Orders,
                        SUM(CASE WHEN o.Done = 0 THEN 1 ELSE 0 END) AS OpenOrders,
-                       SUM(CASE WHEN o.ToBeDeliveredByID = @PersonID THEN 1 ELSE 0 END) AS Mine
-                FROM OrdersTbl o
+                       SUM(CASE WHEN {MINE} THEN 1 ELSE 0 END) AS Mine
+                FROM OrdersTbl o{BY_JOIN}
                 WHERE o.RequiredByDate IS NOT NULL
                   AND EXISTS (SELECT 1 FROM OrderLinesTbl ol WHERE ol.OrderID = o.OrderID)
                   AND (CAST(o.RequiredByDate AS DATE) = @Today
@@ -111,6 +125,12 @@ namespace TrackerSQL.Repositories
                              AND EXISTS (SELECT 1 FROM OrderLinesTbl xl WHERE xl.OrderID = x.OrderID)))
                 GROUP BY CAST(o.RequiredByDate AS DATE)
                 ORDER BY DeliveryDate";
+            // A subquery is not allowed inside SUM, so the Delivered by person is joined.
+            bool collections = withCollections && PersonsRepository.HasDeliveryTypeColumn();
+            sql = sql.Replace("{BY_JOIN}", collections ? "\n                LEFT JOIN PeopleTbl bp ON bp.PersonID = o.ToBeDeliveredByID" : string.Empty)
+                     .Replace("{MINE}", collections
+                         ? "(o.ToBeDeliveredByID = @PersonID OR bp.DeliveryType = '" + DeliveryTypes.Collect + "')"
+                         : "o.ToBeDeliveredByID = @PersonID");
             return Query(sql, r => new MobileDeliveryDate
             {
                 Date = Convert.ToDateTime(r["DeliveryDate"]).ToString("yyyy-MM-dd"),
@@ -170,13 +190,15 @@ namespace TrackerSQL.Repositories
             public string GpsStatus;
             /// <summary>The contact's usual delivery person collects or is a courier.</summary>
             public bool CollectsOrCourier;
+            /// <summary>The order's Delivered by person is "Collect (shop)": collected by the client at the depot.</summary>
+            public bool Collection;
         }
 
         /// <summary>
         /// One row per order line for the date (optionally one driver), with contact and latest proof. Rows are in route order
         /// per driver: geohash (the contact's point or its area's cell), then the old area order for stops with neither.
         /// </summary>
-        public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null)
+        public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null, bool withCollections = false)
         {
             string sql = @"
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
@@ -190,7 +212,7 @@ namespace TrackerSQL.Repositories
                        pr.MissingItems AS ProofMissingItems,
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
                        pr.NotAtClient AS ProofNotAtClient,
-                       {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}, {GPS_COLS}, {AGENT_COL}
+                       {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}, {GPS_COLS}, {AGENT_COL}, {BY_TYPE} AS DeliveryByType
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
@@ -221,14 +243,15 @@ namespace TrackerSQL.Repositories
                          : "CAST(NULL AS FLOAT) AS GpsLat, CAST(NULL AS FLOAT) AS GpsLng, CAST(NULL AS VARCHAR(20)) AS GpsSource, CAST(NULL AS VARCHAR(20)) AS GpsStatus");
             sql = sql.Replace("{AGENT_COL}", PersonsRepository.HasDeliveryTypeColumn()
                 ? "(SELECT TOP 1 ag.DeliveryType FROM PeopleTbl ag WHERE ag.PersonID = c.PreferredAgentID) AS AgentDeliveryType"
-                : "CAST(NULL AS VARCHAR(20)) AS AgentDeliveryType");
+                : "CAST(NULL AS VARCHAR(20)) AS AgentDeliveryType")
+                .Replace("{BY_TYPE}", PersonsRepository.HasDeliveryTypeColumn() ? "p.DeliveryType" : "CAST(NULL AS VARCHAR(10))");
             bool learn = DeliveryVisitRepository.TableSeen();
             sql = sql.Replace("{LEARN_JOIN}", learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
                      .Replace("{LEARN_COLS}", learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits");
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
-                sql += " AND o.ToBeDeliveredByID = @PersonID";
+                sql += " AND " + PersonFilterSql(withCollections);
                 ps.Add(P("@PersonID", personId.Value, DbType.Int32));
             }
             if (orderId.HasValue)
@@ -288,12 +311,13 @@ namespace TrackerSQL.Repositories
                 GpsLng = r["GpsLng"] == DBNull.Value ? (double?)null : Convert.ToDouble(r["GpsLng"]),
                 GpsSource = Str(r, "GpsSource"),
                 GpsStatus = Str(r, "GpsStatus"),
-                CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect
+                CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect,
+                Collection = Str(r, "DeliveryByType") == DeliveryTypes.Collect
             }, ps.ToArray());
         }
 
         /// <summary>Repairs whose related order line is on an order due on the date (optionally one driver), keyed by OrderID.</summary>
-        public List<KeyValuePair<int, MobileStopRepair>> GetSheetRepairs(DateTime date, int? personId)
+        public List<KeyValuePair<int, MobileStopRepair>> GetSheetRepairs(DateTime date, int? personId, bool withCollections = false)
         {
             string sql = @"
                 SELECT ol.OrderID, r.RepairID, r.JobCardNumber, e.EquipTypeName, r.EquipSerialNumber,
@@ -308,7 +332,7 @@ namespace TrackerSQL.Repositories
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
-                sql += " AND o.ToBeDeliveredByID = @PersonID";
+                sql += " AND " + PersonFilterSql(withCollections);
                 ps.Add(P("@PersonID", personId.Value, DbType.Int32));
             }
             sql += " ORDER BY ol.OrderID, r.RepairID";

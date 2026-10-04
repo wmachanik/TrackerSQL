@@ -8,6 +8,7 @@ Not released yet. 3.0.3.4 went live on 2026-10-03.
 
 ### Features
 - **Deliveries Waiting for Order Done is its own page** — **Deliveries → Waiting for Order Done** (also a card on **All delivery tools**; administrators). Same list and **Complete Now** as before, with a Refresh button. Opened from a red flag it highlights that order's row.
+- **Depot collections in the driver app (Quaffee Driver 0.5.5)** — most clients who collect at the depot don't sign, but some must. **Lookups → People → Collections** marks who hands collections over (first run ticks our own drivers SQ, MX and WM, and anyone named Sisanda). Their app's **Mine** list then has a **Collections at the Depot** group with the day's orders delivered by a *Collect (shop)* person, kept out of the route, the expected times and Change order. Opening one shows "Collection at the depot"; **Collected** preselects *Collected by the client*, so the client's name, the terms tick and the signature are ready, and the proof of delivery works as for a delivery. A collection never changes the client's GPS point or the driver's delivery order. People not ticked, and older apps, see no change.
 - **Red flag on the Delivery Sheet** — an order the driver delivered from the app that is still not done in Tracker shows a red flag next to the client: *Order Done failed*, *Items to follow: …* or *Left for the office* (orange *Being completed* while the background run is busy). Hover shows when and by whom it was delivered and the reason; clicking opens the Waiting for Order Done page on that order (non-administrators go to the order). Not shown on the printed sheet.
 
 ### Changes
@@ -15,7 +16,8 @@ Not released yet. 3.0.3.4 went live on 2026-10-03.
 - **Driver App page panels** — the waiting list moved to its own page; a *Deliveries From the App* panel links to it (with how many are waiting) and to Delivery Order. The phone set-up is in its own *Install the App on a Phone or Tablet* panel, with Android and "Any Phone, Including iPhone" side by side.
 
 ### Go-live notes
-- Upload `bin/`, `Tools/DeliveriesAwaitingDone.aspx` (new), `Tools/DriverApp.aspx`, `Tools/Deliveries.aspx`, `Site.Master` and `Styles/Site.css` (stylesheet version `20261003-05`, so browsers load the new one). No schema change. In the live `Web.config` change only `Version` to 3.0.3.5.
+- Upload `bin/`, `Tools/DeliveriesAwaitingDone.aspx` (new), `Tools/DriverApp.aspx`, `Tools/Deliveries.aspx`, `Pages/Lookups.aspx`, `Site.Master` and `Styles/Site.css` (stylesheet version `20261003-05`, so browsers load the new one), `App_Data/SQLCommands-DriverGps-07.xml` (new; runs at start-up: `PeopleTbl.HandsOverCollections`), the `driver/` folder (web app 0.5.5) and `Downloads/QuaffeeDriver.apk` with `Downloads/QuaffeeDriver.json` (0.5.5; phones offer Update). In the live `Web.config` change only `Version` to 3.0.3.5.
+- After the first start check **Lookups → People → Collections**: SQ, MX and WM are ticked. Sisanda needs a People row with her Tracker login under Username (Delivery Type *None*) and Collections ticked before her app shows collections.
 
 ## 3.0.3.4 — 2026-10-03
 

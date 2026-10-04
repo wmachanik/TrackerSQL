@@ -18,5 +18,8 @@ namespace TrackerSQL.Models
 
         /// <summary>DELIVER, COURIER, COLLECT or NONE (DeliveryTypes). COURIER and IsDispatched are kept equal.</summary>
         public string DeliveryType { get; set; } = "NONE";
+
+        /// <summary>Hands over depot collections: their driver app lists orders delivered by a "Collect (shop)" person.</summary>
+        public bool HandsOverCollections { get; set; }
     }
 }

@@ -115,6 +115,8 @@ namespace TrackerSQL.Models
         public MobileStopGps Gps { get; set; }
         /// <summary>True when deliveries never change the client's point (walk-in, collects or goes by courier).</summary>
         public bool? NoGpsLearning { get; set; }
+        /// <summary>True when the client collects it at the depot (Delivered by a "Collect (shop)" person): not on the route.</summary>
+        public bool? Collection { get; set; }
     }
 
     public class MobileDeliveryItem

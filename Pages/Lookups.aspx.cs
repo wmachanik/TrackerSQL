@@ -2276,6 +2276,7 @@ namespace TrackerSQL.Pages
                 var ddlDeliveryType = (DropDownList)row.FindControl("ddlDeliveryType");
                 var ddlDayOfWeek = (DropDownList)row.FindControl("ddlDayOfWeek");
                 var ddlSecurityNames = (DropDownList)row.FindControl("ddlSecurityNames");
+                var cbxCollections = (CheckBox)row.FindControl("cbxHandsOverCollections");
                 string deliveryType = DeliveryTypes.Normalise(ddlDeliveryType?.SelectedValue);
 
                 var pPerson = new Person
@@ -2286,6 +2287,7 @@ namespace TrackerSQL.Pages
                     Enabled = cbxEnabled != null && cbxEnabled.Checked,
                     DeliveryType = deliveryType,
                     IsDispatched = deliveryType == DeliveryTypes.Courier,
+                    HandsOverCollections = cbxCollections != null && cbxCollections.Checked,
                     NormalDeliveryDoW = ddlDayOfWeek != null ? (int?)Convert.ToInt32(ddlDayOfWeek.SelectedValue) : 0,
                     SecurityUsername = ddlSecurityNames != null ? ddlSecurityNames.SelectedValue : ""
                 };
@@ -2427,6 +2429,7 @@ namespace TrackerSQL.Pages
                     string newDeliveryType = DeliveryTypes.Normalise(deliveryTypeDdl?.SelectedValue);
                     var dowDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlDayOfWeek");
                     var userDdl = (DropDownList)gvPeople.FooterRow.FindControl("ddlSecurityNames");
+                    var collectionsCbx = (CheckBox)gvPeople.FooterRow.FindControl("cbxHandsOverCollections");
 
                     if (personTbx == null || abrvTbx == null || enabledCbx == null || dowDdl == null || userDdl == null)
                     {
@@ -2441,6 +2444,7 @@ namespace TrackerSQL.Pages
                         Enabled = enabledCbx.Checked,
                         DeliveryType = newDeliveryType,
                         IsDispatched = newDeliveryType == DeliveryTypes.Courier,
+                        HandsOverCollections = collectionsCbx != null && collectionsCbx.Checked,
                         NormalDeliveryDoW = Convert.ToInt32(dowDdl.SelectedValue),
                         SecurityUsername = userDdl.SelectedValue
                     };

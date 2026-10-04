@@ -582,6 +582,21 @@
                                             <asp:DropDownList ID="ddlDeliveryType" runat="server" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Collections" SortExpression="HandsOverCollections"
+                                        HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight">
+                                        <HeaderTemplate>
+                                            <span title="Hands over collections at the depot: their driver app lists the day's orders delivered by a Collect (shop) person under Collections at the Depot, so they can get the client's name and signature. Needs a Username.">Collections</span>
+                                        </HeaderTemplate>
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxHandsOverCollections" runat="server" Text="Yes" Checked='<%# Bind("HandsOverCollections") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxHandsOverCollections" runat="server" Text="Yes" Checked='<%# Bind("HandsOverCollections") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxHandsOverCollections" runat="server" Text="Yes" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Normal Delivery DoW" SortExpression="NormalDeliveryDoW">
                                         <EditItemTemplate>
                                             <asp:DropDownList ID="ddlDayOfWeek" runat="server">

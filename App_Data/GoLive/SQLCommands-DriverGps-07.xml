@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Collections in the driver app (3.0.3.5).
+  - PeopleTbl.HandsOverCollections: this person hands over orders collected at the depot (orders whose Delivered by
+    person is "Collect (shop)"). Their driver app lists those orders under Collections at the Depot, so they can get
+    the client's name and signature (Lookups -> People -> Collections).
+  - First run only: ticks our own drivers (Delivery Type "Does deliveries") and anyone named Sisanda. Later changes
+    in Lookups are kept.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.PeopleTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'HandsOverCollections') IS NULL
+      BEGIN
+          ALTER TABLE dbo.PeopleTbl ADD HandsOverCollections BIT NOT NULL
+              CONSTRAINT DF_People_HandsOverCollections DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <!-- One-shot: who hands over collections to start with. -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.PeopleTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'HandsOverCollections') IS NOT NULL
+         AND COL_LENGTH(N'dbo.PeopleTbl', N'DeliveryType') IS NOT NULL
+         AND NOT EXISTS (
+             SELECT 1
+             FROM sys.extended_properties ep
+             WHERE ep.major_id = OBJECT_ID(N'dbo.PeopleTbl')
+               AND ep.minor_id = 0
+               AND ep.name = N'HandsOverCollectionsSeeded_v1')
+      BEGIN
+          EXEC (N'UPDATE dbo.PeopleTbl SET HandsOverCollections = 1
+                  WHERE Enabled = 1 AND (DeliveryType = ''DELIVER'' OR Person LIKE N''Sisanda%'')');
+
+          EXEC sys.sp_addextendedproperty
+              @name = N'HandsOverCollectionsSeeded_v1',
+              @value = N'1',
+              @level0type = N'SCHEMA', @level0name = N'dbo',
+              @level1type = N'TABLE',  @level1name = N'PeopleTbl';
+      END
+    ]]>
+  </command>
+</root>

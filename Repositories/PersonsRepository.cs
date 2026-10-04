@@ -41,6 +41,54 @@ WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'IsDispatched'") > 0;
         {
             _hasIsDispatched = null;
             _hasDeliveryType = null;
+            _hasHandsOverCollections = null;
+        }
+
+        private static bool? _hasHandsOverCollections;
+
+        /// <summary>PeopleTbl.HandsOverCollections comes from SQLCommands-DriverGps-07.xml (run at startup).</summary>
+        internal static bool HasHandsOverCollectionsColumn()
+        {
+            if (_hasHandsOverCollections.HasValue)
+                return _hasHandsOverCollections.Value;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _hasHandsOverCollections = db.ExecuteScalar<int>(@"
+SELECT COUNT(*) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'HandsOverCollections'") > 0;
+                }
+            }
+            catch
+            {
+                _hasHandsOverCollections = false;
+            }
+            return _hasHandsOverCollections.Value;
+        }
+
+        /// <summary>The person hands over depot collections, so their driver app lists them.</summary>
+        public bool HandsOverCollections(int personId)
+        {
+            if (personId <= 0 || !HasHandsOverCollectionsColumn() || !HasDeliveryTypeColumn())
+                return false;
+            return ExecuteScalar<bool?>("SELECT HandsOverCollections FROM PeopleTbl WHERE PersonID = @PersonID",
+                new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@PersonID", DataValue = personId, DataDbType = DbType.Int32 }
+                }) == true;
+        }
+
+        private void SaveHandsOverCollections(int personId, bool handsOver)
+        {
+            if (personId <= 0 || !HasHandsOverCollectionsColumn())
+                return;
+            ExecNonQuery("UPDATE PeopleTbl SET HandsOverCollections = @HandsOver WHERE PersonID = @PersonID",
+                new List<DBParameter>
+                {
+                    new DBParameter { ParamName = "@HandsOver", DataValue = handsOver, DataDbType = DbType.Boolean },
+                    new DBParameter { ParamName = "@PersonID", DataValue = personId, DataDbType = DbType.Int32 }
+                });
         }
 
         private static bool? _hasDeliveryType;
@@ -69,7 +117,8 @@ WHERE object_id = OBJECT_ID(N'dbo.PeopleTbl') AND name = N'DeliveryType'") > 0;
         private string SelectColumns =>
             SelectColumnsBase
             + (HasIsDispatchedColumn() ? ", IsDispatched" : string.Empty)
-            + (HasDeliveryTypeColumn() ? ", DeliveryType" : string.Empty);
+            + (HasDeliveryTypeColumn() ? ", DeliveryType" : string.Empty)
+            + (HasHandsOverCollectionsColumn() ? ", HandsOverCollections" : string.Empty);
 
         protected override string CoreColumns => SelectColumns;
 
@@ -326,7 +375,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 parameters.Add(new DBParameter { ParamName = "@DeliveryType", DataValue = entity.DeliveryType, DataDbType = DbType.AnsiString });
             }
 
-            return ExecuteScalar<int>(sql, parameters);
+            int newId = ExecuteScalar<int>(sql, parameters);
+            if (entity.HandsOverCollections)
+                SaveHandsOverCollections(newId, true);
+            return newId;
         }
 
         public override int Update(Person entity)
@@ -377,7 +429,9 @@ WHERE PersonID = @PersonID";
                 parameters.Add(new DBParameter { ParamName = "@DeliveryType", DataValue = entity.DeliveryType, DataDbType = DbType.AnsiString });
             }
 
-            return ExecNonQuery(sql, parameters);
+            int rows = ExecNonQuery(sql, parameters);
+            SaveHandsOverCollections(entity.PersonID, entity.HandsOverCollections);
+            return rows;
         }
 
         private static Person MapPerson(IDataRecord rdr)
@@ -385,6 +439,8 @@ WHERE PersonID = @PersonID";
             var p = DbMapper.Map<Person>(rdr);
             if (p != null && DbMapper.HasColumn(rdr, "IsDispatched") && rdr["IsDispatched"] != DBNull.Value)
                 p.IsDispatched = Convert.ToBoolean(rdr["IsDispatched"]);
+            if (p != null && DbMapper.HasColumn(rdr, "HandsOverCollections") && rdr["HandsOverCollections"] != DBNull.Value)
+                p.HandsOverCollections = Convert.ToBoolean(rdr["HandsOverCollections"]);
             if (p != null)
             {
                 string type = DbMapper.HasColumn(rdr, "DeliveryType") && rdr["DeliveryType"] != DBNull.Value

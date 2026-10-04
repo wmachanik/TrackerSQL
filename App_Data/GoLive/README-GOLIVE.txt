@@ -78,6 +78,8 @@ SQLCommands-DriverGps-05.xml   ← MobileDeliveryProofTbl.TermsAccepted / TermsT
                                  MobileApiSettingsTbl.DeliveryTerms / TermsUrl (terms tick box, POD PDF; 3.0.3.2)
 SQLCommands-DriverGps-06.xml   ← GpsSettingsTbl.UseRoadTimes; RoadLegTbl (HeiGIT road driving times between route
                                  points, kept 180 days; route order by road times; 3.0.3.3)
+SQLCommands-DriverGps-07.xml   ← PeopleTbl.HandsOverCollections (depot collections in the driver app; first run ticks
+                                 our own drivers and anyone named Sisanda; 3.0.3.5)
 SQLCommands-OrderDone-01.xml   ← WooCommerceSettingsTbl.CompleteWooOrderOnDone (Order Done marks the Woo order Completed);
                                  turns on Driver App "run Done" once (3.0.3.3)
 The Collected delivery outcome is now created with "needs a name" off (01 and MobileApi-01). Live already has the
@@ -100,7 +102,7 @@ Live steps:
    then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK once from Tools -> Driver App (0.5.4; upload Downloads/QuaffeeDriver.apk AND
+5. Driver app: install the new APK once from Tools -> Driver App (0.5.5; upload Downloads/QuaffeeDriver.apk AND
    Downloads/QuaffeeDriver.json; from 0.5.1 on (so after this install) the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
    starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
    simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work

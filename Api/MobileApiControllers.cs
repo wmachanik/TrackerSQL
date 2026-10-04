@@ -67,17 +67,18 @@ namespace TrackerSQL.Api
     {
         /// <summary>Delivery dates with order counts ("mine" = orders for the signed-in driver).</summary>
         [HttpGet, Route("dates")]
-        public HttpResponseMessage Dates()
+        public HttpResponseMessage Dates(bool collections = false)
         {
-            return JsonWithETag(new MobileDeliveryManager().GetDates(CurrentUser));
+            return JsonWithETag(new MobileDeliveryManager().GetDates(CurrentUser, collections));
         }
 
         /// <summary>
         /// The day's delivery sheet for offline use. person = "me" (default), "all" or a PersonID.
+        /// collections = true adds the day's depot collections to "me" when the person hands them over (Lookups → People).
         /// Send the last ETag in If-None-Match to get 304 when nothing changed.
         /// </summary>
         [HttpGet, Route("sheet")]
-        public HttpResponseMessage Sheet(string date = null, string person = "me")
+        public HttpResponseMessage Sheet(string date = null, string person = "me", bool collections = false)
         {
             if (!TryParseDate(date, out DateTime day))
                 return Error(HttpStatusCode.BadRequest, "date must be yyyy-MM-dd.");
@@ -96,7 +97,7 @@ namespace TrackerSQL.Api
             if (personId != CurrentUser.PersonId)
                 LogNote(personId.HasValue ? "Viewed person " + personId + "'s deliveries" : "Viewed everyone's deliveries");
 
-            var sheet = new MobileDeliveryManager().GetSheet(day, personId);
+            var sheet = new MobileDeliveryManager().GetSheet(day, personId, collections && personId.HasValue && personId == CurrentUser.PersonId);
             return JsonWithETag(sheet, new { sheet.Date, sheet.PersonId, sheet.Orders, sheet.RouteNote });
         }
 

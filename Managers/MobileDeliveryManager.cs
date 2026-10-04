@@ -31,15 +31,24 @@ namespace TrackerSQL.Managers
 
         private readonly MobileApiRepository _repo = new MobileApiRepository();
 
-        public List<MobileDeliveryDate> GetDates(MobileTokenUser user)
+        /// <param name="collections">The app lists depot collections too (0.5.5+); only used when the person hands them over.</param>
+        public List<MobileDeliveryDate> GetDates(MobileTokenUser user, bool collections = false)
         {
             MobileApiSchemaInstaller.EnsureReady();
-            return _repo.GetDeliveryDates(TimeZoneUtils.Now().Date, user?.PersonId);
+            return _repo.GetDeliveryDates(TimeZoneUtils.Now().Date, user?.PersonId, WithCollections(user?.PersonId, collections));
         }
 
-        public MobileDeliverySheet GetSheet(DateTime date, int? personId)
+        /// <summary>The person is ticked "Collections" in Lookups → People and the app asked for them.</summary>
+        private static bool WithCollections(int? personId, bool asked)
+        {
+            return asked && personId.HasValue && new PersonsRepository().HandsOverCollections(personId.Value);
+        }
+
+        /// <param name="collections">Also the day's depot collections when this person hands them over (Lookups → People).</param>
+        public MobileDeliverySheet GetSheet(DateTime date, int? personId, bool collections = false)
         {
             MobileApiSchemaInstaller.EnsureReady();
+            bool withCollections = WithCollections(personId, collections);
             var sheet = new MobileDeliverySheet
             {
                 Date = date.ToString("yyyy-MM-dd"),
@@ -49,7 +58,7 @@ namespace TrackerSQL.Managers
 
             MobileDeliveryStop stop = null;
             var routeRows = new Dictionary<int, MobileApiRepository.SheetRow>();
-            foreach (var row in _repo.GetSheetRows(date, personId))
+            foreach (var row in _repo.GetSheetRows(date, personId, null, withCollections))
             {
                 if (stop == null || stop.OrderId != row.OrderID)
                 {
@@ -77,7 +86,7 @@ namespace TrackerSQL.Managers
             if (sheet.Orders.Count > 0)
             {
                 var stops = sheet.Orders.ToDictionary(o => o.OrderId);
-                foreach (var pair in _repo.GetSheetRepairs(date, personId))
+                foreach (var pair in _repo.GetSheetRepairs(date, personId, withCollections))
                 {
                     if (!stops.TryGetValue(pair.Key, out MobileDeliveryStop owner))
                         continue;
@@ -149,6 +158,14 @@ namespace TrackerSQL.Managers
             var result = new List<MobileDeliveryStop>(stops.Count);
             foreach (var driverStops in stops.GroupBy(s => s.DeliveryById ?? 0))
             {
+                if (driverStops.All(s => s.Collection == true))
+                {
+                    List<MobileDeliveryStop> collections = driverStops.OrderBy(s => s.Company, StringComparer.OrdinalIgnoreCase).ToList();
+                    for (int i = 0; i < collections.Count; i++)
+                        collections[i].Seq = i + 1;
+                    result.AddRange(collections);
+                    continue;
+                }
                 List<MobileDeliveryStop> route = RoutePlanner.Order(driverStops.ToList(),
                     s => routeRows.TryGetValue(s.OrderId, out var row) ? row.RouteHash : null, depotLat, depotLng, roadSeconds);
                 route = RoutePlanner.ApplyLearned(route, s => s.ContactId,
@@ -214,7 +231,8 @@ namespace TrackerSQL.Managers
                             Review = row.GpsStatus == CustomerLocation.StatusReviewRequired
                         }
                         : new MobileStopGps { Kind = "none" },
-                NoGpsLearning = sundry || row.CollectsOrCourier ? true : (bool?)null
+                NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection ? true : (bool?)null,
+                Collection = row.Collection ? true : (bool?)null
             };
         }
 
@@ -423,7 +441,10 @@ namespace TrackerSQL.Managers
                 return Fail(item, "A delivered order needs how it was delivered, the received-by name or a signature.");
             if (outcome == OutcomeNotDelivered && reason.Length == 0 && string.IsNullOrWhiteSpace(item.Note))
                 return Fail(item, "Say why it was not delivered.");
-            bool notAtClient = outcome == OutcomeDelivered && IsNotAtClientOption(reason);
+            // Handed over at the depot: where the phone is says nothing about the client or the route.
+            bool collection = order.DeliveryById.HasValue
+                && new PersonsRepository().GetDeliveryType(order.DeliveryById.Value) == DeliveryTypes.Collect;
+            bool notAtClient = outcome == OutcomeDelivered && (collection || IsNotAtClientOption(reason));
             bool? termsAccepted = outcome == OutcomeDelivered ? item.TermsAccepted : null;
             var settings = Settings;
             // A short delivery is left for the office: Order Done would close items that are still to follow.
@@ -491,6 +512,7 @@ namespace TrackerSQL.Managers
                       + proof.Longitude.Value.ToString("0.00000", CultureInfo.InvariantCulture)
                       + (proof.AccuracyM.HasValue ? " +/-" + proof.AccuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + "m" : string.Empty)
                     : " | no GPS")
+                + (collection ? " | depot collection" : string.Empty)
                 + (notAtClient ? " | not at the client: position not used for the client's GPS point or the delivery order" : string.Empty),
                 user?.UserName);
 
@@ -508,7 +530,7 @@ namespace TrackerSQL.Managers
                 }
             }
 
-            if (!notAtClient)
+            if (!notAtClient && !collection)
                 RecordDeliveryOrder(order, proof, user);
             DriverTrackingManager.RecordDelivery(user?.PersonId, proof.Latitude, proof.Longitude, proof.AccuracyM, proof.DeliveredAt, user?.UserName);
 

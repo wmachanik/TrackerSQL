@@ -102,7 +102,7 @@ Live steps:
    then Save depot point, so every route starts at the right place.
 4. Tools → Customer Locations: run a small batch, then "Look up rough ones again" for the Needs-checking list.
    Route order needs points: stops without one (and no located contact in their area) go last on the sheet.
-5. Driver app: install the new APK once from Tools -> Driver App (0.5.5; upload Downloads/QuaffeeDriver.apk AND
+5. Driver app: install the new APK once from Tools -> Driver App (0.5.6; upload Downloads/QuaffeeDriver.apk AND
    Downloads/QuaffeeDriver.json; from 0.5.1 on (so after this install) the app shows Update itself when a newer APK is uploaded; asks for location permission on the first delivery or when tracking
    starts). The web copy at /driver is already rebuilt in this release. Drivers must allow location, or proofs
    simply arrive without GPS. With tracking on, Android shows a "Sharing your position" notification during work

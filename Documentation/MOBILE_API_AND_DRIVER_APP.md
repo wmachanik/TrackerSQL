@@ -160,11 +160,11 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   without the signer's name in *Received by*. The proof stores
   `TermsAccepted` and `TermsText` (the wording shown, or the current setting for older apps, whose `termsAccepted` is
   null). Defaults in `MobileApiSettingsManager` (`DefaultDeliveryTerms`, `DefaultTermsUrl`).
-- **Depot collections** (0.5.5, DriverGps-07): `delivery/sheet?person=collections` returns only the day's orders whose
+- **Depot collections** (0.5.6, DriverGps-07): `delivery/sheet?person=collections` returns only the day's orders whose
   Delivered by person is *Collect (shop)* (`DeliveryType` COLLECT). For people ticked **Collections** in Lookups → People
   (`PeopleTbl.HandsOverCollections`) `delivery/dates` also sends `collections` (that count per date; otherwise it is left
-  out), and the app then shows a third view next to Mine (person icon) and Everyone (people icon): **Collections** (hand
-  icon; labels show on wider screens, icons only on a phone). Collection stops carry `collection: true`, are numbered by
+  out), and the app then shows a third button next to Mine (person icon) and Everyone (people icon): a hand icon with no
+  words (Mine / Everyone labels show on wider screens, icons only on a phone). Collection stops carry `collection: true`, are numbered by
   client name (no route planning, road times or expected times). Collected / Not collected preselects the "collected by the client" outcome (Not at
   client, needs a name) so the name, terms tick and signature are ready. On sync an order delivered by a COLLECT person
   is always stored Not at the client and never records a delivery-order visit, whatever outcome was chosen.

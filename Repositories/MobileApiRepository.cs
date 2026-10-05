@@ -142,6 +142,8 @@ namespace TrackerSQL.Repositories
             public string CompanyName;
             public string FirstName;
             public string LastName;
+            public string AltFirstName;
+            public string AltLastName;
             public string Phone;
             public string Cell;
             public string Address;
@@ -197,7 +199,7 @@ namespace TrackerSQL.Repositories
         {
             string sql = @"
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                       c.PhoneNumber, c.CellNumber, c.BillingAddress, c.StateOrProvince, c.PostalCode,
+                       c.ContactAltFirstName, c.ContactAltLastName, c.PhoneNumber, c.CellNumber, c.BillingAddress, c.StateOrProvince, c.PostalCode,
                        a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        o.ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
@@ -270,6 +272,8 @@ namespace TrackerSQL.Repositories
                 CompanyName = Str(r, "CompanyName"),
                 FirstName = Str(r, "ContactFirstName"),
                 LastName = Str(r, "ContactLastName"),
+                AltFirstName = Str(r, "ContactAltFirstName"),
+                AltLastName = Str(r, "ContactAltLastName"),
                 Phone = Str(r, "PhoneNumber"),
                 Cell = Str(r, "CellNumber"),
                 Address = Str(r, "BillingAddress"),
@@ -369,6 +373,24 @@ namespace TrackerSQL.Repositories
                     RequiredByDate = NDate(r, "RequiredByDate")
                 }, P("@OrderID", orderId, DbType.Int32));
             return list.Count > 0 ? list[0] : null;
+        }
+
+        /// <summary>
+        /// Sets the contact's alternative person when both its names are blank and the name is not the main contact's.
+        /// Returns false when nothing was changed.
+        /// </summary>
+        public bool SetAltContactIfBlank(int contactId, string name, string firstName, string lastName)
+        {
+            const string sql = @"
+                UPDATE ContactsTbl SET ContactAltFirstName = @First, ContactAltLastName = @Last
+                WHERE ContactID = @ContactID
+                  AND LTRIM(RTRIM(ISNULL(ContactAltFirstName, N'') + ISNULL(ContactAltLastName, N''))) = N''
+                  AND LTRIM(RTRIM(ISNULL(ContactFirstName, N'') + N' ' + ISNULL(ContactLastName, N''))) <> @Name";
+            return Exec(sql,
+                P("@ContactID", contactId, DbType.Int32),
+                P("@Name", name, DbType.String),
+                P("@First", firstName, DbType.String),
+                P("@Last", (object)lastName ?? DBNull.Value, DbType.String)) > 0;
         }
 
         // ---------------- Delivery proof ----------------

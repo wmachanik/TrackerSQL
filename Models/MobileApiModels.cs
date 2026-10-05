@@ -95,6 +95,8 @@ namespace TrackerSQL.Models
         public string Company { get; set; }
         /// <summary>Person to hand the delivery to (contact first + last name; ZZName walk-in name from the order notes).</summary>
         public string ContactName { get; set; }
+        /// <summary>The contact's alternative person (Contact Details), who may also receive or collect it.</summary>
+        public string AltContactName { get; set; }
         public string Phone { get; set; }
         public string Cell { get; set; }
         public string Address { get; set; }

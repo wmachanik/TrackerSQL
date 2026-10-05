@@ -21,6 +21,7 @@ namespace TrackerSQL.Managers
         public const string SourceMerge = "Merge";
         public const string SourceDisable = "Disable";
         public const string SourcePortal = "Portal";
+        public const string SourceDriverApp = "DriverApp";
 
         private const int ValueMaxLen = 400;
 

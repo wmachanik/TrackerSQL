@@ -115,6 +115,41 @@ namespace TrackerSQL.Managers
         /// Logs which stop of the day this was (delivered or not: the driver went there), so the route can learn the driver's
         /// own order. Never fails the sync.
         /// </summary>
+        /// <summary>
+        /// Whoever collected at the depot becomes the contact's alternative person when it has none (and it is not the
+        /// main contact or a walk-in), so the next collection offers their name.
+        /// </summary>
+        private void SaveCollectorAsAltContact(MobileApiRepository.OrderBrief order, string receivedBy, MobileTokenUser user)
+        {
+            if (order.ContactID <= 0 || order.ContactID == SystemConstants.CustomerConstants.SundryCustomerID)
+                return;
+            try
+            {
+                string name = System.Text.RegularExpressions.Regex.Replace(receivedBy, @"\s+", " ").Trim();
+                int space = name.IndexOf(' ');
+                string first = space < 0 ? name : name.Substring(0, space);
+                string last = space < 0 ? null : name.Substring(space + 1);
+                if (first.Length > 50 || (last?.Length ?? 0) > 50
+                    || !_repo.SetAltContactIfBlank(order.ContactID, name, first, last))
+                    return;
+
+                ContactChangeLogManager.LogDiff(order.ContactID,
+                    new Contact(),
+                    new Contact { ContactAltFirstName = first, ContactAltLastName = last },
+                    ContactChangeLogManager.SourceDriverApp,
+                    "Collected order " + order.OrderID + " at the depot",
+                    user?.UserName);
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                    "Order " + order.OrderID + " | Contact=" + order.ContactID + " | alternative person set to '" + name + "' (collected at the depot)",
+                    user?.UserName);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                    "Saving the alternative person failed for order " + order.OrderID + ": " + ex.Message, user?.UserName);
+            }
+        }
+
         private static void RecordDeliveryOrder(MobileApiRepository.OrderBrief order, MobileDeliveryProof proof, MobileTokenUser user)
         {
             if (!proof.ContactID.HasValue || proof.ContactID.Value == SystemConstants.CustomerConstants.SundryCustomerID)
@@ -181,6 +216,7 @@ namespace TrackerSQL.Managers
             bool sundry = row.ContactID == SystemConstants.CustomerConstants.SundryCustomerID;
             string walkIn = sundry ? SundryNotes.Name(row.Notes) : null;
             string contactName = sundry ? walkIn : (row.FirstName + " " + row.LastName).Trim();
+            string altName = sundry ? null : (row.AltFirstName + " " + row.AltLastName).Trim();
 
             return new MobileDeliveryStop
             {
@@ -188,6 +224,7 @@ namespace TrackerSQL.Managers
                 ContactId = row.ContactID,
                 Company = sundry ? (string.IsNullOrWhiteSpace(walkIn) ? "Walk-in client" : walkIn) : row.CompanyName,
                 ContactName = NullIfEmpty(contactName),
+                AltContactName = string.Equals(altName, contactName, StringComparison.OrdinalIgnoreCase) ? null : NullIfEmpty(altName),
                 Phone = NullIfEmpty(row.Phone),
                 Cell = NullIfEmpty(row.Cell),
                 Address = NullIfEmpty(row.Address),
@@ -524,6 +561,9 @@ namespace TrackerSQL.Managers
                         "GPS learn from delivery failed for order " + order.OrderID + ": " + ex.Message, user?.UserName);
                 }
             }
+
+            if (collection && outcome == OutcomeDelivered && receivedBy.Length > 0)
+                SaveCollectorAsAltContact(order, receivedBy, user);
 
             if (!notAtClient && !collection)
                 RecordDeliveryOrder(order, proof, user);

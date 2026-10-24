@@ -1,7 +1,7 @@
 # Mobile REST API and Quaffee Driver App
 
 **Released:** 3.0.3.0 (live 2026-09-29)  
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-10-24
 
 Tracker exposes a JSON API at `/api/v1` for the **Quaffee Driver** app (delivery drivers: delivery sheet, proof of
 delivery captured offline, repairs, contacts). The app lives in a separate folder, `C:\SRC\ASP.net\TrackerDriver`
@@ -168,6 +168,12 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   client name (no route planning, road times or expected times). Collected / Not collected preselects the "collected by the client" outcome (Not at
   client, needs a name) so the name, terms tick and signature are ready. On sync an order delivered by a COLLECT person
   is always stored Not at the client and never records a delivery-order visit, whatever outcome was chosen.
+- **Alternative person (0.5.6):** each stop may include `altContactName` (contact's alternative first + last name from
+  Contact Details, omitted when blank or the same as `contactName`). On **Collected**, the capture screen shows name chips
+  for `contactName` and `altContactName`; if the driver enters someone else and the contact has no alternative yet, sync
+  sets `ContactAltFirstName` / `ContactAltLastName` once (`MobileApiRepository.SetAltContactIfBlank`) and writes
+  **Contact change log** (`ContactChangeLogManager`, source `DriverApp`). The stop screen shows *Hand to: … or …* when
+  `altContactName` is set. Does not apply to walk-ins (contact id 9).
 - **Walk-in stops:** for ZZName orders the sheet's `company` / `contactName` is the walk-in name from the notes and
   `notes` is the address / goods after the `:` without `[#…#]` tags (`SundryNotes`).
 

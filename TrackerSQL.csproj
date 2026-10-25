@@ -351,6 +351,8 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-06.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-07.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-07.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-08.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-08.xml" />
     <Content Include="App_Data\SQLCommands-OrderDone-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-OrderDone-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
@@ -375,7 +377,9 @@
     <Compile Include="Account\ChangePasswordSuccess.aspx.designer.cs">
       <DependentUpon>ChangePasswordSuccess.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Portal\PortalPageBase.cs" />
+    <Compile Include="Portal\PortalPageBase.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="Portal\Portal.Master.cs">
       <DependentUpon>Portal.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -629,6 +633,7 @@
     <Compile Include="Models\AwayReason.cs" />
     <Compile Include="Models\ClosureDate.cs" />
     <Compile Include="Models\Contact.cs" />
+    <Compile Include="Models\ContactDeliverToAddress.cs" />
     <Compile Include="Models\ContactChangeLogEntry.cs" />
     <Compile Include="Models\ContactOrderSummary.cs" />
     <Compile Include="Models\ContactProofRow.cs" />
@@ -715,6 +720,7 @@
     <Compile Include="Repositories\ContactsAwayPeriodRepository.cs" />
     <Compile Include="Repositories\ContactsItemUsageRepository.cs" />
     <Compile Include="Repositories\ContactsRepository.cs" />
+    <Compile Include="Repositories\ContactDeliverToAddressRepository.cs" />
     <Compile Include="Repositories\CustomerLocationRepository.cs" />
     <Compile Include="Repositories\DeliveryVisitRepository.cs" />
     <Compile Include="Repositories\RoadLegRepository.cs" />
@@ -1152,6 +1158,7 @@
     <Compile Include="Managers\PostalAreaSetupManager.cs" />
     <Compile Include="Managers\ContactPostalFillManager.cs" />
     <Compile Include="Managers\CustomerLocationManager.cs" />
+    <Compile Include="Managers\DeliveryOnBehalfManager.cs" />
     <Compile Include="Models\WooCategoryFilter.cs" />
     <Compile Include="Models\WooEnabledPushPreviewRow.cs" />
     <Compile Include="Models\WooItemMapping.cs" />

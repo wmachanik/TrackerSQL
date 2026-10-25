@@ -251,7 +251,7 @@ namespace TrackerSQL.Managers
 
             var line = ToOrderTblData(header);
             line.ItemTypeID = itemTypeId;
-            line.QuantityOrdered = quantity;
+            line.QuantityOrdered = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(quantity);
             line.PackagingID = packagingId;
             if (prepTypeId > 0)
                 line.PrepTypeID = prepTypeId;
@@ -287,7 +287,8 @@ namespace TrackerSQL.Managers
                 Confirmed = header.Confirmed,
                 Done = header.Done,
                 InvoiceDone = header.InvoiceDone,
-                InvoiceTypeID = header.InvoiceTypeID
+                InvoiceTypeID = header.InvoiceTypeID,
+                DeliverToAddressID = header.DeliverToAddressID
             };
         }
 
@@ -325,6 +326,7 @@ namespace TrackerSQL.Managers
                     orderData.CustomerID, orderData.ItemTypeID, orderData.RequiredByDate);
 
                 ApplyDefaultPrepTypeIfNeeded(orderData);
+                orderData.QuantityOrdered = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(orderData.QuantityOrdered);
 
                 if (orderId <= 0)
                 {
@@ -393,6 +395,9 @@ namespace TrackerSQL.Managers
             if (!line.InvoiceTypeID.HasValue && header.InvoiceTypeID.HasValue)
                 line.InvoiceTypeID = header.InvoiceTypeID;
 
+            if (!line.DeliverToAddressID.HasValue)
+                line.DeliverToAddressID = header.DeliverToAddressID;
+
             line.Confirmed = header.Confirmed;
             line.Done = header.Done;
             line.InvoiceDone = header.InvoiceDone;
@@ -458,7 +463,7 @@ namespace TrackerSQL.Managers
             return _ordersRepository.UpdateOrderLine(
                 orderLineId,
                 resolvedItemId,
-                quantityOrdered,
+                SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(quantityOrdered),
                 packagingId);
         }
 

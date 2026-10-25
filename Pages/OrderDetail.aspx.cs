@@ -209,6 +209,8 @@ namespace TrackerSQL.Pages
             if (_redirectingAfterSave)
                 return;
 
+            EnsureContactComboPopulated();
+            RestoreContactComboDisplay();
             RepairContactComboSelection();
             EnsureContactDisplayed();
             UpdateNewItemButtonState();
@@ -590,6 +592,7 @@ namespace TrackerSQL.Pages
             header.OrderDate = DateTime.TryParse(tbxOrderDate.Text, out DateTime orderDate) ? orderDate.Date : DateTime.MinValue;
             header.PrepDate = DateTime.TryParse(tbxPrepDate.Text, out DateTime prepDate) ? prepDate.Date : DateTime.MinValue;
             header.RequiredByDate = DateTime.TryParse(tbxRequiredByDate.Text, out DateTime requiredBy) ? requiredBy.Date : DateTime.MinValue;
+            header.DeliverToAddressID = ReadDeliverToAddressIdFromControls();
             return header;
         }
 
@@ -599,6 +602,7 @@ namespace TrackerSQL.Pages
                 return;
 
             SelectContactInCombo(header.CustomerID);
+            BindDeliverToOrderDropdown((int)header.CustomerID, header.DeliverToAddressID);
             tbxOrderDate.Text = header.OrderDate.ToString("yyyy-MM-dd");
             tbxPrepDate.Text = header.PrepDate.ToString("yyyy-MM-dd");
             tbxRequiredByDate.Text = header.RequiredByDate.ToString("yyyy-MM-dd");
@@ -627,31 +631,23 @@ namespace TrackerSQL.Pages
         }
 
         /// <summary>
-        /// Order flag list. "Contact default" (value 0) means no flag stored on the order: new
-        /// orders then take the contact's account type, and old orders show that on the sheet.
+        /// Order flag list. A new or unset order defaults to the system Standard invoice type.
         /// </summary>
         private void BindInvoiceTypeDropdown(long contactId, int? selectedInvoiceTypeId)
         {
             var invoiceTypes = new InvoiceTypesRepository().GetAll("InvoiceTypeID");
 
-            string defaultText = "Contact default";
-            if (contactId > 0)
-            {
-                int? contactTypeId = new ContactsAccInfoRepository().GetInvoiceTypeIdByContactId((int)contactId);
-                var contactType = invoiceTypes.FirstOrDefault(t => t.InvoiceTypeID == contactTypeId);
-                if (contactType != null)
-                    defaultText += " (" + contactType.InvoiceTypeDesc + ")";
-            }
-
             ddlInvoiceType.Items.Clear();
-            ddlInvoiceType.Items.Add(new ListItem(defaultText, "0"));
+            ddlInvoiceType.Items.Add(new ListItem("No order flag", "0"));
             foreach (var invoiceType in invoiceTypes)
                 ddlInvoiceType.Items.Add(new ListItem(invoiceType.InvoiceTypeDesc, invoiceType.InvoiceTypeID.ToString()));
 
             ListItem selected = selectedInvoiceTypeId.HasValue
                 ? ddlInvoiceType.Items.FindByValue(selectedInvoiceTypeId.Value.ToString())
                 : null;
-            (selected ?? ddlInvoiceType.Items[0]).Selected = true;
+            (selected
+                ?? ddlInvoiceType.Items.FindByValue(SystemConstants.InvoiceTypeConstants.DefaultForNewOrder.ToString())
+                ?? ddlInvoiceType.Items[0]).Selected = true;
         }
 
         private void BindWaybillRow()
@@ -879,6 +875,23 @@ namespace TrackerSQL.Pages
                 return false;
             }
 
+            if (!TryValidateDeliverToSelection(out string deliverToError))
+            {
+                SetStatusMessage(deliverToError, isError: true);
+                pnlOrderHeader.Update();
+                return false;
+            }
+
+            if (DeliveryOnBehalfManager.ContactNeedsDeliverToChoice((int)header.CustomerID)
+                && !OrdersRepository.HasDeliverToAddressIdColumn())
+            {
+                SetStatusMessage(
+                    "Deliver-to orders need a database update. Restart the Tracker site once (or run SQLCommands-DriverGps-08), then try again.",
+                    isError: true);
+                pnlOrderHeader.Update();
+                return false;
+            }
+
             int? conflictingId = _orderManager.FindDuplicateOrderForHeader(header, OrderId);
             if (conflictingId.HasValue)
             {
@@ -940,7 +953,8 @@ namespace TrackerSQL.Pages
                 InvoiceDone = source.InvoiceDone,
                 PurchaseOrder = source.PurchaseOrder,
                 Notes = source.Notes,
-                InvoiceTypeID = source.InvoiceTypeID
+                InvoiceTypeID = source.InvoiceTypeID,
+                DeliverToAddressID = source.DeliverToAddressID
             };
         }
 
@@ -959,7 +973,8 @@ namespace TrackerSQL.Pages
                 || previous.InvoiceDone != current.InvoiceDone
                 || (previous.PurchaseOrder ?? string.Empty) != (current.PurchaseOrder ?? string.Empty)
                 || (previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty)
-                || previous.InvoiceTypeID != current.InvoiceTypeID;
+                || previous.InvoiceTypeID != current.InvoiceTypeID
+                || previous.DeliverToAddressID != current.DeliverToAddressID;
         }
 
         protected void btnUndoHeader_Click(object sender, EventArgs e)
@@ -1026,6 +1041,8 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterAsyncPostBackControl(btnConfirmMergeDuplicate);
             scriptManager.RegisterAsyncPostBackControl(btnOpenDuplicateOrder);
             scriptManager.RegisterAsyncPostBackControl(btnDismissMergePrompt);
+            if (ddlDeliverToOrder != null)
+                scriptManager.RegisterAsyncPostBackControl(ddlDeliverToOrder);
         }
 
         /// <summary>Contact id from hdnSelectedContactId — single source of truth on the form.</summary>
@@ -1297,6 +1314,7 @@ namespace TrackerSQL.Pages
                 if (!TryResolveContactIdFromComboPostback(out int contactId))
                 {
                     SetContactId(0);
+                    BindDeliverToOrderDropdown(0, null);
                     if (OrderId <= 0)
                     {
                         btnLastOrder.Visible = false;
@@ -1325,6 +1343,7 @@ namespace TrackerSQL.Pages
                 else
                 {
                     MarkHeaderDirty();
+                    BindDeliverToOrderDropdown(contactId, ReadDeliverToAddressIdFromControls());
                 }
 
                 UpdateNewItemButtonState();
@@ -1480,6 +1499,8 @@ namespace TrackerSQL.Pages
                 parts.Add("Notes changed");
             if (previous.InvoiceTypeID != current.InvoiceTypeID)
                 parts.Add($"Flag {previous.InvoiceTypeID?.ToString() ?? "default"}->{current.InvoiceTypeID?.ToString() ?? "default"}");
+            if (previous.DeliverToAddressID != current.DeliverToAddressID)
+                parts.Add($"DeliverTo {previous.DeliverToAddressID?.ToString() ?? "main"}->{current.DeliverToAddressID?.ToString() ?? "main"}");
 
             return parts.Count > 0 ? string.Join("; ", parts) : "header updated";
         }
@@ -1641,6 +1662,186 @@ namespace TrackerSQL.Pages
             {
                 tbxNewQuantityOrdered.Text = prefs.PreferedQty.ToString();
             }
+
+            BindDeliverToOrderDropdown(contactId, null);
+        }
+
+        /// <summary>
+        /// Ajax ComboBox inside an UpdatePanel can return with only the markup list item after a partial postback.
+        /// </summary>
+        private void EnsureContactComboPopulated()
+        {
+            if (cboContacts == null)
+                return;
+
+            if (cboContacts.Items.Count > 1)
+                return;
+
+            BindContactDropdown();
+        }
+
+        /// <summary>Keep the contact name visible in the ComboBox text box after UpdatePanel refreshes.</summary>
+        private void RestoreContactComboDisplay()
+        {
+            if (cboContacts == null)
+                return;
+
+            int contactId = CurrentContactId;
+            if (contactId <= 0)
+                return;
+
+            string idStr = contactId.ToString();
+            ListItem item = cboContacts.Items.FindByValue(idStr);
+            if (item == null)
+            {
+                SelectContactInCombo(contactId);
+                return;
+            }
+
+            EnsureListControlSelectionByValue(cboContacts, idStr);
+
+            if (string.IsNullOrWhiteSpace(cboContacts.Text)
+                || string.Equals(cboContacts.Text.Trim(), "none", StringComparison.OrdinalIgnoreCase))
+            {
+                cboContacts.Text = item.Text;
+            }
+        }
+
+        private void BindDeliverToOrderDropdown(int contactId, int? selectedDeliverToAddressId)
+        {
+            if (trDeliverToOrder == null || ddlDeliverToOrder == null)
+                return;
+
+            bool show = DeliveryOnBehalfManager.ContactNeedsDeliverToChoice(contactId);
+            trDeliverToOrder.Visible = show;
+            ddlDeliverToOrder.Items.Clear();
+            if (!show)
+                return;
+
+            ddlDeliverToOrder.Items.Add(new ListItem("— select recipient —", ""));
+            ddlDeliverToOrder.Items.Add(new ListItem("Main (customer address)", "0"));
+
+            foreach (ContactDeliverToAddress row in new ContactDeliverToAddressRepository().ListForContact(contactId, enabledOnly: true))
+            {
+                ddlDeliverToOrder.Items.Add(new ListItem(
+                    row.ShortNameForOrders,
+                    row.DeliverToAddressID.ToString()));
+            }
+
+            string selected = string.Empty;
+            if (selectedDeliverToAddressId.HasValue && selectedDeliverToAddressId.Value > 0)
+                selected = selectedDeliverToAddressId.Value.ToString();
+            else if (OrderId > 0)
+                selected = "0";
+
+            if (!string.IsNullOrEmpty(selected))
+            {
+                ListItem pick = ddlDeliverToOrder.Items.FindByValue(selected);
+                if (pick != null)
+                {
+                    ddlDeliverToOrder.ClearSelection();
+                    pick.Selected = true;
+                }
+            }
+        }
+
+        private int? ReadDeliverToAddressIdFromControls()
+        {
+            if (trDeliverToOrder == null || !trDeliverToOrder.Visible || ddlDeliverToOrder == null)
+                return null;
+            if (!TryGetListControlValue(ddlDeliverToOrder, out string raw) || string.IsNullOrEmpty(raw))
+                return null;
+            if (raw == "0")
+                return null;
+            return int.TryParse(raw, out int id) && id > 0 ? id : (int?)null;
+        }
+
+        private bool TryValidateDeliverToSelection(out string errorMessage)
+        {
+            errorMessage = null;
+            int contactId = (int)GetEffectiveContactId();
+            if (!DeliveryOnBehalfManager.ContactNeedsDeliverToChoice(contactId))
+                return true;
+
+            if (!OrdersRepository.HasDeliverToAddressIdColumn())
+            {
+                errorMessage =
+                    "Deliver-to orders need a database update. Restart the Tracker site once (or run SQLCommands-DriverGps-08), then try again.";
+                return false;
+            }
+
+            if (ddlDeliverToOrder == null || string.IsNullOrEmpty(ddlDeliverToOrder.SelectedValue))
+            {
+                errorMessage = "Choose the main customer address or a recipient address.";
+                return false;
+            }
+
+            if (ddlDeliverToOrder.SelectedValue != "0"
+                && int.TryParse(ddlDeliverToOrder.SelectedValue, out int deliverToId))
+            {
+                ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(deliverToId);
+                if (row == null || row.ContactID != contactId || !row.Enabled)
+                {
+                    errorMessage = "The selected deliver-to address is not valid for this contact.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        protected void ddlDeliverToOrder_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (!TryGetListControlValue(ddlDeliverToOrder, out string raw) || raw == string.Empty || raw == "0")
+            {
+                MarkHeaderDirty();
+                pnlOrderHeader.Update();
+                return;
+            }
+
+            if (!int.TryParse(raw, out int id) || id <= 0)
+                return;
+
+            ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(id);
+            if (row?.ToBeDeliveredByID is int personId && personId > 0)
+            {
+                PreferredDeliveryPersonId = personId;
+                BindDeliveryPersonDropdown(forceRebind: false, preservePersonId: personId);
+                ListItem item = ddlToBeDeliveredBy?.Items.FindByValue(personId.ToString());
+                if (item != null)
+                {
+                    ddlToBeDeliveredBy.ClearSelection();
+                    item.Selected = true;
+                }
+            }
+
+            MaybeApplyDeliverToPurchaseOrder(id, row);
+            MarkHeaderDirty();
+            pnlOrderHeader.Update();
+        }
+
+        private void MaybeApplyDeliverToPurchaseOrder(int deliverToAddressId, ContactDeliverToAddress row = null)
+        {
+            if (deliverToAddressId <= 0 || tbxPurchaseOrder == null)
+                return;
+
+            row = row ?? new ContactDeliverToAddressRepository().GetById(deliverToAddressId);
+            if (row == null)
+                return;
+
+            string current = tbxPurchaseOrder.Text?.Trim() ?? string.Empty;
+            if (!string.IsNullOrEmpty(current) && !DeliveryOnBehalfManager.LooksLikeAutoDeliverToPo(current))
+                return;
+
+            DateTime requiredBy = DateTime.TryParse(tbxRequiredByDate?.Text, out DateTime day)
+                ? day.Date
+                : TimeZoneUtils.Now().Date;
+            long contactId = GetEffectiveContactId();
+            if (contactId <= 0)
+                contactId = row.ContactID;
+            int seq = new OrdersRepository().NextDeliverToPoSequence(deliverToAddressId, contactId, requiredBy, OrderId);
+            tbxPurchaseOrder.Text = DeliveryOnBehalfManager.FormatDeliverToPurchaseOrder(
+                row.ShortNameForOrders, requiredBy, seq);
         }
 
         private void SyncSessionForDataSources(OrderHeaderData header)
@@ -1816,13 +2017,36 @@ namespace TrackerSQL.Pages
             var candidates = new WooCommerceOrderImportManager().FindWooLinkCandidates(orderId, out string error);
             if (candidates == null || candidates.Count == 0)
             {
-                SetStatusMessage(error ?? "No matching unlinked Woo orders found.", isError: true);
-                if (pnlWooLink != null)
-                    pnlWooLink.Visible = false;
-                if (upnlWooLink != null)
-                    upnlWooLink.Update();
+                if (!CanOfferManualWooLink(error))
+                {
+                    SetStatusMessage(error ?? "No matching unlinked Woo orders found.", isError: true);
+                    HideWooLinkDialog();
+                    return;
+                }
+
+                ShowManualWooLinkDialog(orderId, error);
                 return;
             }
+
+            ShowWooLinkCandidateDialog(orderId, candidates);
+        }
+
+        private static bool CanOfferManualWooLink(string error)
+        {
+            return !string.IsNullOrEmpty(error)
+                && error.StartsWith("No unlinked Woo orders for this contact", StringComparison.Ordinal);
+        }
+
+        private void ShowWooLinkCandidateDialog(int orderId, List<WooOrderLinkCandidate> candidates)
+        {
+            if (pnlWooLinkCandidates != null)
+                pnlWooLinkCandidates.Visible = true;
+            if (pnlWooLinkManual != null)
+                pnlWooLinkManual.Visible = false;
+            if (tbxWooLinkManualNumber != null)
+                tbxWooLinkManualNumber.Text = string.Empty;
+            if (btnWooLinkConfirm != null)
+                btnWooLinkConfirm.Text = "Link Selected";
 
             litWooLinkPrompt.Text = HttpUtility.HtmlEncode(
                 "Pick the Woo order to link to Tracker #" + orderId
@@ -1843,21 +2067,107 @@ namespace TrackerSQL.Pages
                 upnlWooLink.Update();
         }
 
+        private void ShowManualWooLinkDialog(int orderId, string finderMessage)
+        {
+            if (pnlWooLinkCandidates != null)
+                pnlWooLinkCandidates.Visible = false;
+            if (pnlWooLinkManual != null)
+                pnlWooLinkManual.Visible = true;
+            if (tbxWooLinkManualNumber != null)
+                tbxWooLinkManualNumber.Text = string.Empty;
+            if (btnWooLinkConfirm != null)
+                btnWooLinkConfirm.Text = "Link to Woo Order";
+
+            string detail = string.IsNullOrWhiteSpace(finderMessage)
+                ? "No matching unlinked Woo orders were found for the automatic search."
+                : finderMessage.Trim();
+            litWooLinkPrompt.Text = HttpUtility.HtmlEncode(
+                detail
+                + " You can link Tracker order #" + orderId
+                + " manually by entering the Woo order number (or Woo order ID from Woo admin).");
+
+            rblWooLinkCandidates.Items.Clear();
+            pnlWooLink.Visible = true;
+            if (upnlWooLink != null)
+                upnlWooLink.Update();
+        }
+
+        private void HideWooLinkDialog()
+        {
+            if (pnlWooLink != null)
+                pnlWooLink.Visible = false;
+            if (upnlWooLink != null)
+                upnlWooLink.Update();
+        }
+
+        private static bool TryResolveWooOrderIdFromManualInput(string raw, out long wooOrderId, out string error)
+        {
+            wooOrderId = 0;
+            error = null;
+            string input = (raw ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                error = "Enter a Woo order number.";
+                return false;
+            }
+
+            if (!long.TryParse(input, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out long parsed) || parsed <= 0)
+            {
+                error = "Enter a valid Woo order number.";
+                return false;
+            }
+
+            var preview = new WooCommerceOrderImportManager().GetPreviewForOrder(parsed, out error);
+            if (preview == null)
+                return false;
+
+            string wooNumber = (preview.WooOrderNumber ?? string.Empty).Trim();
+            bool numberMatch = string.Equals(wooNumber, input, StringComparison.OrdinalIgnoreCase);
+            bool idMatch = preview.WooOrderId == parsed;
+            if (!numberMatch && !idMatch)
+            {
+                error = "Woo order #" + input + " was not found. Check the number in Woo admin.";
+                return false;
+            }
+
+            wooOrderId = preview.WooOrderId;
+            error = null;
+            return true;
+        }
+
         protected void btnWooLinkConfirm_Click(object sender, EventArgs e)
         {
             int orderId = OrderId > 0 ? OrderId : PersistedOrderId;
             long wooOrderId = 0;
-            if (rblWooLinkCandidates.SelectedItem != null)
+            string resolveError = null;
+
+            if (pnlWooLinkManual != null && pnlWooLinkManual.Visible)
+            {
+                if (!TryResolveWooOrderIdFromManualInput(tbxWooLinkManualNumber?.Text, out wooOrderId, out resolveError))
+                {
+                    SetStatusMessage(resolveError ?? "Could not resolve that Woo order.", isError: true);
+                    pnlWooLink.Visible = true;
+                    if (upnlWooLink != null)
+                        upnlWooLink.Update();
+                    return;
+                }
+            }
+            else if (rblWooLinkCandidates.SelectedItem != null)
+            {
                 long.TryParse(rblWooLinkCandidates.SelectedValue, System.Globalization.NumberStyles.Integer,
                     System.Globalization.CultureInfo.InvariantCulture, out wooOrderId);
+            }
 
             pnlWooLink.Visible = false;
+            if (pnlWooLinkManual != null)
+                pnlWooLinkManual.Visible = false;
             if (upnlWooLink != null)
                 upnlWooLink.Update();
 
             if (orderId <= 0 || wooOrderId <= 0)
             {
-                SetStatusMessage("Select a Woo order to link.", isError: true);
+                SetStatusMessage(resolveError ?? "Select a Woo order to link.", isError: true);
                 return;
             }
 
@@ -1874,9 +2184,11 @@ namespace TrackerSQL.Pages
 
         protected void btnWooLinkCancel_Click(object sender, EventArgs e)
         {
-            pnlWooLink.Visible = false;
-            if (upnlWooLink != null)
-                upnlWooLink.Update();
+            HideWooLinkDialog();
+            if (pnlWooLinkManual != null)
+                pnlWooLinkManual.Visible = false;
+            if (tbxWooLinkManualNumber != null)
+                tbxWooLinkManualNumber.Text = string.Empty;
             SetStatusMessage("Woo link cancelled.", log: false);
         }
 
@@ -2315,6 +2627,13 @@ namespace TrackerSQL.Pages
             var header = ReadHeaderFromControls();
             header.CustomerID = contactId;
 
+            if (!TryValidateDeliverToSelection(out string deliverToError))
+            {
+                SetStatusMessage(deliverToError, isError: true);
+                pnlOrderHeader.Update();
+                return;
+            }
+
             if (orderId <= 0)
             {
                 var ensure = _orderManager.EnsureOrderHeader(header, forceNewOrder: forceNewOrder);
@@ -2451,6 +2770,13 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
+                if (!TryValidateDeliverToSelection(out string deliverToError))
+                {
+                    SetStatusMessage(deliverToError, isError: true);
+                    pnlOrderHeader.Update();
+                    return;
+                }
+
                 int itemId = ResolveComboIntValue(cboNewItemDesc);
                 if (itemId <= 0)
                 {
@@ -2464,7 +2790,8 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
-                double qty = Convert.ToDouble(tbxNewQuantityOrdered.Text);
+                double qty = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(
+                    Convert.ToDouble(tbxNewQuantityOrdered.Text));
                 int packagingId = ResolveComboIntValue(cboNewPackaging);
 
                 int orderId = OrderId;
@@ -2664,6 +2991,8 @@ namespace TrackerSQL.Pages
                 return false;
             }
 
+            qty = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(qty);
+
             if (itemId <= 0)
             {
                 SetStatusMessage("Please select an item.", isError: true);
@@ -2803,13 +3132,16 @@ namespace TrackerSQL.Pages
             qty = 0;
             if (e?.NewValues != null && e.NewValues.Contains("QuantityOrdered") && e.NewValues["QuantityOrdered"] != null)
             {
-                qty = Convert.ToDouble(e.NewValues["QuantityOrdered"]);
+                qty = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(Convert.ToDouble(e.NewValues["QuantityOrdered"]));
                 return true;
             }
 
             var qtyBox = row.FindControl("tbxQuantityOrdered") as TextBox;
             if (TryReadPostedDouble(qtyBox, out qty))
+            {
+                qty = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(qty);
                 return true;
+            }
 
             if (Request.Form == null)
                 return false;
@@ -2820,7 +3152,10 @@ namespace TrackerSQL.Pages
                     continue;
 
                 if (double.TryParse(Request.Form[key], out qty))
+                {
+                    qty = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(qty);
                     return true;
+                }
             }
 
             return false;

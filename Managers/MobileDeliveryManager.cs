@@ -65,7 +65,9 @@ namespace TrackerSQL.Managers
                 stop.Items.Add(new MobileDeliveryItem
                 {
                     LineId = row.OrderLineID,
-                    Qty = Math.Round(row.Qty, SystemConstants.DatabaseConstants.NumDecimalPoints),
+                    Qty = Math.Round(
+                        SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(row.Qty),
+                        SystemConstants.DatabaseConstants.NumDecimalPoints),
                     Item = NullIfEmpty(row.ItemDesc),
                     Pack = NullIfEmpty(row.PackDesc),
                     PackColour = HexColour(row.PackColour),
@@ -217,12 +219,27 @@ namespace TrackerSQL.Managers
             string walkIn = sundry ? SundryNotes.Name(row.Notes) : null;
             string contactName = sundry ? walkIn : (row.FirstName + " " + row.LastName).Trim();
             string altName = sundry ? null : (row.AltFirstName + " " + row.AltLastName).Trim();
+            string deliverTo = sundry
+                ? null
+                : DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+            bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverTo);
+            string accountCompany = sundry ? null : row.CompanyName;
+
+            string notes = sundry ? SundryNotes.Details(row.Notes) : DeliveryOnBehalfManager.NotesWithoutDeliverToPrefix(row.Notes);
+
+            string company = sundry
+                ? (string.IsNullOrWhiteSpace(walkIn) ? "Walk-in client" : walkIn)
+                : hasDeliverTo
+                    ? DeliveryOnBehalfManager.ListDisplayName(deliverTo, accountCompany)
+                    : row.CompanyName;
 
             return new MobileDeliveryStop
             {
                 OrderId = row.OrderID,
                 ContactId = row.ContactID,
-                Company = sundry ? (string.IsNullOrWhiteSpace(walkIn) ? "Walk-in client" : walkIn) : row.CompanyName,
+                Company = company,
+                DeliverTo = hasDeliverTo ? deliverTo : null,
+                AccountCompany = hasDeliverTo ? accountCompany : null,
                 ContactName = NullIfEmpty(contactName),
                 AltContactName = string.Equals(altName, contactName, StringComparison.OrdinalIgnoreCase) ? null : NullIfEmpty(altName),
                 Phone = NullIfEmpty(row.Phone),
@@ -231,7 +248,7 @@ namespace TrackerSQL.Managers
                 Province = NullIfEmpty(row.Province),
                 PostalCode = NullIfEmpty(row.PostalCode),
                 Area = NullIfEmpty(row.AreaName),
-                Notes = NullIfEmpty(sundry ? SundryNotes.Details(row.Notes) : row.Notes),
+                Notes = NullIfEmpty(notes),
                 Po = NullIfEmpty(row.PurchaseOrder),
                 Done = row.Done,
                 Confirmed = row.Confirmed,

@@ -19,6 +19,8 @@ namespace TrackerSQL.Models
         public bool? InvoiceDone { get; set; }
         /// <summary>Order flag (InvoiceTypesTbl) — delivery note, dispatch note, gift, etc.</summary>
         public int? InvoiceTypeID { get; set; }
+        /// <summary>When set, delivery uses this contact deliver-to address (delivery on behalf).</summary>
+        public int? DeliverToAddressID { get; set; }
         public List<OrderLine> Lines { get; set; } = new List<OrderLine>();
     }
 }

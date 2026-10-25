@@ -162,6 +162,15 @@ namespace TrackerSQL.Repositories
             bool geo = CustomerLocationRepository.TableSeen();
             bool learn = DeliveryVisitRepository.TableSeen();
             bool plan = DeliveryRouteRepository.TableSeen();
+            bool deliverTo = DeliveryOnBehalfManager.IsActive;
+            string dobCols = deliverTo
+                ? @", o.DeliverToAddressID, dob.DeliverToPerson, dob.Label AS DeliverToLabel,
+                    LTRIM(RTRIM(
+                        ISNULL(dob.Address1, N'')
+                        + CASE WHEN NULLIF(LTRIM(RTRIM(ISNULL(dob.Address2, N''))), N'') IS NOT NULL THEN N', ' + dob.Address2 ELSE N'' END
+                        + CASE WHEN NULLIF(LTRIM(RTRIM(ISNULL(dob.Address3, N''))), N'') IS NOT NULL THEN N', ' + dob.Address3 ELSE N'' END
+                    )) AS DeliverToAddressLine"
+                : string.Empty;
             return @"
                 SELECT DISTINCT
                     o.OrderID,
@@ -190,10 +199,14 @@ namespace TrackerSQL.Repositories
                     p.Abbreviation AS DeliveryByAbbreviation,
                     ar.AreaName,
                     ar.ShortCode AS AreaShortCode,
-                    COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID,
+                    COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID"
+                    + dobCols + @",
                     " + (geo
-                        ? "CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
-                            + CustomerLocationRepository.RouteHashSql + " AS GeoSortKey"
+                        ? (deliverTo
+                            ? "CASE WHEN " + DeliveryOnBehalfManager.EffectiveRouteHashSql(CustomerLocationRepository.RouteHashSql) + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
+                              + DeliveryOnBehalfManager.EffectiveRouteHashSql(CustomerLocationRepository.RouteHashSql) + " AS GeoSortKey"
+                            : "CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END AS NoGeo, "
+                              + CustomerLocationRepository.RouteHashSql + " AS GeoSortKey")
                         : "1 AS NoGeo, CAST(NULL AS VARCHAR(12)) AS GeoSortKey") + @",
                     " + (learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits") + @",
                     " + (plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops") + @"
@@ -201,11 +214,11 @@ namespace TrackerSQL.Repositories
                 INNER JOIN OrderLinesTbl ol
                     ON o.OrderID = ol.OrderID
                 LEFT JOIN ContactsTbl c
-                    ON o.ContactID = c.ContactID
+                    ON o.ContactID = c.ContactID"
+                + (deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty) + @"
                 LEFT JOIN PeopleTbl p
                     ON o.ToBeDeliveredByID = p.PersonID
-                LEFT JOIN AreasTbl ar
-                    ON ar.AreaID = c.AreaID
+                " + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "ar") + @"
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i
@@ -368,7 +381,11 @@ namespace TrackerSQL.Repositories
                 DeliveryByAbbreviation = GetString(rdr, "DeliveryByAbbreviation"),
                 AreaName = GetString(rdr, "AreaName"),
                 AreaShortCode = GetString(rdr, "AreaShortCode"),
-                InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID")
+                InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID"),
+                DeliverToAddressID = DeliveryOnBehalfManager.IsActive ? GetNullableInt(rdr, "DeliverToAddressID") : null,
+                DeliverToPerson = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToPerson") : string.Empty,
+                DeliverToLabel = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToLabel") : string.Empty,
+                DeliverToAddressLine = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToAddressLine") : string.Empty
             };
         }
 

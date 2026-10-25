@@ -83,6 +83,7 @@ to upload are in `CHANGELOG.md`.
 
 | Version | Config changes |
 |---------|----------------|
+| 3.0.3.7 | `Version` → 3.0.3.7 only. Schema pack `SQLCommands-DriverGps-08.xml` runs at start-up (delivery on behalf). |
 | 3.0.3.5 | In progress: `Version` 3.0.3.4 → 3.0.3.5 (no other change). Schema pack `SQLCommands-DriverGps-07.xml` runs at start-up. |
 | 3.0.3.4 | `Version` 3.0.3.3 → 3.0.3.4 only. |
 | 3.0.3.3 | `Version` 3.0.3.2 → 3.0.3.3 only. |

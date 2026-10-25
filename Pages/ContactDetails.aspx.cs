@@ -261,6 +261,13 @@ namespace TrackerSQL.Pages
         protected void btnGpsRefresh_Click(object sender, EventArgs e)
         {
             UpdateGpsLine();
+            if (TryGetContactId(out int contactId))
+            {
+                BindDeliverToGrid(contactId);
+                if (pnlDeliverToEditor != null && pnlDeliverToEditor.Visible)
+                    UpdateDeliverToGpsLine();
+                upnlDeliverTo?.Update();
+            }
             upnlContactDetails.Update();
         }
 
@@ -373,6 +380,8 @@ namespace TrackerSQL.Pages
                 NotesTextBox.Text = contact.Notes;
                 ReminderCountLabel.Text = (contact.ReminderCount ?? 0).ToString();
                 LastReminderLabel.Text = contact.LastDateSentReminder.HasValue ? contact.LastDateSentReminder.Value.ToString("yyyy-MM-dd") : "never";
+
+                BindDeliveryOnBehalfUi(contact, id);
 
                 TrySelectDropDownByValue(ddlAreas, contact.AreaID);
                 TrySelectDropDownByValue(ddlContactTypes, contact.ContactTypeID);
@@ -933,7 +942,8 @@ namespace TrackerSQL.Pages
                     TypicallySecToo = existing.TypicallySecToo,
                     ReminderCount = existing.ReminderCount,
                     LastDateSentReminder = existing.LastDateSentReminder,
-                    SendDeliveryConfirmation = existing.SendDeliveryConfirmation
+                    SendDeliveryConfirmation = existing.SendDeliveryConfirmation,
+                    DeliveryOnBehalf = existing.DeliveryOnBehalf
                 }
                 : new Contact { ReminderCount = 0, Enabled = true };
 
@@ -969,6 +979,8 @@ namespace TrackerSQL.Pages
             contact.AlwaysSendChkUp = AlwaysSendChkUpCheckBox.Checked;
             contact.NormallyResponds = NormallyRespondsCheckBox.Checked;
             contact.Notes = NullIfEmpty(NotesTextBox.Text);
+            if (ContactsRepository.HasDeliveryOnBehalfColumn() && chkDeliveryOnBehalf != null)
+                contact.DeliveryOnBehalf = chkDeliveryOnBehalf.Checked;
 
             return contact;
         }
@@ -2488,5 +2500,349 @@ namespace TrackerSQL.Pages
             if (accPaymentTermsDropDownList.SelectedIndex == 0 && accPaymentTermsDropDownList.Items.Count > 1)
                 accPaymentTermsDropDownList.SelectedIndex = 1; // default selection
         }
+
+        protected string DeliverToGpsGridHtml(object dataItem)
+        {
+            var row = dataItem as ContactDeliverToAddress;
+            if (row == null || !TryGetContactId(out int contactId))
+                return "—";
+
+            if (!row.ToBeDeliveredByID.HasValue || !new PersonsRepository().IsDeliverPerson(row.ToBeDeliveredByID))
+                return "<span class=\"muted small\">n/a</span>";
+
+            CustomerLocation loc = row.ToDisplayLocation();
+            string badge = CustomerLocation.BadgeHtml(loc);
+            string coords = loc == null
+                ? "<span class=\"contact-gps-review\">not found yet</span>"
+                : HttpUtility.HtmlEncode(loc.CoordinatesText);
+            string check = " <input type=\"button\" class=\"filter-panel-btn contact-postal-suggest\" value=\"Check\" "
+                + "onclick=\"trackerOpenGps(" + contactId + "," + row.DeliverToAddressID + "); return false;\" />";
+            return badge + " " + coords + check;
+        }
+
+        private void BindDeliveryOnBehalfUi(Contact contact, int contactId)
+        {
+            bool schema = ContactsRepository.HasDeliveryOnBehalfColumn() && ContactDeliverToAddressRepository.TableSeen();
+            if (chkDeliveryOnBehalf != null)
+            {
+                chkDeliveryOnBehalf.Visible = ContactsRepository.HasDeliveryOnBehalfColumn();
+                chkDeliveryOnBehalf.Checked = contact.DeliveryOnBehalf ?? false;
+                chkDeliveryOnBehalf.Enabled = schema;
+            }
+            if (lblDeliveryOnBehalfPending != null)
+                lblDeliveryOnBehalfPending.Visible = !schema && ContactsRepository.HasDeliveryOnBehalfColumn() == false;
+
+            UpdateDeliverToTabVisibility();
+            if (schema && contactId > 0)
+            {
+                HideDeliverToForm();
+                BindDeliverToGrid(contactId);
+            }
+        }
+
+        private void UpdateDeliverToTabVisibility()
+        {
+            if (tabpnlDeliverTo == null)
+                return;
+            bool show = ContactsRepository.HasDeliveryOnBehalfColumn()
+                && ContactDeliverToAddressRepository.TableSeen()
+                && chkDeliveryOnBehalf != null
+                && chkDeliveryOnBehalf.Checked;
+            tabpnlDeliverTo.Visible = show;
+        }
+
+        private void BindDeliverToGrid(int contactId)
+        {
+            if (gvDeliverToAddresses == null)
+                return;
+            gvDeliverToAddresses.DataSource = new ContactDeliverToAddressRepository().ListForContact(contactId);
+            gvDeliverToAddresses.DataBind();
+        }
+
+        protected void chkDeliveryOnBehalf_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateDeliverToTabVisibility();
+            if (uppnlTabContainer != null)
+                uppnlTabContainer.Update();
+        }
+
+        private const string VSKEY_DELIVER_TO_EDIT_ID = "DeliverToEditId";
+
+        private int DeliverToEditId
+        {
+            get => ViewState[VSKEY_DELIVER_TO_EDIT_ID] as int? ?? 0;
+            set => ViewState[VSKEY_DELIVER_TO_EDIT_ID] = value;
+        }
+
+        protected void btnDeliverToAdd_Click(object sender, EventArgs e)
+        {
+            ShowDeliverToForm(0);
+        }
+
+        protected void btnDeliverToCancel_Click(object sender, EventArgs e)
+        {
+            HideDeliverToForm();
+        }
+
+        protected void btnDeliverToSave_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(CompanyIDLabel.Text, out int contactId) || contactId <= 0)
+                return;
+
+            string person = NullIfEmpty(tbxDeliverToPerson?.Text);
+            string label = NullIfEmpty(tbxDeliverToLabel?.Text);
+            if (string.IsNullOrEmpty(person) && string.IsNullOrEmpty(label))
+            {
+                ShowDeliverToFormError("Enter Deliver To or Short Name.");
+                return;
+            }
+            if (label == null)
+                label = person;
+            if (person == null)
+                person = label;
+
+            int? deliveredBy = ParseNullableInt(ddlDeliverToDeliveryBy?.SelectedValue);
+            if (!deliveredBy.HasValue || deliveredBy.Value <= 0)
+            {
+                ShowDeliverToFormError("Choose who delivers to this address.");
+                return;
+            }
+
+            var row = new ContactDeliverToAddress
+            {
+                ContactID = contactId,
+                DeliverToAddressID = DeliverToEditId,
+                DeliverToPerson = person,
+                Label = label,
+                ToBeDeliveredByID = deliveredBy,
+                Address1 = NullIfEmpty(tbxDeliverToAddr1?.Text),
+                Address2 = NullIfEmpty(tbxDeliverToAddr2?.Text),
+                Address3 = NullIfEmpty(tbxDeliverToAddr3?.Text),
+                AreaID = ParseNullableInt(ddlDeliverToArea?.SelectedValue),
+                PostalCode = NullIfEmpty(tbxDeliverToPostal?.Text),
+                Enabled = chkDeliverToEnabled == null || chkDeliverToEnabled.Checked
+            };
+
+            var repo = new ContactDeliverToAddressRepository();
+            bool addressChanged = false;
+            int savedId;
+            if (DeliverToEditId > 0)
+            {
+                var existing = repo.GetById(DeliverToEditId);
+                if (existing == null || existing.ContactID != contactId)
+                {
+                    ShowDeliverToFormError("This address could not be found.");
+                    return;
+                }
+                row.SortOrder = existing.SortOrder;
+                row.Latitude = existing.Latitude;
+                row.Longitude = existing.Longitude;
+                row.Geohash = existing.Geohash;
+                row.GeocodedAddress = existing.GeocodedAddress;
+                row.SourceAddress = existing.SourceAddress;
+                row.LocationStatus = existing.LocationStatus;
+                row.Source = existing.Source;
+                row.LocationUpdatedBy = existing.LocationUpdatedBy;
+                row.LocationUpdatedDate = existing.LocationUpdatedDate;
+                addressChanged = !CustomerLocationManager.SameDeliverToPhysicalAddress(existing, row);
+                if (!repo.Update(row))
+                {
+                    ShowDeliverToFormError("Could not save this address.");
+                    return;
+                }
+                savedId = DeliverToEditId;
+            }
+            else
+            {
+                savedId = repo.Insert(row);
+                if (savedId <= 0)
+                {
+                    ShowDeliverToFormError("Could not add this address.");
+                    return;
+                }
+                row.DeliverToAddressID = savedId;
+                addressChanged = true;
+            }
+
+            if (addressChanged && new PersonsRepository().IsDeliverPerson(deliveredBy))
+            {
+                try
+                {
+                    new CustomerLocationManager().EnsureForDeliverToAddress(savedId, Context?.User?.Identity?.Name, force: true);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "DeliverTo GPS lookup: " + ex.Message);
+                }
+            }
+
+            BindDeliverToGrid(contactId);
+            HideDeliverToForm();
+            upnlDeliverTo?.Update();
+        }
+
+        protected void ddlDeliverToDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateDeliverToGpsLine();
+            upnlDeliverTo?.Update();
+        }
+
+        private void UpdateDeliverToGpsLine()
+        {
+            if (trDeliverToGps == null)
+                return;
+
+            trDeliverToGps.Visible = pnlDeliverToEditor != null && pnlDeliverToEditor.Visible;
+            if (lblDeliverToGpsLocation != null)
+            {
+                lblDeliverToGpsLocation.Text = string.Empty;
+                lblDeliverToGpsLocation.CssClass = "contact-gps-value";
+            }
+            if (btnDeliverToGpsCheck != null)
+                btnDeliverToGpsCheck.Visible = false;
+            if (lblDeliverToGpsPending != null)
+                lblDeliverToGpsPending.Visible = false;
+
+            if (!trDeliverToGps.Visible)
+                return;
+
+            if (DeliverToEditId <= 0)
+            {
+                if (lblDeliverToGpsPending != null)
+                    lblDeliverToGpsPending.Visible = true;
+                if (litDeliverToGpsCaption != null)
+                    litDeliverToGpsCaption.Text = "GPS";
+                return;
+            }
+
+            int? personId = ParseNullableInt(ddlDeliverToDeliveryBy?.SelectedValue);
+            if (!personId.HasValue || personId.Value <= 0
+                || !new PersonsRepository().IsDeliverPerson(personId))
+            {
+                if (litDeliverToGpsCaption != null)
+                    litDeliverToGpsCaption.Text = "GPS";
+                if (lblDeliverToGpsLocation != null)
+                    lblDeliverToGpsLocation.Text = "not needed (courier or collection)";
+                return;
+            }
+
+            if (!new CustomerLocationManager().IsReady)
+                return;
+
+            ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(DeliverToEditId);
+            CustomerLocation loc = row?.ToDisplayLocation();
+            if (litDeliverToGpsCaption != null)
+                litDeliverToGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc);
+            if (loc == null)
+            {
+                if (lblDeliverToGpsLocation != null)
+                {
+                    lblDeliverToGpsLocation.Text = "not found yet";
+                    lblDeliverToGpsLocation.ToolTip = "No GPS point yet: press Check to place it";
+                    lblDeliverToGpsLocation.CssClass = "contact-gps-value contact-gps-review";
+                }
+            }
+            else if (lblDeliverToGpsLocation != null)
+            {
+                lblDeliverToGpsLocation.Text = HttpUtility.HtmlEncode(loc.CoordinatesText);
+                lblDeliverToGpsLocation.ToolTip = loc.StatusDisplay + " (" + loc.OriginText + ")";
+            }
+
+            if (btnDeliverToGpsCheck != null && TryGetContactId(out int contactId))
+            {
+                btnDeliverToGpsCheck.Visible = true;
+                btnDeliverToGpsCheck.OnClientClick = "trackerOpenGps(" + contactId + "," + DeliverToEditId + "); return false;";
+            }
+        }
+
+        protected void gvDeliverTo_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "EditDeliverTo", StringComparison.OrdinalIgnoreCase))
+                return;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out int id) || id <= 0)
+                return;
+            ShowDeliverToForm(id);
+        }
+
+        private void ShowDeliverToForm(int deliverToAddressId)
+        {
+            DeliverToEditId = deliverToAddressId;
+            if (lblDeliverToFormError != null)
+                lblDeliverToFormError.Visible = false;
+
+            if (deliverToAddressId > 0)
+            {
+                var row = new ContactDeliverToAddressRepository().GetById(deliverToAddressId);
+                if (row == null)
+                {
+                    HideDeliverToForm();
+                    return;
+                }
+                if (litDeliverToFormTitle != null)
+                    litDeliverToFormTitle.Text = "Edit Address";
+                tbxDeliverToPerson.Text = row.DeliverToPerson ?? string.Empty;
+                tbxDeliverToLabel.Text = row.Label ?? string.Empty;
+                TrySelectDropDownByValue(ddlDeliverToDeliveryBy, row.ToBeDeliveredByID);
+                tbxDeliverToAddr1.Text = row.Address1 ?? string.Empty;
+                tbxDeliverToAddr2.Text = row.Address2 ?? string.Empty;
+                tbxDeliverToAddr3.Text = row.Address3 ?? string.Empty;
+                TrySelectDropDownByValue(ddlDeliverToArea, row.AreaID);
+                tbxDeliverToPostal.Text = row.PostalCode ?? string.Empty;
+                if (chkDeliverToEnabled != null)
+                    chkDeliverToEnabled.Checked = row.Enabled;
+            }
+            else
+            {
+                if (litDeliverToFormTitle != null)
+                    litDeliverToFormTitle.Text = "New Address";
+                tbxDeliverToPerson.Text = string.Empty;
+                tbxDeliverToLabel.Text = string.Empty;
+                TrySelectDropDownByValue(ddlDeliverToDeliveryBy, ParseNullableInt(ddlDeliveryBy?.SelectedValue));
+                tbxDeliverToAddr1.Text = string.Empty;
+                tbxDeliverToAddr2.Text = string.Empty;
+                tbxDeliverToAddr3.Text = string.Empty;
+                TrySelectDropDownByValue(ddlDeliverToArea, 0);
+                tbxDeliverToPostal.Text = string.Empty;
+                if (chkDeliverToEnabled != null)
+                    chkDeliverToEnabled.Checked = true;
+            }
+
+            if (pnlDeliverToEditor != null)
+                pnlDeliverToEditor.Visible = true;
+            UpdateDeliverToGpsLine();
+            upnlDeliverTo?.Update();
+        }
+
+        private void HideDeliverToForm()
+        {
+            DeliverToEditId = 0;
+            if (pnlDeliverToEditor != null)
+                pnlDeliverToEditor.Visible = false;
+            if (lblDeliverToFormError != null)
+                lblDeliverToFormError.Visible = false;
+        }
+
+        private void ShowDeliverToFormError(string message)
+        {
+            if (lblDeliverToFormError == null)
+                return;
+            lblDeliverToFormError.Text = message;
+            lblDeliverToFormError.Visible = true;
+            if (pnlDeliverToEditor != null)
+                pnlDeliverToEditor.Visible = true;
+        }
+
+        protected void gvDeliverTo_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            if (!int.TryParse(CompanyIDLabel.Text, out int contactId) || contactId <= 0)
+                return;
+            int id = Convert.ToInt32(gvDeliverToAddresses.DataKeys[e.RowIndex].Value);
+            new ContactDeliverToAddressRepository().Delete(id, contactId);
+            if (DeliverToEditId == id)
+                HideDeliverToForm();
+            BindDeliverToGrid(contactId);
+            upnlDeliverTo?.Update();
+        }
+
     }
 }

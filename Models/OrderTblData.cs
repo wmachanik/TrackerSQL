@@ -21,6 +21,7 @@ namespace TrackerSQL.Models
         public string Notes { get; set; } = string.Empty;
         /// <summary>Order flag (InvoiceTypesTbl). Null on insert = use the contact's account type.</summary>
         public int? InvoiceTypeID { get; set; }
+        public int? DeliverToAddressID { get; set; }
         public int ItemTypeID { get; set; }
         public double QuantityOrdered { get; set; }
         public int PrepTypeID { get; set; }

@@ -116,13 +116,6 @@
                 <div class="dashboard-card home-tone-delivery">
                     <div class="tool-card-header">
                         <img class="tool-card-icon" src="images/imgButtons/icons8-delivery-16.png" alt="" />
-                        <h4><a href="Tools/DriverApp.aspx">Driver App</a></h4>
-                    </div>
-                    <p>Install the driver app on a phone or tablet<br /><a href="driver/">Open the web app</a></p>
-                </div>
-                <div class="dashboard-card home-tone-delivery">
-                    <div class="tool-card-header">
-                        <img class="tool-card-icon" src="images/imgButtons/icons8-delivery-16.png" alt="" />
                         <h4><a href="Tools/Deliveries.aspx">Deliveries &amp; Areas</a></h4>
                     </div>
                     <p>Delivery order, customer GPS points, areas, people and GPS settings</p>

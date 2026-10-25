@@ -1,6 +1,6 @@
 # Delivery on Behalf (planned)
 
-**Status:** design only (not in 3.0.3.5).  
+**Status:** phase 1 in progress (Contact Details checkbox + Deliver-To Addresses tab; orders/sheet/driver API not wired yet).  
 **Goal:** Some contacts are invoiced to one address but coffee is delivered to another person/place (or several). Route planning and the driver app must use the **deliver-to** GPS and address, not only the contact's main billing point (`CustomerLocationTbl`).
 
 This is separate from **alternative person** (`ContactAltFirstName` / `ContactAltLastName`), which is who may receive the order at the same address. Delivery on behalf is a **named deliver-to destination** with its own address and GPS.

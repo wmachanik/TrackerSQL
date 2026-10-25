@@ -93,6 +93,10 @@ namespace TrackerSQL.Models
         public int OrderId { get; set; }
         public int ContactId { get; set; }
         public string Company { get; set; }
+        /// <summary>Deliver-to short name when the order uses a recipient address (detail title).</summary>
+        public string DeliverTo { get; set; }
+        /// <summary>Billing contact company when <see cref="DeliverTo"/> is set (detail subtitle).</summary>
+        public string AccountCompany { get; set; }
         /// <summary>Person to hand the delivery to (contact first + last name; ZZName walk-in name from the order notes).</summary>
         public string ContactName { get; set; }
         /// <summary>The contact's alternative person (Contact Details), who may also receive or collect it.</summary>

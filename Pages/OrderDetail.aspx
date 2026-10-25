@@ -128,6 +128,13 @@
                                 <asp:HiddenField ID="hdnSelectedContactId" runat="server" Value="" />
                             </td>
                         </tr>
+                        <tr id="trDeliverToOrder" runat="server" visible="false">
+                            <td>Recipient</td>
+                            <td>
+                                <asp:DropDownList ID="ddlDeliverToOrder" runat="server" AutoPostBack="true"
+                                    OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged" />
+                            </td>
+                        </tr>
                         <tr>
                             <td>Order Date</td>
                             <td>
@@ -260,6 +267,7 @@
                 </ContentTemplate>
                 <Triggers>
                     <asp:AsyncPostBackTrigger ControlID="cboContacts" EventName="SelectedIndexChanged" />
+                    <asp:AsyncPostBackTrigger ControlID="ddlDeliverToOrder" EventName="SelectedIndexChanged" />
                     <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
@@ -313,15 +321,22 @@
             <asp:UpdatePanel ID="upnlWooLink" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                 <ContentTemplate>
                     <asp:Panel ID="pnlWooLink" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                        DefaultButton="btnWooLinkConfirm"
                         data-tracker-unsaved-ignore="1">
                         <div class="confirm-modal">
-                            <h2>Link to Woo order</h2>
+                            <h2>Link to Woo Order</h2>
                             <p><asp:Literal ID="litWooLinkPrompt" runat="server" /></p>
-                            <div class="confirm-modal-option">
+                            <asp:Panel ID="pnlWooLinkCandidates" runat="server" CssClass="confirm-modal-option">
                                 <asp:RadioButtonList ID="rblWooLinkCandidates" runat="server" RepeatDirection="Vertical" />
-                            </div>
+                            </asp:Panel>
+                            <asp:Panel ID="pnlWooLinkManual" runat="server" CssClass="confirm-modal-option" Visible="false">
+                                <label for="<%= tbxWooLinkManualNumber.ClientID %>">Woo Order Number</label>
+                                <asp:TextBox ID="tbxWooLinkManualNumber" runat="server" CssClass="filter-panel-input"
+                                    MaxLength="20" autocomplete="off"
+                                    ToolTip="Woo order number or internal Woo order ID from Woo admin" />
+                            </asp:Panel>
                             <div class="button-row confirm-modal-buttons">
-                                <asp:Button ID="btnWooLinkConfirm" runat="server" Text="Link selected"
+                                <asp:Button ID="btnWooLinkConfirm" runat="server" Text="Link Selected"
                                     CssClass="filter-panel-btn" OnClick="btnWooLinkConfirm_Click"
                                     CausesValidation="false" />
                                 <asp:Button ID="btnWooLinkCancel" runat="server" Text="Cancel"
@@ -630,6 +645,26 @@
                 return input ? (input.value || '').trim() : '';
             }
 
+            function syncContactComboDisplay() {
+                var h = byId(contactHiddenId);
+                var contactId = h && h.value ? String(parseInt(h.value, 10) || '') : '';
+                if (!contactId || contactId === '0') return;
+
+                var combo = byId(contactsComboId);
+                if (!combo) return;
+
+                var input = document.getElementById(contactsComboId + '_TextBox')
+                    || (combo.querySelector && combo.querySelector('input[type="text"]'));
+                if (!input || (input.value || '').trim()) return;
+
+                var hidden = document.getElementById(contactsComboId + '_HiddenField');
+                var idx = hidden ? parseInt(hidden.value, 10) : -1;
+                if (combo.tagName === 'SELECT' && combo.selectedIndex >= 0)
+                    idx = combo.selectedIndex;
+                if (idx >= 0 && combo.options && combo.options[idx])
+                    input.value = combo.options[idx].text;
+            }
+
             function isSundryContact() {
                 var id = getContactId();
                 if (id === sundryId) return true;
@@ -722,6 +757,7 @@
                     var prm = Sys.WebForms.PageRequestManager.getInstance();
                     prm.add_endRequest(function () {
                         wire();
+                        syncContactComboDisplay();
                         syncNewItemButton();
                     });
                 }

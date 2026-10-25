@@ -2,6 +2,12 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.7 — 2026-10-25
+
+- **Delivery on behalf** — Contact Details: **Delivery on Behalf** flag and deliver-to addresses (short name, GPS). **Order Detail**: **Recipient** picker (main vs deliver-to), auto P/Order `ShortName-yyyyMMdd-n` when the same customer has more than one deliver-to order on a day (`-2`, `-3`, …). **Delivery sheet** and **driver app**: recipient-first names (`Vredehoek Spar [TCCC]` on lists; detail shows recipient + **Customer:** billing company); deliver-to address/GPS on sheet and mobile API; no duplicate “Deliver to:” in notes. Schema pack `SQLCommands-DriverGps-08.xml` (`ContactsTbl.DeliveryOnBehalf`, `ContactDeliverToAddressTbl`, `OrdersTbl.DeliverToAddressID`). Order/mobile lines with qty 0 are saved and sent as 1.
+
+**Go live:** Upload `bin/`, `App_Data/SQLCommands-DriverGps-08.xml`, `Pages/OrderDetail.aspx` (+ `.cs`, `.designer`), `Pages/ContactDetails.aspx` (+ `.cs`), `Pages/DeliverySheet.aspx` (+ `.cs` if changed), `Managers/DeliveryOnBehalfManager.cs`, related repos/managers/models, the `driver/` folder (rebuilt web app). In live `Web.config` set `Version` to **3.0.3.7** only (merge your existing secrets/connection strings from `web.live.config`). **Recycle the site** (or touch `Web.config`) so start-up runs the schema pack; check `/api/v1/ping` and `App_Data/startup.log` for “Order flag schema ready”. Optional: **System Tools → XML to SQL** → run `SQLCommands-DriverGps-08.xml` once if start-up did not run.
+
 ## 3.0.3.5 — in progress
 
 Not released yet. 3.0.3.4 went live on 2026-10-03.

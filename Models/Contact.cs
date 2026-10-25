@@ -49,5 +49,7 @@ namespace TrackerSQL.Models
         public string Notes { get; set; }
         public bool? SendDeliveryConfirmation { get; set; }
         public DateTime? LastDateSentReminder { get; set; }
+        /// <summary>Orders may use named deliver-to addresses (ContactDeliverToAddressTbl) with their own GPS.</summary>
+        public bool? DeliveryOnBehalf { get; set; }
     }
 }

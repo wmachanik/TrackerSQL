@@ -19,5 +19,7 @@ namespace TrackerSQL.Models
         public string Notes { get; set; } = string.Empty;
         /// <summary>Order flag (InvoiceTypesTbl). Null on update = keep the stored flag.</summary>
         public int? InvoiceTypeID { get; set; }
+        /// <summary>Null or 0 = main contact address; otherwise ContactDeliverToAddressTbl.</summary>
+        public int? DeliverToAddressID { get; set; }
     }
 }

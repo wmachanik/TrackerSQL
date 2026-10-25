@@ -43,12 +43,24 @@ namespace TrackerSQL.Managers
             /// <summary>The proof predates the stored hand-over list and something was short: the items are the order, not what was delivered.</summary>
             public bool ItemsAreOrdered;
             public byte[] Signature;
+            public bool ShowLocation;
             public string TermsText;
             public string TermsUrl;
         }
 
         /// <summary>Everything the POD shows; null (with the reason) for a missing proof or a delivery that was not made.</summary>
         public PodDocument Load(long proofId, out string error)
+        {
+            return Load(proofId, out error, true);
+        }
+
+        /// <summary>Loads a delivered record for a confirmation email without requiring a signature.</summary>
+        public PodDocument LoadForDeliveryConfirmation(long proofId, out string error)
+        {
+            return Load(proofId, out error, false);
+        }
+
+        private PodDocument Load(long proofId, out string error, bool requireSignature)
         {
             error = null;
             MobileApiSchemaInstaller.EnsureReady();
@@ -61,6 +73,11 @@ namespace TrackerSQL.Managers
             if (!string.Equals(proof.Outcome, MobileDeliveryManager.OutcomeDelivered, StringComparison.OrdinalIgnoreCase))
             {
                 error = "That delivery was not made, so there is no proof of delivery.";
+                return null;
+            }
+            if (requireSignature && !proof.HasSignature)
+            {
+                error = "That delivery was not signed, so there is no proof of delivery.";
                 return null;
             }
 
@@ -114,6 +131,8 @@ namespace TrackerSQL.Managers
 
             if (_repo.TryGetSignature(proofId, out byte[] signature, out _))
                 doc.Signature = signature;
+
+            doc.ShowLocation = ShouldShowLocation(proof, contactId);
             return doc;
         }
 
@@ -202,7 +221,7 @@ namespace TrackerSQL.Managers
             row("How", (proof.Reason ?? string.Empty) + (proof.NotAtClient ? " (not at the client's address)" : string.Empty), false);
             row("Received by", string.IsNullOrWhiteSpace(proof.ReceivedByName) ? "(no name given)" : proof.ReceivedByName, true);
             row("Driver", doc.Driver, false);
-            if (proof.Latitude.HasValue && proof.Longitude.HasValue)
+            if (doc.ShowLocation && proof.Latitude.HasValue && proof.Longitude.HasValue)
                 row("Location", proof.Latitude.Value.ToString("0.00000", CultureInfo.InvariantCulture) + ", "
                     + proof.Longitude.Value.ToString("0.00000", CultureInfo.InvariantCulture)
                     + (proof.AccuracyM.HasValue ? "  (within " + proof.AccuracyM.Value.ToString("0", CultureInfo.InvariantCulture) + " m)" : string.Empty)
@@ -393,6 +412,101 @@ namespace TrackerSQL.Managers
             AppLogger.WriteLog(SystemConstants.LogTypes.Email,
                 "Proof of delivery for order " + proof.OrderID + " (POD " + proofId + ") sent to " + recipient, sentBy);
             return null;
+        }
+
+        /// <summary>Emails an unsigned delivered record as a confirmation, without calling it proof of delivery.</summary>
+        public string SendDeliveryConfirmation(long proofId, string sentBy, out string sentTo)
+        {
+            sentTo = null;
+            PodDocument doc = LoadForDeliveryConfirmation(proofId, out string error);
+            if (doc == null)
+                return error;
+
+            string recipient = doc.Email;
+            if (string.IsNullOrWhiteSpace(recipient))
+                return doc.WalkIn
+                    ? "the walk-in order has no email in its notes ([#name@example.com#])"
+                    : "the client has no email address";
+            if (!IsEmail(recipient))
+                return "'" + recipient + "' is not a valid email address";
+
+            MobileDeliveryProof proof = doc.Proof;
+            var body = new StringBuilder();
+            body.AppendFormat("<p>Hi {0},</p>", Html(doc.Greeting ?? "there"));
+            body.AppendFormat("<p>This is a confirmation that order {0}{1} was delivered on {2} at {3}.</p>",
+                proof.OrderID.ToString(CultureInfo.InvariantCulture),
+                doc.PurchaseOrder == null ? string.Empty : " (PO " + Html(doc.PurchaseOrder) + ")",
+                proof.DeliveredAt.ToString("dddd d MMMM yyyy", CultureInfo.InvariantCulture),
+                proof.DeliveredAt.ToString("HH:mm", CultureInfo.InvariantCulture));
+            body.Append("<table cellpadding=\"4\" style=\"border-collapse:collapse\">");
+            if (!string.IsNullOrWhiteSpace(proof.ReceivedByName))
+                AppendRow(body, "Received by", proof.ReceivedByName);
+            if (!string.IsNullOrWhiteSpace(proof.Reason))
+                AppendRow(body, "Delivered", proof.Reason);
+            AppendRow(body, "Order", proof.OrderID.ToString(CultureInfo.InvariantCulture));
+            body.Append("</table>");
+            if (doc.Items.Count > 0)
+            {
+                body.Append("<p><strong>Delivered</strong></p><ul>");
+                foreach (string line in doc.Items)
+                    body.AppendFormat("<li>{0}</li>", Html(line));
+                body.Append("</ul>");
+            }
+            if (!string.IsNullOrWhiteSpace(proof.MissingItems))
+                body.AppendFormat("<p><strong>Still to follow:</strong> {0}</p>", Html(proof.MissingItems));
+            body.Append(MessageProvider.GetEmailSignature());
+
+            var settings = new EmailSettings();
+            settings.SetRecipient(recipient);
+            var email = new EmailMailKitCls(settings);
+            email.AddSysCCFAddress();
+            email.SetEmailSubject("Delivery confirmation - " + doc.Client + " - order " + proof.OrderID.ToString(CultureInfo.InvariantCulture));
+            email.AddToBody(body.ToString());
+
+            if (!email.SendEmail())
+                return string.IsNullOrWhiteSpace(email.LastErrorSummary)
+                    ? "the email could not be sent"
+                    : "the email could not be sent (" + email.LastErrorSummary + ")";
+
+            sentTo = recipient;
+            AppLogger.WriteLog(SystemConstants.LogTypes.Email,
+                "Delivery confirmation for order " + proof.OrderID + " (unsigned proof " + proofId + ") sent to " + recipient, sentBy);
+            return null;
+        }
+
+        private bool ShouldShowLocation(MobileDeliveryProof proof, int contactId)
+        {
+            if (proof == null || proof.NotAtClient || !proof.Latitude.HasValue || !proof.Longitude.HasValue)
+                return false;
+            if (proof.AccuracyM.HasValue && proof.AccuracyM.Value > 500m)
+                return false;
+
+            if (contactId <= 0 || contactId == SystemConstants.CustomerConstants.SundryCustomerID)
+                return true;
+
+            CustomerLocation expected = new CustomerLocationRepository().GetByContactId(contactId);
+            if (expected == null)
+                return true;
+
+            double distanceKm = DistanceKm((double)proof.Latitude.Value, (double)proof.Longitude.Value,
+                (double)expected.Latitude, (double)expected.Longitude);
+            return distanceKm <= 2.0;
+        }
+
+        private static double DistanceKm(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double earthRadiusKm = 6371.0088;
+            double dLat = DegreesToRadians(lat2 - lat1);
+            double dLon = DegreesToRadians(lon2 - lon1);
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2))
+                * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            return earthRadiusKm * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        }
+
+        private static double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180.0;
         }
 
         private static bool IsEmail(string value)

@@ -10,6 +10,29 @@ namespace TrackerSQL.Repositories
 {
     public class ContactsRepository
     {
+        private static bool? _hasDeliveryOnBehalf;
+
+        /// <summary>ContactsTbl.DeliveryOnBehalf from SQLCommands-DriverGps-08.xml (run at startup).</summary>
+        public static bool HasDeliveryOnBehalfColumn()
+        {
+            if (_hasDeliveryOnBehalf.HasValue)
+                return _hasDeliveryOnBehalf.Value;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _hasDeliveryOnBehalf = db.ExecuteScalar<int>(@"
+SELECT COUNT(1) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.ContactsTbl') AND name = N'DeliveryOnBehalf'") > 0;
+                }
+            }
+            catch
+            {
+                _hasDeliveryOnBehalf = false;
+            }
+            return _hasDeliveryOnBehalf.Value;
+        }
+
         public Contact GetById(int id)
         {
             string sql = "SELECT * FROM ContactsTbl WHERE ContactID = @Id";
@@ -146,7 +169,8 @@ private Contact Map(IDataReader r)
                 ReminderCount = GetValue<int?>(r, "ReminderCount"),
                 Notes = GetValue<string>(r, "Notes"),
                 SendDeliveryConfirmation = GetValue<bool?>(r, "SendDeliveryConfirmation"),
-                LastDateSentReminder = GetValue<DateTime?>(r, "LastDateSentReminder")
+                LastDateSentReminder = GetValue<DateTime?>(r, "LastDateSentReminder"),
+                DeliveryOnBehalf = GetValue<bool?>(r, "DeliveryOnBehalf")
             };
             return c;
         }
@@ -325,7 +349,7 @@ private Contact Map(IDataReader r)
             if (contact == null || contact.ContactID <= 0)
                 return false;
 
-            const string sql = @"
+            string sql = @"
                 UPDATE ContactsTbl SET
                     CompanyName = @CompanyName,
                     ContactTitle = @ContactTitle,
@@ -366,7 +390,9 @@ private Contact Map(IDataReader r)
                     AlwaysSendChkUp = @AlwaysSendChkUp,
                     NormallyResponds = @NormallyResponds,
                     Notes = @Notes,
-                    SendDeliveryConfirmation = @SendDeliveryConfirmation
+                    SendDeliveryConfirmation = @SendDeliveryConfirmation"
+                + (HasDeliveryOnBehalfColumn() ? ", DeliveryOnBehalf = @DeliveryOnBehalf" : string.Empty)
+                + @"
                 WHERE ContactID = @ContactID";
 
             return ExecNonQuery(sql, BuildContactParameters(contact, includeId: true)) > 0;
@@ -408,7 +434,7 @@ WHERE ContactID = @ContactID";
             if (contact == null)
                 return 0;
 
-            const string sql = @"
+            string sql = @"
                 INSERT INTO ContactsTbl (
                     CompanyName, ContactTitle, ContactFirstName, ContactLastName,
                     ContactAltFirstName, ContactAltLastName, Department, BillingAddress,
@@ -419,7 +445,9 @@ WHERE ContactID = @ContactID";
                     SecondaryItemPrefID, SecPrefQty, TypicallySecToo,
                     PreferredAgentID, PreferredCourierServiceID, SalesAgentID, EquipentSN,
                     UsesFilter, AutoFulfill, Enabled, PredictionDisabled,
-                    AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes, SendDeliveryConfirmation
+                    AlwaysSendChkUp, NormallyResponds, ReminderCount, Notes, SendDeliveryConfirmation"
+                + (HasDeliveryOnBehalfColumn() ? ", DeliveryOnBehalf" : string.Empty)
+                + @"
                 ) VALUES (
                     @CompanyName, @ContactTitle, @ContactFirstName, @ContactLastName,
                     @ContactAltFirstName, @ContactAltLastName, @Department, @BillingAddress,
@@ -430,7 +458,9 @@ WHERE ContactID = @ContactID";
                     @SecondaryItemPrefID, @SecPrefQty, @TypicallySecToo,
                     @PreferredAgentID, @PreferredCourierServiceID, @SalesAgentID, @EquipentSN,
                     @UsesFilter, @AutoFulfill, @Enabled, @PredictionDisabled,
-                    @AlwaysSendChkUp, @NormallyResponds, @ReminderCount, @Notes, @SendDeliveryConfirmation
+                    @AlwaysSendChkUp, @NormallyResponds, @ReminderCount, @Notes, @SendDeliveryConfirmation"
+                + (HasDeliveryOnBehalfColumn() ? ", @DeliveryOnBehalf" : string.Empty)
+                + @"
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -482,6 +512,9 @@ WHERE ContactID = @ContactID";
                 new DBParameter { ParamName = "@Notes", DataValue = (object)contact.Notes ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@SendDeliveryConfirmation", DataValue = (object)contact.SendDeliveryConfirmation ?? DBNull.Value, DataDbType = DbType.Boolean }
             };
+
+            if (HasDeliveryOnBehalfColumn())
+                parameters.Add(new DBParameter { ParamName = "@DeliveryOnBehalf", DataValue = contact.DeliveryOnBehalf ?? false, DataDbType = DbType.Boolean });
 
             if (includeId)
             {

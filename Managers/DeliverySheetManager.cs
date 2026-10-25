@@ -103,6 +103,13 @@ namespace TrackerSQL.Managers
                 item.ContactName = string.Format("{0}[{1}]", item.ContactName, row.Notes);
             }
 
+            if (row.DeliverToAddressID.HasValue && row.DeliverToAddressID.Value > 0)
+            {
+                string deliverTo = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+                if (!string.IsNullOrWhiteSpace(deliverTo))
+                    item.ContactName = DeliveryOnBehalfManager.ListDisplayName(deliverTo, item.ContactName);
+            }
+
             if (row.InvoiceTypeID.HasValue
                 && _invoiceTypesById.TryGetValue(row.InvoiceTypeID.Value, out InvoiceType invoiceType))
             {
@@ -162,6 +169,8 @@ namespace TrackerSQL.Managers
                     else if (notes.Contains(":"))
                         notes = notes.Substring(notes.IndexOf(":") + 1).Trim();
                 }
+
+                notes = DeliveryOnBehalfManager.NotesWithoutDeliverToPrefix(notes);
 
                 string strippedNotes = StripEmailOut(notes);
                 if (!string.IsNullOrWhiteSpace(strippedNotes))

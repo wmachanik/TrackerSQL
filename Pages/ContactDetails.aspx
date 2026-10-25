@@ -190,9 +190,16 @@
                     <td>Reminders: [<asp:Label ID="ReminderCountLabel" runat="server" />]</td>
                     <td>Last sent: <asp:Label ID="LastReminderLabel" runat="server" /></td>
                     <td>Contact Portal</td>
-                    <td colspan="3">
+                    <td colspan="2">
                         <asp:Label ID="lblPortalStatus" runat="server" Text="" />
                         <asp:Literal ID="ltrlPortalConflicts" runat="server" EnableViewState="false" />
+                    </td>
+                    <td>Delivery on Behalf</td>
+                    <td>
+                        <asp:CheckBox ID="chkDeliveryOnBehalf" runat="server"
+                            AutoPostBack="true" OnCheckedChanged="chkDeliveryOnBehalf_CheckedChanged" />
+                        <asp:Label ID="lblDeliveryOnBehalfPending" runat="server" Visible="false" CssClass="muted small"
+                            Text="Restart the site once (database update)." />
                     </td>
                 </tr>
                 <tr>
@@ -670,14 +677,18 @@
                                         <ItemTemplate>
                                             <span class="pod-actions">
                                                 <asp:HyperLink ID="hlPodPdf" runat="server" Text="PDF" Target="_blank"
-                                                    Visible='<%# (bool)Eval("IsDelivered") %>'
+                                                    Visible='<%# (bool)Eval("HasSignature") %>'
                                                     NavigateUrl='<%# Eval("PodUrl") %>'
                                                     ToolTip="Open the proof of delivery (PDF)" />
                                                 <asp:LinkButton ID="lbSendPod" runat="server" Text="Email"
                                                     Visible='<%# (bool)Eval("IsDelivered") %>'
                                                     CommandName="SendPod" CommandArgument='<%# Eval("ProofID") %>'
-                                                    ToolTip="Email the proof of delivery PDF to the client (or the address above)"
-                                                    OnClientClick="return confirm('Email the proof of delivery for this order?');" />
+                                                    ToolTip='<%# (bool)Eval("HasSignature")
+                                                        ? "Email the proof of delivery PDF to the client (or the address above)"
+                                                        : "Email the delivery confirmation to the client (or the address above)" %>'
+                                                    OnClientClick='<%# (bool)Eval("HasSignature")
+                                                        ? "return confirm(\"Email the proof of delivery for this order?\");"
+                                                        : "return confirm(\"Email the delivery confirmation for this order?\");" %>' />
                                             </span>
                                             <span class="pod-sent"><%#: Eval("PodSentDisplay") %></span>
                                         </ItemTemplate>
@@ -750,6 +761,115 @@
                     </ContentTemplate>
                 </ajaxToolkit:TabPanel>
                 <%-- Visible when the contact has any repairs (open or done) --%>
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Deliver-To Addresses" ID="tabpnlDeliverTo" Visible="false">
+                    <ContentTemplate>
+                        <asp:UpdatePanel ID="upnlDeliverTo" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                            <ContentTemplate>
+                                <div class="pad-4">
+                                    <asp:Button ID="btnDeliverToAdd" runat="server" Text="Add Address" CssClass="filter-panel-btn"
+                                        OnClick="btnDeliverToAdd_Click" CausesValidation="false" />
+                                    <asp:Panel ID="pnlDeliverToEditor" runat="server" Visible="false" CssClass="mt-12">
+                                        <h3 class="section-heading"><asp:Literal ID="litDeliverToFormTitle" runat="server" Text="New Address" /></h3>
+                                        <table class="TblCoffee" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td>Deliver To</td>
+                                                <td><asp:TextBox ID="tbxDeliverToPerson" runat="server" Width="20em"
+                                                    ToolTip="Person who receives the order and may sign for it" /></td>
+                                                <td>Short Name</td>
+                                                <td><asp:TextBox ID="tbxDeliverToLabel" runat="server" Width="12em"
+                                                    ToolTip="Shown when choosing this address on an order (defaults to Deliver To if blank)" /></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Delivered By</td>
+                                                <td colspan="3">
+                                                    <asp:DropDownList ID="ddlDeliverToDeliveryBy" runat="server" AppendDataBoundItems="true"
+                                                        DataSourceID="odsPersons" DataTextField="Abbreviation" DataValueField="PersonID"
+                                                        AutoPostBack="true" OnSelectedIndexChanged="ddlDeliverToDeliveryBy_SelectedIndexChanged">
+                                                        <asp:ListItem Value="0" Text="- please select -" />
+                                                    </asp:DropDownList>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Address</td>
+                                                <td colspan="3">
+                                                    <asp:TextBox ID="tbxDeliverToAddr1" runat="server" Width="28em" /><br />
+                                                    <asp:TextBox ID="tbxDeliverToAddr2" runat="server" Width="28em" /><br />
+                                                    <asp:TextBox ID="tbxDeliverToAddr3" runat="server" Width="28em" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Area</td>
+                                                <td>
+                                                    <asp:DropDownList ID="ddlDeliverToArea" runat="server" DataSourceID="odsAreas"
+                                                        DataTextField="AreaName" DataValueField="AreaID" AppendDataBoundItems="true">
+                                                        <asp:ListItem Value="0" Text="- please select -" />
+                                                    </asp:DropDownList>
+                                                </td>
+                                                <td>Postal Code</td>
+                                                <td><asp:TextBox ID="tbxDeliverToPostal" runat="server" Width="8em" /></td>
+                                            </tr>
+                                            <tr id="trDeliverToGps" runat="server" visible="false">
+                                                <td><asp:Literal ID="litDeliverToGpsCaption" runat="server" Text="GPS" /></td>
+                                                <td colspan="3">
+                                                    <asp:Label ID="lblDeliverToGpsLocation" runat="server" CssClass="contact-gps-value" />
+                                                    <asp:Button ID="btnDeliverToGpsCheck" runat="server" Text="Check" Visible="false"
+                                                        CssClass="filter-panel-btn contact-postal-suggest" CausesValidation="false" UseSubmitBehavior="false"
+                                                        ToolTip="Open the map: confirm the pin, drag it, type GPS co-ordinates or search for the address" />
+                                                    <asp:Label ID="lblDeliverToGpsPending" runat="server" Visible="false" CssClass="muted small"
+                                                        Text="Save the address first, then use Check for GPS." />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>&nbsp;</td>
+                                                <td colspan="3">
+                                                    <asp:CheckBox ID="chkDeliverToEnabled" runat="server" Text="Enabled" Checked="true" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <div class="button-row mt-8">
+                                            <asp:Button ID="btnDeliverToSave" runat="server" Text="Save Address" CssClass="filter-panel-btn"
+                                                OnClick="btnDeliverToSave_Click" CausesValidation="false" />
+                                            <asp:Button ID="btnDeliverToCancel" runat="server" Text="Cancel" CssClass="filter-panel-btn"
+                                                OnClick="btnDeliverToCancel_Click" CausesValidation="false" />
+                                        </div>
+                                        <asp:Label ID="lblDeliverToFormError" runat="server" CssClass="status-message status-error" Visible="false" />
+                                    </asp:Panel>
+                                    <asp:GridView ID="gvDeliverToAddresses" runat="server" CssClass="TblWhite small mt-12"
+                                        AutoGenerateColumns="False" EmptyDataText="No deliver-to addresses yet."
+                                        DataKeyNames="DeliverToAddressID"
+                                        OnRowCommand="gvDeliverTo_RowCommand" OnRowDeleting="gvDeliverTo_RowDeleting">
+                                        <Columns>
+                                            <asp:TemplateField ShowHeader="False">
+                                                <ItemTemplate>
+                                                    <asp:ImageButton ID="btnEditDeliverTo" runat="server" CommandName="EditDeliverTo"
+                                                        CommandArgument='<%# Eval("DeliverToAddressID") %>' CausesValidation="false"
+                                                        ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" ToolTip="Edit this address" />
+                                                    &nbsp;
+                                                    <asp:ImageButton ID="btnDeleteDeliverTo" runat="server" CommandName="Delete" CausesValidation="false"
+                                                        ImageUrl="~/images/imgButtons/DelItem.gif" AlternateText="Delete" ToolTip="Delete this address"
+                                                        OnClientClick="return confirm('Delete this deliver-to address?');" />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="DeliverToPerson" HeaderText="Deliver To" />
+                                            <asp:BoundField DataField="Label" HeaderText="Short Name" />
+                                            <asp:BoundField DataField="DeliveryByDisplay" HeaderText="Delivered By" />
+                                            <asp:TemplateField HeaderText="Address">
+                                                <ItemTemplate><%# Eval("AddressSummary") %></ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="AreaName" HeaderText="Area" />
+                                            <asp:TemplateField HeaderText="GPS">
+                                                <ItemTemplate><%# DeliverToGpsGridHtml(Container.DataItem) %></ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="On">
+                                                <ItemTemplate><%# (bool)Eval("Enabled") ? "Yes" : "No" %></ItemTemplate>
+                                            </asp:TemplateField>
+                                        </Columns>
+                                    </asp:GridView>
+                                </div>
+                            </ContentTemplate>
+                        </asp:UpdatePanel>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
                 <ajaxToolkit:TabPanel runat="server" HeaderText="Repairs" ID="tabpnlRepairs" Visible="false">
                     <HeaderTemplate>Repairs</HeaderTemplate>
                     <ContentTemplate>
@@ -844,13 +964,15 @@
             function dialog() { return document.querySelector('#contactGpsOverlay .contact-gps-dialog'); }
             function place() { var d = dialog(); if (d) d.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)'; }
 
-            window.trackerOpenGps = function (contactId) {
+            window.trackerOpenGps = function (contactId, deliverToAddressId) {
                 changed = false;
                 var overlay = document.getElementById('contactGpsOverlay');
                 var frame = document.getElementById('contactGpsFrame');
                 if (!overlay || !frame) return;
                 dx = 0; dy = 0; place();
-                frame.src = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
+                var url = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
+                if (deliverToAddressId) url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                frame.src = url;
                 overlay.style.display = 'flex';
             };
 

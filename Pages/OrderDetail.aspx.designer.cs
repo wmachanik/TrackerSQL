@@ -38,6 +38,8 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.HyperLink hlContactHdr;
         protected global::AjaxControlToolkit.ComboBox cboContacts;
         protected global::System.Web.UI.WebControls.HiddenField hdnSelectedContactId;
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trDeliverToOrder;
+        protected global::System.Web.UI.WebControls.DropDownList ddlDeliverToOrder;
         protected global::System.Web.UI.WebControls.TextBox tbxOrderDate;
         protected global::AjaxControlToolkit.CalendarExtender tbxOrderDate_CalendarExtender;
         protected global::System.Web.UI.WebControls.TextBox tbxPrepDate;
@@ -80,7 +82,10 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlWooLink;
         protected global::System.Web.UI.WebControls.Panel pnlWooLink;
         protected global::System.Web.UI.WebControls.Literal litWooLinkPrompt;
+        protected global::System.Web.UI.WebControls.Panel pnlWooLinkCandidates;
         protected global::System.Web.UI.WebControls.RadioButtonList rblWooLinkCandidates;
+        protected global::System.Web.UI.WebControls.Panel pnlWooLinkManual;
+        protected global::System.Web.UI.WebControls.TextBox tbxWooLinkManualNumber;
         protected global::System.Web.UI.WebControls.Button btnWooLinkConfirm;
         protected global::System.Web.UI.WebControls.Button btnWooLinkCancel;
         protected global::System.Web.UI.UpdatePanel upnlOrderLines;

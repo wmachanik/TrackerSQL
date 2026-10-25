@@ -358,6 +358,204 @@ namespace TrackerSQL.Managers
             return loc;
         }
 
+        /// <summary>Street lines and postal code only (area and delivered-by do not invalidate GPS).</summary>
+        public static string PhysicalAddressFingerprint(ContactDeliverToAddress row)
+        {
+            if (row == null)
+                return string.Empty;
+            return string.Join(", ", new[] { row.Address1, row.Address2, row.Address3, row.PostalCode }
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim()));
+        }
+
+        public static bool SameDeliverToPhysicalAddress(ContactDeliverToAddress before, ContactDeliverToAddress after)
+        {
+            return Norm(PhysicalAddressFingerprint(before)) == Norm(PhysicalAddressFingerprint(after));
+        }
+
+        public static string BuildAddressText(ContactDeliverToAddress row)
+        {
+            if (row == null)
+                return string.Empty;
+            var lines = new[] { row.Address1, row.Address2, row.Address3 }.Where(s => !string.IsNullOrWhiteSpace(s));
+            string joined = string.Join(", ", lines);
+            var contact = new Contact
+            {
+                BillingAddress = joined,
+                PostalCode = row.PostalCode,
+                AreaID = row.AreaID,
+                StateOrProvince = row.StateOrProvince
+            };
+            return BuildAddressText(contact);
+        }
+
+        public static string SearchTextForDeliverTo(ContactDeliverToAddress row)
+        {
+            if (row == null)
+                return string.Empty;
+            var contact = new Contact
+            {
+                BillingAddress = string.Join("\n", new[] { row.Address1, row.Address2, row.Address3 }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                PostalCode = row.PostalCode,
+                AreaID = row.AreaID,
+                StateOrProvince = row.StateOrProvince
+            };
+            return SearchTextFor(contact);
+        }
+
+        public LocationLookupOutcome EnsureForDeliverToAddress(int deliverToAddressId, string userName, bool force = false)
+        {
+            var repo = new ContactDeliverToAddressRepository();
+            ContactDeliverToAddress row = repo.GetById(deliverToAddressId);
+            if (row == null)
+                return new LocationLookupOutcome { Skipped = true, Message = "Deliver-to address not found." };
+
+            LocationLookupOutcome outcome = LookUpDeliverTo(row, userName, force);
+            if (outcome.UsedLookup)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "DeliverTo=" + deliverToAddressId + " | GPS looked up"
+                    + (force ? " again" : string.Empty) + ": "
+                    + (outcome.Success && row.HasGpsPoint
+                        ? (row.GpsNeedsReview ? "rough" : "found") + " " + row.Latitude + "," + row.Longitude
+                        : "not found - " + outcome.Message), userName);
+            }
+            return outcome;
+        }
+
+        public ContactDeliverToAddress SetManualDeliverTo(int deliverToAddressId, decimal latitude, decimal longitude, string userName, string matchedAddress = null)
+        {
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
+                throw new ArgumentOutOfRangeException(nameof(latitude), "Not a valid GPS point.");
+
+            var repo = new ContactDeliverToAddressRepository();
+            ContactDeliverToAddress existing = repo.GetById(deliverToAddressId);
+            if (existing == null)
+                throw new InvalidOperationException("Deliver-to address not found.");
+
+            existing.Latitude = latitude;
+            existing.Longitude = longitude;
+            existing.Geohash = Geohash.Encode((double)latitude, (double)longitude);
+            existing.GeocodedAddress = string.IsNullOrWhiteSpace(matchedAddress) ? existing.GeocodedAddress : matchedAddress;
+            string physical = PhysicalAddressFingerprint(existing);
+            existing.SourceAddress = physical.Length > 0 ? physical : BuildAddressText(existing);
+            existing.LocationStatus = CustomerLocation.StatusVerified;
+            existing.Source = CustomerLocation.SourceManual;
+            existing.LocationUpdatedBy = userName;
+            repo.UpdateGps(existing);
+            return repo.GetById(deliverToAddressId);
+        }
+
+        private LocationLookupOutcome LookUpDeliverTo(ContactDeliverToAddress row, string userName, bool force)
+        {
+            if (!IsReady)
+                return new LocationLookupOutcome { Skipped = true, Message = "GPS tables are not installed yet." };
+
+            if (!force && !new PersonsRepository().IsDeliverPerson(row.ToBeDeliveredByID))
+                return new LocationLookupOutcome { Skipped = true, Message = "Not delivered by one of our drivers." };
+
+            string addressText = BuildAddressText(row);
+            if (string.IsNullOrWhiteSpace(addressText))
+                return new LocationLookupOutcome { Skipped = true, Message = "This address has no street text yet." };
+
+            PurgeExpiredOncePerDay();
+            var repo = new ContactDeliverToAddressRepository();
+            string physical = PhysicalAddressFingerprint(row);
+            if (!force && row.HasGpsPoint
+                && (SameAddress(row.SourceAddress, addressText) || SameAddress(row.SourceAddress, physical)))
+            {
+                return new LocationLookupOutcome
+                {
+                    Success = true,
+                    Skipped = true,
+                    Location = row.ToDisplayLocation()
+                };
+            }
+
+            var contact = new Contact
+            {
+                BillingAddress = string.Join("\n", new[] { row.Address1, row.Address2, row.Address3 }.Where(s => !string.IsNullOrWhiteSpace(s))),
+                PostalCode = row.PostalCode,
+                AreaID = row.AreaID,
+                StateOrProvince = row.StateOrProvince
+            };
+
+            GpsSettings settings = _settingsRepo.Get();
+            GeocodeResult result = GeocodeContact(contact, settings, out bool usedLookup);
+            if (!result.Success && result.Failure != GeocodeFailure.NotFound)
+            {
+                return new LocationLookupOutcome
+                {
+                    StopBatch = result.Failure == GeocodeFailure.DailyLimitReached
+                        || result.Failure == GeocodeFailure.PerMinuteLimitReached
+                        || result.Failure == GeocodeFailure.NotConfigured,
+                    UsedLookup = usedLookup,
+                    Location = row.ToDisplayLocation(),
+                    Message = result.Message
+                };
+            }
+
+            row.SourceAddress = physical.Length > 0 ? physical : addressText;
+            row.LocationUpdatedBy = userName;
+
+            if (result.Success)
+            {
+                row.Latitude = (decimal)result.Latitude;
+                row.Longitude = (decimal)result.Longitude;
+                row.GeocodedAddress = result.Label;
+                bool azure = result.Provider == GpsSettings.ProviderAzureMaps;
+                row.Source = azure ? CustomerLocation.SourceAzureMaps : CustomerLocation.SourceGeocoder;
+                row.LocationStatus = result.IsPrecise ? CustomerLocation.StatusApproximate : CustomerLocation.StatusReviewRequired;
+            }
+            else if (!TryPostcodeCentroid(contact.PostalCode, row))
+            {
+                if (row.GpsNeedsReview && !row.GpsIsVerified && row.Source != CustomerLocation.SourceManual)
+                    repo.ClearGps(row.DeliverToAddressID, row.ContactID);
+                return new LocationLookupOutcome
+                {
+                    UsedLookup = usedLookup,
+                    Message = "Address not found; set the pin with Check."
+                };
+            }
+
+            row.Geohash = Geohash.Encode((double)row.Latitude.Value, (double)row.Longitude.Value);
+            repo.UpdateGps(row);
+            row = repo.GetById(row.DeliverToAddressID);
+
+            return new LocationLookupOutcome
+            {
+                Success = true,
+                UsedLookup = usedLookup,
+                Location = row.ToDisplayLocation(),
+                Message = row.GpsNeedsReview
+                    ? "Location found, but only roughly; please check the pin."
+                    : "Location found."
+            };
+        }
+
+        private static bool TryPostcodeCentroid(string postalCode, ContactDeliverToAddress row)
+        {
+            if (!int.TryParse((postalCode ?? string.Empty).Trim(), out int code) || code <= 0)
+                return false;
+            try
+            {
+                SaPostalCode place = new SaPostalCodeRepository().GetPlacesForPostalCode(code, 20)
+                    .FirstOrDefault(p => p.Latitude.HasValue && p.Longitude.HasValue);
+                if (place == null)
+                    return false;
+                row.Latitude = place.Latitude.Value;
+                row.Longitude = place.Longitude.Value;
+                row.GeocodedAddress = "Postcode " + code.ToString("0000") + " (" + place.PlaceName + ")";
+                row.Source = CustomerLocation.SourcePostcode;
+                row.LocationStatus = CustomerLocation.StatusReviewRequired;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         /// <summary>Phone fixes less sure than this (metres) are ignored.</summary>
         public const decimal DriverMaxAccuracyM = 75;
         /// <summary>A delivery this close to our driver point agrees with it.</summary>

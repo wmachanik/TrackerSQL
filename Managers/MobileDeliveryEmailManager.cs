@@ -21,6 +21,10 @@ namespace TrackerSQL.Managers
         /// <summary>The POD PDF to the client, copied to the orders address.</summary>
         public string SendConfirmation(long proofId, string userName)
         {
+            MobileDeliveryProof proof = _repo.GetProof(proofId);
+            if (proof != null && proof.HasSignature == false
+                && string.Equals(proof.Outcome, MobileDeliveryManager.OutcomeDelivered, StringComparison.OrdinalIgnoreCase))
+                return new ProofOfDeliveryManager().SendDeliveryConfirmation(proofId, userName, out _);
             return new ProofOfDeliveryManager().Send(proofId, userName, null, out _);
         }
 

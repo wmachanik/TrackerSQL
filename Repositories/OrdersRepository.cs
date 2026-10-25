@@ -10,9 +10,37 @@ namespace TrackerSQL.Repositories
 {
     public class OrdersRepository
     {
+        private static bool? _hasDeliverToAddressId;
+
+        public static bool HasDeliverToAddressIdColumn()
+        {
+            if (_hasDeliverToAddressId == true)
+                return true;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    bool seen = db.ExecuteScalar<int>(@"
+SELECT COUNT(1) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'") > 0;
+                    if (seen)
+                        _hasDeliverToAddressId = true;
+                    return seen;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string HeaderSelectColumns =>
+            "OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID"
+            + (HasDeliverToAddressIdColumn() ? ", DeliverToAddressID" : string.Empty);
+
         public Order GetById(int id)
         {
-            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID FROM OrdersTbl WHERE OrderID = @Id";
+            string sql = "SELECT " + HeaderSelectColumns + " FROM OrdersTbl WHERE OrderID = @Id";
             var p = new List<DBParameter> { new DBParameter { DataValue = id, DataDbType = DbType.Int32, ParamName = "@Id" } };
 
             using (var db = new TrackerSQLDb())
@@ -32,7 +60,7 @@ namespace TrackerSQL.Repositories
         public List<Order> GetAll()
         {
             var list = new List<Order>();
-            string sql = "SELECT OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID FROM OrdersTbl";
+            string sql = "SELECT " + HeaderSelectColumns + " FROM OrdersTbl";
             using (var db = new TrackerSQLDb())
             using (var rdr = db.ExecuteReader(sql))
             {
@@ -227,7 +255,10 @@ namespace TrackerSQL.Repositories
                 Notes = r["Notes"] == DBNull.Value ? string.Empty : r["Notes"].ToString(),
                 PurchaseOrder = r["PurchaseOrder"] == DBNull.Value ? string.Empty : r["PurchaseOrder"].ToString(),
                 InvoiceDone = r["InvoiceDone"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["InvoiceDone"]),
-                InvoiceTypeID = r["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["InvoiceTypeID"])
+                InvoiceTypeID = r["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["InvoiceTypeID"]),
+                DeliverToAddressID = HasDeliverToAddressIdColumn() && r["DeliverToAddressID"] != DBNull.Value
+                    ? Convert.ToInt32(r["DeliverToAddressID"])
+                    : (int?)null
             };
         }
         public OrderHeaderData GetOrderHeaderByOrderId(int orderId)
@@ -248,8 +279,41 @@ namespace TrackerSQL.Repositories
                 InvoiceDone = order.InvoiceDone ?? false,
                 PurchaseOrder = order.PurchaseOrder ?? string.Empty,
                 Notes = order.Notes ?? string.Empty,
-                InvoiceTypeID = order.InvoiceTypeID
+                InvoiceTypeID = order.InvoiceTypeID,
+                DeliverToAddressID = order.DeliverToAddressID
             };
+        }
+
+        /// <summary>
+        /// Next suffix for auto PO (Name-yyyyMMdd-n): other orders for the same contact, same deliver-to address, same delivery day.
+        /// First order gets n=1; a second gets n=2, etc.
+        /// </summary>
+        public int NextDeliverToPoSequence(int deliverToAddressId, long contactId, DateTime requiredByDate, int excludeOrderId = 0)
+        {
+            if (deliverToAddressId <= 0 || !HasDeliverToAddressIdColumn())
+                return 1;
+
+            string sql = @"
+                SELECT COUNT(1) FROM OrdersTbl
+                WHERE DeliverToAddressID = @DeliverToAddressID
+                  AND CAST(RequiredByDate AS DATE) = @Date";
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@DeliverToAddressID", DataValue = deliverToAddressId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@Date", DataValue = requiredByDate.Date, DataDbType = DbType.Date }
+            };
+            if (contactId > 0)
+            {
+                sql += " AND ContactID = @ContactID";
+                parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 });
+            }
+            if (excludeOrderId > 0)
+            {
+                sql += " AND OrderID <> @ExcludeOrderID";
+                parameters.Add(new DBParameter { ParamName = "@ExcludeOrderID", DataValue = excludeOrderId, DataDbType = DbType.Int32 });
+            }
+
+            return ExecuteScalar<int>(sql, parameters) + 1;
         }
 
         public int GetOrderLineCount(int orderId)
@@ -564,13 +628,14 @@ namespace TrackerSQL.Repositories
                 parameters.Add(new DBParameter { ParamName = paramName, DataValue = ids[i], DataDbType = DbType.Int32 });
             }
 
+            string deliverToSet = HasDeliverToAddressIdColumn() ? ", DeliverToAddressID = @DeliverToAddressID" : string.Empty;
             string sql = $@"
                 UPDATE OrdersTbl SET
                     ContactID = @ContactID, OrderDate = @OrderDate, PrepDate = @PrepDate,
                     ToBeDeliveredByID = @ToBeDeliveredByID, RequiredByDate = @RequiredByDate,
                     Confirmed = @Confirmed, Done = @Done, InvoiceDone = @InvoiceDone,
                     PurchaseOrder = @PurchaseOrder, Notes = @Notes,
-                    InvoiceTypeID = COALESCE(@InvoiceTypeID, InvoiceTypeID)
+                    InvoiceTypeID = COALESCE(@InvoiceTypeID, InvoiceTypeID){deliverToSet}
                 WHERE OrderID IN ({string.Join(", ", inParams)})";
 
             int result = ExecNonQuery(sql, parameters);
@@ -632,10 +697,11 @@ namespace TrackerSQL.Repositories
 
         public OrderTblData GetOrderTblDataById(int orderId)
         {
-            const string sql = @"
+            string deliverToCol = HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : string.Empty;
+            string sql = @"
                 SELECT o.OrderID, o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate,
                        o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.InvoiceDone,
-                       o.PurchaseOrder, o.Notes, o.InvoiceTypeID,
+                       o.PurchaseOrder, o.Notes, o.InvoiceTypeID" + deliverToCol + @",
                        ol.OrderLineID, ol.ItemID, ol.QtyOrdered, ol.PrepTypeID, ol.PackagingID
                 FROM OrdersTbl o
                 LEFT JOIN OrderLinesTbl ol ON o.OrderID = ol.OrderID
@@ -671,21 +737,16 @@ namespace TrackerSQL.Repositories
         public int InsertOrderHeader(OrderTblData orderData)
         {
             EnsureNotesColumnWide();
-            // No flag supplied (normal / Woo / prediction orders) → the contact's account type.
-            const string sql = @"
+            // Only an explicitly supplied order or recurring-order flag is stored.
+            string deliverToCols = HasDeliverToAddressIdColumn() ? ", DeliverToAddressID" : string.Empty;
+            string deliverToVals = HasDeliverToAddressIdColumn() ? ", @DeliverToAddressID" : string.Empty;
+            string sql = $@"
                 INSERT INTO OrdersTbl
                 (ContactID, OrderDate, PrepDate, ToBeDeliveredByID, RequiredByDate, Confirmed, Done, Packed,
-                 InvoiceDone, PurchaseOrder, Notes, InvoiceTypeID)
+                 InvoiceDone, PurchaseOrder, Notes, InvoiceTypeID{deliverToCols})
                 VALUES
                 (@ContactID, @OrderDate, @PrepDate, @ToBeDeliveredByID, @RequiredByDate, @Confirmed, @Done, @Packed,
-                 @InvoiceDone, @PurchaseOrder, @Notes,
-                 COALESCE(
-                     (SELECT it.InvoiceTypeID FROM InvoiceTypesTbl it WHERE it.InvoiceTypeID = @InvoiceTypeID),
-                     (SELECT TOP 1 it.InvoiceTypeID
-                      FROM ContactsAccInfoTbl a
-                      INNER JOIN InvoiceTypesTbl it ON it.InvoiceTypeID = a.InvoiceTypeID
-                      WHERE a.ContactID = @ContactID),
-                     (SELECT it.InvoiceTypeID FROM InvoiceTypesTbl it WHERE it.InvoiceTypeID = 1)));
+                 @InvoiceDone, @PurchaseOrder, @Notes, @InvoiceTypeID{deliverToVals});
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var parameters = new List<DBParameter>
@@ -703,6 +764,16 @@ namespace TrackerSQL.Repositories
                 new DBParameter { ParamName = "@Notes", DataValue = orderData.Notes ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@InvoiceTypeID", DataValue = FkOrDbNull(orderData.InvoiceTypeID ?? 0), DataDbType = DbType.Int32 }
             };
+            if (HasDeliverToAddressIdColumn())
+            {
+                int? deliverTo = orderData.DeliverToAddressID;
+                parameters.Add(new DBParameter
+                {
+                    ParamName = "@DeliverToAddressID",
+                    DataValue = deliverTo.HasValue && deliverTo.Value > 0 ? (object)deliverTo.Value : DBNull.Value,
+                    DataDbType = DbType.Int32
+                });
+            }
 
             return ExecuteScalar<int>(sql, parameters);
         }
@@ -766,6 +837,7 @@ IF NOT EXISTS (
 
         public int InsertOrderLine(int orderId, int itemId, double quantityOrdered, int prepTypeId, int packagingId)
         {
+            quantityOrdered = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(quantityOrdered);
             const string sql = @"
                 INSERT INTO OrderLinesTbl (OrderID, ItemID, QtyOrdered, PrepTypeID, PackagingID)
                 VALUES (@OrderID, @ItemID, @QtyOrdered, @PrepTypeID, @PackagingID);
@@ -1176,6 +1248,7 @@ WHERE OrderID = @OrderID
 
         public bool UpdateOrderLine(long orderLineId, int itemId, double quantityOrdered, int packagingId)
         {
+            quantityOrdered = SystemConstants.FormatConstants.OrderLineQtyAtLeastOne(quantityOrdered);
             const string sql = @"
                 UPDATE OrderLinesTbl
                 SET ItemID = @ItemID, QtyOrdered = @QtyOrdered, PackagingID = @PackagingID
@@ -1261,13 +1334,16 @@ WHERE OrderID = @OrderID
                 InvoiceDone = rdr["InvoiceDone"] != DBNull.Value && Convert.ToBoolean(rdr["InvoiceDone"]),
                 PurchaseOrder = rdr["PurchaseOrder"] == DBNull.Value ? string.Empty : rdr["PurchaseOrder"].ToString(),
                 Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
-                InvoiceTypeID = rdr["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["InvoiceTypeID"])
+                InvoiceTypeID = rdr["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["InvoiceTypeID"]),
+                DeliverToAddressID = HasDeliverToAddressIdColumn() && rdr["DeliverToAddressID"] != DBNull.Value
+                    ? Convert.ToInt32(rdr["DeliverToAddressID"])
+                    : (int?)null
             };
         }
 
         private static List<DBParameter> BuildHeaderUpdateParameters(OrderHeaderData header)
         {
-            return new List<DBParameter>
+            var list = new List<DBParameter>
             {
                 new DBParameter { ParamName = "@ContactID", DataValue = header.CustomerID, DataDbType = DbType.Int64 },
                 new DBParameter { ParamName = "@OrderDate", DataValue = header.OrderDate, DataDbType = DbType.Date },
@@ -1281,6 +1357,17 @@ WHERE OrderID = @OrderID
                 new DBParameter { ParamName = "@Notes", DataValue = header.Notes ?? string.Empty, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@InvoiceTypeID", DataValue = DbParamHelpers.FkOrDbNull(header.InvoiceTypeID ?? 0), DataDbType = DbType.Int32 }
             };
+            if (HasDeliverToAddressIdColumn())
+            {
+                int? deliverTo = header.DeliverToAddressID;
+                list.Add(new DBParameter
+                {
+                    ParamName = "@DeliverToAddressID",
+                    DataValue = deliverTo.HasValue && deliverTo.Value > 0 ? (object)deliverTo.Value : DBNull.Value,
+                    DataDbType = DbType.Int32
+                });
+            }
+            return list;
         }
 
         public List<OrderEntryListItem> GetOrderEntryList(bool orderDone, string searchFor, string searchValue)

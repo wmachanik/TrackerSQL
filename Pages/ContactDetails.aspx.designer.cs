@@ -33,6 +33,15 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.ScriptManager smContactDetails;
 
         /// <summary>
+        /// pnlContactDetails control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlContactDetails;
+
+        /// <summary>
         /// uprgContactDetails control.
         /// </summary>
         /// <remarks>
@@ -40,6 +49,15 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UpdateProgress uprgContactDetails;
+
+        /// <summary>
+        /// hdnContactDirty control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hdnContactDirty;
 
         /// <summary>
         /// upnlContactDetails control.
@@ -139,6 +157,14 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox PostalCodeTextBox;
+
+        /// <summary>
+        /// btnSuggestPostal control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnSuggestPostal;
 
         /// <summary>
@@ -214,24 +240,6 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.TextBox AltEmailAddressTextBox;
 
         /// <summary>
-        /// lblPortalStatus control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblPortalStatus;
-
-        /// <summary>
-        /// ltrlPortalConflicts control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltrlPortalConflicts;
-
-        /// <summary>
         /// ddlContactTypes control.
         /// </summary>
         /// <remarks>
@@ -304,17 +312,6 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.RequiredFieldValidator ddlDeliveryByRequiredFieldValidator;
 
         /// <summary>
-        /// ddlCourierService control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.DropDownList ddlCourierService;
-
-        /// <summary>
-        /// phCourier / phCourierBlank controls.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.PlaceHolder phCourier;
-        protected global::System.Web.UI.WebControls.PlaceHolder phCourierBlank;
-
-        /// <summary>
         /// ddlAgent control.
         /// </summary>
         /// <remarks>
@@ -322,6 +319,69 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlAgent;
+
+        /// <summary>
+        /// phCourier control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder phCourier;
+
+        /// <summary>
+        /// ddlCourierService control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlCourierService;
+
+        /// <summary>
+        /// phCourierBlank control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder phCourierBlank;
+
+        /// <summary>
+        /// lblGpsCaption control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblGpsCaption;
+
+        /// <summary>
+        /// lblGpsLocation control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblGpsLocation;
+
+        /// <summary>
+        /// btnGpsCheck control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnGpsCheck;
+
+        /// <summary>
+        /// btnGpsRefresh control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnGpsRefresh;
 
         /// <summary>
         /// ReminderCountLabel control.
@@ -340,6 +400,34 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label LastReminderLabel;
+
+        /// <summary>
+        /// lblPortalStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblPortalStatus;
+
+        /// <summary>
+        /// ltrlPortalConflicts control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltrlPortalConflicts;
+
+        /// <summary>
+        /// chkDeliveryOnBehalf control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.CheckBox chkDeliveryOnBehalf;
+
+        /// <summary>
+        /// lblDeliveryOnBehalfPending control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblDeliveryOnBehalfPending;
 
         /// <summary>
         /// enabledCheckBox control.
@@ -432,36 +520,6 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnInsert;
 
         /// <summary>
-        /// pnlDuplicatePrompt control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Panel pnlDuplicatePrompt;
-
-        /// <summary>
-        /// litDuplicateTitle control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Literal litDuplicateTitle;
-
-        /// <summary>
-        /// litDuplicatePrompt control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Literal litDuplicatePrompt;
-
-        /// <summary>
-        /// btnDuplicateAddAnyway control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Button btnDuplicateAddAnyway;
-
-        /// <summary>
-        /// btnDuplicateMerge control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Button btnDuplicateMerge;
-
-        /// <summary>
-        /// btnDuplicateCancel control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Button btnDuplicateCancel;
-
-        /// <summary>
         /// btnCopy2AccInfo control.
         /// </summary>
         /// <remarks>
@@ -516,8 +574,12 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnInvitePortal;
 
         /// <summary>
-        /// btnViewInPortal control (administrators: read-only portal preview as this contact).
+        /// btnViewInPortal control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnViewInPortal;
 
         /// <summary>
@@ -539,13 +601,66 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.ImageButton btnCancel;
 
         /// <summary>
-        /// hdnContactDirty — unsaved changes flag (client + server).
+        /// pnlDuplicatePrompt control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.HiddenField hdnContactDirty;
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlDuplicatePrompt;
+
+        /// <summary>
+        /// litDuplicateTitle control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litDuplicateTitle;
+
+        /// <summary>
+        /// litDuplicatePrompt control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litDuplicatePrompt;
+
+        /// <summary>
+        /// btnDuplicateAddAnyway control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateAddAnyway;
+
+        /// <summary>
+        /// btnDuplicateMerge control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateMerge;
+
+        /// <summary>
+        /// btnDuplicateCancel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnDuplicateCancel;
 
         /// <summary>
         /// pnlStatus control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlStatus;
 
         /// <summary>
@@ -565,11 +680,6 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.ValidationSummary valContactSave;
-
-        /// <summary>
-        /// pnlContactDetails control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.Panel pnlContactDetails;
 
         /// <summary>
         /// uppnlTabContainer control.
@@ -905,15 +1015,6 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlNextItems;
 
         /// <summary>
-        /// dgContactUsage control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DataGrid dgContactUsage;
-
-        /// <summary>
         /// tabpnlItems control.
         /// </summary>
         /// <remarks>
@@ -943,16 +1044,28 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// tabpnlChangeLog control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::AjaxControlToolkit.TabPanel tabpnlChangeLog;
 
         /// <summary>
         /// upnlContactChangeLog control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.UpdatePanel upnlContactChangeLog;
 
         /// <summary>
         /// gvContactChangeLog control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactChangeLog;
 
         /// <summary>
@@ -985,29 +1098,64 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// tabpnlWaybills control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::AjaxControlToolkit.TabPanel tabpnlWaybills;
 
         /// <summary>
         /// gvContactWaybills control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactWaybills;
 
         /// <summary>
         /// tabpnlProofs control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.Label lblGpsCaption;
-        protected global::System.Web.UI.WebControls.Label lblGpsLocation;
-        protected global::System.Web.UI.WebControls.Button btnGpsCheck;
-        protected global::System.Web.UI.WebControls.Button btnGpsRefresh;
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::AjaxControlToolkit.TabPanel tabpnlProofs;
 
+        /// <summary>
+        /// upnlContactProofs control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.UpdatePanel upnlContactProofs;
+
+        /// <summary>
+        /// txtPodEmail control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtPodEmail;
+
+        /// <summary>
+        /// litProofMessage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litProofMessage;
 
         /// <summary>
         /// gvContactProofs control.
         /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactProofs;
 
         /// <summary>
@@ -1045,6 +1193,121 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.GridView gvContactRepairs;
+
+        /// <summary>
+        /// tabpnlDeliverTo control.
+        /// </summary>
+        protected global::AjaxControlToolkit.TabPanel tabpnlDeliverTo;
+
+        /// <summary>
+        /// upnlDeliverTo control.
+        /// </summary>
+        protected global::System.Web.UI.UpdatePanel upnlDeliverTo;
+
+        /// <summary>
+        /// btnDeliverToAdd control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDeliverToAdd;
+
+        /// <summary>
+        /// pnlDeliverToEditor control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlDeliverToEditor;
+
+        /// <summary>
+        /// litDeliverToFormTitle control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litDeliverToFormTitle;
+
+        /// <summary>
+        /// tbxDeliverToPerson control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToPerson;
+
+        /// <summary>
+        /// tbxDeliverToLabel control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToLabel;
+
+        /// <summary>
+        /// ddlDeliverToDeliveryBy control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.DropDownList ddlDeliverToDeliveryBy;
+
+        /// <summary>
+        /// tbxDeliverToAddr1 control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToAddr1;
+
+        /// <summary>
+        /// tbxDeliverToAddr2 control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToAddr2;
+
+        /// <summary>
+        /// tbxDeliverToAddr3 control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToAddr3;
+
+        /// <summary>
+        /// ddlDeliverToArea control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.DropDownList ddlDeliverToArea;
+
+        /// <summary>
+        /// tbxDeliverToPostal control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToPostal;
+
+        /// <summary>
+        /// trDeliverToGps control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trDeliverToGps;
+
+        /// <summary>
+        /// litDeliverToGpsCaption control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litDeliverToGpsCaption;
+
+        /// <summary>
+        /// lblDeliverToGpsLocation control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblDeliverToGpsLocation;
+
+        /// <summary>
+        /// btnDeliverToGpsCheck control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDeliverToGpsCheck;
+
+        /// <summary>
+        /// lblDeliverToGpsPending control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblDeliverToGpsPending;
+
+        /// <summary>
+        /// chkDeliverToEnabled control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.CheckBox chkDeliverToEnabled;
+
+        /// <summary>
+        /// btnDeliverToSave control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDeliverToSave;
+
+        /// <summary>
+        /// btnDeliverToCancel control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDeliverToCancel;
+
+        /// <summary>
+        /// lblDeliverToFormError control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblDeliverToFormError;
+
+        /// <summary>
+        /// gvDeliverToAddresses control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvDeliverToAddresses;
 
         /// <summary>
         /// odsAreas control.

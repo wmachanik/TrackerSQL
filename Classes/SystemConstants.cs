@@ -27,6 +27,9 @@ namespace TrackerSQL.Classes
                 return Math.Round(value, DatabaseConstants.NumDecimalPoints)
                     .ToString(DigitFormat, System.Globalization.CultureInfo.InvariantCulture);
             }
+
+            /// <summary>Zero (or negative) line qty is treated as 1 when saving or sending to the driver app.</summary>
+            public static double OrderLineQtyAtLeastOne(double qty) => qty <= 0 ? 1.0 : qty;
         }
         // Customer related constants
         public static class CustomerConstants
@@ -67,6 +70,9 @@ namespace TrackerSQL.Classes
             /// (Contact Details Insert and Woo bootstrap).
             /// </summary>
             public const int DefaultForNewContact = Standard;
+
+            /// <summary>Default invoice type for newly created orders.</summary>
+            public const int DefaultForNewOrder = Standard;
         }
 
         /// <summary>Recurring-order behaviour toggles (move to system settings DB later).</summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 
 namespace TrackerSQL.Repositories
@@ -189,6 +190,8 @@ namespace TrackerSQL.Repositories
             public bool CollectsOrCourier;
             /// <summary>The order's Delivered by person is "Collect (shop)": collected by the client at the depot.</summary>
             public bool Collection;
+            public string DeliverToPerson;
+            public string DeliverToLabel;
         }
 
         /// <summary>
@@ -197,9 +200,11 @@ namespace TrackerSQL.Repositories
         /// </summary>
         public List<SheetRow> GetSheetRows(DateTime date, int? personId, int? orderId = null, bool collectionsOnly = false)
         {
+            bool deliverTo = DeliveryOnBehalfManager.IsActive;
             string sql = @"
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                       c.ContactAltFirstName, c.ContactAltLastName, c.PhoneNumber, c.CellNumber, c.BillingAddress, c.StateOrProvince, c.PostalCode,
+                       c.ContactAltFirstName, c.ContactAltLastName, c.PhoneNumber, c.CellNumber,
+                       {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
                        a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        o.ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
@@ -210,10 +215,12 @@ namespace TrackerSQL.Repositories
                        pr.DeliveredAt AS ProofDeliveredAt, pr.Status AS ProofStatus, pr.HasSignature AS ProofHasSignature,
                        pr.NotAtClient AS ProofNotAtClient,
                        {GEO_HASH} AS RouteHash, {LEARN_COLS}, {PLAN_COLS}, {GPS_COLS}, {AGENT_COL}, {BY_TYPE} AS DeliveryByType
+                       {DOB_EXTRA_COLS}
                 FROM OrdersTbl o
                 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
-                LEFT JOIN AreasTbl a ON a.AreaID = c.AreaID
+                {DOB_JOIN}
+                {AREA_JOIN}
                 LEFT JOIN PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
                 LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
                 LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID{GEO_JOIN}
@@ -229,14 +236,26 @@ namespace TrackerSQL.Repositories
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}{PLAN_JOIN}
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
             sql = sql.Replace("{PROOF_AWAY}", ProofHasNotAtClientColumn() ? "ISNULL(m.NotAtClient, 0)" : "CAST(0 AS BIT)");
+            sql = sql.Replace("{BILLING_ADDR}", DeliveryOnBehalfManager.EffectiveBillingAddressSql("c"))
+                     .Replace("{PROVINCE_COL}", DeliveryOnBehalfManager.EffectiveProvinceSql("c"))
+                     .Replace("{POSTAL_COL}", DeliveryOnBehalfManager.EffectivePostalCodeSql("c"))
+                     .Replace("{AREA_JOIN}", DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a"))
+                     .Replace("{DOB_JOIN}", deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty)
+                     .Replace("{DOB_EXTRA_COLS}", deliverTo ? ", dob.DeliverToPerson, dob.Label AS DeliverToLabel" : string.Empty);
             bool plan = DeliveryRouteRepository.TableSeen();
             sql = sql.Replace("{PLAN_JOIN}", plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
                      .Replace("{PLAN_COLS}", plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops");
             bool geo = CustomerLocationRepository.TableSeen();
+            string routeHashExpr = geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))";
+            if (geo && deliverTo)
+                routeHashExpr = DeliveryOnBehalfManager.EffectiveRouteHashSql(CustomerLocationRepository.RouteHashSql);
             sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
-                     .Replace("{GEO_HASH}", geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))")
+                     .Replace("{GEO_HASH}", routeHashExpr)
                      .Replace("{GPS_COLS}", geo
-                         ? "gl.Latitude AS GpsLat, gl.Longitude AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus"
+                         ? (deliverTo
+                             ? DeliveryOnBehalfManager.EffectiveGpsLatSql() + " AS GpsLat, "
+                               + DeliveryOnBehalfManager.EffectiveGpsLngSql() + " AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus"
+                             : "gl.Latitude AS GpsLat, gl.Longitude AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus")
                          : "CAST(NULL AS FLOAT) AS GpsLat, CAST(NULL AS FLOAT) AS GpsLng, CAST(NULL AS VARCHAR(20)) AS GpsSource, CAST(NULL AS VARCHAR(20)) AS GpsStatus");
             sql = sql.Replace("{AGENT_COL}", PersonsRepository.HasDeliveryTypeColumn()
                 ? "(SELECT TOP 1 ag.DeliveryType FROM PeopleTbl ag WHERE ag.PersonID = c.PreferredAgentID) AS AgentDeliveryType"
@@ -260,8 +279,8 @@ namespace TrackerSQL.Repositories
             }
             // Delivered stops keep their place so the route numbers do not shift during the day.
             sql += " ORDER BY o.ToBeDeliveredByID,"
-                 + (geo ? " CASE WHEN " + CustomerLocationRepository.RouteHashSql + " IS NULL THEN 1 ELSE 0 END, "
-                        + CustomerLocationRepository.RouteHashSql + "," : string.Empty)
+                 + (geo ? " CASE WHEN " + routeHashExpr + " IS NULL THEN 1 ELSE 0 END, "
+                        + routeHashExpr + "," : string.Empty)
                  + " CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
                  + " a.AreaName, c.CompanyName, o.OrderID, i.SortOrder, ol.OrderLineID";
 
@@ -313,7 +332,9 @@ namespace TrackerSQL.Repositories
                 GpsSource = Str(r, "GpsSource"),
                 GpsStatus = Str(r, "GpsStatus"),
                 CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect,
-                Collection = Str(r, "DeliveryByType") == DeliveryTypes.Collect
+                Collection = Str(r, "DeliveryByType") == DeliveryTypes.Collect,
+                DeliverToPerson = deliverTo ? Str(r, "DeliverToPerson") : null,
+                DeliverToLabel = deliverTo ? Str(r, "DeliverToLabel") : null
             }, ps.ToArray());
         }
 

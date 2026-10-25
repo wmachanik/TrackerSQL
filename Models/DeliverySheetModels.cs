@@ -60,6 +60,14 @@ namespace TrackerSQL.Models
         /// <summary>Order flag (order's own, else the contact's account type).</summary>
         public int? InvoiceTypeID { get; set; }
 
+        public int? DeliverToAddressID { get; set; }
+
+        public string DeliverToPerson { get; set; }
+
+        public string DeliverToLabel { get; set; }
+
+        public string DeliverToAddressLine { get; set; }
+
         public DeliverySheetOrderRow()
         {
             ContactName = string.Empty;

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Delivery on behalf (3.0.3.5+).
+  - ContactsTbl.DeliveryOnBehalf: contact may have named deliver-to addresses (not the main GPS).
+  - ContactDeliverToAddressTbl: short label, person, address, area, GPS for route planning and orders.
+  Idempotent. Run by OrderFlagsSchemaInstaller at application start, or via Tools -> XMLtoSQL.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactsTbl', N'DeliveryOnBehalf') IS NULL
+      BEGIN
+          ALTER TABLE dbo.ContactsTbl ADD DeliveryOnBehalf BIT NOT NULL
+              CONSTRAINT DF_Contacts_DeliveryOnBehalf DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ContactDeliverToAddressTbl (
+              DeliverToAddressID INT IDENTITY(1,1) NOT NULL,
+              ContactID INT NOT NULL,
+              Label NVARCHAR(50) NOT NULL,
+              DeliverToPerson NVARCHAR(100) NULL,
+              Address1 NVARCHAR(100) NULL,
+              Address2 NVARCHAR(100) NULL,
+              Address3 NVARCHAR(100) NULL,
+              AreaID INT NULL,
+              StateOrProvince NVARCHAR(50) NULL,
+              PostalCode NVARCHAR(20) NULL,
+              Latitude DECIMAL(9, 6) NULL,
+              Longitude DECIMAL(9, 6) NULL,
+              ToBeDeliveredByID INT NULL,
+              SortOrder INT NOT NULL CONSTRAINT DF_ContactDeliverTo_SortOrder DEFAULT (0),
+              Enabled BIT NOT NULL CONSTRAINT DF_ContactDeliverTo_Enabled DEFAULT (1),
+              CONSTRAINT PK_ContactDeliverToAddressTbl PRIMARY KEY (DeliverToAddressID)
+          );
+          CREATE INDEX IX_ContactDeliverTo_Contact ON dbo.ContactDeliverToAddressTbl (ContactID, Enabled, SortOrder)
+              INCLUDE (Label, DeliverToPerson, AreaID, Latitude, Longitude, ToBeDeliveredByID);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'ToBeDeliveredByID') IS NULL
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD ToBeDeliveredByID INT NULL;
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'LocationStatus') IS NULL
+      BEGIN
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD
+              Geohash VARCHAR(12) NULL,
+              GeocodedAddress NVARCHAR(500) NULL,
+              SourceAddress NVARCHAR(500) NULL,
+              LocationStatus VARCHAR(20) NULL,
+              Source VARCHAR(20) NULL,
+              LocationUpdatedDate DATETIME NULL,
+              LocationUpdatedBy NVARCHAR(128) NULL;
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrdersTbl', N'DeliverToAddressID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.OrdersTbl ADD DeliverToAddressID INT NULL;
+          CREATE INDEX IX_Orders_DeliverToAddress ON dbo.OrdersTbl (DeliverToAddressID)
+              WHERE DeliverToAddressID IS NOT NULL;
+      END
+    ]]>
+  </command>
+</root>

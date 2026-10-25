@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using TrackerSQL.Classes;
@@ -22,6 +23,17 @@ namespace TrackerSQL.Pages
             }
         }
 
+        private int DeliverToAddressId
+        {
+            get
+            {
+                int.TryParse(Request.QueryString["DeliverToAddressID"], out int id);
+                return id;
+            }
+        }
+
+        private bool IsDeliverTo => DeliverToAddressId > 0;
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
@@ -31,10 +43,9 @@ namespace TrackerSQL.Pages
         private void BindPage()
         {
             var manager = new CustomerLocationManager();
-            Contact contact = ContactId > 0 ? new ContactsRepository().GetById(ContactId) : null;
-            if (contact == null || !manager.IsReady)
+            if (!manager.IsReady)
             {
-                ShowMessage(contact == null ? "Contact not found." : "The GPS tables are not installed yet.", true);
+                ShowMessage("The GPS tables are not installed yet.", true);
                 btnSavePin.Enabled = false;
                 btnLookupAgain.Enabled = false;
                 return;
@@ -44,15 +55,46 @@ namespace TrackerSQL.Pages
             hdnTileUrl.Value = settings.MapTileUrl;
             hdnAzureTiles.Value = settings.UseAzureMap ? ResolveUrl("~/Handlers/MapTile.ashx") : string.Empty;
 
-            litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
-            string addressText = CustomerLocationManager.SearchTextFor(contact);
+            string addressText;
+            CustomerLocation loc;
+            if (IsDeliverTo)
+            {
+                ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(DeliverToAddressId);
+                if (row == null || row.ContactID != ContactId)
+                {
+                    ShowMessage("Deliver-to address not found.", true);
+                    btnSavePin.Enabled = false;
+                    btnLookupAgain.Enabled = false;
+                    return;
+                }
+
+                string title = string.Join(" — ", new[] { row.Label, row.DeliverToPerson }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                litContactName.Text = HttpUtility.HtmlEncode(string.IsNullOrWhiteSpace(title) ? "Deliver-to address" : title);
+                addressText = CustomerLocationManager.SearchTextForDeliverTo(row);
+                loc = row.ToDisplayLocation();
+            }
+            else
+            {
+                Contact contact = ContactId > 0 ? new ContactsRepository().GetById(ContactId) : null;
+                if (contact == null)
+                {
+                    ShowMessage("Contact not found.", true);
+                    btnSavePin.Enabled = false;
+                    btnLookupAgain.Enabled = false;
+                    return;
+                }
+
+                litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
+                addressText = CustomerLocationManager.SearchTextFor(contact);
+                loc = manager.Get(ContactId);
+            }
+
             litAddress.Text = HttpUtility.HtmlEncode(addressText);
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
                 txtSearch.Text = addressText;
             ViewState["SearchLabel"] = null;
             hdnDirty.Value = "0";
 
-            CustomerLocation loc = manager.Get(ContactId);
             if (loc != null)
             {
                 SetPoint(loc.Latitude, loc.Longitude, true);
@@ -98,9 +140,20 @@ namespace TrackerSQL.Pages
 
             try
             {
-                new CustomerLocationManager().SetManual(ContactId, lat, lng, Context?.User?.Identity?.Name,
-                    ViewState["SearchLabel"] as string);
-                AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + ContactId + " | GPS pin saved (checked)");
+                if (IsDeliverTo)
+                {
+                    new CustomerLocationManager().SetManualDeliverTo(DeliverToAddressId, lat, lng, Context?.User?.Identity?.Name,
+                        ViewState["SearchLabel"] as string);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                        "DeliverTo=" + DeliverToAddressId + " | GPS pin saved (checked)");
+                }
+                else
+                {
+                    new CustomerLocationManager().SetManual(ContactId, lat, lng, Context?.User?.Identity?.Name,
+                        ViewState["SearchLabel"] as string);
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + ContactId + " | GPS pin saved (checked)");
+                }
+
                 BindPage();
                 ShowMessage("Pin saved and marked as checked.", false);
                 ClientScript.RegisterStartupScript(GetType(), "gpsSavedClose",
@@ -116,8 +169,9 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                LocationLookupOutcome outcome = new CustomerLocationManager()
-                    .EnsureForContact(ContactId, Context?.User?.Identity?.Name, force: true);
+                LocationLookupOutcome outcome = IsDeliverTo
+                    ? new CustomerLocationManager().EnsureForDeliverToAddress(DeliverToAddressId, Context?.User?.Identity?.Name, force: true)
+                    : new CustomerLocationManager().EnsureForContact(ContactId, Context?.User?.Identity?.Name, force: true);
                 BindPage();
                 ShowMessage(outcome.Message ?? (outcome.Success ? "Location found." : "Not found."), !outcome.Success);
                 if (outcome.Success || outcome.UsedLookup)

@@ -416,7 +416,7 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>Exact area names that use road courier (not Cape Town vehicle / SQ).</summary>
-        private static bool IsCourierDispatchArea(string areaName)
+        public static bool IsCourierDispatchArea(string areaName)
         {
             if (string.IsNullOrWhiteSpace(areaName))
                 return false;

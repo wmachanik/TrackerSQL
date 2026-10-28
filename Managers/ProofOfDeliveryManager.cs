@@ -33,6 +33,8 @@ namespace TrackerSQL.Managers
             public MobileDeliveryProof Proof;
             public bool WalkIn;
             public string Client;
+            /// <summary>Billing account when <see cref="OnBehalfOf"/> is set (delivery on behalf).</summary>
+            public string OnBehalfOf;
             /// <summary>First name for "Hi …" (none for walk-ins).</summary>
             public string Greeting;
             public string Address;
@@ -109,11 +111,12 @@ namespace TrackerSQL.Managers
             else
             {
                 Contact customer = contactId > 0 ? new ContactsRepository().GetById(contactId) : null;
-                doc.Client = NullIfEmpty(first?.CompanyName) ?? NullIfEmpty(customer?.CompanyName) ?? NullIfEmpty(proof.CompanyName) ?? "Client";
+                string accountCompany = NullIfEmpty(first?.CompanyName) ?? NullIfEmpty(customer?.CompanyName) ?? NullIfEmpty(proof.CompanyName);
+                ApplyDeliverToClient(doc, first, accountCompany);
                 doc.Greeting = NullIfEmpty(customer?.ContactFirstName);
-                string address = NullIfEmpty(first?.Address) ?? NullIfEmpty(customer?.BillingAddress);
-                string postal = NullIfEmpty(first?.PostalCode) ?? NullIfEmpty(customer?.PostalCode);
-                doc.Address = address == null ? postal : postal == null || address.Contains(postal) ? address : address + ", " + postal;
+                doc.Address = FormatPostalAddress(
+                    NullIfEmpty(first?.Address) ?? NullIfEmpty(customer?.BillingAddress),
+                    NullIfEmpty(first?.PostalCode) ?? NullIfEmpty(customer?.PostalCode));
                 doc.Email = NullIfEmpty(customer?.EmailAddress) ?? NullIfEmpty(customer?.AltEmailAddress);
             }
             doc.PurchaseOrder = NullIfEmpty(first?.PurchaseOrder);
@@ -132,8 +135,31 @@ namespace TrackerSQL.Managers
             if (_repo.TryGetSignature(proofId, out byte[] signature, out _))
                 doc.Signature = signature;
 
-            doc.ShowLocation = ShouldShowLocation(proof, contactId);
+            doc.ShowLocation = ShouldShowLocation(proof, contactId, first);
             return doc;
+        }
+
+        /// <summary>Same titles as the delivery sheet and driver app: deliver-to site, optional "on behalf of" account.</summary>
+        private static void ApplyDeliverToClient(PodDocument doc, MobileApiRepository.SheetRow sheetRow, string accountCompany)
+        {
+            string deliverTo = DeliveryOnBehalfManager.DeliverToDisplayName(sheetRow?.DeliverToLabel, sheetRow?.DeliverToPerson);
+            bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverTo);
+            if (hasDeliverTo)
+            {
+                doc.Client = DeliveryOnBehalfManager.ListDisplayName(deliverTo, accountCompany);
+                doc.OnBehalfOf = accountCompany;
+            }
+            else
+                doc.Client = accountCompany ?? "Client";
+        }
+
+        private static string FormatPostalAddress(string address, string postal)
+        {
+            if (address == null)
+                return postal;
+            if (postal == null || address.Contains(postal))
+                return address;
+            return address + ", " + postal;
         }
 
         /// <summary>"2 × Kenya AA (1kg)" per order line handed over (all of it unless <paramref name="lines"/> says less); repair lines are left out.</summary>
@@ -214,6 +240,8 @@ namespace TrackerSQL.Managers
             };
 
             row("Delivered to", doc.Client, true);
+            if (!string.IsNullOrWhiteSpace(doc.OnBehalfOf))
+                row("On behalf of", doc.OnBehalfOf, false);
             row(doc.WalkIn ? "Details" : "Address", doc.Address, false);
             row("Order", proof.OrderID.ToString(CultureInfo.InvariantCulture), false);
             row("Your PO", doc.PurchaseOrder, false);
@@ -375,6 +403,10 @@ namespace TrackerSQL.Managers
                 proof.DeliveredAt.ToString("dddd d MMMM yyyy", CultureInfo.InvariantCulture),
                 proof.DeliveredAt.ToString("HH:mm", CultureInfo.InvariantCulture));
             body.Append("<table cellpadding=\"4\" style=\"border-collapse:collapse\">");
+            if (!string.IsNullOrWhiteSpace(doc.OnBehalfOf))
+                AppendRow(body, "On behalf of", doc.OnBehalfOf);
+            if (!string.IsNullOrWhiteSpace(doc.Address))
+                AppendRow(body, "Address", doc.Address);
             if (!string.IsNullOrWhiteSpace(proof.ReceivedByName))
                 AppendRow(body, "Received by", proof.ReceivedByName);
             if (!string.IsNullOrWhiteSpace(proof.Reason))
@@ -439,6 +471,10 @@ namespace TrackerSQL.Managers
                 proof.DeliveredAt.ToString("dddd d MMMM yyyy", CultureInfo.InvariantCulture),
                 proof.DeliveredAt.ToString("HH:mm", CultureInfo.InvariantCulture));
             body.Append("<table cellpadding=\"4\" style=\"border-collapse:collapse\">");
+            if (!string.IsNullOrWhiteSpace(doc.OnBehalfOf))
+                AppendRow(body, "On behalf of", doc.OnBehalfOf);
+            if (!string.IsNullOrWhiteSpace(doc.Address))
+                AppendRow(body, "Address", doc.Address);
             if (!string.IsNullOrWhiteSpace(proof.ReceivedByName))
                 AppendRow(body, "Received by", proof.ReceivedByName);
             if (!string.IsNullOrWhiteSpace(proof.Reason))
@@ -474,7 +510,7 @@ namespace TrackerSQL.Managers
             return null;
         }
 
-        private bool ShouldShowLocation(MobileDeliveryProof proof, int contactId)
+        private bool ShouldShowLocation(MobileDeliveryProof proof, int contactId, MobileApiRepository.SheetRow sheetRow)
         {
             if (proof == null || proof.NotAtClient || !proof.Latitude.HasValue || !proof.Longitude.HasValue)
                 return false;
@@ -484,12 +520,28 @@ namespace TrackerSQL.Managers
             if (contactId <= 0 || contactId == SystemConstants.CustomerConstants.SundryCustomerID)
                 return true;
 
-            CustomerLocation expected = new CustomerLocationRepository().GetByContactId(contactId);
-            if (expected == null)
-                return true;
+            double? expectedLat = null, expectedLng = null;
+            if (sheetRow?.DeliverToAddressId is int deliverToId && deliverToId > 0)
+            {
+                ContactDeliverToAddress deliverTo = new ContactDeliverToAddressRepository().GetById(deliverToId);
+                if (deliverTo?.Latitude is decimal dLat && deliverTo.Longitude is decimal dLng)
+                {
+                    expectedLat = (double)dLat;
+                    expectedLng = (double)dLng;
+                }
+            }
+
+            if (!expectedLat.HasValue)
+            {
+                CustomerLocation expected = new CustomerLocationRepository().GetByContactId(contactId);
+                if (expected == null)
+                    return true;
+                expectedLat = (double)expected.Latitude;
+                expectedLng = (double)expected.Longitude;
+            }
 
             double distanceKm = DistanceKm((double)proof.Latitude.Value, (double)proof.Longitude.Value,
-                (double)expected.Latitude, (double)expected.Longitude);
+                expectedLat.Value, expectedLng.Value);
             return distanceKm <= 2.0;
         }
 

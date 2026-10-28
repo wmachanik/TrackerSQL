@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Alternative address kind on ContactDeliverToAddressTbl (3.0.3.x).
+  Values: OnBehalf, Gift, Home, Work, Friend, Family, Other
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'AddressKind') IS NULL
+      BEGIN
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD AddressKind NVARCHAR(20) NOT NULL
+              CONSTRAINT DF_ContactDeliverTo_AddressKind DEFAULT (N'OnBehalf');
+      END
+    ]]>
+  </command>
+</root>

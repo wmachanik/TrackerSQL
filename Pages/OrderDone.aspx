@@ -8,10 +8,10 @@
 <asp:Content ID="cntOrderDoneBdy" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="smOrderDone" runat="server" EnablePartialRendering="true" />
 
-    <asp:UpdateProgress ID="updtprgOrderDone" runat="server" AssociatedUpdatePanelID="updtpnlOrderDone"
-        DisplayAfter="0" DynamicLayout="true">
+    <%-- No AssociatedUpdatePanelID — show for all async postbacks (Done, email option). --%>
+    <asp:UpdateProgress ID="updtprgOrderDone" runat="server" DisplayAfter="0" DynamicLayout="true">
         <ProgressTemplate>
-            <div class="status-message status-info page-tone-progress">
+            <div class="status-message status-info page-tone-progress page-tone-send-progress">
                 <img src="../images/animi/QuaffeeProgress.gif" alt="please wait..." />
                 &nbsp;Please wait...
             </div>
@@ -163,7 +163,9 @@
 
                     <div class="button-row mt-16">
                         <asp:Button ID="btnDone" Text="Done" runat="server" AccessKey="D" CssClass="filter-panel-btn"
-                            OnClick="btnDone_Click" ToolTip="Mark order delivered and update usage (Alt+D)" />
+                            OnClick="btnDone_Click" UseSubmitBehavior="true"
+                            OnClientClick="return orderDoneBeginSubmit(this);"
+                            ToolTip="Mark order delivered and update usage (Alt+D)" />
                         <span class="image-button" title="Cancel and return to delivery sheet">
                             <asp:ImageButton ID="btnCancel" runat="server"
                                 ImageUrl="~/images/imgButtons/Back.gif"
@@ -247,4 +249,77 @@
     <asp:ObjectDataSource ID="odsPackagingTypes" runat="server"
         TypeName="TrackerSQL.Managers.OrderLookupDataSource"
         SelectMethod="GetPackagingTypes" />
+
+    <script type="text/javascript">
+        (function () {
+            var btnDoneId = '<%= btnDone.ClientID %>';
+            var doneLabel = 'Done';
+
+            function orderDoneSetBusy(btn) {
+                if (!btn) {
+                    return;
+                }
+                if (!btn.getAttribute('data-order-done-label')) {
+                    btn.setAttribute('data-order-done-label', btn.value || doneLabel);
+                }
+                btn.disabled = true;
+                btn.value = 'Updating...';
+                btn.setAttribute('aria-busy', 'true');
+            }
+
+            function orderDoneResetButton() {
+                var btn = document.getElementById(btnDoneId);
+                if (!btn) {
+                    return;
+                }
+                btn.removeAttribute('data-order-done-submitting');
+                var label = btn.getAttribute('data-order-done-label') || doneLabel;
+                btn.disabled = false;
+                btn.value = label;
+                btn.removeAttribute('aria-busy');
+            }
+
+            // Do not disable the button here — that can cancel the async postback and hide UpdateProgress.
+            window.orderDoneBeginSubmit = function (btn) {
+                if (!btn || btn.getAttribute('data-order-done-submitting') === '1') {
+                    return false;
+                }
+                if (typeof (Page_ClientValidate) === 'function' && !Page_ClientValidate()) {
+                    return false;
+                }
+                btn.setAttribute('data-order-done-submitting', '1');
+                return true;
+            };
+
+            function wireOrderDoneAsync() {
+                if (!window.Sys || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
+                    return false;
+                }
+                var prm = Sys.WebForms.PageRequestManager.getInstance();
+                if (prm._orderDoneBusyHandlersAttached) {
+                    return true;
+                }
+                prm._orderDoneBusyHandlersAttached = true;
+                prm.add_beginRequest(function (sender, args) {
+                    var el = args.get_postBackElement();
+                    if (el && el.id === btnDoneId) {
+                        orderDoneSetBusy(el);
+                    }
+                });
+                prm.add_endRequest(function () {
+                    orderDoneResetButton();
+                });
+                return true;
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', wireOrderDoneAsync);
+            } else {
+                wireOrderDoneAsync();
+            }
+            if (window.Sys && Sys.Application) {
+                Sys.Application.add_load(wireOrderDoneAsync);
+            }
+        })();
+    </script>
 </asp:Content>

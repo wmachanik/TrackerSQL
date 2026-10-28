@@ -40,10 +40,11 @@ namespace TrackerSQL.Repositories
             string sql = BaseDeliverySheetSql() + @"
                 WHERE CAST(o.RequiredByDate AS DATE) = @RequiredByDate";
 
+            string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
             if (deliveryById.HasValue)
             {
                 sql += @"
-                AND o.ToBeDeliveredByID = @ToBeDeliveredByID";
+                AND " + effectiveBy + @" = @ToBeDeliveredByID";
 
                 parameters.Add(new DBParameter
                 {
@@ -57,7 +58,7 @@ namespace TrackerSQL.Repositories
                 ORDER BY
                     o.Done,
                     o.RequiredByDate,
-                    o.ToBeDeliveredByID,
+                    " + effectiveBy + @",
                     NoGeo,
                     GeoSortKey,
                     OffDay,
@@ -159,6 +160,7 @@ namespace TrackerSQL.Repositories
         /// </summary>
         private static string BaseDeliverySheetSql()
         {
+            string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
             bool geo = CustomerLocationRepository.TableSeen();
             bool learn = DeliveryVisitRepository.TableSeen();
             bool plan = DeliveryRouteRepository.TableSeen();
@@ -171,7 +173,7 @@ namespace TrackerSQL.Repositories
                         + CASE WHEN NULLIF(LTRIM(RTRIM(ISNULL(dob.Address3, N''))), N'') IS NOT NULL THEN N', ' + dob.Address3 ELSE N'' END
                     )) AS DeliverToAddressLine"
                 : string.Empty;
-            return @"
+            string sql = @"
                 SELECT DISTINCT
                     o.OrderID,
                     o.ContactID,
@@ -188,7 +190,7 @@ namespace TrackerSQL.Repositories
                     ISNULL(apd.OffDay, 1) AS OffDay,
                     ISNULL(apd.DeliveryOrder, 32767) AS DeliveryOrder,
                     i.SortOrder,
-                    o.ToBeDeliveredByID,
+                    {EFFECTIVE_BY} AS ToBeDeliveredByID,
                     o.PurchaseOrder,
                     o.Confirmed,
                     o.InvoiceDone,
@@ -217,7 +219,7 @@ namespace TrackerSQL.Repositories
                     ON o.ContactID = c.ContactID"
                 + (deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty) + @"
                 LEFT JOIN PeopleTbl p
-                    ON o.ToBeDeliveredByID = p.PersonID
+                    ON p.PersonID = {EFFECTIVE_BY}
                 " + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "ar") + @"
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
@@ -236,8 +238,9 @@ namespace TrackerSQL.Repositories
                     SELECT TOP 1 ai.InvoiceTypeID
                     FROM ContactsAccInfoTbl ai
                     WHERE ai.ContactID = o.ContactID
-                ) acc" + (learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
-                + (plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty);
+                ) acc" + (learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", effectiveBy) : string.Empty)
+                + (plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", effectiveBy) : string.Empty);
+            return sql.Replace("{EFFECTIVE_BY}", effectiveBy);
         }
 
         private RepositoryListResult<ActiveDeliveryDate> ExecuteActiveDeliveryDateQuery(
@@ -401,6 +404,8 @@ namespace TrackerSQL.Repositories
 
         private static int? GetNullableInt(IDataRecord rdr, string name)
         {
+            if (!DbMapper.HasColumn(rdr, name))
+                return null;
             return rdr[name] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr[name]);
         }
 

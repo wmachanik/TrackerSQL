@@ -271,6 +271,8 @@
                     <asp:AsyncPostBackTrigger ControlID="btnLastOrder" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveHeader" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnSaveAndReturn" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnWooLinkConfirm" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="btnWooLinkCancel" EventName="Click" />
                 </Triggers>
             </asp:UpdatePanel>
             <%-- Outside header dirty root so waybill/courier edits do not trip leave warnings. --%>

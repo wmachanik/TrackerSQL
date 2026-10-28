@@ -1,17 +1,21 @@
 using System;
 using System.Linq;
+using TrackerSQL.Managers;
 
 namespace TrackerSQL.Models
 {
-    /// <summary>Named deliver-to destination for a contact (delivery on behalf).</summary>
+    /// <summary>Alternative delivery address for a contact (second site, gift, work, etc.).</summary>
     public class ContactDeliverToAddress
     {
         public int DeliverToAddressID { get; set; }
         public int ContactID { get; set; }
         /// <summary>Short name on orders (e.g. "Reception").</summary>
         public string Label { get; set; }
-        /// <summary>Who receives the delivery at this address.</summary>
+        /// <summary>Who receives and signs on the driver app at this address.</summary>
         public string DeliverToPerson { get; set; }
+        /// <summary><see cref="AlternativeAddressKind"/> code (OnBehalf, Gift, Home, …).</summary>
+        public string AddressKind { get; set; }
+        public string AddressKindDisplay => AlternativeAddressKind.Display(AddressKind);
         public int? ToBeDeliveredByID { get; set; }
         public string Address1 { get; set; }
         public string Address2 { get; set; }

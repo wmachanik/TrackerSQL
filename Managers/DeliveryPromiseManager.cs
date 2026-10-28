@@ -45,17 +45,48 @@ namespace TrackerSQL.Managers
             int? areaId,
             DateTime orderDate,
             DateTime requiredByDate,
-            DateTime? now = null)
+            DateTime? now = null,
+            int? deliveryPersonId = null)
         {
             DateTime today = (now ?? TimeZoneUtils.Now()).Date;
             if (orderDate.Date != today)
+                return false;
+
+            if (IsCourierStyleDelivery(deliveryPersonId, areaId))
                 return false;
 
             DeliveryPromiseResult promise = GetPromisedDate(areaId, now ?? TimeZoneUtils.Now());
             if (!promise.FoundRule || !promise.PromisedDate.HasValue)
                 return false;
 
+            // Website "Dispatch" rules (Regional SA, Gauteng, etc.) are next workday — not a lucky early exception.
+            if (string.Equals(promise.PromiseKind, "Dispatch", StringComparison.OrdinalIgnoreCase))
+                return false;
+
             return requiredByDate.Date < promise.PromisedDate.Value.Date;
+        }
+
+        private static bool IsCourierStyleDelivery(int? deliveryPersonId, int? areaId)
+        {
+            if (deliveryPersonId.HasValue && deliveryPersonId.Value > 0)
+            {
+                int id = deliveryPersonId.Value;
+                if (id == SystemConstants.DeliveryConstants.CourierDeliveryID
+                    || id == SystemConstants.DeliveryConstants.ParcelDispatchID)
+                    return true;
+
+                if (new PersonsRepository().GetDeliveryType(id) == DeliveryTypes.Courier)
+                    return true;
+            }
+
+            if (areaId.HasValue && areaId.Value > 0)
+            {
+                string areaName = new AreasRepository().GetAreaName(areaId.Value);
+                if (WooCommerceAreaMappingManager.IsCourierDispatchArea(areaName))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool WindowContains(DeliveryPromiseRule rule, DateTime orderedAt)

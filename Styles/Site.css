@@ -4429,6 +4429,49 @@ textarea.order-detail-notes,
     margin-bottom: 0.5rem;
 }
 
+.contact-deliver-to-tab .contact-deliver-to-bottom {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.page-tone-contacts .contact-deliver-to-tab .contact-deliver-to-bottom {
+    border-top-color: rgba(255, 255, 255, 0.25);
+}
+
+.contact-deliver-to-toolbar {
+    margin-bottom: 0;
+}
+
+.contact-deliver-to-toolbar.button-row {
+    margin-top: 0;
+}
+
+.contact-deliver-to-form {
+    margin-top: 10px;
+    padding: 12px 14px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.45);
+    max-width: 52rem;
+}
+
+.page-tone-contacts .contact-deliver-to-form {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.contact-deliver-to-form .section-heading-sm {
+    margin-top: 0;
+}
+
+.contact-deliver-to-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
 @media (max-width: 768px) {
     .new-order-item-table {
         display: block !important;
@@ -11163,6 +11206,15 @@ a.dlv-await-flag.is-pending { background: #d68910; }
 .deliveries-hub h3, .deliveries-hub h4, .driver-tracking-page h3 { font-variant: normal; }
 
 /* Tools/DriverTracking.aspx: drivers list beside the map */
+.driver-tracking-day-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 4px;
+}
+.driver-tracking-day-row input[type="date"] { padding: 4px 6px; }
+.driver-tracking-day-row .filter-panel-link { margin-left: 8px; }
 .driver-tracking-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0; }
 .driver-tracking-bar .driver-tracking-warning { color: #8b3a3a; font-weight: 600; }
 .driver-tracking-layout { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
@@ -11195,6 +11247,8 @@ a.dlv-await-flag.is-pending { background: #d68910; }
     box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
 }
 .driver-tracking-stop-icon.done span { background: #9a9a9a; }
+.driver-tracking-stop-icon.depot span { background: #4e664d; }
+.driver-tracking-page tr.depot td { font-style: italic; }
 .driver-tracking-depot-icon span {
     display: block;
     padding: 1px 4px;

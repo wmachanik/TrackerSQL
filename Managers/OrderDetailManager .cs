@@ -221,7 +221,12 @@ namespace TrackerSQL.Managers
             DateTime now = TimeZoneUtils.Now();
             bool orderToday = header.OrderDate.Date == now.Date;
             bool soonerException = orderToday
-                && _promiseManager.IsSoonerThanPromiseException(areaId, header.OrderDate, header.RequiredByDate, now);
+                && _promiseManager.IsSoonerThanPromiseException(
+                    areaId,
+                    header.OrderDate,
+                    header.RequiredByDate,
+                    now,
+                    header.ToBeDeliveredBy);
 
             string inner;
             if (soonerException)

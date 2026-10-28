@@ -75,13 +75,13 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.TextBox tbxEmailSubject;
 
         /// <summary>
-        /// ltrlEmailTextID control.
+        /// hdnEmailTextId control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltrlEmailTextID;
+        protected global::System.Web.UI.WebControls.HiddenField hdnEmailTextId;
 
         /// <summary>
         /// tabEmailBody control.

@@ -8,6 +8,8 @@ namespace TrackerSQL.Models
     public class DriverTrackingBoard
     {
         public string Day { get; set; }
+        /// <summary>True when <see cref="Day"/> is today (live ETAs and auto-refresh).</summary>
+        public bool IsToday { get; set; }
         public string Now { get; set; }
         public bool TrackingEnabled { get; set; }
         public int FreshMinutes { get; set; }
@@ -15,6 +17,27 @@ namespace TrackerSQL.Models
         public double? DepotLat { get; set; }
         public double? DepotLng { get; set; }
         public List<DriverTrackingDriver> Drivers { get; set; } = new List<DriverTrackingDriver>();
+        /// <summary>Orders on the route after resolving deliver-by (diagnostics).</summary>
+        public int StopCount { get; set; }
+        /// <summary>Raw delivery sheet lines for the day (diagnostics).</summary>
+        public int SheetRows { get; set; }
+        /// <summary>Distinct orders on RequiredByDate (diagnostics).</summary>
+        public int OrderCount { get; set; }
+    }
+
+    /// <summary>One order due on a day (driver tracking load from OrdersTbl).</summary>
+    public class DriverTrackingOrderLine
+    {
+        public int OrderId { get; set; }
+        public int ContactId { get; set; }
+        public string CompanyName { get; set; }
+        public int? ToBeDeliveredById { get; set; }
+        public int? DeliverToAddressId { get; set; }
+        public string DeliveryByAbbreviation { get; set; }
+        public string AreaName { get; set; }
+        public bool Done { get; set; }
+        public string DeliverToLabel { get; set; }
+        public string DeliverToPerson { get; set; }
     }
 
     public class DriverTrackingDriver
@@ -38,9 +61,11 @@ namespace TrackerSQL.Models
         public int StopsLeft { get; set; }
         /// <summary>Remaining stops without a GPS point (no ETA).</summary>
         public int StopsNoPoint { get; set; }
-        /// <summary>Estimated time the last stop is done ("HH:mm").</summary>
+        /// <summary>Estimated time back at the depot after the last stop ("HH:mm").</summary>
         public string FinishEta { get; set; }
-        /// <summary>The ETAs start from the driver's position, else from the depot.</summary>
+        /// <summary>True when today's ETAs are held until the driver leaves the depot (or delivers).</summary>
+        public bool WaitingDepot { get; set; }
+        /// <summary>The ETAs start from the driver's position, else from the depot (no phone position today).</summary>
         public bool FromDepot { get; set; }
         public List<DriverTrackingStop> Stops { get; set; } = new List<DriverTrackingStop>();
     }
@@ -58,5 +83,7 @@ namespace TrackerSQL.Models
         public double? Lat { get; set; }
         public double? Lng { get; set; }
         public string Eta { get; set; }
+        /// <summary>Return leg to the depot (not a customer stop).</summary>
+        public bool IsDepot { get; set; }
     }
 }

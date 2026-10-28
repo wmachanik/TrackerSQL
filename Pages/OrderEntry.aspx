@@ -46,13 +46,14 @@
                             <asp:DropDownList ID="ddlSearchFor" runat="server">
                                 <asp:ListItem Selected="True" Value="none" Text="--Select item--" />
                                 <asp:ListItem Value="Company" Text="Company Name" />
+                                <asp:ListItem Value="OrderID" Text="Order Number" />
                                 <asp:ListItem Value="PrepDate" Text="Prep Date" />
                             </asp:DropDownList>
                         </div>
                         <div class="filter-control">
                             <asp:TextBox ID="tbxSearchFor" runat="server" Width="20em"
                                 AutoPostBack="true" OnTextChanged="tbxSearchFor_TextChanged"
-                                ToolTip="Company name or prep date (yyyy-MM-dd)" />
+                                ToolTip="Company name, Tracker order number, or prep date (yyyy-MM-dd)" />
                         </div>
                         <asp:Button ID="btnGo" Text="Go" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnGo_Click" ToolTip="Apply search filter" />
@@ -93,6 +94,15 @@
                                             ToolTip="Open order to view or edit all lines" />
                                     </span>
                                 </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Order #" SortExpression="OrderID">
+                                <ItemTemplate>
+                                    <asp:HyperLink ID="hlOrderId" runat="server"
+                                        Text='<%# Eval("OrderID") %>'
+                                        NavigateUrl='<%# Eval("OrderID", "~/Pages/OrderDetail.aspx?OrderID={0}") %>'
+                                        ToolTip="Open order detail" />
+                                </ItemTemplate>
+                                <ItemStyle Width="5em" HorizontalAlign="Right" />
                             </asp:TemplateField>
                             <asp:TemplateField HeaderText="Company Name" SortExpression="CompanyName">
                                 <ItemTemplate>

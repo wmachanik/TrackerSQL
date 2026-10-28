@@ -176,17 +176,21 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Today's drivers: everyone with a position today or with stops for a "delivers" person, their latest position,
-        /// status and the stops left in route order with ETAs (straight line × 1.3 at the average speed, plus the service time).
+        /// Drivers for a delivery day: positions on that day, stops in route order, ETAs when viewing today.
         /// </summary>
-        public DriverTrackingBoard Board()
+        public DriverTrackingBoard Board() => Board(TimeZoneUtils.Now().Date);
+
+        public DriverTrackingBoard Board(DateTime day)
         {
             GpsSettings settings = new GpsSettingsRepository().Get();
             DateTime now = TimeZoneUtils.Now();
-            DateTime day = now.Date;
+            day = day.Date;
+            bool isToday = day == now.Date;
+            DateTime pingUpTo = isToday ? now : day.AddDays(1).AddTicks(-1);
             var board = new DriverTrackingBoard
             {
                 Day = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                IsToday = isToday,
                 Now = now.ToString("HH:mm", CultureInfo.InvariantCulture),
                 TrackingEnabled = settings.TrackingEnabled,
                 FreshMinutes = settings.FreshMinutes,
@@ -196,22 +200,25 @@ namespace TrackerSQL.Managers
             };
 
             Dictionary<int, DriverLocationRepository.Ping> pings = DriverLocationRepository.TableSeen()
-                ? new DriverLocationRepository().LatestPerPerson(day, now).ToDictionary(p => p.PersonID)
+                ? new DriverLocationRepository().LatestPerPerson(day, pingUpTo).ToDictionary(p => p.PersonID)
                 : new Dictionary<int, DriverLocationRepository.Ping>();
-            if (DriverLocationRepository.TableSeen())
+            if (isToday && DriverLocationRepository.TableSeen())
                 CleanupIfDue(settings);
 
-            List<MobileDeliveryStop> orders = new MobileDeliveryManager().GetSheet(day, null).Orders
-                .Where(o => o.DeliveryById.HasValue).ToList();
+            RepositoryListResult<DeliverySheetOrderRow> sheetProbe = new DeliverySheetRepository().GetDeliverySheetRows(day, null);
+            board.SheetRows = sheetProbe.Success ? sheetProbe.Items?.Count ?? 0 : 0;
+            List<MobileDeliveryStop> orders = LoadSheetOrders(day, sheetProbe, out int orderCount);
+            board.OrderCount = orderCount;
+            board.StopCount = orders.Count;
+            RouteTimesManager.DayTimes routeTimes = isToday
+                ? new RouteTimesManager().ForDay(day, orders)
+                : null;
             Dictionary<int, PersonInfo> people = LoadPeople();
-            Dictionary<int, Tuple<double, double>> points = LoadPoints(orders.Select(o => o.ContactId).Distinct());
+            Dictionary<int, Tuple<double, double>> points = LoadStopPoints(orders);
 
             var personIds = new HashSet<int>(pings.Keys);
-            foreach (int id in orders.Select(o => o.DeliveryById.Value).Distinct())
-            {
-                if (people.TryGetValue(id, out PersonInfo p) && p.Delivers)
-                    personIds.Add(id);
-            }
+            foreach (int id in orders.Where(o => o.DeliveryById.HasValue).Select(o => o.DeliveryById.Value).Distinct())
+                personIds.Add(id);
 
             foreach (int personId in personIds)
             {
@@ -229,10 +236,15 @@ namespace TrackerSQL.Managers
                     driver.Lng = (double)ping.Longitude;
                     driver.Accuracy = ping.AccuracyM.HasValue ? (double?)ping.AccuracyM.Value : null;
                     driver.LastSeen = ping.PingTime.ToString("HH:mm", CultureInfo.InvariantCulture);
-                    driver.MinutesAgo = Math.Max(0, (int)Math.Floor((now - ping.PingTime).TotalMinutes));
+                    driver.MinutesAgo = Math.Max(0, (int)Math.Floor((pingUpTo - ping.PingTime).TotalMinutes));
                     driver.Source = ping.Source;
-                    driver.Colour = driver.MinutesAgo <= settings.FreshMinutes ? "green"
-                        : driver.MinutesAgo <= settings.StaleMinutes ? "orange" : "red";
+                    if (isToday)
+                    {
+                        driver.Colour = driver.MinutesAgo <= settings.FreshMinutes ? "green"
+                            : driver.MinutesAgo <= settings.StaleMinutes ? "orange" : "red";
+                    }
+                    else
+                        driver.Colour = "green";
                 }
                 else
                 {
@@ -240,11 +252,11 @@ namespace TrackerSQL.Managers
                 }
 
                 driver.Stops = orders.Where(o => o.DeliveryById == personId)
-                    .GroupBy(o => o.ContactId)
+                    .GroupBy(StopGroupKey)
                     .Select(g => new DriverTrackingStop
                     {
                         Seq = g.Min(o => o.Seq),
-                        ContactId = g.Key,
+                        ContactId = g.First().ContactId,
                         Company = g.First().Company,
                         Area = g.First().Area,
                         Orders = g.Count(),
@@ -263,26 +275,81 @@ namespace TrackerSQL.Managers
                     driver.Status = "No stops";
                 else if (driver.StopsLeft == 0)
                     driver.Status = "Finished";
+                else if (!isToday)
+                    driver.Status = driver.MinutesAgo.HasValue ? "That day" : "No GPS";
                 else if (!driver.MinutesAgo.HasValue || driver.MinutesAgo > settings.StaleMinutes)
                     driver.Status = "Offline";
                 else
                     driver.Status = "On route";
 
-                AddEtas(driver, board, settings, now);
+                AddEtas(driver, board, settings, now, orders, routeTimes, isToday);
                 board.Drivers.Add(driver);
             }
 
             board.Drivers = board.Drivers
+                .Where(d => d.Stops.Count > 0)
                 .OrderBy(d => d.Status == "On route" ? 0 : d.Status == "Offline" ? 1 : d.Status == "Finished" ? 2 : 3)
                 .ThenBy(d => d.Name)
                 .ToList();
             return board;
         }
 
-        private static void AddEtas(DriverTrackingDriver driver, DriverTrackingBoard board, GpsSettings settings, DateTime now)
+        private static void AddEtas(DriverTrackingDriver driver, DriverTrackingBoard board, GpsSettings settings, DateTime now,
+            List<MobileDeliveryStop> orders, RouteTimesManager.DayTimes routeTimes, bool isToday)
         {
+            driver.FromDepot = !driver.Lat.HasValue;
+            if (!isToday)
+                return;
+
+            bool today = routeTimes != null && routeTimes.Today;
+            RouteTimesManager.DriverState routeState = null;
+            if (today)
+                routeTimes.Drivers.TryGetValue(driver.PersonId, out routeState);
+
+            if (today && driver.StopsLeft > 0 && (routeState == null || !routeState.Started))
+            {
+                driver.WaitingDepot = true;
+                driver.FinishEta = null;
+                return;
+            }
+
+            if (today && routeState != null && routeTimes.Stops.Count > 0)
+            {
+                foreach (DriverTrackingStop stop in driver.Stops)
+                {
+                    if (stop.Done)
+                        continue;
+                    MobileDeliveryStop sample = orders
+                        .Where(o => o.DeliveryById == driver.PersonId && o.ContactId == stop.ContactId && !IsFinished(o))
+                        .OrderBy(o => o.Seq)
+                        .FirstOrDefault();
+                    if (sample != null && routeTimes.Stops.TryGetValue(sample.OrderId, out RouteTimesManager.StopTime time)
+                        && time.Expected.HasValue)
+                        stop.Eta = time.Expected.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
+                }
+
+                if (routeState.FinishAtDepot.HasValue)
+                {
+                    driver.FinishEta = routeState.FinishAtDepot.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
+                    if (board.DepotLat.HasValue && board.DepotLng.HasValue && driver.StopsLeft > 0)
+                    {
+                        int lastSeq = driver.Stops.Where(s => !s.Done).Select(s => s.Seq).DefaultIfEmpty(0).Max();
+                        driver.Stops.Add(new DriverTrackingStop
+                        {
+                            Seq = lastSeq + 1,
+                            Company = "Depot (return)",
+                            IsDepot = true,
+                            Lat = board.DepotLat,
+                            Lng = board.DepotLng,
+                            Eta = driver.FinishEta
+                        });
+                    }
+                }
+                return;
+            }
+
+            // Past days or no route-times data: simple straight-line chain from last position or depot.
             double? lat = driver.Lat, lng = driver.Lng;
-            driver.FromDepot = !lat.HasValue;
             if (!lat.HasValue)
             {
                 lat = board.DepotLat;
@@ -304,8 +371,282 @@ namespace TrackerSQL.Managers
                 lng = stop.Lng;
                 any = true;
             }
-            if (any)
+            if (any && board.DepotLat.HasValue && board.DepotLng.HasValue && lat.HasValue && lng.HasValue)
+            {
+                double kmBack = GeoDistance.Metres(lat.Value, lng.Value, board.DepotLat.Value, board.DepotLng.Value) / 1000 * RoadFactor;
+                t = t.AddMinutes(kmBack / speedKmh * 60);
                 driver.FinishEta = t.ToString("HH:mm", CultureInfo.InvariantCulture);
+                int lastSeq = driver.Stops.Where(s => !s.Done).Select(s => s.Seq).DefaultIfEmpty(0).Max();
+                driver.Stops.Add(new DriverTrackingStop
+                {
+                    Seq = lastSeq + 1,
+                    Company = "Depot (return)",
+                    IsDepot = true,
+                    Lat = board.DepotLat,
+                    Lng = board.DepotLng,
+                    Eta = driver.FinishEta
+                });
+            }
+            else if (any)
+                driver.FinishEta = t.ToString("HH:mm", CultureInfo.InvariantCulture);
+        }
+
+        private static bool IsFinished(MobileDeliveryStop stop) => stop.Done || stop.Proof != null;
+
+        /// <summary>
+        /// Stops for the day in the same route order as Delivery order and the driver's app
+        /// (<see cref="MobileDeliveryManager.GetSheet"/> / DeliveryRouteTbl), not alphabetical order from Orders.
+        /// </summary>
+        private static List<MobileDeliveryStop> LoadSheetOrders(DateTime day, RepositoryListResult<DeliverySheetOrderRow> sheet, out int orderCount)
+        {
+            day = day.Date;
+            List<DriverTrackingOrderLine> orderLines = new OrdersRepository().ListForDriverTracking(day);
+            orderCount = orderLines.Count;
+
+            List<MobileDeliveryStop> planned = LoadPlannedMobileSheet(day, orderLines);
+            if (planned.Count > 0)
+                return planned;
+
+            if (orderLines.Count > 0)
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                    "Driver tracking: " + orderLines.Count + " order(s) on " + day.ToString("yyyy-MM-dd")
+                    + " but the planned sheet had no stops with a deliver-by person.");
+
+            sheet = sheet ?? new DeliverySheetRepository().GetDeliverySheetRows(day, null);
+            if (sheet.Success && sheet.Items != null && sheet.Items.Count > 0)
+            {
+                List<MobileDeliveryStop> fromSheet = StopsFromDeliverySheet(sheet.Items);
+                if (fromSheet.Count > 0)
+                    return fromSheet;
+            }
+
+            if (orderLines.Count > 0)
+                return StopsFromOrderLines(orderLines);
+
+            return new List<MobileDeliveryStop>();
+        }
+
+        /// <summary>Same pipeline as Tools/DeliveryOrder.aspx — office plan, learned order, then driving order.</summary>
+        private static List<MobileDeliveryStop> LoadPlannedMobileSheet(DateTime day, List<DriverTrackingOrderLine> orderLines)
+        {
+            List<MobileDeliveryStop> orders;
+            try
+            {
+                orders = new MobileDeliveryManager().GetSheet(day, null).Orders ?? new List<MobileDeliveryStop>();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Driver tracking mobile sheet failed: " + ex.Message);
+                orders = new List<MobileDeliveryStop>();
+            }
+
+            EnrichDriversFromOrderLines(orders, orderLines);
+            orders = orders.Where(o => o.DeliveryById.HasValue && o.DeliveryById.Value > 0).ToList();
+            if (orders.Count == 0)
+                return orders;
+
+            AppendMissingDayOrders(orders, orderLines);
+            return orders;
+        }
+
+        private static void EnrichDriversFromOrderLines(List<MobileDeliveryStop> stops, List<DriverTrackingOrderLine> orderLines)
+        {
+            if (stops == null || stops.Count == 0 || orderLines == null || orderLines.Count == 0)
+                return;
+            var byOrder = orderLines.ToDictionary(l => l.OrderId);
+            foreach (MobileDeliveryStop stop in stops)
+            {
+                if (stop.DeliveryById.HasValue && stop.DeliveryById.Value > 0)
+                    continue;
+                if (!byOrder.TryGetValue(stop.OrderId, out DriverTrackingOrderLine line))
+                    continue;
+                int? driverId = ResolveDriverId(line.ToBeDeliveredById, line.DeliverToAddressId, line.DeliveryByAbbreviation,
+                    line.DeliverToLabel, line.DeliverToPerson);
+                if (!driverId.HasValue || driverId.Value <= 0)
+                    continue;
+                stop.DeliveryById = driverId;
+                if (string.IsNullOrWhiteSpace(stop.DeliveryBy))
+                    stop.DeliveryBy = line.DeliveryByAbbreviation;
+            }
+        }
+
+        /// <summary>Orders on the day that are not on the mobile sheet (e.g. deliver-to driver resolved only from Orders).</summary>
+        private static void AppendMissingDayOrders(List<MobileDeliveryStop> orders, List<DriverTrackingOrderLine> orderLines)
+        {
+            var onSheet = new HashSet<int>(orders.Select(o => o.OrderId));
+            var missing = orderLines.Where(l => !onSheet.Contains(l.OrderId)).ToList();
+            if (missing.Count == 0)
+                return;
+            foreach (MobileDeliveryStop extra in StopsFromOrderLines(missing))
+            {
+                int maxSeq = orders.Where(o => o.DeliveryById == extra.DeliveryById).Select(o => o.Seq).DefaultIfEmpty(0).Max();
+                extra.Seq = maxSeq + 1;
+                orders.Add(extra);
+            }
+        }
+
+        private static List<MobileDeliveryStop> StopsFromOrderLines(List<DriverTrackingOrderLine> orderLines)
+        {
+            var stops = new List<MobileDeliveryStop>();
+            var seqByDriver = new Dictionary<int, int>();
+            foreach (DriverTrackingOrderLine row in orderLines)
+            {
+                int? driverId = ResolveDriverId(row.ToBeDeliveredById, row.DeliverToAddressId, row.DeliveryByAbbreviation,
+                    row.DeliverToLabel, row.DeliverToPerson);
+                if (!driverId.HasValue || driverId.Value <= 0)
+                    continue;
+
+                string deliverToName = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+                bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverToName);
+                string company = hasDeliverTo
+                    ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.CompanyName)
+                    : row.CompanyName;
+
+                int seq = seqByDriver.TryGetValue(driverId.Value, out int n) ? n + 1 : 1;
+                seqByDriver[driverId.Value] = seq;
+
+                var stop = new MobileDeliveryStop
+                {
+                    OrderId = row.OrderId,
+                    ContactId = row.ContactId,
+                    Company = company,
+                    DeliverTo = hasDeliverTo ? deliverToName : null,
+                    DeliverToAddressId = row.DeliverToAddressId,
+                    Area = row.AreaName,
+                    Done = row.Done,
+                    DeliveryById = driverId,
+                    DeliveryBy = row.DeliveryByAbbreviation,
+                    Seq = seq
+                };
+
+                if (row.DeliverToAddressId is int addrId && addrId > 0)
+                {
+                    ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(addrId);
+                    if (addr?.Latitude is decimal lat && addr.Longitude is decimal lng)
+                    {
+                        stop.Gps = new MobileStopGps
+                        {
+                            Lat = Math.Round((double)lat, 6),
+                            Lng = Math.Round((double)lng, 6),
+                            Kind = "pin"
+                        };
+                    }
+                }
+
+                stops.Add(stop);
+            }
+
+            return stops;
+        }
+
+        private static List<MobileDeliveryStop> StopsFromDeliverySheet(List<DeliverySheetOrderRow> rows)
+        {
+            var stops = new List<MobileDeliveryStop>();
+            var seenOrders = new HashSet<int>();
+            var seqByDriver = new Dictionary<int, int>();
+            foreach (DeliverySheetOrderRow row in rows)
+            {
+                if (!seenOrders.Add(row.OrderID))
+                    continue;
+
+                int? driverId = ResolveDriverId(row.ToBeDeliveredByID, row.DeliverToAddressID, row.DeliveryByAbbreviation,
+                    row.DeliverToLabel, row.DeliverToPerson);
+                if (!driverId.HasValue || driverId.Value <= 0)
+                    continue;
+
+                string deliverToName = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+                bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverToName);
+                string company = hasDeliverTo
+                    ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.ContactName)
+                    : row.ContactName;
+
+                int seq = seqByDriver.TryGetValue(driverId.Value, out int n) ? n + 1 : 1;
+                seqByDriver[driverId.Value] = seq;
+
+                var stop = new MobileDeliveryStop
+                {
+                    OrderId = row.OrderID,
+                    ContactId = row.ContactID,
+                    Company = company,
+                    DeliverTo = hasDeliverTo ? deliverToName : null,
+                    DeliverToAddressId = row.DeliverToAddressID,
+                    Area = row.AreaName,
+                    Done = row.Done,
+                    DeliveryById = driverId,
+                    DeliveryBy = row.DeliveryByAbbreviation,
+                    Seq = seq
+                };
+
+                if (row.DeliverToAddressID is int addrId && addrId > 0)
+                {
+                    ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(addrId);
+                    if (addr?.Latitude is decimal lat && addr.Longitude is decimal lng)
+                    {
+                        stop.Gps = new MobileStopGps
+                        {
+                            Lat = Math.Round((double)lat, 6),
+                            Lng = Math.Round((double)lng, 6),
+                            Kind = "pin"
+                        };
+                    }
+                }
+
+                stops.Add(stop);
+            }
+
+            return stops;
+        }
+
+        private static int? ResolveDriverId(int? headerBy, int? deliverToAddressId, string abbrev, string deliverToLabel, string deliverToPerson)
+        {
+            if (headerBy.HasValue && headerBy.Value > 0)
+                return headerBy;
+
+            if (deliverToAddressId is int deliverToId && deliverToId > 0)
+            {
+                ContactDeliverToAddress deliverTo = new ContactDeliverToAddressRepository().GetById(deliverToId);
+                if (deliverTo?.ToBeDeliveredByID is int personId && personId > 0)
+                    return personId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(abbrev))
+            {
+                int? byAbbr = new PersonsRepository().GetPersonIdByAbbreviation(abbrev);
+                if (byAbbr.HasValue && byAbbr.Value > 0)
+                    return byAbbr;
+            }
+
+            return null;
+        }
+
+        private static int StopGroupKey(MobileDeliveryStop o)
+        {
+            if (!string.IsNullOrWhiteSpace(o.DeliverTo))
+                return o.DeliverToAddressId ?? o.OrderId;
+            return o.ContactId;
+        }
+
+        /// <summary>GPS for map / ETAs: each stop's sheet point, else the contact's stored point.</summary>
+        private static Dictionary<int, Tuple<double, double>> LoadStopPoints(List<MobileDeliveryStop> orders)
+        {
+            var map = new Dictionary<int, Tuple<double, double>>();
+            foreach (MobileDeliveryStop o in orders)
+            {
+                int key = StopGroupKey(o);
+                if (key <= 0 || map.ContainsKey(key))
+                    continue;
+                if (o.Gps?.Lat != null && o.Gps.Lng.HasValue)
+                    map[key] = Tuple.Create(o.Gps.Lat.Value, o.Gps.Lng.Value);
+            }
+            foreach (MobileDeliveryStop o in orders)
+            {
+                if (!string.IsNullOrWhiteSpace(o.DeliverTo))
+                    continue;
+                int id = o.ContactId;
+                if (id > 0 && !map.ContainsKey(id) && LoadPoints(new[] { id }).TryGetValue(id, out Tuple<double, double> pt))
+                    map[id] = pt;
+            }
+            return map;
         }
 
         private class PersonInfo

@@ -44,6 +44,8 @@ namespace TrackerSQL.Managers
             public int Left;
             /// <summary>The phone's latest position today (tracking or a delivery).</summary>
             public DateTime? LastSeen;
+            /// <summary>Estimated return to the depot after the last open stop (today only).</summary>
+            public DateTime? FinishAtDepot;
         }
 
         public class DayTimes
@@ -158,14 +160,14 @@ namespace TrackerSQL.Managers
                     lng = (double)latest.Longitude;
                 }
 
-                Chain(open, result, t, lat, lng, now, Math.Max(5, settings.AverageSpeedKmh), Math.Max(0, settings.ServiceMinutes),
-                    AverageLegMinutes(visits, Math.Max(5, settings.AverageSpeedKmh)));
+                Chain(open, result, state, t, lat, lng, now, Math.Max(5, settings.AverageSpeedKmh), Math.Max(0, settings.ServiceMinutes),
+                    AverageLegMinutes(visits, Math.Max(5, settings.AverageSpeedKmh)), depotLat, depotLng);
             }
             return result;
         }
 
-        private static void Chain(List<List<MobileDeliveryStop>> open, DayTimes result, DateTime t, double? lat, double? lng, DateTime now,
-            double speedKmh, double serviceMinutes, double averageLeg)
+        private static void Chain(List<List<MobileDeliveryStop>> open, DayTimes result, DriverState state, DateTime t, double? lat, double? lng, DateTime now,
+            double speedKmh, double serviceMinutes, double averageLeg, double? depotLat, double? depotLng)
         {
             bool first = true;
             foreach (List<MobileDeliveryStop> visit in open)
@@ -190,6 +192,9 @@ namespace TrackerSQL.Managers
                     lng = gps.Lng;
                 }
             }
+
+            if (state != null && open.Count > 0 && depotLat.HasValue && depotLng.HasValue && lat.HasValue && lng.HasValue)
+                state.FinishAtDepot = t.AddMinutes(LegMinutes(lat.Value, lng.Value, depotLat.Value, depotLng.Value, speedKmh));
         }
 
         private static double LegMinutes(double lat1, double lng1, double lat2, double lng2, double speedKmh)
@@ -217,19 +222,33 @@ namespace TrackerSQL.Managers
 
         private static bool Finished(MobileDeliveryStop stop) => stop.Done || stop.Proof != null;
 
-        /// <summary>Orders next to each other for the same client are one stop.</summary>
+        /// <summary>Orders next to each other for the same client are one stop (deliver-to addresses stay separate).</summary>
         private static List<List<MobileDeliveryStop>> Visits(IEnumerable<MobileDeliveryStop> route)
         {
             var visits = new List<List<MobileDeliveryStop>>();
             foreach (MobileDeliveryStop stop in route)
             {
-                if (visits.Count > 0 && visits[visits.Count - 1][0].ContactId == stop.ContactId
-                    && stop.ContactId != SystemConstants.CustomerConstants.SundryCustomerID)
+                if (visits.Count > 0 && SameVisit(visits[visits.Count - 1][0], stop))
                     visits[visits.Count - 1].Add(stop);
                 else
                     visits.Add(new List<MobileDeliveryStop> { stop });
             }
             return visits;
+        }
+
+        private static bool SameVisit(MobileDeliveryStop a, MobileDeliveryStop b)
+        {
+            if (a.ContactId != b.ContactId || b.ContactId == SystemConstants.CustomerConstants.SundryCustomerID)
+                return false;
+            bool aDeliverTo = !string.IsNullOrWhiteSpace(a.DeliverTo);
+            bool bDeliverTo = !string.IsNullOrWhiteSpace(b.DeliverTo);
+            if (!aDeliverTo && !bDeliverTo)
+                return true;
+            if (!aDeliverTo || !bDeliverTo)
+                return false;
+            if ((a.DeliverToAddressId ?? 0) != (b.DeliverToAddressId ?? 0))
+                return false;
+            return string.Equals(a.DeliverTo, b.DeliverTo, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

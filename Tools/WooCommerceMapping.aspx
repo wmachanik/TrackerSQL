@@ -1204,6 +1204,13 @@
 
                         <h3 class="sys-prefs-section-title">Woo shipping method → Delivered by</h3>
                         <p class="sys-prefs-help"><asp:Literal ID="litShippingMapsNote" runat="server" /></p>
+                        <div class="filter-control sys-prefs-row">
+                            <asp:Label ID="lblImportCollectKeywords" runat="server" AssociatedControlID="txtImportCollectKeywords"
+                                Text="Collect at shop when method contains" CssClass="small" />
+                            <asp:TextBox ID="txtImportCollectKeywords" runat="server" CssClass="sys-prefs-input" Width="22em"
+                                ToolTip="Comma-separated words matched in the Woo shipping method title (case-insensitive). Used with the maps below when Delivered by is Collect (Cllct)." />
+                            <p class="sys-prefs-help">Default: collect, buiten. Other methods import as delivery (area driver / SQ), even when the contact’s default is Collect.</p>
+                        </div>
                         <p class="sys-prefs-help" id="pnlShippingEmptyHint" runat="server" visible="false">
                             <asp:Literal ID="litShippingEmptyHint" runat="server" />
                         </p>

@@ -44,9 +44,7 @@
                 <div class="page-tone-toolbar filter-block" style="padding-top: 12px;">
                     <asp:Label AssociatedControlID="tbxEmailSubject" Text="Subject:" runat="server" />
                     <asp:TextBox ID="tbxEmailSubject" Text="Coffee Checkup" runat="server" Width="30em" Style="padding-right: 2px" />
-                    <span class="small floatRight">
-                        <asp:Literal ID="ltrlEmailTextID" runat="server" Text="" />
-                    </span>
+                    <asp:HiddenField ID="hdnEmailTextId" runat="server" Value="" />
                     <br />
                     <br />
                     <ajaxToolkit:TabContainer ID="tabEmailBody" runat="server" Height="200px" Width="100%">

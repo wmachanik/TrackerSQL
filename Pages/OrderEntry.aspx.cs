@@ -76,6 +76,8 @@ namespace TrackerSQL.Pages
 
                 if (ddlSearchFor.SelectedValue == "Company" && !string.IsNullOrWhiteSpace(tbxSearchFor.Text))
                     status += $" Company filter: {tbxSearchFor.Text.Trim()}.";
+                else if (ddlSearchFor.SelectedValue == "OrderID" && !string.IsNullOrWhiteSpace(tbxSearchFor.Text))
+                    status += $" Order number filter: {tbxSearchFor.Text.Trim()}.";
                 else if (ddlSearchFor.SelectedValue == "PrepDate" && !string.IsNullOrWhiteSpace(tbxSearchFor.Text))
                     status += $" Prep date filter: {tbxSearchFor.Text.Trim()}.";
 

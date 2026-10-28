@@ -43,7 +43,9 @@
                             Gear-only orders use <strong>ZZName</strong> with the customer name and shipping address in Notes.
                             PO is set to the Woo order number. Payment abbreviations (e.g. <code>[PF]</code>) are configured under
                             <asp:HyperLink ID="lnkPaymentMaps" runat="server" NavigateUrl="~/Tools/WooCommerceMapping.aspx?tab=payment" Text="Woo Mapping → Payment" />.
-                            Delivery person comes from the contact’s area — Woo shipping method titles are not used.
+                            Delivery person: <strong>Collect (Cllct)</strong> only when the Woo shipping method matches
+                            <asp:HyperLink ID="lnkShippingMaps" runat="server" NavigateUrl="~/Tools/WooCommerceMapping.aspx?tab=shipping" Text="Woo Mapping → Shipping" />
+                            (maps or keywords such as collect / buiten); otherwise the area default driver (e.g. SQ).
                         </p>
                     </div>
                 </div>

@@ -32,7 +32,7 @@ namespace TrackerSQL.Managers
         /// <summary>Run idempotent create/alter once per app domain (not every postback).</summary>
         public WooCommerceSchemaInstaller.EnsureResult EnsureSchemaOnce()
         {
-            const string cacheKey = "WooCommerce.SchemaEnsured.v15";
+            const string cacheKey = "WooCommerce.SchemaEnsured.v16";
             if (HttpRuntime.Cache[cacheKey] != null)
                 return new WooCommerceSchemaInstaller.EnsureResult { Succeeded = true, Message = "Schema already ensured." };
 
@@ -338,6 +338,31 @@ namespace TrackerSQL.Managers
         {
             "Name", "Gear", "Address", "WooPay", "Email", "CustomerNote", "ContactCreated"
         };
+
+        public void SaveImportCollectShippingKeywords(string keywords, string updatedBy)
+        {
+            EnsureSchema();
+            var settings = _settingsRepo.GetSettings();
+            settings.ImportCollectShippingKeywords = NormalizeCollectShippingKeywords(keywords);
+            _settingsRepo.SaveSettings(settings, updatedBy);
+        }
+
+        public static string NormalizeCollectShippingKeywords(string keywords)
+        {
+            if (string.IsNullOrWhiteSpace(keywords))
+                return "collect,buiten";
+            var parts = keywords.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            string joined = string.Join(",", parts);
+            return string.IsNullOrWhiteSpace(joined) ? "collect,buiten" : joined;
+        }
+
+        public string GetImportCollectShippingKeywords()
+        {
+            return NormalizeCollectShippingKeywords(_settingsRepo.GetSettings()?.ImportCollectShippingKeywords);
+        }
 
         public void SaveGeneralImportSettings(
             string companyNameMode,

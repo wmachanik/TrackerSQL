@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,6 +19,14 @@ namespace TrackerSQL.Managers
             IsActive
                 ? " LEFT JOIN dbo.ContactDeliverToAddressTbl dob ON dob.DeliverToAddressID = o.DeliverToAddressID"
                 : string.Empty;
+
+        /// <summary>Order header driver, else the deliver-to address default (when on-behalf is active).</summary>
+        public static string EffectiveDeliveredByIdSql(string orderAlias = "o", string deliverToAlias = "dob")
+        {
+            if (!IsActive)
+                return orderAlias + ".ToBeDeliveredByID";
+            return "COALESCE(NULLIF(" + orderAlias + ".ToBeDeliveredByID, 0), " + deliverToAlias + ".ToBeDeliveredByID)";
+        }
 
         /// <summary>Requires <see cref="JoinClause"/> on the query before this join when <see cref="IsActive"/>.</summary>
         public static string AreaJoinOnEffectiveArea(string contactAlias, string areaAlias)
@@ -156,6 +165,46 @@ namespace TrackerSQL.Managers
         public static string OrderPickerText(ContactDeliverToAddress row)
         {
             return row == null ? string.Empty : row.ShortNameForOrders;
+        }
+
+        /// <summary>Detail for orders.log when a new order uses an alternative delivery address.</summary>
+        public static string AuditDeliverToSummary(int? deliverToAddressId)
+        {
+            if (!IsActive || !deliverToAddressId.HasValue || deliverToAddressId.Value <= 0)
+                return null;
+
+            ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(deliverToAddressId.Value);
+            if (row == null)
+                return "Delivery on behalf (alternative address id " + deliverToAddressId.Value + ").";
+
+            var parts = new List<string> { "Delivery on behalf: " + row.ShortNameForOrders };
+            string person = (row.DeliverToPerson ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(person)
+                && !string.Equals(person, row.ShortNameForOrders, StringComparison.OrdinalIgnoreCase))
+                parts.Add("sign POD " + person);
+            string kind = row.AddressKindDisplay;
+            if (!string.IsNullOrWhiteSpace(kind))
+                parts.Add(kind);
+            parts.Add("address id " + row.DeliverToAddressID);
+            return string.Join("; ", parts) + ".";
+        }
+
+        /// <summary>
+        /// When the order uses a deliver-to address with its own driver, set <see cref="OrderHeaderData.ToBeDeliveredBy"/>
+        /// from that row (not the billing contact's preferred delivery person).
+        /// </summary>
+        public static void ApplyDeliverToDriver(OrderHeaderData header)
+        {
+            if (header == null || !IsActive)
+                return;
+            int? deliverToId = header.DeliverToAddressID;
+            if (!deliverToId.HasValue || deliverToId.Value <= 0)
+                return;
+            ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(deliverToId.Value);
+            if (row == null || row.ContactID != header.CustomerID || !row.Enabled)
+                return;
+            if (row.ToBeDeliveredByID is int personId && personId > 0)
+                header.ToBeDeliveredBy = personId;
         }
 
         /// <summary>True when the order UI should offer main vs deliver-to (independent of OrdersTbl column — that is checked on save).</summary>

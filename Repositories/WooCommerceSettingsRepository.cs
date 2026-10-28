@@ -22,7 +22,7 @@ namespace TrackerSQL.Repositories
             "ImportAddressDeduplicateSuburb, ImportAddressStripCapeTown, ImportAddressTitleCase, " +
             "ImportPhoneReplacePlus27, ImportPhoneFormatSa, " +
             "ImportNotesItemID, ImportCompanyNameMode, ImportNoteLineFormat, AppendTrackingToOrderNotes, " +
-            "ImportAutoPullMode, ImportZzNameNoteLayout, ImportNotePartOrder, WriteExpectedDeliveryToWoo, " +
+            "ImportAutoPullMode, ImportCollectShippingKeywords, ImportZzNameNoteLayout, ImportNotePartOrder, WriteExpectedDeliveryToWoo, " +
             "CheckNewOrdersOnNewOrder, CompleteWooOrderOnDone, " +
             "UpdatedAt, UpdatedBy";
 
@@ -79,6 +79,7 @@ namespace TrackerSQL.Repositories
                 ImportNoteLineFormat = "SkuAndName",
                 AppendTrackingToOrderNotes = false,
                 ImportAutoPullMode = "SinceLastSync",
+                ImportCollectShippingKeywords = "collect,buiten",
                 CheckNewOrdersOnNewOrder = true,
                 CompleteWooOrderOnDone = true,
                 ImportZzNameNoteLayout = "NameGearAddressMeta",

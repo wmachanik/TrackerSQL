@@ -303,6 +303,8 @@ namespace TrackerSQL.Pages
                 }
 
                 SetStatus("Completing order...", isError: null);
+                btnDone.Enabled = false;
+                btnDone.Text = "Updating...";
                 updtpnlOrderDone.Update();
 
                 var result = OrderDoneManager.CompleteOrder(
@@ -334,6 +336,8 @@ namespace TrackerSQL.Pages
                 else
                 {
                     SetStatus(result.Message, isError: true);
+                    btnDone.Enabled = true;
+                    btnDone.Text = "Done";
                     new showMessageBox(Page,
                         MessageProvider.Get(MessageKeys.Order.CompletedFailed),
                         result.Message);
@@ -348,6 +352,8 @@ namespace TrackerSQL.Pages
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders, $"OrderDone: btnDone_Click failed: {ex.Message}");
                 SetStatus("Error completing order: " + ex.Message, isError: true);
+                btnDone.Enabled = true;
+                btnDone.Text = "Done";
                 new showMessageBox(Page, MessageProvider.Get(MessageKeys.Order.CompletedFailed), ex.Message);
                 updtpnlOrderDone.Update();
             }

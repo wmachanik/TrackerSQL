@@ -2,6 +2,17 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.8 — 2026-10-28
+
+### Features and fixes
+- **Quaffee Driver 0.5.7** — deliver-to orders show the **recipient** (not the billing contact) for “Received by” when the alternative address has no separate site label; **About** on More lists app version, server and latest Tracker APK version. Depot **alternative person** on collections unchanged from 0.5.6.
+- **Order Entry** — **Order #** column and search by order number; **Order detail** shows Tracker order number in the subtitle and status bar.
+- **Order detail** — manual **Woo link** refreshes the Woo row without a full page reload.
+- **Orders log** — creating an order with a deliver-to recipient writes **Delivery on behalf** details to `orders.log`.
+
+### Go-live notes
+- Upload `bin/`, changed pages/managers, `App_Data/SQLCommands-DriverGps-09.xml` and `SQLCommands-WooCommerce-05.xml` if not already applied, rebuilt `driver/` (0.5.7) and `Downloads/QuaffeeDriver.json` (APK when you ship it). In live `Web.config` set `Version` to **3.0.3.8** only (merge secrets from your live template). Recycle the site; check `/api/v1/ping`.
+
 ## 3.0.3.7 — 2026-10-25
 
 - **Delivery on behalf** — Contact Details: **Delivery on Behalf** flag and deliver-to addresses (short name, GPS). **Order Detail**: **Recipient** picker (main vs deliver-to), auto P/Order `ShortName-yyyyMMdd-n` when the same customer has more than one deliver-to order on a day (`-2`, `-3`, …). **Delivery sheet** and **driver app**: recipient-first names (`Vredehoek Spar [TCCC]` on lists; detail shows recipient + **Customer:** billing company); deliver-to address/GPS on sheet and mobile API; no duplicate “Deliver to:” in notes. Schema pack `SQLCommands-DriverGps-08.xml` (`ContactsTbl.DeliveryOnBehalf`, `ContactDeliverToAddressTbl`, `OrdersTbl.DeliverToAddressID`). Order/mobile lines with qty 0 are saved and sent as 1.

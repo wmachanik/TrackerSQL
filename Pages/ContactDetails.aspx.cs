@@ -2523,6 +2523,16 @@ namespace TrackerSQL.Pages
         private void BindDeliveryOnBehalfUi(Contact contact, int contactId)
         {
             bool schema = ContactsRepository.HasDeliveryOnBehalfColumn() && ContactDeliverToAddressRepository.TableSeen();
+            if (schema && contactId > 0)
+            {
+                int addressCount = new ContactDeliverToAddressRepository().ListForContact(contactId).Count;
+                if (addressCount > 0 && !(contact.DeliveryOnBehalf ?? false))
+                {
+                    new ContactsRepository().UpdateDeliveryOnBehalf(contactId, true);
+                    contact.DeliveryOnBehalf = true;
+                }
+            }
+
             if (chkDeliveryOnBehalf != null)
             {
                 chkDeliveryOnBehalf.Visible = ContactsRepository.HasDeliveryOnBehalfColumn();
@@ -2538,6 +2548,8 @@ namespace TrackerSQL.Pages
                 HideDeliverToForm();
                 BindDeliverToGrid(contactId);
             }
+            else
+                UpdateDeliverToAddButtonVisibility();
         }
 
         private void UpdateDeliverToTabVisibility()
@@ -2559,19 +2571,66 @@ namespace TrackerSQL.Pages
             gvDeliverToAddresses.DataBind();
         }
 
+        private void BindDeliverToKindDropdown(string selectedCode)
+        {
+            if (ddlDeliverToKind == null)
+                return;
+            ddlDeliverToKind.Items.Clear();
+            string selected = AlternativeAddressKind.Normalize(selectedCode);
+            foreach (KeyValuePair<string, string> item in AlternativeAddressKind.AllForDropdown())
+                ddlDeliverToKind.Items.Add(new ListItem(item.Value, item.Key));
+            ListItem match = ddlDeliverToKind.Items.FindByValue(selected);
+            if (match != null)
+                ddlDeliverToKind.SelectedValue = selected;
+            else if (ddlDeliverToKind.Items.Count > 0)
+                ddlDeliverToKind.SelectedIndex = 0;
+        }
+
         protected void chkDeliveryOnBehalf_CheckedChanged(object sender, EventArgs e)
         {
+            if (TryGetContactId(out int contactId))
+                TryPersistDeliveryOnBehalfFlag(contactId, chkDeliveryOnBehalf != null && chkDeliveryOnBehalf.Checked);
+
             UpdateDeliverToTabVisibility();
             if (uppnlTabContainer != null)
                 uppnlTabContainer.Update();
         }
 
+        private void TryPersistDeliveryOnBehalfFlag(int contactId, bool enabled)
+        {
+            if (contactId <= 0 || !ContactsRepository.HasDeliveryOnBehalfColumn())
+                return;
+
+            try
+            {
+                new ContactsRepository().UpdateDeliveryOnBehalf(contactId, enabled);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "DeliveryOnBehalf save: " + ex.Message);
+            }
+        }
+
         private const string VSKEY_DELIVER_TO_EDIT_ID = "DeliverToEditId";
+        private const string VSKEY_DELIVER_TO_PENDING_BY = "DeliverToPendingDeliveryBy";
+        private const string VSKEY_DELIVER_TO_PENDING_AREA = "DeliverToPendingArea";
 
         private int DeliverToEditId
         {
             get => ViewState[VSKEY_DELIVER_TO_EDIT_ID] as int? ?? 0;
             set => ViewState[VSKEY_DELIVER_TO_EDIT_ID] = value;
+        }
+
+        private int? DeliverToPendingDeliveryBy
+        {
+            get => ViewState[VSKEY_DELIVER_TO_PENDING_BY] as int?;
+            set => ViewState[VSKEY_DELIVER_TO_PENDING_BY] = value;
+        }
+
+        private int? DeliverToPendingArea
+        {
+            get => ViewState[VSKEY_DELIVER_TO_PENDING_AREA] as int?;
+            set => ViewState[VSKEY_DELIVER_TO_PENDING_AREA] = value;
         }
 
         protected void btnDeliverToAdd_Click(object sender, EventArgs e)
@@ -2591,22 +2650,30 @@ namespace TrackerSQL.Pages
 
             string person = NullIfEmpty(tbxDeliverToPerson?.Text);
             string label = NullIfEmpty(tbxDeliverToLabel?.Text);
-            if (string.IsNullOrEmpty(person) && string.IsNullOrEmpty(label))
+            if (string.IsNullOrEmpty(person))
             {
-                ShowDeliverToFormError("Enter Deliver To or Short Name.");
+                ShowDeliverToFormError("Enter the recipient name — they sign for the delivery on the driver app.");
                 return;
             }
             if (label == null)
                 label = person;
-            if (person == null)
-                person = label;
+            string addressKind = AlternativeAddressKind.Normalize(ddlDeliverToKind?.SelectedValue);
+
+            var repo = new ContactDeliverToAddressRepository();
+            ContactDeliverToAddress existing = DeliverToEditId > 0 ? repo.GetById(DeliverToEditId) : null;
 
             int? deliveredBy = ParseNullableInt(ddlDeliverToDeliveryBy?.SelectedValue);
+            if ((!deliveredBy.HasValue || deliveredBy.Value <= 0) && existing != null)
+                deliveredBy = existing.ToBeDeliveredByID;
             if (!deliveredBy.HasValue || deliveredBy.Value <= 0)
             {
                 ShowDeliverToFormError("Choose who delivers to this address.");
                 return;
             }
+
+            int? areaId = ParseNullableInt(ddlDeliverToArea?.SelectedValue);
+            if ((!areaId.HasValue || areaId.Value <= 0) && existing != null)
+                areaId = existing.AreaID;
 
             var row = new ContactDeliverToAddress
             {
@@ -2614,21 +2681,20 @@ namespace TrackerSQL.Pages
                 DeliverToAddressID = DeliverToEditId,
                 DeliverToPerson = person,
                 Label = label,
+                AddressKind = addressKind,
                 ToBeDeliveredByID = deliveredBy,
                 Address1 = NullIfEmpty(tbxDeliverToAddr1?.Text),
                 Address2 = NullIfEmpty(tbxDeliverToAddr2?.Text),
                 Address3 = NullIfEmpty(tbxDeliverToAddr3?.Text),
-                AreaID = ParseNullableInt(ddlDeliverToArea?.SelectedValue),
+                AreaID = areaId,
                 PostalCode = NullIfEmpty(tbxDeliverToPostal?.Text),
                 Enabled = chkDeliverToEnabled == null || chkDeliverToEnabled.Checked
             };
 
-            var repo = new ContactDeliverToAddressRepository();
             bool addressChanged = false;
             int savedId;
             if (DeliverToEditId > 0)
             {
-                var existing = repo.GetById(DeliverToEditId);
                 if (existing == null || existing.ContactID != contactId)
                 {
                     ShowDeliverToFormError("This address could not be found.");
@@ -2676,6 +2742,10 @@ namespace TrackerSQL.Pages
                 }
             }
 
+            TryPersistDeliveryOnBehalfFlag(contactId, true);
+            if (chkDeliveryOnBehalf != null)
+                chkDeliveryOnBehalf.Checked = true;
+
             BindDeliverToGrid(contactId);
             HideDeliverToForm();
             upnlDeliverTo?.Update();
@@ -2683,6 +2753,8 @@ namespace TrackerSQL.Pages
 
         protected void ddlDeliverToDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)
         {
+            DeliverToPendingDeliveryBy = ParseNullableInt(ddlDeliverToDeliveryBy?.SelectedValue);
+            DeliverToPendingArea = ParseNullableInt(ddlDeliverToArea?.SelectedValue);
             UpdateDeliverToGpsLine();
             upnlDeliverTo?.Update();
         }
@@ -2782,11 +2854,12 @@ namespace TrackerSQL.Pages
                     litDeliverToFormTitle.Text = "Edit Address";
                 tbxDeliverToPerson.Text = row.DeliverToPerson ?? string.Empty;
                 tbxDeliverToLabel.Text = row.Label ?? string.Empty;
-                TrySelectDropDownByValue(ddlDeliverToDeliveryBy, row.ToBeDeliveredByID);
+                BindDeliverToKindDropdown(row.AddressKind);
+                DeliverToPendingDeliveryBy = row.ToBeDeliveredByID;
+                DeliverToPendingArea = row.AreaID;
                 tbxDeliverToAddr1.Text = row.Address1 ?? string.Empty;
                 tbxDeliverToAddr2.Text = row.Address2 ?? string.Empty;
                 tbxDeliverToAddr3.Text = row.Address3 ?? string.Empty;
-                TrySelectDropDownByValue(ddlDeliverToArea, row.AreaID);
                 tbxDeliverToPostal.Text = row.PostalCode ?? string.Empty;
                 if (chkDeliverToEnabled != null)
                     chkDeliverToEnabled.Checked = row.Enabled;
@@ -2797,11 +2870,12 @@ namespace TrackerSQL.Pages
                     litDeliverToFormTitle.Text = "New Address";
                 tbxDeliverToPerson.Text = string.Empty;
                 tbxDeliverToLabel.Text = string.Empty;
-                TrySelectDropDownByValue(ddlDeliverToDeliveryBy, ParseNullableInt(ddlDeliveryBy?.SelectedValue));
+                BindDeliverToKindDropdown(AlternativeAddressKind.OnBehalf);
+                DeliverToPendingDeliveryBy = ParseNullableInt(ddlDeliveryBy?.SelectedValue);
+                DeliverToPendingArea = ParseNullableInt(ddlAreas?.SelectedValue);
                 tbxDeliverToAddr1.Text = string.Empty;
                 tbxDeliverToAddr2.Text = string.Empty;
                 tbxDeliverToAddr3.Text = string.Empty;
-                TrySelectDropDownByValue(ddlDeliverToArea, 0);
                 tbxDeliverToPostal.Text = string.Empty;
                 if (chkDeliverToEnabled != null)
                     chkDeliverToEnabled.Checked = true;
@@ -2809,17 +2883,58 @@ namespace TrackerSQL.Pages
 
             if (pnlDeliverToEditor != null)
                 pnlDeliverToEditor.Visible = true;
+            BindDeliverToEditorDropdowns();
+            UpdateDeliverToAddButtonVisibility();
             UpdateDeliverToGpsLine();
             upnlDeliverTo?.Update();
+        }
+
+        private void BindDeliverToEditorDropdowns()
+        {
+            if (ddlDeliverToDeliveryBy != null)
+            {
+                ddlDeliverToDeliveryBy.DataBind();
+                TrySelectDropDownByValue(ddlDeliverToDeliveryBy, DeliverToPendingDeliveryBy);
+            }
+            if (ddlDeliverToArea != null)
+            {
+                ddlDeliverToArea.DataBind();
+                TrySelectDropDownByValue(ddlDeliverToArea, DeliverToPendingArea);
+            }
+        }
+
+        protected void ddlDeliverToDeliveryBy_DataBound(object sender, EventArgs e)
+        {
+            if (pnlDeliverToEditor == null || !pnlDeliverToEditor.Visible)
+                return;
+            TrySelectDropDownByValue(ddlDeliverToDeliveryBy, DeliverToPendingDeliveryBy);
+        }
+
+        protected void ddlDeliverToArea_DataBound(object sender, EventArgs e)
+        {
+            if (pnlDeliverToEditor == null || !pnlDeliverToEditor.Visible)
+                return;
+            TrySelectDropDownByValue(ddlDeliverToArea, DeliverToPendingArea);
         }
 
         private void HideDeliverToForm()
         {
             DeliverToEditId = 0;
+            DeliverToPendingDeliveryBy = null;
+            DeliverToPendingArea = null;
             if (pnlDeliverToEditor != null)
                 pnlDeliverToEditor.Visible = false;
             if (lblDeliverToFormError != null)
                 lblDeliverToFormError.Visible = false;
+            UpdateDeliverToAddButtonVisibility();
+        }
+
+        private void UpdateDeliverToAddButtonVisibility()
+        {
+            if (btnDeliverToAdd == null)
+                return;
+            bool editing = pnlDeliverToEditor != null && pnlDeliverToEditor.Visible;
+            btnDeliverToAdd.Visible = !editing;
         }
 
         private void ShowDeliverToFormError(string message)
@@ -2830,6 +2945,7 @@ namespace TrackerSQL.Pages
             lblDeliverToFormError.Visible = true;
             if (pnlDeliverToEditor != null)
                 pnlDeliverToEditor.Visible = true;
+            UpdateDeliverToAddButtonVisibility();
         }
 
         protected void gvDeliverTo_RowDeleting(object sender, GridViewDeleteEventArgs e)

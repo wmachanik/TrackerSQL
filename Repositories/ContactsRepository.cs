@@ -426,6 +426,25 @@ WHERE ContactID = @ContactID";
             return ExecNonQuery(sql, p) > 0;
         }
 
+        /// <summary>Updates only DeliveryOnBehalf (saved immediately from Contact Details).</summary>
+        public bool UpdateDeliveryOnBehalf(int contactId, bool deliveryOnBehalf)
+        {
+            if (contactId <= 0 || !HasDeliveryOnBehalfColumn())
+                return false;
+
+            const string sql = @"
+UPDATE ContactsTbl
+SET DeliveryOnBehalf = @DeliveryOnBehalf
+WHERE ContactID = @ContactID";
+
+            var p = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@DeliveryOnBehalf", DataValue = deliveryOnBehalf, DataDbType = DbType.Boolean },
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+            };
+            return ExecNonQuery(sql, p) > 0;
+        }
+
         /// <summary>
         /// Inserts a new contact. Returns new ContactID, or 0 on failure.
         /// </summary>

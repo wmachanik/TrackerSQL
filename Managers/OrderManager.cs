@@ -70,7 +70,8 @@ namespace TrackerSQL.Managers
             return _ordersRepository.FindOrderIdByRequiredByDate(
                 header.CustomerID,
                 header.RequiredByDate,
-                header.Notes ?? string.Empty);
+                header.Notes ?? string.Empty,
+                header.DeliverToAddressID);
         }
 
         /// <summary>
@@ -85,7 +86,8 @@ namespace TrackerSQL.Managers
                 header.CustomerID,
                 header.RequiredByDate,
                 header.Notes ?? string.Empty,
-                excludeOrderId);
+                excludeOrderId,
+                header.DeliverToAddressID);
         }
 
         public class MergeOrderResult
@@ -127,6 +129,14 @@ namespace TrackerSQL.Managers
                 return result;
             }
 
+            int keepDeliverTo = keepHeader.DeliverToAddressID.GetValueOrDefault(0);
+            int mergeDeliverTo = mergeHeader.DeliverToAddressID.GetValueOrDefault(0);
+            if (keepDeliverTo != mergeDeliverTo)
+            {
+                result.Error = "Cannot merge orders with different deliver-to recipients.";
+                return result;
+            }
+
             result.LinesMoved = _ordersRepository.GetOrderLineCount(mergeFromOrderId);
             if (!_ordersRepository.MoveAllLinesToOrder(mergeFromOrderId, keepOrderId))
             {
@@ -165,6 +175,7 @@ namespace TrackerSQL.Managers
                 return result;
             }
 
+            DeliveryOnBehalfManager.ApplyDeliverToDriver(header);
             if (header.ToBeDeliveredBy <= 0)
                 header.ToBeDeliveredBy = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
 
@@ -209,6 +220,8 @@ namespace TrackerSQL.Managers
                 result.Error = "Failed to create order header.";
                 return result;
             }
+
+            LogOrderCreatedWithDeliverTo(newOrderId, header);
 
             result.OrderId = newOrderId;
             return result;
@@ -273,6 +286,7 @@ namespace TrackerSQL.Managers
 
         private static OrderTblData ToOrderTblData(OrderHeaderData header)
         {
+            DeliveryOnBehalfManager.ApplyDeliverToDriver(header);
             return new OrderTblData
             {
                 CustomerID = header.CustomerID,
@@ -367,6 +381,26 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Orders, "EnsureCustomerLocation: " + ex.Message);
             }
+        }
+
+        private void LogOrderCreatedWithDeliverTo(int orderId, OrderHeaderData header)
+        {
+            if (header == null)
+                return;
+            string deliverTo = DeliveryOnBehalfManager.AuditDeliverToSummary(header.DeliverToAddressID);
+            if (string.IsNullOrEmpty(deliverTo))
+                return;
+
+            string company = _contactsRepository.GetContactNameById((int)header.CustomerID) ?? string.Empty;
+            string contactPart = header.CustomerID > 0
+                ? (string.IsNullOrWhiteSpace(company)
+                    ? "Contact=" + header.CustomerID
+                    : "Contact=" + header.CustomerID + " (" + company + ")")
+                : "Contact=(none)";
+
+            AppLogger.WriteLog(
+                SystemConstants.LogTypes.Orders,
+                "Order " + orderId + " | " + contactPart + " | Order created | " + deliverTo);
         }
 
         private static void ApplyHeaderToOrderLine(OrderHeaderData header, OrderTblData line)

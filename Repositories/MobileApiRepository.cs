@@ -192,6 +192,8 @@ namespace TrackerSQL.Repositories
             public bool Collection;
             public string DeliverToPerson;
             public string DeliverToLabel;
+            public int? DeliverToAddressId;
+            public string DeliverToAddressKind;
         }
 
         /// <summary>
@@ -207,7 +209,7 @@ namespace TrackerSQL.Repositories
                        {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
                        a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
-                       o.ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
+                       {EFFECTIVE_BY} AS ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
                        ol.OrderLineID, ol.ItemID, i.ItemServiceTypeID,
                        ol.QtyOrdered, i.ItemDesc, ip.ItemPrepDescription AS PackDesc, ip.BGColour AS PackColour,
                        pr.ProofID, pr.Outcome AS ProofOutcome, pr.Reason AS ProofReason, pr.ReceivedByName AS ProofReceivedBy,
@@ -221,7 +223,7 @@ namespace TrackerSQL.Repositories
                 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
                 {DOB_JOIN}
                 {AREA_JOIN}
-                LEFT JOIN PeopleTbl p ON p.PersonID = o.ToBeDeliveredByID
+                LEFT JOIN PeopleTbl p ON p.PersonID = {EFFECTIVE_BY}
                 LEFT JOIN ItemsTbl i ON i.ItemID = ol.ItemID
                 LEFT JOIN ItemPackagingsTbl ip ON ip.ItemPackagingID = ol.PackagingID{GEO_JOIN}
                 OUTER APPLY (SELECT TOP 1 d.DeliveryOrder,
@@ -235,15 +237,21 @@ namespace TrackerSQL.Repositories
                                     {PROOF_AWAY} AS NotAtClient
                              FROM MobileDeliveryProofTbl m WHERE m.OrderID = o.OrderID ORDER BY m.ProofID DESC) pr{LEARN_JOIN}{PLAN_JOIN}
                 WHERE CAST(o.RequiredByDate AS DATE) = @Date";
+            string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
             sql = sql.Replace("{PROOF_AWAY}", ProofHasNotAtClientColumn() ? "ISNULL(m.NotAtClient, 0)" : "CAST(0 AS BIT)");
+            sql = sql.Replace("{EFFECTIVE_BY}", effectiveBy);
             sql = sql.Replace("{BILLING_ADDR}", DeliveryOnBehalfManager.EffectiveBillingAddressSql("c"))
                      .Replace("{PROVINCE_COL}", DeliveryOnBehalfManager.EffectiveProvinceSql("c"))
                      .Replace("{POSTAL_COL}", DeliveryOnBehalfManager.EffectivePostalCodeSql("c"))
                      .Replace("{AREA_JOIN}", DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a"))
                      .Replace("{DOB_JOIN}", deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty)
-                     .Replace("{DOB_EXTRA_COLS}", deliverTo ? ", dob.DeliverToPerson, dob.Label AS DeliverToLabel" : string.Empty);
+                     .Replace("{DOB_EXTRA_COLS}", deliverTo
+                         ? ", dob.DeliverToPerson, dob.Label AS DeliverToLabel"
+                           + (ContactDeliverToAddressRepository.HasAddressKindColumn() ? ", dob.AddressKind AS DeliverToAddressKind" : string.Empty)
+                           + (OrdersRepository.HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : string.Empty)
+                         : (OrdersRepository.HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : string.Empty));
             bool plan = DeliveryRouteRepository.TableSeen();
-            sql = sql.Replace("{PLAN_JOIN}", plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
+            sql = sql.Replace("{PLAN_JOIN}", plan ? DeliveryRouteRepository.PlanJoinSql("c", "CAST(o.RequiredByDate AS DATE)", effectiveBy) : string.Empty)
                      .Replace("{PLAN_COLS}", plan ? "dr.PlanSeq, dr.PlanStops" : "CAST(NULL AS INT) AS PlanSeq, 0 AS PlanStops");
             bool geo = CustomerLocationRepository.TableSeen();
             string routeHashExpr = geo ? CustomerLocationRepository.RouteHashSql : "CAST(NULL AS VARCHAR(12))";
@@ -262,12 +270,12 @@ namespace TrackerSQL.Repositories
                 : "CAST(NULL AS VARCHAR(20)) AS AgentDeliveryType")
                 .Replace("{BY_TYPE}", PersonsRepository.HasDeliveryTypeColumn() ? "p.DeliveryType" : "CAST(NULL AS VARCHAR(10))");
             bool learn = DeliveryVisitRepository.TableSeen();
-            sql = sql.Replace("{LEARN_JOIN}", learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", "o.ToBeDeliveredByID") : string.Empty)
+            sql = sql.Replace("{LEARN_JOIN}", learn ? DeliveryVisitRepository.LearnedJoinSql("c", "CAST(o.RequiredByDate AS DATE)", effectiveBy) : string.Empty)
                      .Replace("{LEARN_COLS}", learn ? "dv.LearnedPos, dv.LearnedVisits" : "CAST(NULL AS FLOAT) AS LearnedPos, 0 AS LearnedVisits");
             var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
             if (personId.HasValue)
             {
-                sql += " AND o.ToBeDeliveredByID = @PersonID";
+                sql += " AND " + effectiveBy + " = @PersonID";
                 ps.Add(P("@PersonID", personId.Value, DbType.Int32));
             }
             if (collectionsOnly && PersonsRepository.HasDeliveryTypeColumn())
@@ -278,7 +286,7 @@ namespace TrackerSQL.Repositories
                 ps.Add(P("@OrderID", orderId.Value, DbType.Int32));
             }
             // Delivered stops keep their place so the route numbers do not shift during the day.
-            sql += " ORDER BY o.ToBeDeliveredByID,"
+            sql += " ORDER BY " + effectiveBy + ","
                  + (geo ? " CASE WHEN " + routeHashExpr + " IS NULL THEN 1 ELSE 0 END, "
                         + routeHashExpr + "," : string.Empty)
                  + " CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END,"
@@ -334,7 +342,9 @@ namespace TrackerSQL.Repositories
                 CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect,
                 Collection = Str(r, "DeliveryByType") == DeliveryTypes.Collect,
                 DeliverToPerson = deliverTo ? Str(r, "DeliverToPerson") : null,
-                DeliverToLabel = deliverTo ? Str(r, "DeliverToLabel") : null
+                DeliverToLabel = deliverTo ? Str(r, "DeliverToLabel") : null,
+                DeliverToAddressId = DbMapper.HasColumn(r, "DeliverToAddressID") ? NInt(r, "DeliverToAddressID") : null,
+                DeliverToAddressKind = DbMapper.HasColumn(r, "DeliverToAddressKind") ? Str(r, "DeliverToAddressKind") : null
             }, ps.ToArray());
         }
 

@@ -513,7 +513,7 @@ namespace TrackerSQL.Pages
             SyncSessionForDataSources(header);
             BindOrderLines();
             RefreshPageTitle();
-            SetStatusMessage(string.Empty, log: false);
+            SetStatusMessage(OrderStatusBaseline(orderId), log: false);
             btnLastOrder.Visible = header.CustomerID > 0;
             SetNewItemPanelVisible(false);
             UpdateDuplicateMergeState();
@@ -593,6 +593,7 @@ namespace TrackerSQL.Pages
             header.PrepDate = DateTime.TryParse(tbxPrepDate.Text, out DateTime prepDate) ? prepDate.Date : DateTime.MinValue;
             header.RequiredByDate = DateTime.TryParse(tbxRequiredByDate.Text, out DateTime requiredBy) ? requiredBy.Date : DateTime.MinValue;
             header.DeliverToAddressID = ReadDeliverToAddressIdFromControls();
+            DeliveryOnBehalfManager.ApplyDeliverToDriver(header);
             return header;
         }
 
@@ -603,6 +604,7 @@ namespace TrackerSQL.Pages
 
             SelectContactInCombo(header.CustomerID);
             BindDeliverToOrderDropdown((int)header.CustomerID, header.DeliverToAddressID);
+            DeliveryOnBehalfManager.ApplyDeliverToDriver(header);
             tbxOrderDate.Text = header.OrderDate.ToString("yyyy-MM-dd");
             tbxPrepDate.Text = header.PrepDate.ToString("yyyy-MM-dd");
             tbxRequiredByDate.Text = header.RequiredByDate.ToString("yyyy-MM-dd");
@@ -1550,20 +1552,43 @@ namespace TrackerSQL.Pages
             return string.Empty;
         }
 
+        private static string OrderStatusBaseline(int orderId)
+        {
+            return orderId > 0
+                ? "Order #" + orderId.ToString(System.Globalization.CultureInfo.InvariantCulture) + "."
+                : string.Empty;
+        }
+
         private void RefreshPageTitle()
         {
             bool isNew = OrderId <= 0;
+            int orderId = OrderId > 0 ? OrderId : PersistedOrderId;
             string contactName = GetSelectedContactDisplayName();
 
             if (!string.IsNullOrEmpty(contactName))
             {
                 litPageTitle.Text = contactName;
-                Page.Title = contactName;
+                Page.Title = orderId > 0
+                    ? "Order " + orderId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : contactName;
             }
             else
             {
-                litPageTitle.Text = isNew ? "New Order" : "Order Detail";
+                litPageTitle.Text = isNew
+                    ? "New Order"
+                    : orderId > 0
+                        ? "Order " + orderId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : "Order Detail";
                 Page.Title = litPageTitle.Text;
+            }
+
+            if (litPageSubtitle != null)
+            {
+                litPageSubtitle.Text = isNew
+                    ? "Create a new customer order"
+                    : orderId > 0
+                        ? "Tracker order #" + orderId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : "Manage existing orders and deliveries";
             }
 
             if (upnlPageTitle != null && upnlPageTitle.UpdateMode == UpdatePanelUpdateMode.Conditional)
@@ -2180,6 +2205,9 @@ namespace TrackerSQL.Pages
 
             SyncWooLinkButtonVisibility();
             SetStatusMessage("Linked Tracker order #" + orderId + " to Woo order #" + wooOrderId + ".", isSuccess: true);
+            if (pnlOrderHeader != null)
+                pnlOrderHeader.Update();
+            RefreshFooterButtonPanel();
         }
 
         protected void btnWooLinkCancel_Click(object sender, EventArgs e)

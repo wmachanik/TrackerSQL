@@ -95,6 +95,12 @@ namespace TrackerSQL.Models
         public string Company { get; set; }
         /// <summary>Deliver-to short name when the order uses a recipient address (detail title).</summary>
         public string DeliverTo { get; set; }
+        /// <summary>Contact deliver-to address row when <see cref="DeliverTo"/> is set.</summary>
+        public int? DeliverToAddressId { get; set; }
+        /// <summary>Person who receives and signs POD at the alternative address (Contact Details → Recipient).</summary>
+        public string DeliverToPerson { get; set; }
+        /// <summary>Display text for address type (home, work, on their behalf, …).</summary>
+        public string DeliverToAddressKind { get; set; }
         /// <summary>Billing contact company when <see cref="DeliverTo"/> is set (detail subtitle).</summary>
         public string AccountCompany { get; set; }
         /// <summary>Person to hand the delivery to (contact first + last name; ZZName walk-in name from the order notes).</summary>

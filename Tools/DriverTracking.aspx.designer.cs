@@ -14,8 +14,10 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Label lblMessage;
         protected global::System.Web.UI.WebControls.Panel pnlBoard;
         protected global::System.Web.UI.WebControls.HiddenField hdnDataUrl;
+        protected global::System.Web.UI.WebControls.HiddenField hdnSelectedDay;
         protected global::System.Web.UI.WebControls.HiddenField hdnTileUrl;
         protected global::System.Web.UI.WebControls.HiddenField hdnAzureTiles;
+        protected global::System.Web.UI.WebControls.HyperLink lnkDeliveryOrder;
         protected global::System.Web.UI.WebControls.Literal litFresh;
         protected global::System.Web.UI.WebControls.Literal litStale;
     }

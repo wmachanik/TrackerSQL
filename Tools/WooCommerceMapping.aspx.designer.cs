@@ -102,6 +102,8 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.View viewShipping;
         protected global::System.Web.UI.WebControls.Literal litShippingHelp;
         protected global::System.Web.UI.WebControls.Literal litShippingMapsNote;
+        protected global::System.Web.UI.WebControls.Label lblImportCollectKeywords;
+        protected global::System.Web.UI.WebControls.TextBox txtImportCollectKeywords;
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl pnlShippingEmptyHint;
         protected global::System.Web.UI.WebControls.Literal litShippingEmptyHint;
         protected global::System.Web.UI.WebControls.Button btnSaveShippingMaps;

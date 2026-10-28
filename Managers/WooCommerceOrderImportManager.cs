@@ -31,6 +31,7 @@ namespace TrackerSQL.Managers
         private readonly ItemPackagingsRepository _packRepo = new ItemPackagingsRepository();
         private readonly ContactsAccInfoRepository _accInfoRepo = new ContactsAccInfoRepository();
         private readonly AreasRepository _areasRepo = new AreasRepository();
+        private readonly PersonsRepository _personsRepo = new PersonsRepository();
         private readonly WooCommerceMappingManager _mappingManager = new WooCommerceMappingManager();
 
         private HashSet<long> _gearCategoryIds;
@@ -103,8 +104,37 @@ namespace TrackerSQL.Managers
             List<WooOrderDto> orders = FetchOrders(creds, mode, specificOrderId, rangeFrom, rangeTo);
             EnsurePreviewContext();
 
-            var previews = orders
-                .Select(o => BuildPreview(o))
+            var previews = new List<WooOrderImportPreviewRow>();
+            foreach (WooOrderDto o in orders)
+            {
+                if (o == null)
+                    continue;
+                try
+                {
+                    previews.Add(BuildPreview(o));
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog("woo",
+                        string.Format(CultureInfo.InvariantCulture,
+                            "BuildPreview failed for Woo #{0}: {1}",
+                            o.Number ?? o.Id.ToString(CultureInfo.InvariantCulture),
+                            ex.Message));
+                    var failed = new WooOrderImportPreviewRow
+                    {
+                        WooOrderId = o.Id,
+                        WooOrderNumber = o.Number ?? o.Id.ToString(CultureInfo.InvariantCulture),
+                        WooStatus = o.Status,
+                        OrderDate = o.DateCreated,
+                        Selected = false,
+                        CanImport = false
+                    };
+                    failed.Warnings.Add("Preview failed: " + ex.Message);
+                    previews.Add(failed);
+                }
+            }
+
+            previews = previews
                 .OrderByDescending(r => r.OrderDate ?? DateTime.MinValue)
                 .ToList();
 
@@ -853,6 +883,7 @@ namespace TrackerSQL.Managers
                 contact.StateOrProvince = ship.State ?? contact.StateOrProvince;
                 if (!string.IsNullOrWhiteSpace(ship.Country))
                     contact.CountryOrRegion = ship.Country;
+
             }
 
             if (options.UpdatePhone)
@@ -1118,7 +1149,14 @@ namespace TrackerSQL.Managers
             ResolveContactPreview(order, preview, ship);
             ResolveDeliveryPreview(order, preview, ship);
             CollectConflicts(order, preview, ship);
-            ResolveCanWooLink(order, preview);
+            try
+            {
+                ResolveCanWooLink(order, preview);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("woo", "ResolveCanWooLink: " + ex.Message);
+            }
 
             preview.LinesSummary = string.Join("; ", preview.Lines.Select(l =>
             {
@@ -1361,9 +1399,8 @@ namespace TrackerSQL.Managers
                 return;
 
             DateTime center = (order?.DateCreated ?? TimeZoneUtils.Now()).Date;
-            List<Order> candidates = _ordersRepo.FindUnlinkedOrdersNearDate(
-                preview.MatchedContactId.Value, center, dayWindow: 2, maxRows: 1);
-            preview.CanWooLink = candidates != null && candidates.Count > 0;
+            preview.CanWooLink = _ordersRepo.HasUnlinkedOrderNearDate(
+                preview.MatchedContactId.Value, center, dayWindow: 2);
         }
 
         private void ResolveContactPreview(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
@@ -1971,6 +2008,7 @@ namespace TrackerSQL.Managers
             {
                 contact.PhoneNumber = WooImportAddressHelper.FormatPhone(phone, config);
             }
+
         }
 
         private void ApplyCompanyNamePolicy(
@@ -2075,40 +2113,90 @@ namespace TrackerSQL.Managers
 
         private void ResolveDeliveryPreview(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
         {
+            WooAreaResolveResult areaResult = null;
+            Contact matched = null;
             if (preview.MatchedContactId.HasValue && preview.MatchedContactId.Value > 0)
+                matched = _contactsRepo.GetById(preview.MatchedContactId.Value);
+
+            if (matched?.AreaID != null && matched.AreaID.Value > 0)
             {
-                Contact matched = _contactsRepo.GetById(preview.MatchedContactId.Value);
-                if (matched?.AreaID != null && matched.AreaID.Value > 0)
+                preview.ResolvedAreaId = matched.AreaID;
+                preview.ResolvedAreaName = _areasRepo.GetAreaName(matched.AreaID.Value);
+            }
+            else
+            {
+                areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
+                if (areaResult != null && areaResult.AreaID.HasValue)
                 {
-                    preview.ResolvedAreaId = matched.AreaID;
-                    preview.ResolvedAreaName = _areasRepo.GetAreaName(matched.AreaID.Value);
-                    if (matched.PreferredAgentID.HasValue && matched.PreferredAgentID.Value > 0)
-                        preview.DeliveryPersonId = matched.PreferredAgentID.Value;
-                    else
-                    {
-                        int personId = _areaManager.ResolveDeliveryPersonForArea(matched.AreaID.Value);
-                        preview.DeliveryPersonId = personId > 0
-                            ? personId
-                            : WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
-                    }
-                    return;
+                    preview.ResolvedAreaId = areaResult.AreaID;
+                    preview.ResolvedAreaName = areaResult.AreaName;
                 }
             }
 
-            var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
-            if (areaResult != null && areaResult.AreaID.HasValue)
+            int? mappedShipPerson = _areaManager.ResolveDeliveryPersonForShippingMethod(preview.ShippingMethod);
+            if (IsWooCollectShippingMethod(preview.ShippingMethod, mappedShipPerson))
             {
-                preview.ResolvedAreaId = areaResult.AreaID;
-                preview.ResolvedAreaName = areaResult.AreaName;
+                preview.DeliveryPersonId = ResolveCollectPersonForImport(mappedShipPerson);
+                return;
             }
 
-            int? shipPerson = _areaManager.ResolveDeliveryPersonForShippingMethod(preview.ShippingMethod);
-            if (shipPerson.HasValue && shipPerson.Value > 0)
-                preview.DeliveryPersonId = shipPerson.Value;
-            else if (areaResult?.AreaID != null)
-                preview.DeliveryPersonId = _areaManager.ResolveDeliveryPersonForArea(areaResult.AreaID.Value);
-            else
-                preview.DeliveryPersonId = WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
+            // Delivery order: area default / SQ — not the contact’s Collect (Cllct) default.
+            preview.DeliveryPersonId = ResolveNonCollectDeliveryPersonId(preview.ResolvedAreaId, areaResult);
+        }
+
+        private bool IsCollectionDeliveryPerson(int? personId)
+        {
+            if (!personId.HasValue || personId.Value <= 0)
+                return false;
+            if (personId.Value == SystemConstants.DeliveryConstants.CollectionID)
+                return true;
+            return _personsRepo.GetDeliveryType(personId.Value) == DeliveryTypes.Collect;
+        }
+
+        /// <summary>Area default driver, or system default — never a Collect (shop) person.</summary>
+        private int ResolveNonCollectDeliveryPersonId(int? areaId, WooAreaResolveResult areaResult)
+        {
+            int? candidate = null;
+            if (areaId.HasValue && areaId.Value > 0)
+                candidate = _areaManager.ResolveDeliveryPersonForArea(areaId.Value);
+            else if (areaResult?.AreaID != null && areaResult.AreaID.Value > 0)
+                candidate = _areaManager.ResolveDeliveryPersonForArea(areaResult.AreaID.Value);
+            else if (areaResult?.DefaultPreferredAgentID != null && areaResult.DefaultPreferredAgentID.Value > 0)
+                candidate = areaResult.DefaultPreferredAgentID;
+
+            if (candidate.HasValue && candidate.Value > 0 && !IsCollectionDeliveryPerson(candidate))
+                return candidate.Value;
+
+            int fallback = WooCommerceAreaMappingManager.GetSystemDefaultDeliveryPersonId();
+            if (fallback > 0 && !IsCollectionDeliveryPerson(fallback))
+                return fallback;
+
+            return candidate ?? fallback;
+        }
+
+        private bool IsWooCollectShippingMethod(string methodTitle, int? mappedPersonId)
+        {
+            if (mappedPersonId.HasValue && IsCollectionDeliveryPerson(mappedPersonId))
+                return true;
+            if (string.IsNullOrWhiteSpace(methodTitle))
+                return false;
+            string keywords = _settingsManager.GetImportCollectShippingKeywords();
+            foreach (string part in keywords.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string keyword = part.Trim();
+                if (keyword.Length == 0)
+                    continue;
+                if (methodTitle.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        private static int ResolveCollectPersonForImport(int? mappedPersonId)
+        {
+            if (mappedPersonId.HasValue && mappedPersonId.Value > 0)
+                return mappedPersonId.Value;
+            return SystemConstants.DeliveryConstants.CollectionID;
         }
 
         private void CollectConflicts(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
@@ -2217,6 +2305,9 @@ namespace TrackerSQL.Managers
             long contactId = ResolveContactId(order, preview, ship, updatedBy, out bool contactCreated);
             if (contactId <= 0)
                 return 0;
+
+            // Contact update may have run in ResolveContactId; re-apply delivery driver after shipping is known.
+            ResolveDeliveryPreview(order, preview, ship);
 
             DateTime orderDate;
             DateTime prepDate;
@@ -2496,6 +2587,23 @@ namespace TrackerSQL.Managers
             {
                 try
                 {
+                    Contact contact = _contactsRepo.GetById((int)contactId);
+                    string areaName = contact?.AreaID is int aid && aid > 0
+                        ? _areasRepo.GetAreaName(aid)
+                        : null;
+                    if (WooCommerceAreaMappingManager.IsCourierDispatchArea(areaName))
+                    {
+                        var promise = new DeliveryPromiseManager().GetPromisedDate(
+                            contact?.AreaID,
+                            TimeZoneUtils.Now());
+                        if (promise.FoundRule && promise.PromisedDate.HasValue)
+                        {
+                            deliveryDate = promise.PromisedDate.Value.Date;
+                            prepDate = orderDate.Date;
+                            return;
+                        }
+                    }
+
                     DateTime delivery = orderDate;
                     DateTime prep = new TrackerTools().GetNextPreparationDateByCustomerID(contactId, ref delivery);
                     if (prep > DateTime.MinValue && delivery > DateTime.MinValue)
@@ -2583,7 +2691,10 @@ namespace TrackerSQL.Managers
         {
             string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
             var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
-            int? deliveryPersonId = ResolveDeliveryPersonForArea(areaResult);
+            int? mappedShip = _areaManager.ResolveDeliveryPersonForShippingMethod(preview.ShippingMethod);
+            int? deliveryPersonId = IsWooCollectShippingMethod(preview.ShippingMethod, mappedShip)
+                ? ResolveCollectPersonForImport(mappedShip)
+                : ResolveNonCollectDeliveryPersonId(areaResult?.AreaID, areaResult);
             int salesAgentId = PersonDefaults.GetDefaultSalesAgentId();
             string contactName = GetWooContactName(order, ship);
 

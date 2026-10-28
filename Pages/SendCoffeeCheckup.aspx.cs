@@ -561,7 +561,7 @@ namespace TrackerSQL.Pages
             var texts = _coffeeCheckupManager.GetEmailTexts();
             if (texts == null || texts.SCEMTID <= 0)
                 return;
-            this.ltrlEmailTextID.Text = texts.SCEMTID.ToString();
+            hdnEmailTextId.Value = texts.SCEMTID.ToString();
             this.tbxEmailIntro.Text = HttpUtility.HtmlDecode(texts.Header);
             this.tbxEmailBody.Text = HttpUtility.HtmlDecode(texts.Body);
             this.tbxEmailFooter.Text = texts.Footer;
@@ -569,23 +569,37 @@ namespace TrackerSQL.Pages
 
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(this.ltrlEmailTextID.Text))
+            try
             {
-                SetStatus("No email text ID loaded — cannot update.", isError: true);
-                upnlSendEmail.Update();
-                return;
+                if (!int.TryParse(hdnEmailTextId.Value?.Trim(), out int templateId) || templateId <= 0)
+                {
+                    LoadEmailTexts();
+                    if (!int.TryParse(hdnEmailTextId.Value?.Trim(), out templateId) || templateId <= 0)
+                    {
+                        SetStatus("No email template is loaded — click Email Text Reload, or add one row to SendCheckupEmailTextsTbl.", isError: true);
+                        upnlSendEmail.Update();
+                        return;
+                    }
+                }
+
+                var pEmailTextsData = new SendCheckEmailTexts
+                {
+                    Header = HttpUtility.HtmlEncode(this.tbxEmailIntro.Text),
+                    Body = HttpUtility.HtmlEncode(this.tbxEmailBody.Text),
+                    Footer = HttpUtility.HtmlEncode(this.tbxEmailFooter.Text)
+                };
+                string result = _coffeeCheckupManager.UpdateEmailTexts(pEmailTextsData, templateId);
+                bool failed = !string.IsNullOrWhiteSpace(result);
+                SetStatus(failed ? result : "Email text updated.", isError: failed);
+                if (!failed)
+                    LoadEmailTexts();
             }
-            var pEmailTextsData = new SendCheckEmailTexts
+            catch (Exception ex)
             {
-                Header = HttpUtility.HtmlEncode(this.tbxEmailIntro.Text),
-                Body = HttpUtility.HtmlEncode(this.tbxEmailBody.Text),
-                Footer = HttpUtility.HtmlEncode(this.tbxEmailFooter.Text)
-            };
-            string result = _coffeeCheckupManager.UpdateEmailTexts(pEmailTextsData, Convert.ToInt32(this.ltrlEmailTextID.Text));
-            bool failed = string.IsNullOrWhiteSpace(result)
-                || result.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0
-                || result.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0;
-            SetStatus(string.IsNullOrWhiteSpace(result) ? "Email text updated." : result, isError: failed ? true : false);
+                AppLogger.WriteLog("error", "SendCoffeeCheckup Update Email Text: " + ex.Message);
+                SetStatus("Error: " + ex.Message, isError: true);
+            }
+
             upnlSendEmail.Update();
         }
 

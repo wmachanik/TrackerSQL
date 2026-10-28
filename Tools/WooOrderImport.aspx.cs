@@ -307,7 +307,8 @@ namespace TrackerSQL.Tools
             }
             catch (Exception ex)
             {
-                SetStatus(ex.Message, true);
+                AppLogger.WriteLog("woo", "Order import auto-pull on open: " + ex.Message);
+                SetStatus("Auto-pull failed: " + ex.Message, true);
             }
         }
 

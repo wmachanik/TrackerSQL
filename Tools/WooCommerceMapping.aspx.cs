@@ -3176,6 +3176,9 @@ namespace TrackerSQL.Tools
             }
             gvShippingMaps.DataSource = maps;
             gvShippingMaps.DataBind();
+            var settings = _settings.GetSettings() ?? new WooCommerceSettings();
+            txtImportCollectKeywords.Text = WooCommerceSettingsManager.NormalizeCollectShippingKeywords(
+                settings.ImportCollectShippingKeywords);
             BindDispatchWaybillPanel();
         }
 
@@ -3668,6 +3671,7 @@ namespace TrackerSQL.Tools
         {
             var rows = CollectShippingMapsFromGrid(includeFooter: true);
             int saved = _areaManager.SaveShippingMethodMaps(rows, UserName());
+            _settings.SaveImportCollectShippingKeywords(txtImportCollectKeywords.Text, UserName());
             BindShippingTab();
             SetStatus(MessageProvider.Format(MessageKeys.WooCommerce.MapShippingMapsSaved, saved), false);
             WooCommerceUserLog.Write("Mapping shipping maps saved", "rows=" + saved, UserName());

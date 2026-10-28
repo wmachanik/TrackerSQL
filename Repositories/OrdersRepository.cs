@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using TrackerSQL.Classes;
+using TrackerSQL.Managers;
 using TrackerSQL.Models;
 using static TrackerSQL.Classes.DbParamHelpers;
 
@@ -23,8 +24,7 @@ namespace TrackerSQL.Repositories
                     bool seen = db.ExecuteScalar<int>(@"
 SELECT COUNT(1) FROM sys.columns
 WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'") > 0;
-                    if (seen)
-                        _hasDeliverToAddressId = true;
+                    _hasDeliverToAddressId = seen;
                     return seen;
                 }
             }
@@ -32,6 +32,24 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             {
                 return false;
             }
+        }
+
+        /// <summary>0 = main contact address; used when matching orders for merge / same-day lookup.</summary>
+        private static int NormalizeDeliverToAddressId(int? deliverToAddressId) =>
+            deliverToAddressId.GetValueOrDefault(0);
+
+        private static void AppendDeliverToAddressMatch(ref string sql, List<DBParameter> parameters, int? deliverToAddressId)
+        {
+            if (!HasDeliverToAddressIdColumn())
+                return;
+
+            sql += " AND ISNULL(DeliverToAddressID, 0) = @DeliverToAddressID";
+            parameters.Add(new DBParameter
+            {
+                ParamName = "@DeliverToAddressID",
+                DataValue = NormalizeDeliverToAddressId(deliverToAddressId),
+                DataDbType = DbType.Int32
+            });
         }
 
         private static string HeaderSelectColumns =>
@@ -256,7 +274,7 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                 PurchaseOrder = r["PurchaseOrder"] == DBNull.Value ? string.Empty : r["PurchaseOrder"].ToString(),
                 InvoiceDone = r["InvoiceDone"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(r["InvoiceDone"]),
                 InvoiceTypeID = r["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["InvoiceTypeID"]),
-                DeliverToAddressID = HasDeliverToAddressIdColumn() && r["DeliverToAddressID"] != DBNull.Value
+                DeliverToAddressID = DbMapper.HasColumn(r, "DeliverToAddressID") && r["DeliverToAddressID"] != DBNull.Value
                     ? Convert.ToInt32(r["DeliverToAddressID"])
                     : (int?)null
             };
@@ -459,7 +477,7 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             return list;
         }
 
-        public int? FindOrderIdByRequiredByDate(long contactId, DateTime requiredByDate, string notes)
+        public int? FindOrderIdByRequiredByDate(long contactId, DateTime requiredByDate, string notes, int? deliverToAddressId = null)
         {
             string sql;
             var parameters = new List<DBParameter>();
@@ -468,8 +486,7 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             {
                 sql = @"
                     SELECT TOP 1 OrderID FROM OrdersTbl
-                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate AND Notes = @Notes
-                    ORDER BY OrderID DESC";
+                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate AND Notes = @Notes";
                 parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = SystemConstants.CustomerConstants.SundryCustomerID, DataDbType = DbType.Int64 });
                 parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
                 parameters.Add(new DBParameter { ParamName = "@Notes", DataValue = notes ?? string.Empty, DataDbType = DbType.String });
@@ -478,11 +495,13 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             {
                 sql = @"
                     SELECT TOP 1 OrderID FROM OrdersTbl
-                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate
-                    ORDER BY OrderID DESC";
+                    WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate";
                 parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 });
                 parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
             }
+
+            AppendDeliverToAddressMatch(ref sql, parameters, deliverToAddressId);
+            sql += " ORDER BY OrderID DESC";
 
             int orderId = ExecuteScalar<int>(sql, parameters);
             return orderId > 0 ? orderId : (int?)null;
@@ -491,7 +510,12 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
         /// <summary>
         /// Finds another order for the same contact and required-by date, excluding the given order.
         /// </summary>
-        public int? FindDuplicateOrderIdByRequiredByDate(long contactId, DateTime requiredByDate, string notes, int excludeOrderId)
+        public int? FindDuplicateOrderIdByRequiredByDate(
+            long contactId,
+            DateTime requiredByDate,
+            string notes,
+            int excludeOrderId,
+            int? deliverToAddressId = null)
         {
             if (excludeOrderId <= 0)
                 return null;
@@ -504,8 +528,7 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                 sql = @"
                     SELECT TOP 1 OrderID FROM OrdersTbl
                     WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate AND Notes = @Notes
-                      AND OrderID <> @ExcludeOrderID
-                    ORDER BY OrderID DESC";
+                      AND OrderID <> @ExcludeOrderID";
                 parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = SystemConstants.CustomerConstants.SundryCustomerID, DataDbType = DbType.Int64 });
                 parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
                 parameters.Add(new DBParameter { ParamName = "@Notes", DataValue = notes ?? string.Empty, DataDbType = DbType.String });
@@ -515,13 +538,14 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                 sql = @"
                     SELECT TOP 1 OrderID FROM OrdersTbl
                     WHERE ContactID = @ContactID AND RequiredByDate = @RequiredByDate
-                      AND OrderID <> @ExcludeOrderID
-                    ORDER BY OrderID DESC";
+                      AND OrderID <> @ExcludeOrderID";
                 parameters.Add(new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int64 });
                 parameters.Add(new DBParameter { ParamName = "@RequiredByDate", DataValue = requiredByDate.Date, DataDbType = DbType.Date });
             }
 
+            AppendDeliverToAddressMatch(ref sql, parameters, deliverToAddressId);
             parameters.Add(new DBParameter { ParamName = "@ExcludeOrderID", DataValue = excludeOrderId, DataDbType = DbType.Int32 });
+            sql += " ORDER BY OrderID DESC";
 
             int orderId = ExecuteScalar<int>(sql, parameters);
             return orderId > 0 ? orderId : (int?)null;
@@ -1005,10 +1029,11 @@ ORDER BY OrderID DESC";
             DateTime from = centerDate.Date.AddDays(-dayWindow);
             DateTime to = centerDate.Date.AddDays(dayWindow);
 
+            string deliverToCol = HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : string.Empty;
             string sql = @"
 SELECT TOP (@MaxRows)
     o.OrderID, o.ContactID, o.OrderDate, o.PrepDate, o.RequiredByDate,
-    o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.Notes, o.PurchaseOrder, o.InvoiceDone, o.InvoiceTypeID
+    o.ToBeDeliveredByID, o.Confirmed, o.Done, o.Packed, o.Notes, o.PurchaseOrder, o.InvoiceDone, o.InvoiceTypeID" + deliverToCol + @"
 FROM OrdersTbl o
 WHERE o.ContactID = @ContactID
   AND (
@@ -1040,6 +1065,39 @@ ORDER BY
             }
 
             return list;
+        }
+
+        /// <summary>True when an unlinked Tracker order exists near the date (Woo import link hint). No header mapping.</summary>
+        public bool HasUnlinkedOrderNearDate(int contactId, DateTime centerDate, int dayWindow = 2)
+        {
+            if (contactId <= 0)
+                return false;
+            if (dayWindow < 0)
+                dayWindow = 0;
+
+            DateTime from = centerDate.Date.AddDays(-dayWindow);
+            DateTime to = centerDate.Date.AddDays(dayWindow);
+
+            const string sql = @"
+SELECT TOP 1 o.OrderID
+FROM OrdersTbl o
+WHERE o.ContactID = @ContactID
+  AND (
+        (o.OrderDate IS NOT NULL AND o.OrderDate >= @FromDate AND o.OrderDate <= @ToDate)
+     OR (o.RequiredByDate IS NOT NULL AND o.RequiredByDate >= @FromDate AND o.RequiredByDate <= @ToDate)
+      )
+  AND NOT EXISTS (
+        SELECT 1 FROM WooOrderInfoTbl w WHERE w.OrderID = o.OrderID
+      )";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@FromDate", DataValue = from, DataDbType = DbType.Date },
+                new DBParameter { ParamName = "@ToDate", DataValue = to, DataDbType = DbType.Date }
+            };
+
+            return ExecuteScalar<int>(sql, parameters) > 0;
         }
 
         public bool UpdatePurchaseOrderIfEmpty(int orderId, string purchaseOrder)
@@ -1335,7 +1393,7 @@ WHERE OrderID = @OrderID
                 PurchaseOrder = rdr["PurchaseOrder"] == DBNull.Value ? string.Empty : rdr["PurchaseOrder"].ToString(),
                 Notes = rdr["Notes"] == DBNull.Value ? string.Empty : rdr["Notes"].ToString(),
                 InvoiceTypeID = rdr["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rdr["InvoiceTypeID"]),
-                DeliverToAddressID = HasDeliverToAddressIdColumn() && rdr["DeliverToAddressID"] != DBNull.Value
+                DeliverToAddressID = DbMapper.HasColumn(rdr, "DeliverToAddressID") && rdr["DeliverToAddressID"] != DBNull.Value
                     ? Convert.ToInt32(rdr["DeliverToAddressID"])
                     : (int?)null
             };
@@ -1414,6 +1472,16 @@ WHERE OrderID = @OrderID
                         ParamName = "@SearchValue",
                         DataValue = "%" + (searchValue ?? string.Empty).Trim() + "%",
                         DataDbType = DbType.String
+                    });
+                }
+                else if (searchFor == "OrderID" && int.TryParse((searchValue ?? string.Empty).Trim(), out int orderId) && orderId > 0)
+                {
+                    sql += " AND o.OrderID = @OrderID";
+                    parameters.Add(new DBParameter
+                    {
+                        ParamName = "@OrderID",
+                        DataValue = orderId,
+                        DataDbType = DbType.Int32
                     });
                 }
                 else if (searchFor == "PrepDate" && DateTime.TryParse(searchValue, out DateTime prepDate))
@@ -1734,6 +1802,59 @@ ORDER BY o.OrderDate DESC, o.OrderID DESC, ol.OrderLineID DESC";
         {
             var db = new TrackerSQLDb();
             return db.ExecuteReader(sql, parameters);
+        }
+
+        /// <summary>Distinct orders due on <paramref name="requiredByDate"/> (same date filter as Delivery Sheet).</summary>
+        public List<DriverTrackingOrderLine> ListForDriverTracking(DateTime requiredByDate)
+        {
+            var list = new List<DriverTrackingOrderLine>();
+            bool deliverTo = DeliveryOnBehalfManager.IsActive;
+            string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
+            string deliverToCols = deliverTo ? ", dob.Label AS DeliverToLabel, dob.DeliverToPerson" : ", CAST(NULL AS NVARCHAR(200)) AS DeliverToLabel, CAST(NULL AS NVARCHAR(200)) AS DeliverToPerson";
+            string deliverToJoin = deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty;
+            string deliverToIdCol = HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : ", CAST(NULL AS INT) AS DeliverToAddressID";
+            string sql = @"
+SELECT DISTINCT o.OrderID, o.ContactID, c.CompanyName,
+       " + effectiveBy + @" AS ToBeDeliveredByID" + deliverToIdCol + @",
+       p.Abbreviation AS DeliveryByAbbreviation, a.AreaName, o.Done" + deliverToCols + @"
+FROM OrdersTbl o
+INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
+LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID"
+                + deliverToJoin + @"
+" + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a") + @"
+LEFT JOIN PeopleTbl p ON p.PersonID = " + effectiveBy + @"
+WHERE CAST(o.RequiredByDate AS DATE) = @Date
+ORDER BY " + effectiveBy + @", c.CompanyName, o.OrderID";
+
+            var ps = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@Date", DataValue = requiredByDate.Date, DataDbType = DbType.Date }
+            };
+
+            using (var db = new TrackerSQLDb())
+            using (var r = db.ExecuteReader(sql, ps))
+            {
+                while (r != null && r.Read())
+                {
+                    list.Add(new DriverTrackingOrderLine
+                    {
+                        OrderId = Convert.ToInt32(r["OrderID"]),
+                        ContactId = r["ContactID"] == DBNull.Value ? 0 : Convert.ToInt32(r["ContactID"]),
+                        CompanyName = r["CompanyName"] == DBNull.Value ? null : r["CompanyName"].ToString(),
+                        ToBeDeliveredById = r["ToBeDeliveredByID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["ToBeDeliveredByID"]),
+                        DeliverToAddressId = DbMapper.HasColumn(r, "DeliverToAddressID") && r["DeliverToAddressID"] != DBNull.Value
+                            ? Convert.ToInt32(r["DeliverToAddressID"])
+                            : (int?)null,
+                        DeliveryByAbbreviation = r["DeliveryByAbbreviation"] == DBNull.Value ? null : r["DeliveryByAbbreviation"].ToString(),
+                        AreaName = r["AreaName"] == DBNull.Value ? null : r["AreaName"].ToString(),
+                        Done = r["Done"] != DBNull.Value && Convert.ToBoolean(r["Done"]),
+                        DeliverToLabel = r["DeliverToLabel"] == DBNull.Value ? null : r["DeliverToLabel"].ToString(),
+                        DeliverToPerson = r["DeliverToPerson"] == DBNull.Value ? null : r["DeliverToPerson"].ToString()
+                    });
+                }
+            }
+
+            return list;
         }
     }
 }

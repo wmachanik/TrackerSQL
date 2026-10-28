@@ -385,6 +385,29 @@ namespace TrackerSQL.Managers
                 return string.Empty;
             return Regex.Replace(value.Trim(), @"\s+", " ");
         }
+
+        /// <summary>True when Woo sent a street or postcode+suburb suitable for a delivery run (not collect-only).</summary>
+        public static bool HasDeliverableShippingAddress(WooAddressDto ship)
+        {
+            if (ship == null)
+                return false;
+            if (!string.IsNullOrWhiteSpace(ship.Address1))
+                return true;
+            if (!string.IsNullOrWhiteSpace(ship.Address2))
+                return true;
+            if (!string.IsNullOrWhiteSpace(ship.Postcode)
+                && (!string.IsNullOrWhiteSpace(ship.City) || !string.IsNullOrWhiteSpace(ship.Suburb)))
+                return true;
+            return false;
+        }
+
+        /// <summary>Shipping line and/or billing when Woo leaves shipping empty but the customer ordered delivery.</summary>
+        public static bool HasDeliverableDeliveryAddress(WooOrderDto order, WooAddressDto ship)
+        {
+            if (HasDeliverableShippingAddress(ship))
+                return true;
+            return order != null && HasDeliverableShippingAddress(order.Billing);
+        }
     }
 
     public class WooImportAddressConfig
@@ -401,4 +424,4 @@ namespace TrackerSQL.Managers
         public bool FormatSaPhone { get; set; } = true;
     }
 }
-
+

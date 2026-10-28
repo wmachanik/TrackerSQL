@@ -9,6 +9,31 @@ namespace TrackerSQL.Repositories
     public class ContactDeliverToAddressRepository
     {
         private static bool? _tableSeen;
+        private static bool? _addressKindSeen;
+
+        public static bool HasAddressKindColumn()
+        {
+            if (_addressKindSeen.HasValue)
+                return _addressKindSeen.Value;
+            if (!TableSeen())
+            {
+                _addressKindSeen = false;
+                return false;
+            }
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _addressKindSeen = db.ExecuteScalar<int>(@"
+SELECT CASE WHEN COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'AddressKind') IS NULL THEN 0 ELSE 1 END") == 1;
+                }
+            }
+            catch
+            {
+                _addressKindSeen = false;
+            }
+            return _addressKindSeen.Value;
+        }
 
         public static bool TableSeen()
         {
@@ -34,8 +59,9 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
             if (contactId <= 0 || !TableSeen())
                 return new List<ContactDeliverToAddress>();
 
+            string kindCol = HasAddressKindColumn() ? ", d.AddressKind" : ", CAST(NULL AS NVARCHAR(20)) AS AddressKind";
             string sql = @"
-                SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson,
+                SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson" + kindCol + @",
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
@@ -47,7 +73,8 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 LEFT JOIN dbo.PeopleTbl p ON p.PersonID = d.ToBeDeliveredByID
                 WHERE d.ContactID = @ContactID"
                 + (enabledOnly ? " AND d.Enabled = 1" : string.Empty)
-                + " ORDER BY d.SortOrder, d.Label";
+                + @" ORDER BY LTRIM(RTRIM(COALESCE(NULLIF(LTRIM(RTRIM(d.Label)), N''), d.DeliverToPerson, N''))),
+                         d.DeliverToPerson, d.DeliverToAddressID";
 
             var list = new List<ContactDeliverToAddress>();
             var p = new List<DBParameter> { new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 } };
@@ -65,8 +92,9 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
             if (id <= 0 || !TableSeen())
                 return null;
 
-            const string sql = @"
-                SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson,
+            string kindCol = HasAddressKindColumn() ? ", d.AddressKind" : ", CAST(NULL AS NVARCHAR(20)) AS AddressKind";
+            string sql = @"
+                SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson" + kindCol + @",
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
@@ -94,12 +122,13 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
             if (row.SortOrder <= 0)
                 row.SortOrder = NextSortOrder(row.ContactID);
 
-            const string sql = @"
+            bool kind = HasAddressKindColumn();
+            string sql = @"
                 INSERT INTO dbo.ContactDeliverToAddressTbl (
-                    ContactID, Label, DeliverToPerson, Address1, Address2, Address3,
+                    ContactID, Label, DeliverToPerson" + (kind ? ", AddressKind" : string.Empty) + @", Address1, Address2, Address3,
                     AreaID, StateOrProvince, PostalCode, Latitude, Longitude, ToBeDeliveredByID, SortOrder, Enabled)
                 VALUES (
-                    @ContactID, @Label, @DeliverToPerson, @Address1, @Address2, @Address3,
+                    @ContactID, @Label, @DeliverToPerson" + (kind ? ", @AddressKind" : string.Empty) + @", @Address1, @Address2, @Address3,
                     @AreaID, @StateOrProvince, @PostalCode, @Latitude, @Longitude, @ToBeDeliveredByID, @SortOrder, @Enabled);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -112,10 +141,11 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
             if (row == null || row.DeliverToAddressID <= 0 || !TableSeen())
                 return false;
 
-            const string sql = @"
+            bool kind = HasAddressKindColumn();
+            string sql = @"
                 UPDATE dbo.ContactDeliverToAddressTbl SET
                     Label = @Label,
-                    DeliverToPerson = @DeliverToPerson,
+                    DeliverToPerson = @DeliverToPerson" + (kind ? ",\n                    AddressKind = @AddressKind" : string.Empty) + @",
                     Address1 = @Address1,
                     Address2 = @Address2,
                     Address3 = @Address3,
@@ -217,6 +247,7 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 ContactID = Convert.ToInt32(r["ContactID"]),
                 Label = Str(r, "Label"),
                 DeliverToPerson = Str(r, "DeliverToPerson"),
+                AddressKind = DbMapper.HasColumn(r, "AddressKind") ? Str(r, "AddressKind") : null,
                 Address1 = Str(r, "Address1"),
                 Address2 = Str(r, "Address2"),
                 Address3 = Str(r, "Address3"),
@@ -257,6 +288,18 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 new DBParameter { ParamName = "@ContactID", DataValue = row.ContactID, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@Label", DataValue = (object)row.Label ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@DeliverToPerson", DataValue = (object)row.DeliverToPerson ?? DBNull.Value, DataDbType = DbType.String },
+            };
+            if (HasAddressKindColumn())
+            {
+                p.Add(new DBParameter
+                {
+                    ParamName = "@AddressKind",
+                    DataValue = Managers.AlternativeAddressKind.Normalize(row.AddressKind),
+                    DataDbType = DbType.String
+                });
+            }
+            p.AddRange(new[]
+            {
                 new DBParameter { ParamName = "@Address1", DataValue = (object)row.Address1 ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@Address2", DataValue = (object)row.Address2 ?? DBNull.Value, DataDbType = DbType.String },
                 new DBParameter { ParamName = "@Address3", DataValue = (object)row.Address3 ?? DBNull.Value, DataDbType = DbType.String },
@@ -268,7 +311,7 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 new DBParameter { ParamName = "@ToBeDeliveredByID", DataValue = row.ToBeDeliveredByID.HasValue && row.ToBeDeliveredByID.Value > 0 ? (object)row.ToBeDeliveredByID.Value : DBNull.Value, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@SortOrder", DataValue = row.SortOrder, DataDbType = DbType.Int32 },
                 new DBParameter { ParamName = "@Enabled", DataValue = row.Enabled, DataDbType = DbType.Boolean }
-            };
+            });
             if (includeId)
                 p.Add(new DBParameter { ParamName = "@DeliverToAddressID", DataValue = row.DeliverToAddressID, DataDbType = DbType.Int32 });
             return p;

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Security.Principal;
 using System.Web;
 using System.Web.SessionState;
@@ -10,12 +11,37 @@ using TrackerSQL.Managers;
 namespace TrackerSQL.Handlers
 {
     /// <summary>
-    /// Today's drivers, positions, stops left and ETAs for Tools/DriverTracking.aspx (JSON, refreshed every minute).
+    /// Drivers, positions, stops and ETAs for Tools/DriverTracking.aspx (JSON). Optional query <c>date=yyyy-MM-dd</c> (default today).
     /// Administrators, and users with "Show driver tracking" on Administration → User Information.
     /// </summary>
     public class DriverTrackingData : IHttpHandler, IReadOnlySessionState
     {
         public bool IsReusable => true;
+
+        /// <summary>Parses <c>yyyy-MM-dd</c>, <c>yyyy/MM/dd</c>, or other invariant date strings from the query string.</summary>
+        public static bool TryParseQueryDate(string text, out DateTime day)
+        {
+            day = default;
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+            text = text.Trim();
+            string[] formats =
+            {
+                "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-M-d", "yyyy/M/d",
+                "dd-MM-yyyy", "dd/MM/yyyy", "d-M-yyyy", "d/M/yyyy"
+            };
+            if (DateTime.TryParseExact(text, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out day))
+            {
+                day = day.Date;
+                return true;
+            }
+            if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out day))
+            {
+                day = day.Date;
+                return true;
+            }
+            return false;
+        }
 
         public static bool MaySee(IPrincipal user)
         {
@@ -43,7 +69,19 @@ namespace TrackerSQL.Handlers
 
             try
             {
-                var board = new DriverTrackingManager().Board();
+                string dateParam = context.Request.QueryString["date"];
+                DateTime day;
+                if (string.IsNullOrWhiteSpace(dateParam))
+                    day = TimeZoneUtils.Now().Date;
+                else if (!TryParseQueryDate(dateParam, out day))
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.ContentType = "application/json";
+                    context.Response.Write(JsonConvert.SerializeObject(new { error = "Invalid date \"" + dateParam.Trim() + "\". Use yyyy-MM-dd." }));
+                    return;
+                }
+
+                var board = new DriverTrackingManager().Board(day);
                 context.Response.ContentType = "application/json";
                 context.Response.Write(JsonConvert.SerializeObject(board, WebApiConfig.JsonSettings));
             }

@@ -213,6 +213,35 @@ namespace TrackerSQL.Managers
             return result;
         }
 
+        /// <summary>Recipient who signs POD — from the alternative address row, never the site label alone.</summary>
+        private static string ResolveDeliverToSignatory(MobileApiRepository.SheetRow row, string deliverToSiteName)
+        {
+            string person = NullIfEmpty(row.DeliverToPerson);
+            if (row.DeliverToAddressId is int addrId && addrId > 0)
+            {
+                ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(addrId);
+                string fromAddr = NullIfEmpty(addr?.DeliverToPerson);
+                if (!string.IsNullOrWhiteSpace(fromAddr))
+                    person = fromAddr;
+            }
+
+            if (string.IsNullOrWhiteSpace(person))
+                return null;
+
+            // When there is no label, DeliverToDisplayName falls back to the person — do not treat that as a site-only label.
+            string label = NullIfEmpty(row.DeliverToLabel);
+            if (label != null)
+            {
+                if (string.Equals(person, label, StringComparison.OrdinalIgnoreCase))
+                    return null;
+                string site = NullIfEmpty(deliverToSiteName);
+                if (site != null && string.Equals(person, site, StringComparison.OrdinalIgnoreCase))
+                    return null;
+            }
+
+            return person;
+        }
+
         private static MobileDeliveryStop BuildStop(MobileApiRepository.SheetRow row)
         {
             bool sundry = row.ContactID == SystemConstants.CustomerConstants.SundryCustomerID;
@@ -223,6 +252,9 @@ namespace TrackerSQL.Managers
                 ? null
                 : DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
             bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverTo);
+            string deliverToPerson = sundry || !hasDeliverTo
+                ? null
+                : ResolveDeliverToSignatory(row, deliverTo);
             string accountCompany = sundry ? null : row.CompanyName;
 
             string notes = sundry ? SundryNotes.Details(row.Notes) : DeliveryOnBehalfManager.NotesWithoutDeliverToPrefix(row.Notes);
@@ -239,6 +271,11 @@ namespace TrackerSQL.Managers
                 ContactId = row.ContactID,
                 Company = company,
                 DeliverTo = hasDeliverTo ? deliverTo : null,
+                DeliverToAddressId = hasDeliverTo ? row.DeliverToAddressId : null,
+                DeliverToPerson = deliverToPerson,
+                DeliverToAddressKind = hasDeliverTo && !string.IsNullOrWhiteSpace(row.DeliverToAddressKind)
+                    ? AlternativeAddressKind.Display(row.DeliverToAddressKind)
+                    : null,
                 AccountCompany = hasDeliverTo ? accountCompany : null,
                 ContactName = NullIfEmpty(contactName),
                 AltContactName = string.Equals(altName, contactName, StringComparison.OrdinalIgnoreCase) ? null : NullIfEmpty(altName),

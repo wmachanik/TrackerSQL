@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportCollectShippingKeywords') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD ImportCollectShippingKeywords NVARCHAR(200) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'ImportCollectShippingKeywords') IS NOT NULL
+         AND NOT EXISTS (
+              SELECT 1 FROM dbo.WooCommerceSettingsTbl
+              WHERE SettingsID = 1
+                AND ImportCollectShippingKeywords IS NOT NULL
+                AND LTRIM(RTRIM(ImportCollectShippingKeywords)) <> N'')
+      BEGIN
+          UPDATE dbo.WooCommerceSettingsTbl
+          SET ImportCollectShippingKeywords = N'collect,buiten'
+          WHERE SettingsID = 1;
+      END
+    ]]>
+  </command>
+</root>

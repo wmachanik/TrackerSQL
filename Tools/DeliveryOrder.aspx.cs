@@ -221,11 +221,16 @@ namespace TrackerSQL.Tools
             else if (today)
                 summary.Add(state.Started ? "On route" : "Not left the depot yet (times start once they leave or deliver)");
             summary.Add(done + " of " + visits.Count + " done" + (notDelivered > 0 ? " (" + notDelivered + " not delivered)" : string.Empty));
-            DateTime? last = visits.Where(v => !v.All(Finished))
-                .Select(v => times.Stops.TryGetValue(v[0].OrderId, out RouteTimesManager.StopTime t) ? t.Expected : null)
-                .Where(t => t.HasValue).DefaultIfEmpty(null).Max();
-            if (last.HasValue)
-                summary.Add("last stop about " + last.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
+            if (state?.FinishAtDepot != null && today && done < visits.Count)
+                summary.Add("back at depot about " + state.FinishAtDepot.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
+            else
+            {
+                DateTime? last = visits.Where(v => !v.All(Finished))
+                    .Select(v => times.Stops.TryGetValue(v[0].OrderId, out RouteTimesManager.StopTime t) ? t.Expected : null)
+                    .Where(t => t.HasValue).DefaultIfEmpty(null).Max();
+                if (last.HasValue)
+                    summary.Add("last stop about " + last.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
+            }
             if (state?.LastSeen != null && today)
                 summary.Add("phone last seen " + state.LastSeen.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
             if (plan != null)

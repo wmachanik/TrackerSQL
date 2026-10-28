@@ -56,6 +56,20 @@ namespace TrackerSQL.Managers
             return "COALESCE(dob.PostalCode, " + contactAlias + ".PostalCode)";
         }
 
+        public static string EffectiveCellSql(string contactAlias = "c")
+        {
+            if (!IsActive || !ContactDeliverToAddressRepository.HasPhoneColumns())
+                return contactAlias + ".CellNumber";
+            return "COALESCE(NULLIF(LTRIM(RTRIM(dob.CellNumber)), N''), NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N''), " + contactAlias + ".CellNumber)";
+        }
+
+        public static string EffectivePhoneSql(string contactAlias = "c")
+        {
+            if (!IsActive || !ContactDeliverToAddressRepository.HasPhoneColumns())
+                return contactAlias + ".PhoneNumber";
+            return "COALESCE(NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N''), " + contactAlias + ".PhoneNumber)";
+        }
+
         public static string EffectiveProvinceSql(string contactAlias = "c")
         {
             if (!IsActive)

@@ -4429,6 +4429,24 @@ textarea.order-detail-notes,
     margin-bottom: 0.5rem;
 }
 
+.contact-deliver-to-tab table.TblWhite {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.contact-deliver-to-tab .deliver-to-col-address {
+    width: 28%;
+    max-width: 0;
+}
+
+.contact-deliver-to-tab .deliver-to-address-ellipsis {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
 .contact-deliver-to-tab .contact-deliver-to-bottom {
     margin-top: 12px;
     padding-top: 12px;

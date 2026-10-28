@@ -187,14 +187,14 @@
                     </asp:PlaceHolder>
                 </tr>
                 <tr>
-                    <td>Alternative addresses</td>
+                    <td>Alt. Addresses</td>
                     <td>
-                        <asp:CheckBox ID="chkDeliveryOnBehalf" runat="server" Text="This contact uses alternative delivery addresses"
+                        <asp:CheckBox ID="chkDeliveryOnBehalf" runat="server" Text="This contact has alternative delivery addresses"
                             AutoPostBack="true" OnCheckedChanged="chkDeliveryOnBehalf_CheckedChanged" />
                         <asp:Label ID="lblDeliveryOnBehalfPending" runat="server" Visible="false" CssClass="muted small"
                             Text="Restart the site once (database update)." />
                     </td>
-                    <td>Reminders:</td>
+                    <td>Reminders</td>
                     <td>[<asp:Label ID="ReminderCountLabel" runat="server" />] &ndash; Last sent: <asp:Label ID="LastReminderLabel" runat="server" /></td>
                     <td>Contact Portal</td>
                     <td>
@@ -781,9 +781,12 @@
                                             <asp:BoundField DataField="AddressKindDisplay" HeaderText="Type" />
                                             <asp:BoundField DataField="DeliverToPerson" HeaderText="Recipient (signs)" />
                                             <asp:BoundField DataField="Label" HeaderText="Label" />
+                                            <asp:TemplateField HeaderText="Mobile">
+                                                <ItemTemplate><%# DeliverToMobileGridHtml(Container.DataItem) %></ItemTemplate>
+                                            </asp:TemplateField>
                                             <asp:BoundField DataField="DeliveryByDisplay" HeaderText="Delivered By" />
-                                            <asp:TemplateField HeaderText="Address">
-                                                <ItemTemplate><%# Eval("AddressSummary") %></ItemTemplate>
+                                            <asp:TemplateField HeaderText="Address" ItemStyle-CssClass="deliver-to-col-address" HeaderStyle-CssClass="deliver-to-col-address">
+                                                <ItemTemplate><%# DeliverToAddressGridHtml(Container.DataItem) %></ItemTemplate>
                                             </asp:TemplateField>
                                             <asp:BoundField DataField="AreaName" HeaderText="Area" />
                                             <asp:TemplateField HeaderText="GPS">
@@ -817,6 +820,11 @@
                                                 <td>Label</td>
                                                 <td><asp:TextBox ID="tbxDeliverToLabel" runat="server" Width="12em"
                                                     ToolTip="Short name on orders and the delivery sheet (defaults to recipient if blank)" /></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Mobile</td>
+                                                <td colspan="3"><asp:TextBox ID="tbxDeliverToCell" runat="server" Width="20em"
+                                                    ToolTip="Mobile or contact number for this alternative address (driver app and calls)" /></td>
                                             </tr>
                                             <tr>
                                                 <td>Delivered By</td>

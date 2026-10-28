@@ -1203,6 +1203,15 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.UpdatePanel upnlDeliverTo;
 
         /// <summary>
+        /// gvDeliverToAddresses control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvDeliverToAddresses;
+
+        /// <summary>
         /// btnDeliverToAdd control.
         /// </summary>
         /// <remarks>
@@ -1255,6 +1264,11 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox tbxDeliverToLabel;
+
+        /// <summary>
+        /// tbxDeliverToCell control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox tbxDeliverToCell;
 
         /// <summary>
         /// ddlDeliverToDeliveryBy control.
@@ -1390,15 +1404,6 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label lblDeliverToFormError;
-
-        /// <summary>
-        /// gvDeliverToAddresses control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvDeliverToAddresses;
 
         /// <summary>
         /// tabpnlRepairs control.

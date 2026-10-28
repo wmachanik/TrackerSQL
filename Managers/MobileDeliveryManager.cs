@@ -95,6 +95,12 @@ namespace TrackerSQL.Managers
             return sheet;
         }
 
+        public List<MobileDeliverToSite> GetDeliverToSites(DateTime date, int? personId)
+        {
+            MobileApiSchemaInstaller.EnsureReady();
+            return _repo.ListDeliverToSitesForDate(date, personId);
+        }
+
         /// <summary>The driver picked a "how it was delivered" choice ticked "Not at the client" (e.g. collected by the client).</summary>
         private bool IsNotAtClientOption(string reason)
         {

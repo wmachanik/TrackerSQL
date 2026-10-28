@@ -205,7 +205,7 @@ namespace TrackerSQL.Repositories
             bool deliverTo = DeliveryOnBehalfManager.IsActive;
             string sql = @"
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
-                       c.ContactAltFirstName, c.ContactAltLastName, c.PhoneNumber, c.CellNumber,
+                       c.ContactAltFirstName, c.ContactAltLastName, {EFFECTIVE_PHONE} AS PhoneNumber, {EFFECTIVE_CELL} AS CellNumber,
                        {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
                        a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
@@ -243,6 +243,8 @@ namespace TrackerSQL.Repositories
             sql = sql.Replace("{BILLING_ADDR}", DeliveryOnBehalfManager.EffectiveBillingAddressSql("c"))
                      .Replace("{PROVINCE_COL}", DeliveryOnBehalfManager.EffectiveProvinceSql("c"))
                      .Replace("{POSTAL_COL}", DeliveryOnBehalfManager.EffectivePostalCodeSql("c"))
+                     .Replace("{EFFECTIVE_PHONE}", DeliveryOnBehalfManager.EffectivePhoneSql("c"))
+                     .Replace("{EFFECTIVE_CELL}", DeliveryOnBehalfManager.EffectiveCellSql("c"))
                      .Replace("{AREA_JOIN}", DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a"))
                      .Replace("{DOB_JOIN}", deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty)
                      .Replace("{DOB_EXTRA_COLS}", deliverTo
@@ -950,6 +952,56 @@ namespace TrackerSQL.Repositories
                                FROM ContactsTbl WHERE ContactID = @ContactID",
                 MapContact, P("@ContactID", contactId, DbType.Int32));
             return list.Count > 0 ? list[0] : null;
+        }
+
+        /// <summary>Alternative delivery addresses on orders due on the date (for the driver app offline cache).</summary>
+        public List<MobileDeliverToSite> ListDeliverToSitesForDate(DateTime date, int? personId)
+        {
+            if (!DeliveryOnBehalfManager.IsActive || !OrdersRepository.HasDeliverToAddressIdColumn())
+                return new List<MobileDeliverToSite>();
+
+            string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
+            string phoneCols = ContactDeliverToAddressRepository.HasPhoneColumns()
+                ? @"COALESCE(NULLIF(LTRIM(RTRIM(dob.CellNumber)), N''), NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N'')) AS CellNumber"
+                : "CAST(NULL AS NVARCHAR(30)) AS CellNumber";
+            string kindCol = ContactDeliverToAddressRepository.HasAddressKindColumn()
+                ? "dob.AddressKind"
+                : "CAST(NULL AS NVARCHAR(20)) AS AddressKind";
+            string sql = @"
+SELECT DISTINCT dob.DeliverToAddressID, o.ContactID, c.CompanyName, dob.Label, dob.DeliverToPerson, "
+                + kindCol + @" AS AddressKind, " + phoneCols + @",
+    LTRIM(RTRIM(
+        ISNULL(dob.Address1, N'')
+        + CASE WHEN NULLIF(LTRIM(RTRIM(ISNULL(dob.Address2, N''))), N'') IS NOT NULL THEN N', ' + dob.Address2 ELSE N'' END
+        + CASE WHEN NULLIF(LTRIM(RTRIM(ISNULL(dob.Address3, N''))), N'') IS NOT NULL THEN N', ' + dob.Address3 ELSE N'' END
+    )) AS AddressLine,
+    dob.PostalCode, a.AreaName
+FROM OrdersTbl o
+INNER JOIN ContactDeliverToAddressTbl dob ON dob.DeliverToAddressID = o.DeliverToAddressID AND dob.Enabled = 1
+LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID
+LEFT JOIN AreasTbl a ON a.AreaID = COALESCE(dob.AreaID, c.AreaID)
+WHERE CAST(o.RequiredByDate AS DATE) = @Date AND o.DeliverToAddressID IS NOT NULL";
+            var ps = new List<DBParameter> { P("@Date", date.Date, DbType.Date) };
+            if (personId.HasValue)
+            {
+                sql += " AND " + effectiveBy + " = @PersonID";
+                ps.Add(P("@PersonID", personId.Value, DbType.Int32));
+            }
+
+            return Query(sql, r => new MobileDeliverToSite
+            {
+                Id = Convert.ToInt32(r["DeliverToAddressID"]),
+                ContactId = Convert.ToInt32(r["ContactID"]),
+                AccountCompany = Str(r, "CompanyName"),
+                Label = Str(r, "Label"),
+                DeliverToPerson = NullIfEmpty(Str(r, "DeliverToPerson")),
+                AddressKind = AlternativeAddressKind.Display(Str(r, "AddressKind")),
+                Cell = NullIfEmpty(Str(r, "CellNumber")),
+                Phone = null,
+                Address = NullIfEmpty(Str(r, "AddressLine")),
+                PostalCode = NullIfEmpty(Str(r, "PostalCode")),
+                Area = NullIfEmpty(Str(r, "AreaName"))
+            }, ps.ToArray());
         }
 
         private static MobileContact MapContact(IDataRecord r)

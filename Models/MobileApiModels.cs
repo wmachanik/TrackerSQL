@@ -478,6 +478,21 @@ namespace TrackerSQL.Models
         public string Source { get; set; }
     }
 
+    public class MobileDeliverToSite
+    {
+        public int Id { get; set; }
+        public int ContactId { get; set; }
+        public string AccountCompany { get; set; }
+        public string Label { get; set; }
+        public string DeliverToPerson { get; set; }
+        public string AddressKind { get; set; }
+        public string Phone { get; set; }
+        public string Cell { get; set; }
+        public string Address { get; set; }
+        public string PostalCode { get; set; }
+        public string Area { get; set; }
+    }
+
     public class MobileContact
     {
         public int Id { get; set; }

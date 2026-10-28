@@ -2511,13 +2511,46 @@ namespace TrackerSQL.Pages
                 return "<span class=\"muted small\">n/a</span>";
 
             CustomerLocation loc = row.ToDisplayLocation();
-            string badge = CustomerLocation.BadgeHtml(loc);
-            string coords = loc == null
-                ? "<span class=\"contact-gps-review\">not found yet</span>"
-                : HttpUtility.HtmlEncode(loc.CoordinatesText);
+            string tip = loc == null
+                ? "No GPS point yet — press Check"
+                : loc.CoordinatesText + " (" + loc.StatusDisplay + ", " + loc.OriginText + ")";
+            string badge = CustomerLocation.BadgeHtml(loc, tip);
             string check = " <input type=\"button\" class=\"filter-panel-btn contact-postal-suggest\" value=\"Check\" "
                 + "onclick=\"trackerOpenGps(" + contactId + "," + row.DeliverToAddressID + "); return false;\" />";
-            return badge + " " + coords + check;
+            return badge + check;
+        }
+
+        protected string DeliverToMobileGridHtml(object dataItem)
+        {
+            var row = dataItem as ContactDeliverToAddress;
+            if (row == null)
+                return string.Empty;
+            string number = DeliverToMobileNumber(row);
+            return string.IsNullOrEmpty(number) ? "—" : HttpUtility.HtmlEncode(number);
+        }
+
+        protected string DeliverToAddressGridHtml(object dataItem)
+        {
+            var row = dataItem as ContactDeliverToAddress;
+            if (row == null)
+                return string.Empty;
+            string full = row.AddressSummary ?? string.Empty;
+            if (string.IsNullOrEmpty(full))
+                return "—";
+            return "<span class=\"deliver-to-address-ellipsis\" title=\""
+                + HttpUtility.HtmlAttributeEncode(full) + "\">"
+                + HttpUtility.HtmlEncode(full) + "</span>";
+        }
+
+        private static string DeliverToMobileNumber(ContactDeliverToAddress row)
+        {
+            if (row == null)
+                return string.Empty;
+            if (!string.IsNullOrWhiteSpace(row.CellNumber))
+                return row.CellNumber.Trim();
+            if (!string.IsNullOrWhiteSpace(row.PhoneNumber))
+                return row.PhoneNumber.Trim();
+            return string.Empty;
         }
 
         private void BindDeliveryOnBehalfUi(Contact contact, int contactId)
@@ -2681,6 +2714,8 @@ namespace TrackerSQL.Pages
                 DeliverToAddressID = DeliverToEditId,
                 DeliverToPerson = person,
                 Label = label,
+                CellNumber = NullIfEmpty(tbxDeliverToCell?.Text),
+                PhoneNumber = null,
                 AddressKind = addressKind,
                 ToBeDeliveredByID = deliveredBy,
                 Address1 = NullIfEmpty(tbxDeliverToAddr1?.Text),
@@ -2803,21 +2838,25 @@ namespace TrackerSQL.Pages
 
             ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(DeliverToEditId);
             CustomerLocation loc = row?.ToDisplayLocation();
+            string tip = loc == null
+                ? "No GPS point yet — press Check"
+                : loc.CoordinatesText + " (" + loc.StatusDisplay + ", " + loc.OriginText + ")";
             if (litDeliverToGpsCaption != null)
-                litDeliverToGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc);
+                litDeliverToGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc, tip);
             if (loc == null)
             {
                 if (lblDeliverToGpsLocation != null)
                 {
-                    lblDeliverToGpsLocation.Text = "not found yet";
-                    lblDeliverToGpsLocation.ToolTip = "No GPS point yet: press Check to place it";
+                    lblDeliverToGpsLocation.Text = "Press Check to place a GPS point";
+                    lblDeliverToGpsLocation.ToolTip = string.Empty;
                     lblDeliverToGpsLocation.CssClass = "contact-gps-value contact-gps-review";
                 }
             }
             else if (lblDeliverToGpsLocation != null)
             {
-                lblDeliverToGpsLocation.Text = HttpUtility.HtmlEncode(loc.CoordinatesText);
-                lblDeliverToGpsLocation.ToolTip = loc.StatusDisplay + " (" + loc.OriginText + ")";
+                lblDeliverToGpsLocation.Text = HttpUtility.HtmlEncode(loc.StatusDisplay + " (" + loc.OriginText + ")");
+                lblDeliverToGpsLocation.ToolTip = loc.CoordinatesText;
+                lblDeliverToGpsLocation.CssClass = "contact-gps-value";
             }
 
             if (btnDeliverToGpsCheck != null && TryGetContactId(out int contactId))
@@ -2854,6 +2893,8 @@ namespace TrackerSQL.Pages
                     litDeliverToFormTitle.Text = "Edit Address";
                 tbxDeliverToPerson.Text = row.DeliverToPerson ?? string.Empty;
                 tbxDeliverToLabel.Text = row.Label ?? string.Empty;
+                if (tbxDeliverToCell != null)
+                    tbxDeliverToCell.Text = DeliverToMobileNumber(row);
                 BindDeliverToKindDropdown(row.AddressKind);
                 DeliverToPendingDeliveryBy = row.ToBeDeliveredByID;
                 DeliverToPendingArea = row.AreaID;
@@ -2870,6 +2911,8 @@ namespace TrackerSQL.Pages
                     litDeliverToFormTitle.Text = "New Address";
                 tbxDeliverToPerson.Text = string.Empty;
                 tbxDeliverToLabel.Text = string.Empty;
+                if (tbxDeliverToCell != null)
+                    tbxDeliverToCell.Text = string.Empty;
                 BindDeliverToKindDropdown(AlternativeAddressKind.OnBehalf);
                 DeliverToPendingDeliveryBy = ParseNullableInt(ddlDeliveryBy?.SelectedValue);
                 DeliverToPendingArea = ParseNullableInt(ddlAreas?.SelectedValue);

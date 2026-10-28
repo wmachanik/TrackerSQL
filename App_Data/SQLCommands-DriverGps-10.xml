@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Phone numbers on alternative delivery addresses (Contact Details → Alternative Addresses).
+  Idempotent. Runs at application start via OrderFlagsSchemaInstaller.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'CellNumber') IS NULL
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD CellNumber NVARCHAR(30) NULL;
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'PhoneNumber') IS NULL
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD PhoneNumber NVARCHAR(30) NULL;
+    ]]>
+  </command>
+</root>

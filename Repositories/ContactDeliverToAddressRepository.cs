@@ -35,6 +35,35 @@ SELECT CASE WHEN COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'AddressKind') I
             return _addressKindSeen.Value;
         }
 
+        private static bool? _phoneColumnsSeen;
+
+        public static bool HasPhoneColumns()
+        {
+            if (_phoneColumnsSeen.HasValue)
+                return _phoneColumnsSeen.Value;
+            if (!TableSeen())
+            {
+                _phoneColumnsSeen = false;
+                return false;
+            }
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _phoneColumnsSeen = db.ExecuteScalar<int>(@"
+SELECT CASE WHEN COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'CellNumber') IS NULL THEN 0 ELSE 1 END") == 1;
+                }
+            }
+            catch
+            {
+                _phoneColumnsSeen = false;
+            }
+            return _phoneColumnsSeen.Value;
+        }
+
+        private static string PhoneSelectCols =>
+            HasPhoneColumns() ? ", d.CellNumber, d.PhoneNumber" : ", CAST(NULL AS NVARCHAR(30)) AS CellNumber, CAST(NULL AS NVARCHAR(30)) AS PhoneNumber";
+
         public static bool TableSeen()
         {
             if (_tableSeen.HasValue)
@@ -65,7 +94,7 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
-                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID,
+                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + @",
                        a.AreaName,
                        COALESCE(p.Abbreviation, p.Person) AS DeliveryByDisplay
                 FROM dbo.ContactDeliverToAddressTbl d
@@ -98,7 +127,7 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
-                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID,
+                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + @",
                        a.AreaName,
                        COALESCE(p.Abbreviation, p.Person) AS DeliveryByDisplay
                 FROM dbo.ContactDeliverToAddressTbl d
@@ -123,12 +152,15 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 row.SortOrder = NextSortOrder(row.ContactID);
 
             bool kind = HasAddressKindColumn();
+            bool phone = HasPhoneColumns();
             string sql = @"
                 INSERT INTO dbo.ContactDeliverToAddressTbl (
-                    ContactID, Label, DeliverToPerson" + (kind ? ", AddressKind" : string.Empty) + @", Address1, Address2, Address3,
+                    ContactID, Label, DeliverToPerson" + (kind ? ", AddressKind" : string.Empty)
+                + (phone ? ", CellNumber, PhoneNumber" : string.Empty) + @", Address1, Address2, Address3,
                     AreaID, StateOrProvince, PostalCode, Latitude, Longitude, ToBeDeliveredByID, SortOrder, Enabled)
                 VALUES (
-                    @ContactID, @Label, @DeliverToPerson" + (kind ? ", @AddressKind" : string.Empty) + @", @Address1, @Address2, @Address3,
+                    @ContactID, @Label, @DeliverToPerson" + (kind ? ", @AddressKind" : string.Empty)
+                + (phone ? ", @CellNumber, @PhoneNumber" : string.Empty) + @", @Address1, @Address2, @Address3,
                     @AreaID, @StateOrProvince, @PostalCode, @Latitude, @Longitude, @ToBeDeliveredByID, @SortOrder, @Enabled);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -142,10 +174,12 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 return false;
 
             bool kind = HasAddressKindColumn();
+            bool phone = HasPhoneColumns();
             string sql = @"
                 UPDATE dbo.ContactDeliverToAddressTbl SET
                     Label = @Label,
-                    DeliverToPerson = @DeliverToPerson" + (kind ? ",\n                    AddressKind = @AddressKind" : string.Empty) + @",
+                    DeliverToPerson = @DeliverToPerson" + (kind ? ",\n                    AddressKind = @AddressKind" : string.Empty)
+                + (phone ? ",\n                    CellNumber = @CellNumber,\n                    PhoneNumber = @PhoneNumber" : string.Empty) + @",
                     Address1 = @Address1,
                     Address2 = @Address2,
                     Address3 = @Address3,
@@ -247,6 +281,8 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 ContactID = Convert.ToInt32(r["ContactID"]),
                 Label = Str(r, "Label"),
                 DeliverToPerson = Str(r, "DeliverToPerson"),
+                CellNumber = DbMapper.HasColumn(r, "CellNumber") ? Str(r, "CellNumber") : null,
+                PhoneNumber = DbMapper.HasColumn(r, "PhoneNumber") ? Str(r, "PhoneNumber") : null,
                 AddressKind = DbMapper.HasColumn(r, "AddressKind") ? Str(r, "AddressKind") : null,
                 Address1 = Str(r, "Address1"),
                 Address2 = Str(r, "Address2"),
@@ -297,6 +333,11 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                     DataValue = Managers.AlternativeAddressKind.Normalize(row.AddressKind),
                     DataDbType = DbType.String
                 });
+            }
+            if (HasPhoneColumns())
+            {
+                p.Add(new DBParameter { ParamName = "@CellNumber", DataValue = (object)row.CellNumber ?? DBNull.Value, DataDbType = DbType.String });
+                p.Add(new DBParameter { ParamName = "@PhoneNumber", DataValue = (object)row.PhoneNumber ?? DBNull.Value, DataDbType = DbType.String });
             }
             p.AddRange(new[]
             {

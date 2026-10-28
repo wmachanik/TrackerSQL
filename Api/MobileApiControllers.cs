@@ -108,6 +108,28 @@ namespace TrackerSQL.Api
             return JsonWithETag(sheet, new { sheet.Date, sheet.PersonId, sheet.Orders, sheet.RouteNote });
         }
 
+        /// <summary>Alternative delivery addresses on today's orders (cache on the phone for offline site contact details).</summary>
+        [HttpGet, Route("deliver-to-sites")]
+        public HttpResponseMessage DeliverToSites(string date = null, string person = "me")
+        {
+            if (!TryParseDate(date, out DateTime day))
+                return Error(HttpStatusCode.BadRequest, "date must be yyyy-MM-dd.");
+
+            int? personId;
+            string p = (person ?? "me").Trim();
+            if (p.Equals("all", StringComparison.OrdinalIgnoreCase))
+                personId = null;
+            else if (p.Equals("me", StringComparison.OrdinalIgnoreCase) || p.Length == 0)
+                personId = CurrentUser.PersonId;
+            else if (int.TryParse(p, out int id) && id > 0)
+                personId = id;
+            else
+                return Error(HttpStatusCode.BadRequest, "person must be \"me\", \"all\" or a person id.");
+
+            var sites = new MobileDeliveryManager().GetDeliverToSites(day, personId);
+            return JsonWithETag(sites, new { date = day.ToString("yyyy-MM-dd"), personId, sites });
+        }
+
         /// <summary>Upload deliveries captured offline (received-by name, signature, outcome). Safe to retry: clientRef de-duplicates.</summary>
         [HttpPost, Route("sync")]
         public HttpResponseMessage Sync([FromBody] MobileDeliverySyncRequest request)

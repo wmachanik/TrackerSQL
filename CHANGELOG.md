@@ -2,6 +2,16 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.9 — 2026-10-28
+
+### Features and fixes
+- **Alternative delivery addresses (Contact Details)** — one **Mobile** number per site; address column truncates with ellipsis (full line on hover); GPS column shows badge only (coordinates on the pill tooltip, **Check** unchanged).
+- **Quaffee Driver 0.5.8** — **Site contact** on deliver-to stops (call, WhatsApp, navigate); deliver-to sites for the day download with the sheet on Wi‑Fi (**Save everything on this phone**). Sheet uses deliver-to mobile when set.
+- **Mobile API** — `GET /api/v1/delivery/deliver-to-sites`; schema pack `SQLCommands-DriverGps-10.xml` (`ContactDeliverToAddressTbl.CellNumber`, legacy `PhoneNumber` column retained for migration).
+
+### Go-live notes
+- Upload `bin/`, `Pages/ContactDetails.aspx` (+ code-behind), managers/repos/models, `App_Data/SQLCommands-DriverGps-10.xml`, rebuilt `driver/` (0.5.8) and `Downloads/QuaffeeDriver.json` (APK when you ship it). In live `Web.config` set `Version` to **3.0.3.9** only. Recycle the site; check `/api/v1/ping`.
+
 ## 3.0.3.8 — 2026-10-28
 
 ### Features and fixes

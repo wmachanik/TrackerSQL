@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Web;
 
 namespace TrackerSQL.Models
 {
@@ -90,11 +91,30 @@ namespace TrackerSQL.Models
         /// </summary>
         public static string BadgeHtml(CustomerLocation loc)
         {
+            return BadgeHtml(loc, null);
+        }
+
+        /// <param name="tooltip">When set, used as the badge title (e.g. coordinates for alternative addresses).</param>
+        public static string BadgeHtml(CustomerLocation loc, string tooltip)
+        {
+            string title = tooltip;
+            if (string.IsNullOrEmpty(title))
+            {
+                if (loc == null)
+                    title = "No GPS point yet";
+                else
+                    title = loc.CoordinatesText + " — " + loc.StatusDisplay;
+            }
+
+            string titleAttr = string.IsNullOrEmpty(title)
+                ? string.Empty
+                : " title=\"" + HttpUtility.HtmlAttributeEncode(title) + "\"";
+
             if (loc == null || loc.NeedsReview)
-                return "<span class=\"gps-badge gps-badge-unsure\" aria-hidden=\"true\"></span>";
+                return "<span class=\"gps-badge gps-badge-unsure\" aria-hidden=\"true\"" + titleAttr + "></span>";
             return loc.IsVerified
-                ? "<span class=\"gps-badge gps-badge-ok\" aria-hidden=\"true\"></span>"
-                : "<span class=\"gps-badge gps-badge-found\" aria-hidden=\"true\"></span>";
+                ? "<span class=\"gps-badge gps-badge-ok\" aria-hidden=\"true\"" + titleAttr + "></span>"
+                : "<span class=\"gps-badge gps-badge-found\" aria-hidden=\"true\"" + titleAttr + "></span>";
         }
     }
 }

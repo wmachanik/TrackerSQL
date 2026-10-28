@@ -13,6 +13,8 @@ namespace TrackerSQL.Models
         public string Label { get; set; }
         /// <summary>Who receives and signs on the driver app at this address.</summary>
         public string DeliverToPerson { get; set; }
+        public string CellNumber { get; set; }
+        public string PhoneNumber { get; set; }
         /// <summary><see cref="AlternativeAddressKind"/> code (OnBehalf, Gift, Home, …).</summary>
         public string AddressKind { get; set; }
         public string AddressKindDisplay => AlternativeAddressKind.Display(AddressKind);

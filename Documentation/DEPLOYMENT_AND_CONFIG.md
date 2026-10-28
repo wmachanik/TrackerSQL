@@ -1,6 +1,6 @@
 # Deployment and Configuration
 
-**Last Updated:** 2026-10-03 (3.0.3.3 live)
+**Last Updated:** 2026-10-28 (3.0.3.9)
 
 ## 1. Live environment
 
@@ -83,6 +83,7 @@ to upload are in `CHANGELOG.md`.
 
 | Version | Config changes |
 |---------|----------------|
+| 3.0.3.9 | `Version` → 3.0.3.9 only. Schema pack `SQLCommands-DriverGps-10.xml` (deliver-to **CellNumber**). Rebuilt `driver/` (0.5.8) and `Downloads/QuaffeeDriver.json` (APK when shipped). |
 | 3.0.3.8 | `Version` → 3.0.3.8 only. Optional schema packs `SQLCommands-DriverGps-09.xml`, `SQLCommands-WooCommerce-05.xml` if not already applied at start-up. |
 | 3.0.3.7 | `Version` → 3.0.3.7 only. Schema pack `SQLCommands-DriverGps-08.xml` runs at start-up (delivery on behalf). |
 | 3.0.3.5 | In progress: `Version` 3.0.3.4 → 3.0.3.5 (no other change). Schema pack `SQLCommands-DriverGps-07.xml` runs at start-up. |

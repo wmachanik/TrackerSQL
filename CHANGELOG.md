@@ -2,6 +2,18 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.3.10 — in progress
+
+### Features and fixes
+- **Schema packs** — the site and the mobile API check the database (the table or column the pack adds). They open the XML, in `App_Data` or `App_Data\Archive`, only when that object is missing. A restored database that already has the column does not need the file.
+- **Woo import** — creating (or refreshing) a Tracker order writes `orders.log`: who imported it, Tracker order, contact, and the Woo order number / id.
+- **Checkup holiday note** — the closure heads-up in the Send Checkup email is HTML again (`Heads-up` in italics), not literal `&lt;i&gt;` tags.
+- **Default start time** — System Preferences → GPS & Drivers → Arrival times: expected times on the driver app and Driver tracking start from this clock (default 08:00) until the driver leaves the depot or delivers. The delivery log records when they actually start (`SQLCommands-DriverGps-11.xml`).
+- **Change how a delivery was done** — Contact Details → Proof of Delivery: **Change** on a row to pick a different Delivery Outcome if the driver chose the wrong type. Does not undo Order Done.
+- **Mobile Tracker link** — hamburger menu **Tracker Site**, and the driver app More page **Open Tracker**, go to the office site.
+- **Mobile-friendly admin** — Delivery Outcomes, Delivery Promise Rules, and Lookups → Areas: tables fit a phone (no 600 px lock, larger tap targets, wrap on edit).
+- **Area codes on Driver tracking** — the Area column uses the Lookups → Areas code (or the automatic abbreviation); full name is the tooltip. The driver sheet shows the same code.
+
 ## 3.0.3.9 — 2026-10-28
 
 ### Features and fixes

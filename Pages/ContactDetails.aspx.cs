@@ -523,8 +523,100 @@ namespace TrackerSQL.Pages
             gvContactProofs.DataBind();
         }
 
+        protected void gvContactProofs_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvContactProofs.EditIndex = e.NewEditIndex;
+            int contactId = GetLoadedContactId();
+            if (contactId > 0)
+                BindContactProofsGrid(contactId);
+            upnlContactProofs.Update();
+        }
+
+        protected void gvContactProofs_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvContactProofs.EditIndex = -1;
+            int contactId = GetLoadedContactId();
+            if (contactId > 0)
+                BindContactProofsGrid(contactId);
+            upnlContactProofs.Update();
+        }
+
+        protected void gvContactProofs_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            object key = gvContactProofs.DataKeys[e.RowIndex].Value;
+            if (!long.TryParse(Convert.ToString(key), out long proofId))
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            var row = gvContactProofs.Rows[e.RowIndex];
+            var ddl = row.FindControl("ddlProofHow") as DropDownList;
+            int optionId;
+            if (ddl == null || !int.TryParse(ddl.SelectedValue, out optionId) || optionId <= 0)
+            {
+                litProofMessage.Text = "<p class=\"status-message status-error\">Choose how it was delivered.</p>";
+                e.Cancel = true;
+                upnlContactProofs.Update();
+                return;
+            }
+
+            string why = new MobileDeliveryManager().ChangeProofHow(proofId, optionId, User.Identity.Name);
+            if (why != null)
+            {
+                litProofMessage.Text = "<p class=\"status-message status-error\">" + HttpUtility.HtmlEncode(why) + "</p>";
+                e.Cancel = true;
+                upnlContactProofs.Update();
+                return;
+            }
+
+            litProofMessage.Text = "<p class=\"status-message status-info\">How it was delivered has been updated.</p>";
+            gvContactProofs.EditIndex = -1;
+            int contactId = GetLoadedContactId();
+            if (contactId > 0)
+                BindContactProofsGrid(contactId);
+            e.Cancel = true;
+            upnlContactProofs.Update();
+        }
+
+        protected void gvContactProofs_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow)
+                return;
+            if ((e.Row.RowState & DataControlRowState.Edit) == 0)
+                return;
+
+            var ddl = e.Row.FindControl("ddlProofHow") as DropDownList;
+            var data = e.Row.DataItem as ContactProofRow;
+            if (ddl == null || data == null)
+                return;
+
+            List<MobileDeliveryOption> options = new MobileApiRepository().GetDeliveryOptions(enabledOnly: false)
+                ?? new List<MobileDeliveryOption>();
+            ddl.Items.Clear();
+            string current = (data.Reason ?? string.Empty).Trim();
+            bool matched = false;
+            foreach (MobileDeliveryOption option in options.Where(o => o.Enabled || string.Equals(o.Text, current, StringComparison.OrdinalIgnoreCase)))
+            {
+                string when = string.Equals(option.Outcome, MobileDeliveryManager.OutcomeNotDelivered, StringComparison.OrdinalIgnoreCase)
+                    ? "Not delivered" : "Delivered";
+                var item = new ListItem(when + " — " + option.Text, option.Id.ToString());
+                if (string.Equals(option.Text, current, StringComparison.OrdinalIgnoreCase)
+                    || (string.IsNullOrEmpty(current) && string.Equals(option.Outcome, data.Outcome, StringComparison.OrdinalIgnoreCase)))
+                {
+                    item.Selected = !matched;
+                    matched = true;
+                }
+                ddl.Items.Add(item);
+            }
+            if (!matched && !string.IsNullOrEmpty(current))
+                ddl.Items.Insert(0, new ListItem("(current) " + current, "0"));
+        }
+
         protected void gvContactProofs_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            if (e.CommandName == "Edit" || e.CommandName == "Update" || e.CommandName == "Cancel")
+                return;
             if (e.CommandName != "SendPod" || !long.TryParse(Convert.ToString(e.CommandArgument), out long proofId))
                 return;
 

@@ -314,6 +314,7 @@ namespace TrackerSQL.Tools
             lblGpsRoadTimes.Text = RoadTimesHint(s, repo);
             txtGpsSpeed.Text = s.AverageSpeedKmh.ToString();
             txtGpsServiceMinutes.Text = s.ServiceMinutes.ToString();
+            txtGpsDefaultStart.Text = s.DefaultStartTime;
             txtGpsFresh.Text = s.FreshMinutes.ToString();
             txtGpsStale.Text = s.StaleMinutes.ToString();
             lblGpsUpdated.Text = s.UpdatedAt.HasValue
@@ -431,6 +432,7 @@ namespace TrackerSQL.Tools
             s.UseRoadTimes = chkGpsRoadTimes.Checked;
             s.AverageSpeedKmh = ReadInt(txtGpsSpeed, s.AverageSpeedKmh, 5, 120);
             s.ServiceMinutes = ReadInt(txtGpsServiceMinutes, s.ServiceMinutes, 0, 120);
+            s.DefaultStartTime = ReadTime(txtGpsDefaultStart, s.DefaultStartTime);
             s.FreshMinutes = ReadInt(txtGpsFresh, s.FreshMinutes, 1, 600);
             s.StaleMinutes = Math.Max(s.FreshMinutes + 1, ReadInt(txtGpsStale, s.StaleMinutes, 2, 1440));
 

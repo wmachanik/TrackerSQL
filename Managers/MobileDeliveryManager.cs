@@ -291,6 +291,7 @@ namespace TrackerSQL.Managers
                 Province = NullIfEmpty(row.Province),
                 PostalCode = NullIfEmpty(row.PostalCode),
                 Area = NullIfEmpty(row.AreaName),
+                AreaCode = NullIfEmpty(AreaPill.Code(row.AreaName, row.AreaShortCode)),
                 Notes = NullIfEmpty(notes),
                 Po = NullIfEmpty(row.PurchaseOrder),
                 Done = row.Done,
@@ -760,6 +761,38 @@ namespace TrackerSQL.Managers
             AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
                 "Order " + proof.OrderID + " | Background Order Done queued again for proof " + proofId, userName);
             MobileDeliveryCompletionQueue.Kick();
+            return null;
+        }
+
+        /// <summary>
+        /// Changes how a captured delivery was done (Lookups → Delivery Outcomes). Used when the driver picked the wrong type.
+        /// Does not undo Order Done, GPS learning or emails. Returns why not, or null.
+        /// </summary>
+        public string ChangeProofHow(long proofId, int optionId, string userName)
+        {
+            MobileApiSchemaInstaller.EnsureReady();
+            MobileDeliveryProof proof = _repo.GetProof(proofId);
+            if (proof == null)
+                return "That proof of delivery was not found.";
+            MobileDeliveryOption option = _repo.GetDeliveryOptions(enabledOnly: false)
+                .FirstOrDefault(o => o.Id == optionId);
+            if (option == null || string.IsNullOrWhiteSpace(option.Text))
+                return "That delivery outcome was not found.";
+
+            string outcome = string.Equals(option.Outcome, OutcomeNotDelivered, StringComparison.OrdinalIgnoreCase)
+                ? OutcomeNotDelivered : OutcomeDelivered;
+            string oldHow = string.IsNullOrWhiteSpace(proof.Reason) ? proof.Outcome : proof.Reason;
+            if (string.Equals(proof.Outcome, outcome, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(proof.Reason ?? string.Empty, option.Text, StringComparison.OrdinalIgnoreCase)
+                && proof.NotAtClient == option.NotAtClient)
+                return null;
+
+            _repo.UpdateProofHow(proofId, outcome, option.Text, option.NotAtClient);
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Order " + proof.OrderID + " | Proof " + proofId + " how changed from "
+                + (oldHow ?? "(none)") + " to " + option.Text
+                + (outcome != proof.Outcome ? " (" + outcome + ")" : string.Empty),
+                userName);
             return null;
         }
 

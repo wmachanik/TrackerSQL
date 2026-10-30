@@ -1,7 +1,7 @@
 # Mobile REST API and Quaffee Driver App
 
 **Released:** 3.0.3.0 (live 2026-09-29)  
-**Last Updated:** 2026-10-24
+**Last Updated:** 2026-10-30
 
 Tracker exposes a JSON API at `/api/v1` for the **Quaffee Driver** app (delivery drivers: delivery sheet, proof of
 delivery captured offline, repairs, contacts). The app lives in a separate folder, `C:\SRC\ASP.net\TrackerDriver`
@@ -59,10 +59,10 @@ All replies are JSON (camelCase, nulls omitted). Every call except `ping` and `a
 | `POST delivery/route` | device | `{date: "yyyy-MM-dd", orderIds: [...]}` the driver's own stop order for the day (first to last; at most 500); `[]` goes back to the suggested order. Returns `{ok, stops}`. Used before the learned / GPS order on both sheets (`DeliveryRouteTbl`) |
 | `GET delivery/proofs`, `GET delivery/proofs/{id}/signature` | **admin** | Signature is `no-store` |
 | `GET repairs`, `GET repairs/{id}`, `POST repairs`, `PUT repairs/{id}` | device | ETag on list; `clientRef` on create |
-| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, `terms` and `termsUrl` for the tick box above the signature, `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`, and `app`: `{ version, versionCode, url }` from `Downloads/QuaffeeDriver.json`, missing when there is none) |
+| `GET lookups`, `GET contacts?q=`, `GET contacts/{id}` | device | Lookups include `settings` (Driver App settings, incl. `landlinePrefixes` such as `["021"]`: no WhatsApp for those numbers, `terms` and `termsUrl` for the tick box above the signature, `tracking`: `{ enabled, minutes, weekdaysOnly, from, to }`, `route`: `{ speedKmh, serviceMinutes, depotLat, depotLng, leftDepotMetres, startTime }`, and `app`: `{ version, versionCode, url }` from `Downloads/QuaffeeDriver.json`, missing when there is none) |
 | `GET app/download` | device | `{ version, url }`: a download link for the APK valid 30 minutes (`MachineKey.Protect`, purpose `DriverApkDownload`) |
 | `GET app/apk?t=` | none (the link is the permission) | The APK as `QuaffeeDriver-<version>.apk`; 403 text when the link expired. The request log keeps the path without the link |
-| `POST location` | device | `{ points: [{ lat, lng, accuracy, at, source }] }` (oldest first, at most 200; `source` APP_OPEN or PERIODIC). Stored only while tracking is on and inside the work days and hours; future or day-old points are skipped. Needs a sign-in linked to a person (400 otherwise). Returns `{ ok, saved, skipped, trackingEnabled }` (`DriverLocationPingTbl`) |
+| `POST location` | device | `{ points: [{ lat, lng, accuracy, at, source }] }` (oldest first, at most 200; `source` APP_OPEN or PERIODIC). Stored only while tracking is on and inside the work days and hours; future or day-old points are skipped. Needs a sign-in linked to a person (400 otherwise). Returns `{ ok, saved, skipped, trackingEnabled }` (`DriverLocationPingTbl`). The first ping of the day more than 300 m from the depot is written to the delivery log as the driver starting |
 | `GET devices`, `POST devices/{id}/revoke`, `GET log` | **admin** | |
 
 ## 3. Security (as built)
@@ -137,11 +137,13 @@ API Tester → **Check API tables**. Idempotent. No existing table is altered.
   PC; back it up) and `versionCode` is higher.
 - **Times and Next** (0.5.2, `src/routeTimes.ts`): the list marks the first unfinished stop **Next** (today) and shows the
   delivered time. On "Mine", expected times ("about HH:mm"; "roughly" when the stop or the one before has no point) start
-  once a position is more than `settings.route.leftDepotMetres` (300) from the depot (remembered for the day in
-  localStorage `route.left`) or something was delivered today. They chain from the latest of the last delivery (that
+  from `settings.route.startTime` (System Preferences → GPS & Drivers → Default start time, default 08:00) at the depot
+  until a position is more than `settings.route.leftDepotMetres` (300) from the depot (remembered for the day in
+  localStorage `route.left`) or something was delivered today. They then chain from the latest of the last delivery (that
   stop's point) and the last position: straight line × 1.3 at `speedKmh`, plus `serviceMinutes` per stop; consecutive
   orders for one client are one stop; the first time is never before now. `RouteTimesManager` does the same for the
-  office board on Tools → Delivery order (`ForDay(day, sheetOrders)`), using the tracking pings.
+  office board on Tools → Driver tracking (`ForDay(day, sheetOrders)`), using the tracking pings. Each stop may include
+  `areaCode` (Lookups → Areas code or the automatic abbreviation); the list shows that with the full `area` as the tooltip.
 - **Office order note:** when the office dragged the driver's stops on the Delivery Sheet (`DeliveryRouteTbl.SetBy` ends
   in " (office)"), the sheet's `routeNote` says who and when; it goes once the driver saves their own order. The sheet
   ETag includes it.

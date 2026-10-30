@@ -266,7 +266,7 @@
                 if (!d) { el.innerHTML = boardDrivers().length ? '<p class="driver-tracking-muted">Click a driver to see their stops.</p>' : ''; return; }
                 var html = '<h3>' + esc(d.name) + ': ' + d.stopsLeft + ' stop(s) left'
                     + (d.finishEta ? ', back at depot about ' + esc(d.finishEta) : '') + '</h3>';
-                if (d.waitingDepot) html += '<p class="driver-tracking-muted">Still at the depot — ETAs start once they leave (300 m) or deliver.</p>';
+                if (d.waitingDepot) html += '<p class="driver-tracking-muted">Still at the depot — expected times use the default start until they leave (300 m) or deliver.</p>';
                 else if (d.stopsLeft > 0 && d.fromDepot) html += '<p class="driver-tracking-muted">No position today: times are from the depot.</p>';
                 if (d.stopsNoPoint > 0) html += '<p class="driver-tracking-muted">' + d.stopsNoPoint + ' stop(s) have no GPS point and no time.</p>';
                 if (d.stops.length) {
@@ -274,7 +274,8 @@
                         + d.stops.map(function (s) {
                             var rowCls = s.done ? 'done' : (s.isDepot ? 'depot' : '');
                             return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '><td>' + (s.isDepot ? '↩' : s.seq) + '</td><td>' + esc(s.company)
-                                + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td>' + esc(s.area || '') + '</td><td>'
+                                + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td title="' + esc(s.areaName || s.area || '') + '">'
+                                + esc(s.area || '') + '</td><td>'
                                 + (s.done ? (s.notAtClient ? esc(s.notAtClient) : 'done') : esc(s.eta || '-')) + '</td></tr>';
                         }).join('') + '</tbody></table>';
                 }

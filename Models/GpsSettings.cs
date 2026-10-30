@@ -44,6 +44,8 @@ namespace TrackerSQL.Models
 
         public int AverageSpeedKmh { get; set; } = 30;
         public int ServiceMinutes { get; set; } = 5;
+        /// <summary>Clock time expected times start from until the driver leaves the depot or delivers (HH:mm).</summary>
+        public string DefaultStartTime { get; set; } = "08:00";
         public int FreshMinutes { get; set; } = 15;
         public int StaleMinutes { get; set; } = 30;
 

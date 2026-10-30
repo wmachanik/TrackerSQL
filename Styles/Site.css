@@ -1,4 +1,4 @@
-﻿/* Rev: 20261001-01
+﻿/* Rev: 20261028-03
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -8208,6 +8208,71 @@ body.woo-map-working [id$="upgWooMap"] {
     padding: 0.5rem 0.75rem 0.75rem;
 }
 
+.delivery-promise-scroll {
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .delivery-promise-grid.results-table,
+    .delivery-outcomes-table.results-table {
+        display: table !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        white-space: normal !important;
+    }
+
+    .ajax__tab_body table.delivery-outcomes-table,
+    .ajax__tab_body table.lookups-areas-table,
+    .ajax__tab_body table.lookups-area-days-table {
+        display: table !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+    }
+
+    .delivery-promise-grid .delivery-promise-window,
+    .delivery-promise-grid .delivery-promise-result {
+        white-space: normal;
+    }
+
+    .delivery-promise-grid input[type="image"],
+    .delivery-outcomes-table input[type="image"],
+    .delivery-promise-grid img,
+    .delivery-outcomes-table img {
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .delivery-promise-grid input[type="text"],
+    .delivery-promise-grid select,
+    .delivery-promise-grid textarea,
+    .delivery-outcomes-table input[type="text"],
+    .delivery-outcomes-table select {
+        max-width: 100%;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .delivery-promise-add .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .delivery-promise-add .filter-control,
+    .delivery-promise-add .filter-control input,
+    .delivery-promise-add .filter-control select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .delivery-outcomes-table td,
+    .delivery-outcomes-table th {
+        white-space: normal !important;
+    }
+}
+
 .order-done-courier-panel {
     margin: 1rem 0 0.5rem;
     padding: 0.75rem 1rem 1rem;
@@ -8485,14 +8550,56 @@ body.woo-map-working [id$="upgWooMap"] {
 }
 
 /* Keep XML file browser styles when using page-tone-xml */
+.page-tone-xml select.xmltosql-fit {
+    width: auto !important;
+    max-width: 16rem !important;
+    min-width: 8rem;
+}
+
+.page-tone-xml .xmltosql-list-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: fit-content;
+    margin: 0 0 8px 0;
+}
+
 .page-tone-xml .file-browser {
     border: 1px solid #c5dbe6;
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 10px 12px;
     margin: 10px 0 0;
     background: rgba(255, 255, 255, 0.72);
     max-height: 220px;
     overflow-y: auto;
+}
+
+.page-tone-xml .file-browser .file-item,
+.page-tone-xml .file-browser .file-item *,
+.xmltosql-panel .file-browser .file-item,
+.xmltosql-panel .file-browser .file-item * {
+    cursor: pointer;
+}
+
+.page-tone-xml .file-browser .file-item,
+.xmltosql-panel .file-browser .file-item {
+    padding: 5px 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.page-tone-xml .file-browser .file-item:hover,
+.xmltosql-panel .file-browser .file-item:hover {
+    background-color: var(--light-green);
+}
+
+.page-tone-xml .file-browser .file-item.selected,
+.xmltosql-panel .file-browser .file-item.selected {
+    background-color: #E0EFD0;
 }
 
 .page-tone-xml .xmltosql-filepath {
@@ -8808,12 +8915,13 @@ body.woo-map-working [id$="upgWooMap"] {
 .lookups-areas-list-scroll,
 .lookups-areas-days-scroll {
     flex: 1 1 auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: auto;
     /* Grow with the screen so a full page (15 rows + insert footer + pager)
        fits without an inner scrollbar; 520px floor for short viewports. */
     max-height: max(520px, calc(100vh - 280px));
     max-width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 .lookups-areas-table.results-table,
@@ -8908,6 +9016,49 @@ body.woo-map-working [id$="upgWooMap"] {
     .lookups-areas-days {
         flex: 1 1 100%;
         max-width: 100%;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .lookups-areas-list-scroll,
+    .lookups-areas-days-scroll {
+        max-height: none;
+        overflow-x: auto;
+    }
+
+    .lookups-areas-table.results-table,
+    .lookups-area-days-table.results-table {
+        display: table !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        white-space: normal !important;
+    }
+
+    .lookups-areas-table.results-table th,
+    .lookups-areas-table.results-table td,
+    .lookups-area-days-table.results-table th,
+    .lookups-area-days-table.results-table td {
+        white-space: normal !important;
+    }
+
+    .lookups-areas-table.results-table input[type="image"],
+    .lookups-area-days-table.results-table input[type="image"],
+    .lookups-areas-table.results-table img,
+    .lookups-area-days-table.results-table img {
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .lookups-areas-table.results-table input[type="text"],
+    .lookups-area-days-table.results-table input[type="text"],
+    .lookups-areas-table.results-table select,
+    .lookups-area-days-table.results-table select {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 44px;
+        box-sizing: border-box;
     }
 }
 
@@ -9593,6 +9744,34 @@ a.delivery-days-tag.is-promise-gap:hover {
 .pod-sent { display: block; color: #3f6b4f; font-size: 0.9em; white-space: nowrap; }
 .pod-terms { color: #3f6b4f; white-space: nowrap; }
 .pod-terms.is-missing { color: #b00020; font-weight: 600; }
+.pod-change-how {
+    display: inline-block;
+    margin-left: 0.5em;
+    white-space: nowrap;
+}
+.pod-how-list { min-width: 12em; max-width: 100%; min-height: 2.2em; }
+.pod-how-actions { margin-top: 0.35em; }
+.pod-how-actions a { margin-right: 0.8em; }
+
+@media (max-width: 768px) {
+    .contact-proofs-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+    .pod-change-how,
+    .pod-how-actions a {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .pod-how-list {
+        width: 100%;
+        min-height: 44px;
+    }
+}
 
 /* Contact Portal: proof of delivery View / Download */
 .portal-pod-links a + a { margin-left: 0.9em; }
@@ -10137,15 +10316,34 @@ table.recurring-order-editor-grid .col-ro-date input[type="text"] {
     overflow-y: auto;
 }
 
-.xmltosql-panel .file-item {
+.xmltosql-panel .file-item,
+.xmltosql-panel .file-item * {
     cursor: pointer;
-    padding: 4px 6px;
+}
+
+.xmltosql-panel .file-item {
+    padding: 5px 8px;
     margin: 2px 0;
     border-radius: 4px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .xmltosql-panel .file-item:hover {
-    background-color: #d9eef6;
+    background-color: var(--light-green);
+}
+
+.xmltosql-panel .file-item.selected {
+    background-color: #E0EFD0;
+}
+
+input[type="submit"].xmltosql-archive-on,
+input[type="button"].xmltosql-archive-on {
+    background-color: #5a4a2f !important;
+    border-color: #5a4a2f !important;
+    color: #fff !important;
 }
 
 .xmltosql-panel .xml-file {

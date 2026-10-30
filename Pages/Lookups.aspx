@@ -823,7 +823,7 @@
                                                 </FooterTemplate>
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Dlvry Order"
-                                                HeaderStyle-CssClass="col-tight" ItemStyle-CssClass="col-tight" FooterStyle-CssClass="col-tight">
+                                                HeaderStyle-CssClass="col-tight col-priority-4" ItemStyle-CssClass="col-tight col-priority-4" FooterStyle-CssClass="col-tight col-priority-4">
                                                 <HeaderTemplate>
                                                     <span title="The order the area's deliveries go in on the delivery sheet. Set it on the Delivery Days tab.">Dlvry Order</span>
                                                 </HeaderTemplate>
@@ -1422,7 +1422,7 @@
                         </p>
                         <div class="results-container scrollable-table-container">
                             <asp:GridView ID="gvDriverOptions" runat="server" DataKeyNames="Id"
-                                CssClass="results-table results-table-fit" AutoGenerateColumns="False" ShowFooter="true"
+                                CssClass="results-table results-table-fit delivery-outcomes-table" AutoGenerateColumns="False" ShowFooter="true"
                                 OnRowCommand="gvDriverOptions_RowCommand"
                                 OnRowEditing="gvDriverOptions_RowEditing"
                                 OnRowCancelingEdit="gvDriverOptions_RowCancelingEdit"
@@ -1467,7 +1467,7 @@
                                             </asp:DropDownList>
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Option">
+                                    <asp:TemplateField HeaderText="Option" ItemStyle-CssClass="wrap">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxDoText" runat="server" Text='<%# Bind("Text") %>' Width="18em" MaxLength="100" />
                                         </EditItemTemplate>
@@ -1503,7 +1503,9 @@
                                             <asp:CheckBox ID="cbxDoNotAtClientFooter" runat="server" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="On">
+                                    <asp:TemplateField HeaderText="On"
+                                        HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="col-priority-3"
+                                        FooterStyle-CssClass="col-priority-3">
                                         <EditItemTemplate>
                                             <asp:CheckBox ID="cbxDoEnabled" runat="server" Checked='<%# Bind("Enabled") %>' />
                                         </EditItemTemplate>
@@ -1514,7 +1516,9 @@
                                             <asp:CheckBox ID="cbxDoEnabledFooter" runat="server" Checked="true" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Sort">
+                                    <asp:TemplateField HeaderText="Sort"
+                                        HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4"
+                                        FooterStyle-CssClass="col-priority-4">
                                         <EditItemTemplate>
                                             <asp:TextBox ID="tbxDoSort" runat="server" Text='<%# Bind("SortOrder") %>' Width="3em" />
                                         </EditItemTemplate>

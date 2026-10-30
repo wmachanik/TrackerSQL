@@ -11,9 +11,10 @@ namespace TrackerSQL.Managers
 {
     /// <summary>
     /// When each stop on a driver's route was delivered, which one is next, and when the rest are expected.
-    /// Expected times start only once the driver has left the depot (a position further than <see cref="LeftDepotMetres"/>
-    /// from it) or made a delivery, and chain from the latest of the last delivery and the last position:
-    /// straight line × 1.3 at the average speed, plus the minutes per stop. The driver app works them out the same way.
+    /// Expected times start from <see cref="GpsSettings.DefaultStartTime"/> at the depot until the driver has left
+    /// (a position further than <see cref="LeftDepotMetres"/> from it) or made a delivery, then chain from the latest
+    /// of the last delivery and the last position: straight line × 1.3 at the average speed, plus the minutes per stop.
+    /// The driver app works them out the same way.
     /// </summary>
     public class RouteTimesManager
     {
@@ -66,7 +67,8 @@ namespace TrackerSQL.Managers
                     ServiceMinutes = Math.Max(0, s.ServiceMinutes),
                     DepotLat = s.HasDepotPoint ? (double?)s.DepotLatitude.Value : null,
                     DepotLng = s.HasDepotPoint ? (double?)s.DepotLongitude.Value : null,
-                    LeftDepotMetres = LeftDepotMetres
+                    LeftDepotMetres = LeftDepotMetres,
+                    StartTime = FormatClock(s.DefaultStartTime)
                 };
             }
             catch (Exception ex)
@@ -141,8 +143,6 @@ namespace TrackerSQL.Managers
                     state.LeftAt = driverPings.FirstOrDefault(p =>
                         GeoDistance.Metres(depotLat.Value, depotLng.Value, (double)p.Latitude, (double)p.Longitude) > LeftDepotMetres)?.PingTime;
                 state.Started = lastDelivered.HasValue || state.LeftAt.HasValue;
-                if (!state.Started)
-                    continue;
 
                 DateTime t;
                 double? lat, lng;
@@ -153,11 +153,17 @@ namespace TrackerSQL.Managers
                     lat = gps?.Lat ?? (latest != null ? (double?)latest.Latitude : depotLat);
                     lng = gps?.Lng ?? (latest != null ? (double?)latest.Longitude : depotLng);
                 }
-                else
+                else if (latest != null && state.Started)
                 {
                     t = latest.PingTime;
                     lat = (double)latest.Latitude;
                     lng = (double)latest.Longitude;
+                }
+                else
+                {
+                    t = day.Date.Add(ParseClock(settings.DefaultStartTime, new TimeSpan(8, 0, 0)));
+                    lat = depotLat;
+                    lng = depotLng;
                 }
 
                 Chain(open, result, state, t, lat, lng, now, Math.Max(5, settings.AverageSpeedKmh), Math.Max(0, settings.ServiceMinutes),
@@ -221,6 +227,18 @@ namespace TrackerSQL.Managers
             visit.Select(s => s.Gps).FirstOrDefault(g => g?.Lat != null && g.Lng.HasValue);
 
         private static bool Finished(MobileDeliveryStop stop) => stop.Done || stop.Proof != null;
+
+        private static TimeSpan ParseClock(string value, TimeSpan fallback)
+        {
+            return TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out TimeSpan t) && t < TimeSpan.FromDays(1)
+                ? t : fallback;
+        }
+
+        private static string FormatClock(string value)
+        {
+            TimeSpan t = ParseClock(value, new TimeSpan(8, 0, 0));
+            return t.Hours.ToString("00", CultureInfo.InvariantCulture) + ":" + t.Minutes.ToString("00", CultureInfo.InvariantCulture);
+        }
 
         /// <summary>Orders next to each other for the same client are one stop (deliver-to addresses stay separate).</summary>
         private static List<List<MobileDeliveryStop>> Visits(IEnumerable<MobileDeliveryStop> route)

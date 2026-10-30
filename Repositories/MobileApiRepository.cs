@@ -151,6 +151,7 @@ namespace TrackerSQL.Repositories
             public string Province;
             public string PostalCode;
             public string AreaName;
+            public string AreaShortCode;
             public string Notes;
             public string PurchaseOrder;
             public bool Done;
@@ -207,7 +208,7 @@ namespace TrackerSQL.Repositories
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
                        c.ContactAltFirstName, c.ContactAltLastName, {EFFECTIVE_PHONE} AS PhoneNumber, {EFFECTIVE_CELL} AS CellNumber,
                        {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
-                       a.AreaName, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
+                       a.AreaName, a.ShortCode AS AreaShortCode, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        {EFFECTIVE_BY} AS ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
                        ol.OrderLineID, ol.ItemID, i.ItemServiceTypeID,
@@ -309,6 +310,7 @@ namespace TrackerSQL.Repositories
                 Province = Str(r, "StateOrProvince"),
                 PostalCode = Str(r, "PostalCode"),
                 AreaName = Str(r, "AreaName"),
+                AreaShortCode = Str(r, "AreaShortCode"),
                 Notes = Str(r, "Notes"),
                 PurchaseOrder = Str(r, "PurchaseOrder"),
                 Done = Bool(r, "Done"),
@@ -542,6 +544,19 @@ namespace TrackerSQL.Repositories
                 WHERE ProofID = @ProofID";
             Exec(sql, P("@Status", status), P("@Message", Trunc(message, 1000)), P("@Now", TimeZoneUtils.Now(), DbType.DateTime),
                 P("@By", completedBy), P("@ProofID", proofId, DbType.Int64));
+        }
+
+        /// <summary>Office correction when the driver picked the wrong how / outcome. Does not undo Order Done.</summary>
+        public void UpdateProofHow(long proofId, string outcome, string reason, bool notAtClient)
+        {
+            Exec(@"UPDATE MobileDeliveryProofTbl
+                   SET Outcome = @Outcome, Reason = @Reason"
+                   + (ProofHasNotAtClientColumn() ? ", NotAtClient = @NotAtClient" : "") + @"
+                   WHERE ProofID = @ProofID",
+                P("@Outcome", Trunc(outcome, 20)),
+                P("@Reason", Trunc(reason, 100)),
+                P("@NotAtClient", notAtClient, DbType.Boolean),
+                P("@ProofID", proofId, DbType.Int64));
         }
 
         private string ProofColumns => @"

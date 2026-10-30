@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default route start time (System Preferences → GPS & Drivers → Arrival times).
+  Used for expected times until the driver leaves the depot or makes a delivery.
+  Idempotent. Runs at application start via OrderFlagsSchemaInstaller.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.GpsSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.GpsSettingsTbl', N'DefaultStartTime') IS NULL
+          ALTER TABLE dbo.GpsSettingsTbl ADD DefaultStartTime VARCHAR(5) NOT NULL
+              CONSTRAINT DF_GpsSettings_DefaultStartTime DEFAULT ('08:00');
+    ]]>
+  </command>
+</root>

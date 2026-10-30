@@ -647,6 +647,7 @@
                         <asp:UpdatePanel ID="upnlContactProofs" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                         <ContentTemplate>
                         <div class="pad-4">
+                            <p class="small muted">If the driver picked the wrong how, tap <strong>Change</strong> on that row and choose the right delivery outcome.</p>
                             <div class="pod-toolbar">
                                 <label for="<%= txtPodEmail.ClientID %>">Email the proof of delivery to</label>
                                 <asp:TextBox ID="txtPodEmail" runat="server" TextMode="Email" MaxLength="200" Columns="34"
@@ -655,8 +656,12 @@
                             </div>
                             <asp:Literal ID="litProofMessage" runat="server" />
                             <asp:GridView ID="gvContactProofs" runat="server" CssClass="TblWhite small contact-proofs-table"
-                                AutoGenerateColumns="False" EmptyDataText="no proof of delivery"
-                                OnRowCommand="gvContactProofs_RowCommand">
+                                AutoGenerateColumns="False" EmptyDataText="no proof of delivery" DataKeyNames="ProofID"
+                                OnRowCommand="gvContactProofs_RowCommand"
+                                OnRowEditing="gvContactProofs_RowEditing"
+                                OnRowCancelingEdit="gvContactProofs_RowCancelingEdit"
+                                OnRowUpdating="gvContactProofs_RowUpdating"
+                                OnRowDataBound="gvContactProofs_RowDataBound">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
                                         <ItemTemplate>
@@ -670,8 +675,22 @@
                                     <asp:BoundField DataField="OrderID" HeaderText="Order #" />
                                     <asp:BoundField DataField="WalkInName" HeaderText="Walk-in" Visible="false" />
                                     <asp:BoundField DataField="DeliveredAt" HeaderText="When" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
-                                    <asp:BoundField DataField="OutcomeDisplay" HeaderText="Outcome" />
-                                    <asp:BoundField DataField="Reason" HeaderText="How" />
+                                    <asp:BoundField DataField="OutcomeDisplay" HeaderText="Outcome" ReadOnly="true" />
+                                    <asp:TemplateField HeaderText="How">
+                                        <ItemTemplate>
+                                            <span><%# Eval("Reason") %></span>
+                                            <asp:LinkButton ID="lbChangeHow" runat="server" CommandName="Edit" Text="Change"
+                                                CssClass="pod-change-how" CausesValidation="false"
+                                                ToolTip="Change how it was delivered if the driver picked the wrong type" />
+                                        </ItemTemplate>
+                                        <EditItemTemplate>
+                                            <asp:DropDownList ID="ddlProofHow" runat="server" CssClass="pod-how-list" />
+                                            <div class="pod-how-actions">
+                                                <asp:LinkButton ID="lbSaveHow" runat="server" CommandName="Update" Text="Save" CausesValidation="false" />
+                                                <asp:LinkButton ID="lbCancelHow" runat="server" CommandName="Cancel" Text="Cancel" CausesValidation="false" />
+                                            </div>
+                                        </EditItemTemplate>
+                                    </asp:TemplateField>
                                     <asp:BoundField DataField="ReceivedByName" HeaderText="Received by" />
                                     <asp:TemplateField HeaderText="POD">
                                         <ItemTemplate>

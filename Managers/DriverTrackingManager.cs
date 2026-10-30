@@ -22,6 +22,8 @@ namespace TrackerSQL.Managers
         private const double RoadFactor = 1.3;
 
         private static readonly object CleanupSync = new object();
+        private static readonly object StartLogSync = new object();
+        private static readonly HashSet<string> LoggedStarts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static DateTime _lastCleanup = DateTime.MinValue;
 
         public class ReceiveResult
@@ -120,6 +122,8 @@ namespace TrackerSQL.Managers
                 result.Saved++;
             }
 
+            if (result.Saved > 0)
+                NoteStartIfNeeded(user.PersonId.Value, user.UserName, settings);
             CleanupIfDue(settings);
             return result;
         }
@@ -145,11 +149,60 @@ namespace TrackerSQL.Managers
                     PingTime = at,
                     Source = DriverLocationRepository.SourceDeliveryComplete
                 }, userName);
+                NoteStartIfNeeded(personId.Value, userName, settings);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Driver position from delivery not stored: " + ex.Message, userName);
             }
+        }
+
+        /// <summary>Once a day per driver: they left the depot (or delivered) — write the delivery log.</summary>
+        private static void NoteStartIfNeeded(int personId, string userName, GpsSettings settings)
+        {
+            if (settings == null || !settings.HasDepotPoint)
+                return;
+            DateTime day = TimeZoneUtils.Now().Date;
+            string key = personId.ToString(CultureInfo.InvariantCulture) + "-" + day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            lock (StartLogSync)
+            {
+                if (LoggedStarts.Contains(key))
+                    return;
+            }
+
+            List<DriverLocationRepository.Ping> pings;
+            try
+            {
+                pings = new DriverLocationRepository().ForDay(day);
+            }
+            catch
+            {
+                return;
+            }
+            DriverLocationRepository.Ping firstAway = pings?
+                .Where(p => p.PersonID == personId)
+                .OrderBy(p => p.PingTime)
+                .FirstOrDefault(p => GeoDistance.Metres(
+                    (double)settings.DepotLatitude.Value, (double)settings.DepotLongitude.Value,
+                    (double)p.Latitude, (double)p.Longitude) > RouteTimesManager.LeftDepotMetres);
+            if (firstAway == null)
+                return;
+
+            lock (StartLogSync)
+            {
+                if (!LoggedStarts.Add(key))
+                    return;
+            }
+
+            // A recycle would otherwise write the same start again; only log a start that just happened.
+            if ((TimeZoneUtils.Now() - firstAway.PingTime).TotalMinutes > 20)
+                return;
+
+            string who = string.IsNullOrWhiteSpace(userName) ? "Person " + personId : userName;
+            AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
+                "Driver " + who + " started at " + firstAway.PingTime.ToString("HH:mm", CultureInfo.InvariantCulture)
+                + " (" + firstAway.Source + ").",
+                userName);
         }
 
         /// <summary>Deletes positions past the retention period, at most once a day.</summary>
@@ -258,7 +311,8 @@ namespace TrackerSQL.Managers
                         Seq = g.Min(o => o.Seq),
                         ContactId = g.First().ContactId,
                         Company = g.First().Company,
-                        Area = g.First().Area,
+                        Area = AreaPill.Code(g.First().Area, g.First().AreaCode),
+                        AreaName = g.First().Area,
                         Orders = g.Count(),
                         Done = g.All(o => o.Done || o.Proof != null),
                         NotAtClient = g.All(o => o.Proof?.NotAtClient == true) ? (g.First().Proof.Reason ?? "not at the client") : null,
@@ -307,11 +361,7 @@ namespace TrackerSQL.Managers
                 routeTimes.Drivers.TryGetValue(driver.PersonId, out routeState);
 
             if (today && driver.StopsLeft > 0 && (routeState == null || !routeState.Started))
-            {
                 driver.WaitingDepot = true;
-                driver.FinishEta = null;
-                return;
-            }
 
             if (today && routeState != null && routeTimes.Stops.Count > 0)
             {
@@ -513,6 +563,7 @@ namespace TrackerSQL.Managers
                     DeliverTo = hasDeliverTo ? deliverToName : null,
                     DeliverToAddressId = row.DeliverToAddressId,
                     Area = row.AreaName,
+                    AreaCode = AreaPill.Code(row.AreaName, row.AreaShortCode),
                     Done = row.Done,
                     DeliveryById = driverId,
                     DeliveryBy = row.DeliveryByAbbreviation,
@@ -571,6 +622,7 @@ namespace TrackerSQL.Managers
                     DeliverTo = hasDeliverTo ? deliverToName : null,
                     DeliverToAddressId = row.DeliverToAddressID,
                     Area = row.AreaName,
+                    AreaCode = AreaPill.Code(row.AreaName, row.AreaShortCode),
                     Done = row.Done,
                     DeliveryById = driverId,
                     DeliveryBy = row.DeliveryByAbbreviation,

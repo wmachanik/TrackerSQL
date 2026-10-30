@@ -1816,7 +1816,7 @@ ORDER BY o.OrderDate DESC, o.OrderID DESC, ol.OrderLineID DESC";
             string sql = @"
 SELECT DISTINCT o.OrderID, o.ContactID, c.CompanyName,
        " + effectiveBy + @" AS ToBeDeliveredByID" + deliverToIdCol + @",
-       p.Abbreviation AS DeliveryByAbbreviation, a.AreaName, o.Done" + deliverToCols + @"
+       p.Abbreviation AS DeliveryByAbbreviation, a.AreaName, a.ShortCode AS AreaShortCode, o.Done" + deliverToCols + @"
 FROM OrdersTbl o
 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID"
@@ -1847,6 +1847,8 @@ ORDER BY " + effectiveBy + @", c.CompanyName, o.OrderID";
                             : (int?)null,
                         DeliveryByAbbreviation = r["DeliveryByAbbreviation"] == DBNull.Value ? null : r["DeliveryByAbbreviation"].ToString(),
                         AreaName = r["AreaName"] == DBNull.Value ? null : r["AreaName"].ToString(),
+                        AreaShortCode = DbMapper.HasColumn(r, "AreaShortCode") && r["AreaShortCode"] != DBNull.Value
+                            ? r["AreaShortCode"].ToString() : null,
                         Done = r["Done"] != DBNull.Value && Convert.ToBoolean(r["Done"]),
                         DeliverToLabel = r["DeliverToLabel"] == DBNull.Value ? null : r["DeliverToLabel"].ToString(),
                         DeliverToPerson = r["DeliverToPerson"] == DBNull.Value ? null : r["DeliverToPerson"].ToString()

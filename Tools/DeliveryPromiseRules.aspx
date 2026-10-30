@@ -116,7 +116,7 @@
                     </fieldset>
                 </asp:Panel>
 
-                <div class="results-container">
+                <div class="results-container scrollable-table-container delivery-promise-scroll">
                     <asp:GridView ID="gvRules" runat="server" CssClass="results-table delivery-promise-grid"
                         AutoGenerateColumns="false" DataKeyNames="RuleID"
                         AllowPaging="true" PageSize="25" AllowSorting="true"
@@ -130,7 +130,7 @@
                         EmptyDataText="No delivery promise rules found. Open Woo Mapping once to seed from XML.">
                         <Columns>
                             <asp:BoundField DataField="RuleID" HeaderText="ID" ReadOnly="true"
-                                SortExpression="RuleID" ItemStyle-CssClass="col-tight" HeaderStyle-CssClass="col-tight" />
+                                SortExpression="RuleID" ItemStyle-CssClass="col-tight col-priority-4" HeaderStyle-CssClass="col-tight col-priority-4" />
 
                             <asp:TemplateField HeaderText="Group" SortExpression="RuleGroup">
                                 <ItemTemplate><%# Eval("RuleGroup") %></ItemTemplate>
@@ -200,7 +200,8 @@
                                 <ItemStyle CssClass="col-tight" />
                             </asp:TemplateField>
 
-                            <asp:TemplateField HeaderText="Notes" SortExpression="Notes">
+                            <asp:TemplateField HeaderText="Notes" SortExpression="Notes"
+                                HeaderStyle-CssClass="col-priority-3" ItemStyle-CssClass="wrap col-priority-3">
                                 <ItemTemplate>
                                     <div class="clamp-3 delivery-promise-notes"><%# Eval("Notes") %></div>
                                 </ItemTemplate>

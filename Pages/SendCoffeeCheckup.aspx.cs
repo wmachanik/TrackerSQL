@@ -387,7 +387,7 @@ namespace TrackerSQL.Pages
                         holidayNote = "Please note: upcoming public holidays may affect delivery timing. Thanks for your understanding.";
 
                     emailData.Footer = (emailData.Footer ?? string.Empty) +
-                       $"<p style='margin:8px 0'>{HttpUtility.HtmlEncode(holidayNote)}</p>";
+                       $"<p style='margin:8px 0'>{holidayNote}</p>";
                 }
 
                 SetStatus("Processing contacts...", isError: null);

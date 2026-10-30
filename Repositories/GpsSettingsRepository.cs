@@ -86,6 +86,8 @@ namespace TrackerSQL.Repositories
                     s.UseRoadTimes = Bool(r, "UseRoadTimes");
                 s.AverageSpeedKmh = Int(r, "AverageSpeedKmh", s.AverageSpeedKmh);
                 s.ServiceMinutes = Int(r, "ServiceMinutes", s.ServiceMinutes);
+                if (HasColumn(r, "DefaultStartTime"))
+                    s.DefaultStartTime = Str(r, "DefaultStartTime") ?? s.DefaultStartTime;
                 s.FreshMinutes = Int(r, "FreshMinutes", s.FreshMinutes);
                 s.StaleMinutes = Int(r, "StaleMinutes", s.StaleMinutes);
                 s.UpdatedAt = r["UpdatedAt"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["UpdatedAt"]);
@@ -126,6 +128,7 @@ UPDATE dbo.GpsSettingsTbl SET
     " + (ColumnExists("UseRoadTimes") ? "UseRoadTimes = @UseRoadTimes," : string.Empty) + @"
     AverageSpeedKmh = @AverageSpeedKmh,
     ServiceMinutes = @ServiceMinutes,
+    " + (ColumnExists("DefaultStartTime") ? "DefaultStartTime = @DefaultStartTime," : string.Empty) + @"
     FreshMinutes = @FreshMinutes,
     StaleMinutes = @StaleMinutes,
     UpdatedAt = GETDATE(),
@@ -152,6 +155,7 @@ WHERE SettingsID = 1;";
                 P("@UseRoadTimes", s.UseRoadTimes, DbType.Boolean),
                 P("@AverageSpeedKmh", s.AverageSpeedKmh, DbType.Int32),
                 P("@ServiceMinutes", s.ServiceMinutes, DbType.Int32),
+                P("@DefaultStartTime", s.DefaultStartTime ?? "08:00", DbType.AnsiString),
                 P("@FreshMinutes", s.FreshMinutes, DbType.Int32),
                 P("@StaleMinutes", s.StaleMinutes, DbType.Int32),
                 P("@UpdatedBy", userName, DbType.String)

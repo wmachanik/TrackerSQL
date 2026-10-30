@@ -500,6 +500,10 @@
                                         <td class="sys-prefs-field"><asp:TextBox ID="txtGpsServiceMinutes" runat="server" CssClass="gps-num-input" TextMode="Number" /></td>
                                     </tr>
                                     <tr>
+                                        <td class="sys-prefs-label"><span title="Expected times on the driver app and Driver tracking start from this clock until the driver leaves the depot (300 m) or makes a delivery. The delivery log records when they actually start.">Default start time</span></td>
+                                        <td class="sys-prefs-field"><asp:TextBox ID="txtGpsDefaultStart" runat="server" CssClass="gps-time-input" TextMode="Time" /></td>
+                                    </tr>
+                                    <tr>
                                         <td class="sys-prefs-label"><span title="Driver marker is green when the last position is newer than this, orange up to the next value, red after that.">Position colours (minutes)</span></td>
                                         <td class="sys-prefs-field">
                                             green under <asp:TextBox ID="txtGpsFresh" runat="server" CssClass="gps-num-input" TextMode="Number" />

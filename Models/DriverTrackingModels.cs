@@ -35,6 +35,7 @@ namespace TrackerSQL.Models
         public int? DeliverToAddressId { get; set; }
         public string DeliveryByAbbreviation { get; set; }
         public string AreaName { get; set; }
+        public string AreaShortCode { get; set; }
         public bool Done { get; set; }
         public string DeliverToLabel { get; set; }
         public string DeliverToPerson { get; set; }
@@ -76,6 +77,8 @@ namespace TrackerSQL.Models
         public int ContactId { get; set; }
         public string Company { get; set; }
         public string Area { get; set; }
+        /// <summary>Full area name (tooltip when <see cref="Area"/> is the short code).</summary>
+        public string AreaName { get; set; }
         public int Orders { get; set; }
         public bool Done { get; set; }
         /// <summary>Done without the driver going there, e.g. "Collected by the client".</summary>

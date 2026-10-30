@@ -113,6 +113,8 @@ namespace TrackerSQL.Models
         public string Province { get; set; }
         public string PostalCode { get; set; }
         public string Area { get; set; }
+        /// <summary>Area short code (Lookups → Areas), else the automatic abbreviation.</summary>
+        public string AreaCode { get; set; }
         public string Notes { get; set; }
         public string Po { get; set; }
         public bool Done { get; set; }
@@ -421,6 +423,8 @@ namespace TrackerSQL.Models
         public MobileTrackingSettings Tracking { get; set; }
         /// <summary>The Android app on this site (Downloads/QuaffeeDriver.json from "npm run apk"); null when there is none.</summary>
         public MobileAppRelease App { get; set; }
+        /// <summary>The web app on this site (/driver/, driver/version.json from "npm run build:site").</summary>
+        public MobileWebRelease Web { get; set; }
         /// <summary>Arrival times on the route (System Preferences → GPS &amp; Drivers).</summary>
         public MobileRouteTimesSettings Route { get; set; }
         /// <summary>The statement the person receiving a delivery ticks before signing (System → Driver App).</summary>
@@ -438,6 +442,8 @@ namespace TrackerSQL.Models
         public double? DepotLng { get; set; }
         /// <summary>Times are worked out once the phone is this far from the depot (or after the first delivery).</summary>
         public int LeftDepotMetres { get; set; }
+        /// <summary>HH:mm expected times start from until the driver leaves the depot or delivers.</summary>
+        public string StartTime { get; set; }
     }
 
     public class MobileAppRelease
@@ -447,6 +453,12 @@ namespace TrackerSQL.Models
         public int VersionCode { get; set; }
         /// <summary>Site-relative download address, e.g. "/Downloads/QuaffeeDriver.apk?v=0.5.1".</summary>
         public string Url { get; set; }
+    }
+
+    public class MobileWebRelease
+    {
+        /// <summary>"0.5.8" from driver/version.json (npm run build:site).</summary>
+        public string Version { get; set; }
     }
 
     public class MobileTrackingSettings

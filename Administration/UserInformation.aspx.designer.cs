@@ -23,5 +23,6 @@ namespace TrackerSQL.Administration
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlTimeZone;
         protected global::System.Web.UI.WebControls.CheckBox cbxDriverTracking;
+        protected global::System.Web.UI.WebControls.CheckBox cbxShowSheetAreaAbbr;
     }
 }

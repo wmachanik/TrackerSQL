@@ -12,7 +12,12 @@ Release notes for shipped TrackerSQL versions. Newest first.
 - **Change how a delivery was done** — Contact Details → Proof of Delivery: **Change** on a row to pick a different Delivery Outcome if the driver chose the wrong type. Does not undo Order Done.
 - **Mobile Tracker link** — hamburger menu **Tracker Site**, and the driver app More page **Open Tracker**, go to the office site.
 - **Mobile-friendly admin** — Delivery Outcomes, Delivery Promise Rules, and Lookups → Areas: tables fit a phone (no 600 px lock, larger tap targets, wrap on edit).
-- **Area codes on Driver tracking** — the Area column uses the Lookups → Areas code (or the automatic abbreviation); full name is the tooltip. The driver sheet shows the same code.
+- **Area codes on Driver tracking** — the Area column uses the Lookups → Areas code (or the automatic abbreviation); full name is the tooltip. The driver sheet shows the same code. Stops with no GPS point are orange (list and legend).
+- **Delivery Sheet area codes** — per-user **Show Area Codes** (on the sheet, and User Information) puts the area abbreviation next to the client.
+- **Alternative address Save** — Contact Details → Save Address shows **Saving** and ignores a second click.
+- **Order Done / gift or on behalf** — orders to a Gift or On their behalf alternative address do not write usage or move Next Coffee / filter dates.
+- **Filter (and other non-coffee) predictions** — next date uses how often that item is actually delivered (ignore split deliveries under 14 days). Contact 466's filters every 2–3 months no longer land in 2027 because daily cups were ~0.1.
+- **Lookups → Areas** — adding a second (or later) prep day for an area works (the Add button now inserts; it previously did nothing once the first day existed).
 
 ## 3.0.3.9 — 2026-10-28
 

@@ -13,6 +13,8 @@ namespace TrackerSQL.Classes
         public DateTime LoadedOn { get; set; }
         /// <summary>Delivery Sheet shows the Seq / Area / ETA / Status columns (off by default).</summary>
         public bool ShowDeliveryRouteEta { get; set; }
+        /// <summary>Delivery Sheet shows each stop's area abbreviation (off by default).</summary>
+        public bool ShowSheetAreaAbbr { get; set; }
         /// <summary>Show driver positions (Driver Tracking page / map) (off by default).</summary>
         public bool DriverTracking { get; set; }
 

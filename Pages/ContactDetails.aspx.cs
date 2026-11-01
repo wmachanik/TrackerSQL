@@ -2972,6 +2972,11 @@ namespace TrackerSQL.Pages
             DeliverToEditId = deliverToAddressId;
             if (lblDeliverToFormError != null)
                 lblDeliverToFormError.Visible = false;
+            if (btnDeliverToSave != null)
+            {
+                btnDeliverToSave.Text = "Save Address";
+                btnDeliverToSave.Attributes.Remove("data-busy");
+            }
 
             if (deliverToAddressId > 0)
             {
@@ -3080,6 +3085,11 @@ namespace TrackerSQL.Pages
             lblDeliverToFormError.Visible = true;
             if (pnlDeliverToEditor != null)
                 pnlDeliverToEditor.Visible = true;
+            if (btnDeliverToSave != null)
+            {
+                btnDeliverToSave.Text = "Save Address";
+                btnDeliverToSave.Attributes.Remove("data-busy");
+            }
             UpdateDeliverToAddButtonVisibility();
         }
 

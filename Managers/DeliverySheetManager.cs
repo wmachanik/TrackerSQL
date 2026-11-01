@@ -18,7 +18,7 @@ namespace TrackerSQL.Managers
             _invoiceTypesById = invoiceTypesById ?? new Dictionary<int, InvoiceType>();
         }
 
-        public DeliverySheetBuildResult Build(List<DeliverySheetOrderRow> rows, bool includeDeliveryPeople)
+        public DeliverySheetBuildResult Build(List<DeliverySheetOrderRow> rows, bool includeDeliveryPeople, bool showAreaAbbr = false)
         {
             var result = new DeliverySheetBuildResult();
 
@@ -36,7 +36,7 @@ namespace TrackerSQL.Managers
 
             foreach (var row in rows)
             {
-                var item = BuildDisplayItem(row, includeDeliveryPeople, deliveryPeople);
+                var item = BuildDisplayItem(row, includeDeliveryPeople, deliveryPeople, showAreaAbbr);
 
                 AddItemHtmlAndTotals(row, item, itemTotals);
 
@@ -66,7 +66,8 @@ namespace TrackerSQL.Managers
         private DeliverySheetDisplayItem BuildDisplayItem(
             DeliverySheetOrderRow row,
             bool includeDeliveryPeople,
-            SortedDictionary<string, string> deliveryPeople)
+            SortedDictionary<string, string> deliveryPeople,
+            bool showAreaAbbr)
         {
             var item = new DeliverySheetDisplayItem
             {
@@ -74,6 +75,7 @@ namespace TrackerSQL.Managers
                 ContactID = row.ContactID.ToString(),
                 ContactIDValue = row.ContactID,
                 ContactName = row.ContactName ?? string.Empty,
+                AreaCode = AreaPill.Code(row.AreaName, row.AreaShortCode),
                 Details = string.Format("{0:d}, {1}", row.RequiredByDate, row.DeliveryByAbbreviation),
                 InvoiceDone = row.InvoiceDone,
                 Done = row.Done,
@@ -115,6 +117,9 @@ namespace TrackerSQL.Managers
             {
                 item.FlagPillHtml = OrderFlagPill.Html(invoiceType);
             }
+
+            if (showAreaAbbr)
+                item.AreaPillHtml = AreaPill.Html(row.AreaName, row.AreaShortCode);
 
             // Done status is rendered as a status-badge next to the name in the page UI
             // (same pattern as RecurringOrders enabled/disabled) — do not prefix the name here.

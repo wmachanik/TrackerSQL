@@ -896,7 +896,8 @@
                                         </table>
                                         <div class="contact-deliver-to-actions button-row">
                                             <asp:Button ID="btnDeliverToSave" runat="server" Text="Save Address" CssClass="filter-panel-btn"
-                                                OnClick="btnDeliverToSave_Click" CausesValidation="false" />
+                                                OnClick="btnDeliverToSave_Click" CausesValidation="false"
+                                                OnClientClick="if(this.getAttribute('data-busy'))return false;this.setAttribute('data-busy','1');this.value='Saving';return true;" />
                                             <asp:Button ID="btnDeliverToCancel" runat="server" Text="Cancel" CssClass="filter-panel-btn"
                                                 OnClick="btnDeliverToCancel_Click" CausesValidation="false" />
                                         </div>

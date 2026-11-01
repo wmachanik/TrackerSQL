@@ -51,5 +51,16 @@ namespace TrackerSQL.Managers
                 return DisplayNames[OnBehalf];
             return DisplayNames.TryGetValue(storedCode.Trim(), out string text) ? text : storedCode.Trim();
         }
+
+        /// <summary>
+        /// Gift and on-behalf sites are not this contact's own machine, so Order Done
+        /// must not write usage or move Next Coffee / filter dates.
+        /// </summary>
+        public static bool SkipsUsagePrediction(string storedCode)
+        {
+            string kind = Normalize(storedCode);
+            return string.Equals(kind, Gift, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(kind, OnBehalf, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

@@ -39,6 +39,7 @@ namespace TrackerSQL.Pages
         protected Button btnFindDefault;
         protected ImageButton btnFind;
         protected ImageButton btnPrint;
+        protected CheckBox cbxShowAreaAbbr;
         protected HyperLink hlAddDeliveryItem;
         protected UpdatePanel upnlDeliveryItems;
         protected Table tblDeliveries;
@@ -131,6 +132,7 @@ namespace TrackerSQL.Pages
 
             if (!this.IsPostBack)
             {
+                BindShowAreaAbbrCheckbox();
                 // Enter key should load the selected delivery date (Go), not Find.
                 // Defaulting to Find caused date AutoPostBack / Go to be overwritten by a
                 // contact search whenever the Find box had leftover text.
@@ -277,7 +279,7 @@ namespace TrackerSQL.Pages
                 ClearPageStatus();
 
             var manager = CreateSheetManager();
-            var buildResult = manager.Build(queryResult.Items, !pPrintForm);
+            var buildResult = manager.Build(queryResult.Items, !pPrintForm, ShowSheetAreaAbbr);
 
             PrepareRouteExtras(requiredDate, pPrintForm, buildResult);
             LoadAwaitingDone(pPrintForm);
@@ -597,12 +599,15 @@ namespace TrackerSQL.Pages
                 if (pPrintForm)
                 {
                     // Flag pills are screen only — the printed sheet shows the name only.
-                    cellContact.Text = currentItem.Done ? "done · " + currentItem.ContactName : currentItem.ContactName;
+                    string printArea = ShowSheetAreaAbbr && !string.IsNullOrEmpty(currentItem.AreaCode)
+                        ? currentItem.AreaCode + " · "
+                        : string.Empty;
+                    cellContact.Text = (currentItem.Done ? "done · " : string.Empty) + printArea + currentItem.ContactName;
                 }
                 else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
                 {
                     cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done) + AwaitingDoneFlag(currentItem, orderDetailUrl)
-                        + currentItem.FlagPillHtml + currentItem.ContactName;
+                        + currentItem.FlagPillHtml + currentItem.AreaPillHtml + currentItem.ContactName;
                 }
                 else
                 {
@@ -610,6 +615,7 @@ namespace TrackerSQL.Pages
                         FormatDeliveryStatusBadge(currentItem.Done) +
                         AwaitingDoneFlag(currentItem, orderDetailUrl) +
                         currentItem.FlagPillHtml +
+                        currentItem.AreaPillHtml +
                         $"<a href='./ContactDetails.aspx?ID={currentItem.ContactID}'>{currentItem.ContactName}</a>";
 
                     cellContact.CssClass = "wordwrap";
@@ -1108,10 +1114,27 @@ namespace TrackerSQL.Pages
             var manager = CreateSheetManager();
 
             // Do not rebuild the By list from search hits (avoids a follow-up By postback wiping rows).
-            var buildResult = manager.Build(queryResult.Items, false);
+            var buildResult = manager.Build(queryResult.Items, false, ShowSheetAreaAbbr);
             LoadAwaitingDone(false);
 
             this.BuildDeliveryTable(buildResult, false, updateDeliveryByDropdown: false);
+        }
+
+        private bool ShowSheetAreaAbbr => UserPreferencesHelper.GetCurrentPreferences().ShowSheetAreaAbbr;
+
+        private void BindShowAreaAbbrCheckbox()
+        {
+            if (cbxShowAreaAbbr == null)
+                return;
+            cbxShowAreaAbbr.Checked = ShowSheetAreaAbbr;
+            cbxShowAreaAbbr.Visible = true;
+        }
+
+        protected void cbxShowAreaAbbr_CheckedChanged(object sender, EventArgs e)
+        {
+            UserPreferencesHelper.SaveCurrentShowSheetAreaAbbr(cbxShowAreaAbbr != null && cbxShowAreaAbbr.Checked);
+            bool printForm = Request.QueryString["Print"] != null && Request.QueryString["Print"].ToString() == "Y";
+            PageInitialize(printForm);
         }
 
         /// <summary>Sheet manager with the order flag lookup (flag icons show their name as a tooltip).</summary>

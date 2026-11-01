@@ -213,10 +213,22 @@ namespace TrackerSQL.Managers
                 latest.UsageDate = _usageLinesRepository.GetInstallDate(contactId);
 
             int daysToAdd = !perDayCalc
-                ? (int)Math.Round(latest.LastQty * itemAverage / dailyAverage, 0)
+                ? (int)Math.Round(latest.LastQty * itemAverage / Math.Max(dailyAverage, 0.0001), 0)
                 : (int)Math.Round(latest.LastQty * 100.0 / itemAverage, 0);
 
-            DateTime nextDate = AddHolidayExtension(contactId, latest.UsageDate.AddDays(daysToAdd), serviceTypeId);
+            DateTime nextDate;
+            if (!perDayCalc)
+            {
+                DateTime cadence = NextDateFromDeliveryCadence(contactId, serviceTypeId, latest);
+                nextDate = cadence != DateTime.MinValue
+                    ? AddHolidayExtension(contactId, cadence, serviceTypeId)
+                    : AddHolidayExtension(contactId, latest.UsageDate.AddDays(daysToAdd), serviceTypeId);
+            }
+            else
+            {
+                nextDate = AddHolidayExtension(contactId, latest.UsageDate.AddDays(daysToAdd), serviceTypeId);
+            }
+
             ApplyField(target, tracked.UsageDateFieldName, nextDate, tracked.UsageAveFieldName, itemAverage);
         }
 
@@ -248,6 +260,42 @@ namespace TrackerSQL.Managers
                 target.DescaleAveCount = average;
             else if (string.Equals(aveField, "ServiceAveCount", StringComparison.OrdinalIgnoreCase))
                 target.ServiceAveCount = average;
+        }
+
+        /// <summary>
+        /// Next date from how often this item is actually delivered (filters, clean, descale).
+        /// Cup-based days fail when daily coffee use is tiny (contact 466: filters every 2–3 months, Next Filter 2027).
+        /// Ignores gaps under 14 days (split deliveries).
+        /// </summary>
+        private DateTime NextDateFromDeliveryCadence(int contactId, int serviceTypeId, LineUsageData latest)
+        {
+            var lines = _usageLinesRepository.GetLast10UsageLines(contactId, serviceTypeId);
+            var dated = lines
+                .Where(l => l.UsageDate.HasValue && l.UsageDate.Value > DateTime.MinValue)
+                .OrderBy(l => l.UsageDate.Value.Date)
+                .ToList();
+            if (dated.Count < 2)
+                return DateTime.MinValue;
+
+            var gaps = new List<int>();
+            for (int i = 1; i < dated.Count; i++)
+            {
+                int days = (dated[i].UsageDate.Value.Date - dated[i - 1].UsageDate.Value.Date).Days;
+                if (days >= 14)
+                    gaps.Add(days);
+            }
+
+            if (gaps.Count == 0)
+                return DateTime.MinValue;
+
+            int averageDays = (int)Math.Round(gaps.Average(), 0);
+            if (averageDays < 14)
+                return DateTime.MinValue;
+
+            DateTime last = latest.UsageDate > DateTime.MinValue
+                ? latest.UsageDate.Date
+                : dated[dated.Count - 1].UsageDate.Value.Date;
+            return last.AddDays(averageDays);
         }
 
         private LineUsageData GetLatestUsageData(int contactId, int serviceTypeId)

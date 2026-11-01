@@ -63,6 +63,7 @@
                 <span><i class="driver-tracking-dot orange"></i>within <asp:Literal ID="litStale" runat="server" /> minutes</span>
                 <span><i class="driver-tracking-dot red"></i>older</span>
                 <span><i class="driver-tracking-dot grey"></i>no position on this day</span>
+                <span><i class="driver-tracking-dot orange"></i>stop with no GPS</span>
             </p>
             <p class="sys-prefs-phase-note">
                 Click a driver to see the stops left, numbered in route order, with a return leg to the depot. Arrival times use the
@@ -272,11 +273,13 @@
                 if (d.stops.length) {
                     html += '<table class="TblWhite small"><thead><tr><th>#</th><th>Stop</th><th>Area</th><th>ETA</th></tr></thead><tbody>'
                         + d.stops.map(function (s) {
-                            var rowCls = s.done ? 'done' : (s.isDepot ? 'depot' : '');
+                            var noGps = !s.isDepot && (s.lat == null || s.lng == null);
+                            var rowCls = s.done ? 'done' : (s.isDepot ? 'depot' : (noGps ? 'nopoint' : ''));
+                            var areaCode = s.area || '';
                             return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '><td>' + (s.isDepot ? '↩' : s.seq) + '</td><td>' + esc(s.company)
-                                + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td title="' + esc(s.areaName || s.area || '') + '">'
-                                + esc(s.area || '') + '</td><td>'
-                                + (s.done ? (s.notAtClient ? esc(s.notAtClient) : 'done') : esc(s.eta || '-')) + '</td></tr>';
+                                + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td title="' + esc(s.areaName || areaCode) + '">'
+                                + esc(areaCode) + '</td><td>'
+                                + (s.done ? (s.notAtClient ? esc(s.notAtClient) : 'done') : (noGps ? 'no GPS' : esc(s.eta || '-'))) + '</td></tr>';
                         }).join('') + '</tbody></table>';
                 }
                 el.innerHTML = html;
@@ -284,7 +287,7 @@
 
             function stopIcon(s) {
                 var label = s.isDepot ? 'D' : s.seq;
-                var extra = s.isDepot ? ' depot' : (s.done ? ' done' : '');
+                var extra = s.isDepot ? ' depot' : (s.done ? ' done' : ((s.lat == null || s.lng == null) ? ' nopoint' : ''));
                 return L.divIcon({ className: 'driver-tracking-stop-icon' + extra, html: '<span>' + label + '</span>', iconSize: [26, 26], iconAnchor: [13, 13] });
             }
 

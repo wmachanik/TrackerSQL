@@ -110,6 +110,12 @@ namespace TrackerSQL.Models
         /// <summary>Order flag pill HTML (empty when the flag has no pill, e.g. Standard).</summary>
         public string FlagPillHtml { get; set; }
 
+        /// <summary>Area abbreviation pill HTML (empty when the user option is off or there is no area).</summary>
+        public string AreaPillHtml { get; set; }
+
+        /// <summary>Area short code for print (empty when none).</summary>
+        public string AreaCode { get; set; }
+
         public int? DeliveryById { get; set; }
 
         public string DeliveryBy { get; set; }
@@ -123,6 +129,8 @@ namespace TrackerSQL.Models
             Items = string.Empty;
             Notes = string.Empty;
             FlagPillHtml = string.Empty;
+            AreaPillHtml = string.Empty;
+            AreaCode = string.Empty;
         }
     }
 

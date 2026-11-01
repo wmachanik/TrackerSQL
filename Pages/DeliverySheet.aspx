@@ -24,6 +24,7 @@
             <asp:AsyncPostBackTrigger ControlID="btnFind" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnFindDefault" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="ddlDeliveryBy" EventName="SelectedIndexChanged" />
+            <asp:AsyncPostBackTrigger ControlID="cbxShowAreaAbbr" EventName="CheckedChanged" />
             <asp:PostBackTrigger ControlID="btnPrint" />
             <asp:PostBackTrigger ControlID="btnRefresh" />
             <asp:PostBackTrigger ControlID="btnBack" />
@@ -104,6 +105,9 @@
                                     </span>
                                 </span>
                             </asp:Panel>
+                            <asp:CheckBox ID="cbxShowAreaAbbr" runat="server" CssClass="small"
+                                Text="Show Area Codes" ToolTip="Show each delivery's area abbreviation (Lookups → Areas code)"
+                                AutoPostBack="true" OnCheckedChanged="cbxShowAreaAbbr_CheckedChanged" />
                             <span class="toolbar-icon-row">
                                 <span class="image-button hideWhenPrinting" title="Print sheet (Alt+Shift+P)">
                                     <asp:ImageButton ID="btnPrint" runat="server"

@@ -85,6 +85,8 @@ namespace TrackerSQL.Administration
                     ddlTimeZone.SelectedIndex = 0;
 
                 cbxDriverTracking.Checked = prefs.DriverTracking;
+                if (cbxShowSheetAreaAbbr != null)
+                    cbxShowSheetAreaAbbr.Checked = prefs.ShowSheetAreaAbbr;
             }
             catch (Exception ex)
             {
@@ -139,6 +141,8 @@ namespace TrackerSQL.Administration
                 var prefs = TrackerSQL.Classes.UserPreferencesHelper.GetCurrentPreferencesForUser(userId);
                 prefs.TimeZoneId = ddlTimeZone.SelectedValue;
                 prefs.DriverTracking = cbxDriverTracking.Checked;
+                if (cbxShowSheetAreaAbbr != null)
+                    prefs.ShowSheetAreaAbbr = cbxShowSheetAreaAbbr.Checked;
 
                 TrackerSQL.Classes.UserPreferencesHelper.SaveOrUpdatePreferences(prefs); 
                 if (string.Equals(username, User?.Identity?.Name, StringComparison.OrdinalIgnoreCase))

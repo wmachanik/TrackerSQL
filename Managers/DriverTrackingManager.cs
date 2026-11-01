@@ -311,7 +311,9 @@ namespace TrackerSQL.Managers
                         Seq = g.Min(o => o.Seq),
                         ContactId = g.First().ContactId,
                         Company = g.First().Company,
-                        Area = AreaPill.Code(g.First().Area, g.First().AreaCode),
+                        Area = string.IsNullOrWhiteSpace(g.First().AreaCode)
+                            ? AreaPill.Code(g.First().Area, null)
+                            : g.First().AreaCode.Trim(),
                         AreaName = g.First().Area,
                         Orders = g.Count(),
                         Done = g.All(o => o.Done || o.Proof != null),

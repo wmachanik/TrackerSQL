@@ -250,28 +250,40 @@ namespace TrackerSQL.Managers
                 }
             }
 
-            int updatedCupCount = AddItemsToUsageTables(customerId, tempHeaderId, pIsActual, pCupCount, pStock, deliveryDate);
-
-            if (!_contactsUsageRepository.UpdateLastCupCount(customerId, updatedCupCount))
+            bool skipPrediction = OrderIsGiftOrOnBehalf(orderId);
+            int updatedCupCount = existingLastCupCount;
+            if (!skipPrediction)
             {
-                result.Success = false;
-                result.Message =
-                    "Could not save the cup count for this contact (no usage/prediction record could be created). " +
-                    "Try again, or enter a cup count and retry.";
+                updatedCupCount = AddItemsToUsageTables(customerId, tempHeaderId, pIsActual, pCupCount, pStock, deliveryDate);
+
+                if (!_contactsUsageRepository.UpdateLastCupCount(customerId, updatedCupCount))
+                {
+                    result.Success = false;
+                    result.Message =
+                        "Could not save the cup count for this contact (no usage/prediction record could be created). " +
+                        "Try again, or enter a cup count and retry.";
+                    AppLogger.WriteLog(
+                        SystemConstants.LogTypes.Orders,
+                        $"OrderDone: UpdateLastCupCount failed for ContactID={customerId}, cupCount={updatedCupCount}");
+                    return result;
+                }
+
+                RecordSystemCupCountTotal(orderId, customerId, updatedCupCount);
+                UpdatePredictions(customerId, updatedCupCount);
+            }
+            else
+            {
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Orders,
-                    $"OrderDone: UpdateLastCupCount failed for ContactID={customerId}, cupCount={updatedCupCount}");
-                return result;
+                    $"OrderDone: skipped usage/prediction for ContactID={customerId} (gift or on-behalf address)");
             }
 
-            RecordSystemCupCountTotal(orderId, customerId, updatedCupCount);
-
-            UpdatePredictions(customerId, updatedCupCount);
             if (orderId > 0)
                 _ordersRepository.MarkDoneForOrderId(orderId);
             else
                 _ordersRepository.MarkDoneForTempOrderHeader(tempHeaderId);
-            _contactsRepository.ResetReminderCount(customerId, hasCoffee);
+            if (!skipPrediction)
+                _contactsRepository.ResetReminderCount(customerId, hasCoffee);
 
             string companyName = _contactsRepository.GetContactNameById(customerId) ?? string.Empty;
             string orderPart = orderId > 0 ? $"Order {orderId}" : $"TempOrder {tempHeaderId}";
@@ -1083,6 +1095,29 @@ namespace TrackerSQL.Managers
             catch
             {
                 return 0;
+            }
+        }
+
+        private bool OrderIsGiftOrOnBehalf(int orderId)
+        {
+            if (orderId <= 0 || !OrdersRepository.HasDeliverToAddressIdColumn())
+                return false;
+
+            try
+            {
+                OrderHeaderData header = _ordersRepository.GetOrderHeaderByOrderId(orderId);
+                int? deliverToId = header?.DeliverToAddressID;
+                if (!deliverToId.HasValue || deliverToId.Value <= 0)
+                    return false;
+
+                ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(deliverToId.Value);
+                return addr != null && AlternativeAddressKind.SkipsUsagePrediction(addr.AddressKind);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Orders,
+                    "OrderDone: gift/on-behalf check failed: " + ex.Message);
+                return false;
             }
         }
 

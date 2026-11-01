@@ -1,7 +1,7 @@
 # Mobile REST API and Quaffee Driver App
 
 **Released:** 3.0.3.0 (live 2026-09-29)  
-**Last Updated:** 2026-10-30
+**Last Updated:** 2026-11-01
 
 Tracker exposes a JSON API at `/api/v1` for the **Quaffee Driver** app (delivery drivers: delivery sheet, proof of
 delivery captured offline, repairs, contacts). The app lives in a separate folder, `C:\SRC\ASP.net\TrackerDriver`

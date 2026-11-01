@@ -2773,7 +2773,7 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                if (e.CommandName.Equals("Update") || e.CommandName.Equals("AddAreaDays"))
+                if (e.CommandName.Equals("Update") || e.CommandName.Equals("AddAreaDays") || e.CommandName.Equals("AddItem"))
                 {
                     GridViewRow gridViewRow = e.CommandName.Equals("Update") ? this.gvAreaDays.Rows[this.gvAreaDays.EditIndex] : this.gvAreaDays.FooterRow;
                     DropDownList control1 = (DropDownList)gridViewRow.FindControl("ddlPreperationDoW");

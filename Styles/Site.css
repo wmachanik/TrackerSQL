@@ -11464,7 +11464,9 @@ a.dlv-await-flag.is-pending { background: #d68910; }
 }
 .driver-tracking-stop-icon.done span { background: #9a9a9a; }
 .driver-tracking-stop-icon.depot span { background: #4e664d; }
+.driver-tracking-stop-icon.nopoint span { background: #e8902a; }
 .driver-tracking-page tr.depot td { font-style: italic; }
+.driver-tracking-stops tr.nopoint td { color: #c46a12; font-weight: 600; }
 .driver-tracking-depot-icon span {
     display: block;
     padding: 1px 4px;

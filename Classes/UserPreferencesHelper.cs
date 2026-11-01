@@ -94,6 +94,9 @@ namespace TrackerSQL.Classes
 IF COL_LENGTH(N'dbo.UserPreferences', N'ShowDeliveryRouteEta') IS NULL
     ALTER TABLE dbo.UserPreferences ADD ShowDeliveryRouteEta BIT NOT NULL
         CONSTRAINT DF_UserPreferences_ShowRouteEta DEFAULT (0);
+IF COL_LENGTH(N'dbo.UserPreferences', N'ShowSheetAreaAbbr') IS NULL
+    ALTER TABLE dbo.UserPreferences ADD ShowSheetAreaAbbr BIT NOT NULL
+        CONSTRAINT DF_UserPreferences_ShowSheetAreaAbbr DEFAULT (0);
 IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
     ALTER TABLE dbo.UserPreferences ADD DriverTracking BIT NOT NULL
         CONSTRAINT DF_UserPreferences_DriverTracking DEFAULT (0);";
@@ -173,7 +176,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
         {
             string connString = GetConnectionString();
             EnsureUserPreferencesTableExists();
-            string query = "SELECT UserId, TimeZoneId, Language, ShowDeliveryRouteEta, DriverTracking FROM UserPreferences WHERE UserId = @UserId";
+            string query = "SELECT UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking FROM UserPreferences WHERE UserId = @UserId";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -193,6 +196,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                         TimeZoneId = reader.GetString(reader.GetOrdinal("TimeZoneId")),
                         Language = reader.GetString(reader.GetOrdinal("Language")),
                         ShowDeliveryRouteEta = reader.GetBoolean(reader.GetOrdinal("ShowDeliveryRouteEta")),
+                        ShowSheetAreaAbbr = reader.GetBoolean(reader.GetOrdinal("ShowSheetAreaAbbr")),
                         DriverTracking = reader.GetBoolean(reader.GetOrdinal("DriverTracking")),
                         LoadedOn = DateTime.UtcNow
                     };
@@ -203,8 +207,8 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
         public static void SavePreferencesToDb(UserPreferences prefs)
         {
             string connString = GetConnectionString();
-            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, ShowDeliveryRouteEta, DriverTracking, CreatedOn, UpdatedOn)
-                     VALUES (@UserId, @TimeZoneId, @Language, @ShowDeliveryRouteEta, @DriverTracking, @CreatedOn, @UpdatedOn)";
+            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking, CreatedOn, UpdatedOn)
+                     VALUES (@UserId, @TimeZoneId, @Language, @ShowDeliveryRouteEta, @ShowSheetAreaAbbr, @DriverTracking, @CreatedOn, @UpdatedOn)";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -213,6 +217,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                 cmd.Parameters.AddWithValue("@TimeZoneId", prefs.TimeZoneId ?? "South Africa Standard Time");
                 cmd.Parameters.AddWithValue("@Language", prefs.Language ?? "en-ZA");
                 cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
+                cmd.Parameters.AddWithValue("@ShowSheetAreaAbbr", prefs.ShowSheetAreaAbbr);
                 cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
                 cmd.Parameters.AddWithValue("@CreatedOn", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
@@ -229,6 +234,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                      SET TimeZoneId = @TimeZoneId,
                          Language = @Language,
                          ShowDeliveryRouteEta = @ShowDeliveryRouteEta,
+                         ShowSheetAreaAbbr = @ShowSheetAreaAbbr,
                          DriverTracking = @DriverTracking,
                          UpdatedOn = @UpdatedOn
                      WHERE UserId = @UserId";
@@ -240,12 +246,22 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                 cmd.Parameters.AddWithValue("@TimeZoneId", prefs.TimeZoneId ?? "South Africa Standard Time");
                 cmd.Parameters.AddWithValue("@Language", prefs.Language ?? "en-ZA");
                 cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
+                cmd.Parameters.AddWithValue("@ShowSheetAreaAbbr", prefs.ShowSheetAreaAbbr);
                 cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
 
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public static void SaveCurrentShowSheetAreaAbbr(bool show)
+        {
+            UserPreferences prefs = GetCurrentPreferences();
+            prefs.ShowSheetAreaAbbr = show;
+            SaveOrUpdatePreferences(prefs);
+            if (HttpContext.Current?.Session != null)
+                HttpContext.Current.Session[SessionKey] = prefs;
         }
 
         public static void SaveOrUpdatePreferences(UserPreferences prefs)

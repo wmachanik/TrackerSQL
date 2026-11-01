@@ -51,6 +51,9 @@
                         <td>
                             <asp:CheckBox ID="cbxDriverTracking" runat="server" Text="May see driver tracking"
                                 ToolTip="Lets this user open Deliveries → Driver tracking (where the drivers are now). Administrators always can; off by default for everyone else." />
+                            <br />
+                            <asp:CheckBox ID="cbxShowSheetAreaAbbr" runat="server" Text="Show area codes on the delivery sheet"
+                                ToolTip="Shows each delivery's area abbreviation (Lookups → Areas) next to the client name." />
                         </td>
                     </tr>
                     <tr>

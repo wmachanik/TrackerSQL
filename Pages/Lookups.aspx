@@ -975,7 +975,7 @@
                                                         ImageUrl="~/images/imgButtons/Trashcan.gif" />
                                                 </ItemTemplate>
                                                 <FooterTemplate>
-                                                    <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="AddItem"
+                                                    <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="AddAreaDays"
                                                         ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
                                                 </FooterTemplate>
                                             </asp:TemplateField>

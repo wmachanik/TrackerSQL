@@ -32,6 +32,8 @@ namespace TrackerSQL.Models
         public string SourceAddress { get; set; }
         public string LocationStatus { get; set; }
         public string Source { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public DateTime? LastUsedDate { get; set; }
         public DateTime? LocationUpdatedDate { get; set; }
         public string LocationUpdatedBy { get; set; }
         public int SortOrder { get; set; }

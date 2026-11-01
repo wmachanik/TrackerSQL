@@ -604,10 +604,12 @@ namespace TrackerSQL.Pages
                         : string.Empty;
                     cellContact.Text = (currentItem.Done ? "done · " : string.Empty) + printArea + currentItem.ContactName;
                 }
-                else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix)
+                else if (currentItem.ContactID == SystemConstants.CustomerConstants.SundryCustomerNamePrefix
+                    || currentItem.ContactIDValue == SystemConstants.CustomerConstants.SundryCustomerID)
                 {
                     cellContact.Text = FormatDeliveryStatusBadge(currentItem.Done) + AwaitingDoneFlag(currentItem, orderDetailUrl)
-                        + currentItem.FlagPillHtml + currentItem.AreaPillHtml + currentItem.ContactName;
+                        + currentItem.FlagPillHtml + currentItem.AreaPillHtml
+                        + $"<a href='{orderDetailUrl}' title='Open this walk-in order to change the area'>{currentItem.ContactName}</a>";
                 }
                 else
                 {

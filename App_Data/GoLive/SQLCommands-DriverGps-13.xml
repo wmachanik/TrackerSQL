@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Alternative address Created / Last used (ZZName casual sites and cleanup).
+  Idempotent. Runs at application start via OrderFlagsSchemaInstaller.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'CreatedDate') IS NULL
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD CreatedDate DATETIME NOT NULL CONSTRAINT DF_ContactDeliverToAddress_CreatedDate DEFAULT (GETDATE());
+      IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'LastUsedDate') IS NULL
+          ALTER TABLE dbo.ContactDeliverToAddressTbl ADD LastUsedDate DATETIME NULL;
+    ]]>
+  </command>
+</root>

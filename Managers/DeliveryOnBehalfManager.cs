@@ -222,18 +222,7 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>True when the order UI should offer main vs deliver-to (independent of OrdersTbl column — that is checked on save).</summary>
-        public static bool ContactNeedsDeliverToChoice(int contactId)
-        {
-            if (contactId <= 0
-                || !ContactsRepository.HasDeliveryOnBehalfColumn()
-                || !ContactDeliverToAddressRepository.TableSeen())
-                return false;
-
-            Contact contact = new ContactsRepository().GetById(contactId);
-            if (contact?.DeliveryOnBehalf != true)
-                return false;
-
-            return new ContactDeliverToAddressRepository().ListForContact(contactId, enabledOnly: true).Count > 0;
-        }
+        public static bool ContactNeedsDeliverToChoice(int contactId) =>
+            ZzNameDeliverTo.ShowChoice(contactId);
     }
 }

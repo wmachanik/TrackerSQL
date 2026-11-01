@@ -10,6 +10,7 @@ namespace TrackerSQL.Repositories
     {
         private static bool? _tableSeen;
         private static bool? _addressKindSeen;
+        private static bool? _useDatesSeen;
 
         public static bool HasAddressKindColumn()
         {
@@ -36,6 +37,30 @@ SELECT CASE WHEN COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'AddressKind') I
         }
 
         private static bool? _phoneColumnsSeen;
+
+        public static bool HasUseDatesColumn()
+        {
+            if (_useDatesSeen.HasValue)
+                return _useDatesSeen.Value;
+            if (!TableSeen())
+            {
+                _useDatesSeen = false;
+                return false;
+            }
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    _useDatesSeen = db.ExecuteScalar<int>(@"
+SELECT CASE WHEN COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'LastUsedDate') IS NULL THEN 0 ELSE 1 END") == 1;
+                }
+            }
+            catch
+            {
+                _useDatesSeen = false;
+            }
+            return _useDatesSeen.Value;
+        }
 
         public static bool HasPhoneColumns()
         {
@@ -89,12 +114,15 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 return new List<ContactDeliverToAddress>();
 
             string kindCol = HasAddressKindColumn() ? ", d.AddressKind" : ", CAST(NULL AS NVARCHAR(20)) AS AddressKind";
+            string useCols = HasUseDatesColumn()
+                ? ", d.CreatedDate, d.LastUsedDate"
+                : ", CAST(NULL AS DATETIME) AS CreatedDate, CAST(NULL AS DATETIME) AS LastUsedDate";
             string sql = @"
                 SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson" + kindCol + @",
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
-                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + @",
+                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + useCols + @",
                        a.AreaName,
                        COALESCE(p.Abbreviation, p.Person) AS DeliveryByDisplay
                 FROM dbo.ContactDeliverToAddressTbl d
@@ -122,12 +150,15 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 return null;
 
             string kindCol = HasAddressKindColumn() ? ", d.AddressKind" : ", CAST(NULL AS NVARCHAR(20)) AS AddressKind";
+            string useCols = HasUseDatesColumn()
+                ? ", d.CreatedDate, d.LastUsedDate"
+                : ", CAST(NULL AS DATETIME) AS CreatedDate, CAST(NULL AS DATETIME) AS LastUsedDate";
             string sql = @"
                 SELECT d.DeliverToAddressID, d.ContactID, d.Label, d.DeliverToPerson" + kindCol + @",
                        d.Address1, d.Address2, d.Address3, d.AreaID, d.StateOrProvince, d.PostalCode,
                        d.Latitude, d.Longitude, d.Geohash, d.GeocodedAddress, d.SourceAddress,
                        d.LocationStatus, d.Source, d.LocationUpdatedDate, d.LocationUpdatedBy,
-                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + @",
+                       d.SortOrder, d.Enabled, d.ToBeDeliveredByID" + PhoneSelectCols + useCols + @",
                        a.AreaName,
                        COALESCE(p.Abbreviation, p.Person) AS DeliveryByDisplay
                 FROM dbo.ContactDeliverToAddressTbl d
@@ -304,7 +335,11 @@ SELECT CASE WHEN OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NULL THEN
                 Enabled = Convert.ToBoolean(r["Enabled"]),
                 ToBeDeliveredByID = DbMapper.HasColumn(r, "ToBeDeliveredByID") ? NInt(r, "ToBeDeliveredByID") : null,
                 AreaName = Str(r, "AreaName"),
-                DeliveryByDisplay = DbMapper.HasColumn(r, "DeliveryByDisplay") ? Str(r, "DeliveryByDisplay") : null
+                DeliveryByDisplay = DbMapper.HasColumn(r, "DeliveryByDisplay") ? Str(r, "DeliveryByDisplay") : null,
+                CreatedDate = DbMapper.HasColumn(r, "CreatedDate") && r["CreatedDate"] != DBNull.Value
+                    ? (DateTime?)Convert.ToDateTime(r["CreatedDate"]) : null,
+                LastUsedDate = DbMapper.HasColumn(r, "LastUsedDate") && r["LastUsedDate"] != DBNull.Value
+                    ? (DateTime?)Convert.ToDateTime(r["LastUsedDate"]) : null
             };
         }
 

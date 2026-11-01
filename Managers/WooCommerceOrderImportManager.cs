@@ -2348,7 +2348,10 @@ namespace TrackerSQL.Managers
                 PurchaseOrder = preview.WooOrderNumber,
                 Notes = BuildOrderNotes(order, preview, ship,
                     existingOrderId.HasValue && existingOrderId.Value > 0,
-                    contactCreated)
+                    contactCreated),
+                WalkInAreaID = preview.UseZzName && preview.ResolvedAreaId.HasValue && preview.ResolvedAreaId.Value > 0
+                    ? preview.ResolvedAreaId
+                    : (int?)null
             };
 
             string conflictText = preview.Conflicts != null && preview.Conflicts.Count > 0
@@ -2360,6 +2363,40 @@ namespace TrackerSQL.Managers
                 if (header.Notes.Length > 0)
                     header.Notes += " | ";
                 header.Notes += "Conflict: " + conflictText;
+            }
+            if (preview.UseZzName
+                && !IsWooCollectShippingMethod(preview.ShippingMethod, preview.DeliveryPersonId))
+            {
+                string person = FirstNonEmpty(preview.ContactDisplayName, GetWooContactName(order, ship), "Guest");
+                ContactDeliverToAddress match = ZzNameDeliverTo.FindMatch(
+                    (int)SystemConstants.CustomerConstants.SundryCustomerID, person, ship.FormattedAddress);
+                if (match == null)
+                {
+                    var alt = new ContactDeliverToAddress
+                    {
+                        ContactID = (int)SystemConstants.CustomerConstants.SundryCustomerID,
+                        Label = person,
+                        DeliverToPerson = person,
+                        AddressKind = AlternativeAddressKind.Sundry,
+                        Address1 = NullIfEmpty(ship.Address1),
+                        Address2 = NullIfEmpty(ship.Address2),
+                        Address3 = NullIfEmpty(ship.City),
+                        PostalCode = NullIfEmpty(ship.Postcode),
+                        StateOrProvince = NullIfEmpty(ship.State),
+                        AreaID = preview.ResolvedAreaId,
+                        ToBeDeliveredByID = preview.DeliveryPersonId,
+                        CellNumber = NullIfEmpty(ship.Phone),
+                        Enabled = true
+                    };
+                    int altId = ZzNameDeliverTo.Save(alt, updatedBy);
+                    if (altId > 0)
+                        header.DeliverToAddressID = altId;
+                }
+                else
+                    header.DeliverToAddressID = match.DeliverToAddressID;
+
+                if (header.DeliverToAddressID.GetValueOrDefault() > 0)
+                    ZzNameDeliverTo.TouchLastUsed(header.DeliverToAddressID.Value);
             }
 
             int orderId;
@@ -2464,7 +2501,65 @@ namespace TrackerSQL.Managers
                 + (packagingLogLines.Count > 0 ? "; " + string.Join("; ", packagingLogLines) : string.Empty),
                 updatedBy);
 
+            bool isUpdate = existingOrderId.HasValue && existingOrderId.Value > 0;
+            LogWooImportToOrdersLog(orderId, contactId, order, preview, isUpdate, updatedBy);
+
             return orderId;
+        }
+
+        /// <summary>
+        /// orders.log line for a Woo import create/update. AppLogger prefixes the user.
+        /// </summary>
+        private void LogWooImportToOrdersLog(
+            int orderId,
+            long contactId,
+            WooOrderDto order,
+            WooOrderImportPreviewRow preview,
+            bool isUpdate,
+            string updatedBy)
+        {
+            try
+            {
+                string company = contactId > 0
+                    ? (_contactsRepo.GetContactNameById((int)contactId) ?? string.Empty)
+                    : string.Empty;
+                string contactPart = contactId > 0
+                    ? (string.IsNullOrWhiteSpace(company)
+                        ? "Contact=" + contactId.ToString(CultureInfo.InvariantCulture)
+                        : "Contact=" + contactId.ToString(CultureInfo.InvariantCulture) + " (" + company + ")")
+                    : "Contact=(none)";
+
+                string wooNumber = preview != null ? preview.WooOrderNumber : null;
+                if (string.IsNullOrWhiteSpace(wooNumber) && order != null)
+                    wooNumber = order.Number;
+                if (string.IsNullOrWhiteSpace(wooNumber) && order != null && order.Id > 0)
+                    wooNumber = order.Id.ToString(CultureInfo.InvariantCulture);
+                if (string.IsNullOrWhiteSpace(wooNumber))
+                    wooNumber = "(unknown)";
+
+                long wooId = 0;
+                if (order != null && order.Id > 0)
+                    wooId = order.Id;
+                else if (preview != null && preview.WooOrderId > 0)
+                    wooId = preview.WooOrderId;
+
+                string action = isUpdate ? "Updated from Woo import" : "Added by Woo import";
+                string details = "Woo order #" + wooNumber.Trim();
+                if (wooId > 0)
+                    details += " (Woo id " + wooId.ToString(CultureInfo.InvariantCulture) + ")";
+
+                AppLogger.WriteLog(
+                    SystemConstants.LogTypes.Orders,
+                    "Order " + orderId.ToString(CultureInfo.InvariantCulture)
+                    + " | " + contactPart
+                    + " | " + action
+                    + " | " + details,
+                    updatedBy);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog("woo", "orders.log Woo import line failed: " + ex.Message, updatedBy);
+            }
         }
 
         private static bool LineGoesToOrderNotes(WooOrderLinePreview line)
@@ -3251,6 +3346,11 @@ ORDER BY CASE WHEN WooVariationId = @V THEN 0 ELSE 1 END";
                     return v.Trim();
             }
             return null;
+        }
+
+        private static string NullIfEmpty(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
         private static string NormalizePostcode(string postcode)

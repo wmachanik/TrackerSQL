@@ -133,6 +133,11 @@
                             <td>
                                 <asp:DropDownList ID="ddlDeliverToOrder" runat="server" AutoPostBack="true"
                                     OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged" />
+                                <asp:ImageButton ID="btnEditDeliverToOrder" runat="server" Visible="false"
+                                    ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit address"
+                                    ToolTip="Edit this alternative address"
+                                    OnClick="btnEditDeliverToOrder_Click" CausesValidation="false"
+                                    CssClass="image-button" />
                             </td>
                         </tr>
                         <tr>
@@ -234,6 +239,13 @@
                                     ToolTip="For ZZName / sundry orders, enter notes to enable New Item" />
                             </td>
                         </tr>
+                        <tr id="trWalkInArea" runat="server" visible="false">
+                            <td>Area:</td>
+                            <td>
+                                <asp:DropDownList ID="ddlWalkInArea" runat="server"
+                                    ToolTip="Delivery area for this walk-in order only (not the shared ZZName contact)" />
+                            </td>
+                        </tr>
                     </table>
                     <asp:HiddenField ID="hdnHeaderDirty" runat="server" Value="0" />
                     <div class="order-detail-toolbar button-row">
@@ -274,6 +286,81 @@
                     <asp:AsyncPostBackTrigger ControlID="btnWooLinkConfirm" EventName="Click" />
                     <asp:AsyncPostBackTrigger ControlID="btnWooLinkCancel" EventName="Click" />
                 </Triggers>
+            </asp:UpdatePanel>
+            <asp:UpdatePanel ID="upnlDeliverToEditor" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                <ContentTemplate>
+                    <asp:HiddenField ID="hdnDeliverToEditorId" runat="server" Value="0" />
+                    <asp:Panel ID="pnlDeliverToEditor" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                        data-tracker-unsaved-ignore="1">
+                        <div class="confirm-modal confirm-modal-wide alt-address-modal">
+                            <h2><asp:Literal ID="litDeliverToEditorTitle" runat="server" Text="Alternative address" /></h2>
+                            <p class="alt-address-hint">Person name is the label and who signs. GPS is stored on this address, not on ZZName. Save once, then Check to place the pin.</p>
+                            <table class="TblCoffee" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td><asp:Label runat="server" Text="Person" AssociatedControlID="tbxOdDeliverToPerson" /></td>
+                                    <td colspan="3"><asp:TextBox ID="tbxOdDeliverToPerson" runat="server" MaxLength="80" Width="100%" /></td>
+                                </tr>
+                                <tr>
+                                    <td><asp:Label runat="server" Text="Mobile" AssociatedControlID="tbxOdDeliverToCell" /></td>
+                                    <td colspan="3"><asp:TextBox ID="tbxOdDeliverToCell" runat="server" MaxLength="30" Width="16em" /></td>
+                                </tr>
+                                <tr>
+                                    <td><asp:Label runat="server" Text="Address" AssociatedControlID="tbxOdDeliverToAddr1" /></td>
+                                    <td colspan="3" class="alt-address-lines">
+                                        <asp:TextBox ID="tbxOdDeliverToAddr1" runat="server" MaxLength="100" />
+                                        <asp:TextBox ID="tbxOdDeliverToAddr2" runat="server" MaxLength="100" />
+                                        <asp:TextBox ID="tbxOdDeliverToAddr3" runat="server" MaxLength="100" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><asp:Label runat="server" Text="Area" AssociatedControlID="ddlOdDeliverToArea" /></td>
+                                    <td><asp:DropDownList ID="ddlOdDeliverToArea" runat="server" Width="100%" /></td>
+                                    <td><asp:Label runat="server" Text="Postal" AssociatedControlID="tbxOdDeliverToPostal" /></td>
+                                    <td><asp:TextBox ID="tbxOdDeliverToPostal" runat="server" MaxLength="12" Width="8em" /></td>
+                                </tr>
+                                <tr>
+                                    <td><asp:Label runat="server" Text="Delivered by" AssociatedControlID="ddlOdDeliverToBy" /></td>
+                                    <td colspan="3"><asp:DropDownList ID="ddlOdDeliverToBy" runat="server" Width="16em" /></td>
+                                </tr>
+                                <tr>
+                                    <td><asp:Literal ID="litOdDeliverToGpsCaption" runat="server" Text="GPS" /></td>
+                                    <td colspan="3">
+                                        <asp:Label ID="lblOdDeliverToGps" runat="server" CssClass="contact-gps-value" />
+                                        <asp:Button ID="btnOdDeliverToGpsCheck" runat="server" Text="Check" Visible="false"
+                                            CssClass="filter-panel-btn contact-postal-suggest" CausesValidation="false"
+                                            UseSubmitBehavior="false"
+                                            ToolTip="Open the map: confirm the pin, drag it, or search for the address" />
+                                        <asp:Label ID="lblOdDeliverToGpsPending" runat="server" Visible="false" CssClass="muted small"
+                                            Text="Save the address first, then use Check for GPS." />
+                                        <asp:Button ID="btnOdGpsRefresh" runat="server" CssClass="contact-gps-refresh"
+                                            CausesValidation="false" OnClick="btnOdGpsRefresh_Click"
+                                            UseSubmitBehavior="false" TabIndex="-1" />
+                                    </td>
+                                </tr>
+                            </table>
+                            <asp:Label ID="lblOdDeliverToError" runat="server" CssClass="status-message status-error" Visible="false" />
+                            <div class="button-row confirm-modal-buttons">
+                                <asp:Button ID="btnSaveOdDeliverTo" runat="server" Text="Save address"
+                                    CssClass="filter-panel-btn" OnClick="btnSaveOdDeliverTo_Click" CausesValidation="false" />
+                                <asp:Button ID="btnCancelOdDeliverTo" runat="server" Text="Close"
+                                    CssClass="filter-panel-btn" OnClick="btnCancelOdDeliverTo_Click" CausesValidation="false" />
+                            </div>
+                        </div>
+                    </asp:Panel>
+                    <asp:Panel ID="pnlPromoteZzName" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                        data-tracker-unsaved-ignore="1">
+                        <div class="confirm-modal">
+                            <h2>Create a contact?</h2>
+                            <p><asp:Literal ID="litPromoteZzName" runat="server" /></p>
+                            <div class="button-row confirm-modal-buttons">
+                                <asp:Button ID="btnPromoteZzNameYes" runat="server" Text="Create contact"
+                                    CssClass="filter-panel-btn" OnClick="btnPromoteZzNameYes_Click" CausesValidation="false" />
+                                <asp:Button ID="btnPromoteZzNameNo" runat="server" Text="Not now"
+                                    CssClass="filter-panel-btn" OnClick="btnPromoteZzNameNo_Click" CausesValidation="false" />
+                            </div>
+                        </div>
+                    </asp:Panel>
+                </ContentTemplate>
             </asp:UpdatePanel>
             <%-- Outside header dirty root so waybill/courier edits do not trip leave warnings. --%>
             <asp:UpdatePanel ID="upnlWaybillEdit" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
@@ -918,5 +1005,52 @@
                 start();
             }
         })();
+
+        (function () {
+            var changed = false;
+            var dx = 0, dy = 0;
+            function dialog() { return document.querySelector('#orderGpsOverlay .contact-gps-dialog'); }
+            function place() { var d = dialog(); if (d) d.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)'; }
+
+            window.trackerOpenGps = function (contactId, deliverToAddressId) {
+                changed = false;
+                var overlay = document.getElementById('orderGpsOverlay');
+                var frame = document.getElementById('orderGpsFrame');
+                if (!overlay || !frame) return;
+                dx = 0; dy = 0; place();
+                var url = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
+                if (deliverToAddressId) url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                frame.src = url;
+                overlay.style.display = 'flex';
+            };
+
+            window.trackerGpsChanged = function () { changed = true; };
+            window.trackerCloseGps = function (force) {
+                var overlay = document.getElementById('orderGpsOverlay');
+                var frame = document.getElementById('orderGpsFrame');
+                if (!force) {
+                    try {
+                        var w = frame && frame.contentWindow;
+                        if (w && w.gpsRequestClose && !w.gpsRequestClose()) return;
+                    } catch (e) { }
+                }
+                if (overlay) overlay.style.display = 'none';
+                if (frame) frame.src = 'about:blank';
+                if (changed) {
+                    var btn = document.getElementById('<%= btnOdGpsRefresh.ClientID %>');
+                    if (btn) btn.click();
+                }
+            };
+        })();
     </script>
+
+    <div id="orderGpsOverlay" class="contact-gps-overlay" style="display:none;" role="dialog" aria-label="Delivery GPS location">
+        <div class="contact-gps-dialog">
+            <div class="contact-gps-dialog-bar" title="Drag to move this window">
+                <span><strong>Delivery GPS location</strong><span class="contact-location-muted">saved on this alternative address</span></span>
+                <button type="button" class="filter-panel-btn" onclick="trackerCloseGps();">Close</button>
+            </div>
+            <iframe id="orderGpsFrame" class="contact-gps-frame" src="about:blank" title="Delivery GPS location"></iframe>
+        </div>
+    </div>
 </asp:Content>

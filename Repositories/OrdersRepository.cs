@@ -12,6 +12,7 @@ namespace TrackerSQL.Repositories
     public class OrdersRepository
     {
         private static bool? _hasDeliverToAddressId;
+        private static bool? _hasWalkInSiteColumns;
 
         public static bool HasDeliverToAddressIdColumn()
         {
@@ -25,6 +26,27 @@ namespace TrackerSQL.Repositories
 SELECT COUNT(1) FROM sys.columns
 WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'") > 0;
                     _hasDeliverToAddressId = seen;
+                    return seen;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool HasWalkInSiteColumns()
+        {
+            if (_hasWalkInSiteColumns == true)
+                return true;
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                {
+                    bool seen = db.ExecuteScalar<int>(@"
+SELECT COUNT(1) FROM sys.columns
+WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'WalkInAreaID'") > 0;
+                    _hasWalkInSiteColumns = seen;
                     return seen;
                 }
             }
@@ -54,7 +76,8 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
 
         private static string HeaderSelectColumns =>
             "OrderID, ContactID, OrderDate, PrepDate, RequiredByDate, ToBeDeliveredByID, Confirmed, Done, Packed, Notes, PurchaseOrder, InvoiceDone, InvoiceTypeID"
-            + (HasDeliverToAddressIdColumn() ? ", DeliverToAddressID" : string.Empty);
+            + (HasDeliverToAddressIdColumn() ? ", DeliverToAddressID" : string.Empty)
+            + (HasWalkInSiteColumns() ? ", WalkInAreaID, WalkInLatitude, WalkInLongitude" : string.Empty);
 
         public Order GetById(int id)
         {
@@ -276,7 +299,16 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                 InvoiceTypeID = r["InvoiceTypeID"] == DBNull.Value ? (int?)null : Convert.ToInt32(r["InvoiceTypeID"]),
                 DeliverToAddressID = DbMapper.HasColumn(r, "DeliverToAddressID") && r["DeliverToAddressID"] != DBNull.Value
                     ? Convert.ToInt32(r["DeliverToAddressID"])
-                    : (int?)null
+                    : (int?)null,
+                WalkInAreaID = DbMapper.HasColumn(r, "WalkInAreaID") && r["WalkInAreaID"] != DBNull.Value
+                    ? Convert.ToInt32(r["WalkInAreaID"])
+                    : (int?)null,
+                WalkInLatitude = DbMapper.HasColumn(r, "WalkInLatitude") && r["WalkInLatitude"] != DBNull.Value
+                    ? Convert.ToDecimal(r["WalkInLatitude"])
+                    : (decimal?)null,
+                WalkInLongitude = DbMapper.HasColumn(r, "WalkInLongitude") && r["WalkInLongitude"] != DBNull.Value
+                    ? Convert.ToDecimal(r["WalkInLongitude"])
+                    : (decimal?)null
             };
         }
         public OrderHeaderData GetOrderHeaderByOrderId(int orderId)
@@ -298,7 +330,10 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                 PurchaseOrder = order.PurchaseOrder ?? string.Empty,
                 Notes = order.Notes ?? string.Empty,
                 InvoiceTypeID = order.InvoiceTypeID,
-                DeliverToAddressID = order.DeliverToAddressID
+                DeliverToAddressID = order.DeliverToAddressID,
+                WalkInAreaID = order.WalkInAreaID,
+                WalkInLatitude = order.WalkInLatitude,
+                WalkInLongitude = order.WalkInLongitude
             };
         }
 
@@ -653,13 +688,16 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             }
 
             string deliverToSet = HasDeliverToAddressIdColumn() ? ", DeliverToAddressID = @DeliverToAddressID" : string.Empty;
+            string walkInSet = HasWalkInSiteColumns()
+                ? ", WalkInAreaID = @WalkInAreaID, WalkInLatitude = @WalkInLatitude, WalkInLongitude = @WalkInLongitude"
+                : string.Empty;
             string sql = $@"
                 UPDATE OrdersTbl SET
                     ContactID = @ContactID, OrderDate = @OrderDate, PrepDate = @PrepDate,
                     ToBeDeliveredByID = @ToBeDeliveredByID, RequiredByDate = @RequiredByDate,
                     Confirmed = @Confirmed, Done = @Done, InvoiceDone = @InvoiceDone,
                     PurchaseOrder = @PurchaseOrder, Notes = @Notes,
-                    InvoiceTypeID = COALESCE(@InvoiceTypeID, InvoiceTypeID){deliverToSet}
+                    InvoiceTypeID = COALESCE(@InvoiceTypeID, InvoiceTypeID){deliverToSet}{walkInSet}
                 WHERE OrderID IN ({string.Join(", ", inParams)})";
 
             int result = ExecNonQuery(sql, parameters);
@@ -764,13 +802,15 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
             // Only an explicitly supplied order or recurring-order flag is stored.
             string deliverToCols = HasDeliverToAddressIdColumn() ? ", DeliverToAddressID" : string.Empty;
             string deliverToVals = HasDeliverToAddressIdColumn() ? ", @DeliverToAddressID" : string.Empty;
+            string walkInCols = HasWalkInSiteColumns() ? ", WalkInAreaID, WalkInLatitude, WalkInLongitude" : string.Empty;
+            string walkInVals = HasWalkInSiteColumns() ? ", @WalkInAreaID, @WalkInLatitude, @WalkInLongitude" : string.Empty;
             string sql = $@"
                 INSERT INTO OrdersTbl
                 (ContactID, OrderDate, PrepDate, ToBeDeliveredByID, RequiredByDate, Confirmed, Done, Packed,
-                 InvoiceDone, PurchaseOrder, Notes, InvoiceTypeID{deliverToCols})
+                 InvoiceDone, PurchaseOrder, Notes, InvoiceTypeID{deliverToCols}{walkInCols})
                 VALUES
                 (@ContactID, @OrderDate, @PrepDate, @ToBeDeliveredByID, @RequiredByDate, @Confirmed, @Done, @Packed,
-                 @InvoiceDone, @PurchaseOrder, @Notes, @InvoiceTypeID{deliverToVals});
+                 @InvoiceDone, @PurchaseOrder, @Notes, @InvoiceTypeID{deliverToVals}{walkInVals});
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var parameters = new List<DBParameter>
@@ -798,6 +838,7 @@ WHERE object_id = OBJECT_ID(N'dbo.OrdersTbl') AND name = N'DeliverToAddressID'")
                     DataDbType = DbType.Int32
                 });
             }
+            AppendWalkInParameters(parameters, orderData.WalkInAreaID, orderData.WalkInLatitude, orderData.WalkInLongitude);
 
             return ExecuteScalar<int>(sql, parameters);
         }
@@ -1425,7 +1466,32 @@ WHERE OrderID = @OrderID
                     DataDbType = DbType.Int32
                 });
             }
+            AppendWalkInParameters(list, header.WalkInAreaID, header.WalkInLatitude, header.WalkInLongitude);
             return list;
+        }
+
+        private static void AppendWalkInParameters(List<DBParameter> list, int? areaId, decimal? lat, decimal? lng)
+        {
+            if (!HasWalkInSiteColumns())
+                return;
+            list.Add(new DBParameter
+            {
+                ParamName = "@WalkInAreaID",
+                DataValue = areaId.HasValue && areaId.Value > 0 ? (object)areaId.Value : DBNull.Value,
+                DataDbType = DbType.Int32
+            });
+            list.Add(new DBParameter
+            {
+                ParamName = "@WalkInLatitude",
+                DataValue = lat.HasValue ? (object)lat.Value : DBNull.Value,
+                DataDbType = DbType.Decimal
+            });
+            list.Add(new DBParameter
+            {
+                ParamName = "@WalkInLongitude",
+                DataValue = lng.HasValue ? (object)lng.Value : DBNull.Value,
+                DataDbType = DbType.Decimal
+            });
         }
 
         public List<OrderEntryListItem> GetOrderEntryList(bool orderDone, string searchFor, string searchValue)
@@ -1813,15 +1879,21 @@ ORDER BY o.OrderDate DESC, o.OrderID DESC, ol.OrderLineID DESC";
             string deliverToCols = deliverTo ? ", dob.Label AS DeliverToLabel, dob.DeliverToPerson" : ", CAST(NULL AS NVARCHAR(200)) AS DeliverToLabel, CAST(NULL AS NVARCHAR(200)) AS DeliverToPerson";
             string deliverToJoin = deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty;
             string deliverToIdCol = HasDeliverToAddressIdColumn() ? ", o.DeliverToAddressID" : ", CAST(NULL AS INT) AS DeliverToAddressID";
+            string walkInCols = HasWalkInSiteColumns()
+                ? ", o.Notes, o.WalkInLatitude, o.WalkInLongitude"
+                : ", o.Notes, CAST(NULL AS DECIMAL(10,6)) AS WalkInLatitude, CAST(NULL AS DECIMAL(10,6)) AS WalkInLongitude";
             string sql = @"
 SELECT DISTINCT o.OrderID, o.ContactID, c.CompanyName,
        " + effectiveBy + @" AS ToBeDeliveredByID" + deliverToIdCol + @",
-       p.Abbreviation AS DeliveryByAbbreviation, a.AreaName, a.ShortCode AS AreaShortCode, o.Done" + deliverToCols + @"
+       p.Abbreviation AS DeliveryByAbbreviation, "
+                + WalkInOrderSite.AreaNameSql("a", "wa") + @" AS AreaName, "
+                + WalkInOrderSite.AreaCodeSql("a", "wa") + @" AS AreaShortCode, o.Done" + deliverToCols + walkInCols + @"
 FROM OrdersTbl o
 INNER JOIN OrderLinesTbl ol ON ol.OrderID = o.OrderID
 LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID"
                 + deliverToJoin + @"
-" + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a") + @"
+" + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a")
+                + WalkInOrderSite.AreaJoinSql("wa") + @"
 LEFT JOIN PeopleTbl p ON p.PersonID = " + effectiveBy + @"
 WHERE CAST(o.RequiredByDate AS DATE) = @Date
 ORDER BY " + effectiveBy + @", c.CompanyName, o.OrderID";
@@ -1851,7 +1923,12 @@ ORDER BY " + effectiveBy + @", c.CompanyName, o.OrderID";
                             ? r["AreaShortCode"].ToString() : null,
                         Done = r["Done"] != DBNull.Value && Convert.ToBoolean(r["Done"]),
                         DeliverToLabel = r["DeliverToLabel"] == DBNull.Value ? null : r["DeliverToLabel"].ToString(),
-                        DeliverToPerson = r["DeliverToPerson"] == DBNull.Value ? null : r["DeliverToPerson"].ToString()
+                        DeliverToPerson = r["DeliverToPerson"] == DBNull.Value ? null : r["DeliverToPerson"].ToString(),
+                        Notes = DbMapper.HasColumn(r, "Notes") && r["Notes"] != DBNull.Value ? r["Notes"].ToString() : null,
+                        WalkInLat = DbMapper.HasColumn(r, "WalkInLatitude") && r["WalkInLatitude"] != DBNull.Value
+                            ? Convert.ToDouble(r["WalkInLatitude"]) : (double?)null,
+                        WalkInLng = DbMapper.HasColumn(r, "WalkInLongitude") && r["WalkInLongitude"] != DBNull.Value
+                            ? Convert.ToDouble(r["WalkInLongitude"]) : (double?)null
                     });
                 }
             }

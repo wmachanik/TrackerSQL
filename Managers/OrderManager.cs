@@ -302,7 +302,10 @@ namespace TrackerSQL.Managers
                 Done = header.Done,
                 InvoiceDone = header.InvoiceDone,
                 InvoiceTypeID = header.InvoiceTypeID,
-                DeliverToAddressID = header.DeliverToAddressID
+                DeliverToAddressID = header.DeliverToAddressID,
+                WalkInAreaID = header.WalkInAreaID,
+                WalkInLatitude = header.WalkInLatitude,
+                WalkInLongitude = header.WalkInLongitude
             };
         }
 

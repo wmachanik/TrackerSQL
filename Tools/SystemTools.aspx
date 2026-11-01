@@ -84,17 +84,17 @@
                                 <div class="dashboard-card">
                                     <div class="tool-card-header">
                                         <img class="tool-card-icon" src="../images/imgButtons/Copilot_ResetPrepDate_32.png" alt="" />
-                                        <h4>Recalc Prediction Averages</h4>
+                                        <h4>Recalc Prediction Dates</h4>
                                     </div>
-                                    <p>Bulk NextCoffeeBy and daily average (prediction only)</p>
+                                    <p>Bulk Next Coffee, filters, clean, descale and service from usage (not recurring orders)</p>
                                     <div class="tool-card-options">
                                         <asp:CheckBox ID="chkRecalcPredictionsStaleOnly" runat="server" Checked="true"
-                                            Text="Only stale (NextCoffeeBy before last coffee delivery)"
-                                            ToolTip="Recommended after the Order Done prediction bug — skips contacts already ahead of last delivery" />
+                                            Text="Only Stale (Next Date Before Last Delivery, or Next Filter More Than 3 Months After Last Filter)"
+                                            ToolTip="Untick to recalculate every enabled contact. Stale includes coffee/filter/clean/descale/service." />
                                     </div>
                                     <asp:Button ID="btnRecalcPredictions" runat="server" Text="Run"
                                         OnClick="btnRecalcPredictions_Click"
-                                        ToolTip="Recalculate DailyConsumption and NextCoffeeBy from usage history" />
+                                        ToolTip="Recalculate Next Coffee, filter, clean, descale and service dates from usage history" />
                                 </div>
                             </div>
                             <div class="dashboard-link tool-tone-lastorder">
@@ -129,6 +129,19 @@
                                     <asp:Button ID="btnDisableInactiveClients" runat="server" Text="Run"
                                         OnClick="btnDisableInactiveClients_Click"
                                         ToolTip="Disables enabled customers whose last usage/order is older than 3 years" />
+                                </div>
+                            </div>
+                            <div class="dashboard-link tool-tone-disable">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/DelItem.gif" alt="" />
+                                        <h4>Purge unused ZZName addresses</h4>
+                                    </div>
+                                    <p>Delete casual ZZName alternative addresses unused for 12 months and not on any order</p>
+                                    <asp:Button ID="btnPurgeZzNameAlts" runat="server" Text="Run"
+                                        OnClick="btnPurgeZzNameAlts_Click"
+                                        OnClientClick="return confirm('Delete unused ZZName alternative addresses older than 12 months?');"
+                                        ToolTip="Removes guest alternative addresses on ZZName with no orders and last used over a year ago" />
                                 </div>
                             </div>
                         </div>

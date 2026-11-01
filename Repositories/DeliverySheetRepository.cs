@@ -58,13 +58,13 @@ namespace TrackerSQL.Repositories
                 ORDER BY
                     o.Done,
                     o.RequiredByDate,
-                    " + effectiveBy + @",
+                    ToBeDeliveredByID,
                     NoGeo,
                     GeoSortKey,
                     OffDay,
                     DeliveryOrder,
-                    ar.AreaName,
-                    c.CompanyName,
+                    AreaName,
+                    ContactName,
                     o.OrderID,
                     i.SortOrder";
 
@@ -123,13 +123,13 @@ namespace TrackerSQL.Repositories
                 ORDER BY
                     o.Done,
                     o.RequiredByDate,
-                    o.ToBeDeliveredByID,
+                    ToBeDeliveredByID,
                     NoGeo,
                     GeoSortKey,
                     OffDay,
                     DeliveryOrder,
-                    ar.AreaName,
-                    c.CompanyName,
+                    AreaName,
+                    ContactName,
                     o.OrderID,
                     i.SortOrder";
 
@@ -199,8 +199,8 @@ namespace TrackerSQL.Repositories
                     ip.ItemPrepDescription AS PackDesc,
                     ip.BGColour,
                     p.Abbreviation AS DeliveryByAbbreviation,
-                    ar.AreaName,
-                    ar.ShortCode AS AreaShortCode,
+                    " + WalkInOrderSite.AreaNameSql("ar", "wa") + @" AS AreaName,
+                    " + WalkInOrderSite.AreaCodeSql("ar", "wa") + @" AS AreaShortCode,
                     COALESCE(o.InvoiceTypeID, acc.InvoiceTypeID) AS InvoiceTypeID"
                     + dobCols + @",
                     " + (geo
@@ -220,7 +220,8 @@ namespace TrackerSQL.Repositories
                 + (deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty) + @"
                 LEFT JOIN PeopleTbl p
                     ON p.PersonID = {EFFECTIVE_BY}
-                " + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "ar") + @"
+                " + DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "ar")
+                + WalkInOrderSite.AreaJoinSql("wa") + @"
                 LEFT JOIN ItemPackagingsTbl ip
                     ON ol.PackagingID = ip.ItemPackagingID
                 LEFT JOIN ItemsTbl i

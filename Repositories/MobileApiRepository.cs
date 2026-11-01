@@ -208,7 +208,7 @@ namespace TrackerSQL.Repositories
                 SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
                        c.ContactAltFirstName, c.ContactAltLastName, {EFFECTIVE_PHONE} AS PhoneNumber, {EFFECTIVE_CELL} AS CellNumber,
                        {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
-                       a.AreaName, a.ShortCode AS AreaShortCode, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
+                       {AREA_NAME} AS AreaName, {AREA_CODE} AS AreaShortCode, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
                        CASE WHEN apd.OffDay = 0 THEN apd.DeliveryOrder ELSE 10000 + ISNULL(apd.DeliveryOrder, 9999) END AS DeliveryOrder,
                        {EFFECTIVE_BY} AS ToBeDeliveredByID, p.Abbreviation AS DeliveryBy,
                        ol.OrderLineID, ol.ItemID, i.ItemServiceTypeID,
@@ -246,7 +246,10 @@ namespace TrackerSQL.Repositories
                      .Replace("{POSTAL_COL}", DeliveryOnBehalfManager.EffectivePostalCodeSql("c"))
                      .Replace("{EFFECTIVE_PHONE}", DeliveryOnBehalfManager.EffectivePhoneSql("c"))
                      .Replace("{EFFECTIVE_CELL}", DeliveryOnBehalfManager.EffectiveCellSql("c"))
-                     .Replace("{AREA_JOIN}", DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a"))
+                     .Replace("{AREA_JOIN}", DeliveryOnBehalfManager.AreaJoinOnEffectiveArea("c", "a")
+                         + WalkInOrderSite.AreaJoinSql("wa"))
+                     .Replace("{AREA_NAME}", WalkInOrderSite.AreaNameSql("a", "wa"))
+                     .Replace("{AREA_CODE}", WalkInOrderSite.AreaCodeSql("a", "wa"))
                      .Replace("{DOB_JOIN}", deliverTo ? DeliveryOnBehalfManager.JoinClause : string.Empty)
                      .Replace("{DOB_EXTRA_COLS}", deliverTo
                          ? ", dob.DeliverToPerson, dob.Label AS DeliverToLabel"
@@ -261,13 +264,18 @@ namespace TrackerSQL.Repositories
             if (geo && deliverTo)
                 routeHashExpr = DeliveryOnBehalfManager.EffectiveRouteHashSql(CustomerLocationRepository.RouteHashSql);
             sql = sql.Replace("{GEO_JOIN}", geo ? CustomerLocationRepository.RouteJoinSql("c") : string.Empty)
-                     .Replace("{GEO_HASH}", routeHashExpr)
-                     .Replace("{GPS_COLS}", geo
-                         ? (deliverTo
-                             ? DeliveryOnBehalfManager.EffectiveGpsLatSql() + " AS GpsLat, "
-                               + DeliveryOnBehalfManager.EffectiveGpsLngSql() + " AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus"
-                             : "gl.Latitude AS GpsLat, gl.Longitude AS GpsLng, gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus")
-                         : "CAST(NULL AS FLOAT) AS GpsLat, CAST(NULL AS FLOAT) AS GpsLng, CAST(NULL AS VARCHAR(20)) AS GpsSource, CAST(NULL AS VARCHAR(20)) AS GpsStatus");
+                     .Replace("{GEO_HASH}", routeHashExpr);
+            string contactLat = geo
+                ? (deliverTo ? DeliveryOnBehalfManager.EffectiveGpsLatSql() : "gl.Latitude")
+                : "CAST(NULL AS FLOAT)";
+            string contactLng = geo
+                ? (deliverTo ? DeliveryOnBehalfManager.EffectiveGpsLngSql() : "gl.Longitude")
+                : "CAST(NULL AS FLOAT)";
+            sql = sql.Replace("{GPS_COLS}", WalkInOrderSite.GpsLatSql(contactLat) + " AS GpsLat, "
+                + WalkInOrderSite.GpsLngSql(contactLng) + " AS GpsLng, "
+                + (geo
+                    ? "gl.Source AS GpsSource, gl.LocationStatus AS GpsStatus"
+                    : "CAST(NULL AS VARCHAR(20)) AS GpsSource, CAST(NULL AS VARCHAR(20)) AS GpsStatus"));
             sql = sql.Replace("{AGENT_COL}", PersonsRepository.HasDeliveryTypeColumn()
                 ? "(SELECT TOP 1 ag.DeliveryType FROM PeopleTbl ag WHERE ag.PersonID = c.PreferredAgentID) AS AgentDeliveryType"
                 : "CAST(NULL AS VARCHAR(20)) AS AgentDeliveryType")

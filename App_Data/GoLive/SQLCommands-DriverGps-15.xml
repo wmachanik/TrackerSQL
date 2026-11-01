@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ad hoc / Sundry alternative address type (was Casual).
+  IsSundryDefault marks the type used for ZZName guest sites.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.AltAddressKindsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.AltAddressKindsTbl', N'IsSundryDefault') IS NULL
+          ALTER TABLE dbo.AltAddressKindsTbl ADD IsSundryDefault BIT NOT NULL CONSTRAINT DF_AltAddressKinds_Sundry DEFAULT (0);
+
+      IF OBJECT_ID(N'dbo.AltAddressKindsTbl', N'U') IS NOT NULL
+      BEGIN
+          IF EXISTS (SELECT 1 FROM dbo.AltAddressKindsTbl WHERE KindCode = N'Casual')
+             AND NOT EXISTS (SELECT 1 FROM dbo.AltAddressKindsTbl WHERE KindCode = N'Sundry')
+              UPDATE dbo.AltAddressKindsTbl
+              SET KindCode = N'Sundry', KindName = N'Ad hoc'
+              WHERE KindCode = N'Casual';
+
+          IF EXISTS (SELECT 1 FROM dbo.AltAddressKindsTbl WHERE KindCode = N'Sundry')
+              UPDATE dbo.AltAddressKindsTbl
+              SET KindName = N'Ad hoc'
+              WHERE KindCode = N'Sundry';
+
+          IF COL_LENGTH(N'dbo.AltAddressKindsTbl', N'IsSundryDefault') IS NOT NULL
+          BEGIN
+              UPDATE dbo.AltAddressKindsTbl SET IsSundryDefault = 0 WHERE IsSundryDefault = 1 AND KindCode <> N'Sundry';
+              UPDATE dbo.AltAddressKindsTbl SET IsSundryDefault = 1 WHERE KindCode = N'Sundry';
+          END
+
+          IF OBJECT_ID(N'dbo.ContactDeliverToAddressTbl', N'U') IS NOT NULL
+             AND COL_LENGTH(N'dbo.ContactDeliverToAddressTbl', N'AddressKind') IS NOT NULL
+              UPDATE dbo.ContactDeliverToAddressTbl
+              SET AddressKind = N'Sundry'
+              WHERE AddressKind = N'Casual';
+      END
+    ]]>
+  </command>
+</root>

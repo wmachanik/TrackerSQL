@@ -21,6 +21,10 @@ namespace TrackerSQL.Models
         public int? InvoiceTypeID { get; set; }
         /// <summary>When set, delivery uses this contact deliver-to address (delivery on behalf).</summary>
         public int? DeliverToAddressID { get; set; }
+        /// <summary>Walk-in (ZZName) area for this order only — not contact 9.</summary>
+        public int? WalkInAreaID { get; set; }
+        public decimal? WalkInLatitude { get; set; }
+        public decimal? WalkInLongitude { get; set; }
         public List<OrderLine> Lines { get; set; } = new List<OrderLine>();
     }
 }

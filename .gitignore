@@ -363,6 +363,9 @@ MigrationBackup/
 FodyWeavers.xsd
 /App_Data/QuaffeeTracker08.mdb
 /App_Data/manual-sql-history.json
+/App_Data/xmltosql-run-log.json
+/App_Data/Archive/*
+!/App_Data/Archive/.gitkeep
 
 # Temp files - ignore ASP.NET shadow copy cache
 bin/Temp/

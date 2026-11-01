@@ -47,6 +47,42 @@ namespace TrackerSQL.Classes
             return Tidy(joined);
         }
 
+        /// <summary>
+        /// Delivery address for a walk-in: the first line after the name, or the text before " | "
+        /// (Woo joins address then gear with pipes). Empty when there is no colon.
+        /// </summary>
+        public static string Address(string notes)
+        {
+            string details = Details(notes);
+            if (string.IsNullOrEmpty(details))
+                return string.Empty;
+            int pipe = details.IndexOf(" | ", StringComparison.Ordinal);
+            if (pipe >= 0)
+                details = details.Substring(0, pipe);
+            string first = details.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(Tidy)
+                .FirstOrDefault(line => line.Length > 0);
+            return first ?? string.Empty;
+        }
+
+        /// <summary>Goods / extra text after the address (pipe parts or later lines). Empty when the details are only an address.</summary>
+        public static string Rest(string notes)
+        {
+            string details = Details(notes);
+            if (string.IsNullOrEmpty(details))
+                return string.Empty;
+            int pipe = details.IndexOf(" | ", StringComparison.Ordinal);
+            if (pipe >= 0)
+                return Tidy(details.Substring(pipe + 3));
+            var lines = details.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(Tidy)
+                .Where(line => line.Length > 0)
+                .ToList();
+            if (lines.Count <= 1)
+                return string.Empty;
+            return string.Join(", ", lines.Skip(1));
+        }
+
         /// <summary>The email in a [#name@example.com#] tag, else empty ([#41405: Yoco] style references are skipped).</summary>
         public static string Email(string notes)
         {

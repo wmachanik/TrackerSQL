@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Alternative address types (Lookups). KindCode is stored on ContactDeliverToAddressTbl.AddressKind.
+  CountsTowardTracking: when 0, Order Done does not write usage / next-coffee dates.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.AltAddressKindsTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.AltAddressKindsTbl (
+              AltAddressKindID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AltAddressKindsTbl PRIMARY KEY,
+              KindCode NVARCHAR(20) NOT NULL,
+              KindName NVARCHAR(80) NOT NULL,
+              CountsTowardTracking BIT NOT NULL CONSTRAINT DF_AltAddressKinds_Tracking DEFAULT (1),
+              SortOrder INT NOT NULL CONSTRAINT DF_AltAddressKinds_Sort DEFAULT (0),
+              Enabled BIT NOT NULL CONSTRAINT DF_AltAddressKinds_Enabled DEFAULT (1),
+              CONSTRAINT UQ_AltAddressKinds_Code UNIQUE (KindCode)
+          );
+          INSERT INTO dbo.AltAddressKindsTbl (KindCode, KindName, CountsTowardTracking, SortOrder, Enabled) VALUES
+              (N'OnBehalf', N'On their behalf', 0, 10, 1),
+              (N'Gift', N'As a gift', 0, 20, 1),
+              (N'Home', N'Home', 1, 30, 1),
+              (N'Work', N'Work', 1, 40, 1),
+              (N'Friend', N'Friend', 1, 50, 1),
+              (N'Family', N'Family', 1, 60, 1),
+              (N'Other', N'Other', 1, 70, 1),
+              (N'Sundry', N'Ad hoc', 0, 80, 1);
+      END
+    ]]>
+  </command>
+</root>

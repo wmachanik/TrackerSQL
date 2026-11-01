@@ -12,6 +12,7 @@ using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Xml;
+using Newtonsoft.Json;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
 
@@ -22,6 +23,14 @@ namespace TrackerSQL.Tools
         private const string DefaultReturnUrl = "~/Tools/SystemTools.aspx";
         private const string LogName = "xmltosql";
         private const string VsModeTab = "XmlToSql.ModeTab";
+        private const string VsFileSort = "XmlToSql.FileSort";
+        private const string ArchiveFolderName = "Archive";
+        private const string RunLogFileName = "xmltosql-run-log.json";
+        private const string SmokeTestFileName = "SQLCommands_Test_SQLServer.xml";
+        private const int ArchiveAfterDays = 13;
+        private const string FolderAppData = "App_Data";
+        private const string FolderArchive = "Archive";
+        private static readonly object RunLogLock = new object();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -64,9 +73,9 @@ namespace TrackerSQL.Tools
         private void ApplyTabHighlight(int index)
         {
             if (btnTabXml != null)
-                btnTabXml.CssClass = index == 0 ? "sys-prefs-tab active" : "sys-prefs-tab";
+                btnTabXml.CssClass = index == 0 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
             if (btnTabManual != null)
-                btnTabManual.CssClass = index == 1 ? "sys-prefs-tab active" : "sys-prefs-tab";
+                btnTabManual.CssClass = index == 1 ? "sys-prefs-tab is-active" : "sys-prefs-tab";
         }
 
         protected void btnTabXml_Click(object sender, EventArgs e)
@@ -163,7 +172,9 @@ namespace TrackerSQL.Tools
 
         private void SetDefaultFileName()
         {
-            string folderPath = Server.MapPath("~/App_Data/");
+            BindFolderDropdown();
+            ApplySortHighlight();
+            string folderPath = AppDataFolderPath();
             try
             {
                 if (!Directory.Exists(folderPath))
@@ -174,7 +185,7 @@ namespace TrackerSQL.Tools
                 }
 
                 // Prefer the SQL Server smoke-test file when present.
-                string testFile = Path.Combine(folderPath, "SQLCommands_Test_SQLServer.xml");
+                string testFile = Path.Combine(folderPath, SmokeTestFileName);
                 if (File.Exists(testFile))
                     FileNameTextBox.Text = testFile;
                 else
@@ -186,7 +197,7 @@ namespace TrackerSQL.Tools
 
                     FileNameTextBox.Text = newest != null
                         ? newest.FullName
-                        : Path.Combine(folderPath, "SQLCommands_Test_SQLServer.xml");
+                        : Path.Combine(folderPath, SmokeTestFileName);
                 }
 
                 LoadFileBrowser();
@@ -198,6 +209,57 @@ namespace TrackerSQL.Tools
             }
         }
 
+        private void BindFolderDropdown()
+        {
+            if (ddlXmlFolder == null)
+                return;
+            if (ddlXmlFolder.Items.Count == 0)
+            {
+                ddlXmlFolder.Items.Add(new ListItem(FolderAppData, FolderAppData));
+                ddlXmlFolder.Items.Add(new ListItem(FolderAppData + "\\" + ArchiveFolderName, FolderArchive));
+            }
+            if (ddlXmlFolder.SelectedIndex < 0)
+                ddlXmlFolder.SelectedValue = FolderAppData;
+        }
+
+        private string CurrentSort()
+        {
+            string sort = ViewState[VsFileSort] as string;
+            return string.Equals(sort, "date", StringComparison.OrdinalIgnoreCase) ? "date" : "name";
+        }
+
+        private void ApplySortHighlight()
+        {
+            bool byDate = CurrentSort() == "date";
+            if (btnSortName != null)
+                btnSortName.CssClass = byDate ? "sys-prefs-tab" : "sys-prefs-tab is-active";
+            if (btnSortDate != null)
+                btnSortDate.CssClass = byDate ? "sys-prefs-tab is-active" : "sys-prefs-tab";
+        }
+
+        protected void btnSortName_Click(object sender, EventArgs e)
+        {
+            ViewState[VsFileSort] = "name";
+            ApplySortHighlight();
+            LoadFileBrowser();
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnSortDate_Click(object sender, EventArgs e)
+        {
+            ViewState[VsFileSort] = "date";
+            ApplySortHighlight();
+            LoadFileBrowser();
+            upnlXmlToSql.Update();
+        }
+
+        protected void ddlXmlFolder_Changed(object sender, EventArgs e)
+        {
+            LoadFileBrowser();
+            SetStatus("Showing folder " + GetBrowseFolderDisplayName() + ".", isError: null);
+            upnlXmlToSql.Update();
+        }
+
         protected void btnBack_Click(object sender, ImageClickEventArgs e)
         {
             Response.Redirect(DefaultReturnUrl, false);
@@ -206,8 +268,73 @@ namespace TrackerSQL.Tools
 
         protected void RefreshFilesButton_Click(object sender, EventArgs e)
         {
+            BindFolderDropdown();
+            ApplySortHighlight();
             LoadFileBrowser();
             SetStatus("File list refreshed.", isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnArchive_Click(object sender, EventArgs e)
+        {
+            int moved = ArchiveDueXmlFiles();
+            LoadFileBrowser();
+            RedirectTextBoxIfArchived();
+            SetStatus(
+                moved > 0
+                    ? "Moved " + moved + " pack(s) older than " + ArchiveAfterDays + " days to Archive. Choose Folder → App_Data\\Archive to see them."
+                    : "Nothing to archive — no App_Data command packs older than " + ArchiveAfterDays + " days.",
+                isError: null);
+            upnlXmlToSql.Update();
+        }
+
+        protected void btnUnarchive_Click(object sender, EventArgs e)
+        {
+            string filePath = (FileNameTextBox.Text ?? string.Empty).Trim();
+            string archive = Path.GetFullPath(ArchiveFolderPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string appData = Path.GetFullPath(AppDataFolderPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                SetStatus("Choose a file in Archive first.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            string full = Path.GetFullPath(filePath);
+            string dir = Path.GetDirectoryName(full);
+            if (string.IsNullOrEmpty(dir)
+                || !string.Equals(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), archive, StringComparison.OrdinalIgnoreCase))
+            {
+                SetStatus("Unarchive only moves a file that is in App_Data\\Archive.", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            string dest = Path.Combine(appData, Path.GetFileName(full));
+            if (File.Exists(dest))
+            {
+                SetStatus("App_Data already has " + Path.GetFileName(full) + ".", isError: true);
+                upnlXmlToSql.Update();
+                return;
+            }
+
+            try
+            {
+                File.Move(full, dest);
+                FileNameTextBox.Text = dest;
+                if (ddlXmlFolder != null && ddlXmlFolder.Items.FindByValue(FolderAppData) != null)
+                    ddlXmlFolder.SelectedValue = FolderAppData;
+                LoadFileBrowser();
+                SetStatus("Moved " + Path.GetFileName(dest) + " back to App_Data.", isError: false);
+                AppLogger.WriteLog(LogName, "Unarchived " + Path.GetFileName(dest));
+            }
+            catch (Exception ex)
+            {
+                SetStatus("Unarchive failed: " + ex.Message, isError: true);
+                AppLogger.WriteLog(LogName, "Unarchive failed: " + ex.Message);
+            }
+
             upnlXmlToSql.Update();
         }
 
@@ -270,6 +397,18 @@ namespace TrackerSQL.Tools
             }
 
             BindSummary(commands);
+
+            try
+            {
+                RecordXmlRun(filePath);
+                LoadFileBrowser();
+                RedirectTextBoxIfArchived();
+            }
+            catch (Exception archEx)
+            {
+                AppLogger.WriteLog(LogName, "After execute: " + archEx.Message);
+            }
+
             upnlXmlToSql.Update();
         }
 
@@ -555,36 +694,236 @@ namespace TrackerSQL.Tools
             return list;
         }
 
+        private string AppDataFolderPath()
+        {
+            return Server.MapPath("~/App_Data/");
+        }
+
+        private string ArchiveFolderPath()
+        {
+            return Path.Combine(AppDataFolderPath(), ArchiveFolderName);
+        }
+
+        private void EnsureArchiveFolder()
+        {
+            string dir = ArchiveFolderPath();
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+        }
+
+        private string RunLogPath()
+        {
+            return Path.Combine(AppDataFolderPath(), RunLogFileName);
+        }
+
+        private Dictionary<string, DateTime> LoadRunLog()
+        {
+            lock (RunLogLock)
+            {
+                string path = RunLogPath();
+                if (!File.Exists(path))
+                    return new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
+                try
+                {
+                    string json = File.ReadAllText(path);
+                    var loaded = JsonConvert.DeserializeObject<Dictionary<string, DateTime>>(json);
+                    var log = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+                    if (loaded != null)
+                    {
+                        foreach (KeyValuePair<string, DateTime> kv in loaded)
+                            log[kv.Key] = kv.Value;
+                    }
+                    return log;
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog(LogName, "Load run log: " + ex.Message);
+                    return new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+                }
+            }
+        }
+
+        private void SaveRunLog(Dictionary<string, DateTime> log)
+        {
+            lock (RunLogLock)
+            {
+                string json = JsonConvert.SerializeObject(log ?? new Dictionary<string, DateTime>(), Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(RunLogPath(), json);
+            }
+        }
+
+        private static bool IsArchivableCommandPack(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return false;
+            if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return false;
+            if (string.Equals(fileName, SmokeTestFileName, StringComparison.OrdinalIgnoreCase))
+                return false;
+            return fileName.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase)
+                && fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void RecordXmlRun(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+                return;
+
+            string full = Path.GetFullPath(filePath);
+            string name = Path.GetFileName(full);
+            if (!IsArchivableCommandPack(name))
+                return;
+
+            string appData = Path.GetFullPath(AppDataFolderPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!full.StartsWith(appData, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            string fileDir = Path.GetDirectoryName(full);
+            if (string.IsNullOrEmpty(fileDir)
+                || !string.Equals(fileDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), appData, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var log = LoadRunLog();
+            log[name] = DateTime.UtcNow;
+            SaveRunLog(log);
+        }
+
+        /// <summary>
+        /// Moves SQLCommands packs sitting in App_Data whose file date is older than
+        /// <see cref="ArchiveAfterDays"/> days. A run in the last 13 days keeps the file.
+        /// </summary>
+        private int ArchiveDueXmlFiles()
+        {
+            EnsureArchiveFolder();
+
+            string appData = Path.GetFullPath(AppDataFolderPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string archive = Path.GetFullPath(ArchiveFolderPath());
+            DateTime cutoff = DateTime.UtcNow.AddDays(-ArchiveAfterDays);
+            var log = LoadRunLog();
+            int moved = 0;
+
+            if (!Directory.Exists(appData))
+                return 0;
+
+            foreach (FileInfo file in new DirectoryInfo(appData).GetFiles("SQLCommands*.xml"))
+            {
+                if (!IsArchivableCommandPack(file.Name))
+                    continue;
+
+                DateTime stamp = file.LastWriteTimeUtc;
+                DateTime ran;
+                if (log.TryGetValue(file.Name, out ran) && ran.ToUniversalTime() > stamp)
+                    stamp = ran.ToUniversalTime();
+                if (stamp > cutoff)
+                    continue;
+
+                string dest = Path.Combine(archive, file.Name);
+                if (File.Exists(dest))
+                {
+                    string stem = Path.GetFileNameWithoutExtension(file.Name);
+                    string ext = Path.GetExtension(file.Name);
+                    dest = Path.Combine(archive, stem + "_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ext);
+                }
+
+                try
+                {
+                    File.Move(file.FullName, dest);
+                    log.Remove(file.Name);
+                    moved++;
+                    AppLogger.WriteLog(LogName, "Archived " + file.Name + " → " + dest);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog(LogName, "Archive move failed for " + file.Name + ": " + ex.Message);
+                }
+            }
+
+            if (moved > 0)
+                SaveRunLog(log);
+
+            return moved;
+        }
+
+        private void RedirectTextBoxIfArchived()
+        {
+            string current = (FileNameTextBox.Text ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(current) || File.Exists(current))
+                return;
+
+            string archived = Path.Combine(ArchiveFolderPath(), Path.GetFileName(current));
+            if (File.Exists(archived))
+                FileNameTextBox.Text = archived;
+        }
+
+        private string GetBrowseFolderDisplayName()
+        {
+            BindFolderDropdown();
+            string key = ddlXmlFolder?.SelectedValue ?? FolderAppData;
+            if (string.Equals(key, FolderArchive, StringComparison.OrdinalIgnoreCase))
+                return FolderAppData + "\\" + ArchiveFolderName;
+            return FolderAppData;
+        }
+
+        private string ResolveBrowseFolderPath()
+        {
+            BindFolderDropdown();
+            string key = ddlXmlFolder?.SelectedValue ?? FolderAppData;
+            if (string.Equals(key, FolderArchive, StringComparison.OrdinalIgnoreCase))
+            {
+                EnsureArchiveFolder();
+                return ArchiveFolderPath();
+            }
+            return AppDataFolderPath();
+        }
+
+        private List<FileInfo> OrderFiles(IEnumerable<FileInfo> files)
+        {
+            if (CurrentSort() == "date")
+            {
+                return files
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            return files.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
         private void LoadFileBrowser()
         {
-            string folderPath = Server.MapPath("~/App_Data/");
+            BindFolderDropdown();
+            ApplySortHighlight();
+            string folderPath = ResolveBrowseFolderPath();
             try
             {
+                if (ltrlFileBrowserTitle != null)
+                    ltrlFileBrowserTitle.Text = "XML Files — " + GetBrowseFolderDisplayName();
+
                 if (!Directory.Exists(folderPath))
                 {
-                    ltrlFileList.Text = "<em>App_Data directory not found</em>";
+                    ltrlFileList.Text = "<em>Folder not found: " + Server.HtmlEncode(GetBrowseFolderDisplayName()) + "</em>";
                     return;
                 }
 
                 FileInfo[] allFiles = new DirectoryInfo(folderPath).GetFiles("*.xml");
+                var html = new StringBuilder();
+
                 if (allFiles.Length == 0)
                 {
-                    ltrlFileList.Text = "<em>No XML files found</em>";
-                    return;
+                    html.Append("<em>No XML files in this folder</em>");
+                }
+                else
+                {
+                    string selectedPath = (FileNameTextBox.Text ?? string.Empty).Trim();
+                    var sqlCommandFiles = OrderFiles(allFiles
+                        .Where(f => f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase)));
+                    var otherFiles = OrderFiles(allFiles
+                        .Where(f => !f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase)));
+
+                    AppendFileGroup(html, "Migration / Command Files", sqlCommandFiles, highlight: true, selectedPath);
+                    AppendFileGroup(html, "Other XML Files", otherFiles, highlight: false, selectedPath);
                 }
 
-                var sqlCommandFiles = allFiles
-                    .Where(f => f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-                var otherFiles = allFiles
-                    .Where(f => !f.Name.StartsWith("SQLCommands", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var html = new StringBuilder();
-                AppendFileGroup(html, "Migration / command files", sqlCommandFiles, highlight: true);
-                AppendFileGroup(html, "Other XML files", otherFiles, highlight: false);
                 ltrlFileList.Text = html.ToString();
             }
             catch (Exception ex)
@@ -593,18 +932,26 @@ namespace TrackerSQL.Tools
             }
         }
 
-        private static void AppendFileGroup(StringBuilder html, string title, List<FileInfo> files, bool highlight)
+        private static void AppendFileGroup(StringBuilder html, string title, List<FileInfo> files, bool highlight, string selectedPath)
         {
             if (files == null || files.Count == 0)
                 return;
 
-            html.Append("<strong>").Append(title).Append(":</strong><br/>");
+            html.Append("<strong>").Append(title).Append(":</strong>");
             string css = highlight ? "file-item xml-file" : "file-item";
 
             foreach (FileInfo file in files)
             {
-                string jsPath = file.FullName.Replace("\\", "\\\\").Replace("'", "\\'");
-                html.Append("<div class='").Append(css).Append("' onclick=\"selectFile('")
+                string fullPath = file.FullName;
+                string jsPath = fullPath.Replace("\\", "\\\\").Replace("'", "\\'");
+                string attrPath = System.Web.HttpUtility.HtmlAttributeEncode(fullPath);
+                bool selected = !string.IsNullOrEmpty(selectedPath)
+                    && string.Equals(fullPath, selectedPath, StringComparison.OrdinalIgnoreCase);
+                string itemCss = selected ? css + " selected" : css;
+
+                html.Append("<div class='").Append(itemCss)
+                    .Append("' data-path=\"").Append(attrPath)
+                    .Append("\" onclick=\"selectFile('")
                     .Append(jsPath).Append("')\">");
                 html.Append(System.Web.HttpUtility.HtmlEncode(file.Name));
                 html.Append(" <small>(")

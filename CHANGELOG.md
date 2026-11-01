@@ -2,9 +2,18 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.10 — in progress
+## 3.0.3.12 — in progress
+
+_(Development; `Web.config` / `AssemblyInfo` version.)_
+
+## 3.0.3.11 — 2026-11-01
+
+**Quaffee Driver:** 0.5.8 (unchanged). **Release doc:** [Documentation/RELEASE-3.0.3.11.md](Documentation/RELEASE-3.0.3.11.md).
 
 ### Features and fixes
+- **Alt Address Types lookup** — Lookups tab for alternative-address types (code, name, **Counts toward tracking**, sort, on/off). `SQLCommands-DriverGps-14.xml` / `-15.xml`. Unticked types skip usage / Next Coffee when Order Done (gift, on their behalf, **Ad hoc** / Sundry by default).
+- **ZZName alternative addresses** — Recipient on Order Detail is **Standard** (notes, no GPS) or an alternative address (**New alternative…** popup, pencil to edit). ZZName guest sites use **Ad hoc** (stored as Sundry for accounting) with person name as the label and deliver-to, plus Created/Last used (`SQLCommands-DriverGps-13.xml`). Woo gear/ZZName (not collect) matches or creates that alt. Second order / Contact Details can **create a contact**; done Ad hoc orders move to that contact and tracked items (coffee, filter, and the other prediction types) become usage history so Next Coffee can be calculated. System Tools purges unused ZZName alts after 12 months. Walk-in collect-at-depot is not ZZName.
+- **ZZName walk-in site** — address after `Name:` is the driver stop address (Navigate works). Area and a one-off GPS point live on the order (`WalkInAreaID` / lat / lng, schema pack `SQLCommands-DriverGps-12.xml`), never on contact 9. Order Detail shows Area for ZZName; sheet, driver app, and Driver tracking use it. **Open Order** / stop name open Order Detail, not the shared ZZName contact.
 - **Schema packs** — the site and the mobile API check the database (the table or column the pack adds). They open the XML, in `App_Data` or `App_Data\Archive`, only when that object is missing. A restored database that already has the column does not need the file.
 - **Woo import** — creating (or refreshing) a Tracker order writes `orders.log`: who imported it, Tracker order, contact, and the Woo order number / id.
 - **Checkup holiday note** — the closure heads-up in the Send Checkup email is HTML again (`Heads-up` in italics), not literal `&lt;i&gt;` tags.
@@ -17,7 +26,19 @@ Release notes for shipped TrackerSQL versions. Newest first.
 - **Alternative address Save** — Contact Details → Save Address shows **Saving** and ignores a second click.
 - **Order Done / gift or on behalf** — orders to a Gift or On their behalf alternative address do not write usage or move Next Coffee / filter dates.
 - **Filter (and other non-coffee) predictions** — next date uses how often that item is actually delivered (ignore split deliveries under 14 days). Contact 466's filters every 2–3 months no longer land in 2027 because daily cups were ~0.1.
+- **System Tools → Recalc Prediction Dates** — the same bulk run now updates Next Filter / Clean / Descale / Service as well as Next Coffee. Stale also includes a next filter more than 3 months after the last filter (untick Stale to redo everyone).
 - **Lookups → Areas** — adding a second (or later) prep day for an area works (the Add button now inserts; it previously did nothing once the first day existed).
+- **Delivery Sheet SQL** — `SELECT DISTINCT` sort uses **AreaName** / **ContactName** aliases (fixes error on ZZName/courier stops).
+- **Lookups → Areas paging** — selected area stays correct across pages; panel title **Delivery Days for {area} Area**.
+- **Contact Details ViewState** — session page state and lighter POD grid (contact 9 / large signatures); stale ViewState reloads instead of application error.
+- **Order Detail Recipient** — row only when the contact has alternative addresses enabled (or ZZName), not for every order with an old deliver-to id.
+
+### Go-live notes
+- Upload `bin/`, pages/managers/repos/models, `App_Data/SQLCommands-DriverGps-12.xml` through `-15.xml` (+ GoLive copies), `Styles/Site.css`, `Site.Master`, `AddContact.png`. Live `Web.config` **`Version` → 3.0.3.11** only. Recycle; check `/api/v1/ping` and delivery sheet with a ZZName courier order.
+
+## 3.0.3.10 — (merged into 3.0.3.11)
+
+_See 3.0.3.11 above; version 3.0.3.10 was not shipped separately._
 
 ## 3.0.3.9 — 2026-10-28
 

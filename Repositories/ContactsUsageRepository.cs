@@ -194,19 +194,28 @@ LEFT JOIN ContactsTbl c ON c.ContactID = p.ContactID";
         }
 
         /// <summary>
-        /// Prediction rows for bulk average / NextCoffeeBy recalculation (enabled contacts only).
+        /// Prediction rows for bulk Next Coffee / filter / clean / descale / service recalculation (enabled contacts only).
         /// </summary>
         public List<PredictionBulkRecalcCandidate> GetBulkRecalcCandidates(bool staleOnly)
         {
             int coffee = SystemConstants.ServiceTypeConstants.Coffee;
+            int filter = SystemConstants.ServiceTypeConstants.Filter;
+            int clean = SystemConstants.ServiceTypeConstants.Clean;
+            int descale = SystemConstants.ServiceTypeConstants.Descale;
+            int service = SystemConstants.ServiceTypeConstants.Service;
             string sql = @"
                 SELECT
                     p.ContactID,
                     c.CompanyName,
                     p.NextCoffeeBy AS PreviousNextCoffeeBy,
+                    p.NextFilterEst AS PreviousNextFilterEst,
+                    p.NextCleanOn AS PreviousNextCleanOn,
+                    p.NextDescaleEst AS PreviousNextDescaleEst,
+                    p.NextServiceEst AS PreviousNextServiceEst,
                     p.DailyConsumption AS PreviousDailyConsumption,
                     p.LastCupCount,
-                    coffee.LastCoffeeDate
+                    coffee.LastCoffeeDate,
+                    filt.LastFilterDate
                 FROM ContactsItemsPredictedTbl p
                 INNER JOIN ContactsTbl c ON c.ContactID = p.ContactID
                 OUTER APPLY (
@@ -215,21 +224,60 @@ LEFT JOIN ContactsTbl c ON c.ContactID = p.ContactID";
                     WHERE s.ContactID = p.ContactID
                       AND s.ItemServiceTypeID = @CoffeeServiceType
                 ) coffee
+                OUTER APPLY (
+                    SELECT MAX(s.UsageDate) AS LastFilterDate
+                    FROM ContactsItemSvcSummaryTbl s
+                    WHERE s.ContactID = p.ContactID
+                      AND s.ItemServiceTypeID = @FilterServiceType
+                ) filt
+                OUTER APPLY (
+                    SELECT MAX(s.UsageDate) AS LastCleanDate
+                    FROM ContactsItemSvcSummaryTbl s
+                    WHERE s.ContactID = p.ContactID
+                      AND s.ItemServiceTypeID = @CleanServiceType
+                ) clean
+                OUTER APPLY (
+                    SELECT MAX(s.UsageDate) AS LastDescaleDate
+                    FROM ContactsItemSvcSummaryTbl s
+                    WHERE s.ContactID = p.ContactID
+                      AND s.ItemServiceTypeID = @DescaleServiceType
+                ) dsc
+                OUTER APPLY (
+                    SELECT MAX(s.UsageDate) AS LastServiceDate
+                    FROM ContactsItemSvcSummaryTbl s
+                    WHERE s.ContactID = p.ContactID
+                      AND s.ItemServiceTypeID = @ServiceServiceType
+                ) svc
                 WHERE ISNULL(c.Enabled, 1) = 1
                   AND ISNULL(c.PredictionDisabled, 0) = 0";
 
             if (staleOnly)
             {
                 sql += @"
-                  AND coffee.LastCoffeeDate IS NOT NULL
-                  AND (p.NextCoffeeBy IS NULL OR p.NextCoffeeBy < coffee.LastCoffeeDate)";
+                  AND (
+                        (coffee.LastCoffeeDate IS NOT NULL
+                         AND (p.NextCoffeeBy IS NULL OR p.NextCoffeeBy < coffee.LastCoffeeDate))
+                     OR (filt.LastFilterDate IS NOT NULL
+                         AND (p.NextFilterEst IS NULL OR p.NextFilterEst < filt.LastFilterDate
+                              OR p.NextFilterEst > DATEADD(month, 3, filt.LastFilterDate)))
+                     OR (clean.LastCleanDate IS NOT NULL
+                         AND (p.NextCleanOn IS NULL OR p.NextCleanOn < clean.LastCleanDate))
+                     OR (dsc.LastDescaleDate IS NOT NULL
+                         AND (p.NextDescaleEst IS NULL OR p.NextDescaleEst < dsc.LastDescaleDate))
+                     OR (svc.LastServiceDate IS NOT NULL
+                         AND (p.NextServiceEst IS NULL OR p.NextServiceEst < svc.LastServiceDate))
+                  )";
             }
 
             sql += " ORDER BY c.CompanyName, p.ContactID";
 
             var parameters = new List<DBParameter>
             {
-                new DBParameter { ParamName = "@CoffeeServiceType", DataValue = coffee, DataDbType = DbType.Int32 }
+                new DBParameter { ParamName = "@CoffeeServiceType", DataValue = coffee, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@FilterServiceType", DataValue = filter, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@CleanServiceType", DataValue = clean, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@DescaleServiceType", DataValue = descale, DataDbType = DbType.Int32 },
+                new DBParameter { ParamName = "@ServiceServiceType", DataValue = service, DataDbType = DbType.Int32 }
             };
 
             var list = new List<PredictionBulkRecalcCandidate>();
@@ -241,21 +289,27 @@ LEFT JOIN ContactsTbl c ON c.ContactID = p.ContactID";
                     {
                         ContactID = Convert.ToInt32(rdr["ContactID"]),
                         CompanyName = rdr["CompanyName"] == DBNull.Value ? string.Empty : Convert.ToString(rdr["CompanyName"]),
-                        PreviousNextCoffeeBy = rdr["PreviousNextCoffeeBy"] == DBNull.Value
-                            ? (DateTime?)null
-                            : Convert.ToDateTime(rdr["PreviousNextCoffeeBy"]).Date,
+                        PreviousNextCoffeeBy = ReadDate(rdr, "PreviousNextCoffeeBy"),
+                        PreviousNextFilterEst = ReadDate(rdr, "PreviousNextFilterEst"),
+                        PreviousNextCleanOn = ReadDate(rdr, "PreviousNextCleanOn"),
+                        PreviousNextDescaleEst = ReadDate(rdr, "PreviousNextDescaleEst"),
+                        PreviousNextServiceEst = ReadDate(rdr, "PreviousNextServiceEst"),
                         PreviousDailyConsumption = rdr["PreviousDailyConsumption"] == DBNull.Value
                             ? (double?)null
                             : Convert.ToDouble(rdr["PreviousDailyConsumption"]),
                         LastCupCount = rdr["LastCupCount"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["LastCupCount"]),
-                        LastCoffeeDate = rdr["LastCoffeeDate"] == DBNull.Value
-                            ? (DateTime?)null
-                            : Convert.ToDateTime(rdr["LastCoffeeDate"]).Date
+                        LastCoffeeDate = ReadDate(rdr, "LastCoffeeDate"),
+                        LastFilterDate = ReadDate(rdr, "LastFilterDate")
                     });
                 }
             }
 
             return list;
+        }
+
+        private static DateTime? ReadDate(IDataRecord rdr, string name)
+        {
+            return rdr[name] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(rdr[name]).Date;
         }
     }
 
@@ -264,9 +318,14 @@ LEFT JOIN ContactsTbl c ON c.ContactID = p.ContactID";
         public int ContactID { get; set; }
         public string CompanyName { get; set; }
         public DateTime? PreviousNextCoffeeBy { get; set; }
+        public DateTime? PreviousNextFilterEst { get; set; }
+        public DateTime? PreviousNextCleanOn { get; set; }
+        public DateTime? PreviousNextDescaleEst { get; set; }
+        public DateTime? PreviousNextServiceEst { get; set; }
         public double? PreviousDailyConsumption { get; set; }
         public int LastCupCount { get; set; }
         public DateTime? LastCoffeeDate { get; set; }
+        public DateTime? LastFilterDate { get; set; }
     }
 
     public class CupCountTotalSummary

@@ -7,6 +7,13 @@
         function selectFile(filePath) {
             var tb = document.getElementById('<%= FileNameTextBox.ClientID %>');
             if (tb) tb.value = filePath;
+            var items = document.querySelectorAll('.file-browser .file-item');
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].getAttribute('data-path') === filePath)
+                    items[i].className = items[i].className.replace(/\s*selected\b/g, '') + ' selected';
+                else
+                    items[i].className = items[i].className.replace(/\s*selected\b/g, '');
+            }
         }
     </script>
 </asp:Content>
@@ -25,7 +32,7 @@
 
     <asp:UpdatePanel ID="upnlXmlToSql" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
         <ContentTemplate>
-            <asp:Panel ID="pnlMain" runat="server" CssClass="simpleForm page-tone-panel page-tone-xml">
+            <asp:Panel ID="pnlMain" runat="server" CssClass="simpleForm page-tone-panel page-tone-xml xmltosql-panel">
                 <div class="page-tone-header tool-card-header">
                     <img class="tool-card-icon" src="../images/imgButtons/Table.png" alt="" />
                     <div>
@@ -47,6 +54,15 @@
                     <asp:View ID="viewXml" runat="server">
                         <table class="detail-form-table" style="width: 100%;">
                             <tr>
+                                <td style="width: 4.5rem; white-space: nowrap;">Folder</td>
+                                <td>
+                                    <asp:DropDownList ID="ddlXmlFolder" runat="server" CssClass="xmltosql-fit"
+                                        AutoPostBack="true" OnSelectedIndexChanged="ddlXmlFolder_Changed"
+                                        CausesValidation="false"
+                                        ToolTip="Folder to list XML files from" />
+                                </td>
+                            </tr>
+                            <tr>
                                 <td style="width: 4.5rem; white-space: nowrap;">File</td>
                                 <td style="width: 100%;">
                                     <asp:TextBox ID="FileNameTextBox" runat="server"
@@ -58,7 +74,16 @@
                                 <td colspan="2" class="button-row">
                                     <asp:Button ID="RefreshFilesButton" runat="server" Text="Refresh Files"
                                         CssClass="filter-panel-btn" OnClick="RefreshFilesButton_Click"
-                                        CausesValidation="false" ToolTip="Reload XML files from App_Data" />
+                                        CausesValidation="false" ToolTip="Reload the file list for the selected folder" />
+                                    <asp:Button ID="btnArchive" runat="server" Text="Archive"
+                                        CssClass="filter-panel-btn" OnClick="btnArchive_Click"
+                                        CausesValidation="false"
+                                        OnClientClick="return confirm('Move SQL command packs in App_Data that are older than 13 days into Archive?');"
+                                        ToolTip="Move packs older than 13 days from App_Data into Archive" />
+                                    <asp:Button ID="btnUnarchive" runat="server" Text="Unarchive"
+                                        CssClass="filter-panel-btn" OnClick="btnUnarchive_Click"
+                                        CausesValidation="false"
+                                        ToolTip="Move the selected Archive file back to App_Data" />
                                     <asp:Button ID="GoButton" runat="server" Text="Execute XML"
                                         CssClass="filter-panel-btn" OnClick="GoButton_Click"
                                         CausesValidation="false"
@@ -77,7 +102,13 @@
                         </table>
 
                         <asp:Panel ID="pnlFileBrowser" runat="server" CssClass="file-browser">
-                            <strong>Available XML files in App_Data</strong><br />
+                            <div class="xmltosql-list-tools">
+                                <asp:LinkButton ID="btnSortName" runat="server" Text="Sort by Name"
+                                    CssClass="sys-prefs-tab" OnClick="btnSortName_Click" CausesValidation="false" />
+                                <asp:LinkButton ID="btnSortDate" runat="server" Text="Sort by Date"
+                                    CssClass="sys-prefs-tab" OnClick="btnSortDate_Click" CausesValidation="false" />
+                            </div>
+                            <strong><asp:Literal ID="ltrlFileBrowserTitle" runat="server" Text="XML Files" /></strong>
                             <asp:Literal ID="ltrlFileList" runat="server" />
                         </asp:Panel>
                     </asp:View>
@@ -185,7 +216,12 @@
         </ContentTemplate>
         <Triggers>
             <asp:AsyncPostBackTrigger ControlID="GoButton" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="ddlXmlFolder" EventName="SelectedIndexChanged" />
+            <asp:AsyncPostBackTrigger ControlID="btnSortName" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnSortDate" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="RefreshFilesButton" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnArchive" EventName="Click" />
+            <asp:AsyncPostBackTrigger ControlID="btnUnarchive" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnManualExecute" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnManualClear" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="gvManualHistory" EventName="RowCommand" />

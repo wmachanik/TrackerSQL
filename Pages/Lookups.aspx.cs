@@ -57,6 +57,7 @@ namespace TrackerSQL.Pages
         protected Button btnAreaGo;
         protected Button btnAreaReset;
         protected GridView gvAreas;
+        protected Literal litAreaDaysTitle;
         protected GridView gvAreaDays;
         protected HiddenField hdnOpenAreaId;
         protected Button btnOpenArea;
@@ -101,6 +102,9 @@ namespace TrackerSQL.Pages
         protected Button btnRepairStatusGo;
         protected Button btnRepairStatusReset;
         protected GridView gvRepairStatuses;
+        protected TabPanel tabpnlAltAddressKinds;
+        protected UpdatePanel upnlAltAddressKinds;
+        protected GridView gvAltAddressKinds;
         protected TabPanel tabpnlSortOrders;
         protected UpdatePanel upnlSortOrders;
         protected GridView gvSortOrders;
@@ -160,6 +164,7 @@ namespace TrackerSQL.Pages
                 BindPaymentTermsGrid();
                 BindPriceLevelsGrid();
                 BindRepairStatusesGrid();
+                BindAltAddressKindsGrid();
                 BindSortOrdersGrid();
                 BindCouriersGrid();
                 BindDriverOptionsGrid();
@@ -188,6 +193,16 @@ namespace TrackerSQL.Pages
                 for (int i = 0; i < tabcLookup.Tabs.Count; i++)
                 {
                     if (tabcLookup.Tabs[i] == tabpnlPeople)
+                        return i;
+                }
+            }
+
+            if (string.Equals(key, "Alt Address Types", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(key, "Address Types", StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 0; i < tabcLookup.Tabs.Count; i++)
+                {
+                    if (tabcLookup.Tabs[i] == tabpnlAltAddressKinds)
                         return i;
                 }
             }
@@ -1346,6 +1361,189 @@ namespace TrackerSQL.Pages
             GridPager.BuildPager(gvRepairStatuses, e.Row);
         }
 
+        private void BindAltAddressKindsGrid()
+        {
+            try
+            {
+                var repo = new AltAddressKindsRepository();
+                List<AltAddressKind> rows = repo.GetAll();
+                if (rows.Count == 0)
+                    rows.Add(new AltAddressKind { KindCode = string.Empty, KindName = string.Empty, CountsTowardTracking = true, Enabled = true });
+                gvAltAddressKinds.DataSource = rows;
+                gvAltAddressKinds.DataBind();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Could not load alt address types: " + ex.Message, true);
+            }
+        }
+
+        protected void gvAltAddressKinds_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvAltAddressKinds.EditIndex = e.NewEditIndex;
+            BindAltAddressKindsGrid();
+            upnlAltAddressKinds?.Update();
+        }
+
+        protected void gvAltAddressKinds_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvAltAddressKinds.EditIndex = -1;
+            BindAltAddressKindsGrid();
+            upnlAltAddressKinds?.Update();
+        }
+
+        protected void gvAltAddressKinds_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvAltAddressKinds.DataKeys[e.RowIndex].Value);
+                GridViewRow row = gvAltAddressKinds.Rows[e.RowIndex];
+                AltAddressKind kind = ReadAltAddressKindFromRow(row, footer: false);
+                kind.AltAddressKindID = id;
+                if (!ValidateAltAddressKind(kind, out string error))
+                {
+                    SetLookupStatus(error, true);
+                    return;
+                }
+                new AltAddressKindsRepository().Update(kind);
+                AlternativeAddressKind.ResetCache();
+                gvAltAddressKinds.EditIndex = -1;
+                BindAltAddressKindsGrid();
+                SetLookupStatus("Alternative address type updated.", false);
+                upnlAltAddressKinds?.Update();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Update failed: " + ex.Message, true);
+            }
+        }
+
+        protected void gvAltAddressKinds_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            try
+            {
+                int id = Convert.ToInt32(gvAltAddressKinds.DataKeys[e.RowIndex].Value);
+                GridViewRow row = gvAltAddressKinds.Rows[e.RowIndex];
+                var lblCode = row.FindControl("lblKindCode") as Label;
+                string code = lblCode?.Text;
+                var repo = new AltAddressKindsRepository();
+                int used = repo.CountAddressesUsing(code);
+                if (used > 0)
+                {
+                    SetLookupStatus("Cannot delete — " + used + " alternative address(es) still use this type. Disable it instead.", true);
+                    return;
+                }
+                repo.Delete(id);
+                AlternativeAddressKind.ResetCache();
+                BindAltAddressKindsGrid();
+                SetLookupStatus("Alternative address type deleted.", false);
+                upnlAltAddressKinds?.Update();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Delete failed: " + ex.Message, true);
+            }
+        }
+
+        protected void gvAltAddressKinds_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!string.Equals(e.CommandName, "Insert", StringComparison.OrdinalIgnoreCase))
+                return;
+            try
+            {
+                AltAddressKind kind = ReadAltAddressKindFromRow(gvAltAddressKinds.FooterRow, footer: true);
+                if (!ValidateAltAddressKind(kind, out string error))
+                {
+                    SetLookupStatus(error, true);
+                    return;
+                }
+                new AltAddressKindsRepository().Insert(kind);
+                AlternativeAddressKind.ResetCache();
+                BindAltAddressKindsGrid();
+                SetLookupStatus("Alternative address type added.", false);
+                upnlAltAddressKinds?.Update();
+            }
+            catch (Exception ex)
+            {
+                SetLookupStatus("Insert failed: " + ex.Message, true);
+            }
+        }
+
+        protected void gvAltAddressKinds_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType != DataControlRowType.DataRow && e.Row.RowType != DataControlRowType.Footer)
+                return;
+            var sm = ScriptManager.GetCurrent(Page);
+            if (sm == null)
+                return;
+            foreach (string id in new[] { "btnUpdate", "btnCancel", "btnEdit", "btnDelete", "btnAdd" })
+            {
+                Control btn = e.Row.FindControl(id);
+                if (btn != null)
+                    sm.RegisterPostBackControl(btn);
+            }
+        }
+
+        protected void gvAltAddressKinds_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvAltAddressKinds, e.Row);
+        }
+
+        private static AltAddressKind ReadAltAddressKindFromRow(GridViewRow row, bool footer)
+        {
+            string suffix = footer ? "Footer" : string.Empty;
+            var tbxCode = row.FindControl("tbxKindCode" + suffix) as TextBox;
+            var tbxName = row.FindControl("tbxKindName" + suffix) as TextBox;
+            var cbxTrack = row.FindControl("cbxCountsTowardTracking" + suffix) as CheckBox;
+            var tbxSort = row.FindControl("tbxSortOrder" + suffix) as TextBox;
+            var cbxOn = row.FindControl("cbxEnabled" + suffix) as CheckBox;
+            int sort = 0;
+            if (tbxSort != null)
+                int.TryParse(tbxSort.Text, out sort);
+            string name = tbxName?.Text?.Trim() ?? string.Empty;
+            string code = SanitizeAltAddressKindCode(tbxCode?.Text, name);
+            return new AltAddressKind
+            {
+                KindCode = code,
+                KindName = name,
+                CountsTowardTracking = cbxTrack == null || cbxTrack.Checked,
+                SortOrder = sort,
+                Enabled = cbxOn == null || cbxOn.Checked
+            };
+        }
+
+        private static string SanitizeAltAddressKindCode(string code, string name)
+        {
+            string raw = (code ?? string.Empty).Trim();
+            if (raw.Length == 0)
+                raw = name ?? string.Empty;
+            var chars = new List<char>();
+            foreach (char c in raw)
+            {
+                if (char.IsLetterOrDigit(c))
+                    chars.Add(c);
+                if (chars.Count >= 20)
+                    break;
+            }
+            return new string(chars.ToArray());
+        }
+
+        private static bool ValidateAltAddressKind(AltAddressKind kind, out string error)
+        {
+            error = null;
+            if (kind == null || string.IsNullOrWhiteSpace(kind.KindName))
+            {
+                error = "Enter a type name.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(kind.KindCode))
+            {
+                error = "Enter a short code (letters/digits), e.g. Home.";
+                return false;
+            }
+            return true;
+        }
+
         private void BindSortOrdersGrid()
         {
             try
@@ -2236,6 +2434,7 @@ namespace TrackerSQL.Pages
 
                 gvAreas.DataSource = cities;
                 gvAreas.DataBind();
+                ApplySelectedAreaRow();
             }
             catch (Exception ex)
             {
@@ -2660,23 +2859,106 @@ namespace TrackerSQL.Pages
 
         protected void gvAreas_OnSelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.gvAreas.SelectedDataKey.Values.Count <= 0)
+            if (gvAreas.SelectedDataKey == null || gvAreas.SelectedDataKey.Value == null)
                 return;
-            this.gvAreaDays.Visible = true;
+            RememberSelectedArea(Convert.ToInt32(gvAreas.SelectedDataKey.Value), AreaNameFromRow(gvAreas.SelectedRow));
+            gvAreaDays.Visible = true;
             BindAreaDaysGrid();
+        }
+
+        private int SelectedAreaId
+        {
+            get => ViewState["LookupsSelectedAreaId"] as int? ?? 0;
+            set => ViewState["LookupsSelectedAreaId"] = value;
+        }
+
+        private string SelectedAreaName
+        {
+            get => ViewState["LookupsSelectedAreaName"] as string ?? string.Empty;
+            set => ViewState["LookupsSelectedAreaName"] = value;
+        }
+
+        private void RememberSelectedArea(int areaId, string areaName)
+        {
+            SelectedAreaId = areaId;
+            SelectedAreaName = areaName ?? string.Empty;
+            UpdateAreaDaysTitle();
+        }
+
+        private static string AreaNameFromRow(GridViewRow row)
+        {
+            if (row == null)
+                return string.Empty;
+            Label lbl = row.FindControl("lblAreaName") as Label;
+            if (lbl != null && !string.IsNullOrWhiteSpace(lbl.Text))
+                return lbl.Text.Trim();
+            TextBox tbx = row.FindControl("tbxAreaName") as TextBox;
+            return (tbx?.Text ?? string.Empty).Trim();
+        }
+
+        /// <summary>
+        /// GridView SelectedIndex is a row on the current page. After paging it would
+        /// highlight a different area. Keep the real AreaID and only mark the matching row.
+        /// </summary>
+        private void ApplySelectedAreaRow()
+        {
+            gvAreas.SelectedIndex = -1;
+            if (SelectedAreaId <= 0 || gvAreas.DataKeys == null)
+            {
+                UpdateAreaDaysTitle();
+                return;
+            }
+
+            for (int i = 0; i < gvAreas.Rows.Count; i++)
+            {
+                if (gvAreas.Rows[i].RowType != DataControlRowType.DataRow)
+                    continue;
+                object key = gvAreas.DataKeys[i].Value;
+                if (key != null && Convert.ToInt32(key) == SelectedAreaId)
+                {
+                    gvAreas.SelectedIndex = i;
+                    if (string.IsNullOrWhiteSpace(SelectedAreaName))
+                        SelectedAreaName = AreaNameFromRow(gvAreas.Rows[i]);
+                    break;
+                }
+            }
+
+            UpdateAreaDaysTitle();
+        }
+
+        private void UpdateAreaDaysTitle()
+        {
+            if (litAreaDaysTitle == null)
+                return;
+            string name = SelectedAreaName.Trim();
+            litAreaDaysTitle.Text = name.Length == 0
+                ? "Delivery Days for Selected Area"
+                : "Delivery Days for " + name + " Area";
+        }
+
+        private int CurrentSelectedAreaId()
+        {
+            if (SelectedAreaId > 0)
+                return SelectedAreaId;
+            if (gvAreas.SelectedDataKey?.Value == null)
+                return 0;
+            return Convert.ToInt32(gvAreas.SelectedDataKey.Value);
         }
 
         private void BindAreaDaysGrid()
         {
             try
             {
-                if (gvAreas.SelectedDataKey == null || gvAreas.SelectedDataKey.Value == null)
+                int areaId = CurrentSelectedAreaId();
+                if (areaId <= 0)
                 {
                     gvAreaDays.Visible = false;
+                    UpdateAreaDaysTitle();
                     return;
                 }
 
-                int areaId = Convert.ToInt32(gvAreas.SelectedDataKey.Value);
+                UpdateAreaDaysTitle();
+                gvAreaDays.Visible = true;
                 var repo = new AreaPrepDaysRepository();
                 var filtered = repo.GetAll("DeliveryOrder, PrepDayOfWeekID")
                     .Where(x => x.AreaID == areaId)
@@ -2708,13 +2990,12 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
-                if (gvAreas.SelectedDataKey == null || gvAreas.SelectedDataKey.Value == null)
+                int areaId = CurrentSelectedAreaId();
+                if (areaId <= 0)
                 {
                     lblStatus.Text = "Select an area first.";
                     return;
                 }
-
-                int areaId = Convert.ToInt32(this.gvAreas.SelectedDataKey.Value);
 
                 var prepDay = new AreaPrepDays
                 {
@@ -2780,7 +3061,12 @@ namespace TrackerSQL.Pages
                     TextBox control2 = (TextBox)gridViewRow.FindControl("tbxDeliveryDelay");
                     var controlId = (HiddenField)gridViewRow.FindControl("AreaPrepDaysIDHidden");
 
-                    int areaId = Convert.ToInt32(this.gvAreas.SelectedDataKey.Value);
+                    int areaId = CurrentSelectedAreaId();
+                    if (areaId <= 0)
+                    {
+                        lblStatus.Text = "Select an area first.";
+                        return;
+                    }
 
                     var prepDay = new AreaPrepDays
                     {
@@ -3106,10 +3392,10 @@ namespace TrackerSQL.Pages
             if (index < 0)
                 return;
 
+            RememberSelectedArea(areaId, areas[index].AreaName);
             gvAreas.EditIndex = -1;
             gvAreas.PageIndex = index / gvAreas.PageSize;
             BindAreasGrid();
-            gvAreas.SelectedIndex = index % gvAreas.PageSize;
             gvAreaDays.EditIndex = -1;
             gvAreaDays.Visible = true;
             BindAreaDaysGrid();

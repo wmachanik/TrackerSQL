@@ -309,6 +309,7 @@ namespace TrackerSQL.Managers
                     .Select(g => new DriverTrackingStop
                     {
                         Seq = g.Min(o => o.Seq),
+                        OrderId = g.First().OrderId,
                         ContactId = g.First().ContactId,
                         Company = g.First().Company,
                         Area = string.IsNullOrWhiteSpace(g.First().AreaCode)
@@ -372,7 +373,10 @@ namespace TrackerSQL.Managers
                     if (stop.Done)
                         continue;
                     MobileDeliveryStop sample = orders
-                        .Where(o => o.DeliveryById == driver.PersonId && o.ContactId == stop.ContactId && !IsFinished(o))
+                        .Where(o => o.DeliveryById == driver.PersonId && !IsFinished(o)
+                            && (WalkInOrderSite.IsWalkIn(stop.ContactId)
+                                ? o.OrderId == stop.OrderId
+                                : o.ContactId == stop.ContactId))
                         .OrderBy(o => o.Seq)
                         .FirstOrDefault();
                     if (sample != null && routeTimes.Stops.TryGetValue(sample.OrderId, out RouteTimesManager.StopTime time)
@@ -548,11 +552,17 @@ namespace TrackerSQL.Managers
                 if (!driverId.HasValue || driverId.Value <= 0)
                     continue;
 
-                string deliverToName = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+                bool sundry = WalkInOrderSite.IsWalkIn(row.ContactId);
+                string walkInName = sundry ? SundryNotes.Name(row.Notes) : null;
+                string deliverToName = sundry
+                    ? null
+                    : DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
                 bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverToName);
-                string company = hasDeliverTo
-                    ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.CompanyName)
-                    : row.CompanyName;
+                string company = sundry
+                    ? (string.IsNullOrWhiteSpace(walkInName) ? "ZZName" : walkInName)
+                    : hasDeliverTo
+                        ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.CompanyName)
+                        : row.CompanyName;
 
                 int seq = seqByDriver.TryGetValue(driverId.Value, out int n) ? n + 1 : 1;
                 seqByDriver[driverId.Value] = seq;
@@ -572,7 +582,28 @@ namespace TrackerSQL.Managers
                     Seq = seq
                 };
 
-                if (row.DeliverToAddressId is int addrId && addrId > 0)
+                if (sundry)
+                {
+                    if (row.WalkInLat.HasValue && row.WalkInLng.HasValue)
+                    {
+                        stop.Gps = new MobileStopGps
+                        {
+                            Lat = Math.Round(row.WalkInLat.Value, 6),
+                            Lng = Math.Round(row.WalkInLng.Value, 6),
+                            Kind = "lookup"
+                        };
+                    }
+                    else
+                        stop.Gps = new MobileStopGps { Kind = "none" };
+                    stop.NoGpsLearning = true;
+                    stop.Address = string.IsNullOrWhiteSpace(SundryNotes.Address(row.Notes))
+                        ? null
+                        : SundryNotes.Address(row.Notes);
+                    stop.Notes = string.IsNullOrWhiteSpace(SundryNotes.Rest(row.Notes))
+                        ? null
+                        : SundryNotes.Rest(row.Notes);
+                }
+                else if (row.DeliverToAddressId is int addrId && addrId > 0)
                 {
                     ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(addrId);
                     if (addr?.Latitude is decimal lat && addr.Longitude is decimal lng)
@@ -607,11 +638,17 @@ namespace TrackerSQL.Managers
                 if (!driverId.HasValue || driverId.Value <= 0)
                     continue;
 
-                string deliverToName = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+                bool sundry = WalkInOrderSite.IsWalkIn(row.ContactID);
+                string walkInName = sundry ? SundryNotes.Name(row.Notes) : null;
+                string deliverToName = sundry
+                    ? null
+                    : DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
                 bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverToName);
-                string company = hasDeliverTo
-                    ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.ContactName)
-                    : row.ContactName;
+                string company = sundry
+                    ? (string.IsNullOrWhiteSpace(walkInName) ? "ZZName" : walkInName)
+                    : hasDeliverTo
+                        ? DeliveryOnBehalfManager.ListDisplayName(deliverToName, row.ContactName)
+                        : row.ContactName;
 
                 int seq = seqByDriver.TryGetValue(driverId.Value, out int n) ? n + 1 : 1;
                 seqByDriver[driverId.Value] = seq;
@@ -675,6 +712,8 @@ namespace TrackerSQL.Managers
 
         private static int StopGroupKey(MobileDeliveryStop o)
         {
+            if (WalkInOrderSite.IsWalkIn(o.ContactId))
+                return o.OrderId;
             if (!string.IsNullOrWhiteSpace(o.DeliverTo))
                 return o.DeliverToAddressId ?? o.OrderId;
             return o.ContactId;
@@ -694,7 +733,7 @@ namespace TrackerSQL.Managers
             }
             foreach (MobileDeliveryStop o in orders)
             {
-                if (!string.IsNullOrWhiteSpace(o.DeliverTo))
+                if (!string.IsNullOrWhiteSpace(o.DeliverTo) || WalkInOrderSite.IsWalkIn(o.ContactId))
                     continue;
                 int id = o.ContactId;
                 if (id > 0 && !map.ContainsKey(id) && LoadPoints(new[] { id }).TryGetValue(id, out Tuple<double, double> pt))

@@ -104,7 +104,7 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
-        /// Bulk recalculation of prediction averages and NextCoffeeBy (does not touch recurring dates).
+        /// Bulk recalculation of Next Coffee, filter, clean, descale and service dates (not recurring orders).
         /// </summary>
         public List<PredictionBulkRecalcResult> RecalculateBulk(bool staleOnly)
         {
@@ -118,12 +118,13 @@ namespace TrackerSQL.Managers
                 {
                     ContactID = candidate.ContactID,
                     CompanyName = candidate.CompanyName ?? string.Empty,
-                    LastCoffeeDate = candidate.LastCoffeeDate.HasValue
-                        ? candidate.LastCoffeeDate.Value.ToString("yyyy-MM-dd")
-                        : "(none)",
-                    PreviousNextCoffee = candidate.PreviousNextCoffeeBy.HasValue
-                        ? candidate.PreviousNextCoffeeBy.Value.ToString("yyyy-MM-dd")
-                        : "(none)",
+                    LastCoffeeDate = FmtDate(candidate.LastCoffeeDate),
+                    LastFilterDate = FmtDate(candidate.LastFilterDate),
+                    PreviousNextCoffee = FmtDate(candidate.PreviousNextCoffeeBy),
+                    PreviousNextFilter = FmtDate(candidate.PreviousNextFilterEst),
+                    PreviousNextClean = FmtDate(candidate.PreviousNextCleanOn),
+                    PreviousNextDescale = FmtDate(candidate.PreviousNextDescaleEst),
+                    PreviousNextService = FmtDate(candidate.PreviousNextServiceEst),
                     PreviousDaily = candidate.PreviousDailyConsumption.HasValue
                         ? candidate.PreviousDailyConsumption.Value.ToString("0.####")
                         : "(n/a)"
@@ -133,9 +134,11 @@ namespace TrackerSQL.Managers
                 {
                     bool ok = CalcAndSaveNextRequiredDates(candidate.ContactID);
                     var after = _contactsUsageRepository.GetByContactId(candidate.ContactID);
-                    row.NewNextCoffee = after?.NextCoffeeBy.HasValue == true
-                        ? after.NextCoffeeBy.Value.ToString("yyyy-MM-dd")
-                        : "(none)";
+                    row.NewNextCoffee = FmtDate(after?.NextCoffeeBy);
+                    row.NewNextFilter = FmtDate(after?.NextFilterEst);
+                    row.NewNextClean = FmtDate(after?.NextCleanOn);
+                    row.NewNextDescale = FmtDate(after?.NextDescaleEst);
+                    row.NewNextService = FmtDate(after?.NextServiceEst);
                     row.NewDaily = after?.DailyConsumption.HasValue == true
                         ? after.DailyConsumption.Value.ToString("0.####")
                         : "(n/a)";
@@ -146,15 +149,22 @@ namespace TrackerSQL.Managers
                     }
                     else
                     {
-                        bool nextChanged = !string.Equals(row.PreviousNextCoffee, row.NewNextCoffee, StringComparison.Ordinal);
-                        bool dailyChanged = !string.Equals(row.PreviousDaily, row.NewDaily, StringComparison.Ordinal);
-                        row.Changed = nextChanged || dailyChanged;
+                        row.Changed = !string.Equals(row.PreviousNextCoffee, row.NewNextCoffee, StringComparison.Ordinal)
+                            || !string.Equals(row.PreviousNextFilter, row.NewNextFilter, StringComparison.Ordinal)
+                            || !string.Equals(row.PreviousNextClean, row.NewNextClean, StringComparison.Ordinal)
+                            || !string.Equals(row.PreviousNextDescale, row.NewNextDescale, StringComparison.Ordinal)
+                            || !string.Equals(row.PreviousNextService, row.NewNextService, StringComparison.Ordinal)
+                            || !string.Equals(row.PreviousDaily, row.NewDaily, StringComparison.Ordinal);
                         row.Result = row.Changed ? "Changed" : "Unchanged";
                     }
                 }
                 catch (Exception ex)
                 {
                     row.NewNextCoffee = row.PreviousNextCoffee;
+                    row.NewNextFilter = row.PreviousNextFilter;
+                    row.NewNextClean = row.PreviousNextClean;
+                    row.NewNextDescale = row.PreviousNextDescale;
+                    row.NewNextService = row.PreviousNextService;
                     row.NewDaily = row.PreviousDaily;
                     row.Changed = false;
                     row.Result = "Error: " + ex.Message;
@@ -179,6 +189,11 @@ namespace TrackerSQL.Managers
                 + " changed=" + results.FindAll(r => r.Changed).Count);
 
             return results;
+        }
+
+        private static string FmtDate(DateTime? value)
+        {
+            return value.HasValue ? value.Value.ToString("yyyy-MM-dd") : "(none)";
         }
 
         private static int ResultRank(string result)
@@ -432,8 +447,17 @@ namespace TrackerSQL.Managers
         public int ContactID { get; set; }
         public string CompanyName { get; set; }
         public string LastCoffeeDate { get; set; }
+        public string LastFilterDate { get; set; }
         public string PreviousNextCoffee { get; set; }
         public string NewNextCoffee { get; set; }
+        public string PreviousNextFilter { get; set; }
+        public string NewNextFilter { get; set; }
+        public string PreviousNextClean { get; set; }
+        public string NewNextClean { get; set; }
+        public string PreviousNextDescale { get; set; }
+        public string NewNextDescale { get; set; }
+        public string PreviousNextService { get; set; }
+        public string NewNextService { get; set; }
         public string PreviousDaily { get; set; }
         public string NewDaily { get; set; }
         public string Result { get; set; }

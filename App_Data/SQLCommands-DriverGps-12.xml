@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Walk-in (ZZName) delivery site on the order: area and a one-off GPS point.
+  Never stored on contact 9. Idempotent. Runs at application start via OrderFlagsSchemaInstaller.
+-->
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrdersTbl', N'WalkInAreaID') IS NULL
+          ALTER TABLE dbo.OrdersTbl ADD WalkInAreaID INT NULL;
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrdersTbl', N'WalkInLatitude') IS NULL
+          ALTER TABLE dbo.OrdersTbl ADD WalkInLatitude DECIMAL(10, 6) NULL;
+      IF OBJECT_ID(N'dbo.OrdersTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.OrdersTbl', N'WalkInLongitude') IS NULL
+          ALTER TABLE dbo.OrdersTbl ADD WalkInLongitude DECIMAL(10, 6) NULL;
+    ]]>
+  </command>
+</root>

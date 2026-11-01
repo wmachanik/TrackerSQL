@@ -1800,6 +1800,45 @@ button,
     flex-wrap: wrap;
 }
 
+.confirm-modal-wide {
+    max-width: 640px;
+}
+
+.alt-address-modal p.alt-address-hint {
+    margin: 0 0 12px;
+    color: #5c5346;
+    font-size: 0.92em;
+}
+
+.alt-address-modal table.TblCoffee {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.alt-address-modal table.TblCoffee td:first-child {
+    width: 7.5em;
+    white-space: nowrap;
+    vertical-align: top;
+    padding-top: 6px;
+}
+
+.alt-address-modal .alt-address-lines input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+}
+
+.contact-deliver-to-tab .TblWhite input[type="image"],
+.contact-deliver-to-tab .deliver-to-icon-btn {
+    width: 16px !important;
+    height: 16px !important;
+    padding: 0;
+    vertical-align: middle;
+    border: none;
+    background: transparent;
+}
+
 .order-detail-toolbar {
     display: flex;
     align-items: center;
@@ -8867,7 +8906,7 @@ body.woo-map-working [id$="upgWooMap"] {
     }
 }
 
-/* Lookups → Areas: compact list + delivery days (no forced 600px / horizontal scroll) */
+/* Lookups → Areas: each table hugs its columns, side by side, at most half the row */
 .lookups-areas-layout {
     display: flex;
     flex-wrap: wrap;
@@ -8875,27 +8914,15 @@ body.woo-map-working [id$="upgWooMap"] {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    align-items: stretch;
+    align-items: flex-start;
 }
 
-.lookups-areas-list {
-    flex: 0 1 22rem;
-    max-width: min(100%, 28rem);
-    min-width: min(100%, 16rem);
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    border: 1px solid #e0e0c8;
-    border-radius: 12px;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
+.lookups-areas-list,
 .lookups-areas-days {
-    flex: 0 1 auto;
-    width: max-content;
-    max-width: 100%;
-    align-self: flex-start;
+    flex: 0 0 auto;
+    width: fit-content;
+    min-width: fit-content;
+    max-width: 50%;
     display: flex;
     flex-direction: column;
     background: #fff;
@@ -8926,19 +8953,11 @@ body.woo-map-working [id$="upgWooMap"] {
 
 .lookups-areas-table.results-table,
 .lookups-area-days-table.results-table {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
     table-layout: auto !important;
     margin: 0;
-}
-
-/* Delivery-days grid: hug content (override results-table min-width:600px) */
-.lookups-area-days-table.results-table {
-    width: max-content !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    table-layout: auto !important;
 }
 
 .lookups-areas-table.results-table th,
@@ -8959,8 +8978,8 @@ body.woo-map-working [id$="upgWooMap"] {
 }
 
 .lookups-areas-table .col-area-name {
-    width: 99% !important;
-    white-space: normal !important;
+    width: auto !important;
+    white-space: nowrap !important;
 }
 
 .lookups-area-days-table .col-prep-day {

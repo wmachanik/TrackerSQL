@@ -21,5 +21,9 @@ namespace TrackerSQL.Models
         public int? InvoiceTypeID { get; set; }
         /// <summary>Null or 0 = main contact address; otherwise ContactDeliverToAddressTbl.</summary>
         public int? DeliverToAddressID { get; set; }
+        /// <summary>Walk-in (ZZName) area for this order only.</summary>
+        public int? WalkInAreaID { get; set; }
+        public decimal? WalkInLatitude { get; set; }
+        public decimal? WalkInLongitude { get; set; }
     }
 }

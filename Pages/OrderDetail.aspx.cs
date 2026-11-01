@@ -586,7 +586,8 @@ namespace TrackerSQL.Pages
                 InvoiceTypeID = TryGetListControlValue(ddlInvoiceType, out string invoiceTypeValue)
                     && int.TryParse(invoiceTypeValue, out int invoiceTypeId) && invoiceTypeId > 0
                         ? invoiceTypeId
-                        : (int?)null
+                        : (int?)null,
+                WalkInAreaID = WalkInOrderSite.IsWalkIn(contactId) ? ReadWalkInAreaId() : (int?)null
             };
 
             header.OrderDate = DateTime.TryParse(tbxOrderDate.Text, out DateTime orderDate) ? orderDate.Date : DateTime.MinValue;
@@ -610,6 +611,7 @@ namespace TrackerSQL.Pages
             tbxRequiredByDate.Text = header.RequiredByDate.ToString("yyyy-MM-dd");
             tbxPurchaseOrder.Text = header.PurchaseOrder ?? string.Empty;
             tbxNotes.Text = header.Notes ?? string.Empty;
+            BindWalkInAreaRow(header.CustomerID, header.WalkInAreaID);
             cbxConfirmed.Checked = header.Confirmed;
             cbxInvoiceDone.Checked = header.InvoiceDone;
             cbxDone.Checked = header.Done;
@@ -650,6 +652,45 @@ namespace TrackerSQL.Pages
             (selected
                 ?? ddlInvoiceType.Items.FindByValue(SystemConstants.InvoiceTypeConstants.DefaultForNewOrder.ToString())
                 ?? ddlInvoiceType.Items[0]).Selected = true;
+        }
+
+        private void BindWalkInAreaRow(long contactId, int? selectedAreaId)
+        {
+            bool show = false;
+            if (trWalkInArea != null)
+                trWalkInArea.Visible = show;
+            if (ddlWalkInArea == null)
+                return;
+            ddlWalkInArea.Items.Clear();
+            if (!show)
+                return;
+
+            ddlWalkInArea.Items.Add(new ListItem("(no area)", "0"));
+            foreach (Area area in new AreasRepository().GetLookupList())
+            {
+                if (area == null || area.AreaID <= 0)
+                    continue;
+                ddlWalkInArea.Items.Add(new ListItem(area.AreaName, area.AreaID.ToString()));
+            }
+
+            string value = selectedAreaId.HasValue && selectedAreaId.Value > 0
+                ? selectedAreaId.Value.ToString()
+                : "0";
+            ListItem item = ddlWalkInArea.Items.FindByValue(value);
+            if (item != null)
+            {
+                ddlWalkInArea.ClearSelection();
+                item.Selected = true;
+            }
+        }
+
+        private int? ReadWalkInAreaId()
+        {
+            if (ddlWalkInArea == null || !ddlWalkInArea.Visible)
+                return null;
+            if (!int.TryParse(ddlWalkInArea.SelectedValue, out int id) || id <= 0)
+                return null;
+            return id;
         }
 
         private void BindWaybillRow()
@@ -884,7 +925,8 @@ namespace TrackerSQL.Pages
                 return false;
             }
 
-            if (DeliveryOnBehalfManager.ContactNeedsDeliverToChoice((int)header.CustomerID)
+            if (ZzNameDeliverTo.ShowChoice((int)header.CustomerID)
+                && header.DeliverToAddressID.GetValueOrDefault() > 0
                 && !OrdersRepository.HasDeliverToAddressIdColumn())
             {
                 SetStatusMessage(
@@ -907,12 +949,33 @@ namespace TrackerSQL.Pages
             HideDuplicateMergePrompt();
 
             OrderHeaderData previousHeader = _orderManager.GetOrderHeader(OrderId);
+            if (WalkInOrderSite.IsWalkIn(header.CustomerID))
+            {
+                header.WalkInLatitude = previousHeader?.WalkInLatitude;
+                header.WalkInLongitude = previousHeader?.WalkInLongitude;
+                header.WalkInAreaID = previousHeader?.WalkInAreaID;
+            }
 
             if (!_orderManager.UpdateOrderHeader(OrderId, header))
             {
                 SetStatusMessage("Could not save your changes.", isError: true);
                 pnlOrderHeader.Update();
                 return false;
+            }
+
+            if (header.DeliverToAddressID.GetValueOrDefault() > 0)
+            {
+                ZzNameDeliverTo.TouchLastUsed(header.DeliverToAddressID.Value);
+                if (!navigatingAway
+                    && ZzNameDeliverTo.IsZzName(header.CustomerID)
+                    && ZzNameDeliverTo.CountOrders(header.DeliverToAddressID.Value) >= 2)
+                {
+                    string person = SundryNotes.Name(header.Notes);
+                    ContactDeliverToAddress alt = new ContactDeliverToAddressRepository().GetById(header.DeliverToAddressID.Value);
+                    if (!string.IsNullOrWhiteSpace(alt?.DeliverToPerson))
+                        person = alt.DeliverToPerson;
+                    ShowPromoteZzName(header.DeliverToAddressID.Value, person);
+                }
             }
 
             bool headerChanged = previousHeader != null && HeaderFieldsDiffer(previousHeader, header);
@@ -956,7 +1019,10 @@ namespace TrackerSQL.Pages
                 PurchaseOrder = source.PurchaseOrder,
                 Notes = source.Notes,
                 InvoiceTypeID = source.InvoiceTypeID,
-                DeliverToAddressID = source.DeliverToAddressID
+                DeliverToAddressID = source.DeliverToAddressID,
+                WalkInAreaID = source.WalkInAreaID,
+                WalkInLatitude = source.WalkInLatitude,
+                WalkInLongitude = source.WalkInLongitude
             };
         }
 
@@ -976,7 +1042,8 @@ namespace TrackerSQL.Pages
                 || (previous.PurchaseOrder ?? string.Empty) != (current.PurchaseOrder ?? string.Empty)
                 || (previous.Notes ?? string.Empty) != (current.Notes ?? string.Empty)
                 || previous.InvoiceTypeID != current.InvoiceTypeID
-                || previous.DeliverToAddressID != current.DeliverToAddressID;
+                || previous.DeliverToAddressID != current.DeliverToAddressID
+                || previous.WalkInAreaID != current.WalkInAreaID;
         }
 
         protected void btnUndoHeader_Click(object sender, EventArgs e)
@@ -1045,6 +1112,18 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterAsyncPostBackControl(btnDismissMergePrompt);
             if (ddlDeliverToOrder != null)
                 scriptManager.RegisterAsyncPostBackControl(ddlDeliverToOrder);
+            if (btnEditDeliverToOrder != null)
+                scriptManager.RegisterAsyncPostBackControl(btnEditDeliverToOrder);
+            if (btnSaveOdDeliverTo != null)
+                scriptManager.RegisterAsyncPostBackControl(btnSaveOdDeliverTo);
+            if (btnCancelOdDeliverTo != null)
+                scriptManager.RegisterAsyncPostBackControl(btnCancelOdDeliverTo);
+            if (btnPromoteZzNameYes != null)
+                scriptManager.RegisterAsyncPostBackControl(btnPromoteZzNameYes);
+            if (btnPromoteZzNameNo != null)
+                scriptManager.RegisterAsyncPostBackControl(btnPromoteZzNameNo);
+            if (btnOdGpsRefresh != null)
+                scriptManager.RegisterAsyncPostBackControl(btnOdGpsRefresh);
         }
 
         /// <summary>Contact id from hdnSelectedContactId — single source of truth on the form.</summary>
@@ -1345,7 +1424,10 @@ namespace TrackerSQL.Pages
                 else
                 {
                     MarkHeaderDirty();
-                    BindDeliverToOrderDropdown(contactId, ReadDeliverToAddressIdFromControls());
+                    int? deliverTo = ZzNameDeliverTo.ShowChoice(contactId)
+                        ? ReadDeliverToAddressIdFromControls()
+                        : null;
+                    BindDeliverToOrderDropdown(contactId, deliverTo);
                 }
 
                 UpdateNewItemButtonState();
@@ -1503,6 +1585,8 @@ namespace TrackerSQL.Pages
                 parts.Add($"Flag {previous.InvoiceTypeID?.ToString() ?? "default"}->{current.InvoiceTypeID?.ToString() ?? "default"}");
             if (previous.DeliverToAddressID != current.DeliverToAddressID)
                 parts.Add($"DeliverTo {previous.DeliverToAddressID?.ToString() ?? "main"}->{current.DeliverToAddressID?.ToString() ?? "main"}");
+            if (previous.WalkInAreaID != current.WalkInAreaID)
+                parts.Add($"Walk-in area {previous.WalkInAreaID?.ToString() ?? "none"}->{current.WalkInAreaID?.ToString() ?? "none"}");
 
             return parts.Count > 0 ? string.Join("; ", parts) : "header updated";
         }
@@ -1678,6 +1762,7 @@ namespace TrackerSQL.Pages
                     ? invoiceTypeId
                     : (int?)null;
             BindInvoiceTypeDropdown(contactId, chosenInvoiceTypeId);
+            BindWalkInAreaRow(contactId, ReadWalkInAreaId());
 
             if (prefs.RequiresPurchOrder && string.IsNullOrWhiteSpace(tbxPurchaseOrder.Text))
                 tbxPurchaseOrder.Text = SystemConstants.UIConstants.PORequiredText;
@@ -1737,14 +1822,15 @@ namespace TrackerSQL.Pages
             if (trDeliverToOrder == null || ddlDeliverToOrder == null)
                 return;
 
-            bool show = DeliveryOnBehalfManager.ContactNeedsDeliverToChoice(contactId);
+            bool show = ZzNameDeliverTo.ShowChoice(contactId);
             trDeliverToOrder.Visible = show;
             ddlDeliverToOrder.Items.Clear();
+            if (btnEditDeliverToOrder != null)
+                btnEditDeliverToOrder.Visible = false;
             if (!show)
                 return;
 
-            ddlDeliverToOrder.Items.Add(new ListItem("— select recipient —", ""));
-            ddlDeliverToOrder.Items.Add(new ListItem("Main (customer address)", "0"));
+            ddlDeliverToOrder.Items.Add(new ListItem("Standard", ZzNameDeliverTo.StandardValue));
 
             foreach (ContactDeliverToAddress row in new ContactDeliverToAddressRepository().ListForContact(contactId, enabledOnly: true))
             {
@@ -1753,11 +1839,11 @@ namespace TrackerSQL.Pages
                     row.DeliverToAddressID.ToString()));
             }
 
-            string selected = string.Empty;
+            ddlDeliverToOrder.Items.Add(new ListItem("New alternative…", ZzNameDeliverTo.NewAddressValue));
+
+            string selected = ZzNameDeliverTo.StandardValue;
             if (selectedDeliverToAddressId.HasValue && selectedDeliverToAddressId.Value > 0)
                 selected = selectedDeliverToAddressId.Value.ToString();
-            else if (OrderId > 0)
-                selected = "0";
 
             if (!string.IsNullOrEmpty(selected))
             {
@@ -1768,6 +1854,15 @@ namespace TrackerSQL.Pages
                     pick.Selected = true;
                 }
             }
+
+            UpdateDeliverToEditButton();
+        }
+
+        private void UpdateDeliverToEditButton()
+        {
+            if (btnEditDeliverToOrder == null)
+                return;
+            btnEditDeliverToOrder.Visible = ReadDeliverToAddressIdFromControls().GetValueOrDefault() > 0;
         }
 
         private int? ReadDeliverToAddressIdFromControls()
@@ -1785,7 +1880,7 @@ namespace TrackerSQL.Pages
         {
             errorMessage = null;
             int contactId = (int)GetEffectiveContactId();
-            if (!DeliveryOnBehalfManager.ContactNeedsDeliverToChoice(contactId))
+            if (trDeliverToOrder == null || !trDeliverToOrder.Visible)
                 return true;
 
             if (!OrdersRepository.HasDeliverToAddressIdColumn())
@@ -1795,9 +1890,10 @@ namespace TrackerSQL.Pages
                 return false;
             }
 
-            if (ddlDeliverToOrder == null || string.IsNullOrEmpty(ddlDeliverToOrder.SelectedValue))
+            if (ddlDeliverToOrder == null || string.IsNullOrEmpty(ddlDeliverToOrder.SelectedValue)
+                || ddlDeliverToOrder.SelectedValue == ZzNameDeliverTo.NewAddressValue)
             {
-                errorMessage = "Choose the main customer address or a recipient address.";
+                errorMessage = "Choose Standard or an alternative address.";
                 return false;
             }
 
@@ -1817,10 +1913,19 @@ namespace TrackerSQL.Pages
 
         protected void ddlDeliverToOrder_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!TryGetListControlValue(ddlDeliverToOrder, out string raw) || raw == string.Empty || raw == "0")
+            if (!TryGetListControlValue(ddlDeliverToOrder, out string raw)
+                || raw == string.Empty
+                || raw == ZzNameDeliverTo.StandardValue)
             {
+                UpdateDeliverToEditButton();
                 MarkHeaderDirty();
                 pnlOrderHeader.Update();
+                return;
+            }
+
+            if (raw == ZzNameDeliverTo.NewAddressValue)
+            {
+                ShowDeliverToEditor(0);
                 return;
             }
 
@@ -1841,8 +1946,260 @@ namespace TrackerSQL.Pages
             }
 
             MaybeApplyDeliverToPurchaseOrder(id, row);
+            UpdateDeliverToEditButton();
             MarkHeaderDirty();
             pnlOrderHeader.Update();
+        }
+
+        protected void btnEditDeliverToOrder_Click(object sender, EventArgs e)
+        {
+            int? id = ReadDeliverToAddressIdFromControls();
+            if (id.GetValueOrDefault() > 0)
+                ShowDeliverToEditor(id.Value);
+        }
+
+        private void ShowDeliverToEditor(int deliverToAddressId)
+        {
+            int contactId = (int)GetEffectiveContactId();
+            if (contactId <= 0)
+                return;
+
+            hdnDeliverToEditorId.Value = deliverToAddressId.ToString();
+            litDeliverToEditorTitle.Text = deliverToAddressId > 0 ? "Edit alternative address" : "New alternative address";
+            lblOdDeliverToError.Visible = false;
+
+            BindOdDeliverToLookups();
+
+            ContactDeliverToAddress row = deliverToAddressId > 0
+                ? new ContactDeliverToAddressRepository().GetById(deliverToAddressId)
+                : null;
+            if (row != null && row.ContactID == contactId)
+            {
+                tbxOdDeliverToPerson.Text = row.DeliverToPerson ?? row.Label;
+                tbxOdDeliverToCell.Text = row.CellNumber;
+                tbxOdDeliverToAddr1.Text = row.Address1;
+                tbxOdDeliverToAddr2.Text = row.Address2;
+                tbxOdDeliverToAddr3.Text = row.Address3;
+                tbxOdDeliverToPostal.Text = row.PostalCode;
+                SelectDropValue(ddlOdDeliverToArea, row.AreaID);
+                SelectDropValue(ddlOdDeliverToBy, row.ToBeDeliveredByID);
+            }
+            else
+            {
+                tbxOdDeliverToPerson.Text = ZzNameDeliverTo.IsZzName(contactId) ? SundryNotes.Name(tbxNotes.Text) : string.Empty;
+                tbxOdDeliverToCell.Text = string.Empty;
+                string addr = ZzNameDeliverTo.IsZzName(contactId) ? SundryNotes.Address(tbxNotes.Text) : string.Empty;
+                tbxOdDeliverToAddr1.Text = addr;
+                tbxOdDeliverToAddr2.Text = string.Empty;
+                tbxOdDeliverToAddr3.Text = string.Empty;
+                tbxOdDeliverToPostal.Text = string.Empty;
+                ddlOdDeliverToArea.ClearSelection();
+                if (ddlOdDeliverToArea.Items.Count > 0)
+                    ddlOdDeliverToArea.Items[0].Selected = true;
+                SelectDropValue(ddlOdDeliverToBy, PreferredDeliveryPersonId);
+            }
+
+            pnlDeliverToEditor.Visible = true;
+            UpdateOdDeliverToGpsLine();
+            upnlDeliverToEditor.Update();
+        }
+
+        private void BindOdDeliverToLookups()
+        {
+            ddlOdDeliverToArea.Items.Clear();
+            ddlOdDeliverToArea.Items.Add(new ListItem("- please select -", "0"));
+            foreach (Area area in new AreasRepository().GetLookupList())
+            {
+                if (area == null || area.AreaID <= 0)
+                    continue;
+                ddlOdDeliverToArea.Items.Add(new ListItem(area.AreaName, area.AreaID.ToString()));
+            }
+
+            ddlOdDeliverToBy.Items.Clear();
+            ddlOdDeliverToBy.Items.Add(new ListItem("- please select -", "0"));
+            foreach (ListItem item in ddlToBeDeliveredBy.Items)
+            {
+                if (item.Value == "0")
+                    continue;
+                ddlOdDeliverToBy.Items.Add(new ListItem(item.Text, item.Value));
+            }
+        }
+
+        private static void SelectDropValue(DropDownList ddl, int? id)
+        {
+            if (ddl == null)
+                return;
+            ddl.ClearSelection();
+            string v = id.HasValue && id.Value > 0 ? id.Value.ToString() : "0";
+            ListItem item = ddl.Items.FindByValue(v) ?? ddl.Items[0];
+            if (item != null)
+                item.Selected = true;
+        }
+
+        protected void btnCancelOdDeliverTo_Click(object sender, EventArgs e)
+        {
+            pnlDeliverToEditor.Visible = false;
+            BindDeliverToOrderDropdown((int)GetEffectiveContactId(), ReadDeliverToAddressIdFromControls());
+            pnlOrderHeader.Update();
+            upnlDeliverToEditor.Update();
+        }
+
+        protected void btnSaveOdDeliverTo_Click(object sender, EventArgs e)
+        {
+            int contactId = (int)GetEffectiveContactId();
+            if (contactId <= 0)
+                return;
+
+            string person = (tbxOdDeliverToPerson.Text ?? string.Empty).Trim();
+            if (person.Length == 0)
+            {
+                lblOdDeliverToError.Text = "Enter the person name.";
+                lblOdDeliverToError.Visible = true;
+                upnlDeliverToEditor.Update();
+                return;
+            }
+
+            int.TryParse(hdnDeliverToEditorId.Value, out int editId);
+            int? areaId = int.TryParse(ddlOdDeliverToArea.SelectedValue, out int a) && a > 0 ? a : (int?)null;
+            int? byId = int.TryParse(ddlOdDeliverToBy.SelectedValue, out int b) && b > 0 ? b : (int?)null;
+            if (!byId.HasValue)
+                byId = PreferredDeliveryPersonId;
+
+            ContactDeliverToAddress existing = editId > 0 ? new ContactDeliverToAddressRepository().GetById(editId) : null;
+            var row = existing ?? new ContactDeliverToAddress { ContactID = contactId, Enabled = true };
+            row.ContactID = contactId;
+            row.DeliverToPerson = person;
+            row.Label = person;
+            row.CellNumber = NullIfEmpty(tbxOdDeliverToCell.Text);
+            row.Address1 = NullIfEmpty(tbxOdDeliverToAddr1.Text);
+            row.Address2 = NullIfEmpty(tbxOdDeliverToAddr2.Text);
+            row.Address3 = NullIfEmpty(tbxOdDeliverToAddr3.Text);
+            row.PostalCode = NullIfEmpty(tbxOdDeliverToPostal.Text);
+            row.AreaID = areaId;
+            row.ToBeDeliveredByID = byId;
+            if (ZzNameDeliverTo.IsZzName(contactId))
+                row.AddressKind = AlternativeAddressKind.Sundry;
+            else if (string.IsNullOrWhiteSpace(row.AddressKind))
+                row.AddressKind = AlternativeAddressKind.Other;
+
+            int saved = ZzNameDeliverTo.Save(row, User?.Identity?.Name);
+            if (saved <= 0)
+            {
+                lblOdDeliverToError.Text = "Could not save this address.";
+                lblOdDeliverToError.Visible = true;
+                upnlDeliverToEditor.Update();
+                return;
+            }
+
+            hdnDeliverToEditorId.Value = saved.ToString();
+            litDeliverToEditorTitle.Text = "Edit alternative address";
+            BindDeliverToOrderDropdown(contactId, saved);
+            MarkHeaderDirty();
+            pnlOrderHeader.Update();
+            UpdateOdDeliverToGpsLine();
+            upnlDeliverToEditor.Update();
+        }
+
+        protected void btnOdGpsRefresh_Click(object sender, EventArgs e)
+        {
+            UpdateOdDeliverToGpsLine();
+            upnlDeliverToEditor.Update();
+        }
+
+        private void UpdateOdDeliverToGpsLine()
+        {
+            if (lblOdDeliverToGps != null)
+            {
+                lblOdDeliverToGps.Text = string.Empty;
+                lblOdDeliverToGps.CssClass = "contact-gps-value";
+            }
+            if (btnOdDeliverToGpsCheck != null)
+                btnOdDeliverToGpsCheck.Visible = false;
+            if (lblOdDeliverToGpsPending != null)
+                lblOdDeliverToGpsPending.Visible = false;
+            if (litOdDeliverToGpsCaption != null)
+                litOdDeliverToGpsCaption.Text = "GPS";
+
+            int.TryParse(hdnDeliverToEditorId?.Value, out int editId);
+            if (editId <= 0)
+            {
+                if (lblOdDeliverToGpsPending != null)
+                    lblOdDeliverToGpsPending.Visible = true;
+                return;
+            }
+
+            int contactId = (int)GetEffectiveContactId();
+            if (contactId <= 0)
+                return;
+
+            if (!new CustomerLocationManager().IsReady)
+            {
+                if (lblOdDeliverToGps != null)
+                    lblOdDeliverToGps.Text = "GPS lookup is not configured.";
+                return;
+            }
+
+            ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(editId);
+            CustomerLocation loc = row?.ToDisplayLocation();
+            string tip = loc == null
+                ? "No GPS point yet — press Check"
+                : loc.CoordinatesText + " (" + loc.StatusDisplay + ", " + loc.OriginText + ")";
+            if (litOdDeliverToGpsCaption != null)
+                litOdDeliverToGpsCaption.Text = "GPS " + CustomerLocation.BadgeHtml(loc, tip);
+            if (loc == null)
+            {
+                if (lblOdDeliverToGps != null)
+                {
+                    lblOdDeliverToGps.Text = "Press Check to place a GPS point";
+                    lblOdDeliverToGps.CssClass = "contact-gps-value contact-gps-review";
+                }
+            }
+            else if (lblOdDeliverToGps != null)
+            {
+                lblOdDeliverToGps.Text = HttpUtility.HtmlEncode(loc.StatusDisplay + " (" + loc.OriginText + ")");
+                lblOdDeliverToGps.ToolTip = loc.CoordinatesText;
+            }
+
+            if (btnOdDeliverToGpsCheck != null)
+            {
+                btnOdDeliverToGpsCheck.Visible = true;
+                btnOdDeliverToGpsCheck.OnClientClick = "trackerOpenGps(" + contactId + "," + editId + "); return false;";
+            }
+        }
+
+        private static string NullIfEmpty(string value)
+        {
+            string t = (value ?? string.Empty).Trim();
+            return t.Length == 0 ? null : t;
+        }
+
+        private void ShowPromoteZzName(int deliverToAddressId, string personName)
+        {
+            hdnDeliverToEditorId.Value = deliverToAddressId.ToString();
+            litPromoteZzName.Text = HttpUtility.HtmlEncode(personName)
+                + " already has a previous order at this address. Create a real contact from these details?";
+            pnlPromoteZzName.Visible = true;
+            upnlDeliverToEditor.Update();
+        }
+
+        protected void btnPromoteZzNameNo_Click(object sender, EventArgs e)
+        {
+            pnlPromoteZzName.Visible = false;
+            upnlDeliverToEditor.Update();
+        }
+
+        protected void btnPromoteZzNameYes_Click(object sender, EventArgs e)
+        {
+            int.TryParse(hdnDeliverToEditorId.Value, out int id);
+            int newId = ZzNameDeliverTo.PromoteToContact(id, User?.Identity?.Name, out string error);
+            pnlPromoteZzName.Visible = false;
+            upnlDeliverToEditor.Update();
+            if (newId <= 0)
+            {
+                SetStatusMessage(error ?? "Could not create the contact.", isError: true);
+                return;
+            }
+            Response.Redirect("~/Pages/ContactDetails.aspx?ID=" + newId, true);
         }
 
         private void MaybeApplyDeliverToPurchaseOrder(int deliverToAddressId, ContactDeliverToAddress row = null)
@@ -1890,6 +2247,8 @@ namespace TrackerSQL.Pages
             cbxConfirmed.Enabled = enabled;
             cbxInvoiceDone.Enabled = enabled;
             tbxNotes.Enabled = enabled;
+            if (ddlWalkInArea != null)
+                ddlWalkInArea.Enabled = enabled;
         }
 
         private void ApplyHeaderUiState()

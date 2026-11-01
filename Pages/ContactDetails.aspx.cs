@@ -14,10 +14,25 @@ namespace TrackerSQL.Pages
     public partial class ContactDetails : Page
     {
         protected global::System.Web.UI.WebControls.GridView gvPrediction;
+        private PageStatePersister _sessionPageStatePersister;
 
         private const string CONST_URL_REQUEST_ID = "ID";
         private const string SESSION_RETURN_URL = "ContactDetailsReturnUrl";
         private const string DefaultReturnUrl = "~/Pages/Contacts.aspx";
+
+        /// <summary>
+        /// Keep large grids (proof signatures, alternative addresses) out of the hidden field.
+        /// Contact 9 in particular overflows the posted ViewState.
+        /// </summary>
+        protected override PageStatePersister PageStatePersister
+        {
+            get
+            {
+                if (_sessionPageStatePersister == null)
+                    _sessionPageStatePersister = new SessionPageStatePersister(this);
+                return _sessionPageStatePersister;
+            }
+        }
 
         protected override void OnInit(EventArgs e)
         {
@@ -2681,10 +2696,12 @@ namespace TrackerSQL.Pages
         {
             if (tabpnlDeliverTo == null)
                 return;
-            bool show = ContactsRepository.HasDeliveryOnBehalfColumn()
-                && ContactDeliverToAddressRepository.TableSeen()
-                && chkDeliveryOnBehalf != null
-                && chkDeliveryOnBehalf.Checked;
+            bool zzName = TryGetContactId(out int cid) && ZzNameDeliverTo.IsZzName(cid);
+            bool show = ContactDeliverToAddressRepository.TableSeen()
+                && (zzName
+                    || (ContactsRepository.HasDeliveryOnBehalfColumn()
+                        && chkDeliveryOnBehalf != null
+                        && chkDeliveryOnBehalf.Checked));
             tabpnlDeliverTo.Visible = show;
         }
 
@@ -2694,6 +2711,14 @@ namespace TrackerSQL.Pages
                 return;
             gvDeliverToAddresses.DataSource = new ContactDeliverToAddressRepository().ListForContact(contactId);
             gvDeliverToAddresses.DataBind();
+        }
+
+        protected bool ZzNamePromoteVisible(object dataItem)
+        {
+            var row = dataItem as ContactDeliverToAddress;
+            if (row == null || !ZzNameDeliverTo.IsZzName(row.ContactID) || !row.Enabled)
+                return false;
+            return true;
         }
 
         private void BindDeliverToKindDropdown(string selectedCode)
@@ -2960,9 +2985,20 @@ namespace TrackerSQL.Pages
 
         protected void gvDeliverTo_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            if (!string.Equals(e.CommandName, "EditDeliverTo", StringComparison.OrdinalIgnoreCase))
-                return;
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out int id) || id <= 0)
+                return;
+            if (string.Equals(e.CommandName, "PromoteDeliverTo", StringComparison.OrdinalIgnoreCase))
+            {
+                int newId = ZzNameDeliverTo.PromoteToContact(id, User?.Identity?.Name, out string error);
+                if (newId <= 0)
+                {
+                    SetStatus(error ?? "Could not create a contact from this address.", true);
+                    return;
+                }
+                Response.Redirect("~/Pages/ContactDetails.aspx?ID=" + newId, true);
+                return;
+            }
+            if (!string.Equals(e.CommandName, "EditDeliverTo", StringComparison.OrdinalIgnoreCase))
                 return;
             ShowDeliverToForm(id);
         }

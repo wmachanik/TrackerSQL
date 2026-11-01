@@ -203,7 +203,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Uses/Enabled/Filters</td>
+                    <td>Stati</td>
                     <td colspan="5">
                         <asp:CheckBox ID="enabledCheckBox" runat="server" Text="Enabled" TextAlign="Right" Checked="true" />
                         <asp:CheckBox ID="autofulfillCheckBox" runat="server" Text="Auto Fulfill" TextAlign="Right" />
@@ -717,6 +717,7 @@
                                     <asp:TemplateField HeaderText="Signature">
                                         <ItemTemplate>
                                             <asp:Image ID="imgProofSignature" runat="server" CssClass="contact-proof-signature"
+                                                EnableViewState="false"
                                                 Visible='<%# (bool)Eval("HasSignature") %>'
                                                 ImageUrl='<%# Eval("SignatureDataUrl") %>'
                                                 AlternateText="Signature" ToolTip="Signature captured on the driver app" />
@@ -795,6 +796,13 @@
                                                     <asp:ImageButton ID="btnDeleteDeliverTo" runat="server" CommandName="Delete" CausesValidation="false"
                                                         ImageUrl="~/images/imgButtons/DelItem.gif" AlternateText="Delete" ToolTip="Delete this address"
                                                         OnClientClick="return confirm('Delete this alternative address?');" />
+                                                    <asp:ImageButton ID="btnPromoteDeliverTo" runat="server" CommandName="PromoteDeliverTo"
+                                                        CommandArgument='<%# Eval("DeliverToAddressID") %>' CausesValidation="false"
+                                                        CssClass="deliver-to-icon-btn"
+                                                        ImageUrl="~/images/imgButtons/AddContact.png" AlternateText="Create contact"
+                                                        ToolTip="Create a real contact from this ZZName address"
+                                                        Visible='<%# ZzNamePromoteVisible(Container.DataItem) %>'
+                                                        OnClientClick="return confirm('Create a contact from this alternative address?');" />
                                                 </ItemTemplate>
                                             </asp:TemplateField>
                                             <asp:BoundField DataField="AddressKindDisplay" HeaderText="Type" />

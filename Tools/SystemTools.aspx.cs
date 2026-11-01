@@ -324,8 +324,8 @@ namespace TrackerSQL.Tools
 
                 string scope = staleOnly ? "stale prediction contacts" : "all enabled prediction contacts";
                 ResultsTitleLabel.Text = results.Count == 0
-                    ? "Recalc Prediction Averages: no " + scope + " found."
-                    : "Recalc Prediction Averages (" + scope + "): " + results.Count
+                    ? "Recalc Prediction Dates: no " + scope + " found."
+                    : "Recalc Prediction Dates (" + scope + "): " + results.Count
                         + " processed — " + changed + " changed, " + unchanged + " unchanged"
                         + (failed > 0 ? ", " + failed + " failed" : string.Empty) + ".";
 
@@ -367,7 +367,7 @@ namespace TrackerSQL.Tools
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.System,
                     "SystemTools: RecalcPredictions error: " + ex.Message);
-                ResultsTitleLabel.Text = "Recalc Prediction Averages: Error";
+                ResultsTitleLabel.Text = "Recalc Prediction Dates: Error";
                 ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
                 SetStatus(ex.Message, isError: true);
                 upnlSystemToolsButtons.Update();
@@ -439,6 +439,32 @@ namespace TrackerSQL.Tools
                 ResultsTitleLabel.Text = "Recalc Total Cups: Error";
                 ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
                 SetStatus(ex.Message, isError: true);
+                upnlSystemToolsButtons.Update();
+            }
+        }
+
+        protected void btnPurgeZzNameAlts_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DateTime cutoff = TimeZoneUtils.Now().AddMonths(-12);
+                int n = ZzNameDeliverTo.PurgeUnused(cutoff);
+                ResultsTitleLabel.Text = n == 0
+                    ? "Purge unused ZZName addresses: none to delete."
+                    : "Purge unused ZZName addresses: deleted " + n + ".";
+                gvResults.DataSource = null;
+                gvResults.DataBind();
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ResultsTitleLabel.Text, isError: null);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools: " + ResultsTitleLabel.Text);
+                upnlSystemToolsButtons.Update();
+            }
+            catch (Exception ex)
+            {
+                ResultsTitleLabel.Text = "Purge unused ZZName addresses: Error";
+                ShowResultsSection(showPrepGrid: false, showResultsGrid: false);
+                SetStatus(ex.Message, isError: true);
+                AppLogger.WriteLog(SystemConstants.LogTypes.System, "SystemTools purge ZZName alts: " + ex.Message);
                 upnlSystemToolsButtons.Update();
             }
         }

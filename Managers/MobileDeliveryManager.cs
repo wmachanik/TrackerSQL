@@ -254,21 +254,21 @@ namespace TrackerSQL.Managers
             string walkIn = sundry ? SundryNotes.Name(row.Notes) : null;
             string contactName = sundry ? walkIn : (row.FirstName + " " + row.LastName).Trim();
             string altName = sundry ? null : (row.AltFirstName + " " + row.AltLastName).Trim();
-            string deliverTo = sundry
-                ? null
-                : DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
+            string deliverTo = DeliveryOnBehalfManager.DeliverToDisplayName(row.DeliverToLabel, row.DeliverToPerson);
             bool hasDeliverTo = !string.IsNullOrWhiteSpace(deliverTo);
-            string deliverToPerson = sundry || !hasDeliverTo
+            string deliverToPerson = !hasDeliverTo
                 ? null
                 : ResolveDeliverToSignatory(row, deliverTo);
             string accountCompany = sundry ? null : row.CompanyName;
 
-            string notes = sundry ? SundryNotes.Details(row.Notes) : DeliveryOnBehalfManager.NotesWithoutDeliverToPrefix(row.Notes);
+            string notes = sundry
+                ? SundryNotes.Rest(row.Notes)
+                : DeliveryOnBehalfManager.NotesWithoutDeliverToPrefix(row.Notes);
 
-            string company = sundry
-                ? (string.IsNullOrWhiteSpace(walkIn) ? "Walk-in client" : walkIn)
-                : hasDeliverTo
-                    ? DeliveryOnBehalfManager.ListDisplayName(deliverTo, accountCompany)
+            string company = hasDeliverTo
+                ? DeliveryOnBehalfManager.ListDisplayName(deliverTo, sundry ? walkIn : accountCompany)
+                : sundry
+                    ? (string.IsNullOrWhiteSpace(walkIn) ? "ZZName" : walkIn)
                     : row.CompanyName;
 
             return new MobileDeliveryStop
@@ -287,7 +287,7 @@ namespace TrackerSQL.Managers
                 AltContactName = string.Equals(altName, contactName, StringComparison.OrdinalIgnoreCase) ? null : NullIfEmpty(altName),
                 Phone = NullIfEmpty(row.Phone),
                 Cell = NullIfEmpty(row.Cell),
-                Address = NullIfEmpty(row.Address),
+                Address = NullIfEmpty(hasDeliverTo ? row.Address : (sundry ? SundryNotes.Address(row.Notes) : row.Address)),
                 Province = NullIfEmpty(row.Province),
                 PostalCode = NullIfEmpty(row.PostalCode),
                 Area = NullIfEmpty(row.AreaName),
@@ -312,18 +312,18 @@ namespace TrackerSQL.Managers
                         NotAtClient = row.ProofNotAtClient ? true : (bool?)null
                     }
                     : null,
-                Gps = sundry ? null
-                    : row.GpsLat.HasValue && row.GpsLng.HasValue
-                        ? new MobileStopGps
-                        {
-                            Lat = Math.Round(row.GpsLat.Value, 6),
-                            Lng = Math.Round(row.GpsLng.Value, 6),
-                            Kind = row.GpsSource == CustomerLocation.SourceManual ? "pin"
-                                : row.GpsSource == CustomerLocation.SourceDriver ? "driver" : "lookup",
-                            Checked = row.GpsStatus == CustomerLocation.StatusVerified,
-                            Review = row.GpsStatus == CustomerLocation.StatusReviewRequired
-                        }
-                        : new MobileStopGps { Kind = "none" },
+                Gps = row.GpsLat.HasValue && row.GpsLng.HasValue
+                    ? new MobileStopGps
+                    {
+                        Lat = Math.Round(row.GpsLat.Value, 6),
+                        Lng = Math.Round(row.GpsLng.Value, 6),
+                        Kind = (!sundry || hasDeliverTo) && row.GpsSource == CustomerLocation.SourceManual ? "pin"
+                            : (!sundry || hasDeliverTo) && row.GpsSource == CustomerLocation.SourceDriver ? "driver"
+                            : row.GpsLat.HasValue ? "lookup" : "none",
+                        Checked = (!sundry || hasDeliverTo) && row.GpsStatus == CustomerLocation.StatusVerified,
+                        Review = (!sundry || hasDeliverTo) && row.GpsStatus == CustomerLocation.StatusReviewRequired
+                    }
+                    : new MobileStopGps { Kind = "none" },
                 NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection ? true : (bool?)null,
                 Collection = row.Collection ? true : (bool?)null
             };

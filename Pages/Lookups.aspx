@@ -868,7 +868,7 @@
                                 </div>
                             </div>
                             <div class="lookups-areas-days">
-                                <h4 class="lookups-areas-days-title">Delivery Days for Selected Area</h4>
+                                <h4 class="lookups-areas-days-title"><asp:Literal ID="litAreaDaysTitle" runat="server" Text="Delivery Days for Selected Area" /></h4>
                                 <div class="lookups-areas-days-scroll">
                                     <asp:GridView ID="gvAreaDays" runat="server" AutoGenerateColumns="False"
                                         CssClass="results-table in-panel-grid lookups-area-days-table no-sticky-last"
@@ -1654,6 +1654,116 @@
                                 <PagerTemplate>
                                     <asp:PlaceHolder ID="plhPager" runat="server" />
                                 </PagerTemplate>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
+        <ajaxToolkit:TabPanel ID="tabpnlAltAddressKinds" runat="server" HeaderText="Alt Address Types">
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlAltAddressKinds" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
+                    <Triggers>
+                        <asp:AsyncPostBackTrigger ControlID="gvAltAddressKinds" />
+                    </Triggers>
+                    <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <p class="muted small" style="margin: 0;">
+                                    Type on alternative addresses. Untick <strong>Counts toward tracking</strong> so Order Done does not write usage or move Next Coffee / filter dates (gifts, on their behalf, ZZName casual).
+                                </p>
+                            </div>
+                        </div>
+                        <div class="results-container scrollable-table-container">
+                            <asp:GridView ID="gvAltAddressKinds" runat="server" DataKeyNames="AltAddressKindID"
+                                CssClass="results-table results-table-fit"
+                                AutoGenerateColumns="False" AllowPaging="False" AllowSorting="False"
+                                ShowFooter="True"
+                                OnRowCommand="gvAltAddressKinds_RowCommand"
+                                OnRowEditing="gvAltAddressKinds_RowEditing"
+                                OnRowCancelingEdit="gvAltAddressKinds_RowCancelingEdit"
+                                OnRowUpdating="gvAltAddressKinds_RowUpdating"
+                                OnRowDeleting="gvAltAddressKinds_RowDeleting"
+                                OnRowDataBound="gvAltAddressKinds_RowDataBound"
+                                OnRowCreated="gvAltAddressKinds_RowCreated">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Update" />
+                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Cancel" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit" />
+                                            <asp:ImageButton ID="btnDelete" runat="server" CausesValidation="False" CommandName="Delete"
+                                                ImageUrl="~/images/imgButtons/Trashcan.gif" AlternateText="Delete"
+                                                OnClientClick="return confirm('Delete this alternative address type?');" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="Insert"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Code">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxKindCode" runat="server" Text='<%# Bind("KindCode") %>' MaxLength="20" Width="8em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblKindCode" runat="server" Text='<%# Eval("KindCode") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxKindCodeFooter" runat="server" MaxLength="20" Width="8em" ToolTip="Stored code (e.g. Home)" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Type">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxKindName" runat="server" Text='<%# Bind("KindName") %>' MaxLength="80" Width="14em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblKindName" runat="server" Text='<%# Eval("KindName") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxKindNameFooter" runat="server" MaxLength="80" Width="14em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Counts toward tracking">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxCountsTowardTracking" runat="server"
+                                                Checked='<%# (bool)Eval("CountsTowardTracking") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxCountsTowardTrackingView" runat="server"
+                                                Checked='<%# (bool)Eval("CountsTowardTracking") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxCountsTowardTrackingFooter" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Sort">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="tbxSortOrder" runat="server" Width="4em" Text='<%# Eval("SortOrder") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="lblSortOrder" runat="server" Text='<%# Eval("SortOrder") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="tbxSortOrderFooter" runat="server" Width="4em" Text="90" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="On">
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxEnabled" runat="server" Checked='<%# (bool)Eval("Enabled") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxEnabledView" runat="server" Checked='<%# (bool)Eval("Enabled") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxEnabledFooter" runat="server" Checked="true" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
                             </asp:GridView>
                         </div>
                     </ContentTemplate>

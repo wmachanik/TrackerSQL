@@ -104,7 +104,7 @@ namespace TrackerSQL.Managers
                 string notes = first?.Notes;
                 doc.Client = SundryNotes.Name(notes);
                 if (doc.Client.Length == 0)
-                    doc.Client = "Walk-in client";
+                    doc.Client = "ZZName";
                 doc.Address = NullIfEmpty(SundryNotes.Details(notes));
                 doc.Email = NullIfEmpty(SundryNotes.Email(notes));
             }

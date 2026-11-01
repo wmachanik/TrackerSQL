@@ -36,6 +36,9 @@ namespace TrackerSQL.Models
         public string DeliveryByAbbreviation { get; set; }
         public string AreaName { get; set; }
         public string AreaShortCode { get; set; }
+        public string Notes { get; set; }
+        public double? WalkInLat { get; set; }
+        public double? WalkInLng { get; set; }
         public bool Done { get; set; }
         public string DeliverToLabel { get; set; }
         public string DeliverToPerson { get; set; }
@@ -74,6 +77,7 @@ namespace TrackerSQL.Models
     public class DriverTrackingStop
     {
         public int Seq { get; set; }
+        public int OrderId { get; set; }
         public int ContactId { get; set; }
         public string Company { get; set; }
         public string Area { get; set; }

@@ -82,6 +82,16 @@ namespace TrackerSQL
                     return;
                 }
 
+                if (IsStaleViewState(lastError))
+                {
+                    LogError(lastError);
+                    Server.ClearError();
+                    string path = Request.Url != null ? Request.Url.PathAndQuery : "~/";
+                    Response.Redirect(path, false);
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
+                    return;
+                }
+
                 // Log the error with better error handling
                 LogError(lastError);
                 ApplicationErrorNotifier.Notify(lastError, "Application_Error");
@@ -119,6 +129,20 @@ namespace TrackerSQL
                 Response.Redirect("~/HttpErrorPage.aspx", false);
                 HttpContext.Current.ApplicationInstance.CompleteRequest();
             }
+        }
+
+        private static bool IsStaleViewState(Exception error)
+        {
+            for (Exception ex = error; ex != null; ex = ex.InnerException)
+            {
+                if (ex is ViewStateException)
+                    return true;
+                string message = ex.Message ?? string.Empty;
+                if (message.IndexOf("Invalid viewstate", StringComparison.OrdinalIgnoreCase) >= 0
+                    || message.IndexOf("state information is invalid for this page", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+            return false;
         }
 
         private void LogError(Exception error)

@@ -276,7 +276,12 @@
                             var noGps = !s.isDepot && (s.lat == null || s.lng == null);
                             var rowCls = s.done ? 'done' : (s.isDepot ? 'depot' : (noGps ? 'nopoint' : ''));
                             var areaCode = s.area || '';
-                            return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '><td>' + (s.isDepot ? '↩' : s.seq) + '</td><td>' + esc(s.company)
+                            var nameHtml = esc(s.company);
+                            if (!s.isDepot && s.contactId === 9 && s.orderId)
+                                nameHtml = '<a href="../Pages/OrderDetail.aspx?OrderID=' + encodeURIComponent(s.orderId) + '" title="Open this walk-in order to change the area">' + nameHtml + '</a>';
+                            else if (!s.isDepot && s.contactId)
+                                nameHtml = '<a href="../Pages/ContactDetails.aspx?ID=' + encodeURIComponent(s.contactId) + '" title="Open this contact to change the area">' + nameHtml + '</a>';
+                            return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '><td>' + (s.isDepot ? '↩' : s.seq) + '</td><td>' + nameHtml
                                 + (s.orders > 1 ? ' (' + s.orders + ' orders)' : '') + '</td><td title="' + esc(s.areaName || areaCode) + '">'
                                 + esc(areaCode) + '</td><td>'
                                 + (s.done ? (s.notAtClient ? esc(s.notAtClient) : 'done') : (noGps ? 'no GPS' : esc(s.eta || '-'))) + '</td></tr>';

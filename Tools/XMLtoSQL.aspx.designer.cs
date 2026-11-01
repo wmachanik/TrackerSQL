@@ -16,11 +16,17 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.LinkButton btnTabManual;
         protected global::System.Web.UI.WebControls.MultiView mvModes;
         protected global::System.Web.UI.WebControls.View viewXml;
+        protected global::System.Web.UI.WebControls.DropDownList ddlXmlFolder;
+        protected global::System.Web.UI.WebControls.LinkButton btnSortName;
+        protected global::System.Web.UI.WebControls.LinkButton btnSortDate;
         protected global::System.Web.UI.WebControls.TextBox FileNameTextBox;
         protected global::System.Web.UI.WebControls.Button RefreshFilesButton;
+        protected global::System.Web.UI.WebControls.Button btnArchive;
+        protected global::System.Web.UI.WebControls.Button btnUnarchive;
         protected global::System.Web.UI.WebControls.Button GoButton;
         protected global::System.Web.UI.WebControls.ImageButton btnBack;
         protected global::System.Web.UI.WebControls.Panel pnlFileBrowser;
+        protected global::System.Web.UI.WebControls.Literal ltrlFileBrowserTitle;
         protected global::System.Web.UI.WebControls.Literal ltrlFileList;
         protected global::System.Web.UI.WebControls.View viewManual;
         protected global::System.Web.UI.WebControls.TextBox tbxManualSql;

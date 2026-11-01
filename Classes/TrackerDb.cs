@@ -33,6 +33,10 @@ namespace TrackerSQL.Classes
         private const string CONST_SQL_CREATE_LOGTBL = "CREATE TABLE LogTbl ( [LogID] AUTOINCREMENT, [DateAdded] DateTime, [UserID] INT, [SectionID] INT, [TranactionTypeID] INT,  [CustomerID] INT, Details VARCHAR(255), [Notes] MEMO,  CONSTRAINT [pk_LogID] PRIMARY KEY (LogID) )";
         private const string CONST_SQL_CREATE_SECTIONTYPETBL = "CREATE TABLE SectionTypesTbl ( [SectionID] INT, [SectionType] VARCHAR(50), [Notes] MEMO,  CONSTRAINT [pk_SectionID] PRIMARY KEY (SectionID) )";
         private const string CONST_SQL_CREATE_TRANSACTIONTYPETBL = "CREATE TABLE TransactionTypesTbl ( [TransactionID] INT, [TransactionType] VARCHAR(50), [Notes] MEMO,  CONSTRAINT [pk_TransactionID] PRIMARY KEY (TransactionID) )";
+        // Same window this helper has always enforced (old smalldatetime-sized parameters).
+        private static readonly DateTime MinParameterDate = new DateTime(1900, 1, 1);
+        private static readonly DateTime MaxParameterDate = new DateTime(2079, 12, 31);
+
         private List<DBParameter> _Params;
         private List<DBParameter> _WhereParams;
         private OleDbConnection _TrackerDbConn;
@@ -92,19 +96,21 @@ namespace TrackerSQL.Classes
                 {
                     case DbType.Date:
                         var dateVal = Convert.ToDateTime(value).Date;
-                        if (dateVal < new DateTime(1900, 1, 1) || dateVal > new DateTime(2079, 12, 31))
+                        if (dateVal < MinParameterDate || dateVal > MaxParameterDate)
                         {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.Database, $"Date value {dateVal} is outside Access supported range, using minimum date");
-                            return new DateTime(1900, 1, 1);
+                            AppLogger.WriteLog(SystemConstants.LogTypes.Database,
+                                $"Date value {dateVal:yyyy-MM-dd} is outside TrackerDb parameter range {MinParameterDate:yyyy-MM-dd} to {MaxParameterDate:yyyy-MM-dd}, using {MinParameterDate:yyyy-MM-dd}");
+                            return MinParameterDate;
                         }
                         return dateVal;
 
                     case DbType.DateTime:
                         DateTime dtVal = value is DateTime dt ? dt : Convert.ToDateTime(value);
-                        if (dtVal < new DateTime(1900, 1, 1) || dtVal > new DateTime(2079, 12, 31))
+                        if (dtVal < MinParameterDate || dtVal > MaxParameterDate)
                         {
-                            AppLogger.WriteLog(SystemConstants.LogTypes.Database, $"DateTime value {dtVal} is outside Access supported range, using minimum date");
-                            dtVal = new DateTime(1900, 1, 1);
+                            AppLogger.WriteLog(SystemConstants.LogTypes.Database,
+                                $"DateTime value {dtVal:yyyy-MM-dd HH:mm:ss} is outside TrackerDb parameter range {MinParameterDate:yyyy-MM-dd} to {MaxParameterDate:yyyy-MM-dd}, using {MinParameterDate:yyyy-MM-dd}");
+                            dtVal = MinParameterDate;
                         }
                         // FIX: Return DateTime object instead of string to match DbType.Date behavior
                         return dtVal;

@@ -188,6 +188,7 @@
     <Content Include="images\imgButtons\DelItem.gif" />
     <Content Include="images\imgButtons\DoneButton.gif" />
     <Content Include="images\imgButtons\EditButton.gif" />
+    <Content Include="images\imgButtons\Modify.gif" />
     <Content Include="images\imgButtons\EditItem.gif" />
     <Content Include="images\imgButtons\FirstPage.gif" />
     <Content Include="images\imgButtons\GreenPlus.gif" />
@@ -195,6 +196,7 @@
     <Content Include="images\imgButtons\Item.gif" />
     <Content Include="images\imgButtons\LastPage.gif" />
     <Content Include="images\imgButtons\LockItem.gif" />
+    <Content Include="images\imgButtons\Lightning.gif" />
     <Content Include="images\imgButtons\MoveOnADay.gif" />
     <Content Include="images\imgButtons\NextBtn.png" />
     <Content Include="images\imgButtons\NextPage.gif" />
@@ -254,6 +256,7 @@
     <Content Include="Pages\RepairDetail.aspx" />
     <Content Include="Pages\Repairs.aspx" />
     <Content Include="Pages\RepairStatusChange.aspx" />
+    <Content Include="Pages\SendClientMail.aspx" />
     <Content Include="Pages\SendCoffeeCheckup.aspx" />
     <Content Include="Pages\SentRemindersSheet.aspx" />
     <Content Include="Classes\Web.config" />
@@ -273,6 +276,7 @@
     <Content Include="Scripts\leaflet\images\marker-shadow.png" />
     <Content Include="Scripts\comboBoxPosition.js" />
     <Content Include="Styles\MobileSite.css" />
+    <Content Include="Styles\MobileStaff.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="Tools\EmailDiagnostics.aspx" />
     <Content Include="Tools\EmailDiagnostics.css" />
@@ -540,6 +544,7 @@
     <Compile Include="Managers\ContactPortalSchemaInstaller.cs" />
     <Compile Include="Managers\MobileApiSchemaInstaller.cs" />
     <Compile Include="Managers\OrderFlagsSchemaInstaller.cs" />
+    <Compile Include="Classes\MobileStaffLayout.cs" />
     <Compile Include="Classes\AreaPill.cs" />
     <Compile Include="Classes\OrderFlagPill.cs" />
     <Compile Include="Managers\AreaWeekBoardManager.cs" />
@@ -648,6 +653,7 @@
     <Compile Include="Models\AreaPrepDays.cs" />
     <Compile Include="Models\AreaPrepDateRow.cs" />
     <Compile Include="Models\AwayReason.cs" />
+    <Compile Include="Models\ClientMailModels.cs" />
     <Compile Include="Models\ClosureDate.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\ContactDeliverToAddress.cs" />
@@ -731,6 +737,7 @@
     <Compile Include="Repositories\AreaPrepDaysRepository.cs" />
     <Compile Include="Repositories\AreasRepository.cs" />
     <Compile Include="Repositories\AwayReasonRepository.cs" />
+    <Compile Include="Repositories\ClientMailRepository.cs" />
     <Compile Include="Repositories\ClosureDatesRepository.cs" />
     <Compile Include="Repositories\CoffeeCheckupRepository.cs" />
     <Compile Include="Repositories\DeliverySheetRepository.cs" />
@@ -806,6 +813,7 @@
     <Compile Include="Managers\CoffeeCheckupEmailManager.cs" />
     <Compile Include="Classes\MessageType.cs" />
     <Compile Include="Managers\CoffeeCheckupManager.cs" />
+    <Compile Include="Managers\ClientMailManager.cs" />
     <Compile Include="Managers\CustomerManager.cs" />
     <Compile Include="Managers\DisableClientManager.cs" />
     <Compile Include="Classes\MessageKeys.cs" />
@@ -1058,6 +1066,13 @@
     </Compile>
     <Compile Include="Pages\RepairStatusChange.aspx.designer.cs">
       <DependentUpon>RepairStatusChange.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\SendClientMail.aspx.cs">
+      <DependentUpon>SendClientMail.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Pages\SendClientMail.aspx.designer.cs">
+      <DependentUpon>SendClientMail.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pages\SendCoffeeCheckup.aspx.cs">
       <DependentUpon>SendCoffeeCheckup.aspx</DependentUpon>

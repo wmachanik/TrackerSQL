@@ -506,7 +506,7 @@ namespace TrackerSQL.Classes
         /// <returns>True if added successfully; false if any error occurs.</returns>
         /// <remarks>
         /// Call this multiple times to queue a batch of emails. Once ready, call SendEmailBatch() to dispatch all at once.
-        public bool SendEmailBatch()
+        public bool SendEmailBatch(int delayMilliseconds = 0)
         {
             if (emailConfig == null || !emailConfig.IsInitialized || !batchMessages.Any())
             {
@@ -537,10 +537,14 @@ namespace TrackerSQL.Classes
                     if (IsTestMode) AppLogger.WriteLog(SystemConstants.LogTypes.Email, "!!!!! SendEmailBatch is in TestMode !!!!!");
                     AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"🔌 SMTP session opened for batch delivery.");
 
+                    int remaining = batchMessages.Count;
                     foreach (var msg in batchMessages)
                     {
                         client.Send(msg);
+                        remaining--;
                         AppLogger.WriteLog(SystemConstants.LogTypes.Email, $"📧 Sent batch message to: {string.Join(", ", msg.To)}");
+                        if (delayMilliseconds > 0 && remaining > 0)
+                            System.Threading.Thread.Sleep(delayMilliseconds);
                     }
 
                     client.Disconnect(true);

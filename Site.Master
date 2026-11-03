@@ -8,7 +8,8 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20261101-04" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20261103-11" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/MobileStaff.css?v=20261103-11" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -147,9 +148,30 @@
         setTimeout(function () {
             hideLoadingIndicator();
         }, 5000); // Force hide after 5 seconds
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var body = document.body;
+            if (!body || body.className.indexOf('staff-mobile-page') < 0)
+                return;
+            var key = null;
+            var parts = body.className.split(/\s+/);
+            for (var i = 0; i < parts.length; i++) {
+                if (parts[i].indexOf('staff-mobile-page-') === 0) {
+                    key = parts[i].substring('staff-mobile-page-'.length);
+                    break;
+                }
+            }
+            if (!key)
+                return;
+            var tabs = document.querySelectorAll('.staff-mobile-tabbar a[data-staff-tab]');
+            for (var j = 0; j < tabs.length; j++) {
+                if (tabs[j].getAttribute('data-staff-tab') === key)
+                    tabs[j].classList.add('staff-tab-active');
+            }
+        });
     </script>
 </head>
-<body>
+<body runat="server" id="bodySite">
     <div id="loadingOverlay">
         <div class="loading-spinner"></div>
         <div class="loading-text">Loading QOnT...</div>
@@ -187,6 +209,8 @@
                                         <asp:MenuItem NavigateUrl="~/Pages/ContactsAway.aspx" Text="Contacts Away" Value="ContactsAway" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SendCoffeeCheckup.aspx" Text="Send Checkup"
                                             Value="Send Checkup" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/SendClientMail.aspx" Text="Send Client Mail"
+                                            Value="Send Client Mail" />
                                         <asp:MenuItem NavigateUrl="~/Pages/SentRemindersSheet.aspx" Text="View List of reminders sent"
                                             Value="Sent Reminders List" />
                                     </asp:MenuItem>
@@ -306,6 +330,7 @@
                 <li><a href="/Pages/Contacts.aspx">Contacts</a></li>
                 <li><a href="/Pages/ContactsAway.aspx">Contacts Away</a></li>
                 <li><a href="/Pages/SendCoffeeCheckup.aspx">Send Checkup</a></li>
+                <li><a href="/Pages/SendClientMail.aspx">Send Client Mail</a></li>
                 <li><a href="/Pages/OrderDetail.aspx?NewOrder=true">New Order</a></li>
                 <li><a href="/Tools/WooOrderImport.aspx"><img src="/images/imgButtons/WooImport.png" alt="" class="mobile-nav-icon" /> Woo Order Import</a></li>
                 <li><a href="/Pages/ItemsRequired.aspx">Items Required</a></li>
@@ -342,6 +367,13 @@
                 </asp:Panel>
                 <asp:ContentPlaceHolder ID="MainContent" runat="server" />
             </div>
+            <nav class="staff-mobile-tabbar" aria-label="Staff quick navigation">
+                <a href="<%= ResolveUrl("~/Default.aspx") %>" data-staff-tab="home"><span class="tab-icon" aria-hidden="true">⌂</span>Home</a>
+                <a href="<%= ResolveUrl("~/Pages/DeliverySheet.aspx") %>" data-staff-tab="delivery"><span class="tab-icon" aria-hidden="true">D</span>Deliver</a>
+                <a href="<%= ResolveUrl("~/Pages/OrderDetail.aspx?NewOrder=true") %>" data-staff-tab="order"><span class="tab-icon" aria-hidden="true">+</span>Order</a>
+                <a href="<%= ResolveUrl("~/Pages/Contacts.aspx") %>" data-staff-tab="contacts"><span class="tab-icon" aria-hidden="true">C</span>Contacts</a>
+                <a href="<%= ResolveUrl("~/Pages/SendCoffeeCheckup.aspx") %>" data-staff-tab="checkup"><span class="tab-icon" aria-hidden="true">@</span>Checkup</a>
+            </nav>
             <footer class="site-footer" role="contentinfo">
                 <div class="site-footer-inner">
                     <span class="site-footer-brand">QOnT</span>
@@ -355,6 +387,48 @@
         <div class="clear">
             &nbsp;
         </div>
+        <div id="staffMobileWaitOverlay" class="staff-mobile-wait-overlay" aria-hidden="true" aria-live="polite">
+            <img src="<%= ResolveUrl("~/images/animi/QuaffeeProgress.gif") %>" alt="" />
+            <div id="staffMobileWaitLabel" class="staff-mobile-wait-label">Updating…</div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                function staffMobileWaitMessage(el) {
+                    if (!el) return 'Updating…';
+                    var id = (el.id || '').toLowerCase();
+                    var val = (el.value || el.innerText || el.textContent || '').toLowerCase();
+                    if (id.indexOf('save') >= 0 || val.indexOf('save') >= 0) return 'Saving…';
+                    return 'Updating…';
+                }
+                function bindStaffMobileWait() {
+                    if (!document.body.classList.contains('staff-mobile-page') || !window.Sys
+                        || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
+                        return;
+                    }
+                    var overlay = document.getElementById('staffMobileWaitOverlay');
+                    var label = document.getElementById('staffMobileWaitLabel');
+                    if (!overlay || !label) return;
+                    var prm = Sys.WebForms.PageRequestManager.getInstance();
+                    if (prm._staffMobileWaitBound) return;
+                    prm._staffMobileWaitBound = true;
+                    prm.add_beginRequest(function (sender, args) {
+                        if (window.matchMedia && !window.matchMedia('(max-width: 768px)').matches) return;
+                        label.textContent = staffMobileWaitMessage(args.get_postBackElement());
+                        overlay.setAttribute('aria-hidden', 'false');
+                    });
+                    prm.add_endRequest(function () {
+                        overlay.setAttribute('aria-hidden', 'true');
+                    });
+                }
+                if (window.Sys && Sys.Application) {
+                    Sys.Application.add_load(bindStaffMobileWait);
+                } else if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', bindStaffMobileWait);
+                } else {
+                    bindStaffMobileWait();
+                }
+            })();
+        </script>
     </form>
 
 </body>

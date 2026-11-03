@@ -29,6 +29,13 @@
                     </div>
                     <p>Send automated contact checkups</p>
                 </div>
+                <div class="dashboard-card home-tone-clientmail">
+                    <div class="tool-card-header">
+                        <img class="tool-card-icon" src="images/imgButtons/icons8-send-email-16.png" alt="" />
+                        <h4><a href="Pages/SendClientMail.aspx">Send Client Mail</a></h4>
+                    </div>
+                    <p>Filter contacts and send a one-off HTML email</p>
+                </div>
                 <div class="dashboard-card home-tone-reminders">
                     <div class="tool-card-header">
                         <img class="tool-card-icon" src="images/imgButtons/View.png" alt="" />

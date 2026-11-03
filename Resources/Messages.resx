@@ -129,6 +129,24 @@
   <data name="AwayPeriod.Greeting" xml:space="preserve">
     <value>Dear {0},&lt;br /&gt;&lt;br /&gt;</value>
   </data>
+  <data name="ClientMail.DefaultBody" xml:space="preserve">
+    <value>&lt;p&gt;We wanted to share a short update with you.&lt;/p&gt;</value>
+  </data>
+  <data name="ClientMail.DefaultFooter" xml:space="preserve">
+    <value>&lt;p&gt;If you have any questions, reply to this email or contact us at orders@quaffee.co.za.&lt;/p&gt;</value>
+  </data>
+  <data name="ClientMail.DefaultHeader" xml:space="preserve">
+    <value>&lt;p&gt;A note from Quaffee.&lt;/p&gt;</value>
+  </data>
+  <data name="ClientMail.DefaultSubject" xml:space="preserve">
+    <value>A Note From Quaffee</value>
+  </data>
+  <data name="ClientMail.GreetingGeneric" xml:space="preserve">
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Hi Coffee Lover,&lt;/p&gt;</value>
+  </data>
+  <data name="ClientMail.GreetingWithName" xml:space="preserve">
+    <value>&lt;p style="margin:0 0 8px 0;"&gt;Hi {0},&lt;/p&gt;</value>
+  </data>
   <data name="CoffeeCheckup.AdjustedDatesLabel" xml:space="preserve">
     <value>Adjusted Dates: Prep {0}, Delivery {1}</value>
   </data>

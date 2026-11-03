@@ -83,6 +83,7 @@ For pages opened from **many** callers (e.g. `ContactDetails`), prefer **return 
   - Reminder History → `page-tone-panel page-tone-reminders` (same colours as `home-tone-reminders` on `Default.aspx`)
   - Contacts / Contact Details → `page-tone-panel page-tone-contacts` (`home-tone-contacts`)
   - Send Checkup → `page-tone-panel page-tone-checkup` (`home-tone-checkup`)
+  - Send Client Mail → `page-tone-panel page-tone-clientmail` (`home-tone-clientmail`)
   - Repairs / Repair Detail → `page-tone-panel page-tone-repairs` (`home-tone-repairs`)
   - Order Done → `page-tone-panel page-tone-orders` (`home-tone-orders`)
   - Order Detail (existing) → `page-tone-panel page-tone-orders`; New Order → `page-tone-panel page-tone-neworder` (`home-tone-neworder`)

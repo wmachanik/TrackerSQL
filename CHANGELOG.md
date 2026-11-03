@@ -6,6 +6,8 @@ Release notes for shipped TrackerSQL versions. Newest first.
 
 _(Development; `Web.config` / `AssemblyInfo` version.)_
 
+- **Send Client Mail** — Contacts menu / home card. Compose HTML (standard header, message, footer from Messages.resx `ClientMail.*`, greeting **Hi {First Name}**). Filter by name, contact type, last ordered dates, next coffee dates, equipment, areas, recurring, last items ordered, and an optional custom WHERE fragment. Send a test, then send in groups of 5–100 with a delay between emails. EmailTestMode still redirects all sends.
+
 ## 3.0.3.11 — 2026-11-01
 
 **Quaffee Driver:** 0.5.8 (unchanged). **Release doc:** [Documentation/RELEASE-3.0.3.11.md](Documentation/RELEASE-3.0.3.11.md).

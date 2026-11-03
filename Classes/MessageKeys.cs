@@ -96,6 +96,19 @@ namespace TrackerSQL.Classes
         }
 
         /// <summary>
+        /// One-off client mail (Send Client Mail page).
+        /// </summary>
+        public static class ClientMail
+        {
+            public const string DefaultSubject = "ClientMail.DefaultSubject";
+            public const string DefaultHeader = "ClientMail.DefaultHeader";
+            public const string DefaultBody = "ClientMail.DefaultBody";
+            public const string DefaultFooter = "ClientMail.DefaultFooter";
+            public const string GreetingWithName = "ClientMail.GreetingWithName";
+            public const string GreetingGeneric = "ClientMail.GreetingGeneric";
+        }
+
+        /// <summary>
         /// Email-related messages
         /// </summary>
         public static class Email

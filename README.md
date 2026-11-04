@@ -4,7 +4,7 @@
 **Last Updated:** 2026-06-15 (page migration phase documented)  
 **Purpose:** Current migration guide for replacing legacy `TrackerSQL.Controls`, `TrackerDb`, OleDb/ObjectDataSource patterns, and old Access naming with the new SQL Server repository/model/manager/page structure.
 
-> **Current state (2026-11-01):** shipped **3.0.3.11** (Quaffee Driver **0.5.8**); development **3.0.3.12**. Release summary: [Documentation/RELEASE-3.0.3.11.md](Documentation/RELEASE-3.0.3.11.md). Full notes: [CHANGELOG.md](CHANGELOG.md). Deploying and config: [Documentation/DEPLOYMENT_AND_CONFIG.md](Documentation/DEPLOYMENT_AND_CONFIG.md). Mobile API and driver app: [Documentation/MOBILE_API_AND_DRIVER_APP.md](Documentation/MOBILE_API_AND_DRIVER_APP.md). Rules: [Documentation/HARD_PROJECT_RULES.md](Documentation/HARD_PROJECT_RULES.md).
+> **Current state (2026-11-04):** shipped **3.0.3.11** (Quaffee Driver **0.5.8**); development **3.0.3.13**. Release summary: [Documentation/RELEASE-3.0.3.11.md](Documentation/RELEASE-3.0.3.11.md). Full notes: [CHANGELOG.md](CHANGELOG.md). Deploying and config: [Documentation/DEPLOYMENT_AND_CONFIG.md](Documentation/DEPLOYMENT_AND_CONFIG.md). Mobile API and driver app: [Documentation/MOBILE_API_AND_DRIVER_APP.md](Documentation/MOBILE_API_AND_DRIVER_APP.md). Rules: [Documentation/HARD_PROJECT_RULES.md](Documentation/HARD_PROJECT_RULES.md).
 >
 > **Fresh clone:** real config files are not in git (the repo is public). Copy `Web.config.example` → `Web.config` (and `web.live.config.example` / `Web.Release.config.example` if deploying) and fill in the real passwords.
 

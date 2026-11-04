@@ -301,6 +301,7 @@ namespace TrackerSQL.Pages
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlDeliverToOrder;
+        protected global::System.Web.UI.WebControls.Panel pnlEditDeliverToOrder;
         protected global::System.Web.UI.WebControls.ImageButton btnEditDeliverToOrder;
 
         /// <summary>
@@ -560,6 +561,7 @@ namespace TrackerSQL.Pages
         /// <summary>
         protected global::System.Web.UI.UpdatePanel upnlDeliverToEditor;
         protected global::System.Web.UI.WebControls.HiddenField hdnDeliverToEditorId;
+        protected global::System.Web.UI.WebControls.HiddenField hdnDeliverToEditorOpen;
         protected global::System.Web.UI.WebControls.Panel pnlDeliverToEditor;
         protected global::System.Web.UI.WebControls.Literal litDeliverToEditorTitle;
         protected global::System.Web.UI.WebControls.TextBox tbxOdDeliverToPerson;

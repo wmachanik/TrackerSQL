@@ -2,11 +2,12 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.12 — in progress
+## 3.0.3.13 — in progress
 
-_(Development; `Web.config` / `AssemblyInfo` version.)_
+_(Development; `Web.config` / `web.live.config` / `AssemblyInfo` version.)_
 
-- **Send Client Mail** — Contacts menu / home card. Compose HTML (standard header, message, footer from Messages.resx `ClientMail.*`, greeting **Hi {First Name}**). Filter by name, contact type, last ordered dates, next coffee dates, equipment, areas, recurring, last items ordered, and an optional custom WHERE fragment. Send a test, then send in groups of 5–100 with a delay between emails. EmailTestMode still redirects all sends.
+- **Send Client Mail** — Three panels: message (default header includes `Dear [#FIRSTNAME#],`; greeting is edited in the header, not a separate tick), saved messages in `ClientMailTemplatesTbl`, a filter builder (And/Or, brackets, Last Item Type, Email Primary/All with Contains/Equals/Starts With and Does Not…), CSV export, 1-minute filter cookie, and Applying…/Sending… on the busy buttons. Test and send still use popups. Schema pack `SQLCommands-ClientMail-01.xml`.
+- **Layout** — Delivery Sheet, Order Detail, Send Checkup, and Contacts last-order column pick up the same page-tone / CSS updates.
 
 ## 3.0.3.11 — 2026-11-01
 

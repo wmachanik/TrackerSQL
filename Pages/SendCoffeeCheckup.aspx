@@ -48,7 +48,7 @@
                     <br />
                     <br />
                     <ajaxToolkit:TabContainer ID="tabEmailBody" runat="server" Height="200px" Width="100%">
-                        <ajaxToolkit:TabPanel ID="tpnlEmailIntro" TabIndex="0" HeaderText="Checkup Intro" runat="server">
+                        <ajaxToolkit:TabPanel ID="tpnlEmailIntro" TabIndex="0" HeaderText="Checkup Intro" runat="server" CssClass="checkup-tab-intro">
                             <ContentTemplate>
                                 <asp:TextBox ID="tbxEmailIntro" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
                                     Text="Welcome to Quaffee's coffee checkup or reminder" CausesValidation="false" />
@@ -58,7 +58,7 @@
                                 <span class="small">Enter the text that will appear as the Introduction to the emails.</span><br />
                             </ContentTemplate>
                         </ajaxToolkit:TabPanel>
-                        <ajaxToolkit:TabPanel ID="tpnlEmailBody" TabIndex="1" HeaderText="Checkup Body" runat="server">
+                        <ajaxToolkit:TabPanel ID="tpnlEmailBody" TabIndex="1" HeaderText="Checkup Body" runat="server" CssClass="checkup-tab-body">
                             <ContentTemplate>
                                 <asp:TextBox ID="tbxEmailBody" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10"
                                     Text="" />
@@ -68,7 +68,7 @@
                                 <span class="small">This text appears after the Intro, before the Summary of use. Use [#PREPDATE#], to place next PREPDATE,  [#DELIVERYDATE#] for contact deliver date</span>
                             </ContentTemplate>
                         </ajaxToolkit:TabPanel>
-                        <ajaxToolkit:TabPanel ID="tpnlEmailFooter" TabIndex="2" HeaderText="Checkup Footer" runat="server">
+                        <ajaxToolkit:TabPanel ID="tpnlEmailFooter" TabIndex="2" HeaderText="Checkup Footer" runat="server" CssClass="checkup-tab-footer">
                             <ContentTemplate>
                                 <asp:TextBox ID="tbxEmailFooter" runat="server" TextMode="MultiLine" Height="100%" Width="99%" Rows="10" Text="" />
                                 <ajaxToolkit:HtmlEditorExtender ID="HtmlEmailFooter" TargetControlID="tbxEmailFooter" runat="server"
@@ -79,7 +79,7 @@
                         </ajaxToolkit:TabPanel>
                     </ajaxToolkit:TabContainer>
 
-                    <div class="button-row checkup-send-actions" style="margin-top: 12px;">
+                    <div class="button-row checkup-send-actions checkup-toolbar-actions" style="margin-top: 12px;">
                         <asp:Label ID="lblRemincderWindow" runat="server" Text="Reminder Window (days):" AssociatedControlID="ddlReminderWindow" CssClass="small" />
                         <asp:DropDownList ID="ddlReminderWindow" Style="min-width: 16px" runat="server" CssClass="small"
                             AutoPostBack="true" OnSelectedIndexChanged="ddlReminderWindow_SelectedIndexChanged" />
@@ -143,7 +143,7 @@
             <h2 class="page-tone-subtitle" style="font-size: 1.1em; margin: 0 0 8px;">Contacts to receive the checkup/reminder</h2>
             <asp:UpdatePanel ID="upnlCustomerCheckup" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                 <ContentTemplate>
-                    <div class="results-container small">
+                    <div class="results-container small checkup-recipient-panel">
                         <table border="0" style="width: 100%;">
                             <tr style="text-align: left; font-size: large">
                                 <td style="width: 65%;"><b>Contacts To Get Reminder</b></td>
@@ -151,7 +151,7 @@
                             </tr>
                             <tr>
                                 <td style="vertical-align: top;">
-                                    <asp:GridView ID="gvCustomerCheckup" runat="server" CssClass="results-table" Font-Size="X-Small"
+                                    <asp:GridView ID="gvCustomerCheckup" runat="server" CssClass="results-table staff-checkup-grid" Font-Size="X-Small"
                                         AllowPaging="True" PageSize="25" AutoGenerateColumns="False" DataKeyNames="CustomerID"
                                         AllowSorting="False"
                                         OnSelectedIndexChanged="gvCustomerCheckup_SelectedIndexChanged"
@@ -185,14 +185,20 @@
                                                 DataTextField="CompanyName" HeaderText="Company Name" />
                                             <asp:BoundField DataField="ContactFirstName" HeaderText="First Name" />
                                             <asp:BoundField DataField="EmailAddress" HeaderText="Email" />
-                                            <asp:BoundField DataField="ContactAltFirstName" HeaderText="Alt First Name" />
-                                            <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email" />
+                                            <asp:TemplateField HeaderText="Due" ItemStyle-CssClass="checkup-col-due-kind" HeaderStyle-CssClass="checkup-col-due-kind">
+                                                <ItemTemplate>
+                                                    <asp:Literal runat="server" Mode="PassThrough" Text='<%# GetCheckupDueKindMarkup((long)Eval("CustomerID")) %>' />
+                                                </ItemTemplate>
+                                            </asp:TemplateField>
+                                            <asp:BoundField DataField="ContactAltFirstName" HeaderText="Alt First Name" ItemStyle-CssClass="checkup-col-hide-mobile" HeaderStyle-CssClass="checkup-col-hide-mobile" />
+                                            <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email" ItemStyle-CssClass="checkup-col-hide-mobile" HeaderStyle-CssClass="checkup-col-hide-mobile" />
                                             <asp:TemplateField HeaderText="Area">
                                                 <ItemTemplate>
                                                     <asp:Label ID="AreaNameLabel" runat="server" Text='<%# GetAreaName((int)Eval("AreaID")) %>' />
                                                 </ItemTemplate>
                                             </asp:TemplateField>
-                                            <asp:BoundField DataField="NextCoffee" HeaderText="NxtCoffee" DataFormatString="{0:d}" />
+                                            <asp:BoundField DataField="NextCoffee" HeaderText="NxtCoffee" DataFormatString="{0:d}"
+                                                ItemStyle-CssClass="checkup-col-next-coffee" HeaderStyle-CssClass="checkup-col-next-coffee" />
                                             <asp:BoundField DataField="NextClean" HeaderText="NxtCln" DataFormatString="{0:d}" />
                                             <asp:BoundField DataField="NextDescal" HeaderText="NxtDecal" DataFormatString="{0:d}" />
                                             <asp:BoundField DataField="NextDeliveryDate" HeaderText="NxtDlvry" DataFormatString="{0:d}" />
@@ -206,7 +212,7 @@
                                         </PagerTemplate>
                                     </asp:GridView>
                                 </td>
-                                <td style="vertical-align: top; padding-left: 8px;">
+                                <td style="vertical-align: top; padding-left: 8px;" class="checkup-details-column">
                                     <div class="small" style="margin-bottom: 8px; font-size: x-small;">
                                         Click the select icon to view items. Click the <strong>No</strong> icon to exclude a contact from this run only
                                         (Prep/Refresh will bring them back if still due).

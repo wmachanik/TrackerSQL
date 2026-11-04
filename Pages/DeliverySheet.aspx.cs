@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
@@ -39,7 +40,8 @@ namespace TrackerSQL.Pages
         protected Button btnFindDefault;
         protected ImageButton btnFind;
         protected ImageButton btnPrint;
-        protected CheckBox cbxShowAreaAbbr;
+        protected Panel pnlShowAreaAbbrToggle;
+        protected ImageButton btnShowAreaAbbr;
         protected HyperLink hlAddDeliveryItem;
         protected UpdatePanel upnlDeliveryItems;
         protected Table tblDeliveries;
@@ -89,6 +91,7 @@ namespace TrackerSQL.Pages
             this.btnPrint.Visible = !pPrintForm;
             this.pnlDeliveryDate.Visible = !pPrintForm;
             this.ltrlWhichDate.Visible = !pPrintForm;
+            BindShowAreaAbbrToggle();
 
             // Print uses Print.master and must stay plain (no page-tone chrome).
             if (this.pnlDeliveryShell != null)
@@ -121,6 +124,12 @@ namespace TrackerSQL.Pages
             this.BuildDeliverySheet(pPrintForm, pActiveDeliveryDate, pOnlyDeliveryBy);
         }
 
+        protected override void OnPreRender(EventArgs e)
+        {
+            BindShowAreaAbbrToggle();
+            base.OnPreRender(e);
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             bool pPrintForm =
@@ -132,16 +141,15 @@ namespace TrackerSQL.Pages
 
             if (!this.IsPostBack)
             {
-                BindShowAreaAbbrCheckbox();
                 // Enter key should load the selected delivery date (Go), not Find.
-                // Defaulting to Find caused date AutoPostBack / Go to be overwritten by a
-                // contact search whenever the Find box had leftover text.
                 if (this.btnGo != null)
                     this.Form.DefaultButton = this.btnGo.UniqueID;
 
                 this.BindActivePrepDates();
                 this.PageInitialize(pPrintForm);
             }
+
+            BindShowAreaAbbrToggle();
 
             if (pPrintForm)
                 return;
@@ -576,8 +584,7 @@ namespace TrackerSQL.Pages
                 }
                 else
                 {
-                    cellDetails.Text =
-                        $"<a class='plain' href='{orderDetailUrl}'>{cellDetails.Text.Trim()}</a>";
+                    cellDetails.Text = BuildOrderMetaCellHtml(cellDetails.Text, orderDetailUrl);
                 }
 
                 if (_canOrder && !currentItem.Done && currentItem.DeliveryById.HasValue && currentItem.ContactIDValue > 0
@@ -695,6 +702,43 @@ namespace TrackerSQL.Pages
             return $"{this.ResolveUrl("~/Pages/OrderDetail.aspx")}?OrderID={item.OrderID}";
         }
 
+        /// <summary>Date and driver each link to Order Detail; pencil edit icon is mobile-only (CSS).</summary>
+        private string BuildOrderMetaCellHtml(string detailsText, string orderDetailUrl)
+        {
+            string trimmed = detailsText?.Trim() ?? string.Empty;
+            string metaLinks = BuildOrderMetaLinks(trimmed, orderDetailUrl);
+            string editImg = ResolveUrl("~/images/imgButtons/Modify.gif");
+            string edit =
+                $"<a class='dlv-order-edit plain' href='{orderDetailUrl}' title='Open order'>"
+                + $"<img src='{editImg}' alt='Modify order' /></a>";
+            return $"<span class='dlv-order-meta'>{metaLinks}</span>{edit}";
+        }
+
+        /// <summary>Wraps required-by date and delivery-by abbreviation in order links (same URL).</summary>
+        private static string BuildOrderMetaLinks(string detailsText, string orderDetailUrl)
+        {
+            if (string.IsNullOrEmpty(detailsText))
+            {
+                return $"<a class='plain dlv-order-meta-link' href='{orderDetailUrl}' title='Open order'>&nbsp;</a>";
+            }
+
+            int comma = detailsText.IndexOf(',');
+            if (comma < 0)
+            {
+                return OrderMetaAnchor(orderDetailUrl, detailsText);
+            }
+
+            string datePart = detailsText.Substring(0, comma).Trim();
+            string byPart = detailsText.Substring(comma + 1).Trim();
+            return OrderMetaAnchor(orderDetailUrl, datePart) + ", " + OrderMetaAnchor(orderDetailUrl, byPart);
+        }
+
+        private static string OrderMetaAnchor(string orderDetailUrl, string text)
+        {
+            return $"<a class='plain dlv-order-meta-link' href='{orderDetailUrl}' title='Open order'>"
+                + HttpUtility.HtmlEncode(text) + "</a>";
+        }
+
         /// <summary>
         /// Builds the action buttons for edit, invoice done, and delivered.
         /// </summary>
@@ -757,6 +801,14 @@ namespace TrackerSQL.Pages
         /// </summary>
         private void BuildTotalsTable(List<DeliverySheetTotal> itemTotals)
         {
+            this.tblTotals.Attributes.Remove("data-dlv-mobile-layout");
+
+            if (UseDeliverySheetMobileTotals())
+            {
+                BuildTotalsTableMobile(itemTotals);
+                return;
+            }
+
             TableRow summaryHeaderRow = new TableHeaderRow();
             TableRow summaryItemsRow = new TableRow();
 
@@ -786,6 +838,52 @@ namespace TrackerSQL.Pages
 
             this.tblTotals.Rows.Add(summaryHeaderRow);
             this.tblTotals.Rows.Add(summaryItemsRow);
+        }
+
+        /// <summary>Phone layout: one row per item (description + qty), not a wide header row.</summary>
+        private void BuildTotalsTableMobile(List<DeliverySheetTotal> itemTotals)
+        {
+            TableRow heading = new TableRow();
+            heading.CssClass = "dlv-totals-section";
+            heading.Cells.Add(new TableCell
+            {
+                Text = "Items required",
+                ColumnSpan = 2,
+                CssClass = "dlv-totals-heading"
+            });
+            this.tblTotals.Rows.Add(heading);
+
+            foreach (DeliverySheetTotal itemTotal in itemTotals)
+            {
+                TableRow row = new TableRow();
+                row.CssClass = "dlv-total-line";
+                row.Cells.Add(new TableCell
+                {
+                    Text = itemTotal.ItemDesc,
+                    CssClass = "dlv-total-item"
+                });
+                row.Cells.Add(new TableCell
+                {
+                    Text = SystemConstants.FormatConstants.FormatQuantity(itemTotal.TotalQty),
+                    CssClass = "dlv-total-qty",
+                    HorizontalAlign = HorizontalAlign.Right
+                });
+                this.tblTotals.Rows.Add(row);
+            }
+
+            this.tblTotals.Attributes["data-dlv-mobile-layout"] = "1";
+        }
+
+        /// <summary>Mobile totals list (also used when Browser.IsMobileDevice even if session flag missed).</summary>
+        private bool UseDeliverySheetMobileTotals()
+        {
+            if (this.Session["RunningOnMoble"] is bool sessionMobile && sessionMobile)
+                return true;
+
+            if (this.Request.Browser != null && this.Request.Browser.IsMobileDevice)
+                return true;
+
+            return new CheckBrowser().fBrowserIsMobile();
         }
 
         /// <summary>
@@ -1124,17 +1222,34 @@ namespace TrackerSQL.Pages
 
         private bool ShowSheetAreaAbbr => UserPreferencesHelper.GetCurrentPreferences().ShowSheetAreaAbbr;
 
-        private void BindShowAreaAbbrCheckbox()
+        private void BindShowAreaAbbrToggle()
         {
-            if (cbxShowAreaAbbr == null)
-                return;
-            cbxShowAreaAbbr.Checked = ShowSheetAreaAbbr;
-            cbxShowAreaAbbr.Visible = true;
+            bool on = ShowSheetAreaAbbr;
+            if (pnlShowAreaAbbrToggle != null)
+            {
+                pnlShowAreaAbbrToggle.CssClass = on
+                    ? "image-button dlv-area-abbr-toggle is-on"
+                    : "image-button dlv-area-abbr-toggle";
+                pnlShowAreaAbbrToggle.Attributes["data-area-abbr-on"] = on ? "1" : "0";
+                pnlShowAreaAbbrToggle.Attributes["title"] = on
+                    ? "Area codes are shown on each stop. Click to hide (saved per user)."
+                    : "Area codes are hidden. Click to show on each stop (saved per user).";
+            }
+
+            if (btnShowAreaAbbr != null)
+            {
+                btnShowAreaAbbr.Visible = true;
+                btnShowAreaAbbr.ToolTip = on
+                    ? "Area codes on — click to hide (saved per user)"
+                    : "Area codes off — click to show (saved per user)";
+                btnShowAreaAbbr.AlternateText = on ? "Area codes on" : "Area codes off";
+            }
         }
 
-        protected void cbxShowAreaAbbr_CheckedChanged(object sender, EventArgs e)
+        protected void btnShowAreaAbbr_Click(object sender, ImageClickEventArgs e)
         {
-            UserPreferencesHelper.SaveCurrentShowSheetAreaAbbr(cbxShowAreaAbbr != null && cbxShowAreaAbbr.Checked);
+            UserPreferencesHelper.SaveCurrentShowSheetAreaAbbr(!ShowSheetAreaAbbr);
+            BindShowAreaAbbrToggle();
             bool printForm = Request.QueryString["Print"] != null && Request.QueryString["Print"].ToString() == "Y";
             PageInitialize(printForm);
         }

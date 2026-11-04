@@ -197,6 +197,7 @@ namespace TrackerSQL.Managers
                 { "SQLCommands-Postal-01.xml", new[] { Table("SaPostalCodeTbl") } },
                 { "SQLCommands-ContactChangeLog-01.xml", new[] { Table("ContactChangeLogTbl") } },
                 { "SQLCommands-ContactPortal-01.xml", new[] { Table("ContactPortalSettingsTbl") } },
+                { "SQLCommands-ClientMail-01.xml", new[] { Table("ClientMailTemplatesTbl") } },
             };
     }
 }

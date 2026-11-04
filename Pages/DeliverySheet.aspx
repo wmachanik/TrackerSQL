@@ -24,7 +24,7 @@
             <asp:AsyncPostBackTrigger ControlID="btnFind" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="btnFindDefault" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="ddlDeliveryBy" EventName="SelectedIndexChanged" />
-            <asp:AsyncPostBackTrigger ControlID="cbxShowAreaAbbr" EventName="CheckedChanged" />
+            <asp:AsyncPostBackTrigger ControlID="btnShowAreaAbbr" EventName="Click" />
             <asp:PostBackTrigger ControlID="btnPrint" />
             <asp:PostBackTrigger ControlID="btnRefresh" />
             <asp:PostBackTrigger ControlID="btnBack" />
@@ -55,31 +55,33 @@
                                 OnSelectedIndexChanged="ddlActivePrepDates_SelectedIndexChanged">
                                 <asp:ListItem Value="" Text="--- Select Date ---" />
                             </asp:DropDownList>
-                            <asp:Button
-                                ID="btnGo"
-                                CssClass="filter-panel-btn"
-                                runat="server"
-                                Text="Go"
-                                OnClick="btnGo_Click"
-                                AccessKey="G"
-                                ToolTip="get the results (AltShftG)" />
-                            <span class="image-button" title="Pick a delivery date">
-                                <asp:ImageButton ID="btnCalendar" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
-                                    AlternateText="Calendar" ToolTip="Pick a delivery date"
-                                    CausesValidation="false" OnClientClick="return false;" />
-                                <asp:TextBox ID="tbCalendarDate" runat="server"
-                                    Style="width: 0; height: 0; border: none; padding: 0; margin: 0; opacity: 0; position: absolute; left: 0; top: 100%;"
-                                    AutoPostBack="true" OnTextChanged="tbCalendarDate_TextChanged" />
-                                <ajaxToolkit:CalendarExtender
-                                    ID="calExtender"
+                            <div class="delivery-date-actions">
+                                <asp:Button
+                                    ID="btnGo"
+                                    CssClass="filter-panel-btn"
                                     runat="server"
-                                    TargetControlID="tbCalendarDate"
-                                    PopupButtonID="btnCalendar"
-                                    PopupPosition="BottomLeft"
-                                    Format="yyyy-MM-dd" />
-                            </span>
-                            <asp:Button ID="btnRefresh" CssClass="filter-panel-btn" Text="Refresh" AccessKey="R"
-                                ToolTip="refresh lists (AltShftR)" runat="server" OnClick="btnRefresh_Click" />
+                                    Text="Go"
+                                    OnClick="btnGo_Click"
+                                    AccessKey="G"
+                                    ToolTip="get the results (AltShftG)" />
+                                <span class="image-button" title="Pick a delivery date">
+                                    <asp:ImageButton ID="btnCalendar" runat="server" ImageUrl="~/images/imgButtons/CalendarBtn.png"
+                                        AlternateText="Calendar" ToolTip="Pick a delivery date"
+                                        CausesValidation="false" OnClientClick="return false;" />
+                                    <asp:TextBox ID="tbCalendarDate" runat="server"
+                                        Style="width: 0; height: 0; border: none; padding: 0; margin: 0; opacity: 0; position: absolute; left: 0; top: 100%;"
+                                        AutoPostBack="true" OnTextChanged="tbCalendarDate_TextChanged" />
+                                    <ajaxToolkit:CalendarExtender
+                                        ID="calExtender"
+                                        runat="server"
+                                        TargetControlID="tbCalendarDate"
+                                        PopupButtonID="btnCalendar"
+                                        PopupPosition="BottomLeft"
+                                        Format="yyyy-MM-dd" />
+                                </span>
+                                <asp:Button ID="btnRefresh" CssClass="filter-panel-btn" Text="Refresh" AccessKey="R"
+                                    ToolTip="refresh lists (AltShftR)" runat="server" OnClick="btnRefresh_Click" />
+                            </div>
                             <asp:Label ID="lblDeliveryBy" runat="server" Text="By:" Visible="false" />
                             <asp:DropDownList ID="ddlDeliveryBy" runat="server" AutoPostBack="true" Visible="false"
                                 OnSelectedIndexChanged="ddlDeliveryBy_SelectedIndexChanged" />
@@ -105,9 +107,16 @@
                                     </span>
                                 </span>
                             </asp:Panel>
-                            <asp:CheckBox ID="cbxShowAreaAbbr" runat="server" CssClass="small"
-                                Text="Show Area Codes" ToolTip="Show each delivery's area abbreviation (Lookups → Areas code)"
-                                AutoPostBack="true" OnCheckedChanged="cbxShowAreaAbbr_CheckedChanged" />
+                            <asp:Panel ID="pnlShowAreaAbbrToggle" runat="server" EnableViewState="false"
+                                CssClass="image-button dlv-area-abbr-toggle">
+                                <asp:ImageButton ID="btnShowAreaAbbr" runat="server"
+                                    ImageUrl="~/images/imgButtons/Lightning.gif"
+                                    AlternateText="Area codes"
+                                    ToolTip="Show area codes on stops (Lookups → Areas abbreviation). Click to toggle; saved in your user preferences."
+                                    CausesValidation="false"
+                                    OnClientClick="return dlvAreaAbbrToggleClient(this);"
+                                    OnClick="btnShowAreaAbbr_Click" />
+                            </asp:Panel>
                             <span class="toolbar-icon-row">
                                 <span class="image-button hideWhenPrinting" title="Print sheet (Alt+Shift+P)">
                                     <asp:ImageButton ID="btnPrint" runat="server"
@@ -144,7 +153,7 @@
                 <asp:Button ID="btnSaveRouteOrder" runat="server" Text="Save order" Style="display: none"
                     OnClick="btnSaveRouteOrder_Click" CausesValidation="false" UseSubmitBehavior="false" />
 
-                <asp:Table ID="tblDeliveries" runat="server" EnableViewState="false" CssClass="TblZebra" Width="100%" CellPadding="0">
+                <asp:Table ID="tblDeliveries" runat="server" EnableViewState="false" CssClass="TblZebra delivery-sheet-stops" Width="100%" CellPadding="0">
                     <asp:TableHeaderRow TableSection="TableHeader">
                         <asp:TableHeaderCell>By</asp:TableHeaderCell>
                         <asp:TableHeaderCell>To</asp:TableHeaderCell>
@@ -156,7 +165,7 @@
                 </asp:Table>
                 <br />
                 <div class="TblWrapper">
-                    <asp:Table ID="tblTotals" runat="server" CssClass="TblCoffee" Width="100%">
+                    <asp:Table ID="tblTotals" runat="server" CssClass="TblCoffee delivery-sheet-totals" Width="100%">
                     </asp:Table>
                 </div>
                 <div style="text-align: right; width: 98%" class="small">
@@ -172,6 +181,29 @@
             </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+
+    <script type="text/javascript">
+        function dlvAreaAbbrToggleClient(btn) {
+            var shell = btn && btn.parentNode;
+            if (shell && shell.classList) shell.classList.toggle('is-on');
+            return true;
+        }
+        function dlvSyncAreaAbbrToggleFromServer() {
+            var shell = document.getElementById('<%= pnlShowAreaAbbrToggle.ClientID %>');
+            if (!shell) return;
+            shell.classList.toggle('is-on', shell.getAttribute('data-area-abbr-on') === '1');
+        }
+        (function () {
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(dlvSyncAreaAbbrToggleFromServer);
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', dlvSyncAreaAbbrToggleFromServer);
+            } else {
+                dlvSyncAreaAbbrToggleFromServer();
+            }
+        })();
+    </script>
 
     <script type="text/javascript">
         // Drag-to-order: rows carry data-person / data-contact; only a driver's own open stops move among each other.
@@ -281,6 +313,68 @@
 
             if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
                 Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () { changed = null; start = null; });
+            }
+        })();
+    </script>
+
+    <script type="text/javascript">
+        function dlvApplyMobileTotalsLayout() {
+            if (!document.body.classList.contains('staff-mobile-page-delivery')) return;
+            if (window.matchMedia && !window.matchMedia('(max-width: 768px)').matches) return;
+            var table = document.getElementById('<%= tblTotals.ClientID %>');
+            if (!table) return;
+            if (table.querySelector('tr.dlv-total-line')) {
+                table.setAttribute('data-dlv-mobile-layout', '1');
+                return;
+            }
+            if (table.rows.length < 2) return;
+            var headerRow = table.rows[0];
+            var qtyRow = table.rows[1];
+            if (!headerRow || !qtyRow || headerRow.cells.length < 2
+                || headerRow.cells.length !== qtyRow.cells.length) return;
+
+            var pairs = [];
+            for (var i = 1; i < headerRow.cells.length; i++) {
+                pairs.push({
+                    name: (headerRow.cells[i].textContent || '').trim(),
+                    qty: (qtyRow.cells[i].textContent || '').trim()
+                });
+            }
+
+            while (table.rows.length > 0) {
+                table.deleteRow(0);
+            }
+
+            var section = table.insertRow(-1);
+            section.className = 'dlv-totals-section';
+            var hd = section.insertCell(0);
+            hd.className = 'dlv-totals-heading';
+            hd.colSpan = 2;
+            hd.textContent = 'Items required';
+
+            for (var j = 0; j < pairs.length; j++) {
+                var tr = table.insertRow(-1);
+                tr.className = 'dlv-total-line';
+                var nameCell = tr.insertCell(0);
+                nameCell.className = 'dlv-total-item';
+                nameCell.textContent = pairs[j].name;
+                var qtyCell = tr.insertCell(1);
+                qtyCell.className = 'dlv-total-qty';
+                qtyCell.textContent = pairs[j].qty;
+            }
+
+            table.setAttribute('data-dlv-mobile-layout', '1');
+        }
+
+        (function () {
+            function run() { dlvApplyMobileTotalsLayout(); }
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(run);
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', run);
+            } else {
+                run();
             }
         })();
     </script>

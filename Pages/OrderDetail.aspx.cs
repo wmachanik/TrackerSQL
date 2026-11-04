@@ -48,6 +48,7 @@ namespace TrackerSQL.Pages
 
         private const string VSKEY_PERSISTED_ORDER_ID = "PersistedOrderId";
         private const string VSKEY_CONFLICT_ORDER_ID = "ConflictOrderId";
+        private const string DeliverToEditorOverlayClass = "confirm-modal-overlay deliver-to-editor-overlay";
         private const string VSKEY_HEADER_UNDO = "HeaderUndoSnapshot";
         private const string VSKEY_PREFERRED_DELIVERY = "PreferredDeliveryPersonId";
         private const string VSKEY_LAST_CONTACT_DELIVERY = "LastContactIdForDeliveryPref";
@@ -217,6 +218,7 @@ namespace TrackerSQL.Pages
             UpdateHeaderUndoButton();
             ConfigureMergeButtonConfirm();
             RegisterHeaderDirtyTracking();
+            ApplyDeliverToEditorPanelState();
         }
 
         /// <summary>
@@ -1827,6 +1829,8 @@ namespace TrackerSQL.Pages
             ddlDeliverToOrder.Items.Clear();
             if (btnEditDeliverToOrder != null)
                 btnEditDeliverToOrder.Visible = false;
+            if (pnlEditDeliverToOrder != null)
+                pnlEditDeliverToOrder.Visible = false;
             if (!show)
                 return;
 
@@ -1862,7 +1866,10 @@ namespace TrackerSQL.Pages
         {
             if (btnEditDeliverToOrder == null)
                 return;
-            btnEditDeliverToOrder.Visible = ReadDeliverToAddressIdFromControls().GetValueOrDefault() > 0;
+            bool showEdit = ReadDeliverToAddressIdFromControls().GetValueOrDefault() > 0;
+            btnEditDeliverToOrder.Visible = showEdit;
+            if (pnlEditDeliverToOrder != null)
+                pnlEditDeliverToOrder.Visible = showEdit;
         }
 
         private int? ReadDeliverToAddressIdFromControls()
@@ -1999,9 +2006,59 @@ namespace TrackerSQL.Pages
                 SelectDropValue(ddlOdDeliverToBy, PreferredDeliveryPersonId);
             }
 
-            pnlDeliverToEditor.Visible = true;
+            DeliverToEditorOpen = true;
+            ApplyDeliverToEditorPanelState();
             UpdateOdDeliverToGpsLine();
+            ResetOdDeliverToSaveButton();
             upnlDeliverToEditor.Update();
+            RegisterPageStartupScript("orderDeliverToOpen", "if(window.orderDeliverToSyncShell){orderDeliverToSyncShell();}");
+        }
+
+        private bool DeliverToEditorOpen
+        {
+            get => hdnDeliverToEditorOpen != null && hdnDeliverToEditorOpen.Value == "1";
+            set
+            {
+                if (hdnDeliverToEditorOpen != null)
+                    hdnDeliverToEditorOpen.Value = value ? "1" : "0";
+            }
+        }
+
+        private void ApplyDeliverToEditorPanelState()
+        {
+            if (pnlDeliverToEditor == null)
+                return;
+
+            pnlDeliverToEditor.Visible = true;
+            pnlDeliverToEditor.CssClass = DeliverToEditorOpen
+                ? DeliverToEditorOverlayClass + " is-open"
+                : DeliverToEditorOverlayClass;
+            pnlDeliverToEditor.Attributes["data-open"] = DeliverToEditorOpen ? "1" : "0";
+        }
+
+        private void CloseDeliverToEditorPanel(int contactId, int? selectedDeliverToAddressId)
+        {
+            if (contactId > 0)
+                BindDeliverToOrderDropdown(contactId, selectedDeliverToAddressId);
+
+            lblOdDeliverToError.Visible = false;
+            DeliverToEditorOpen = false;
+            ApplyDeliverToEditorPanelState();
+            ResetOdDeliverToSaveButton();
+            MarkHeaderDirty();
+            pnlOrderHeader?.Update();
+            upnlDeliverToEditor?.Update();
+            RegisterPageStartupScript("orderDeliverToClose", "if(window.orderDeliverToSyncShell){orderDeliverToSyncShell();}");
+        }
+
+        private void ResetOdDeliverToSaveButton()
+        {
+            if (btnSaveOdDeliverTo == null)
+                return;
+
+            btnSaveOdDeliverTo.Text = "Save & close";
+            btnSaveOdDeliverTo.Enabled = true;
+            btnSaveOdDeliverTo.Attributes.Remove("data-busy");
         }
 
         private void BindOdDeliverToLookups()
@@ -2038,23 +2095,25 @@ namespace TrackerSQL.Pages
 
         protected void btnCancelOdDeliverTo_Click(object sender, EventArgs e)
         {
-            pnlDeliverToEditor.Visible = false;
-            BindDeliverToOrderDropdown((int)GetEffectiveContactId(), ReadDeliverToAddressIdFromControls());
-            pnlOrderHeader.Update();
-            upnlDeliverToEditor.Update();
+            CloseDeliverToEditorPanel((int)GetEffectiveContactId(), ReadDeliverToAddressIdFromControls());
         }
 
         protected void btnSaveOdDeliverTo_Click(object sender, EventArgs e)
         {
             int contactId = (int)GetEffectiveContactId();
             if (contactId <= 0)
+            {
+                ResetOdDeliverToSaveButton();
+                upnlDeliverToEditor.Update();
                 return;
+            }
 
             string person = (tbxOdDeliverToPerson.Text ?? string.Empty).Trim();
             if (person.Length == 0)
             {
                 lblOdDeliverToError.Text = "Enter the person name.";
                 lblOdDeliverToError.Visible = true;
+                ResetOdDeliverToSaveButton();
                 upnlDeliverToEditor.Update();
                 return;
             }
@@ -2087,17 +2146,13 @@ namespace TrackerSQL.Pages
             {
                 lblOdDeliverToError.Text = "Could not save this address.";
                 lblOdDeliverToError.Visible = true;
+                ResetOdDeliverToSaveButton();
                 upnlDeliverToEditor.Update();
                 return;
             }
 
             hdnDeliverToEditorId.Value = saved.ToString();
-            litDeliverToEditorTitle.Text = "Edit alternative address";
-            BindDeliverToOrderDropdown(contactId, saved);
-            MarkHeaderDirty();
-            pnlOrderHeader.Update();
-            UpdateOdDeliverToGpsLine();
-            upnlDeliverToEditor.Update();
+            CloseDeliverToEditorPanel(contactId, saved);
         }
 
         protected void btnOdGpsRefresh_Click(object sender, EventArgs e)

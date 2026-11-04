@@ -1741,6 +1741,75 @@ button,
     pointer-events: none;
 }
 
+.order-deliver-to-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.order-deliver-to-row select {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto !important;
+    max-width: calc(100% - 52px);
+}
+
+.order-deliver-to-row .order-deliver-to-edit.image-button {
+    flex: 0 0 auto;
+    display: inline-flex !important;
+    align-self: center;
+    margin: 0 !important;
+}
+
+/* Panel renders as div.image-button — same 16px icon as span.image-button toolbar controls */
+.order-deliver-to-row div.image-button.order-deliver-to-edit > input[type="image"] {
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    flex: 0 0 16px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-sizing: content-box !important;
+}
+
+/* Full-screen async wait on staff mobile (wired from Site.Master) */
+.staff-mobile-wait-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.staff-mobile-wait-overlay[aria-hidden="false"] {
+    display: flex;
+}
+
+.staff-mobile-wait-overlay .staff-mobile-wait-label {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #302a20;
+}
+
+.staff-mobile-wait-overlay img {
+    width: 48px;
+    height: 48px;
+}
+
 .order-detail-save-return-overlay {
     position: fixed;
     inset: 0;
@@ -1768,6 +1837,11 @@ button,
     align-items: center;
     justify-content: center;
     background: rgba(48, 42, 32, 0.45);
+}
+
+/* Order-detail alt-address editor: stay in DOM for UpdatePanel refreshes; toggle with .is-open */
+.confirm-modal-overlay.deliver-to-editor-overlay:not(.is-open) {
+    display: none !important;
 }
 
 .confirm-modal {
@@ -1827,6 +1901,41 @@ button,
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 4px;
+}
+
+/* Delivery sheet order line: date + driver link to order; pencil edit is mobile-only (MobileStaff.css). */
+a.dlv-order-edit {
+    display: none;
+}
+
+span.dlv-order-meta,
+.dlv-order-meta {
+    font-weight: 500;
+}
+
+table.delivery-sheet-stops a.dlv-order-meta-link {
+    color: #03b34a;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+table.delivery-sheet-stops a.dlv-order-meta-link:hover {
+    color: #1dbf60;
+}
+
+@media (max-width: 768px) {
+    .confirm-modal-overlay {
+        align-items: flex-start;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 12px 8px 24px;
+        box-sizing: border-box;
+    }
+
+    .confirm-modal-overlay > .confirm-modal {
+        flex-shrink: 0;
+        margin: 0 auto 16px;
+    }
 }
 
 .contact-deliver-to-tab .TblWhite input[type="image"],
@@ -2090,6 +2199,14 @@ button,
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
+}
+
+.delivery-date-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
 }
 
 .delivery-find-default-btn {
@@ -3109,48 +3226,99 @@ ul[id$="_OptionList"] li[highlighted="true"],
 .results-table .ajax__combobox_buttoncontainer,
 .TblFlex .ajax__combobox_buttoncontainer,
 .new-order-item-table .ajax__combobox_buttoncontainer {
-    width: 22px !important;
-    max-width: 22px !important;
     white-space: nowrap !important;
 }
 
-.results-table .ajax__combobox_textboxcontainer input[type="text"],
-.TblFlex .ajax__combobox_textboxcontainer input[type="text"],
-.new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
-    display: block !important;
-    width: auto !important;
-    min-width: 8em !important;
-    max-width: 18em !important;
-    height: 22px !important;
-    min-height: 22px !important;
-    max-height: 22px !important;
-    line-height: 20px !important;
-    padding: 0 6px !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    vertical-align: middle !important;
-    border-right: none !important;
-    border-radius: 3px 0 0 3px !important;
+@media (min-width: 769px) {
+    .results-table .ajax__combobox_buttoncontainer,
+    .TblFlex .ajax__combobox_buttoncontainer,
+    .new-order-item-table .ajax__combobox_buttoncontainer {
+        width: 22px !important;
+        max-width: 22px !important;
+    }
+
+    .results-table .ajax__combobox_textboxcontainer input[type="text"],
+    .TblFlex .ajax__combobox_textboxcontainer input[type="text"],
+    .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
+        display: block !important;
+        width: auto !important;
+        min-width: 8em !important;
+        max-width: 18em !important;
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+        line-height: 20px !important;
+        padding: 0 6px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+        border-right: none !important;
+        border-radius: 3px 0 0 3px !important;
+    }
+
+    .results-table .ajax__combobox_buttoncontainer button,
+    .results-table .ajax__combobox_buttoncontainer input[type="button"],
+    .TblFlex .ajax__combobox_buttoncontainer button,
+    .TblFlex .ajax__combobox_buttoncontainer input[type="button"],
+    .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
+        display: block !important;
+        width: 22px !important;
+        min-width: 22px !important;
+        max-width: 22px !important;
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+        margin: 0 0 0 -1px !important;
+        padding: 0 !important;
+        line-height: 20px !important;
+        box-sizing: border-box !important;
+        border-radius: 0 3px 3px 0 !important;
+    }
 }
 
-.results-table .ajax__combobox_buttoncontainer button,
-.results-table .ajax__combobox_buttoncontainer input[type="button"],
-.TblFlex .ajax__combobox_buttoncontainer button,
-.TblFlex .ajax__combobox_buttoncontainer input[type="button"],
-.new-order-item-table .ajax__combobox_buttoncontainer button,
-.new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
-    display: block !important;
-    width: 22px !important;
-    min-width: 22px !important;
-    max-width: 22px !important;
-    height: 22px !important;
-    min-height: 22px !important;
-    max-height: 22px !important;
-    margin: 0 0 0 -1px !important; /* overlap shared border with textbox */
-    padding: 0 !important;
-    line-height: 20px !important;
+/* Delivery sheet: area-code toggle (Panel renders as div.image-button) */
+span.image-button.dlv-area-abbr-toggle,
+div.image-button.dlv-area-abbr-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: var(--primary-green) !important;
+    border: 1px solid var(--primary-green) !important;
+    border-radius: 4px !important;
+    padding: 4px 10px !important;
+    min-height: 30px !important;
     box-sizing: border-box !important;
-    border-radius: 0 3px 3px 0 !important;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+span.image-button.dlv-area-abbr-toggle > input[type="image"],
+div.image-button.dlv-area-abbr-toggle > input[type="image"] {
+    width: 18px !important;
+    height: 18px !important;
+    flex: 0 0 18px !important;
+}
+
+span.image-button.dlv-area-abbr-toggle:not(.is-on),
+div.image-button.dlv-area-abbr-toggle:not(.is-on) {
+    background-color: #5a7a58 !important;
+    border-color: #4a6a48 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22) !important;
+}
+
+span.image-button.dlv-area-abbr-toggle.is-on,
+div.image-button.dlv-area-abbr-toggle.is-on {
+    background-color: #2e402d !important;
+    border-color: #243322 !important;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.45) !important;
+    transform: translateY(1px);
+}
+
+span.image-button.dlv-area-abbr-toggle.is-on:hover,
+div.image-button.dlv-area-abbr-toggle.is-on:hover {
+    background-color: #3a4f39 !important;
+    border-color: #2e402d !important;
 }
 
 .results-table .empty-data {
@@ -4182,33 +4350,32 @@ textarea.order-detail-notes,
     table-layout: auto;
 }
 
-.page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th,
-.page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td,
-.page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th,
-.page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td {
-    vertical-align: middle !important;
-    white-space: nowrap;
-    padding: 6px 8px !important;
-}
-
-/* Qty must match ComboBox height (same as order-lines grid) */
-.page-tone-panel.page-tone-orders .new-order-item-table input[type="text"],
-.page-tone-panel.page-tone-neworder .new-order-item-table input[type="text"] {
-    height: 22px !important;
-    min-height: 22px !important;
-    max-height: 22px !important;
-    line-height: 20px !important;
-    padding: 0 6px !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    vertical-align: middle !important;
-    width: auto !important;
-    max-width: 6em !important;
-}
-
 /* New order line: keep Item / Qty / Prep compact on desktop instead of
    stretching three small controls across the full editor panel. */
 @media (min-width: 769px) {
+    .page-tone-panel.page-tone-orders .new-order-item-table > thead > tr > th,
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td,
+    .page-tone-panel.page-tone-neworder .new-order-item-table > thead > tr > th,
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td {
+        vertical-align: middle !important;
+        white-space: nowrap;
+        padding: 6px 8px !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table input[type="text"],
+    .page-tone-panel.page-tone-neworder .new-order-item-table input[type="text"] {
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+        line-height: 20px !important;
+        padding: 0 6px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+        width: auto !important;
+        max-width: 6em !important;
+    }
+
     .page-tone-panel.page-tone-orders .new-order-item-form,
     .page-tone-panel.page-tone-neworder .new-order-item-form {
         display: inline-block;
@@ -4565,60 +4732,74 @@ textarea.order-detail-notes,
         overflow: visible !important;
     }
 
-    /* Same label + control row as order-lines grid (grid so ComboBoxes fill) */
+    /* Stacked field: label on one line, control full width below */
     .new-order-item-table > tbody > tr > td {
-        display: grid !important;
-        grid-template-columns: 3.25rem minmax(0, 1fr) auto;
-        align-items: center !important;
-        column-gap: 8px !important;
+        display: block !important;
+        align-items: stretch !important;
+        column-gap: 0 !important;
+        row-gap: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        margin-bottom: 12px !important;
         padding: 0 !important;
         border: none !important;
         background: transparent !important;
         box-sizing: border-box !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
+    }
+
+    .new-order-item-table > tbody > tr > td:last-child {
+        margin-bottom: 0 !important;
     }
 
     .new-order-item-table > tbody > tr > td::before {
         content: attr(data-label);
-        grid-column: 1;
-        grid-row: 1;
         display: block !important;
         font-weight: 600;
         color: #4e664d;
-        margin: 0 !important;
+        margin: 0 0 6px 0 !important;
         line-height: 1.2 !important;
     }
 
     .new-order-item-table > tbody > tr > td[data-label="Qty"] input[type="text"] {
-        grid-column: 2;
-        grid-row: 1;
-        justify-self: start;
-        width: 5em !important;
-        max-width: 6em !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        line-height: 34px !important;
-        padding: 0 8px !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 12em !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        line-height: 42px !important;
+        font-size: 16px !important;
+        padding: 0 12px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
     }
 
-    .new-order-item-table .ajax__combobox {
-        grid-column: 2 / -1;
-        grid-row: 1;
+    .page-tone-orders .new-order-item-table .ajax__combobox,
+    .page-tone-neworder .new-order-item-table .ajax__combobox,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox {
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         box-sizing: border-box !important;
     }
 
-    .new-order-item-table .ajax__combobox_inputcontainer,
-    .new-order-item-table .ajax__combobox > table {
+    .page-tone-orders .new-order-item-table .ajax__combobox_inputcontainer,
+    .page-tone-neworder .new-order-item-table .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_inputcontainer,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_inputcontainer,
+    .page-tone-orders .new-order-item-table .ajax__combobox > table,
+    .page-tone-neworder .new-order-item-table .ajax__combobox > table,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox > table,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox > table {
         display: table !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -4627,46 +4808,78 @@ textarea.order-detail-notes,
         table-layout: fixed !important;
     }
 
-    .new-order-item-table .ajax__combobox_textboxcontainer {
+    .page-tone-orders .new-order-item-table .ajax__combobox_textboxcontainer,
+    .page-tone-neworder .new-order-item-table .ajax__combobox_textboxcontainer,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_textboxcontainer,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_textboxcontainer {
         display: table-cell !important;
         width: auto !important;
+        vertical-align: middle !important;
     }
 
-    .new-order-item-table .ajax__combobox_buttoncontainer {
+    .page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer,
+    .page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer {
         display: table-cell !important;
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        max-width: 46px !important;
+        vertical-align: middle !important;
     }
 
-    .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
+    .page-tone-orders .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-neworder .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"],
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_textboxcontainer input[type="text"] {
         display: block !important;
         width: 100% !important;
         min-width: 0 !important;
         max-width: none !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        line-height: 42px !important;
         font-size: 16px !important;
-        padding: 0 8px !important;
+        padding: 0 12px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        border: 1px solid #ccc !important;
+        border-right: none !important;
+        border-radius: 8px 0 0 8px !important;
     }
 
-    .new-order-item-table .ajax__combobox_buttoncontainer button,
-    .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
+    .page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"],
+    .page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"],
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .page-tone-panel.page-tone-orders .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"],
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer button,
+    .page-tone-panel.page-tone-neworder .new-order-item-table .ajax__combobox_buttoncontainer input[type="button"] {
         display: block !important;
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        margin: 0 !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        max-width: 46px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        margin: 0 0 0 -1px !important;
         padding: 0 !important;
         position: relative !important;
+        box-sizing: border-box !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+
+    .page-tone-panel.page-tone-orders .new-order-item-table > tbody > tr > td,
+    .page-tone-panel.page-tone-neworder .new-order-item-table > tbody > tr > td {
+        white-space: normal !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Order-lines grid on mobile: usable stacked form (label + control on one line).
@@ -4728,23 +4941,27 @@ textarea.order-detail-notes,
         overflow: visible !important;
     }
 
-    /* Each field: label | control. Grid (not flex) so ComboBoxes fill the
-       remaining width — flex left empty space and crushed the arrow onto text. */
+    /* Each field: label above control (mobile) */
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td {
-        display: grid !important;
-        grid-template-columns: 3.25rem minmax(0, 1fr) auto;
-        align-items: center !important;
-        column-gap: 8px !important;
+        display: block !important;
+        align-items: stretch !important;
+        column-gap: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
         padding: 0 !important;
         border: none !important;
         overflow: visible !important;
         background: transparent !important;
         box-sizing: border-box !important;
+        margin-bottom: 10px !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:last-child,
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:last-child {
+        margin-bottom: 0 !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td > input[type="hidden"],
@@ -4754,11 +4971,11 @@ textarea.order-detail-notes,
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td::before,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td::before {
-        grid-column: 1;
-        grid-row: 1;
+        display: block !important;
         font-weight: 600;
         color: #4e664d;
         text-align: left;
+        margin-bottom: 6px !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(1),
@@ -4768,17 +4985,25 @@ textarea.order-detail-notes,
     .page-tone-orders .results-table.in-panel-grid .col-cmd,
     .page-tone-neworder .results-table.in-panel-grid .col-cmd {
         display: flex !important;
-        grid-template-columns: none;
+        flex-wrap: wrap;
+        gap: 8px;
         justify-content: flex-start;
         text-align: left !important;
         max-width: none !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 8px !important;
+        border-bottom: 1px solid rgba(78, 102, 77, 0.12);
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(1)::before,
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before,
-    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before {
-        content: none;
+    .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(5)::before,
+    .page-tone-orders .results-table.in-panel-grid .col-cmd::before,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd::before {
+        content: none !important;
+        display: none !important;
+        margin: 0 !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(2)::before,
@@ -4796,15 +5021,16 @@ textarea.order-detail-notes,
         content: "Prep";
     }
 
-    /* ComboBox: fill the middle+right grid tracks; keep arrow glued. */
+    /* ComboBox: full width under label */
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox {
-        grid-column: 2 / -1;
-        grid-row: 1;
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         box-sizing: border-box !important;
     }
 
@@ -4826,14 +5052,16 @@ textarea.order-detail-notes,
         display: table-cell !important;
         width: auto !important;
         max-width: none !important;
+        vertical-align: middle !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer {
         display: table-cell !important;
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        max-width: 46px !important;
+        vertical-align: middle !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_textboxcontainer input[type="text"],
@@ -4842,15 +5070,19 @@ textarea.order-detail-notes,
         width: 100% !important;
         min-width: 0 !important;
         max-width: none !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        line-height: 42px !important;
         font-size: 16px !important;
-        padding: 0 8px !important;
+        padding: 0 12px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        border: 1px solid #ccc !important;
+        border-right: none !important;
+        border-radius: 8px 0 0 8px !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
@@ -4858,37 +5090,38 @@ textarea.order-detail-notes,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer button,
     .page-tone-neworder .results-table.in-panel-grid .ajax__combobox_buttoncontainer input[type="button"] {
         display: block !important;
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        margin: 0 !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        max-width: 46px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        margin: 0 0 0 -1px !important;
         padding: 0 !important;
         position: relative !important;
+        box-sizing: border-box !important;
+        border-radius: 0 8px 8px 0 !important;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(3) > input[type="text"],
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(3) > input[type="text"] {
-        grid-column: 2;
-        grid-row: 1;
-        width: 5em !important;
-        max-width: 6em !important;
-        justify-self: start;
+        display: inline-block !important;
+        width: 100% !important;
+        max-width: 10em !important;
+        vertical-align: middle;
     }
 
     .page-tone-orders .results-table.in-panel-grid > tbody > tr > td:nth-child(3) .small,
     .page-tone-neworder .results-table.in-panel-grid > tbody > tr > td:nth-child(3) .small {
-        grid-column: 3;
-        grid-row: 1;
-        justify-self: start;
+        display: inline-block !important;
+        margin-left: 8px;
+        vertical-align: middle;
     }
 
     .new-order-item-actions {
         margin-top: 12px;
         margin-bottom: 8px;
-        gap: 10px;
+        gap: 8px;
     }
 
     .page-tone-orders .results-table.in-panel-grid .col-tight,
@@ -4898,17 +5131,76 @@ textarea.order-detail-notes,
 
     .page-tone-orders .results-table.in-panel-grid .col-tight input[type="text"],
     .page-tone-neworder .results-table.in-panel-grid .col-tight input[type="text"] {
-        width: 5em !important;
-        max-width: 6em !important;
+        width: 100% !important;
+        max-width: 12em !important;
         flex: 0 0 auto !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        line-height: 34px !important;
-        padding: 0 8px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        max-height: 44px !important;
+        line-height: 42px !important;
+        font-size: 16px !important;
+        padding: 0 12px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
         vertical-align: middle !important;
+        border-radius: 8px !important;
+    }
+
+    .new-order-item-actions .filter-panel-btn,
+    .layout-panel-bottom .filter-panel-btn {
+        min-height: 36px !important;
+        padding: 8px 14px !important;
+        font-size: 0.95rem !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+    }
+
+    /* Order line Edit / Save / Undo — green shell, smaller glyph */
+    .page-tone-orders .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd > input[type="image"],
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd > input[type="image"] {
+        display: block !important;
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+        min-height: 12px !important;
+        max-width: 12px !important;
+        max-height: 12px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-sizing: content-box !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd:hover,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd:hover {
+        background-color: #607060 !important;
+        border-color: #607060 !important;
+    }
+
+    .page-tone-orders .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd > input[type="image"]:hover,
+    .page-tone-neworder .results-table.in-panel-grid .col-cmd span.image-button.order-line-cmd > input[type="image"]:hover {
+        opacity: 1 !important;
+        transform: none !important;
+        background: transparent !important;
     }
 
     /* Contact ComboBox: never let the arrow wrap under the name */
@@ -7031,6 +7323,110 @@ table.results-table .pager-nav a.pager-btn:hover {
 
 .page-tone-checkup .page-tone-title {
     color: #2d7a6f;
+}
+
+.page-tone-clientmail {
+    border-color: #d5cfe8;
+    border-left-color: #5b4b8a;
+    background: linear-gradient(135deg, #efeaf8 0%, #fff 70%);
+}
+
+.page-tone-clientmail .page-tone-header {
+    border-bottom-color: rgba(91, 75, 138, 0.15);
+}
+
+.page-tone-clientmail .page-tone-title {
+    color: #5b4b8a;
+}
+
+.home-tone-clientmail {
+    border-color: #d5cfe8;
+    border-left-color: #5b4b8a;
+}
+
+.clientmail-builder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    flex: 0 0 100%;
+}
+
+.page-tone-clientmail .clientmail-combo,
+.page-tone-clientmail .clientmail-builder select,
+.page-tone-clientmail .clientmail-builder input[type="text"] {
+    font-size: 1em;
+}
+
+.clientmail-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.clientmail-rules-wrap {
+    display: block;
+    width: 100%;
+    flex: 0 0 100%;
+    clear: both;
+    margin-top: 10px;
+}
+
+.clientmail-rules-grid {
+    width: auto !important;
+    max-width: none;
+    display: inline-table;
+    font-size: 1em !important;
+}
+
+.clientmail-filter-actions,
+.clientmail-filter-status-line {
+    flex: 0 0 100%;
+    width: 100%;
+    display: flex;
+    clear: both;
+}
+
+.clientmail-filter-status-line {
+    display: block;
+}
+
+.clientmail-rules-grid td,
+.clientmail-rules-grid th {
+    white-space: nowrap;
+}
+
+.clientmail-filter-actions {
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.clientmail-btn-clear {
+    margin-left: 1.25em;
+}
+
+.clientmail-filter-checks {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5em;
+    padding-left: 3em;
+}
+
+.clientmail-modal-bg {
+    background-color: #201606;
+    opacity: 0.45;
+    filter: alpha(opacity=45);
+}
+
+.clientmail-modal {
+    background: #fff;
+    padding: 16px 18px;
+    min-width: 22em;
+    max-width: 36em;
+    border: 1px solid #5b4b8a;
+    box-shadow: 0 8px 24px rgba(32, 22, 6, 0.25);
 }
 
 .page-tone-contacts {

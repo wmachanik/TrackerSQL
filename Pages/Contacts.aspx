@@ -118,7 +118,7 @@
                             <asp:CheckBoxField DataField="enabled" HeaderText="Enabled" SortExpression="enabled"
                                 HeaderStyle-CssClass="col-priority-4" ItemStyle-CssClass="col-priority-4" />
                             <asp:HyperLinkField DataNavigateUrlFields="CustomerID" HeaderText="Order" ItemStyle-HorizontalAlign="Center"
-                                HeaderStyle-CssClass="col-priority-1" ItemStyle-CssClass="col-priority-1"
+                                HeaderStyle-CssClass="col-priority-1 col-contact-last-order" ItemStyle-CssClass="col-priority-1 col-contact-last-order"
                                 DataNavigateUrlFormatString="~/Pages/OrderDetail.aspx?CoID={0}&LastOrder=Y" Text="+last" />
                         </Columns>
                     </asp:GridView>

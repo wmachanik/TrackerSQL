@@ -42,6 +42,11 @@ namespace TrackerSQL
         protected global::System.Web.UI.HtmlControls.HtmlForm frmMain;
 
         /// <summary>
+        /// bodySite control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl bodySite;
+
+        /// <summary>
         /// NavigationMenu control.
         /// </summary>
         /// <remarks>

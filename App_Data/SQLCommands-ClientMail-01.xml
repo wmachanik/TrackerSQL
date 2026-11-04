@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Saved client-mail templates (Send Client Mail). Idempotent.
+-->
+<root>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ClientMailTemplatesTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.ClientMailTemplatesTbl
+          (
+              ClientMailTemplateID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ClientMailTemplatesTbl PRIMARY KEY,
+              TemplateName NVARCHAR(120) NOT NULL,
+              Subject NVARCHAR(300) NOT NULL CONSTRAINT DF_ClientMailTemplates_Subject DEFAULT (N''),
+              HeaderText NVARCHAR(MAX) NULL,
+              BodyText NVARCHAR(MAX) NULL,
+              FooterText NVARCHAR(MAX) NULL,
+              DateLastChange DATETIME NULL,
+              CONSTRAINT UQ_ClientMailTemplates_Name UNIQUE (TemplateName)
+          );
+      END
+    ]]>
+  </command>
+</root>

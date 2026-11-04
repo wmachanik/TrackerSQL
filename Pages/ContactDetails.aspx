@@ -11,6 +11,16 @@
         function showMessage(thisMessage) {
             alert(thisMessage);
         }
+        function contactDetailsBeginAddLast(btn) {
+            if (typeof contactDetailsConfirmLeave === 'function' && !contactDetailsConfirmLeave())
+                return false;
+            if (!btn || btn.getAttribute('data-busy') === '1')
+                return false;
+            btn.setAttribute('data-busy', '1');
+            btn.value = 'Adding...';
+            btn.disabled = true;
+            return true;
+        }
     </script>
 </asp:Content>
 <asp:Content ID="cntContactDetailsBdy" ContentPlaceHolderID="MainContent" runat="server">
@@ -231,7 +241,7 @@
                             OnClick="btnCopy2AccInfo_Click" CausesValidation="false" ToolTip="Copy contact fields into account info" />
                         <asp:Button ID="btnAddLasOrder" Text="Add Last" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnAddLasOrder_Click" CausesValidation="false"
-                            OnClientClick="return contactDetailsConfirmLeave();"
+                            OnClientClick="return contactDetailsBeginAddLast(this);"
                             ToolTip="Create order from last order" />
                         <asp:Button ID="btnForceNext" Text="Force Next" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnForceNext_Click" CausesValidation="false"

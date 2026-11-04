@@ -17,12 +17,9 @@ namespace TrackerSQL.Managers
             return _repository.Search(filter);
         }
 
-        public string BuildBody(ClientMailRecipient contact, string headerHtml, string bodyHtml, string footerHtml, bool includeGreeting)
+        public string BuildBody(ClientMailRecipient contact, string headerHtml, string bodyHtml, string footerHtml)
         {
             var builder = new StringBuilder();
-            if (includeGreeting)
-                builder.Append(BuildGreeting(contact));
-
             AppendSection(builder, ReplacePlaceholders(headerHtml, contact));
             AppendSection(builder, ReplacePlaceholders(bodyHtml, contact));
             AppendSection(builder, ReplacePlaceholders(footerHtml, contact));
@@ -40,7 +37,6 @@ namespace TrackerSQL.Managers
             string headerHtml,
             string bodyHtml,
             string footerHtml,
-            bool includeGreeting,
             bool includeCc,
             int groupSize,
             int delayMilliseconds)
@@ -78,7 +74,7 @@ namespace TrackerSQL.Managers
                         continue;
                     }
 
-                    string html = BuildBody(contact, headerHtml, bodyHtml, footerHtml, includeGreeting);
+                    string html = BuildBody(contact, headerHtml, bodyHtml, footerHtml);
                     if (!email.AddToBatch(subject, html, null, to))
                     {
                         result.TotalFailed++;
@@ -119,8 +115,7 @@ namespace TrackerSQL.Managers
             string subject,
             string headerHtml,
             string bodyHtml,
-            string footerHtml,
-            bool includeGreeting)
+            string footerHtml)
         {
             var result = new BatchSendResult();
             if (string.IsNullOrWhiteSpace(testTo))
@@ -136,7 +131,7 @@ namespace TrackerSQL.Managers
                 ContactLastName = "Lover"
             };
 
-            string html = BuildBody(contact, headerHtml, bodyHtml, footerHtml, includeGreeting);
+            string html = BuildBody(contact, headerHtml, bodyHtml, footerHtml);
             html = "<p><i>Test mail — would normally go to "
                  + System.Web.HttpUtility.HtmlEncode(sample?.ToEmail ?? "(no recipient yet)")
                  + " / " + System.Web.HttpUtility.HtmlEncode(contact.CompanyName ?? "")
@@ -185,6 +180,41 @@ namespace TrackerSQL.Managers
             if (builder == null || string.IsNullOrWhiteSpace(content))
                 return;
             builder.Append(content.Trim());
+        }
+
+        public string BuildCsv(IList<ClientMailRecipient> recipients)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("ContactID,CompanyName,ContactFirstName,ContactLastName,EmailAddress,AltEmailAddress,PhoneNumber,CellNumber,ContactType,Area,Equipment,LastOrderDate,NextCoffeeBy,LastItems,LastItemTypes,Recurring");
+            if (recipients == null)
+                return sb.ToString();
+            foreach (var r in recipients)
+            {
+                sb.Append(Csv(r.ContactID.ToString())).Append(',');
+                sb.Append(Csv(r.CompanyName)).Append(',');
+                sb.Append(Csv(r.ContactFirstName)).Append(',');
+                sb.Append(Csv(r.ContactLastName)).Append(',');
+                sb.Append(Csv(r.EmailAddress)).Append(',');
+                sb.Append(Csv(r.AltEmailAddress)).Append(',');
+                sb.Append(Csv(r.PhoneNumber)).Append(',');
+                sb.Append(Csv(r.CellNumber)).Append(',');
+                sb.Append(Csv(r.ContactTypeDesc)).Append(',');
+                sb.Append(Csv(r.AreaName)).Append(',');
+                sb.Append(Csv(r.EquipTypeName)).Append(',');
+                sb.Append(Csv(r.LastOrderDate.HasValue ? r.LastOrderDate.Value.ToString("yyyy-MM-dd") : "")).Append(',');
+                sb.Append(Csv(r.NextCoffeeBy.HasValue ? r.NextCoffeeBy.Value.ToString("yyyy-MM-dd") : "")).Append(',');
+                sb.Append(Csv(r.LastItemsOrdered)).Append(',');
+                sb.Append(Csv(r.LastItemTypes)).Append(',');
+                sb.AppendLine(Csv(r.IsRecurring ? "Yes" : "No"));
+            }
+            return sb.ToString();
+        }
+
+        private static string Csv(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "\"\"";
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
         }
 
         private static string AppendError(string existing, string add)

@@ -130,13 +130,13 @@
     <value>Dear {0},&lt;br /&gt;&lt;br /&gt;</value>
   </data>
   <data name="ClientMail.DefaultBody" xml:space="preserve">
-    <value>&lt;p&gt;We wanted to share a short update with you.&lt;/p&gt;</value>
+    <value>&lt;p&gt;We wanted to share a short update with you.&lt;/p&gt;&lt;p&gt;Please replace this paragraph with the message you would like to send.&lt;/p&gt;</value>
   </data>
   <data name="ClientMail.DefaultFooter" xml:space="preserve">
-    <value>&lt;p&gt;If you have any questions, reply to this email or contact us at orders@quaffee.co.za.&lt;/p&gt;</value>
+    <value>&lt;p&gt;If you have any questions, reply to this email or write to &lt;a href="mailto:orders@quaffee.co.za"&gt;orders@quaffee.co.za&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Thank you for being a Quaffee customer.&lt;/p&gt;</value>
   </data>
   <data name="ClientMail.DefaultHeader" xml:space="preserve">
-    <value>&lt;p&gt;A note from Quaffee.&lt;/p&gt;</value>
+    <value>&lt;p&gt;Dear [#FIRSTNAME#],&lt;/p&gt;&lt;p&gt;A note from the Quaffee team.&lt;/p&gt;</value>
   </data>
   <data name="ClientMail.DefaultSubject" xml:space="preserve">
     <value>A Note From Quaffee</value>

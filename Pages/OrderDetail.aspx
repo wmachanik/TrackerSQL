@@ -131,13 +131,18 @@
                         <tr id="trDeliverToOrder" runat="server" visible="false">
                             <td>Recipient</td>
                             <td>
-                                <asp:DropDownList ID="ddlDeliverToOrder" runat="server" AutoPostBack="true"
-                                    OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged" />
-                                <asp:ImageButton ID="btnEditDeliverToOrder" runat="server" Visible="false"
-                                    ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit address"
-                                    ToolTip="Edit this alternative address"
-                                    OnClick="btnEditDeliverToOrder_Click" CausesValidation="false"
-                                    CssClass="image-button" />
+                                <div class="order-deliver-to-row">
+                                    <asp:DropDownList ID="ddlDeliverToOrder" runat="server" AutoPostBack="true"
+                                        OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged" />
+                                    <asp:Panel ID="pnlEditDeliverToOrder" runat="server" Visible="false"
+                                        CssClass="image-button order-deliver-to-edit"
+                                        ToolTip="Edit this alternative address">
+                                        <asp:ImageButton ID="btnEditDeliverToOrder" runat="server"
+                                            ImageUrl="~/images/imgButtons/Modify.gif" AlternateText="Modify address"
+                                            ToolTip="Edit this alternative address"
+                                            OnClick="btnEditDeliverToOrder_Click" CausesValidation="false" />
+                                    </asp:Panel>
+                                </div>
                             </td>
                         </tr>
                         <tr>
@@ -290,7 +295,9 @@
             <asp:UpdatePanel ID="upnlDeliverToEditor" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
                 <ContentTemplate>
                     <asp:HiddenField ID="hdnDeliverToEditorId" runat="server" Value="0" />
-                    <asp:Panel ID="pnlDeliverToEditor" runat="server" CssClass="confirm-modal-overlay" Visible="false"
+                    <asp:HiddenField ID="hdnDeliverToEditorOpen" runat="server" Value="0" />
+                    <asp:Panel ID="pnlDeliverToEditor" runat="server"
+                        CssClass="confirm-modal-overlay deliver-to-editor-overlay"
                         data-tracker-unsaved-ignore="1">
                         <div class="confirm-modal confirm-modal-wide alt-address-modal">
                             <h2><asp:Literal ID="litDeliverToEditorTitle" runat="server" Text="Alternative address" /></h2>
@@ -340,8 +347,10 @@
                             </table>
                             <asp:Label ID="lblOdDeliverToError" runat="server" CssClass="status-message status-error" Visible="false" />
                             <div class="button-row confirm-modal-buttons">
-                                <asp:Button ID="btnSaveOdDeliverTo" runat="server" Text="Save address"
-                                    CssClass="filter-panel-btn" OnClick="btnSaveOdDeliverTo_Click" CausesValidation="false" />
+                                <asp:Button ID="btnSaveOdDeliverTo" runat="server" Text="Save &amp; close"
+                                    CssClass="filter-panel-btn" OnClick="btnSaveOdDeliverTo_Click" CausesValidation="false"
+                                    OnClientClick="return orderDeliverToBeginSave(this);"
+                                    ToolTip="Save this alternative address and return to the order" />
                                 <asp:Button ID="btnCancelOdDeliverTo" runat="server" Text="Close"
                                     CssClass="filter-panel-btn" OnClick="btnCancelOdDeliverTo_Click" CausesValidation="false" />
                             </div>
@@ -361,6 +370,10 @@
                         </div>
                     </asp:Panel>
                 </ContentTemplate>
+                <Triggers>
+                    <asp:AsyncPostBackTrigger ControlID="btnEditDeliverToOrder" EventName="Click" />
+                    <asp:AsyncPostBackTrigger ControlID="ddlDeliverToOrder" EventName="SelectedIndexChanged" />
+                </Triggers>
             </asp:UpdatePanel>
             <%-- Outside header dirty root so waybill/courier edits do not trip leave warnings. --%>
             <asp:UpdatePanel ID="upnlWaybillEdit" runat="server" UpdateMode="Conditional" ChildrenAsTriggers="true">
@@ -456,17 +469,23 @@
                             <Columns>
                                 <asp:TemplateField HeaderText="&nbsp;" HeaderStyle-CssClass="col-cmd" ItemStyle-CssClass="col-cmd">
                                     <ItemTemplate>
-                                        <asp:ImageButton ID="btnEditLine" runat="server" CommandName="Edit" CausesValidation="false"
-                                            ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit"
-                                            ToolTip="Edit this line" />
+                                        <span class="image-button order-line-cmd" title="Edit this line">
+                                            <asp:ImageButton ID="btnEditLine" runat="server" CommandName="Edit" CausesValidation="false"
+                                                ImageUrl="~/images/imgButtons/EditItem.gif" AlternateText="Edit"
+                                                ToolTip="Edit this line" />
+                                        </span>
                                     </ItemTemplate>
                                     <EditItemTemplate>
-                                        <asp:ImageButton ID="btnUpdateLine" runat="server" CommandName="Update" CausesValidation="false"
-                                            ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Save"
-                                            ToolTip="Save line" />
-                                        <asp:ImageButton ID="btnCancelLine" runat="server" CommandName="Cancel" CausesValidation="false"
-                                            ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Undo"
-                                            ToolTip="Cancel edit" />
+                                        <span class="image-button order-line-cmd" title="Save line">
+                                            <asp:ImageButton ID="btnUpdateLine" runat="server" CommandName="Update" CausesValidation="false"
+                                                ImageUrl="~/images/imgButtons/UpdateItem.gif" AlternateText="Save"
+                                                ToolTip="Save line" />
+                                        </span>
+                                        <span class="image-button order-line-cmd" title="Cancel edit">
+                                            <asp:ImageButton ID="btnCancelLine" runat="server" CommandName="Cancel" CausesValidation="false"
+                                                ImageUrl="~/images/imgButtons/CancelItem.gif" AlternateText="Undo"
+                                                ToolTip="Cancel edit" />
+                                        </span>
                                     </EditItemTemplate>
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Item" SortExpression="ItemTypeID">
@@ -669,6 +688,40 @@
             } else if (window.orderHeaderMarkDirty) {
                 orderHeaderMarkDirty();
             }
+        }
+
+        function orderDeliverToBeginSave(btn) {
+            if (!btn || btn.getAttribute('data-busy') === '1')
+                return false;
+            btn.setAttribute('data-busy', '1');
+            btn.value = 'Saving...';
+            /* Do not disable before postback — ASP.NET won't raise btnSaveOdDeliverTo_Click. */
+            return true;
+        }
+
+        function orderDeliverToSyncShell() {
+            var shell = document.getElementById('<%= pnlDeliverToEditor.ClientID %>');
+            var hdn = document.getElementById('<%= hdnDeliverToEditorOpen.ClientID %>');
+            if (!shell)
+                return;
+            var open = hdn && hdn.value === '1';
+            shell.classList.toggle('is-open', open);
+            shell.setAttribute('data-open', open ? '1' : '0');
+            if (!open)
+                orderDeliverToResetSaveBtn();
+        }
+
+        function orderDeliverToResetSaveBtn() {
+            var btn = document.getElementById('<%= btnSaveOdDeliverTo.ClientID %>');
+            if (!btn)
+                return;
+            btn.removeAttribute('data-busy');
+            btn.disabled = false;
+            btn.value = 'Save & close';
+        }
+
+        if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(orderDeliverToSyncShell);
         }
 
         // Shared dirty guard (Scripts/unsavedChanges.js via Site.Master)

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using TrackerSQL.Classes;
@@ -41,9 +41,6 @@ namespace TrackerSQL.Repositories
             if (filter == null)
                 filter = new ClientMailFilter();
 
-            if (!TryValidateCustomWhere(filter.CustomWhere, out string customError))
-                throw new InvalidOperationException(customError);
-
             var sql = new StringBuilder(@"
 SELECT
     c.ContactID,
@@ -58,6 +55,9 @@ SELECT
     lastOrd.RequiredByDate AS LastOrderDate,
     u.NextCoffeeBy,
     lastItems.LastItemsOrdered,
+    lastTypes.LastItemTypes,
+    c.PhoneNumber,
+    c.CellNumber,
     CAST(CASE WHEN rec.ContactID IS NULL THEN 0 ELSE 1 END AS BIT) AS IsRecurring
 FROM ContactsTbl c
 LEFT JOIN ContactTypesTbl ct ON ct.ContactTypeID = c.ContactTypeID
@@ -79,6 +79,18 @@ OUTER APPLY (
         FOR XML PATH(''), TYPE).value('.', 'nvarchar(max)'), 1, 2, '') AS LastItemsOrdered
 ) lastItems
 OUTER APPLY (
+    SELECT STUFF((
+        SELECT ', ' + types.ItemServiceTypeName
+        FROM (
+            SELECT DISTINCT st.ItemServiceTypeName
+            FROM OrderLinesTbl ol
+            INNER JOIN ItemsTbl i ON i.ItemID = ol.ItemID
+            INNER JOIN ItemServiceTypesTbl st ON st.ItemServiceTypeID = i.ItemServiceTypeID
+            WHERE ol.OrderID = lastOrd.OrderID
+        ) types
+        FOR XML PATH(''), TYPE).value('.', 'nvarchar(max)'), 1, 2, '') AS LastItemTypes
+) lastTypes
+OUTER APPLY (
     SELECT TOP 1 r.ContactID
     FROM RecurringOrdersTbl r
     WHERE r.ContactID = c.ContactID AND ISNULL(r.Enabled, 0) = 1
@@ -99,120 +111,14 @@ WHERE 1 = 1
                 )");
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.NameContains))
-            {
-                sql.AppendLine(@" AND (
-                    c.CompanyName LIKE @Name
-                 OR c.ContactFirstName LIKE @Name
-                 OR c.ContactLastName LIKE @Name
-                 OR CONCAT(ISNULL(c.ContactFirstName,''), ' ', ISNULL(c.ContactLastName,'')) LIKE @Name
-                )");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@Name",
-                    DataValue = "%" + filter.NameContains.Trim() + "%",
-                    DataDbType = DbType.String
-                });
-            }
+            var rules = filter.Rules ?? new List<ClientMailRule>();
+            int paramIndex = 0;
+            string combined = CombineRules(rules, parameters, ref paramIndex);
 
-            if (filter.ContactTypeID.GetValueOrDefault() > 0)
+            if (!string.IsNullOrEmpty(combined))
             {
-                sql.AppendLine(" AND c.ContactTypeID = @ContactTypeID");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@ContactTypeID",
-                    DataValue = filter.ContactTypeID.Value,
-                    DataDbType = DbType.Int32
-                });
-            }
-
-            if (filter.EquipTypeID.GetValueOrDefault() > 0)
-            {
-                sql.AppendLine(" AND c.EquipTypeID = @EquipTypeID");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@EquipTypeID",
-                    DataValue = filter.EquipTypeID.Value,
-                    DataDbType = DbType.Int32
-                });
-            }
-
-            if (filter.LastOrderedFrom.HasValue)
-            {
-                sql.AppendLine(" AND lastOrd.RequiredByDate >= @LastFrom");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@LastFrom",
-                    DataValue = filter.LastOrderedFrom.Value.Date,
-                    DataDbType = DbType.Date
-                });
-            }
-
-            if (filter.LastOrderedTo.HasValue)
-            {
-                sql.AppendLine(" AND lastOrd.RequiredByDate < @LastTo");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@LastTo",
-                    DataValue = filter.LastOrderedTo.Value.Date.AddDays(1),
-                    DataDbType = DbType.Date
-                });
-            }
-
-            if (filter.NextRequiredFrom.HasValue)
-            {
-                sql.AppendLine(" AND u.NextCoffeeBy >= @NextFrom");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@NextFrom",
-                    DataValue = filter.NextRequiredFrom.Value.Date,
-                    DataDbType = DbType.Date
-                });
-            }
-
-            if (filter.NextRequiredTo.HasValue)
-            {
-                sql.AppendLine(" AND u.NextCoffeeBy < @NextTo");
-                parameters.Add(new DBParameter
-                {
-                    ParamName = "@NextTo",
-                    DataValue = filter.NextRequiredTo.Value.Date.AddDays(1),
-                    DataDbType = DbType.Date
-                });
-            }
-
-            if (filter.AreaIds != null && filter.AreaIds.Count > 0)
-            {
-                var ids = filter.AreaIds.Where(id => id > 0).Distinct().ToList();
-                if (ids.Count > 0)
-                {
-                    sql.Append(" AND c.AreaID IN (");
-                    sql.Append(string.Join(",", ids.Select(id => id.ToString())));
-                    sql.AppendLine(")");
-                }
-            }
-
-            if (filter.IsRecurring == true)
-                sql.AppendLine(" AND rec.ContactID IS NOT NULL");
-            else if (filter.IsRecurring == false)
-                sql.AppendLine(" AND rec.ContactID IS NULL");
-
-            if (filter.LastItemIds != null && filter.LastItemIds.Count > 0)
-            {
-                var ids = filter.LastItemIds.Where(id => id > 0).Distinct().ToList();
-                if (ids.Count > 0)
-                {
-                    sql.Append(" AND EXISTS (SELECT 1 FROM OrderLinesTbl olx WHERE olx.OrderID = lastOrd.OrderID AND olx.ItemID IN (");
-                    sql.Append(string.Join(",", ids.Select(id => id.ToString())));
-                    sql.AppendLine("))");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(filter.CustomWhere))
-            {
-                sql.Append(" AND (");
-                sql.Append(filter.CustomWhere.Trim());
-                sql.AppendLine(")");
+                sql.Append(" AND ");
+                sql.AppendLine(combined);
             }
 
             sql.AppendLine(" ORDER BY c.CompanyName, c.ContactFirstName");
@@ -226,6 +132,253 @@ WHERE 1 = 1
             }
 
             return list;
+        }
+
+        private static string CombineRules(List<ClientMailRule> rules, List<DBParameter> parameters, ref int paramIndex)
+        {
+            var expr = new StringBuilder();
+            int depth = 0;
+            bool first = true;
+            foreach (var rule in rules)
+            {
+                if (rule == null)
+                    continue;
+                string clause = BuildRuleClause(rule, parameters, ref paramIndex, out string ruleError);
+                if (!string.IsNullOrEmpty(ruleError))
+                    throw new InvalidOperationException(ruleError);
+                if (string.IsNullOrWhiteSpace(clause))
+                    continue;
+
+                if (!first)
+                {
+                    expr.Append(string.Equals(rule.Join, "Or", StringComparison.OrdinalIgnoreCase) ? " OR " : " AND ");
+                }
+                first = false;
+
+                if (rule.GroupOpen)
+                {
+                    expr.Append("(");
+                    depth++;
+                }
+                expr.Append("(");
+                expr.Append(clause);
+                expr.Append(")");
+                if (rule.GroupClose)
+                {
+                    if (depth <= 0)
+                        throw new InvalidOperationException("A close bracket has no matching open bracket. Tick ( before the group and ) on its last condition.");
+                    expr.Append(")");
+                    depth--;
+                }
+            }
+
+            if (depth != 0)
+                throw new InvalidOperationException("Open and close brackets must match. Tick ( on the first condition in a group and ) on the last.");
+
+            return expr.Length == 0 ? null : expr.ToString();
+        }
+
+        private static string BuildRuleClause(ClientMailRule rule, List<DBParameter> parameters, ref int paramIndex, out string error)
+        {
+            error = null;
+            string field = rule.Field ?? string.Empty;
+            string op = rule.Operator ?? string.Empty;
+
+            if (field == ClientMailFields.Name)
+            {
+                ResolveTextCompare(op, rule.Value, out string cmp, out string likeValue, out bool negated);
+                string p = AddParam(parameters, ref paramIndex, likeValue, DbType.String);
+                string inner = $@"(c.CompanyName {cmp} {p}
+ OR c.ContactFirstName {cmp} {p}
+ OR c.ContactLastName {cmp} {p}
+ OR CONCAT(ISNULL(c.ContactFirstName,''), ' ', ISNULL(c.ContactLastName,'')) {cmp} {p})";
+                return negated ? "NOT " + inner : inner;
+            }
+
+            if (field == ClientMailFields.EmailPrimary || field == ClientMailFields.EmailAll)
+            {
+                ResolveTextCompare(op, rule.Value, out string cmp, out string likeValue, out bool negated);
+                string p = AddParam(parameters, ref paramIndex, likeValue, DbType.String);
+                string inner;
+                if (field == ClientMailFields.EmailAll)
+                {
+                    inner = $@"(ISNULL(c.EmailAddress,'') {cmp} {p}
+ OR ISNULL(c.AltEmailAddress,'') {cmp} {p})";
+                }
+                else
+                {
+                    inner = $"(ISNULL(c.EmailAddress,'') {cmp} {p})";
+                }
+                return negated ? "NOT " + inner : inner;
+            }
+
+            if (field == ClientMailFields.ContactType)
+            {
+                int id;
+                if (!int.TryParse(rule.Value, out id) || id <= 0)
+                {
+                    error = "Choose a contact type.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, id, DbType.Int32);
+                return op == ClientMailOps.IsNot ? "c.ContactTypeID <> " + p : "c.ContactTypeID = " + p;
+            }
+
+            if (field == ClientMailFields.Equipment)
+            {
+                int id;
+                if (!int.TryParse(rule.Value, out id) || id <= 0)
+                {
+                    error = "Choose an equipment type.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, id, DbType.Int32);
+                return op == ClientMailOps.IsNot ? "c.EquipTypeID <> " + p : "c.EquipTypeID = " + p;
+            }
+
+            if (field == ClientMailFields.Area)
+            {
+                int id;
+                if (!int.TryParse(rule.Value, out id) || id <= 0)
+                {
+                    error = "Choose an area.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, id, DbType.Int32);
+                return op == ClientMailOps.IsNot ? "c.AreaID <> " + p : "c.AreaID = " + p;
+            }
+
+            if (field == ClientMailFields.Recurring)
+            {
+                bool yes = rule.Value == "1" || string.Equals(rule.Value, "Yes", StringComparison.OrdinalIgnoreCase);
+                return yes ? "rec.ContactID IS NOT NULL" : "rec.ContactID IS NULL";
+            }
+
+            if (field == ClientMailFields.LastItemType)
+            {
+                int id;
+                if (!int.TryParse(rule.Value, out id) || id <= 0)
+                {
+                    error = "Choose a last item type.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, id, DbType.Int32);
+                string exists = @"EXISTS (
+                    SELECT 1 FROM OrderLinesTbl olx
+                    INNER JOIN ItemsTbl ix ON ix.ItemID = olx.ItemID
+                    WHERE olx.OrderID = lastOrd.OrderID AND ix.ItemServiceTypeID = " + p + ")";
+                return op == ClientMailOps.IsNot ? "NOT " + exists : exists;
+            }
+
+            if (field == ClientMailFields.LastItem)
+            {
+                int id;
+                if (!int.TryParse(rule.Value, out id) || id <= 0)
+                {
+                    error = "Choose a last item.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, id, DbType.Int32);
+                string exists = "EXISTS (SELECT 1 FROM OrderLinesTbl olx WHERE olx.OrderID = lastOrd.OrderID AND olx.ItemID = " + p + ")";
+                return op == ClientMailOps.IsNot ? "NOT " + exists : exists;
+            }
+
+            if (field == ClientMailFields.LastOrdered)
+                return BuildDateClause("lastOrd.RequiredByDate", op, rule, parameters, ref paramIndex, out error);
+
+            if (field == ClientMailFields.NextRequired)
+                return BuildDateClause("u.NextCoffeeBy", op, rule, parameters, ref paramIndex, out error);
+
+            if (field == ClientMailFields.CustomWhere)
+            {
+                if (!TryValidateCustomWhere(rule.Value, out error))
+                    return null;
+                if (string.IsNullOrWhiteSpace(rule.Value))
+                {
+                    error = "Enter a custom Where fragment.";
+                    return null;
+                }
+                return "(" + rule.Value.Trim() + ")";
+            }
+
+            error = "Unknown filter field.";
+            return null;
+        }
+
+        private static void ResolveTextCompare(string op, string value, out string cmp, out string likeValue, out bool negated)
+        {
+            string raw = (value ?? string.Empty).Trim();
+            negated = op == ClientMailOps.NotContains || op == ClientMailOps.NotStartsWith || op == ClientMailOps.NotEquals;
+            if (op == ClientMailOps.EqualsOp || op == ClientMailOps.NotEquals)
+            {
+                cmp = "=";
+                likeValue = raw;
+                return;
+            }
+            cmp = "LIKE";
+            if (op == ClientMailOps.StartsWith || op == ClientMailOps.NotStartsWith)
+                likeValue = raw + "%";
+            else
+                likeValue = "%" + raw + "%";
+        }
+
+        private static string BuildDateClause(string column, string op, ClientMailRule rule, List<DBParameter> parameters, ref int paramIndex, out string error)
+        {
+            error = null;
+            if (op == ClientMailOps.InLastDays)
+            {
+                int days;
+                if (!int.TryParse(rule.Value, out days) || days < 0 || days > 3650)
+                {
+                    error = "Enter days between 0 and 3650.";
+                    return null;
+                }
+                string p = AddParam(parameters, ref paramIndex, days, DbType.Int32);
+                return column + " >= DATEADD(day, -" + p + ", CAST(GETDATE() AS date))";
+            }
+
+            DateTime d1;
+            if (op == ClientMailOps.Between)
+            {
+                if (!TryParseDate(rule.Value, out d1) || !TryParseDate(rule.Value2, out DateTime d2))
+                {
+                    error = "Enter both From and To dates.";
+                    return null;
+                }
+                string p1 = AddParam(parameters, ref paramIndex, d1.Date, DbType.Date);
+                string p2 = AddParam(parameters, ref paramIndex, d2.Date.AddDays(1), DbType.Date);
+                return column + " >= " + p1 + " AND " + column + " < " + p2;
+            }
+
+            if (!TryParseDate(rule.Value, out d1))
+            {
+                error = "Enter a date.";
+                return null;
+            }
+
+            if (op == ClientMailOps.OnOrBefore)
+            {
+                string p = AddParam(parameters, ref paramIndex, d1.Date.AddDays(1), DbType.Date);
+                return column + " < " + p;
+            }
+
+            string pa = AddParam(parameters, ref paramIndex, d1.Date, DbType.Date);
+            return column + " >= " + pa;
+        }
+
+        private static bool TryParseDate(string text, out DateTime d)
+        {
+            if (DateTime.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.None, out d))
+                return true;
+            return DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out d);
+        }
+
+        private static string AddParam(List<DBParameter> parameters, ref int paramIndex, object value, DbType type)
+        {
+            string name = "@p" + paramIndex;
+            paramIndex++;
+            parameters.Add(new DBParameter { ParamName = name, DataValue = value, DataDbType = type });
+            return name;
         }
     }
 }

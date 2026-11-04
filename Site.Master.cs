@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using TrackerSQL.Classes;
 using TrackerSQL.Managers;
@@ -56,6 +57,7 @@ namespace TrackerSQL
             SyncWooMappingMenuItem(wooOn);
             SyncWooOrderImportMenuItem(wooOn);
             HighlightCurrentMenuItem();
+            MobileStaffLayout.ApplyBodyClasses(bodySite, Request);
 
             sw.Stop();
             RequestTiming.Write("MASTER PAGE", sw.ElapsedMilliseconds + " ms");

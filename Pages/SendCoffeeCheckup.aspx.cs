@@ -27,6 +27,7 @@ namespace TrackerSQL.Pages
         private int reminderWindowDays = SystemConstants.CheckupConstants.DefaultReminderWindowDays;
 
         private readonly CoffeeCheckupManager _coffeeCheckupManager;
+        private Dictionary<long, string> _checkupDueKindByContact;
 
         public SendCoffeeCheckup()
         {
@@ -236,6 +237,7 @@ namespace TrackerSQL.Pages
         }
         private void BindCheckupGrids()
         {
+            _checkupDueKindByContact = null;
             gvCustomerCheckup.DataSource = _coffeeCheckupManager.GetPreparedContacts("CompanyName");
             gvCustomerCheckup.DataBind();
             BindContactItemsGrid();
@@ -619,6 +621,36 @@ namespace TrackerSQL.Pages
         {
             Session["CoffeeCheckupReminderWindowDays"] = ddlReminderWindow.SelectedValue;
             btnPrepData_Click(sender, e);
+        }
+
+        protected string GetCheckupDueKindMarkup(long customerId)
+        {
+            EnsureCheckupDueKindCache();
+            if (!_checkupDueKindByContact.TryGetValue(customerId, out string kind))
+                kind = "Predicted";
+
+            bool recurring = string.Equals(kind, "Recurring", StringComparison.OrdinalIgnoreCase);
+            string css = recurring ? "checkup-due-pill checkup-due-pill--recurring" : "checkup-due-pill checkup-due-pill--predicted";
+            string label = recurring ? "Recurring" : "Predicted";
+            return $"<span class=\"{css}\">{HttpUtility.HtmlEncode(label)}</span>";
+        }
+
+        private void EnsureCheckupDueKindCache()
+        {
+            if (_checkupDueKindByContact != null)
+                return;
+
+            _checkupDueKindByContact = new Dictionary<long, string>();
+            var withItems = _coffeeCheckupManager.GetPreparedContactsWithItems();
+            if (withItems == null)
+                return;
+
+            foreach (var contact in withItems)
+            {
+                bool recurring = contact.ItemsContactRequires != null
+                    && contact.ItemsContactRequires.Exists(i => i.RecurringOrder);
+                _checkupDueKindByContact[contact.CustomerID] = recurring ? "Recurring" : "Predicted";
+            }
         }
     }
 }

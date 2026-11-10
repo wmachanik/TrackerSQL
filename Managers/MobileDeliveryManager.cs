@@ -326,8 +326,10 @@ namespace TrackerSQL.Managers
                         Review = (!sundry || hasDeliverTo) && row.GpsStatus == CustomerLocation.StatusReviewRequired
                     }
                     : new MobileStopGps { Kind = "none" },
-                NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection ? true : (bool?)null,
-                Collection = row.Collection ? true : (bool?)null
+                NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection
+                    || MobileApiSettingsManager.IsSupplierPickupContact(row.ContactTypeId) ? true : (bool?)null,
+                Collection = row.Collection ? true : (bool?)null,
+                SupplierPickup = MobileApiSettingsManager.IsSupplierPickupContact(row.ContactTypeId) ? true : (bool?)null
             };
         }
 
@@ -657,14 +659,20 @@ namespace TrackerSQL.Managers
             string receivedBy = (item.ReceivedBy ?? string.Empty).Trim();
             string reason = (item.Reason ?? string.Empty).Trim();
             string missingItems = (item.MissingItems ?? string.Empty).Trim();
+            bool supplierPickup = MobileApiSettingsManager.IsSupplierPickupContact(order.ContactTypeId);
             if (outcome == OutcomeDelivered && receivedBy.Length == 0 && signature == null && reason.Length == 0)
+            {
+                if (supplierPickup)
+                    return Fail(item, "Choose how you collected from the supplier, or enter who handed it over.");
                 return Fail(item, "A delivered order needs how it was delivered, the received-by name or a signature.");
+            }
             if (outcome == OutcomeNotDelivered && reason.Length == 0 && string.IsNullOrWhiteSpace(item.Note))
                 return Fail(item, "Say why it was not delivered.");
             // Handed over at the depot: where the phone is says nothing about the client or the route.
             bool collection = order.DeliveryById.HasValue
                 && new PersonsRepository().GetDeliveryType(order.DeliveryById.Value) == DeliveryTypes.Collect;
-            bool notAtClient = outcome == OutcomeDelivered && (collection || IsNotAtClientOption(reason));
+            bool notAtClient = outcome == OutcomeDelivered
+                && (collection || supplierPickup || IsNotAtClientOption(reason));
             bool? termsAccepted = outcome == OutcomeDelivered ? item.TermsAccepted : null;
             var settings = Settings;
             // A short delivery is left for the office: Order Done would close items that are still to follow.

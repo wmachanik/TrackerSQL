@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Quaffee Lovers: WordPress application-password login for role grant/remove (WC API keys cannot change roles on some shops) -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'WordPressRoleGrantUsername') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD WordPressRoleGrantUsername NVARCHAR(128) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'WordPressRoleGrantAppPasswordEncrypted') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD WordPressRoleGrantAppPasswordEncrypted NVARCHAR(MAX) NULL;
+      END
+    ]]>
+  </command>
+</root>

@@ -15,6 +15,8 @@ namespace TrackerSQL.Managers
         public const string XmlFileNameAddress = "SQLCommands-WooCommerce-03.xml";
         public const string XmlFileNameGeneral = "SQLCommands-WooCommerce-04.xml";
         public const string XmlFileNameImportCollect = "SQLCommands-WooCommerce-05.xml";
+        public const string XmlFileNameQuaffeeLovers = "SQLCommands-WooCommerce-06.xml";
+        public const string XmlFileNameWordPressRoles = "SQLCommands-WooCommerce-07.xml";
         public const string XmlFileNameDeliveryPromise = "SQLCommands-DeliveryPromise-01.xml";
 
         public static readonly string[] XmlFileNames =
@@ -24,6 +26,8 @@ namespace TrackerSQL.Managers
             XmlFileNameAddress,
             XmlFileNameGeneral,
             XmlFileNameImportCollect,
+            XmlFileNameQuaffeeLovers,
+            XmlFileNameWordPressRoles,
             XmlFileNameDeliveryPromise,
             OrderFlagsSchemaInstaller.OrderDoneXmlFileName
         };

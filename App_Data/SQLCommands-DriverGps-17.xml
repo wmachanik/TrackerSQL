@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.ContactTypesTbl WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier')
+      BEGIN
+          INSERT INTO dbo.ContactTypesTbl (ContactTypeDesc) VALUES (N'Supplier');
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'SupplierCollectionContactTypeID') IS NULL
+      BEGIN
+          ALTER TABLE dbo.MobileApiSettingsTbl ADD SupplierCollectionContactTypeID INT NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.MobileApiSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.MobileApiSettingsTbl', N'SupplierCollectionContactTypeID') IS NOT NULL
+      BEGIN
+          DECLARE @SupplierTypeId INT = (
+              SELECT TOP 1 ContactTypeID FROM dbo.ContactTypesTbl WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier'
+              ORDER BY ContactTypeID);
+          IF @SupplierTypeId IS NOT NULL
+          BEGIN
+              IF EXISTS (SELECT 1 FROM dbo.MobileApiSettingsTbl WHERE SettingsID = 1)
+                  UPDATE dbo.MobileApiSettingsTbl
+                  SET SupplierCollectionContactTypeID = @SupplierTypeId
+                  WHERE SettingsID = 1 AND SupplierCollectionContactTypeID IS NULL;
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = NULL
+              WHERE ContactTypeID = @SupplierTypeId
+                AND CompanyName LIKE N'%Cape Coffee Beans%';
+
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = @SupplierTypeId
+              WHERE ContactTypeID IS NULL OR ContactTypeID <> @SupplierTypeId
+                AND (
+                    CompanyName LIKE N'%Zuka%'
+                    OR CompanyName LIKE N'%Marunic%'
+                    OR CompanyName LIKE N'%Float%'
+                    OR (CompanyName LIKE N'%Cape Coffee%' AND CompanyName NOT LIKE N'%Beans%')
+                );
+          END
+      END
+    ]]>
+  </command>
+</root>

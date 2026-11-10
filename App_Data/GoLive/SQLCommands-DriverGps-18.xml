@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NULL
+      BEGIN
+          ALTER TABLE dbo.ContactTypesTbl
+              ADD DriverCollectionOnly BIT NOT NULL
+              CONSTRAINT DF_ContactTypesTbl_DriverCollectionOnly DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NOT NULL
+      BEGIN
+          UPDATE dbo.ContactTypesTbl
+          SET DriverCollectionOnly = 1
+          WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier';
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.ContactsTbl', N'U') IS NOT NULL
+      BEGIN
+          DECLARE @SupplierTypeId INT = (
+              SELECT TOP 1 ContactTypeID FROM dbo.ContactTypesTbl
+              WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier'
+              ORDER BY ContactTypeID);
+
+          IF @SupplierTypeId IS NOT NULL
+          BEGIN
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = NULL
+              WHERE ContactTypeID = @SupplierTypeId
+                AND CompanyName LIKE N'%Cape Coffee Beans%';
+
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = @SupplierTypeId
+              WHERE (ContactTypeID IS NULL OR ContactTypeID <> @SupplierTypeId)
+                AND (
+                    CompanyName LIKE N'%Zuka%'
+                    OR CompanyName LIKE N'%Marunic%'
+                    OR CompanyName LIKE N'%Float%'
+                    OR (CompanyName LIKE N'%Cape Coffee%' AND CompanyName NOT LIKE N'%Beans%')
+                );
+          END
+      END
+    ]]>
+  </command>
+</root>

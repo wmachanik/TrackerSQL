@@ -94,6 +94,34 @@ namespace TrackerSQL.Portal
                 + HttpUtility.HtmlEncode(text) + "</span>";
         }
 
+        /// <summary>Shown on portal Home when the contact is a Quaffee Lovers member; empty otherwise.</summary>
+        protected string QuaffeeLoversMemberHtml()
+        {
+            int contactId = Portal.GetCurrentContactId();
+            if (contactId <= 0)
+                return string.Empty;
+
+            QuaffeeLoversContactStatus status;
+            try
+            {
+                status = new QuaffeeLoversMembershipManager().GetContactStatus(contactId);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+
+            if (!status.QuaffeeLoversMember)
+                return string.Empty;
+
+            const string heading = "You are a Quaffee Lovers member";
+            const string detail = "Member prices apply when you shop with us online.";
+            return "<div class=\"portal-next-coffee\"><img src=\""
+                + HttpUtility.HtmlAttributeEncode(ResolveUrl("~/images/imgButtons/Woocommerce-Icon.png"))
+                + "\" alt=\"\" /><div class=\"portal-next-coffee-text\"><strong>" + HttpUtility.HtmlEncode(heading)
+                + "</strong><span>" + HttpUtility.HtmlEncode(detail) + "</span></div></div>";
+        }
+
         /// <summary>"Next coffee" highlight for Home and My Orders; empty when there is nothing to show.</summary>
         protected string NextCoffeeHtml()
         {

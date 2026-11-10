@@ -205,12 +205,7 @@
                             Text="Restart the site once (database update)." />
                     </td>
                     <td>Reminders</td>
-                    <td>[<asp:Label ID="ReminderCountLabel" runat="server" />] &ndash; Last sent: <asp:Label ID="LastReminderLabel" runat="server" /></td>
-                    <td>Contact Portal</td>
-                    <td>
-                        <asp:Label ID="lblPortalStatus" runat="server" Text="" />
-                        <asp:Literal ID="ltrlPortalConflicts" runat="server" EnableViewState="false" />
-                    </td>
+                    <td colspan="4">[<asp:Label ID="ReminderCountLabel" runat="server" />] &ndash; Last sent: <asp:Label ID="LastReminderLabel" runat="server" /></td>
                 </tr>
                 <tr>
                     <td>Stati</td>
@@ -253,13 +248,6 @@
                             OnClick="btnSendReminder_Click" CausesValidation="false"
                             OnClientClick="return confirm('Send a coffee checkup reminder email to this contact now?');"
                             ToolTip="Email a checkup reminder now (updates last reminder date and count)" />
-                        <asp:Button ID="btnInvitePortal" Text="Invite to portal" runat="server" CssClass="filter-panel-btn"
-                            OnClick="btnInvitePortal_Click" CausesValidation="false"
-                            OnClientClick="return confirm('Email this contact a temporary password for the contact portal?');"
-                            ToolTip="Create or reset Contact-role login and email a temporary password" />
-                        <asp:Button ID="btnViewInPortal" Text="View in portal" runat="server" Visible="false"
-                            CssClass="filter-panel-btn portal-preview-btn" CausesValidation="false"
-                            ToolTip="Administrators: open the Contact Portal as this contact in a new tab (read-only preview)" />
                         <asp:Button ID="btnRecalcAverage" Text="Recalc Ave" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnRecalcAverage_Click" CausesValidation="false" />
                         <span class="image-button" title="Return to the page you came from without saving">
@@ -312,6 +300,98 @@
             <%-- No AutoPostBack: all tab content is bound on load, so switching is instant
                  client-side (a server round trip here left the progress overlay stuck). --%>
             <ajaxToolkit:TabContainer ID="tabcContact" runat="server" AutoPostBack="false">
+                <ajaxToolkit:TabPanel runat="server" HeaderText="Settings" ID="tabpnlSettings">
+                    <ContentTemplate>
+                        <div class="pad-4 contact-settings-tab">
+                            <asp:Panel ID="pnlContactPortalSection" runat="server" CssClass="settings-section">
+                                <h3 class="settings-section-title">Contact portal</h3>
+                                <table class="TblCoffee" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>Status</td>
+                                        <td>
+                                            <asp:Label ID="lblPortalStatus" runat="server" Text="" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2">
+                                            <asp:Literal ID="ltrlPortalConflicts" runat="server" EnableViewState="false" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" class="button-row">
+                                            <asp:Button ID="btnInvitePortal" Text="Invite to portal" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnInvitePortal_Click" CausesValidation="false"
+                                                OnClientClick="return confirm('Email this contact a temporary password for the contact portal?');"
+                                                ToolTip="Create or reset Contact-role login and email a temporary password" />
+                                            <asp:Button ID="btnViewInPortal" Text="View in portal" runat="server" Visible="false"
+                                                CssClass="filter-panel-btn portal-preview-btn" CausesValidation="false"
+                                                ToolTip="Administrators: open the Contact Portal as this contact in a new tab (read-only preview)" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </asp:Panel>
+
+                            <asp:Panel ID="pnlWooCommerceSection" runat="server" CssClass="settings-section">
+                                <h3 class="settings-section-title">WooCommerce</h3>
+                                <table class="TblCoffee" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>Shop connection</td>
+                                        <td class="button-row">
+                                            <asp:Button ID="btnVerifyShopLogin" Text="Verify login" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnVerifyShopLogin_Click" CausesValidation="false"
+                                                ToolTip="Test WooCommerce API keys and WordPress role admin login configured in WooCommerce Mapping" />
+                                            <asp:Label ID="lblShopLoginVerify" runat="server" CssClass="muted small" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Woo orders (imported)</td>
+                                        <td><asp:Label ID="lblWooOrderCount" runat="server" Text="&mdash;" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Orders before member</td>
+                                        <td><asp:Label ID="lblWooOrderThreshold" runat="server" Text="&mdash;" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Woo customer</td>
+                                        <td><asp:Label ID="lblWooCustomerInfo" runat="server" Text="&mdash;" /></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Shop role</td>
+                                        <td><asp:Label ID="lblWooShopRole" runat="server" Text="&mdash;" /></td>
+                                    </tr>
+                                    <tr id="trQuaffeeLoversStatus" runat="server">
+                                        <td>Quaffee Lovers</td>
+                                        <td>
+                                            <asp:Panel ID="pnlQuaffeeLoversStati" runat="server" CssClass="contact-stati-quaffee">
+                                                <asp:Label ID="lblQuaffeeLoversStatus" runat="server" CssClass="status-badge" Visible="false" />
+                                            </asp:Panel>
+                                            <asp:Label ID="lblQuaffeeLoversDetail" runat="server" CssClass="muted small" Visible="false" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" class="button-row">
+                                            <asp:Button ID="btnQuaffeeCheckWoo" Text="Check Woo" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnQuaffeeCheckWoo_Click" CausesValidation="false"
+                                                ToolTip="Look up this contact on the shop and refresh member role status (no email)" />
+                                            <asp:Button ID="btnQuaffeeInviteMember" Text="Invite member" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnQuaffeeInviteMember_Click" CausesValidation="false"
+                                                OnClientClick="return confirm('Grant the shop member role and send the welcome email?');"
+                                                ToolTip="When they meet the order threshold — grant member and send welcome email" />
+                                            <asp:Button ID="btnQuaffeeForceMember" Text="Force member" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnQuaffeeForceMember_Click" CausesValidation="false"
+                                                OnClientClick="return confirm('Grant the shop member role and send welcome email, even if they have fewer orders than the threshold?');"
+                                                ToolTip="Grant the configured shop member role and welcome email (ignores order threshold)" />
+                                            <asp:Button ID="btnQuaffeeDisableMember" Text="Disable member" runat="server" CssClass="filter-panel-btn"
+                                                OnClick="btnQuaffeeDisableMember_Click" CausesValidation="false"
+                                                OnClientClick="return confirm('Remove the shop member role (set to customer) and clear Quaffee Lovers membership?');"
+                                                ToolTip="Sets shop role to customer and clears membership in Tracker" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </asp:Panel>
+                        </div>
+                    </ContentTemplate>
+                </ajaxToolkit:TabPanel>
                 <ajaxToolkit:TabPanel ID="tabpnlAccountInfo" runat="server" HeaderText="Accounts Info">
                     <ContentTemplate>
                         <asp:UpdatePanel ID="dvContactsAccInfoUpdatePanel" runat="server" ChildrenAsTriggers="true" UpdateMode="Conditional">

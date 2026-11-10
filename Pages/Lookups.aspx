@@ -750,6 +750,105 @@
                 </asp:UpdatePanel>
             </ContentTemplate>
         </ajaxToolkit:TabPanel>
+        <ajaxToolkit:TabPanel ID="tabpnlContactTypes" runat="server" HeaderText="Contact Types">
+            <HeaderTemplate>
+                Contact Types
+            </HeaderTemplate>
+            <ContentTemplate>
+                <asp:UpdatePanel ID="upnlContactTypes" runat="server" UpdateMode="Conditional">
+                    <ContentTemplate>
+                        <div class="filter-toolbar lookups-tab-toolbar">
+                            <div class="filter-section search-controls">
+                                <div class="filter-control">
+                                    <asp:Label AssociatedControlID="tbxContactTypeSearch" runat="server" Text="Search:" />
+                                    <asp:TextBox ID="tbxContactTypeSearch" runat="server" OnTextChanged="tbxContactTypeSearch_TextChanged" />
+                                </div>
+                                <asp:Button ID="btnContactTypeGo" Text="Go" runat="server" CssClass="filter-panel-btn"
+                                    ToolTip="Search contact types by name or notes" OnClick="btnContactTypeGo_Click" />
+                                <asp:Button ID="btnContactTypeReset" Text="Reset" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnContactTypeReset_Click" />
+                            </div>
+                            <div class="filter-section admin-controls lookups-tab-icon-wrap">
+                                <img class="lookups-tab-icon" src="../images/imgButtons/icons8-new-contact-48.png"
+                                    width="32" height="32" alt="" />
+                            </div>
+                        </div>
+                        <div class="responsive-layout-container scrollable-table-container">
+                            <asp:GridView ID="gvContactTypes" runat="server" AllowPaging="True" EmptyDataText="No contact types found"
+                                AllowSorting="True" AutoGenerateColumns="False" ShowFooter="True"
+                                DataKeyNames="ContactTypeID" PageSize="20"
+                                OnRowCommand="gvContactTypes_RowCommand"
+                                OnPageIndexChanging="gvContactTypes_PageIndexChanging"
+                                OnSorting="gvContactTypes_Sorting"
+                                CssClass="results-table"
+                                OnRowEditing="gvContactTypes_RowEditing"
+                                OnRowCancelingEdit="gvContactTypes_RowCancelingEdit"
+                                OnRowUpdating="gvContactTypes_RowUpdating"
+                                OnRowCreated="gvContactTypes_RowCreated">
+                                <Columns>
+                                    <asp:TemplateField ShowHeader="False">
+                                        <EditItemTemplate>
+                                            <asp:ImageButton ID="btnUpdate" runat="server" CausesValidation="False" CommandName="Update"
+                                                AlternateText="go" ImageUrl="~/images/imgButtons/UpdateItem.gif" />&nbsp;
+                                            <asp:ImageButton ID="btnCancel" runat="server" CausesValidation="False" CommandName="Cancel"
+                                                AlternateText="no" ImageUrl="~/images/imgButtons/CancelItem.gif" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:ImageButton ID="btnEdit" runat="server" CausesValidation="False" CommandName="Edit"
+                                                AlternateText="Edit" ImageUrl="~/images/imgButtons/EditItem.gif" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:ImageButton ID="btnAdd" runat="server" CausesValidation="False" CommandName="Insert"
+                                                ImageUrl="~/images/imgButtons/AddItem.gif" AlternateText="Add" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Type" SortExpression="ContactTypeDesc">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="ContactTypeDescTextBox" runat="server" Text='<%# Bind("ContactTypeDesc") %>' Width="15em" MaxLength="50" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="ContactTypeDescLabel" runat="server" Text='<%# Bind("ContactTypeDesc") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="ContactTypeDescTextBox" runat="server" Width="15em" MaxLength="50" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField ConvertEmptyStringToNull="False" HeaderText="Notes" SortExpression="Notes">
+                                        <EditItemTemplate>
+                                            <asp:TextBox ID="ContactTypeNotesTextBox" runat="server" Text='<%# Bind("Notes") %>' Width="30em" />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:Label ID="ContactTypeNotesLabel" runat="server" Text='<%# Bind("Notes") %>' />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:TextBox ID="ContactTypeNotesTextBox" runat="server" Width="30em" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Collection only">
+                                        <HeaderTemplate>
+                                            <span title="Driver app stops for contacts of this type are supplier pickups: the driver records Collected with who handed goods over — no client signature or terms. Also used when the supplier drops off at the client (Not at client delivery outcomes).">Collection only</span>
+                                        </HeaderTemplate>
+                                        <EditItemTemplate>
+                                            <asp:CheckBox ID="cbxCtCollectionOnly" runat="server" Checked='<%# Bind("DriverCollectionOnly") %>' />
+                                        </EditItemTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="cbxCtCollectionOnly" runat="server" Checked='<%# Eval("DriverCollectionOnly") %>' Enabled="false" />
+                                        </ItemTemplate>
+                                        <FooterTemplate>
+                                            <asp:CheckBox ID="cbxCtCollectionOnlyFooter" runat="server" />
+                                        </FooterTemplate>
+                                    </asp:TemplateField>
+                                </Columns>
+                                <PagerStyle CssClass="pager-row" />
+                                <PagerTemplate>
+                                    <asp:PlaceHolder ID="plhPager" runat="server" />
+                                </PagerTemplate>
+                            </asp:GridView>
+                        </div>
+                    </ContentTemplate>
+                </asp:UpdatePanel>
+            </ContentTemplate>
+        </ajaxToolkit:TabPanel>
         <ajaxToolkit:TabPanel ID="tabpnlAreas" runat="server" HeaderText="Areas">
             <HeaderTemplate>
                 Areas

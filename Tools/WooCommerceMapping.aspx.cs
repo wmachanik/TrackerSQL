@@ -3547,6 +3547,22 @@ namespace TrackerSQL.Tools
             chkGeneralCompleteWooOnDone.Checked = settings.CompleteWooOrderOnDone;
             chkGeneralWriteExpectedDelivery.Checked = settings.WriteExpectedDeliveryToWoo;
             chkGeneralCheckNewOrders.Checked = settings.CheckNewOrdersOnNewOrder;
+            if (chkQuaffeeLoversEnabled != null)
+                chkQuaffeeLoversEnabled.Checked = settings.QuaffeeLoversEnabled;
+            if (txtQuaffeeLoversThreshold != null)
+                txtQuaffeeLoversThreshold.Text = (settings.QuaffeeLoversOrderThreshold > 0
+                    ? settings.QuaffeeLoversOrderThreshold : 3).ToString(CultureInfo.InvariantCulture);
+            if (txtQuaffeeLoversRole != null)
+                txtQuaffeeLoversRole.Text = WooCommerceSettingsManager.NormalizeQuaffeeLoversRole(settings.QuaffeeLoversWooRole);
+            if (txtWordPressRoleGrantUsername != null)
+                txtWordPressRoleGrantUsername.Text = settings.WordPressRoleGrantUsername ?? string.Empty;
+            if (txtWordPressRoleGrantAppPassword != null)
+            {
+                txtWordPressRoleGrantAppPassword.Text = string.Empty;
+                txtWordPressRoleGrantAppPassword.Attributes["placeholder"] = _settings.HasSavedWordPressRoleAppPassword()
+                    ? "•••• saved"
+                    : string.Empty;
+            }
 
             string autoPull = WooCommerceSettingsManager.NormalizeAutoPullMode(settings.ImportAutoPullMode);
             ddlGeneralAutoPull.Items.Clear();
@@ -3574,6 +3590,16 @@ namespace TrackerSQL.Tools
             MarkOriginal(chkGeneralCompleteWooOnDone, chkGeneralCompleteWooOnDone.Checked);
             MarkOriginal(chkGeneralWriteExpectedDelivery, chkGeneralWriteExpectedDelivery.Checked);
             MarkOriginal(chkGeneralCheckNewOrders, chkGeneralCheckNewOrders.Checked);
+            if (chkQuaffeeLoversEnabled != null)
+                MarkOriginal(chkQuaffeeLoversEnabled, chkQuaffeeLoversEnabled.Checked);
+            if (txtQuaffeeLoversThreshold != null)
+                MarkOriginal(txtQuaffeeLoversThreshold);
+            if (txtQuaffeeLoversRole != null)
+                MarkOriginal(txtQuaffeeLoversRole);
+            if (txtWordPressRoleGrantUsername != null)
+                MarkOriginal(txtWordPressRoleGrantUsername);
+            if (txtWordPressRoleGrantAppPassword != null)
+                MarkOriginal(txtWordPressRoleGrantAppPassword);
             if (lstGeneralNotePartOrder != null)
                 lstGeneralNotePartOrder.Attributes["data-original"] = GetNotePartOrderFromList();
         }
@@ -3588,9 +3614,23 @@ namespace TrackerSQL.Tools
             bool completeWooOnDone = chkGeneralCompleteWooOnDone.Checked;
             string autoPull = ddlGeneralAutoPull.SelectedValue;
             string noteOrder = GetNotePartOrderFromList();
+            bool loversEnabled = chkQuaffeeLoversEnabled != null && chkQuaffeeLoversEnabled.Checked;
+            int loversThreshold = 3;
+            if (txtQuaffeeLoversThreshold != null
+                && !int.TryParse((txtQuaffeeLoversThreshold.Text ?? string.Empty).Trim(), out loversThreshold))
+                loversThreshold = 3;
+            string loversRole = txtQuaffeeLoversRole != null ? txtQuaffeeLoversRole.Text : null;
+            string wpRoleUser = txtWordPressRoleGrantUsername != null ? txtWordPressRoleGrantUsername.Text : null;
+            bool replaceWpAppPass = txtWordPressRoleGrantAppPassword != null
+                && !string.IsNullOrWhiteSpace(txtWordPressRoleGrantAppPassword.Text);
+            string wpAppPass = replaceWpAppPass ? txtWordPressRoleGrantAppPassword.Text : null;
             _settings.SaveGeneralImportSettings(
                 companyMode, noteFmt, appendTracking, autoPull, noteOrder,
-                writeExpectedDelivery, checkNewOrders, completeWooOnDone, UserName());
+                writeExpectedDelivery, checkNewOrders, completeWooOnDone,
+                loversEnabled, loversThreshold, loversRole,
+                wpRoleUser, wpAppPass, replaceWpAppPass, UserName());
+            if (txtWordPressRoleGrantAppPassword != null)
+                txtWordPressRoleGrantAppPassword.Text = string.Empty;
             BindGeneralTab();
             SetStatus(MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralSettingsSaved), false);
             WooCommerceUserLog.Write("Mapping general settings saved",
@@ -3598,6 +3638,30 @@ namespace TrackerSQL.Tools
                     "companyMode={0}, noteFmt={1}, trackNotes={2}, autoPull={3}, noteOrder={4}, writeExpDel={5}, checkNewOnNewOrder={6}, completeWooOnDone={7}",
                     companyMode, noteFmt, appendTracking, autoPull, noteOrder, writeExpectedDelivery, checkNewOrders, completeWooOnDone),
                 UserName());
+        }
+
+        protected void btnVerifyShopIntegration_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string wpUser = txtWordPressRoleGrantUsername != null ? txtWordPressRoleGrantUsername.Text : null;
+                string wpPass = txtWordPressRoleGrantAppPassword != null ? txtWordPressRoleGrantAppPassword.Text : null;
+                var verify = _settings.VerifyShopIntegration(wpUser, wpPass, UserName());
+                string msg = verify.Summary;
+                if (verify.WordPressRoleOk && verify.WordPressUserId.HasValue)
+                    msg += " WP user #" + verify.WordPressUserId.Value
+                        + (string.IsNullOrWhiteSpace(verify.WordPressRoles) ? "" : " (" + verify.WordPressRoles + ").");
+                if (lblVerifyShopIntegration != null)
+                    lblVerifyShopIntegration.Text = msg;
+                SetStatus(msg, !verify.AllOk);
+                AppLogger.WriteLog("woo", "Verify shop integration: " + msg, UserName());
+            }
+            catch (Exception ex)
+            {
+                if (lblVerifyShopIntegration != null)
+                    lblVerifyShopIntegration.Text = ex.Message;
+                SetStatus(ex.Message, true);
+            }
         }
 
         private void BindNotePartOrderList(string orderCsv)

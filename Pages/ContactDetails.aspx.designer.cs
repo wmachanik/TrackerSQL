@@ -582,6 +582,58 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnInvitePortal;
 
         /// <summary>
+        /// btnQuaffeeCheckWoo control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnQuaffeeCheckWoo;
+
+        /// <summary>
+        /// btnQuaffeeInviteMember control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnQuaffeeInviteMember;
+
+        /// <summary>
+        /// btnQuaffeeForceMember control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnQuaffeeForceMember;
+
+        /// <summary>
+        /// btnQuaffeeDisableMember control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnQuaffeeDisableMember;
+
+        /// <summary>
+        /// pnlQuaffeeLoversStati control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlQuaffeeLoversStati;
+
+        /// <summary>
+        /// lblQuaffeeLoversStatus control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblQuaffeeLoversStatus;
+
+        protected global::AjaxControlToolkit.TabPanel tabpnlSettings;
+
+        protected global::System.Web.UI.WebControls.Panel pnlContactPortalSection;
+
+        protected global::System.Web.UI.WebControls.Panel pnlWooCommerceSection;
+
+        protected global::System.Web.UI.WebControls.Button btnVerifyShopLogin;
+
+        protected global::System.Web.UI.WebControls.Label lblShopLoginVerify;
+
+        protected global::System.Web.UI.WebControls.Label lblWooOrderCount;
+
+        protected global::System.Web.UI.WebControls.Label lblWooOrderThreshold;
+
+        protected global::System.Web.UI.WebControls.Label lblWooCustomerInfo;
+
+        protected global::System.Web.UI.WebControls.Label lblWooShopRole;
+
+        protected global::System.Web.UI.HtmlControls.HtmlTableRow trQuaffeeLoversStatus;
+
+        protected global::System.Web.UI.WebControls.Label lblQuaffeeLoversDetail;
+
+        /// <summary>
         /// btnViewInPortal control.
         /// </summary>
         /// <remarks>

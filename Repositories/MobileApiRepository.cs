@@ -191,6 +191,7 @@ namespace TrackerSQL.Repositories
             public bool CollectsOrCourier;
             /// <summary>The order's Delivered by person is "Collect (shop)": collected by the client at the depot.</summary>
             public bool Collection;
+            public int? ContactTypeId;
             public string DeliverToPerson;
             public string DeliverToLabel;
             public int? DeliverToAddressId;
@@ -205,7 +206,7 @@ namespace TrackerSQL.Repositories
         {
             bool deliverTo = DeliveryOnBehalfManager.IsActive;
             string sql = @"
-                SELECT o.OrderID, o.ContactID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
+                SELECT o.OrderID, o.ContactID, c.ContactTypeID, c.CompanyName, c.ContactFirstName, c.ContactLastName,
                        c.ContactAltFirstName, c.ContactAltLastName, {EFFECTIVE_PHONE} AS PhoneNumber, {EFFECTIVE_CELL} AS CellNumber,
                        {BILLING_ADDR} AS BillingAddress, {PROVINCE_COL} AS StateOrProvince, {POSTAL_COL} AS PostalCode,
                        {AREA_NAME} AS AreaName, {AREA_CODE} AS AreaShortCode, o.Notes, o.PurchaseOrder, o.Done, o.Confirmed,
@@ -353,6 +354,7 @@ namespace TrackerSQL.Repositories
                 GpsStatus = Str(r, "GpsStatus"),
                 CollectsOrCourier = Str(r, "AgentDeliveryType") == DeliveryTypes.Courier || Str(r, "AgentDeliveryType") == DeliveryTypes.Collect,
                 Collection = Str(r, "DeliveryByType") == DeliveryTypes.Collect,
+                ContactTypeId = NInt(r, "ContactTypeID"),
                 DeliverToPerson = deliverTo ? Str(r, "DeliverToPerson") : null,
                 DeliverToLabel = deliverTo ? Str(r, "DeliverToLabel") : null,
                 DeliverToAddressId = DbMapper.HasColumn(r, "DeliverToAddressID") ? NInt(r, "DeliverToAddressID") : null,
@@ -402,18 +404,21 @@ namespace TrackerSQL.Repositories
             public bool Done;
             public int? DeliveryById;
             public DateTime? RequiredByDate;
+            public int? ContactTypeId;
         }
 
         public OrderBrief GetOrderBrief(int orderId)
         {
-            var list = Query("SELECT OrderID, ContactID, Done, ToBeDeliveredByID, RequiredByDate FROM OrdersTbl WHERE OrderID = @OrderID",
+            var list = Query(@"SELECT o.OrderID, o.ContactID, o.Done, o.ToBeDeliveredByID, o.RequiredByDate, c.ContactTypeID
+FROM OrdersTbl o LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID WHERE o.OrderID = @OrderID",
                 r => new OrderBrief
                 {
                     OrderID = Convert.ToInt32(r["OrderID"]),
                     ContactID = NInt(r, "ContactID") ?? 0,
                     Done = Bool(r, "Done"),
                     DeliveryById = NInt(r, "ToBeDeliveredByID"),
-                    RequiredByDate = NDate(r, "RequiredByDate")
+                    RequiredByDate = NDate(r, "RequiredByDate"),
+                    ContactTypeId = NInt(r, "ContactTypeID")
                 }, P("@OrderID", orderId, DbType.Int32));
             return list.Count > 0 ? list[0] : null;
         }

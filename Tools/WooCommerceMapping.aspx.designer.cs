@@ -167,6 +167,18 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.DropDownList ddlGeneralAutoPull;
         protected global::System.Web.UI.WebControls.Label lblGeneralCheckNewOrders;
         protected global::System.Web.UI.WebControls.CheckBox chkGeneralCheckNewOrders;
+        protected global::System.Web.UI.WebControls.Label lblQuaffeeLoversEnabled;
+        protected global::System.Web.UI.WebControls.CheckBox chkQuaffeeLoversEnabled;
+        protected global::System.Web.UI.WebControls.Label lblQuaffeeLoversThreshold;
+        protected global::System.Web.UI.WebControls.TextBox txtQuaffeeLoversThreshold;
+        protected global::System.Web.UI.WebControls.Label lblQuaffeeLoversRole;
+        protected global::System.Web.UI.WebControls.TextBox txtQuaffeeLoversRole;
+        protected global::System.Web.UI.WebControls.Label lblWordPressRoleGrantUsername;
+        protected global::System.Web.UI.WebControls.TextBox txtWordPressRoleGrantUsername;
+        protected global::System.Web.UI.WebControls.Label lblWordPressRoleGrantAppPassword;
+        protected global::System.Web.UI.WebControls.TextBox txtWordPressRoleGrantAppPassword;
+        protected global::System.Web.UI.WebControls.Button btnVerifyShopIntegration;
+        protected global::System.Web.UI.WebControls.Label lblVerifyShopIntegration;
         protected global::System.Web.UI.WebControls.Button btnSaveGeneralSettings;
         protected global::System.Web.UI.WebControls.DropDownList ddlItemLookup;
         protected global::System.Web.UI.WebControls.HiddenField hdnUnsavedCat;

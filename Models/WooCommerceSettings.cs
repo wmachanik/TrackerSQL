@@ -87,6 +87,16 @@ namespace TrackerSQL.Models
         /// Courier / dispatch orders stay open (waybill note only).
         /// </summary>
         public bool CompleteWooOrderOnDone { get; set; } = true;
+        /// <summary>When true, qualifying contacts get the Quaffee Lovers Woo role after N Woo imports.</summary>
+        public bool QuaffeeLoversEnabled { get; set; }
+        /// <summary>Imported Woo orders (linked in WooOrderInfoTbl) before auto membership runs. Default 3.</summary>
+        public int QuaffeeLoversOrderThreshold { get; set; } = 3;
+        /// <summary>WooCommerce customer role slug on the shop (default member).</summary>
+        public string QuaffeeLoversWooRole { get; set; } = "member";
+        /// <summary>WordPress admin username used with an application password to grant/remove customer roles.</summary>
+        public string WordPressRoleGrantUsername { get; set; }
+        /// <summary>Encrypted WordPress application password for role changes (not the WC REST key).</summary>
+        public string WordPressRoleGrantAppPasswordEncrypted { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

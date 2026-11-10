@@ -198,6 +198,17 @@
                                     <asp:Button ID="btnWooMapping" runat="server" Text="Open" OnClick="btnWooMapping_Click" />
                                 </div>
                             </div>
+                            <div class="dashboard-link tool-tone-sysdata">
+                                <div class="dashboard-card">
+                                    <div class="tool-card-header">
+                                        <img class="tool-card-icon" src="../images/imgButtons/ContactCardLink.png" alt="" />
+                                        <h4>Quaffee Lovers invites</h4>
+                                    </div>
+                                    <p>Scan contacts with enough Woo orders; welcome them to the loyalty program</p>
+                                    <asp:Button ID="btnQuaffeeLoversInvite" runat="server" Text="Open"
+                                        PostBackUrl="~/Tools/QuaffeeLoversInvite.aspx" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

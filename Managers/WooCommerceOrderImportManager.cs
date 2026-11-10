@@ -2525,6 +2525,23 @@ namespace TrackerSQL.Managers
             bool isUpdate = existingOrderId.HasValue && existingOrderId.Value > 0;
             LogWooImportToOrdersLog(orderId, contactId, order, preview, isUpdate, updatedBy);
 
+            if (!isUpdate && contactId > 0 && contactId != SystemConstants.CustomerConstants.SundryCustomerID)
+            {
+                try
+                {
+                    string email = FirstNonEmpty(order.Billing?.Email, order.Shipping?.Email, ship.Email);
+                    long wooCustomerId = order.CustomerId;
+                    new QuaffeeLoversMembershipManager().TryAfterOrderImported(
+                        (int)contactId, email, wooCustomerId, updatedBy);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog("woo",
+                        "Quaffee Lovers check after import failed for contact " + contactId + ": " + ex.Message,
+                        updatedBy);
+                }
+            }
+
             return orderId;
         }
 

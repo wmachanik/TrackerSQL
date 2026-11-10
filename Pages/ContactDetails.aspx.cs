@@ -454,7 +454,7 @@ namespace TrackerSQL.Pages
                 // Orders / Recurring / Repairs history tabs
                 BindHistoryTabs(id);
 
-                UpdatePortalInviteButton(id);
+                BindSettingsTab(id);
             }
             catch (Exception ex)
             {
@@ -912,6 +912,18 @@ namespace TrackerSQL.Pages
             btnForceCheckup.Enabled = editMode;
             btnSendReminder.Enabled = editMode;
             btnInvitePortal.Enabled = editMode;
+            if (btnViewInPortal != null)
+                btnViewInPortal.Enabled = editMode;
+            if (btnQuaffeeCheckWoo != null)
+                btnQuaffeeCheckWoo.Enabled = editMode;
+            if (btnQuaffeeInviteMember != null)
+                btnQuaffeeInviteMember.Enabled = editMode;
+            if (btnQuaffeeForceMember != null)
+                btnQuaffeeForceMember.Enabled = editMode;
+            if (btnQuaffeeDisableMember != null)
+                btnQuaffeeDisableMember.Enabled = editMode;
+            if (btnVerifyShopLogin != null)
+                btnVerifyShopLogin.Enabled = true;
             btnRecalcAverage.Enabled = editMode;
             btnInsert.Enabled = !editMode;
             accAddDetailsButton.Enabled = !editMode;
@@ -2128,6 +2140,166 @@ namespace TrackerSQL.Pages
             }
         }
 
+        protected void btnQuaffeeCheckWoo_Click(object sender, EventArgs e)
+        {
+            RunQuaffeeLoversAction("Check Woo",
+                id => new QuaffeeLoversMembershipManager().TrySyncFromWoo(id, User.Identity.Name));
+        }
+
+        protected void btnVerifyShopLogin_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var verify = new WooCommerceSettingsManager().VerifyShopIntegration(null, null, User.Identity.Name);
+                if (lblShopLoginVerify != null)
+                    lblShopLoginVerify.Text = verify.Summary;
+                NotifyForceAction("Verify shop login", verify.Summary, !verify.AllOk);
+            }
+            catch (Exception ex)
+            {
+                if (lblShopLoginVerify != null)
+                    lblShopLoginVerify.Text = ex.Message;
+                NotifyForceAction("Verify shop login", ex.Message, true);
+            }
+        }
+
+        protected void btnQuaffeeInviteMember_Click(object sender, EventArgs e)
+        {
+            RunQuaffeeLoversAction("Invite member",
+                id => new QuaffeeLoversMembershipManager().TryInviteIfEligible(id, User.Identity.Name));
+        }
+
+        protected void btnQuaffeeDisableMember_Click(object sender, EventArgs e)
+        {
+            RunQuaffeeLoversAction("Disable member",
+                id => new QuaffeeLoversMembershipManager().TryDisableMember(id, User.Identity.Name));
+        }
+
+        protected void btnQuaffeeForceMember_Click(object sender, EventArgs e)
+        {
+            RunQuaffeeLoversAction("Force member",
+                id => new QuaffeeLoversMembershipManager().TryForceGrantMember(id, User.Identity.Name));
+        }
+
+        private void RunQuaffeeLoversAction(string actionName, Func<int, QuaffeeLoversProcessResult> run)
+        {
+            try
+            {
+                if (!TryGetContactId(out int contactId))
+                {
+                    NotifyForceAction(actionName, "No contact selected.", true);
+                    return;
+                }
+
+                var result = run(contactId);
+                BindSettingsTab(contactId);
+                LogContactAudit(result.Succeeded ? actionName : actionName + " failed",
+                    result.Message ?? string.Empty, contactIdOverride: contactId);
+                NotifyForceAction(actionName, result.Message ?? (result.Succeeded ? "Done." : "Failed."), !result.Succeeded);
+            }
+            catch (Exception ex)
+            {
+                LogContactAudit(actionName + " failed", ex.Message);
+                NotifyForceAction(actionName, "Error: " + ex.Message, true);
+            }
+        }
+
+        private void BindSettingsTab(int contactId)
+        {
+            bool hasContact = contactId > 0;
+            if (pnlContactPortalSection != null)
+                pnlContactPortalSection.Visible = hasContact;
+            if (hasContact)
+                UpdatePortalInviteButton(contactId);
+            else if (lblPortalStatus != null)
+                lblPortalStatus.Text = string.Empty;
+
+            bool wooEnabled = hasContact && new WooCommerceSettingsManager().IsIntegrationEnabled();
+            if (pnlWooCommerceSection != null)
+                pnlWooCommerceSection.Visible = wooEnabled;
+
+            QuaffeeLoversContactStatus loversStatus = null;
+            bool showLovers = false;
+            if (wooEnabled)
+            {
+                loversStatus = new QuaffeeLoversMembershipManager().GetContactStatus(contactId);
+                showLovers = loversStatus.FeatureEnabled;
+                int orderCount = loversStatus.WooOrderCount;
+                if (lblWooOrderCount != null)
+                    lblWooOrderCount.Text = orderCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (lblWooOrderThreshold != null)
+                    lblWooOrderThreshold.Text = loversStatus.OrderThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (lblWooCustomerInfo != null)
+                {
+                    if (loversStatus.WooCustomerId.HasValue && loversStatus.WooCustomerId.Value > 0)
+                        lblWooCustomerInfo.Text = "#" + loversStatus.WooCustomerId.Value
+                            + (string.IsNullOrWhiteSpace(loversStatus.Email) ? string.Empty : " — " + loversStatus.Email);
+                    else if (loversStatus.HasWooCustomer == false)
+                        lblWooCustomerInfo.Text = "Not found on shop";
+                    else
+                        lblWooCustomerInfo.Text = "Not checked yet";
+                }
+                if (lblWooShopRole != null)
+                    lblWooShopRole.Text = string.IsNullOrWhiteSpace(loversStatus.ShopRole) ? "—" : loversStatus.ShopRole;
+            }
+
+            if (trQuaffeeLoversStatus != null)
+                trQuaffeeLoversStatus.Visible = showLovers;
+            if (btnQuaffeeCheckWoo != null)
+                btnQuaffeeCheckWoo.Visible = showLovers;
+            if (btnQuaffeeInviteMember != null)
+                btnQuaffeeInviteMember.Visible = showLovers && loversStatus != null
+                    && loversStatus.ThresholdMet && !loversStatus.QuaffeeLoversMember;
+            if (btnQuaffeeForceMember != null)
+                btnQuaffeeForceMember.Visible = showLovers && loversStatus != null && !loversStatus.QuaffeeLoversMember;
+            if (btnQuaffeeDisableMember != null)
+                btnQuaffeeDisableMember.Visible = showLovers && loversStatus != null && loversStatus.QuaffeeLoversMember;
+
+            if (!showLovers || lblQuaffeeLoversStatus == null || loversStatus == null)
+            {
+                if (lblQuaffeeLoversStatus != null)
+                    lblQuaffeeLoversStatus.Visible = false;
+                if (lblQuaffeeLoversDetail != null)
+                    lblQuaffeeLoversDetail.Visible = false;
+            }
+            else
+            {
+                lblQuaffeeLoversStatus.Visible = true;
+                lblQuaffeeLoversStatus.Text = HttpUtility.HtmlEncode(loversStatus.StatusLabel ?? string.Empty);
+                lblQuaffeeLoversStatus.ToolTip = loversStatus.StatusTooltip ?? string.Empty;
+                if (loversStatus.QuaffeeLoversMember)
+                    lblQuaffeeLoversStatus.CssClass = "status-badge is-done";
+                else if (loversStatus.ThresholdMet)
+                    lblQuaffeeLoversStatus.CssClass = "status-badge is-pending";
+                else if (loversStatus.HasWooCustomer == false)
+                    lblQuaffeeLoversStatus.CssClass = "status-badge is-disabled";
+                else
+                    lblQuaffeeLoversStatus.CssClass = "status-badge";
+
+                if (lblQuaffeeLoversDetail != null)
+                {
+                    var parts = new List<string>();
+                    if (loversStatus.WelcomeEmailSentUtc.HasValue)
+                        parts.Add("Welcome " + loversStatus.WelcomeEmailSentUtc.Value.ToString("yyyy-MM-dd"));
+                    if (loversStatus.RoleGrantedUtc.HasValue)
+                        parts.Add("Role granted " + loversStatus.RoleGrantedUtc.Value.ToString("yyyy-MM-dd"));
+                    if (parts.Count > 0)
+                    {
+                        lblQuaffeeLoversDetail.Visible = true;
+                        lblQuaffeeLoversDetail.Text = string.Join(" · ", parts);
+                    }
+                    else
+                    {
+                        lblQuaffeeLoversDetail.Visible = false;
+                        lblQuaffeeLoversDetail.Text = string.Empty;
+                    }
+                }
+            }
+
+            if (IsPostBack && uppnlTabContainer != null)
+                uppnlTabContainer.Update();
+        }
+
         protected void btnInvitePortal_Click(object sender, EventArgs e)
         {
             try
@@ -2145,7 +2317,7 @@ namespace TrackerSQL.Pages
                 BindPortalEmailConflicts(result.OtherContacts);
                 NotifyForceAction("Invite to portal", message ?? (ok ? "Invite sent." : "Invite failed."), !ok);
                 if (ok)
-                    UpdatePortalInviteButton(contactId);
+                    BindSettingsTab(contactId);
             }
             catch (Exception ex)
             {

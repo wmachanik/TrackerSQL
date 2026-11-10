@@ -21,11 +21,40 @@ namespace TrackerSQL.Managers
         private static readonly ConcurrentDictionary<string, string> PreferredAuthByStore =
             new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Final store URL after HTTP redirects (Basic auth is dropped by default on redirect).</summary>
+        private static readonly ConcurrentDictionary<string, string> CanonicalStoreBaseUrlByStore =
+            new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         public class ApiCredentials
         {
             public string StoreBaseUrl { get; set; }
             public string ConsumerKey { get; set; }
             public string ConsumerSecret { get; set; }
+        }
+
+        /// <summary>WordPress user + application password for wp/v2/users role changes.</summary>
+        public class WordPressRoleCredentials
+        {
+            public string StoreBaseUrl { get; set; }
+            public string Username { get; set; }
+            public string ApplicationPassword { get; set; }
+        }
+
+        public class WordPressRoleTestResult
+        {
+            public bool Succeeded { get; set; }
+            public string Detail { get; set; }
+            public long? UserId { get; set; }
+            public string UserName { get; set; }
+            public string Roles { get; set; }
+        }
+
+        /// <summary>WP application passwords are often shown with spaces — strip them for Basic auth.</summary>
+        public static string NormalizeApplicationPassword(string password)
+        {
+            return string.IsNullOrWhiteSpace(password)
+                ? password
+                : password.Replace(" ", string.Empty).Trim();
         }
 
         public class ConnectionTestResult
@@ -207,6 +236,58 @@ namespace TrackerSQL.Managers
             if (url.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase))
                 url = url.Substring(0, url.Length - "/wp-json".Length).TrimEnd('/');
             return url;
+        }
+
+        /// <summary>
+        /// Resolves redirects (www/non-www, http→https) so Basic application-password auth hits the final host.
+        /// Woo query-string keys survive redirects; Authorization headers do not unless we follow manually.
+        /// </summary>
+        public static string ResolveCanonicalStoreBaseUrl(string storeBaseUrl)
+        {
+            string key = NormalizeStoreBaseUrl(storeBaseUrl);
+            if (string.IsNullOrEmpty(key))
+                return key;
+            return CanonicalStoreBaseUrlByStore.GetOrAdd(key, ProbeCanonicalStoreBaseUrl);
+        }
+
+        private static string ProbeCanonicalStoreBaseUrl(string storeBaseUrl)
+        {
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            string url = storeBaseUrl.TrimEnd('/') + "/wp-json/";
+            const int maxRedirects = 6;
+            for (int i = 0; i <= maxRedirects; i++)
+            {
+                using (var handler = new HttpClientHandler { AllowAutoRedirect = false })
+                using (var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) })
+                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("TrackerSQL-WooClient/3.0");
+                using (HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult())
+                {
+                if ((int)response.StatusCode >= 300 && (int)response.StatusCode < 400 && i < maxRedirects)
+                {
+                    Uri next = response.Headers.Location;
+                    if (next == null)
+                        break;
+                    if (!next.IsAbsoluteUri)
+                        next = new Uri(new Uri(url), next);
+                    url = next.ToString();
+                    continue;
+                }
+
+                try
+                {
+                    var uri = new Uri(url);
+                    return NormalizeStoreBaseUrl(uri.GetLeftPart(UriPartial.Authority));
+                }
+                catch
+                {
+                    return storeBaseUrl;
+                }
+                }
+                }
+            }
+            return storeBaseUrl;
         }
 
         public static string SuggestAdminUrl(string storeBaseUrl)

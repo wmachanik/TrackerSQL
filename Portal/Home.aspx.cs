@@ -6,7 +6,7 @@ namespace TrackerSQL.Portal
 {
     public partial class Home : PortalPageBase
     {
-        protected Literal litName, litNextCoffee;
+        protected Literal litName, litQuaffeeLovers, litNextCoffee;
         protected LinkButton lnkSignOutCard;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -17,6 +17,7 @@ namespace TrackerSQL.Portal
                 !string.IsNullOrWhiteSpace(c?.CompanyName)
                     ? c.CompanyName
                     : (c?.ContactFirstName ?? "there"));
+            litQuaffeeLovers.Text = QuaffeeLoversMemberHtml();
             litNextCoffee.Text = NextCoffeeHtml();
         }
 

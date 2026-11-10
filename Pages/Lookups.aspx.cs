@@ -51,6 +51,12 @@ namespace TrackerSQL.Pages
         protected Button btnEquipGo;
         protected Button btnEquipReset;
         protected GridView gvEquipment;
+        protected TabPanel tabpnlContactTypes;
+        protected UpdatePanel upnlContactTypes;
+        protected TextBox tbxContactTypeSearch;
+        protected Button btnContactTypeGo;
+        protected Button btnContactTypeReset;
+        protected GridView gvContactTypes;
         protected TabPanel tabpnlAreas;
         protected UpdatePanel upnlAreas;
         protected TextBox tbxAreaSearch;
@@ -159,6 +165,7 @@ namespace TrackerSQL.Pages
                 // Manual binding for remaining tabs (ObjectDataSource removed)
                 BindPeopleGrid();
                 BindEquipmentGrid();
+                BindContactTypesGrid();
                 BindPackagingGrid();
                 BindInvoiceTypesGrid();
                 BindPaymentTermsGrid();
@@ -212,6 +219,16 @@ namespace TrackerSQL.Pages
                 for (int i = 0; i < tabcLookup.Tabs.Count; i++)
                 {
                     if (tabcLookup.Tabs[i] == tabpnlDriverOptions)
+                        return i;
+                }
+            }
+
+            if (string.Equals(key, "Contact Types", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(key, "ContactTypes", StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 0; i < tabcLookup.Tabs.Count; i++)
+                {
+                    if (tabcLookup.Tabs[i] == tabpnlContactTypes)
                         return i;
                 }
             }
@@ -405,6 +422,146 @@ namespace TrackerSQL.Pages
         protected void tbxEquipSearch_TextChanged(object sender, EventArgs e)
         {
             btnEquipGo_Click(sender, e);
+        }
+
+        private void BindContactTypesGrid()
+        {
+            try
+            {
+                var repo = new ContactTypesRepository();
+                string sortBy = ViewState["ContactTypesSortExpression"] as string ?? "ContactTypeDesc";
+                var types = repo.GetAll(sortBy);
+
+                string searchFilter = tbxContactTypeSearch != null
+                    ? tbxContactTypeSearch.Text.Trim()
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    types = types.Where(t =>
+                        (t.ContactTypeDesc != null
+                            && t.ContactTypeDesc.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        || (t.Notes != null
+                            && t.Notes.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0))
+                        .ToList();
+                }
+
+                gvContactTypes.DataSource = types;
+                gvContactTypes.DataBind();
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = "Error loading contact types: " + ex.Message;
+            }
+        }
+
+        protected void btnContactTypeGo_Click(object sender, EventArgs e)
+        {
+            gvContactTypes.EditIndex = -1;
+            gvContactTypes.PageIndex = 0;
+            BindContactTypesGrid();
+        }
+
+        protected void btnContactTypeReset_Click(object sender, EventArgs e)
+        {
+            if (tbxContactTypeSearch != null)
+                tbxContactTypeSearch.Text = string.Empty;
+            gvContactTypes.EditIndex = -1;
+            gvContactTypes.PageIndex = 0;
+            BindContactTypesGrid();
+        }
+
+        protected void tbxContactTypeSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnContactTypeGo_Click(sender, e);
+        }
+
+        protected void gvContactTypes_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvContactTypes.PageIndex = e.NewPageIndex;
+            BindContactTypesGrid();
+        }
+
+        protected void gvContactTypes_Sorting(object sender, GridViewSortEventArgs e)
+        {
+            ViewState["ContactTypesSortExpression"] = e.SortExpression;
+            BindContactTypesGrid();
+        }
+
+        protected void gvContactTypes_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvContactTypes.EditIndex = e.NewEditIndex;
+            BindContactTypesGrid();
+        }
+
+        protected void gvContactTypes_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvContactTypes.EditIndex = -1;
+            BindContactTypesGrid();
+        }
+
+        protected void gvContactTypes_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                int contactTypeId = Convert.ToInt32(gvContactTypes.DataKeys[e.RowIndex].Value);
+                GridViewRow row = gvContactTypes.Rows[e.RowIndex];
+
+                var tbxDesc = (TextBox)row.FindControl("ContactTypeDescTextBox");
+                var tbxNotes = (TextBox)row.FindControl("ContactTypeNotesTextBox");
+                var cbxCollection = (CheckBox)row.FindControl("cbxCtCollectionOnly");
+
+                var contactType = new ContactType
+                {
+                    ContactTypeID = contactTypeId,
+                    ContactTypeDesc = tbxDesc?.Text ?? string.Empty,
+                    Notes = tbxNotes?.Text ?? string.Empty,
+                    DriverCollectionOnly = cbxCollection != null && cbxCollection.Checked
+                };
+
+                new ContactTypesRepository().Update(contactType);
+
+                gvContactTypes.EditIndex = -1;
+                BindContactTypesGrid();
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = "Error updating contact type: " + ex.Message;
+            }
+        }
+
+        protected void gvContactTypes_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+            GridPager.BuildPager(gvContactTypes, e.Row);
+        }
+
+        protected void gvContactTypes_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (!e.CommandName.Equals("Insert"))
+                return;
+            try
+            {
+                if (gvContactTypes.FooterRow == null)
+                    return;
+
+                var tbxDesc = (TextBox)gvContactTypes.FooterRow.FindControl("ContactTypeDescTextBox");
+                var tbxNotes = (TextBox)gvContactTypes.FooterRow.FindControl("ContactTypeNotesTextBox");
+                var cbxCollection = (CheckBox)gvContactTypes.FooterRow.FindControl("cbxCtCollectionOnlyFooter");
+
+                var contactType = new ContactType
+                {
+                    ContactTypeDesc = tbxDesc?.Text ?? string.Empty,
+                    Notes = tbxNotes?.Text ?? string.Empty,
+                    DriverCollectionOnly = cbxCollection != null && cbxCollection.Checked
+                };
+
+                new ContactTypesRepository().Insert(contactType);
+                BindContactTypesGrid();
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = "Error adding contact type: " + ex.Message;
+            }
         }
 
         private void BindPackagingGrid()

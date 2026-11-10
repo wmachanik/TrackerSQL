@@ -11,6 +11,7 @@ namespace TrackerSQL.Repositories
     {
         private static bool _landlineSeen;
         private static bool _termsSeen;
+        private static bool _supplierTypeSeen;
 
         /// <summary>MobileApiSettingsTbl.LandlinePrefixes (SQLCommands-DriverGps-02.xml); only a positive answer is cached.</summary>
         private static bool LandlineColumnExists()
@@ -26,6 +27,13 @@ namespace TrackerSQL.Repositories
             if (!_termsSeen)
                 _termsSeen = ColumnExists("DeliveryTerms");
             return _termsSeen;
+        }
+
+        private static bool SupplierTypeColumnExists()
+        {
+            if (!_supplierTypeSeen)
+                _supplierTypeSeen = ColumnExists("SupplierCollectionContactTypeID");
+            return _supplierTypeSeen;
         }
 
         private static bool ColumnExists(string column)
@@ -47,10 +55,12 @@ namespace TrackerSQL.Repositories
         {
             bool landline = LandlineColumnExists();
             bool terms = TermsColumnsExist();
+            bool supplierType = SupplierTypeColumnExists();
             string sql = @"
 SELECT RunDoneOnDelivery, SendDeliveryConfirmation, AllowNotesToOffice, OfficeEmail, UpdatedAt, UpdatedBy"
                 + (landline ? ", LandlinePrefixes" : string.Empty)
-                + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty) + @"
+                + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty)
+                + (supplierType ? ", SupplierCollectionContactTypeID" : string.Empty) + @"
 FROM MobileApiSettingsTbl WHERE SettingsID = 1";
 
             using (var db = new TrackerSQLDb())
@@ -68,6 +78,8 @@ FROM MobileApiSettingsTbl WHERE SettingsID = 1";
                     LandlinePrefixes = landline && rdr["LandlinePrefixes"] != DBNull.Value ? rdr["LandlinePrefixes"].ToString() : null,
                     DeliveryTerms = terms && rdr["DeliveryTerms"] != DBNull.Value ? rdr["DeliveryTerms"].ToString() : null,
                     TermsUrl = terms && rdr["TermsUrl"] != DBNull.Value ? rdr["TermsUrl"].ToString() : null,
+                    SupplierCollectionContactTypeId = supplierType && rdr["SupplierCollectionContactTypeID"] != DBNull.Value
+                        ? (int?)Convert.ToInt32(rdr["SupplierCollectionContactTypeID"]) : null,
                     UpdatedAt = Convert.ToDateTime(rdr["UpdatedAt"]),
                     UpdatedBy = rdr["UpdatedBy"] == DBNull.Value ? null : rdr["UpdatedBy"].ToString()
                 };
@@ -78,10 +90,14 @@ FROM MobileApiSettingsTbl WHERE SettingsID = 1";
         {
             bool landline = LandlineColumnExists();
             bool terms = TermsColumnsExist();
+            bool supplierType = SupplierTypeColumnExists();
             string extraSet = (landline ? ", LandlinePrefixes = @Landline" : string.Empty)
-                + (terms ? ", DeliveryTerms = @Terms, TermsUrl = @TermsUrl" : string.Empty);
-            string extraCols = (landline ? ", LandlinePrefixes" : string.Empty) + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty);
-            string extraVals = (landline ? ", @Landline" : string.Empty) + (terms ? ", @Terms, @TermsUrl" : string.Empty);
+                + (terms ? ", DeliveryTerms = @Terms, TermsUrl = @TermsUrl" : string.Empty)
+                + (supplierType ? ", SupplierCollectionContactTypeID = @SupplierType" : string.Empty);
+            string extraCols = (landline ? ", LandlinePrefixes" : string.Empty) + (terms ? ", DeliveryTerms, TermsUrl" : string.Empty)
+                + (supplierType ? ", SupplierCollectionContactTypeID" : string.Empty);
+            string extraVals = (landline ? ", @Landline" : string.Empty) + (terms ? ", @Terms, @TermsUrl" : string.Empty)
+                + (supplierType ? ", @SupplierType" : string.Empty);
             string sql = @"
 IF EXISTS (SELECT 1 FROM MobileApiSettingsTbl WHERE SettingsID = 1)
     UPDATE MobileApiSettingsTbl
@@ -108,6 +124,16 @@ ELSE
             {
                 ps.Add(new DBParameter { ParamName = "@Terms", DataValue = (object)NullIfEmpty(settings.DeliveryTerms, 1000) ?? DBNull.Value, DataDbType = DbType.String });
                 ps.Add(new DBParameter { ParamName = "@TermsUrl", DataValue = (object)NullIfEmpty(settings.TermsUrl, 300) ?? DBNull.Value, DataDbType = DbType.String });
+            }
+            if (supplierType)
+            {
+                ps.Add(new DBParameter
+                {
+                    ParamName = "@SupplierType",
+                    DataValue = settings.SupplierCollectionContactTypeId.HasValue && settings.SupplierCollectionContactTypeId.Value > 0
+                        ? (object)settings.SupplierCollectionContactTypeId.Value : DBNull.Value,
+                    DataDbType = DbType.Int32
+                });
             }
             using (var db = new TrackerSQLDb())
                 return db.ExecuteNonQuery(sql, ps) > 0;

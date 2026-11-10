@@ -45,6 +45,16 @@
                             add to, reword, reorder or switch off. Changes reach the phones the next time they have signal.</div>
                     </td>
                 </tr>
+                <tr>
+                    <td class="sys-prefs-label">Supplier collections</td>
+                    <td class="sys-prefs-field">
+                        <a href="../Pages/Lookups.aspx?tab=Contact%20Types">Lookups → Contact Types</a>
+                        <div class="driver-app-help">Tick <strong>Collection only</strong> on a contact type (e.g. Supplier) so route stops
+                            for contacts of that type are <strong>supplier pickups</strong> on the driver's route:
+                            they record <em>Collected</em> with who handed goods over — no client signature or terms.
+                            Assign the type on each contact in Contact Details.</div>
+                    </td>
+                </tr>
             </table>
 
             <h4 class="gps-settings-heading">Signature and Terms</h4>

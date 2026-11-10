@@ -9,6 +9,7 @@
             View your details, orders, repairs and recurring orders.
             You can update some of your details directly; anything else can be sent to us as a change request.
         </p>
+        <asp:Literal ID="litQuaffeeLovers" runat="server" />
         <asp:Literal ID="litNextCoffee" runat="server" />
     </div>
     <div class="home-dashboard portal-dashboard">

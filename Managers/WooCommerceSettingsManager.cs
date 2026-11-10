@@ -120,6 +120,12 @@ namespace TrackerSQL.Managers
             return !string.IsNullOrEmpty(s?.ConsumerSecretEncrypted);
         }
 
+        public bool HasSavedWordPressRoleAppPassword()
+        {
+            var s = GetSettings();
+            return !string.IsNullOrEmpty(s?.WordPressRoleGrantAppPasswordEncrypted);
+        }
+
         public void SaveConnectionSettings(
             string storeUrl,
             string adminUrl,
@@ -280,6 +286,141 @@ namespace TrackerSQL.Managers
             return true;
         }
 
+        public class ShopIntegrationVerifyResult
+        {
+            public bool WooApiOk { get; set; }
+            public string WooApiMessage { get; set; }
+            public bool TrackerRoleEndpointOk { get; set; }
+            public string TrackerRoleEndpointMessage { get; set; }
+            public bool WordPressRoleOk { get; set; }
+            public string WordPressRoleMessage { get; set; }
+            public long? WordPressUserId { get; set; }
+            public string WordPressRoles { get; set; }
+
+            /// <summary>Role grant works with Woo keys (mu-plugin) and/or WordPress application password.</summary>
+            public bool RoleGrantOk => TrackerRoleEndpointOk || WordPressRoleOk;
+
+            public bool AllOk => WooApiOk && RoleGrantOk;
+
+            public string Summary =>
+                string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "Woo API: {0}. Role grant API (Woo keys): {1}. WordPress app password: {2}.",
+                    WooApiOk ? "OK" : (WooApiMessage ?? "failed"),
+                    TrackerRoleEndpointOk ? "OK" : (TrackerRoleEndpointMessage ?? "not available"),
+                    WordPressRoleOk ? "OK" : (WordPressRoleMessage ?? "not configured / failed"));
+        }
+
+        /// <summary>
+        /// Tests stored Woo REST keys and WordPress role-login (typed overrides or saved values).
+        /// </summary>
+        public ShopIntegrationVerifyResult VerifyShopIntegration(
+            string wordPressUsernameOverride,
+            string wordPressAppPasswordOverride,
+            string updatedBy)
+        {
+            var result = new ShopIntegrationVerifyResult();
+            EnsureSchema();
+
+            var wooTest = TestConnection(null, null, null, updatedBy ?? "verify");
+            result.WooApiOk = wooTest.Succeeded;
+            result.WooApiMessage = wooTest.Detail
+                ?? (wooTest.Succeeded ? "WooCommerce API connection OK." : "WooCommerce API connection failed.");
+
+            if (TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials wooCreds, out _))
+            {
+                var trackerTest = _api.TestTrackerRoleEndpoint(wooCreds);
+                result.TrackerRoleEndpointOk = trackerTest.Succeeded;
+                result.TrackerRoleEndpointMessage = trackerTest.Detail;
+                if (trackerTest.UserId.HasValue)
+                    result.WordPressUserId = trackerTest.UserId;
+                if (!string.IsNullOrWhiteSpace(trackerTest.Roles))
+                    result.WordPressRoles = trackerTest.Roles;
+            }
+            else
+            {
+                result.TrackerRoleEndpointMessage = "Woo API keys not available in settings.";
+            }
+
+            var settings = GetSettings();
+            string wpUser = !string.IsNullOrWhiteSpace(wordPressUsernameOverride)
+                ? wordPressUsernameOverride.Trim()
+                : (settings.WordPressRoleGrantUsername ?? string.Empty).Trim();
+            string wpPass = !string.IsNullOrWhiteSpace(wordPressAppPasswordOverride)
+                ? wordPressAppPasswordOverride
+                : DecryptOrEmpty(settings.WordPressRoleGrantAppPasswordEncrypted);
+            wpPass = WooCommerceApiClient.NormalizeApplicationPassword(wpPass);
+
+            if (string.IsNullOrWhiteSpace(wpUser) || string.IsNullOrWhiteSpace(wpPass))
+            {
+                result.WordPressRoleOk = false;
+                result.WordPressRoleMessage = result.TrackerRoleEndpointOk
+                    ? "Not needed — role grant API (Woo keys) is OK."
+                    : "Not configured — install the Tracker mu-plugin on the shop "
+                      + "(Documentation/WooIntegration/wordpress-mu-plugin-tracker-user-roles.php) "
+                      + "or save a WordPress application password.";
+                return result;
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.StoreBaseUrl))
+            {
+                result.WordPressRoleOk = false;
+                result.WordPressRoleMessage = "Store URL is not saved.";
+                return result;
+            }
+
+            string canonicalStore = WooCommerceApiClient.ResolveCanonicalStoreBaseUrl(settings.StoreBaseUrl);
+            var wpTest = _api.TestWordPressRoleConnection(new WooCommerceApiClient.WordPressRoleCredentials
+            {
+                StoreBaseUrl = canonicalStore,
+                Username = wpUser,
+                ApplicationPassword = wpPass
+            });
+            if (wpTest.Succeeded && !string.Equals(canonicalStore, settings.StoreBaseUrl, StringComparison.OrdinalIgnoreCase))
+                wpTest.Detail += " (store URL resolved to " + canonicalStore + " after redirect).";
+            result.WordPressRoleOk = wpTest.Succeeded;
+            result.WordPressRoleMessage = wpTest.Detail;
+            if (wpTest.UserId.HasValue)
+                result.WordPressUserId = wpTest.UserId;
+            if (!string.IsNullOrWhiteSpace(wpTest.Roles))
+                result.WordPressRoles = wpTest.Roles;
+            return result;
+        }
+
+        public bool TryGetWordPressRoleCredentials(out WooCommerceApiClient.WordPressRoleCredentials creds, out string error)
+        {
+            creds = null;
+            error = null;
+            if (!IsSchemaReady())
+            {
+                error = "WooCommerce tables are not ready.";
+                return false;
+            }
+            var settings = GetSettings();
+            if (string.IsNullOrWhiteSpace(settings?.StoreBaseUrl))
+            {
+                error = "Store URL must be saved first.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(settings.WordPressRoleGrantUsername))
+            {
+                error = "WordPress username for role changes is not configured.";
+                return false;
+            }
+            string pass = DecryptOrEmpty(settings.WordPressRoleGrantAppPasswordEncrypted);
+            if (string.IsNullOrWhiteSpace(pass))
+            {
+                error = "WordPress application password for role changes is not configured.";
+                return false;
+            }
+            creds = new WooCommerceApiClient.WordPressRoleCredentials
+            {
+                StoreBaseUrl = WooCommerceApiClient.ResolveCanonicalStoreBaseUrl(settings.StoreBaseUrl),
+                Username = settings.WordPressRoleGrantUsername.Trim(),
+                ApplicationPassword = WooCommerceApiClient.NormalizeApplicationPassword(pass)
+            };
+            return true;
+        }
+
         public void SaveCategoryFilterMode(string mode, string updatedBy)
         {
             EnsureSchema();
@@ -373,11 +514,25 @@ namespace TrackerSQL.Managers
             bool writeExpectedDeliveryToWoo,
             bool checkNewOrdersOnNewOrder,
             bool completeWooOrderOnDone,
+            bool quaffeeLoversEnabled,
+            int quaffeeLoversOrderThreshold,
+            string quaffeeLoversWooRole,
+            string wordPressRoleGrantUsername,
+            string wordPressRoleGrantAppPasswordPlain,
+            bool replaceWordPressRoleAppPassword,
             string updatedBy)
         {
             EnsureSchema();
             var settings = _settingsRepo.GetSettings();
             settings.CompleteWooOrderOnDone = completeWooOrderOnDone;
+            settings.QuaffeeLoversEnabled = quaffeeLoversEnabled;
+            settings.QuaffeeLoversOrderThreshold = quaffeeLoversOrderThreshold > 0 ? quaffeeLoversOrderThreshold : 3;
+            settings.QuaffeeLoversWooRole = NormalizeQuaffeeLoversRole(quaffeeLoversWooRole);
+            settings.WordPressRoleGrantUsername = (wordPressRoleGrantUsername ?? string.Empty).Trim();
+            if (replaceWordPressRoleAppPassword && !string.IsNullOrWhiteSpace(wordPressRoleGrantAppPasswordPlain))
+                settings.WordPressRoleGrantAppPasswordEncrypted =
+                    WooCommerceSecretProtector.Encrypt(
+                        WooCommerceApiClient.NormalizeApplicationPassword(wordPressRoleGrantAppPasswordPlain));
             settings.ImportCompanyNameMode = NormalizeCompanyNameMode(companyNameMode);
             settings.ImportNoteLineFormat = NormalizeNoteLineFormat(noteLineFormat);
             settings.AppendTrackingToOrderNotes = appendTrackingToOrderNotes;
@@ -400,6 +555,12 @@ namespace TrackerSQL.Managers
             if (string.Equals(mode, "UpdateName", StringComparison.OrdinalIgnoreCase))
                 return "UpdateName";
             return "CareOfPrefix";
+        }
+
+        public static string NormalizeQuaffeeLoversRole(string role)
+        {
+            string r = (role ?? string.Empty).Trim().ToLowerInvariant();
+            return string.IsNullOrEmpty(r) ? "member" : r;
         }
 
         public static string NormalizeNoteLineFormat(string format)

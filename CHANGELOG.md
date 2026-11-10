@@ -2,9 +2,22 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.15 — in progress
+## 3.0.4.1 — 2026-11-10
 
-_(Development; bump `Web.config` / `AssemblyInfo` / `Web.config.example` to **3.0.3.15**.)_
+**Quaffee Driver:** 0.5.8 (unchanged).
+
+### Features and fixes
+
+- **Quaffee Lovers** — After N Woo-imported orders, grant the shop member role and send a welcome email. Settings on WooCommerce Mapping; invite tool (`Tools/QuaffeeLoversInvite.aspx`); Contact Details **Settings** tab with Check Woo, Invite, Force member, and Disable. Schema `SQLCommands-WooCommerce-06.xml` (`QuaffeeLoversGrantTbl`, settings columns, `WooContactInfoTbl` member flags).
+- **Shop member roles** — WordPress mu-plugin (`Documentation/WooIntegration/wordpress-mu-plugin-tracker-user-roles.php`) grants/removes roles via Woo API keys (`wc-tracker/v1/users/roles`). Optional WP application-password fields in `SQLCommands-WooCommerce-07.xml`. **Verify shop login** on Woo Mapping and Contact Details. Member status reflects the **actual shop role**, not Tracker grant/email flags alone.
+- **Contact Details** — Portal and Woo sections moved to **Settings** tab (first tab); Stati stay on the main form.
+- **Portal** — Home shows a Quaffee Lovers member banner when the contact has the member role on the shop.
+- **Supplier collections** — Contact type **Supplier** with **Collection only** (Lookups → Contact Types). Driver app can show supplier pickups (`SQLCommands-DriverGps-17.xml`, `-18.xml`). Optional data pack `SQLCommands-SupplierContacts-01.xml` tags known suppliers.
+
+### Go-live notes
+
+- Back up live OtterDb. Publish `bin/` and changed pages/managers. Upload `App_Data/SQLCommands-WooCommerce-06.xml`, `-07.xml`, `SQLCommands-DriverGps-17.xml`, `-18.xml`, and `SQLCommands-SupplierContacts-01.xml` (GoLive copies optional). Copy the WordPress mu-plugin to `wp-content/mu-plugins/` on the shop.
+- Live `Web.config` **`Version` → 3.0.4.1** only. Recycle; check `/api/v1/ping`. Open Woo Mapping once (schema 06/07). Run **SupplierContacts-01** via XMLtoSQL if you want supplier contacts auto-tagged. Enable Quaffee Lovers; **Verify shop login** → Role grant API OK.
 
 ## 3.0.3.14 — 2026-11-10
 

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Supplier contacts + driver "collection only" (3.0.4.1).
+
+  Run manually: System Tools → XML to SQL → SQLCommands-SupplierContacts-01.xml
+  Safe to re-run; each step is idempotent.
+
+  Does:
+  - Ensures Contact Types "Supplier" exists
+  - Adds ContactTypesTbl.DriverCollectionOnly when missing (Lookups → Contact Types → Collection only)
+  - Ticks Collection only on Supplier
+  - Sets contact type Supplier on Zuka, Marunic, Float, Cape Coffee (not Cape Coffee Beans — that is a client)
+-->
+<root>
+  <command type="select">
+    <![CDATA[
+      SELECT c.ContactID, c.CompanyName, c.ContactTypeID, ct.ContactTypeDesc
+      FROM dbo.ContactsTbl c
+      LEFT JOIN dbo.ContactTypesTbl ct ON ct.ContactTypeID = c.ContactTypeID
+      WHERE c.CompanyName LIKE N'%Zuka%'
+         OR c.CompanyName LIKE N'%Marunic%'
+         OR c.CompanyName LIKE N'%Float%'
+         OR (c.CompanyName LIKE N'%Cape Coffee%' AND c.CompanyName NOT LIKE N'%Beans%')
+      ORDER BY c.CompanyName;
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.ContactTypesTbl WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier')
+      BEGIN
+          INSERT INTO dbo.ContactTypesTbl (ContactTypeDesc) VALUES (N'Supplier');
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NULL
+      BEGIN
+          ALTER TABLE dbo.ContactTypesTbl
+              ADD DriverCollectionOnly BIT NOT NULL
+              CONSTRAINT DF_ContactTypesTbl_DriverCollectionOnly DEFAULT (0);
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NOT NULL
+      BEGIN
+          UPDATE dbo.ContactTypesTbl
+          SET DriverCollectionOnly = 1
+          WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier';
+      END
+    ]]>
+  </command>
+
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.ContactTypesTbl', N'U') IS NOT NULL
+         AND OBJECT_ID(N'dbo.ContactsTbl', N'U') IS NOT NULL
+      BEGIN
+          DECLARE @SupplierTypeId INT = (
+              SELECT TOP 1 ContactTypeID FROM dbo.ContactTypesTbl
+              WHERE LTRIM(RTRIM(ContactTypeDesc)) = N'Supplier'
+              ORDER BY ContactTypeID);
+
+          IF @SupplierTypeId IS NOT NULL
+          BEGIN
+              -- Cape Coffee Beans is a client; clear if it was tagged Supplier by an older broad match
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = NULL
+              WHERE ContactTypeID = @SupplierTypeId
+                AND CompanyName LIKE N'%Cape Coffee Beans%';
+
+              UPDATE dbo.ContactsTbl
+              SET ContactTypeID = @SupplierTypeId
+              WHERE (ContactTypeID IS NULL OR ContactTypeID <> @SupplierTypeId)
+                AND (
+                    CompanyName LIKE N'%Zuka%'
+                    OR CompanyName LIKE N'%Marunic%'
+                    OR CompanyName LIKE N'%Float%'
+                    OR (CompanyName LIKE N'%Cape Coffee%' AND CompanyName NOT LIKE N'%Beans%')
+                );
+          END
+      END
+    ]]>
+  </command>
+
+  <command type="select">
+    <![CDATA[
+      SELECT ct.ContactTypeID, ct.ContactTypeDesc,
+             ISNULL(ct.DriverCollectionOnly, 0) AS DriverCollectionOnly,
+             (SELECT COUNT(*) FROM dbo.ContactsTbl c WHERE c.ContactTypeID = ct.ContactTypeID) AS ContactCount
+      FROM dbo.ContactTypesTbl ct
+      WHERE LTRIM(RTRIM(ct.ContactTypeDesc)) = N'Supplier'
+         OR ISNULL(ct.DriverCollectionOnly, 0) = 1
+      ORDER BY ct.ContactTypeDesc;
+
+      SELECT c.ContactID, c.CompanyName, ct.ContactTypeDesc
+      FROM dbo.ContactsTbl c
+      LEFT JOIN dbo.ContactTypesTbl ct ON ct.ContactTypeID = c.ContactTypeID
+      WHERE c.CompanyName LIKE N'%Zuka%'
+         OR c.CompanyName LIKE N'%Marunic%'
+         OR c.CompanyName LIKE N'%Float%'
+         OR (c.CompanyName LIKE N'%Cape Coffee%' AND c.CompanyName NOT LIKE N'%Beans%')
+      ORDER BY c.CompanyName;
+    ]]>
+  </command>
+</root>

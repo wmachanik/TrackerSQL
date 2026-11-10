@@ -243,6 +243,7 @@
     <Content Include="Tools\DeliveryPromiseRules.aspx" />
     <Content Include="Tools\PostalAreaSetup.aspx" />
     <Content Include="Tools\ContactPostalFill.aspx" />
+    <Content Include="Tools\QuaffeeLoversInvite.aspx" />
     <Content Include="Tools\WooOrderImport.aspx" />
     <Content Include="Pages\ItemGroups.aspx" />
     <Content Include="Pages\LeaveApp.aspx" />
@@ -300,6 +301,8 @@
     <Content Include="App_Data\SQLCommands-WooCommerce-03.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-04.xml" />
     <Content Include="App_Data\SQLCommands-WooCommerce-05.xml" />
+    <Content Include="App_Data\SQLCommands-WooCommerce-06.xml" />
+    <Content Include="App_Data\SQLCommands-WooCommerce-07.xml" />
     <Content Include="App_Data\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DeliveryPromise-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-CourierServices-01.xml" />
@@ -366,6 +369,10 @@
     <Content Include="App_Data\SQLCommands-DriverGps-13.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-14.xml" />
     <Content Include="App_Data\SQLCommands-DriverGps-15.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-16.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-17.xml" />
+    <Content Include="App_Data\SQLCommands-DriverGps-18.xml" />
+    <Content Include="App_Data\SQLCommands-SupplierContacts-01.xml" />
     <Content Include="App_Data\SQLCommands-ClientMail-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-08.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-09.xml" />
@@ -375,12 +382,18 @@
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-13.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-14.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-15.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-16.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-17.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-DriverGps-18.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-SupplierContacts-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ClientMail-01.xml" />
     <Content Include="App_Data\SQLCommands-OrderDone-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-OrderDone-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-ContactChangeLog-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-04.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-05.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-06.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-07.xml" />
     <Content Include="Web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
@@ -1181,6 +1194,9 @@
     <Compile Include="Managers\WooCommerceApiClient.cs" />
     <Compile Include="Managers\WooCommerceApiClient.Catalog.cs" />
     <Compile Include="Managers\WooCommerceApiClient.Orders.cs" />
+    <Compile Include="Managers\WooCommerceApiClient.Customers.cs" />
+    <Compile Include="Managers\QuaffeeLoversMembershipManager.cs" />
+    <Compile Include="Managers\QuaffeeLoversEmailManager.cs" />
     <Compile Include="Managers\WooCommerceOrderImportManager.cs" />
     <Compile Include="Managers\WooImportAddressHelper.cs" />
     <Compile Include="Managers\DeliveryPromiseManager.cs" />
@@ -1210,6 +1226,9 @@
     <Compile Include="Models\DispatchPersonRow.cs" />
     <Compile Include="Models\OrderWaybill.cs" />
     <Compile Include="Models\WooOrderInfo.cs" />
+    <Compile Include="Models\WooContactInfo.cs" />
+    <Compile Include="Models\QuaffeeLoversGrant.cs" />
+    <Compile Include="Models\QuaffeeLoversModels.cs" />
     <Compile Include="Models\WooOrderImportPreview.cs" />
     <Compile Include="Models\WooContactUpdateOptions.cs" />
     <Compile Include="Models\DeliveryPromiseRule.cs" />
@@ -1228,6 +1247,8 @@
     <Compile Include="Repositories\WooPaymentMethodMapRepository.cs" />
     <Compile Include="Repositories\OrderWaybillRepository.cs" />
     <Compile Include="Repositories\WooOrderInfoRepository.cs" />
+    <Compile Include="Repositories\WooContactInfoRepository.cs" />
+    <Compile Include="Repositories\QuaffeeLoversGrantRepository.cs" />
     <Compile Include="Repositories\WooItemMappingRepository.cs" />
     <Compile Include="Repositories\WooAttributeMapRepository.cs" />
     <Compile Include="Repositories\WooAttributeParentRepository.cs" />
@@ -1250,6 +1271,13 @@
     </Compile>
     <Compile Include="Tools\ContactPostalFill.aspx.designer.cs">
       <DependentUpon>ContactPostalFill.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\QuaffeeLoversInvite.aspx.cs">
+      <DependentUpon>QuaffeeLoversInvite.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Tools\QuaffeeLoversInvite.aspx.designer.cs">
+      <DependentUpon>QuaffeeLoversInvite.aspx</DependentUpon>
     </Compile>
     <Compile Include="Tools\WooOrderImport.aspx.cs">
       <DependentUpon>WooOrderImport.aspx</DependentUpon>

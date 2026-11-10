@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Quaffee Lovers: auto Woo membership after N imported orders -->
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'QuaffeeLoversEnabled') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD QuaffeeLoversEnabled BIT NOT NULL
+              CONSTRAINT DF_WooSettings_QuaffeeLoversEnabled DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'QuaffeeLoversOrderThreshold') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD QuaffeeLoversOrderThreshold INT NOT NULL
+              CONSTRAINT DF_WooSettings_QuaffeeLoversThreshold DEFAULT (3);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'QuaffeeLoversWooRole') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooCommerceSettingsTbl ADD QuaffeeLoversWooRole NVARCHAR(64) NULL;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooCommerceSettingsTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooCommerceSettingsTbl', N'QuaffeeLoversWooRole') IS NOT NULL
+         AND NOT EXISTS (
+              SELECT 1 FROM dbo.WooCommerceSettingsTbl
+              WHERE SettingsID = 1
+                AND QuaffeeLoversWooRole IS NOT NULL
+                AND LTRIM(RTRIM(QuaffeeLoversWooRole)) <> N'')
+      BEGIN
+          UPDATE dbo.WooCommerceSettingsTbl
+          SET QuaffeeLoversWooRole = N'member'
+          WHERE SettingsID = 1;
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooContactInfoTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooContactInfoTbl', N'WooOrderCount') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooContactInfoTbl ADD WooOrderCount INT NOT NULL
+              CONSTRAINT DF_WooContactInfo_WooOrderCount DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooContactInfoTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooContactInfoTbl', N'QuaffeeLoversMember') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooContactInfoTbl ADD QuaffeeLoversMember BIT NOT NULL
+              CONSTRAINT DF_WooContactInfo_QuaffeeLovers DEFAULT (0);
+      END
+    ]]>
+  </command>
+  <command type="alter">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.WooContactInfoTbl', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.WooContactInfoTbl', N'QuaffeeLoversCheckedUtc') IS NULL
+      BEGIN
+          ALTER TABLE dbo.WooContactInfoTbl ADD QuaffeeLoversCheckedUtc DATETIME2 NULL;
+      END
+    ]]>
+  </command>
+  <command type="create">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.QuaffeeLoversGrantTbl', N'U') IS NULL
+      BEGIN
+          CREATE TABLE dbo.QuaffeeLoversGrantTbl
+          (
+              GrantID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_QuaffeeLoversGrantTbl PRIMARY KEY,
+              ContactID BIGINT NOT NULL,
+              WooCustomerId BIGINT NULL,
+              MatchEmail NVARCHAR(255) NULL,
+              WooOrderCount INT NOT NULL,
+              WooRoleAtGrant NVARCHAR(64) NULL,
+              AlreadyMemberOnWoo BIT NOT NULL CONSTRAINT DF_QuaffeeLovers_AlreadyMember DEFAULT (0),
+              RoleGrantedUtc DATETIME2 NULL,
+              WelcomeEmailSentUtc DATETIME2 NULL,
+              RecordedUtc DATETIME2 NOT NULL CONSTRAINT DF_QuaffeeLovers_Recorded DEFAULT (SYSUTCDATETIME()),
+              RecordedBy NVARCHAR(100) NULL,
+              InviteSentUtc DATETIME2 NULL,
+              InviteSentBy NVARCHAR(100) NULL,
+              DismissedUtc DATETIME2 NULL,
+              DismissedBy NVARCHAR(100) NULL,
+              Notes NVARCHAR(500) NULL
+          );
+          CREATE UNIQUE INDEX UX_QuaffeeLoversGrant_Contact
+              ON dbo.QuaffeeLoversGrantTbl (ContactID);
+      END
+    ]]>
+  </command>
+</root>

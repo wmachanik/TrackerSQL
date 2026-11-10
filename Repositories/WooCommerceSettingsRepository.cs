@@ -24,6 +24,8 @@ namespace TrackerSQL.Repositories
             "ImportNotesItemID, ImportCompanyNameMode, ImportNoteLineFormat, AppendTrackingToOrderNotes, " +
             "ImportAutoPullMode, ImportCollectShippingKeywords, ImportZzNameNoteLayout, ImportNotePartOrder, WriteExpectedDeliveryToWoo, " +
             "CheckNewOrdersOnNewOrder, CompleteWooOrderOnDone, " +
+            "QuaffeeLoversEnabled, QuaffeeLoversOrderThreshold, QuaffeeLoversWooRole, " +
+            "WordPressRoleGrantUsername, WordPressRoleGrantAppPasswordEncrypted, " +
             "UpdatedAt, UpdatedBy";
 
         public WooCommerceSettings GetSettings()
@@ -82,6 +84,8 @@ namespace TrackerSQL.Repositories
                 ImportCollectShippingKeywords = "collect,buiten",
                 CheckNewOrdersOnNewOrder = true,
                 CompleteWooOrderOnDone = true,
+                QuaffeeLoversOrderThreshold = 3,
+                QuaffeeLoversWooRole = "member",
                 ImportZzNameNoteLayout = "NameGearAddressMeta",
                 ImportNotePartOrder = "Name,Gear,Address,WooPay,Email,CustomerNote,ContactCreated",
                 ImportAddressDeduplicateSuburb = true,

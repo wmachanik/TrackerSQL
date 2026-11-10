@@ -363,5 +363,32 @@ IF OBJECT_ID(N'dbo.WooOrderInfoTbl', N'U') IS NOT NULL
                 info.ImportConflicts = rdr["ImportConflicts"] as string;
             return info;
         }
+
+        /// <summary>Distinct Woo-linked Tracker orders for a contact (excludes ZZName contact 9).</summary>
+        public int CountImportedOrdersForContact(int contactId)
+        {
+            if (!TableExists() || contactId <= 0
+                || contactId == (int)SystemConstants.CustomerConstants.SundryCustomerID)
+                return 0;
+
+            const string sql = @"
+SELECT COUNT(DISTINCT w.OrderID)
+FROM dbo.WooOrderInfoTbl w
+INNER JOIN dbo.OrdersTbl o ON o.OrderID = w.OrderID
+WHERE o.ContactID = @ContactID";
+
+            try
+            {
+                using (var db = new TrackerSQLDb())
+                    return db.ExecuteScalar<int>(sql, new List<DBParameter>
+                    {
+                        new DBParameter { ParamName = "@ContactID", DataValue = contactId, DataDbType = DbType.Int32 }
+                    });
+            }
+            catch
+            {
+                return 0;
+            }
+        }
 }
 }

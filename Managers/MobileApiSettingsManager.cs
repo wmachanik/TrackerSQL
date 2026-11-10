@@ -108,6 +108,18 @@ namespace TrackerSQL.Managers
             return string.IsNullOrWhiteSpace(url) ? DefaultTermsUrl : url.Trim();
         }
 
+        /// <summary>Contact types marked collection-only: driver records collection, no signature.</summary>
+        public static bool IsSupplierPickupContact(int? contactTypeId, MobileApiSettings settings = null)
+        {
+            if (ContactTypesRepository.IsDriverCollectionOnly(contactTypeId))
+                return true;
+
+            settings = settings ?? Current;
+            int? typeId = settings?.SupplierCollectionContactTypeId;
+            return typeId.HasValue && typeId.Value > 0
+                && contactTypeId.HasValue && contactTypeId.Value == typeId.Value;
+        }
+
         /// <summary>Used until the setting is saved: Cape Town landlines.</summary>
         public const string DefaultLandlinePrefixes = "021";
 

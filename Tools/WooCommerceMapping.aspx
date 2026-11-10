@@ -223,6 +223,11 @@
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralCompleteWooOnDone.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralWriteExpectedDelivery.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkGeneralCheckNewOrders.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= chkQuaffeeLoversEnabled.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= txtQuaffeeLoversThreshold.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= txtQuaffeeLoversRole.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= txtWordPressRoleGrantUsername.ClientID %>'))
+                || window.wooMapIsControlDirty(document.getElementById('<%= txtWordPressRoleGrantAppPassword.ClientID %>'))
                 || noteOrderDirty;
             var addressDirty = window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeProvince.ClientID %>'))
                 || window.wooMapIsControlDirty(document.getElementById('<%= chkImportAddressIncludeCountry.ClientID %>'))
@@ -1686,6 +1691,64 @@
                                 </td>
                                 <td class="sys-prefs-field">
                                     <asp:CheckBox ID="chkGeneralCheckNewOrders" runat="server" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblQuaffeeLoversEnabled" runat="server" AssociatedControlID="chkQuaffeeLoversEnabled"
+                                        Text="Quaffee Lovers (auto member after N Woo orders)" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:CheckBox ID="chkQuaffeeLoversEnabled" runat="server" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblQuaffeeLoversThreshold" runat="server" AssociatedControlID="txtQuaffeeLoversThreshold"
+                                        Text="Orders before member" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:TextBox ID="txtQuaffeeLoversThreshold" runat="server" CssClass="sys-prefs-input" Width="4em" MaxLength="3" />
+                                    <span class="field-hint">Default 3 — counted as Woo-imported orders linked in Tracker.</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblQuaffeeLoversRole" runat="server" AssociatedControlID="txtQuaffeeLoversRole"
+                                        Text="Woo customer role slug" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:TextBox ID="txtQuaffeeLoversRole" runat="server" CssClass="sys-prefs-input" Width="12em" MaxLength="64" />
+                                    <span class="field-hint">WordPress role slug on the shop (e.g. member). Must match the role in Woo.</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblWordPressRoleGrantUsername" runat="server" AssociatedControlID="txtWordPressRoleGrantUsername"
+                                        Text="WordPress login for roles" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:TextBox ID="txtWordPressRoleGrantUsername" runat="server" CssClass="sys-prefs-input" Width="16em" MaxLength="128" autocomplete="off" />
+                                    <span class="field-hint">Admin (or shop-manager) WordPress username. Required to grant/remove Member — Woo API keys alone cannot change roles on this shop.</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sys-prefs-label">
+                                    <asp:Label ID="lblWordPressRoleGrantAppPassword" runat="server" AssociatedControlID="txtWordPressRoleGrantAppPassword"
+                                        Text="WordPress application password" />
+                                </td>
+                                <td class="sys-prefs-field">
+                                    <asp:TextBox ID="txtWordPressRoleGrantAppPassword" runat="server" CssClass="sys-prefs-input" TextMode="Password" Width="20em" MaxLength="64" autocomplete="new-password" />
+                                    <span class="field-hint">Optional if the Tracker mu-plugin is installed (uses Woo API keys). Otherwise create under Users → Profile → Application Passwords. Leave blank to keep the saved password.</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;</td>
+                                <td class="sys-prefs-field button-row">
+                                    <asp:Button ID="btnVerifyShopIntegration" runat="server" Text="Verify shop login"
+                                        CssClass="filter-panel-btn" OnClick="btnVerifyShopIntegration_Click" CausesValidation="false"
+                                        ToolTip="Test WooCommerce API keys (System Preferences) and the WordPress admin application password above" />
+                                    <asp:Label ID="lblVerifyShopIntegration" runat="server" CssClass="muted small" EnableViewState="false" />
                                 </td>
                             </tr>
                         </table>

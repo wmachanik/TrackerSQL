@@ -28,6 +28,8 @@ namespace TrackerSQL.Managers
         public const string DriverGps14XmlFileName = "SQLCommands-DriverGps-14.xml";
         public const string DriverGps15XmlFileName = "SQLCommands-DriverGps-15.xml";
         public const string DriverGps16XmlFileName = "SQLCommands-DriverGps-16.xml";
+        public const string DriverGps17XmlFileName = "SQLCommands-DriverGps-17.xml";
+        public const string DriverGps18XmlFileName = "SQLCommands-DriverGps-18.xml";
         public const string OrderDoneXmlFileName = "SQLCommands-OrderDone-01.xml";
         public const string ClientMailXmlFileName = "SQLCommands-ClientMail-01.xml";
         public const string ClientMail2XmlFileName = "SQLCommands-ClientMail-02.xml";
@@ -56,7 +58,7 @@ namespace TrackerSQL.Managers
         {
             try
             {
-                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName, AreaDeliveryOrderXmlFileName, DriverGpsXmlFileName, DriverGps2XmlFileName, DriverGps3XmlFileName, DriverGps4XmlFileName, DriverGps5XmlFileName, DriverGps6XmlFileName, DriverGps7XmlFileName, DriverGps8XmlFileName, DriverGps9XmlFileName, DriverGps10XmlFileName, DriverGps11XmlFileName, DriverGps12XmlFileName, DriverGps13XmlFileName, DriverGps14XmlFileName, DriverGps15XmlFileName, DriverGps16XmlFileName, OrderDoneXmlFileName, ClientMailXmlFileName, ClientMail2XmlFileName }, out string error);
+                int ran = XmlSchemaCommandRunner.RunFiles(new[] { XmlFileName, AreaDeliveryOrderXmlFileName, DriverGpsXmlFileName, DriverGps2XmlFileName, DriverGps3XmlFileName, DriverGps4XmlFileName, DriverGps5XmlFileName, DriverGps6XmlFileName, DriverGps7XmlFileName, DriverGps8XmlFileName, DriverGps9XmlFileName, DriverGps10XmlFileName, DriverGps11XmlFileName, DriverGps12XmlFileName, DriverGps13XmlFileName, DriverGps14XmlFileName, DriverGps15XmlFileName, DriverGps16XmlFileName, DriverGps17XmlFileName, DriverGps18XmlFileName, OrderDoneXmlFileName, ClientMailXmlFileName, ClientMail2XmlFileName }, out string error);
                 if (!string.IsNullOrEmpty(error))
                     return error;
                 _ready = true;

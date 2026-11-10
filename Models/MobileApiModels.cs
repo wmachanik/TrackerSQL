@@ -133,6 +133,8 @@ namespace TrackerSQL.Models
         public bool? NoGpsLearning { get; set; }
         /// <summary>True when the client collects it at the depot (Delivered by a "Collect (shop)" person): not on the route.</summary>
         public bool? Collection { get; set; }
+        /// <summary>Supplier pickup (configured contact type): Collected on the route, no signature required.</summary>
+        public bool? SupplierPickup { get; set; }
     }
 
     public class MobileDeliveryItem
@@ -407,6 +409,8 @@ namespace TrackerSQL.Models
         public string DeliveryTerms { get; set; }
         /// <summary>Where the full terms are; empty means the built-in quaffee.co.za page.</summary>
         public string TermsUrl { get; set; }
+        /// <summary>Contacts with this type are supplier pickups: driver records Collected, no signature.</summary>
+        public int? SupplierCollectionContactTypeId { get; set; }
         public System.DateTime? UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
     }

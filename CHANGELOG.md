@@ -1,17 +1,28 @@
-# TrackerSQL changelog
+﻿# TrackerSQL changelog
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.14 — in progress
+## 3.0.3.15 — in progress
 
-_(Development; bump `Web.config` / `AssemblyInfo` / `Web.config.example` to **3.0.3.14**.)_
+_(Development; bump `Web.config` / `AssemblyInfo` / `Web.config.example` to **3.0.3.15**.)_
+
+## 3.0.3.14 — 2026-11-10
+
+**Quaffee Driver:** 0.5.8 (unchanged).
+
+### Features and fixes
 
 - **Woo import contact match** — Prefer enabled contacts, then disabled (so a disabled match like Karen Chilton is found). Gear-only orders only fall back to ZZName when no contact matches.
 - **Woo import GPS** — New/updated contacts and ZZName alt addresses run `EnsureForContact` / `EnsureForDeliverToAddress` on import.
 - **GPS accuracy** — Check uses the current (unsaved) address boxes; strip checkout junk such as `Company Name - …`; reject vague city-only matches when a postcode centroid exists (Salute / Section Street).
-- **Delivery route StopKey** — Saved driver plans key by `(RouteDate, PersonID, ContactID, StopKey)` so ZZName and alternative addresses are separate stops (`SQLCommands-DriverGps-16.xml`).
+- **Delivery route StopKey** — Saved driver plans key by `(RouteDate, PersonID, ContactID, StopKey)` so ZZName and alternative addresses are separate stops (`SQLCommands-DriverGps-16.xml`). Office delivery-sheet drag-order normalises StopKey from today's orders (alt address id, not 0); plan join accepts legacy `StopKey 0` rows when the order uses a deliver-to address (Karen Chilton → Mark Chilton).
+- **Blocking wait overlay** — Full-screen overlay on postbacks and partial postbacks so busy progress is visible site-wide (`Scripts/trackerWaitOverlay.js`, `Site.css`).
 - **Send Client Mail history** — Batches logged in `ClientMailSendLogTbl` and shown as Send History (`SQLCommands-ClientMail-02.xml`).
-- **Woo product map** — Match enabled Tracker SKUs before disabled / leading-underscore SKUs; copy the first variant’s item onto unmatched siblings.
+- **Woo product map** — Match enabled Tracker SKUs before disabled / leading-underscore SKUs; copy the first variant's item onto unmatched siblings.
+
+### Go-live notes
+- Upload `bin/`, changed managers/repos/pages, `Scripts/trackerWaitOverlay.js`, `Site.Master`, `Styles/Site.css`, `Styles/MobileStaff.css`, `App_Data/SQLCommands-DriverGps-16.xml` and `SQLCommands-ClientMail-02.xml` if not already applied. Live `Web.config` **`Version` → 3.0.3.14** only. Recycle; drag an alt-address stop on the delivery sheet and confirm it stays put after save.
+
 
 ## 3.0.3.13 — development
 

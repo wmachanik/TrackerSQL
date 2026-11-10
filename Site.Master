@@ -8,8 +8,8 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20261103-11" rel="stylesheet" type="text/css" />
-    <link href="~/Styles/MobileStaff.css?v=20261103-11" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20261110-01" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/MobileStaff.css?v=20261110-01" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
     <meta name="MobileOptimized" content="width" />
@@ -387,48 +387,13 @@
         <div class="clear">
             &nbsp;
         </div>
-        <div id="staffMobileWaitOverlay" class="staff-mobile-wait-overlay" aria-hidden="true" aria-live="polite">
-            <img src="<%= ResolveUrl("~/images/animi/QuaffeeProgress.gif") %>" alt="" />
-            <div id="staffMobileWaitLabel" class="staff-mobile-wait-label">Updating…</div>
+        <div id="trackerWaitOverlay" class="tracker-wait-overlay" aria-hidden="true" aria-live="polite" role="alertdialog" aria-label="Please wait">
+            <div class="tracker-wait-box">
+                <img src="<%= ResolveUrl("~/images/animi/QuaffeeProgress.gif") %>" alt="" />
+                <div id="trackerWaitLabel" class="tracker-wait-label">Please wait&hellip;</div>
+            </div>
         </div>
-        <script type="text/javascript">
-            (function () {
-                function staffMobileWaitMessage(el) {
-                    if (!el) return 'Updating…';
-                    var id = (el.id || '').toLowerCase();
-                    var val = (el.value || el.innerText || el.textContent || '').toLowerCase();
-                    if (id.indexOf('save') >= 0 || val.indexOf('save') >= 0) return 'Saving…';
-                    return 'Updating…';
-                }
-                function bindStaffMobileWait() {
-                    if (!document.body.classList.contains('staff-mobile-page') || !window.Sys
-                        || !Sys.WebForms || !Sys.WebForms.PageRequestManager) {
-                        return;
-                    }
-                    var overlay = document.getElementById('staffMobileWaitOverlay');
-                    var label = document.getElementById('staffMobileWaitLabel');
-                    if (!overlay || !label) return;
-                    var prm = Sys.WebForms.PageRequestManager.getInstance();
-                    if (prm._staffMobileWaitBound) return;
-                    prm._staffMobileWaitBound = true;
-                    prm.add_beginRequest(function (sender, args) {
-                        if (window.matchMedia && !window.matchMedia('(max-width: 768px)').matches) return;
-                        label.textContent = staffMobileWaitMessage(args.get_postBackElement());
-                        overlay.setAttribute('aria-hidden', 'false');
-                    });
-                    prm.add_endRequest(function () {
-                        overlay.setAttribute('aria-hidden', 'true');
-                    });
-                }
-                if (window.Sys && Sys.Application) {
-                    Sys.Application.add_load(bindStaffMobileWait);
-                } else if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', bindStaffMobileWait);
-                } else {
-                    bindStaffMobileWait();
-                }
-            })();
-        </script>
+        <script src="<%= ResolveUrl("~/Scripts/trackerWaitOverlay.js") %>?v=20261110-01" type="text/javascript"></script>
     </form>
 
 </body>

@@ -278,7 +278,8 @@ namespace TrackerSQL.Managers
                 ContactId = row.ContactID,
                 Company = company,
                 DeliverTo = hasDeliverTo ? deliverTo : null,
-                DeliverToAddressId = hasDeliverTo ? row.DeliverToAddressId : null,
+                // StopKey must follow the order's DeliverToAddressID even when label/person are blank (SaveOfficeRoute / route plan).
+                DeliverToAddressId = row.DeliverToAddressId is int addr && addr > 0 ? addr : (int?)null,
                 DeliverToPerson = deliverToPerson,
                 DeliverToAddressKind = hasDeliverTo && !string.IsNullOrWhiteSpace(row.DeliverToAddressKind)
                     ? AlternativeAddressKind.Display(row.DeliverToAddressKind)
@@ -407,6 +408,33 @@ namespace TrackerSQL.Managers
         }
 
         /// <summary>
+        /// Align route slots with StopKey from today's orders (alt address id, not 0 when the browser posted 0).
+        /// </summary>
+        private static void ApplyAuthoritativeStopKeys(IList<DeliveryRouteRepository.StopRef> stops, HashSet<string> routeIds,
+            IEnumerable<DeliveryRouteRepository.StopRef> knownStops, HashSet<string> done)
+        {
+            if (stops == null || knownStops == null)
+                return;
+            for (int i = 0; i < stops.Count; i++)
+            {
+                DeliveryRouteRepository.StopRef item = stops[i];
+                DeliveryRouteRepository.StopRef auth = DeliveryRouteRepository.AuthoritativeStop(item, knownStops);
+                if (auth.StopKey == item.StopKey)
+                    continue;
+                string oldId = item.ContactId + ":" + item.StopKey;
+                string newId = auth.ContactId + ":" + auth.StopKey;
+                if (routeIds != null)
+                {
+                    routeIds.Remove(oldId);
+                    routeIds.Add(newId);
+                }
+                if (done != null && done.Remove(oldId))
+                    done.Add(newId);
+                stops[i] = auth;
+            }
+        }
+
+        /// <summary>
         /// The office delivery sheet: the driver's stops still to do, dragged into a new order (contacts first to last).
         /// Stops already delivered keep their place, so the route numbers do not shift. Returns the number of stops saved.
         /// </summary>
@@ -424,17 +452,24 @@ namespace TrackerSQL.Managers
                 return 0;
             }
 
+            MobileDeliverySheet sheet = GetSheet(day, personId);
+            List<int> orderIds = sheet.Orders.Where(o => o.ContactId > 0).Select(o => o.OrderId).Distinct().ToList();
+            Dictionary<int, DeliveryRouteRepository.StopRef> stopOf = new DeliveryRouteRepository().StopsForOrders(day, orderIds);
+
             var route = new List<DeliveryRouteRepository.StopRef>();
             var done = new HashSet<string>();
             var routeIds = new HashSet<string>();
-            foreach (MobileDeliveryStop stop in GetSheet(day, personId).Orders.OrderBy(o => o.Seq))
+            foreach (MobileDeliveryStop stop in sheet.Orders.OrderBy(o => o.Seq))
             {
                 if (stop.ContactId <= 0)
                     continue;
+                int stopKey = stopOf.TryGetValue(stop.OrderId, out DeliveryRouteRepository.StopRef fromDb)
+                    ? fromDb.StopKey
+                    : DeliveryRouteRepository.StopKeyFor(stop.ContactId, stop.DeliverToAddressId, stop.OrderId);
                 var item = new DeliveryRouteRepository.StopRef
                 {
                     ContactId = stop.ContactId,
-                    StopKey = DeliveryRouteRepository.StopKeyFor(stop.ContactId, stop.DeliverToAddressId, stop.OrderId)
+                    StopKey = stopKey
                 };
                 string id = item.ContactId + ":" + item.StopKey;
                 if (!routeIds.Add(id))
@@ -444,6 +479,16 @@ namespace TrackerSQL.Managers
                     done.Add(id);
             }
 
+            var knownStops = stopOf.Values.ToList();
+            ApplyAuthoritativeStopKeys(route, routeIds, knownStops, done);
+            if (openContactOrder is List<DeliveryRouteRepository.StopRef> mutableOrder)
+                ApplyAuthoritativeStopKeys(mutableOrder, null, knownStops, null);
+            else if (openContactOrder != null)
+            {
+                for (int i = 0; i < openContactOrder.Count; i++)
+                    openContactOrder[i] = DeliveryRouteRepository.AuthoritativeStop(openContactOrder[i], knownStops);
+            }
+
             var openIds = new List<string>();
             var openStops = new List<DeliveryRouteRepository.StopRef>();
             if (openContactOrder != null)
@@ -451,7 +496,9 @@ namespace TrackerSQL.Managers
                 foreach (DeliveryRouteRepository.StopRef item in openContactOrder)
                 {
                     string id = item.ContactId + ":" + item.StopKey;
-                    if (!routeIds.Contains(id) || done.Contains(id) || openIds.Contains(id))
+                    if (done.Contains(id) || openIds.Contains(id))
+                        continue;
+                    if (!routeIds.Contains(id))
                         continue;
                     openIds.Add(id);
                     openStops.Add(item);
@@ -478,6 +525,8 @@ namespace TrackerSQL.Managers
                 string id = item.ContactId + ":" + item.StopKey;
                 contacts.Add(done.Contains(id) ? item : openStops[next++]);
             }
+
+            ApplyAuthoritativeStopKeys(contacts, null, knownStops, null);
 
             new DeliveryRouteRepository().Save(day, personId, contacts, userName + DeliveryRouteRepository.OfficeSuffix);
             AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,

@@ -41,6 +41,24 @@ namespace TrackerSQL.Repositories
             return ((long)contactId << 32) | (uint)StopKeyFor(contactId, deliverToAddressId, orderId);
         }
 
+        /// <summary>
+        /// Prefer the StopKey from today's orders when the sheet or browser sent 0 for an alt-address stop.
+        /// </summary>
+        public static StopRef AuthoritativeStop(StopRef item, IEnumerable<StopRef> knownStops)
+        {
+            if (knownStops == null)
+                return item;
+            var list = knownStops.Where(s => s.ContactId == item.ContactId).ToList();
+            if (list.Count == 0)
+                return item;
+            if (list.Any(s => s.StopKey == item.StopKey))
+                return new StopRef { ContactId = item.ContactId, StopKey = item.StopKey };
+            if (list.Count == 1)
+                return list[0];
+            StopRef alt = list.FirstOrDefault(s => s.StopKey != 0);
+            return alt.ContactId != 0 ? alt : list[0];
+        }
+
         /// <summary>SQL for <see cref="StopKeyFor"/> on an order row (o / c).</summary>
         public static string StopKeySql(string orderAlias, string contactAlias)
         {
@@ -85,12 +103,29 @@ namespace TrackerSQL.Repositories
         public static string PlanJoinSql(string contactAlias, string dayExpr, string driverExpr)
         {
             string stop = StopKeySql("o", contactAlias);
-            string stopMatch = ColumnSeen("StopKey") ? " AND ISNULL(rp.StopKey, 0) = (" + stop + ")" : string.Empty;
+            string stopMatch = string.Empty;
+            if (ColumnSeen("StopKey"))
+            {
+                stopMatch = @"
+                              AND (
+                                    ISNULL(rp.StopKey, 0) = (" + stop + @")
+                                 OR (
+                                        ISNULL(rp.StopKey, 0) = 0 AND (" + stop + @") > 0
+                                        AND NOT EXISTS (
+                                            SELECT 1 FROM dbo.DeliveryRouteTbl r2
+                                            WHERE r2.RouteDate = rp.RouteDate AND r2.PersonID = rp.PersonID
+                                              AND r2.ContactID = " + contactAlias + @".ContactID
+                                              AND ISNULL(r2.StopKey, 0) = (" + stop + @")
+                                        )
+                                    )
+                              )";
+            }
             return @"
                 OUTER APPLY (
                     SELECT (SELECT TOP 1 rp.Seq FROM dbo.DeliveryRouteTbl rp
                             WHERE rp.RouteDate = " + dayExpr + @" AND rp.PersonID = " + driverExpr + @"
-                              AND rp.ContactID = " + contactAlias + @".ContactID" + stopMatch + @") AS PlanSeq,
+                              AND rp.ContactID = " + contactAlias + @".ContactID" + stopMatch + @"
+                            ORDER BY CASE WHEN ISNULL(rp.StopKey, 0) = (" + stop + @") THEN 0 ELSE 1 END, rp.Seq) AS PlanSeq,
                            (SELECT COUNT(*) FROM dbo.DeliveryRouteTbl rc
                             WHERE rc.RouteDate = " + dayExpr + @" AND rc.PersonID = " + driverExpr + @") AS PlanStops
                 ) dr";

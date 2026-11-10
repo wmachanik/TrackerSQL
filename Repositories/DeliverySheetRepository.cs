@@ -389,10 +389,10 @@ namespace TrackerSQL.Repositories
                 AreaName = GetString(rdr, "AreaName"),
                 AreaShortCode = GetString(rdr, "AreaShortCode"),
                 InvoiceTypeID = GetNullableInt(rdr, "InvoiceTypeID"),
-                DeliverToAddressID = DeliveryOnBehalfManager.IsActive ? GetNullableInt(rdr, "DeliverToAddressID") : null,
-                DeliverToPerson = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToPerson") : string.Empty,
-                DeliverToLabel = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToLabel") : string.Empty,
-                DeliverToAddressLine = DeliveryOnBehalfManager.IsActive ? GetString(rdr, "DeliverToAddressLine") : string.Empty
+                DeliverToAddressID = DbMapper.HasColumn(rdr, "DeliverToAddressID") ? GetNullableInt(rdr, "DeliverToAddressID") : null,
+                DeliverToPerson = DbMapper.HasColumn(rdr, "DeliverToPerson") ? GetString(rdr, "DeliverToPerson") : string.Empty,
+                DeliverToLabel = DbMapper.HasColumn(rdr, "DeliverToLabel") ? GetString(rdr, "DeliverToLabel") : string.Empty,
+                DeliverToAddressLine = DbMapper.HasColumn(rdr, "DeliverToAddressLine") ? GetString(rdr, "DeliverToAddressLine") : string.Empty
             };
         }
 

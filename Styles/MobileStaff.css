@@ -16,11 +16,7 @@
         padding: 0 8px 8px;
     }
 
-    /* Hide small UpdateProgress strips — full-screen overlay used instead */
-    body.staff-mobile-page .page-tone-progress,
-    body.staff-mobile-page .status-message.page-tone-progress {
-        display: none !important;
-    }
+    /* Hide small UpdateProgress strips — tracker-wait-overlay used instead (all viewports via Site.css) */
 
     body.staff-mobile-page .order-deliver-to-row {
         flex-wrap: nowrap;

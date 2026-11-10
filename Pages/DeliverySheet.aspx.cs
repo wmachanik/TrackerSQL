@@ -442,7 +442,7 @@ namespace TrackerSQL.Pages
                                 ContactId = (int?)obj["c"] ?? 0,
                                 StopKey = (int?)obj["k"] ?? 0
                             });
-                        else
+                        else if (token != null && token.Type != Newtonsoft.Json.Linq.JTokenType.Null)
                             contacts.Add(new DeliveryRouteRepository.StopRef { ContactId = (int)token, StopKey = 0 });
                     }
                     int saved = manager.SaveOfficeRoute(day, personId, contacts, User.Identity.Name, out string error);

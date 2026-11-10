@@ -267,6 +267,7 @@
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
     <Content Include="Scripts\unsavedChanges.js" />
+    <Content Include="Scripts\trackerWaitOverlay.js" />
     <Content Include="Scripts\leaflet\leaflet.js" />
     <Content Include="Scripts\leaflet\leaflet.css" />
     <Content Include="Scripts\leaflet\images\layers.png" />

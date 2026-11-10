@@ -1779,8 +1779,8 @@ button,
     box-sizing: content-box !important;
 }
 
-/* Full-screen async wait on staff mobile (wired from Site.Master) */
-.staff-mobile-wait-overlay {
+/* Full-screen blocking wait — all staff pages (Scripts/trackerWaitOverlay.js) */
+.tracker-wait-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -1788,26 +1788,47 @@ button,
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
     background: rgba(255, 255, 255, 0.94);
     text-align: center;
     padding: 24px;
     box-sizing: border-box;
+    pointer-events: all;
 }
 
-.staff-mobile-wait-overlay[aria-hidden="false"] {
+.tracker-wait-overlay[aria-hidden="false"] {
     display: flex;
 }
 
-.staff-mobile-wait-overlay .staff-mobile-wait-label {
+.tracker-wait-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 28px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
+
+.tracker-wait-label {
     font-size: 1.15rem;
     font-weight: 700;
     color: #302a20;
 }
 
-.staff-mobile-wait-overlay img {
+.tracker-wait-overlay img {
     width: 48px;
     height: 48px;
+}
+
+body.tracker-wait-active {
+    overflow: hidden;
+}
+
+/* Inline UpdateProgress strips stay in markup but are not shown — overlay above is used */
+.page-tone-progress:not(.woo-map-busy),
+.status-message.page-tone-progress:not(.woo-map-busy) {
+    display: none !important;
 }
 
 .order-detail-save-return-overlay {
@@ -1819,7 +1840,7 @@ button,
     justify-content: center;
     background: rgba(255, 255, 255, 0.92);
     font-weight: bold;
-    pointer-events: none;
+    pointer-events: all;
 }
 
 .order-detail-save-return-message {
@@ -8264,6 +8285,33 @@ a.sys-prefs-tab[disabled] {
     padding: 0.75rem 1rem;
 }
 
+/* Long Woo pulls: modal busy panel blocks the page */
+body.woo-map-working .woo-map-busy {
+    position: fixed;
+    inset: 0;
+    z-index: 10055;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.96);
+    pointer-events: all;
+}
+
+body.woo-map-working.tracker-wait-active {
+    overflow: hidden;
+}
+
+body.woo-map-working .woo-map-busy-bar {
+    width: min(24rem, 90vw);
+}
+
 body.woo-map-quiet-postback .woo-map-busy,
 body.woo-map-quiet-postback [id$="upgWooMap"] {
     display: none !important;
@@ -11501,7 +11549,8 @@ table.results-table.portal-table tr.pager-row table td {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.94);
+    pointer-events: all;
 }
 
 .portal-wait-box {

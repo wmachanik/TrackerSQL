@@ -13,6 +13,19 @@ namespace TrackerSQL.Classes
             public const string InvalidIDStr = "-1";
             public const string NullDateStr = "1980/01/01";
             public static DateTime SystemMinDate = DateTime.Parse(NullDateStr).Date;
+
+            /// <summary>Retries when SQL Server drops the network name or the pool is briefly exhausted.</summary>
+            public const int TransientOpenAttempts = 3;
+            public const int TransientOpenDelayMs = 250;
+
+            /// <summary>SqlException numbers that mean the server was briefly unreachable (retry the open).</summary>
+            public static readonly int[] TransientSqlErrorNumbers =
+            {
+                -2, 53, 64, 121, 233, 258,
+                10053, 10054, 10060,
+                40197, 40501, 4060, 40613,
+                49918, 49919, 49920
+            };
         }
         //formating constants
         public static class FormatConstants

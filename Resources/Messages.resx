@@ -235,7 +235,7 @@
     <value>&lt;tr&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee; font-weight: bold; background-color: #f9f9f9; width: 40%;"&gt;{0}&lt;/td&gt;&lt;td style="padding: 5px 8px; border-bottom: 1px solid #eee;"&gt;{1}&lt;/td&gt;&lt;/tr&gt;</value>
   </data>
   <data name="CoffeeCheckup.HtmlTableStart" xml:space="preserve">
-    <value>&lt;table cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; margin: 8px 0 4px 0;"&gt;</value>
+    <value>&lt;table cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.4; width: 100%; margin: 0 0 16px 0;"&gt;</value>
   </data>
   <data name="CoffeeCheckup.OrderTypeAutoFulfill" xml:space="preserve">
     <value>Auto-fulfill Order</value>
@@ -569,10 +569,10 @@ Disabled recurring orders:
     <value>Failed to send email to {0}: {1}</value>
   </data>
   <data name="Email.SignatureNoUser" xml:space="preserve">
-    <value>&lt;p style="margin:12px 0 0 0;"&gt;Kind regards,&lt;br/&gt;&lt;b&gt;The Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;Kind regards,&lt;br/&gt;&lt;b&gt;The Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
   </data>
   <data name="Email.SignatureTemplate" xml:space="preserve">
-    <value>&lt;p style="margin:12px 0 0 0;"&gt;Kind regards,&lt;br/&gt;{0}, &lt;b&gt;a member of the Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;Kind regards,&lt;br/&gt;{0}, &lt;b&gt;a member of the Quaffee Team&lt;/b&gt;&lt;br/&gt;&lt;a href='mailto:orders@quaffee.co.za'&gt;orders@quaffee.co.za&lt;/a&gt;&lt;br/&gt;&lt;a href='http://www.quaffee.co.za'&gt;www.quaffee.co.za&lt;/a&gt;&lt;/p&gt;</value>
   </data>
   <data name="Email.ThankYouMessage" xml:space="preserve">
     <value>Thank you for your business!</value>
@@ -599,13 +599,19 @@ Disabled recurring orders:
     <value>Good news — we have stock of the item(s) ordered and are in your area, so we can deliver sooner than our usual website schedule. We currently expect delivery/dispatch on {0}.</value>
   </data>
   <data name="Order.ConfirmationFooter" xml:space="preserve">
-    <value>&lt;p style="margin:12px 0 0 0; font-size:12px; color:#666;"&gt;This email was sent automatically by Quaffee's order and tracking system.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:28px 0 0 0; padding-top:14px; border-top:1px solid #dddddd; font-size:12px; line-height:1.4; color:#777777;"&gt;This email was sent automatically by Quaffee's order and tracking system.&lt;/p&gt;</value>
   </data>
   <data name="Order.ConfirmationHeader" xml:space="preserve">
-    <value>&lt;p style="margin:0 0 8px 0;"&gt;We confirm the following order:&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 16px 0;"&gt;We confirm the following order:&lt;/p&gt;</value>
   </data>
   <data name="Order.ConfirmationIntro" xml:space="preserve">
-    <value>&lt;p style="margin:0 0 8px 0;"&gt;Dear {0},&lt;/p&gt;&lt;p style="margin:0 0 8px 0;"&gt;Thank you for ordering from Quaffee.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 16px 0;"&gt;Dear {0},&lt;/p&gt;&lt;p style="margin:0 0 16px 0;"&gt;Thank you for ordering from Quaffee.&lt;/p&gt;</value>
+  </data>
+  <data name="Order.ConfirmationBodyStyle" xml:space="preserve">
+    <value>font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.5; color:#222222;</value>
+  </data>
+  <data name="Order.ConfirmationDeliverToLabel" xml:space="preserve">
+    <value>Delivering to</value>
   </data>
   <data name="Order.ConfirmationTableDeliveryLabel" xml:space="preserve">
     <value>Expected delivery / dispatch</value>
@@ -632,25 +638,25 @@ Disabled recurring orders:
     <value>Quaffee: we have received your order</value>
   </data>
   <data name="Order.PortalAckHeader" xml:space="preserve">
-    <value>&lt;p style="margin:0 0 8px 0;"&gt;We have received the following order through My Quaffee:&lt;/p&gt;</value>
+    <value>&lt;p style="margin:0 0 16px 0;"&gt;We have received the following order through My Quaffee:&lt;/p&gt;</value>
   </data>
   <data name="Order.PortalAckDelivery" xml:space="preserve">
     <value>We will aim to deliver/dispatch it on {0}.</value>
   </data>
   <data name="Order.PortalAckCaveat" xml:space="preserve">
-    <value>&lt;p style="margin:8px 0 0 0;"&gt;We will endeavour to supply this order as placed. However, there is a chance we may need to change it depending on stock and availability. If anything needs to change, we will let you know.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;We will endeavour to supply this order as placed. However, there is a chance we may need to change it depending on stock and availability. If anything needs to change, we will let you know.&lt;/p&gt;</value>
   </data>
   <data name="Order.PortalAckChanges" xml:space="preserve">
-    <value>&lt;p style="margin:8px 0 0 0;"&gt;You asked for these changes: &lt;em&gt;{0}&lt;/em&gt;. We will review them before your order goes out.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;You asked for these changes: &lt;em&gt;{0}&lt;/em&gt;. We will review them before your order goes out.&lt;/p&gt;</value>
   </data>
   <data name="Order.EmailFooter" xml:space="preserve">
-    <value>&lt;p style="margin:8px 0 0 0;"&gt;Thank you for choosing Quaffee!&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;Thank you for choosing Quaffee!&lt;/p&gt;</value>
   </data>
   <data name="Portal.EmailAlreadyJoined" xml:space="preserve">
-    <value>&lt;p style="margin:12px 0 0 0;"&gt;You already have access to &lt;strong&gt;My Quaffee&lt;/strong&gt; — view your contact details, orders, repairs, and recurring orders. &lt;a href="{0}"&gt;Sign in here&lt;/a&gt;.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;You already have access to &lt;strong&gt;My Quaffee&lt;/strong&gt; — view your contact details, orders, repairs, and recurring orders. &lt;a href="{0}"&gt;Sign in here&lt;/a&gt;.&lt;/p&gt;</value>
   </data>
   <data name="Portal.EmailJoinInvite" xml:space="preserve">
-    <value>&lt;p style="margin:12px 0 0 0;"&gt;Want to view your contact details, orders, repairs, and recurring orders online? Join &lt;strong&gt;My Quaffee&lt;/strong&gt;: &lt;a href="{0}"&gt;request access here&lt;/a&gt; using the email address we have on file.&lt;/p&gt;</value>
+    <value>&lt;p style="margin:16px 0 0 0;"&gt;Want to view your contact details, orders, repairs, and recurring orders online? Join &lt;strong&gt;My Quaffee&lt;/strong&gt;: &lt;a href="{0}"&gt;request access here&lt;/a&gt; using the email address we have on file.&lt;/p&gt;</value>
   </data>
   <data name="Order.FutureMessage" xml:space="preserve">
     <value>This order is scheduled for future processing</value>
@@ -1413,6 +1419,24 @@ When you continue, Tracker will create companion database tables (orders and ite
   </data>
   <data name="WooCommerce.MapCollapseAll" xml:space="preserve">
     <value>Collapse all</value>
+  </data>
+  <data name="WooCommerce.MapShowName" xml:space="preserve">
+    <value>Show Name</value>
+  </data>
+  <data name="WooCommerce.MapShowPack" xml:space="preserve">
+    <value>Show Pack</value>
+  </data>
+  <data name="WooCommerce.MapShowMode" xml:space="preserve">
+    <value>Show Mode</value>
+  </data>
+  <data name="WooCommerce.MapShowNameTip" xml:space="preserve">
+    <value>Hide the Name column so the SKU stays on screen. Hover a SKU to read the full value.</value>
+  </data>
+  <data name="WooCommerce.MapShowPackTip" xml:space="preserve">
+    <value>Hide Pack Cascade and the Pack column.</value>
+  </data>
+  <data name="WooCommerce.MapShowModeTip" xml:space="preserve">
+    <value>Hide the Mode column. The parent row still keeps its mode.</value>
   </data>
   <data name="WooCommerce.MapPullAttributes" xml:space="preserve">
     <value>Pull options for ticked attributes</value>

@@ -14,7 +14,7 @@ namespace TrackerSQL.Handlers
     /// Drivers, positions, stops and ETAs for Tools/DriverTracking.aspx (JSON). Optional query <c>date=yyyy-MM-dd</c> (default today).
     /// Administrators, and users with "Show driver tracking" on Administration → User Information.
     /// </summary>
-    public class DriverTrackingData : IHttpHandler, IReadOnlySessionState
+    public class DriverTrackingData : IHttpHandler, IRequiresSessionState
     {
         public bool IsReusable => true;
 
@@ -69,6 +69,33 @@ namespace TrackerSQL.Handlers
 
             try
             {
+                if (string.Equals(context.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(context.Request.QueryString["action"], "hide", StringComparison.OrdinalIgnoreCase))
+                {
+                    UserPreferencesHelper.SaveCurrentHideTrackingCouriers(context.Request.QueryString["hide"] != "0");
+                    context.Response.ContentType = "application/json";
+                    context.Response.Write("{\"ok\":true}");
+                    return;
+                }
+                if (string.Equals(context.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(context.Request.QueryString["action"], "optimize", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!TryParseQueryDate(context.Request.QueryString["date"], out DateTime routeDay))
+                        routeDay = TimeZoneUtils.Now().Date;
+                    int personId = 0;
+                    int.TryParse(context.Request.QueryString["person"], out personId);
+                    int saved = new MobileDeliveryManager().OptimizeRoute(routeDay, personId, context.User.Identity.Name, out string routeError);
+                    context.Response.ContentType = "application/json";
+                    if (routeError != null)
+                    {
+                        context.Response.StatusCode = 400;
+                        context.Response.Write(JsonConvert.SerializeObject(new { error = routeError }));
+                        return;
+                    }
+                    context.Response.Write(JsonConvert.SerializeObject(new { ok = true, stops = saved }));
+                    return;
+                }
+
                 string dateParam = context.Request.QueryString["date"];
                 DateTime day;
                 if (string.IsNullOrWhiteSpace(dateParam))

@@ -280,7 +280,8 @@ namespace TrackerSQL.Managers
                 {
                     PersonId = personId,
                     Name = person?.Name ?? ("Person " + personId),
-                    Abbreviation = person?.Abbreviation
+                    Abbreviation = person?.Abbreviation,
+                    OwnDriver = person == null || person.Delivers
                 };
 
                 if (pings.TryGetValue(personId, out DriverLocationRepository.Ping ping))
@@ -317,7 +318,7 @@ namespace TrackerSQL.Managers
                             : g.First().AreaCode.Trim(),
                         AreaName = g.First().Area,
                         Orders = g.Count(),
-                        Done = g.All(o => o.Done || o.Proof != null),
+                        Done = g.All(o => o.Done),
                         NotAtClient = g.All(o => o.Proof?.NotAtClient == true) ? (g.First().Proof.Reason ?? "not at the client") : null,
                         Lat = points.TryGetValue(g.Key, out Tuple<double, double> pt) ? (double?)pt.Item1 : null,
                         Lng = pt?.Item2
@@ -373,10 +374,7 @@ namespace TrackerSQL.Managers
                     if (stop.Done)
                         continue;
                     MobileDeliveryStop sample = orders
-                        .Where(o => o.DeliveryById == driver.PersonId && !IsFinished(o)
-                            && (WalkInOrderSite.IsWalkIn(stop.ContactId)
-                                ? o.OrderId == stop.OrderId
-                                : o.ContactId == stop.ContactId))
+                        .Where(o => o.DeliveryById == driver.PersonId && !IsFinished(o) && o.OrderId == stop.OrderId)
                         .OrderBy(o => o.Seq)
                         .FirstOrDefault();
                     if (sample != null && routeTimes.Stops.TryGetValue(sample.OrderId, out RouteTimesManager.StopTime time)
@@ -447,7 +445,7 @@ namespace TrackerSQL.Managers
                 driver.FinishEta = t.ToString("HH:mm", CultureInfo.InvariantCulture);
         }
 
-        private static bool IsFinished(MobileDeliveryStop stop) => stop.Done || stop.Proof != null;
+        private static bool IsFinished(MobileDeliveryStop stop) => stop.Done;
 
         /// <summary>
         /// Stops for the day in the same route order as Delivery order and the driver's app

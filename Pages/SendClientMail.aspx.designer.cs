@@ -11,6 +11,7 @@ namespace TrackerSQL.Pages
         protected global::System.Web.UI.WebControls.Button btnSaveMessage;
         protected global::System.Web.UI.WebControls.TextBox tbxEmailSubject;
         protected global::System.Web.UI.WebControls.Button btnReloadDefaults;
+        protected global::System.Web.UI.WebControls.GridView gvSendHistory;
         protected global::AjaxControlToolkit.TabContainer tabEmailBody;
         protected global::AjaxControlToolkit.TabPanel tpnlHeader;
         protected global::System.Web.UI.WebControls.TextBox tbxEmailHeader;

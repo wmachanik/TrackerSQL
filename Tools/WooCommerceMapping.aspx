@@ -642,6 +642,8 @@
                 window.wooMapSnapshotOriginals();
                 window.wooMapRefreshDirty();
                 window.wooMapBindCompactSelects();
+                if (window.wooMapApplyColToggles)
+                    window.wooMapApplyColToggles();
                 window._wooMapRestore = null;
                 var restore = function () {
                     if (!r) return;
@@ -671,6 +673,8 @@
             window.addEventListener('load', function () {
                 window.wooMapAttachBusyHandlers();
                 window.wooMapBindCompactSelects();
+                if (window.wooMapApplyColToggles)
+                    window.wooMapApplyColToggles();
             });
         })();
     </script>
@@ -936,6 +940,65 @@
                             <asp:Button ID="btnExpandAllGroups" runat="server" CssClass="filter-panel-btn" OnClick="btnExpandAllGroups_Click" CausesValidation="false" />
                             <asp:Button ID="btnCollapseAllGroups" runat="server" CssClass="filter-panel-btn" OnClick="btnCollapseAllGroups_Click" CausesValidation="false" />
                         </div>
+                        <div class="woo-map-col-toggles">
+                            <label class="woo-map-col-toggle">
+                                <input type="checkbox" id="chkShowName" runat="server" checked="checked" />
+                                <asp:Literal ID="litShowName" runat="server" />
+                            </label>
+                            <label class="woo-map-col-toggle">
+                                <input type="checkbox" id="chkShowPack" runat="server" checked="checked" />
+                                <asp:Literal ID="litShowPack" runat="server" />
+                            </label>
+                            <label class="woo-map-col-toggle">
+                                <input type="checkbox" id="chkShowMode" runat="server" checked="checked" />
+                                <asp:Literal ID="litShowMode" runat="server" />
+                            </label>
+                        </div>
+                        <script type="text/javascript">
+                            window.wooMapApplyColToggles = function () {
+                                var grid = document.getElementById('<%= gvPull.ClientID %>');
+                                var nameBox = document.getElementById('<%= chkShowName.ClientID %>');
+                                var packBox = document.getElementById('<%= chkShowPack.ClientID %>');
+                                var modeBox = document.getElementById('<%= chkShowMode.ClientID %>');
+                                function remember(key, box) {
+                                    if (!box) return true;
+                                    try {
+                                        var stored = localStorage.getItem(key);
+                                        if (stored === '0' || stored === '1')
+                                            box.checked = stored === '1';
+                                    } catch (ex) { }
+                                    return box.checked;
+                                }
+                                if (grid) {
+                                    var hideName = nameBox && !remember('wooMapShowName', nameBox);
+                                    var hidePack = packBox && !remember('wooMapShowPack', packBox);
+                                    var hideMode = modeBox && !remember('wooMapShowMode', modeBox);
+                                    grid.className = (grid.className || '')
+                                        .replace(/\bwoo-map-hide-name\b/g, '')
+                                        .replace(/\bwoo-map-hide-pack\b/g, '')
+                                        .replace(/\bwoo-map-hide-mode\b/g, '')
+                                        .replace(/\s+/g, ' ').trim();
+                                    if (hideName) grid.className += ' woo-map-hide-name';
+                                    if (hidePack) grid.className += ' woo-map-hide-pack';
+                                    if (hideMode) grid.className += ' woo-map-hide-mode';
+                                }
+                            };
+                            if (!window._wooMapColToggleBound) {
+                                window._wooMapColToggleBound = true;
+                                document.addEventListener('change', function (e) {
+                                    var t = e.target;
+                                    if (!t || !t.id) return;
+                                    var key = null;
+                                    if (t.id.indexOf('chkShowName') >= 0) key = 'wooMapShowName';
+                                    else if (t.id.indexOf('chkShowPack') >= 0) key = 'wooMapShowPack';
+                                    else if (t.id.indexOf('chkShowMode') >= 0) key = 'wooMapShowMode';
+                                    if (!key) return;
+                                    try { localStorage.setItem(key, t.checked ? '1' : '0'); } catch (ex) { }
+                                    window.wooMapApplyColToggles();
+                                }, false);
+                            }
+                            window.wooMapApplyColToggles();
+                        </script>
                         <asp:Panel ID="pnlPullSearch" runat="server" DefaultButton="btnFindSku" CssClass="filter-toolbar">
                             <div class="filter-section search-controls">
                                 <div class="filter-control">

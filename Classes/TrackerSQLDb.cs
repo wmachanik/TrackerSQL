@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading;
 using TrackerSQL.Classes;
 using TrackerSQL.Repositories;
 
@@ -165,7 +166,11 @@ namespace TrackerSQL.Classes
 
                     using (var da = new SqlDataAdapter(cmd))
                     {
-                        da.Fill(dt);
+                        ExecuteWithOpenRetry(() =>
+                        {
+                            dt.Clear();
+                            return da.Fill(dt);
+                        });
                     }
                 }
             }
@@ -243,7 +248,7 @@ namespace TrackerSQL.Classes
                             cmd.Parameters.Add(BuildSqlParameter(parameters[i], i));
                     }
 
-                    if (_conn.State != ConnectionState.Open) _conn.Open();
+                    OpenWithRetry();
                     var res = cmd.ExecuteScalar();
                     return res == DBNull.Value ? null : res;
                 }
@@ -271,7 +276,7 @@ namespace TrackerSQL.Classes
                             cmd.Parameters.Add(BuildSqlParameter(parameters[i], i));
                     }
 
-                    if (_conn.State != ConnectionState.Open) _conn.Open();
+                    OpenWithRetry();
                     return cmd.ExecuteNonQuery();
                 }
             }
@@ -297,7 +302,7 @@ namespace TrackerSQL.Classes
                         cmd.Parameters.Add(BuildSqlParameter(parameters[i], i));
                 }
 
-                if (_conn.State != ConnectionState.Open) _conn.Open();
+                OpenWithRetry();
                 // Caller must close the reader which will also close the connection
                 return cmd.ExecuteReader(CommandBehavior.CloseConnection);
             }
@@ -307,6 +312,79 @@ namespace TrackerSQL.Classes
                 // Ensure connection closed on error
                 if (_conn.State == ConnectionState.Open) _conn.Close();
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Live SQL (SmarterASP) drops named-pipe connects with error 64
+        /// ("The specified network name is no longer available"). Retry the open
+        /// before the page reports a failed add-item.
+        /// </summary>
+        private void OpenWithRetry()
+        {
+            ExecuteWithOpenRetry(() =>
+            {
+                if (_conn.State == ConnectionState.Broken)
+                    _conn.Close();
+                if (_conn.State != ConnectionState.Open)
+                    _conn.Open();
+                return 0;
+            });
+        }
+
+        private T ExecuteWithOpenRetry<T>(Func<T> action)
+        {
+            int max = SystemConstants.DatabaseConstants.TransientOpenAttempts;
+            int delayMs = SystemConstants.DatabaseConstants.TransientOpenDelayMs;
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    return action();
+                }
+                catch (Exception ex) when (IsTransientOpenFailure(ex) && attempt < max)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Database,
+                        $"Transient SQL connection attempt {attempt} of {max}, retrying: {ex.Message}");
+                    SafeClose();
+                    Thread.Sleep(delayMs * attempt);
+                }
+            }
+        }
+
+        private static bool IsTransientOpenFailure(Exception ex)
+        {
+            var sql = ex as SqlException;
+            if (sql != null)
+            {
+                if (sql.Class == 20)
+                    return true;
+                int[] numbers = SystemConstants.DatabaseConstants.TransientSqlErrorNumbers;
+                for (int i = 0; i < numbers.Length; i++)
+                {
+                    if (numbers[i] == sql.Number)
+                        return true;
+                }
+                return false;
+            }
+
+            var invalid = ex as InvalidOperationException;
+            if (invalid != null && invalid.Message != null
+                && invalid.Message.IndexOf("max pool size", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            return false;
+        }
+
+        private void SafeClose()
+        {
+            try
+            {
+                if (_conn != null && _conn.State != ConnectionState.Closed)
+                    _conn.Close();
+            }
+            catch
+            {
             }
         }
 

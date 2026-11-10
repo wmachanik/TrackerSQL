@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TrackerSQL.Classes;
 using TrackerSQL.Models;
+using TrackerSQL.Repositories;
 
 namespace TrackerSQL.Managers
 {
@@ -74,6 +75,7 @@ namespace TrackerSQL.Managers
                 OrderID = row.OrderID,
                 ContactID = row.ContactID.ToString(),
                 ContactIDValue = row.ContactID,
+                RouteStopKey = DeliveryRouteRepository.StopKeyFor(row.ContactID, row.DeliverToAddressID, row.OrderID),
                 ContactName = row.ContactName ?? string.Empty,
                 AreaCode = AreaPill.Code(row.AreaName, row.AreaShortCode),
                 Details = string.Format("{0:d}, {1}", row.RequiredByDate, row.DeliveryByAbbreviation),

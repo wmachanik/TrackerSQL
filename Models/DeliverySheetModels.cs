@@ -103,6 +103,9 @@ namespace TrackerSQL.Models
 
         public int ContactIDValue { get; set; }
 
+        /// <summary>0 for the contact's own address; order id for ZZName; address id for an alternative address.</summary>
+        public int RouteStopKey { get; set; }
+
         public DateTime RequiredByDate { get; set; }
 
         public string Notes { get; set; }

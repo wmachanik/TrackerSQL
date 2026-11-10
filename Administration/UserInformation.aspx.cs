@@ -87,6 +87,8 @@ namespace TrackerSQL.Administration
                 cbxDriverTracking.Checked = prefs.DriverTracking;
                 if (cbxShowSheetAreaAbbr != null)
                     cbxShowSheetAreaAbbr.Checked = prefs.ShowSheetAreaAbbr;
+                if (cbxHideTrackingCouriers != null)
+                    cbxHideTrackingCouriers.Checked = prefs.HideTrackingCouriers;
             }
             catch (Exception ex)
             {
@@ -143,6 +145,8 @@ namespace TrackerSQL.Administration
                 prefs.DriverTracking = cbxDriverTracking.Checked;
                 if (cbxShowSheetAreaAbbr != null)
                     prefs.ShowSheetAreaAbbr = cbxShowSheetAreaAbbr.Checked;
+                if (cbxHideTrackingCouriers != null)
+                    prefs.HideTrackingCouriers = cbxHideTrackingCouriers.Checked;
 
                 TrackerSQL.Classes.UserPreferencesHelper.SaveOrUpdatePreferences(prefs); 
                 if (string.Equals(username, User?.Identity?.Name, StringComparison.OrdinalIgnoreCase))

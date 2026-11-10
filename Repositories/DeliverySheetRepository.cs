@@ -347,8 +347,11 @@ namespace TrackerSQL.Repositories
                 List<List<DeliverySheetOrderRow>> orders = run.GroupBy(r => r.OrderID).Select(g => g.ToList()).ToList();
                 List<List<DeliverySheetOrderRow>> route = RoutePlanner.Order(orders,
                     o => routeHash.TryGetValue(o[0].OrderID, out string hash) ? hash : null, depotLat, depotLng, roadSeconds);
-                route = RoutePlanner.ApplyLearned(route, o => o[0].ContactID,
-                    o => learned.TryGetValue(o[0].OrderID, out var l) ? l : null);
+                route = RoutePlanner.ApplyLearned(route,
+                    o => DeliveryRouteRepository.SiteKey(o[0].ContactID, o[0].DeliverToAddressID, o[0].OrderID),
+                    o => DeliveryRouteRepository.StopKeyFor(o[0].ContactID, o[0].DeliverToAddressID, o[0].OrderID) != 0
+                        ? null
+                        : (learned.TryGetValue(o[0].OrderID, out var l) ? l : null));
                 route = RoutePlanner.ApplyPlan(route, o => plans.TryGetValue(o[0].OrderID, out var p) ? p : null);
                 foreach (List<DeliverySheetOrderRow> order in route)
                     planned.AddRange(order);

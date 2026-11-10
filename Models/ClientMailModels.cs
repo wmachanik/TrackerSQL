@@ -80,6 +80,33 @@ namespace TrackerSQL.Models
         public const string CustomWhere = "CustomWhere";
     }
 
+    public class ClientMailSendLog
+    {
+        public DateTime SentAt { get; set; }
+        public string MessageName { get; set; }
+        public string Subject { get; set; }
+        public string FilterText { get; set; }
+        public int EmailsSent { get; set; }
+        public int EmailsFailed { get; set; }
+        public string SentBy { get; set; }
+
+        public string MessageLabel =>
+            string.IsNullOrWhiteSpace(MessageName) ? (Subject ?? string.Empty) : MessageName.Trim();
+
+        public string SentAtText => SentAt.ToString("dd MMM yyyy HH:mm");
+
+        public string SuccessText
+        {
+            get
+            {
+                int total = EmailsSent + EmailsFailed;
+                if (total <= 0)
+                    return "0%";
+                return ((int)Math.Round(100.0 * EmailsSent / total)).ToString() + "%";
+            }
+        }
+    }
+
     public class ClientMailTemplate
     {
         public int ClientMailTemplateID { get; set; }

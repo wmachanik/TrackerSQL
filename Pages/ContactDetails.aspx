@@ -1034,7 +1034,32 @@
                 if (!overlay || !frame) return;
                 dx = 0; dy = 0; place();
                 var url = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
-                if (deliverToAddressId) url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                function val(id) {
+                    var el = document.getElementById(id);
+                    return el ? (el.value || '') : '';
+                }
+                if (deliverToAddressId) {
+                    url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                    // Only when the editor is open — otherwise grid Check would send blank boxes and clear the lookup.
+                    var editor = document.getElementById('<%= pnlDeliverToEditor.ClientID %>');
+                    var editorOpen = false;
+                    if (editor) {
+                        var st = window.getComputedStyle ? getComputedStyle(editor) : editor.style;
+                        editorOpen = st && st.display !== 'none' && st.visibility !== 'hidden';
+                    }
+                    if (editorOpen) {
+                        url += '&Addr1=' + encodeURIComponent(val('<%= tbxDeliverToAddr1.ClientID %>'));
+                        url += '&Addr2=' + encodeURIComponent(val('<%= tbxDeliverToAddr2.ClientID %>'));
+                        url += '&Addr3=' + encodeURIComponent(val('<%= tbxDeliverToAddr3.ClientID %>'));
+                        url += '&Postal=' + encodeURIComponent(val('<%= tbxDeliverToPostal.ClientID %>'));
+                        url += '&AreaID=' + encodeURIComponent(val('<%= ddlDeliverToArea.ClientID %>'));
+                    }
+                } else {
+                    // Main contact: use the address / postal / area boxes even when not saved yet.
+                    url += '&Address=' + encodeURIComponent(val('<%= BillingAddressTextBox.ClientID %>'));
+                    url += '&Postal=' + encodeURIComponent(val('<%= PostalCodeTextBox.ClientID %>'));
+                    url += '&AreaID=' + encodeURIComponent(val('<%= ddlAreas.ClientID %>'));
+                }
                 frame.src = url;
                 overlay.style.display = 'flex';
             };

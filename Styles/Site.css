@@ -8183,6 +8183,29 @@ a.sys-prefs-mapping-link:visited {
     font-size: 0.72rem;
 }
 
+.woo-map-col-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin: 0.35rem 0 0.5rem;
+    font-size: 0.92rem;
+}
+.woo-map-col-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+}
+.woo-map-pull-grid.woo-map-hide-name th:nth-child(4),
+.woo-map-pull-grid.woo-map-hide-name td:nth-child(4),
+.woo-map-pull-grid.woo-map-hide-pack th:nth-child(6),
+.woo-map-pull-grid.woo-map-hide-pack td:nth-child(6),
+.woo-map-pull-grid.woo-map-hide-pack th:nth-child(13),
+.woo-map-pull-grid.woo-map-hide-pack td:nth-child(13),
+.woo-map-pull-grid.woo-map-hide-mode th:nth-child(7),
+.woo-map-pull-grid.woo-map-hide-mode td:nth-child(7) {
+    display: none;
+}
 .woo-map-pull-grid td.woo-map-sku-col,
 .woo-map-pull-grid th.woo-map-sku-col {
     min-width: 11rem;
@@ -11846,6 +11869,7 @@ a.dlv-await-flag.is-pending { background: #d68910; }
 }
 .driver-tracking-day-row input[type="date"] { padding: 4px 6px; }
 .driver-tracking-day-row .filter-panel-link { margin-left: 8px; }
+.driver-tracking-hide-other { margin-left: auto; white-space: nowrap; }
 .driver-tracking-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0; }
 .driver-tracking-bar .driver-tracking-warning { color: #8b3a3a; font-weight: 600; }
 .driver-tracking-layout { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }

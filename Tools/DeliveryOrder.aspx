@@ -45,9 +45,7 @@
                 <p class="sys-prefs-phase-note">
                     Each stop the driver app recorded, in the order it happened (several orders at one stop count once).
                     When a driver sets the order in the app before leaving (<em>Driver's plan</em>), or the office drags it on the Delivery Sheet, that order is used for the day.
-                    Otherwise the suggested order on the delivery sheet and in the app comes first from where each driver usually delivers a contact
-                    (their last <asp:Literal ID="litVisits" runat="server" /> visits; one visit counts half, four visits 80%), then from the GPS
-                    route from the depot, then from the area order. Days with fewer than <asp:Literal ID="litMinStops" runat="server" /> stops are
+                    Otherwise the suggested order is the GPS route from the depot (road time when it is known, otherwise straight-line). Area order is the guide for stops with no GPS point, and the tie-break when two stops are in the same place. Where a driver usually delivers a contact (their last <asp:Literal ID="litVisits" runat="server" /> visits) only nudges that place: one visit moves it a little, and even many visits leave most of the place with the GPS route. ZZName orders and alternative addresses are each their own stop, so they follow that site's GPS point and are not pulled to the account's usual place. Days with fewer than <asp:Literal ID="litMinStops" runat="server" /> stops are
                     not learnt from. Collections by the client and supplier drop-offs are not counted. <em>Suggested now</em> is where the stop would be on that day's sheet today.
                     Other days: <asp:Literal ID="litRecentDays" runat="server" />
                 </p>

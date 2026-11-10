@@ -172,17 +172,11 @@ namespace TrackerSQL.Managers
 
             var items = _itemsRepo.GetAll("SKU") ?? new List<Item>();
             var byId = items.ToDictionary(i => i.ItemID);
-            var bySku = items
-                .Where(i => !string.IsNullOrWhiteSpace(i.SKU))
-                .GroupBy(i => i.SKU.Trim(), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(x => x.ItemEnabled != false).First(),
-                    StringComparer.OrdinalIgnoreCase);
-            var enabledSkusLongestFirst = bySku.Keys
-                .OrderByDescending(s => s.Length)
-                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            Dictionary<string, Item> enabledBySku;
+            List<string> enabledSkusLongestFirst;
+            Dictionary<string, Item> disabledBySku;
+            List<string> disabledSkusLongestFirst;
+            BuildSkuLookups(items, out enabledBySku, out enabledSkusLongestFirst, out disabledBySku, out disabledSkusLongestFirst);
 
             var attrMaps = _attrRepo.GetActive();
             var variantNames = _attrParentRepo.GetVariantAttributeNames();
@@ -302,7 +296,7 @@ namespace TrackerSQL.Managers
                         }
                         Item parentMatch;
                         string parentMatchReason;
-                        if (TryMatchEnabledItem(p, bySku, enabledSkusLongestFirst, parentItemByProduct, byId,
+                        if (TryMatchEnabledItem(p, enabledBySku, enabledSkusLongestFirst, disabledBySku, disabledSkusLongestFirst, parentItemByProduct, byId,
                             out parentMatch, out parentMatchReason))
                         {
                             suggested = parentMatch.ItemID;
@@ -336,7 +330,7 @@ namespace TrackerSQL.Managers
                 {
                     Item match;
                     string matchReason;
-                    if (TryMatchEnabledItem(p, bySku, enabledSkusLongestFirst, parentItemByProduct, byId,
+                    if (TryMatchEnabledItem(p, enabledBySku, enabledSkusLongestFirst, disabledBySku, disabledSkusLongestFirst, parentItemByProduct, byId,
                         out match, out matchReason))
                     {
                         suggested = match.ItemID;
@@ -439,6 +433,7 @@ namespace TrackerSQL.Managers
             }
 
             // Sync parent ImportMode onto children; build parent attribute summary from children when empty.
+            ApplyFirstVariantItemDefault(allRows);
             SuggestParentItemModeForSingleInStock(allRows, categoryLockedImportModes);
             ApplyParentImportModes(allRows);
             MarkParentSavedFromChildren(allRows);
@@ -797,17 +792,11 @@ namespace TrackerSQL.Managers
             if (rows == null || rows.Count == 0)
                 return;
             var items = _itemsRepo.GetAll("SKU") ?? new List<Item>();
-            var bySku = items
-                .Where(i => !string.IsNullOrWhiteSpace(i.SKU))
-                .GroupBy(i => i.SKU.Trim(), StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(x => x.ItemEnabled != false).First(),
-                    StringComparer.OrdinalIgnoreCase);
-            var skusLongestFirst = bySku.Keys
-                .OrderByDescending(s => s.Length)
-                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            Dictionary<string, Item> enabledBySku;
+            List<string> enabledOrder;
+            Dictionary<string, Item> disabledBySku;
+            List<string> disabledOrder;
+            BuildSkuLookups(items, out enabledBySku, out enabledOrder, out disabledBySku, out disabledOrder);
 
             foreach (var child in rows.Where(r => r != null && !r.IsParentGroup && r.WooProductId == productId))
             {
@@ -817,7 +806,7 @@ namespace TrackerSQL.Managers
                     continue;
                 Item match;
                 string reason;
-                if (!TryMatchSku(child.Sku, child.ParentSku, bySku, skusLongestFirst, out match, out reason))
+                if (!TryMatchSkuPreferEnabled(child.Sku, child.ParentSku, enabledBySku, enabledOrder, disabledBySku, disabledOrder, out match, out reason))
                     continue;
                 child.SuggestedItemID = match.ItemID;
                 child.SuggestedItemDesc = match.ItemDesc;
@@ -1269,10 +1258,84 @@ namespace TrackerSQL.Managers
             return string.IsNullOrWhiteSpace(sku) ? null : sku.Trim();
         }
 
+        /// <summary>Enabled Tracker SKUs, then disabled and leading-underscore SKUs.</summary>
+        private static void BuildSkuLookups(
+            IList<Item> items,
+            out Dictionary<string, Item> enabledBySku,
+            out List<string> enabledSkusLongestFirst,
+            out Dictionary<string, Item> disabledBySku,
+            out List<string> disabledSkusLongestFirst)
+        {
+            enabledBySku = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+            disabledBySku = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+            if (items != null)
+            {
+                foreach (Item item in items)
+                {
+                    if (item == null || string.IsNullOrWhiteSpace(item.SKU))
+                        continue;
+                    string key = item.SKU.Trim();
+                    Dictionary<string, Item> dest = IsEnabledForSkuMatch(item) ? enabledBySku : disabledBySku;
+                    Item existing;
+                    if (!dest.TryGetValue(key, out existing))
+                        dest[key] = item;
+                }
+            }
+            enabledSkusLongestFirst = OrderSkusLongestFirst(enabledBySku);
+            disabledSkusLongestFirst = OrderSkusLongestFirst(disabledBySku);
+        }
+
+        private static List<string> OrderSkusLongestFirst(Dictionary<string, Item> bySku)
+        {
+            return bySku.Keys
+                .OrderByDescending(s => s.Length)
+                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>A leading underscore marks a retired SKU even when the enabled flag is still set.</summary>
+        private static bool IsEnabledForSkuMatch(Item item)
+        {
+            if (item == null || item.ItemEnabled == false)
+                return false;
+            string sku = (item.SKU ?? string.Empty).Trim();
+            return sku.Length == 0 || sku[0] != '_';
+        }
+
+        /// <summary>
+        /// When the first variant already matches a Tracker item, unmatched siblings use that item.
+        /// </summary>
+        private static void ApplyFirstVariantItemDefault(List<WooProductMapRow> rows)
+        {
+            if (rows == null || rows.Count == 0)
+                return;
+            foreach (var group in rows.Where(r => r != null && !r.IsParentGroup).GroupBy(r => r.WooProductId))
+            {
+                var ordered = group.OrderBy(r => r.WooVariationId ?? 0).ToList();
+                WooProductMapRow first = ordered.FirstOrDefault();
+                if (first == null || first.MapToNotes || first.MappedItemID <= 0)
+                    continue;
+                foreach (WooProductMapRow sibling in ordered)
+                {
+                    if (ReferenceEquals(sibling, first) || sibling.MapToNotes || sibling.ExistingMappingID > 0)
+                        continue;
+                    if (sibling.MappedItemID > 0 || sibling.SuggestedItemID > 0)
+                        continue;
+                    sibling.MappedItemID = first.MappedItemID;
+                    sibling.SuggestedItemID = first.SuggestedItemID > 0 ? first.SuggestedItemID : first.MappedItemID;
+                    sibling.SuggestedItemDesc = first.SuggestedItemDesc;
+                    sibling.MatchReason = "Same as first variant";
+                    sibling.ApplySelected = true;
+                }
+            }
+        }
+
         private static bool TryMatchEnabledItem(
             WooProductDto p,
             Dictionary<string, Item> enabledBySku,
             List<string> enabledSkusLongestFirst,
+            Dictionary<string, Item> disabledBySku,
+            List<string> disabledSkusLongestFirst,
             Dictionary<long, int> parentItemByProduct,
             Dictionary<int, Item> byId,
             out Item match,
@@ -1281,7 +1344,7 @@ namespace TrackerSQL.Managers
             bool isVariation = p != null && p.VariationId.HasValue && p.VariationId.Value > 0;
             string sku = p == null ? string.Empty : (p.Sku ?? string.Empty).Trim();
             string parentSku = p == null ? string.Empty : (p.ParentSku ?? string.Empty).Trim();
-            if (TryMatchSku(sku, parentSku, enabledBySku, enabledSkusLongestFirst, out match, out reason))
+            if (TryMatchSkuPreferEnabled(sku, parentSku, enabledBySku, enabledSkusLongestFirst, disabledBySku, disabledSkusLongestFirst, out match, out reason))
                 return true;
 
             if (p != null && isVariation && parentItemByProduct.ContainsKey(p.Id))
@@ -1299,6 +1362,21 @@ namespace TrackerSQL.Managers
             match = null;
             reason = null;
             return false;
+        }
+
+        private static bool TryMatchSkuPreferEnabled(
+            string sku,
+            string parentSku,
+            Dictionary<string, Item> enabledBySku,
+            List<string> enabledSkusLongestFirst,
+            Dictionary<string, Item> disabledBySku,
+            List<string> disabledSkusLongestFirst,
+            out Item match,
+            out string reason)
+        {
+            if (TryMatchSku(sku, parentSku, enabledBySku, enabledSkusLongestFirst, out match, out reason))
+                return true;
+            return TryMatchSku(sku, parentSku, disabledBySku, disabledSkusLongestFirst, out match, out reason);
         }
 
         private static bool TryMatchSku(

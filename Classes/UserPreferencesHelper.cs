@@ -99,7 +99,10 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'ShowSheetAreaAbbr') IS NULL
         CONSTRAINT DF_UserPreferences_ShowSheetAreaAbbr DEFAULT (0);
 IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
     ALTER TABLE dbo.UserPreferences ADD DriverTracking BIT NOT NULL
-        CONSTRAINT DF_UserPreferences_DriverTracking DEFAULT (0);";
+        CONSTRAINT DF_UserPreferences_DriverTracking DEFAULT (0);
+IF COL_LENGTH(N'dbo.UserPreferences', N'HideTrackingCouriers') IS NULL
+    ALTER TABLE dbo.UserPreferences ADD HideTrackingCouriers BIT NOT NULL
+        CONSTRAINT DF_UserPreferences_HideTrackingCouriers DEFAULT (1);";
                     using (SqlCommand alterCmd = new SqlCommand(addColumns, conn))
                         alterCmd.ExecuteNonQuery();
                     _optionColumnsEnsured = true;
@@ -176,7 +179,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
         {
             string connString = GetConnectionString();
             EnsureUserPreferencesTableExists();
-            string query = "SELECT UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking FROM UserPreferences WHERE UserId = @UserId";
+            string query = "SELECT UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking, HideTrackingCouriers FROM UserPreferences WHERE UserId = @UserId";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -198,6 +201,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                         ShowDeliveryRouteEta = reader.GetBoolean(reader.GetOrdinal("ShowDeliveryRouteEta")),
                         ShowSheetAreaAbbr = reader.GetBoolean(reader.GetOrdinal("ShowSheetAreaAbbr")),
                         DriverTracking = reader.GetBoolean(reader.GetOrdinal("DriverTracking")),
+                        HideTrackingCouriers = reader.GetBoolean(reader.GetOrdinal("HideTrackingCouriers")),
                         LoadedOn = DateTime.UtcNow
                     };
                 }
@@ -207,8 +211,8 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
         public static void SavePreferencesToDb(UserPreferences prefs)
         {
             string connString = GetConnectionString();
-            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking, CreatedOn, UpdatedOn)
-                     VALUES (@UserId, @TimeZoneId, @Language, @ShowDeliveryRouteEta, @ShowSheetAreaAbbr, @DriverTracking, @CreatedOn, @UpdatedOn)";
+            string query = @"INSERT INTO UserPreferences (UserId, TimeZoneId, Language, ShowDeliveryRouteEta, ShowSheetAreaAbbr, DriverTracking, HideTrackingCouriers, CreatedOn, UpdatedOn)
+                     VALUES (@UserId, @TimeZoneId, @Language, @ShowDeliveryRouteEta, @ShowSheetAreaAbbr, @DriverTracking, @HideTrackingCouriers, @CreatedOn, @UpdatedOn)";
 
             using (SqlConnection conn = new SqlConnection(connString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -219,6 +223,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                 cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
                 cmd.Parameters.AddWithValue("@ShowSheetAreaAbbr", prefs.ShowSheetAreaAbbr);
                 cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
+                cmd.Parameters.AddWithValue("@HideTrackingCouriers", prefs.HideTrackingCouriers);
                 cmd.Parameters.AddWithValue("@CreatedOn", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
 
@@ -236,6 +241,7 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                          ShowDeliveryRouteEta = @ShowDeliveryRouteEta,
                          ShowSheetAreaAbbr = @ShowSheetAreaAbbr,
                          DriverTracking = @DriverTracking,
+                         HideTrackingCouriers = @HideTrackingCouriers,
                          UpdatedOn = @UpdatedOn
                      WHERE UserId = @UserId";
 
@@ -248,11 +254,21 @@ IF COL_LENGTH(N'dbo.UserPreferences', N'DriverTracking') IS NULL
                 cmd.Parameters.AddWithValue("@ShowDeliveryRouteEta", prefs.ShowDeliveryRouteEta);
                 cmd.Parameters.AddWithValue("@ShowSheetAreaAbbr", prefs.ShowSheetAreaAbbr);
                 cmd.Parameters.AddWithValue("@DriverTracking", prefs.DriverTracking);
+                cmd.Parameters.AddWithValue("@HideTrackingCouriers", prefs.HideTrackingCouriers);
                 cmd.Parameters.AddWithValue("@UpdatedOn", DateTime.UtcNow);
 
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public static void SaveCurrentHideTrackingCouriers(bool hide)
+        {
+            UserPreferences prefs = GetCurrentPreferences();
+            prefs.HideTrackingCouriers = hide;
+            SaveOrUpdatePreferences(prefs);
+            if (HttpContext.Current?.Session != null)
+                HttpContext.Current.Session[SessionKey] = prefs;
         }
 
         public static void SaveCurrentShowSheetAreaAbbr(bool show)

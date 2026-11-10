@@ -37,6 +37,7 @@
                 <button type="button" id="dtNextDay" class="filter-panel-btn" title="Day after">&#9654;</button>
                 <button type="button" id="dtToday" class="filter-panel-btn">Today</button>
                 <asp:HyperLink ID="lnkDeliveryOrder" runat="server" CssClass="filter-panel-link" Text="Delivery order for this day" />
+                <label class="driver-tracking-hide-other"><input type="checkbox" id="dtHideOther" <%= HideTrackingCouriersChecked %> /> Hide Collection And Courier</label>
             </div>
 
             <div class="driver-tracking-bar">
@@ -246,7 +247,11 @@
             }
 
             function boardDrivers() {
-                return board && board.drivers ? board.drivers : [];
+                var list = board && board.drivers ? board.drivers : [];
+                var box = byId('dtHideOther');
+                if (box && box.checked)
+                    list = list.filter(function (d) { return d.ownDriver !== false; });
+                return list;
             }
 
             function renderList() {
@@ -267,6 +272,8 @@
                 if (!d) { el.innerHTML = boardDrivers().length ? '<p class="driver-tracking-muted">Click a driver to see their stops.</p>' : ''; return; }
                 var html = '<h3>' + esc(d.name) + ': ' + d.stopsLeft + ' stop(s) left'
                     + (d.finishEta ? ', back at depot about ' + esc(d.finishEta) : '') + '</h3>';
+                if (d.ownDriver !== false && d.stopsLeft > 0)
+                    html += '<p><button type="button" class="filter-panel-btn" id="dtOptimize">Optimize Route</button></p>';
                 if (d.waitingDepot) html += '<p class="driver-tracking-muted">Still at the depot — expected times use the default start until they leave (300 m) or deliver.</p>';
                 else if (d.stopsLeft > 0 && d.fromDepot) html += '<p class="driver-tracking-muted">No position today: times are from the depot.</p>';
                 if (d.stopsNoPoint > 0) html += '<p class="driver-tracking-muted">' + d.stopsNoPoint + ' stop(s) have no GPS point and no time.</p>';
@@ -435,6 +442,27 @@
             }
 
             byId('dtRefresh').addEventListener('click', function () { changeDay(selectedDay()); });
+            var hideOther = byId('dtHideOther');
+            if (hideOther) {
+                hideOther.addEventListener('change', function () {
+                    if (selectedId) {
+                        var still = false;
+                        boardDrivers().forEach(function (d) { if (d.personId === selectedId) still = true; });
+                        if (!still) { selectedId = null; fittedFor = null; fitted = false; }
+                    }
+                    render();
+                    fetch(dataUrlBase + '?action=hide&hide=' + (hideOther.checked ? '1' : '0'), { method: 'POST', credentials: 'same-origin' });
+                });
+            }
+            byId('dtStops').addEventListener('click', function (e) {
+                if (!e.target || e.target.id !== 'dtOptimize' || !selectedId) return;
+                if (!confirm('Put the remaining stops in driving order from the depot? The driver app picks this up on its next refresh.')) return;
+                e.target.disabled = true;
+                fetch(dataUrlBase + '?action=optimize&date=' + encodeURIComponent(viewingDay) + '&person=' + selectedId, { method: 'POST', credentials: 'same-origin' })
+                    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j && j.error || ('HTTP ' + r.status)); return j; }); })
+                    .then(function () { load(viewingDay); })
+                    .catch(function (err) { alert(err.message); e.target.disabled = false; });
+            });
             if (byId('dtPrevDay')) byId('dtPrevDay').addEventListener('click', function () { shiftDay(-1); });
             if (byId('dtNextDay')) byId('dtNextDay').addEventListener('click', function () { shiftDay(1); });
             if (byId('dtToday')) byId('dtToday').addEventListener('click', function () { changeDay(todayIso()); });

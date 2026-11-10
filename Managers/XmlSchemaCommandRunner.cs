@@ -187,6 +187,7 @@ namespace TrackerSQL.Managers
                 { "SQLCommands-DriverGps-13.xml", new[] { Column("ContactDeliverToAddressTbl", "LastUsedDate") } },
                 { "SQLCommands-DriverGps-14.xml", new[] { Table("AltAddressKindsTbl") } },
                 { "SQLCommands-DriverGps-15.xml", new[] { Column("AltAddressKindsTbl", "IsSundryDefault") } },
+                { "SQLCommands-DriverGps-16.xml", new[] { Column("DeliveryRouteTbl", "StopKey") } },
                 { "SQLCommands-OrderDone-01.xml", new[] { Column("WooCommerceSettingsTbl", "CompleteWooOrderOnDone") } },
                 { "SQLCommands-WooCommerce-01.xml", new[] { Table("WooCatalogCacheTbl") } },
                 { "SQLCommands-WooCommerce-02.xml", new[] { Table("WooPaymentMethodMapTbl") } },
@@ -198,6 +199,7 @@ namespace TrackerSQL.Managers
                 { "SQLCommands-ContactChangeLog-01.xml", new[] { Table("ContactChangeLogTbl") } },
                 { "SQLCommands-ContactPortal-01.xml", new[] { Table("ContactPortalSettingsTbl") } },
                 { "SQLCommands-ClientMail-01.xml", new[] { Table("ClientMailTemplatesTbl") } },
+                { "SQLCommands-ClientMail-02.xml", new[] { Table("ClientMailSendLogTbl") } },
             };
     }
 }

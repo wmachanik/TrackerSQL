@@ -17,6 +17,8 @@ namespace TrackerSQL.Classes
         public bool ShowSheetAreaAbbr { get; set; }
         /// <summary>Show driver positions (Driver Tracking page / map) (off by default).</summary>
         public bool DriverTracking { get; set; }
+        /// <summary>Driver Tracking hides collection and courier people (on by default).</summary>
+        public bool HideTrackingCouriers { get; set; } = true;
 
         public TimeZoneInfo GetTimeZoneInfo()
         {

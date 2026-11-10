@@ -54,6 +54,9 @@
                             <br />
                             <asp:CheckBox ID="cbxShowSheetAreaAbbr" runat="server" Text="Show area codes on the delivery sheet"
                                 ToolTip="Shows each delivery's area abbreviation (Lookups → Areas) next to the client name." />
+                            <br />
+                            <asp:CheckBox ID="cbxHideTrackingCouriers" runat="server" Text="Hide Collection And Courier On Driver Tracking"
+                                ToolTip="Driver tracking leaves collection and courier people off the table and the map." />
                         </td>
                     </tr>
                     <tr>

@@ -47,6 +47,7 @@ namespace TrackerSQL.Managers
                 ? contact.CompanyName.Trim()
                 : contactName;
 
+            email.AddToBody(OpenConfirmationBody());
             email.AddToBody(MessageProvider.Format(MessageKeys.Order.ConfirmationIntro, contactName));
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationHeader));
             email.AddToBody(BuildConfirmationTableHtml(companyName, header, orderLines, notes));
@@ -59,20 +60,21 @@ namespace TrackerSQL.Managers
             {
                 string po = header.PurchaseOrder.Trim();
                 if (string.Equals(po, SystemConstants.UIConstants.PORequiredText, StringComparison.OrdinalIgnoreCase))
-                    email.AddToBody("<p style=\"margin:8px 0 0 0;\">" + MessageProvider.Get(MessageKeys.Order.ConfirmationPORequired) + "</p>");
+                    email.AddToBody("<p style=\"margin:16px 0 0 0;\">" + MessageProvider.Get(MessageKeys.Order.ConfirmationPORequired) + "</p>");
                 else
-                    email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+                    email.AddToBody("<p style=\"margin:16px 0 0 0;\">"
                         + MessageProvider.Format(MessageKeys.Order.ConfirmationPOReceived, HttpUtility.HtmlEncode(po))
                         + "</p>");
             }
 
-            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
             string portalBlurb = ContactPortalManager.BuildEmailPortalBlurbHtml(
                 header != null ? (int)header.CustomerID : 0);
             if (!string.IsNullOrWhiteSpace(portalBlurb))
                 email.AddToBody(portalBlurb);
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
             email.AddToBody(MessageProvider.GetEmailSignature());
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
+            email.AddToBody(CloseConfirmationBody());
 
             bool success = email.SendEmail();
             if (success)
@@ -107,23 +109,25 @@ namespace TrackerSQL.Managers
             string contactName = EmailUtils.GetFriendlyContactName(contact);
             string companyName = !string.IsNullOrWhiteSpace(contact.CompanyName) ? contact.CompanyName.Trim() : contactName;
 
+            email.AddToBody(OpenConfirmationBody());
             email.AddToBody(MessageProvider.Format(MessageKeys.Order.ConfirmationIntro, contactName));
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.PortalAckHeader));
             email.AddToBody(BuildConfirmationTableHtml(companyName, header, orderLines, string.Empty));
-            email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+            email.AddToBody("<p style=\"margin:16px 0 0 0;\">"
                 + MessageProvider.Format(MessageKeys.Order.PortalAckDelivery, header.RequiredByDate.ToString("dd MMM, ddd, yyyy"))
                 + "</p>");
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.PortalAckCaveat));
             if (!string.IsNullOrWhiteSpace(requestedChanges))
                 email.AddToBody(MessageProvider.Format(MessageKeys.Order.PortalAckChanges, HttpUtility.HtmlEncode(requestedChanges.Trim())));
             if (!string.IsNullOrWhiteSpace(header.PurchaseOrder))
-                email.AddToBody("<p style=\"margin:8px 0 0 0;\">"
+                email.AddToBody("<p style=\"margin:16px 0 0 0;\">"
                     + MessageProvider.Format(MessageKeys.Order.ConfirmationPOReceived, HttpUtility.HtmlEncode(header.PurchaseOrder.Trim()))
                     + "</p>");
 
-            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
             email.AddToBody(MessageProvider.Get(MessageKeys.Order.EmailFooter));
             email.AddToBody(MessageProvider.GetEmailSignature());
+            email.AddToBody(MessageProvider.Get(MessageKeys.Order.ConfirmationFooter));
+            email.AddToBody(CloseConfirmationBody());
 
             bool success = email.SendEmail();
             statusMessage = success
@@ -145,6 +149,16 @@ namespace TrackerSQL.Managers
                 MessageProvider.Get(MessageKeys.CoffeeCheckup.TableCompanyContact),
                 HttpUtility.HtmlEncode(companyName ?? string.Empty)));
             html.Append("<tbody>");
+
+            string deliverTo = BuildDeliverToLine(header);
+            if (!string.IsNullOrWhiteSpace(deliverTo))
+            {
+                html.Append(string.Format(
+                    MessageProvider.Get(MessageKeys.CoffeeCheckup.HtmlTableRowNormal),
+                    MessageProvider.Get(MessageKeys.Order.ConfirmationDeliverToLabel),
+                    HttpUtility.HtmlEncode(deliverTo),
+                    ""));
+            }
 
             string deliveryLabel = MessageProvider.Get(MessageKeys.Order.ConfirmationTableDeliveryLabel);
             string deliveryValue = header != null
@@ -186,10 +200,11 @@ namespace TrackerSQL.Managers
                     else
                     {
                         left = HttpUtility.HtmlEncode(line.ItemName ?? string.Empty);
+                        string qtyText = SystemConstants.FormatConstants.FormatQuantity(line.Qty);
                         if (string.IsNullOrEmpty(line.PackagingName) || line.PackagingID == 0)
-                            right = HttpUtility.HtmlEncode(FormatQty(line.Qty));
+                            right = HttpUtility.HtmlEncode(qtyText);
                         else
-                            right = HttpUtility.HtmlEncode(FormatQty(line.Qty) + " (" + line.PackagingName + ")");
+                            right = HttpUtility.HtmlEncode(qtyText + " (" + line.PackagingName + ")");
                     }
 
                     string rowTemplate = itemIndex % 2 == 0
@@ -202,13 +217,6 @@ namespace TrackerSQL.Managers
 
             html.Append("</tbody></table>");
             return html.ToString();
-        }
-
-        private static string FormatQty(double qty)
-        {
-            if (Math.Abs(qty - Math.Round(qty)) < 0.0001)
-                return ((int)Math.Round(qty)).ToString();
-            return qty.ToString("0.##");
         }
 
         private string BuildDeliveryExplanationHtml(OrderHeaderData header)
@@ -279,7 +287,44 @@ namespace TrackerSQL.Managers
                 inner = inner.Substring(gt + 1).TrimStart();
             }
 
-            return "<p style=\"margin:8px 0 0 0;\">" + inner + "</p>";
+            return "<p style=\"margin:16px 0 0 0;\">" + inner + "</p>";
+        }
+
+        private static string OpenConfirmationBody()
+        {
+            return "<div style=\"" + MessageProvider.Get(MessageKeys.Order.ConfirmationBodyStyle) + "\">";
+        }
+
+        private static string CloseConfirmationBody()
+        {
+            return "</div>";
+        }
+
+        /// <summary>Customer-facing line when the order goes to an alternative address.</summary>
+        private static string BuildDeliverToLine(OrderHeaderData header)
+        {
+            if (header == null || header.DeliverToAddressID.GetValueOrDefault() <= 0)
+                return null;
+
+            ContactDeliverToAddress addr = new ContactDeliverToAddressRepository().GetById(header.DeliverToAddressID.Value);
+            if (addr == null)
+                return null;
+
+            var parts = new List<string>();
+            string name = addr.ShortNameForOrders;
+            if (!string.IsNullOrWhiteSpace(name))
+                parts.Add(name.Trim());
+            string person = (addr.DeliverToPerson ?? string.Empty).Trim();
+            if (person.Length > 0 && !string.Equals(person, name, StringComparison.OrdinalIgnoreCase))
+                parts.Add(person);
+            if (!string.IsNullOrWhiteSpace(addr.AddressSummary))
+                parts.Add(addr.AddressSummary.Trim());
+
+            string text = string.Join(", ", parts);
+            string kind = addr.AddressKindDisplay;
+            if (!string.IsNullOrWhiteSpace(kind))
+                text = string.IsNullOrEmpty(text) ? kind : text + " (" + kind + ")";
+            return string.IsNullOrWhiteSpace(text) ? null : text;
         }
 
         private int? ResolveContactAreaId(long customerId)

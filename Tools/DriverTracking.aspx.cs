@@ -12,6 +12,9 @@ namespace TrackerSQL.Tools
     /// <summary>Map of drivers for a delivery day; data from Handlers/DriverTrackingData.ashx.</summary>
     public partial class DriverTracking : Page
     {
+        protected string HideTrackingCouriersChecked =>
+            UserPreferencesHelper.GetCurrentPreferences().HideTrackingCouriers ? "checked=\"checked\"" : string.Empty;
+
         protected void Page_Load(object sender, EventArgs e)
         {
             DateTime day = TimeZoneUtils.Now().Date;

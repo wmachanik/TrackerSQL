@@ -217,12 +217,16 @@
                 return t ? Array.prototype.slice.call(t.querySelectorAll('tr[data-person="' + person + '"]')) : [];
             }
             function contactsOf(person) {
-                var seen = [];
+                var seen = [], out = [];
                 rowsOf(person).forEach(function (r) {
                     var c = parseInt(r.getAttribute('data-contact'), 10);
-                    if (seen.indexOf(c) < 0) seen.push(c);
+                    var k = parseInt(r.getAttribute('data-stop') || '0', 10);
+                    var id = c + ':' + k;
+                    if (seen.indexOf(id) >= 0) return;
+                    seen.push(id);
+                    out.push({ c: c, k: k });
                 });
-                return seen;
+                return out;
             }
             function bar(show, text) {
                 var b = document.getElementById('dlvOrderBar');
@@ -255,7 +259,7 @@
                 }
                 if (!changed) {
                     var rows = rowsOf(person);
-                    start = { person: person, rows: rows, after: rows[rows.length - 1].nextSibling, contacts: contactsOf(person).join(',') };
+                    start = { person: person, rows: rows, after: rows[rows.length - 1].nextSibling, contacts: contactsOf(person).map(function (s) { return s.c + ':' + s.k; }).join(',') };
                 }
                 dragRow = tr;
                 tr.classList.add('dlv-dragging');
@@ -280,7 +284,7 @@
                 dragRow.classList.remove('dlv-dragging');
                 dragRow.removeAttribute('draggable');
                 dragRow = null;
-                if (start && contactsOf(person).join(',') !== start.contacts) {
+                if (start && contactsOf(person).map(function (s) { return s.c + ':' + s.k; }).join(',') !== start.contacts) {
                     changed = person;
                     bar(true, 'You changed the order of ' + name + "'s stops.");
                 } else {

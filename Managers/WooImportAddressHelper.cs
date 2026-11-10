@@ -199,6 +199,8 @@ namespace TrackerSQL.Managers
                 .Where(p => !string.IsNullOrWhiteSpace(p))
                 .Select(p => p.Trim())
                 .Where(p => p.Length > 0)
+                // Drop checkout label leaks such as "Company Name - Salute".
+                .Where(p => !CustomerLocationManager.IsCompanyLabelLine(p))
                 .ToList();
 
             if (config.StripCapeTown && IsCapeTownDeliveryArea(areaName))

@@ -433,7 +433,18 @@ namespace TrackerSQL.Pages
                 }
                 else
                 {
-                    List<int> contacts = (request["contacts"] as Newtonsoft.Json.Linq.JArray)?.Select(t => (int)t).ToList() ?? new List<int>();
+                    var contacts = new List<DeliveryRouteRepository.StopRef>();
+                    foreach (Newtonsoft.Json.Linq.JToken token in (request["contacts"] as Newtonsoft.Json.Linq.JArray) ?? new Newtonsoft.Json.Linq.JArray())
+                    {
+                        if (token is Newtonsoft.Json.Linq.JObject obj)
+                            contacts.Add(new DeliveryRouteRepository.StopRef
+                            {
+                                ContactId = (int?)obj["c"] ?? 0,
+                                StopKey = (int?)obj["k"] ?? 0
+                            });
+                        else
+                            contacts.Add(new DeliveryRouteRepository.StopRef { ContactId = (int)token, StopKey = 0 });
+                    }
                     int saved = manager.SaveOfficeRoute(day, personId, contacts, User.Identity.Name, out string error);
                     if (error != null)
                         throw new InvalidOperationException(error);
@@ -533,8 +544,11 @@ namespace TrackerSQL.Pages
 
             // 2. Sundry item reordering is now handled by DeliverySheetManager.
 
-            // 3. Add delivery rows to the table
-            AddDeliveryRows(buildResult.Items, pPrintForm);
+            // 3. Add delivery rows to the table. One driver on screen already shows in By, so the date stays plain.
+            bool oneDriverOnScreen = !pPrintForm
+                && !string.IsNullOrEmpty(selectedDeliveryBy)
+                && selectedDeliveryBy != "%";
+            AddDeliveryRows(buildResult.Items, pPrintForm, oneDriverOnScreen);
 
             // 4. Style the table rows for readability
             ApplyRowStyles();
@@ -553,7 +567,7 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// Adds delivery rows to the deliveries table.
         /// </summary>
-        private void AddDeliveryRows(List<DeliverySheetDisplayItem> deliveryItemsList, bool pPrintForm)
+        private void AddDeliveryRows(List<DeliverySheetDisplayItem> deliveryItemsList, bool pPrintForm, bool oneDriverOnScreen = false)
         {
             int index = 0;
             int num1 = deliveryItemsList.Count;
@@ -574,6 +588,12 @@ namespace TrackerSQL.Pages
                 // Details cell
                 TableCell cellDetails = new TableCell();
                 cellDetails.Text = currentItem.Details;
+                if (oneDriverOnScreen)
+                {
+                    int comma = cellDetails.Text.IndexOf(',');
+                    if (comma > 0)
+                        cellDetails.Text = cellDetails.Text.Substring(0, comma).Trim();
+                }
 
                 if (pPrintForm)
                 {
@@ -592,6 +612,7 @@ namespace TrackerSQL.Pages
                 {
                     row.Attributes["data-order"] = currentItem.OrderID.ToString();
                     row.Attributes["data-contact"] = currentItem.ContactIDValue.ToString();
+                    row.Attributes["data-stop"] = currentItem.RouteStopKey.ToString();
                     row.Attributes["data-person"] = currentItem.DeliveryById.Value.ToString();
                     row.Attributes["data-driver"] = currentItem.DeliveryBy ?? string.Empty;
                     cellDetails.Text = "<span class='dlv-handle' title='Drag to change the order of this driver&#39;s stops'>&#x2807;</span>"

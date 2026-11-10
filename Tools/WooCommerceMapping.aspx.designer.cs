@@ -57,6 +57,12 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.Button btnResetCatalog;
         protected global::System.Web.UI.WebControls.Button btnExpandAllGroups;
         protected global::System.Web.UI.WebControls.Button btnCollapseAllGroups;
+        protected global::System.Web.UI.HtmlControls.HtmlInputCheckBox chkShowName;
+        protected global::System.Web.UI.HtmlControls.HtmlInputCheckBox chkShowPack;
+        protected global::System.Web.UI.HtmlControls.HtmlInputCheckBox chkShowMode;
+        protected global::System.Web.UI.WebControls.Literal litShowName;
+        protected global::System.Web.UI.WebControls.Literal litShowPack;
+        protected global::System.Web.UI.WebControls.Literal litShowMode;
         protected global::System.Web.UI.WebControls.Panel pnlPullSearch;
         protected global::System.Web.UI.WebControls.Label lblFindSku;
         protected global::System.Web.UI.WebControls.TextBox txtFindSku;

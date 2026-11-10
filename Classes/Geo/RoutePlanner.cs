@@ -11,7 +11,8 @@ namespace TrackerSQL.Classes.Geo
     /// that: nearest stop not visited yet, then 2-opt (reverse a stretch) and Or-opt (move 1-3 stops) until nothing improves.
     /// Stops are positioned by their geohash; stops at the same point stay together; ties keep the incoming (geohash) order.
     /// Stops without a position keep their order at the end.
-    /// <see cref="ApplyLearned"/> then moves stops towards where drivers really deliver them (DeliveryVisitTbl).
+    /// <see cref="ApplyLearned"/> then nudges stops towards where drivers really deliver them (DeliveryVisitTbl).
+        /// The GPS route stays in charge: a learned place never takes more than about a third of the position.
     /// </summary>
     public static class RoutePlanner
     {
@@ -278,28 +279,33 @@ namespace TrackerSQL.Classes.Geo
         }
 
         /// <summary>
-        /// Puts the driver's own habits first: each stop's place in <paramref name="route"/> (0 = first .. 1 = last) is blended
-        /// with where the driver really delivered it (<paramref name="learnedOf"/>: average place 0..1 and how many visits),
-        /// weighting the learned place by its visits (1 visit = half, 4 visits = 80%). Stops never delivered with the app keep
-        /// their route place. A contact's stops share the place of its first one so they stay together.
+        /// Nudges each stop from its place in the GPS route (0 = first .. 1 = last) towards where the driver really delivered
+        /// it (<paramref name="learnedOf"/>: average place 0..1 and how many visits). One visit moves it a little; ten visits
+        /// still leave about two thirds of the place with the GPS route, so a bad day cannot yank the route across town.
+        /// Stops never delivered with the app keep their route place. Stops that share <paramref name="siteOf"/> stay together.
+        /// ZZName orders and alternative addresses use their own site, so they are not pulled to the account's usual place.
         /// </summary>
-        public static List<T> ApplyLearned<T>(IList<T> route, Func<T, int> contactOf, Func<T, Tuple<double, int>> learnedOf)
+        public static List<T> ApplyLearned<T>(IList<T> route, Func<T, long> siteOf, Func<T, Tuple<double, int>> learnedOf)
         {
             int n = route.Count;
             if (n < 2)
                 return route.ToList();
 
-            var firstIndex = new Dictionary<int, int>();
+            var firstIndex = new Dictionary<long, int>();
             var keyed = new List<Tuple<T, int, double>>(n);
             for (int i = 0; i < n; i++)
             {
-                int contact = contactOf(route[i]);
-                if (!firstIndex.TryGetValue(contact, out int first))
-                    firstIndex[contact] = first = i;
+                long site = siteOf(route[i]);
+                if (!firstIndex.TryGetValue(site, out int first))
+                    firstIndex[site] = first = i;
                 double place = (double)first / (n - 1);
                 Tuple<double, int> learned = learnedOf(route[i]);
                 if (learned != null && learned.Item2 > 0)
-                    place = (learned.Item2 * Math.Max(0, Math.Min(1, learned.Item1)) + place) / (learned.Item2 + 1);
+                {
+                    double learnedPlace = Math.Max(0, Math.Min(1, learned.Item1));
+                    double trust = Math.Min(0.35, learned.Item2 / (learned.Item2 + 8.0));
+                    place = trust * learnedPlace + (1 - trust) * place;
+                }
                 keyed.Add(Tuple.Create(route[i], i, place));
             }
             return keyed.OrderBy(k => k.Item3).ThenBy(k => k.Item2).Select(k => k.Item1).ToList();

@@ -206,8 +206,9 @@ namespace TrackerSQL.Managers
                 }
                 List<MobileDeliveryStop> route = RoutePlanner.Order(driverStops.ToList(),
                     s => routeRows.TryGetValue(s.OrderId, out var row) ? row.RouteHash : null, depotLat, depotLng, roadSeconds);
-                route = RoutePlanner.ApplyLearned(route, s => s.ContactId,
-                    s => routeRows.TryGetValue(s.OrderId, out var row) && row.LearnedPos.HasValue
+                route = RoutePlanner.ApplyLearned(route, s => DeliveryRouteRepository.SiteKey(s.ContactId, s.DeliverToAddressId, s.OrderId),
+                    s => DeliveryRouteRepository.StopKeyFor(s.ContactId, s.DeliverToAddressId, s.OrderId) == 0
+                        && routeRows.TryGetValue(s.OrderId, out var row) && row.LearnedPos.HasValue
                         ? Tuple.Create(row.LearnedPos.Value, row.LearnedVisits) : null);
                 route = RoutePlanner.ApplyPlan(route,
                     s => routeRows.TryGetValue(s.OrderId, out var row) && row.PlanSeq.HasValue
@@ -368,8 +369,13 @@ namespace TrackerSQL.Managers
             }
 
             var repo = new DeliveryRouteRepository();
-            Dictionary<int, int> contactOf = repo.ContactsForOrders(day, orderIds);
-            List<int> contacts = orderIds.Where(contactOf.ContainsKey).Select(id => contactOf[id]).Distinct().ToList();
+            Dictionary<int, DeliveryRouteRepository.StopRef> stopOf = repo.StopsForOrders(day, orderIds);
+            var contacts = new List<DeliveryRouteRepository.StopRef>();
+            foreach (int id in orderIds)
+            {
+                if (stopOf.TryGetValue(id, out DeliveryRouteRepository.StopRef stop))
+                    contacts.Add(stop);
+            }
             if (orderIds.Count > 0 && contacts.Count == 0)
             {
                 error = "None of those orders are due on " + day.ToString("yyyy-MM-dd") + ".";
@@ -379,8 +385,7 @@ namespace TrackerSQL.Managers
 
             AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, contacts.Count == 0
                 ? "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " went back to the suggested order"
-                : "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " set " + contacts.Count + " stops: contacts "
-                  + string.Join(", ", contacts), user.UserName);
+                : "Route order: driver " + user.PersonId + " " + day.ToString("yyyy-MM-dd") + " set " + contacts.Count + " stops", user.UserName);
             return contacts.Count;
         }
 
@@ -405,7 +410,7 @@ namespace TrackerSQL.Managers
         /// The office delivery sheet: the driver's stops still to do, dragged into a new order (contacts first to last).
         /// Stops already delivered keep their place, so the route numbers do not shift. Returns the number of stops saved.
         /// </summary>
-        public int SaveOfficeRoute(DateTime day, int personId, IList<int> openContactOrder, string userName, out string error)
+        public int SaveOfficeRoute(DateTime day, int personId, IList<DeliveryRouteRepository.StopRef> openContactOrder, string userName, out string error)
         {
             error = null;
             if (!DeliveryRouteRepository.TableSeen())
@@ -419,35 +424,108 @@ namespace TrackerSQL.Managers
                 return 0;
             }
 
-            List<int> route = new List<int>();
-            var done = new HashSet<int>();
+            var route = new List<DeliveryRouteRepository.StopRef>();
+            var done = new HashSet<string>();
+            var routeIds = new HashSet<string>();
             foreach (MobileDeliveryStop stop in GetSheet(day, personId).Orders.OrderBy(o => o.Seq))
             {
-                if (stop.ContactId <= 0 || route.Contains(stop.ContactId))
+                if (stop.ContactId <= 0)
                     continue;
-                route.Add(stop.ContactId);
+                var item = new DeliveryRouteRepository.StopRef
+                {
+                    ContactId = stop.ContactId,
+                    StopKey = DeliveryRouteRepository.StopKeyFor(stop.ContactId, stop.DeliverToAddressId, stop.OrderId)
+                };
+                string id = item.ContactId + ":" + item.StopKey;
+                if (!routeIds.Add(id))
+                    continue;
+                route.Add(item);
                 if (stop.Done || stop.Proof != null)
-                    done.Add(stop.ContactId);
+                    done.Add(id);
             }
 
-            var wanted = (openContactOrder ?? new List<int>()).Where(c => route.Contains(c) && !done.Contains(c)).Distinct().ToList();
-            wanted.AddRange(route.Where(c => !done.Contains(c) && !wanted.Contains(c)));
-            if (wanted.Count == 0)
+            var openIds = new List<string>();
+            var openStops = new List<DeliveryRouteRepository.StopRef>();
+            if (openContactOrder != null)
+            {
+                foreach (DeliveryRouteRepository.StopRef item in openContactOrder)
+                {
+                    string id = item.ContactId + ":" + item.StopKey;
+                    if (!routeIds.Contains(id) || done.Contains(id) || openIds.Contains(id))
+                        continue;
+                    openIds.Add(id);
+                    openStops.Add(item);
+                }
+            }
+            foreach (DeliveryRouteRepository.StopRef item in route)
+            {
+                string id = item.ContactId + ":" + item.StopKey;
+                if (done.Contains(id) || openIds.Contains(id))
+                    continue;
+                openIds.Add(id);
+                openStops.Add(item);
+            }
+            if (openStops.Count == 0)
             {
                 error = "There are no stops left to put in order.";
                 return 0;
             }
 
-            var contacts = new List<int>(route.Count);
+            var contacts = new List<DeliveryRouteRepository.StopRef>(route.Count);
             int next = 0;
-            foreach (int contactId in route)
-                contacts.Add(done.Contains(contactId) ? contactId : wanted[next++]);
+            foreach (DeliveryRouteRepository.StopRef item in route)
+            {
+                string id = item.ContactId + ":" + item.StopKey;
+                contacts.Add(done.Contains(id) ? item : openStops[next++]);
+            }
 
             new DeliveryRouteRepository().Save(day, personId, contacts, userName + DeliveryRouteRepository.OfficeSuffix);
             AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
-                "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " to " + contacts.Count + " stops: contacts "
-                + string.Join(", ", contacts), userName);
+                "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " to " + contacts.Count + " stops", userName);
             return contacts.Count;
+        }
+
+        /// <summary>
+        /// Puts the driver's remaining stops in driving order from the depot and saves that as the day's route.
+        /// Delivered stops keep their place. Returns the number of stops saved.
+        /// </summary>
+        public int OptimizeRoute(DateTime day, int personId, string userName, out string error)
+        {
+            error = null;
+            if (!new PersonsRepository().IsDeliverPerson(personId))
+            {
+                error = "Only our own drivers have a route order (not couriers or collections).";
+                return 0;
+            }
+
+            List<MobileDeliveryStop> orders = GetSheet(day, personId).Orders ?? new List<MobileDeliveryStop>();
+            List<MobileDeliveryStop> open = orders.Where(s => !s.Done && s.Collection != true).ToList();
+            if (open.Count == 0)
+            {
+                error = "There are no stops left to put in order.";
+                return 0;
+            }
+
+            DeliverySheetRepository.DepotPoint(out double? depotLat, out double? depotLng);
+            List<MobileDeliveryStop> driving = RoutePlanner.Order(open, s =>
+            {
+                if (s.Gps?.Lat == null || !s.Gps.Lng.HasValue)
+                    return null;
+                return Geohash.Encode(s.Gps.Lat.Value, s.Gps.Lng.Value);
+            }, depotLat, depotLng, RoadTimesManager.ForRouting());
+
+            var wanted = new List<DeliveryRouteRepository.StopRef>();
+            foreach (MobileDeliveryStop stop in driving)
+            {
+                if (stop.ContactId <= 0)
+                    continue;
+                wanted.Add(new DeliveryRouteRepository.StopRef
+                {
+                    ContactId = stop.ContactId,
+                    StopKey = DeliveryRouteRepository.StopKeyFor(stop.ContactId, stop.DeliverToAddressId, stop.OrderId)
+                });
+            }
+            return SaveOfficeRoute(day, personId, wanted, userName, out error);
         }
 
         /// <summary>The office delivery sheet: back to the suggested order for the driver's day.</summary>
@@ -455,7 +533,7 @@ namespace TrackerSQL.Managers
         {
             if (!DeliveryRouteRepository.TableSeen())
                 return;
-            new DeliveryRouteRepository().Save(day, personId, new List<int>(), userName + DeliveryRouteRepository.OfficeSuffix);
+            new DeliveryRouteRepository().Save(day, personId, new List<DeliveryRouteRepository.StopRef>(), userName + DeliveryRouteRepository.OfficeSuffix);
             AppLogger.WriteLog(SystemConstants.LogTypes.Delivery,
                 "Route order: office set driver " + personId + " " + day.ToString("yyyy-MM-dd") + " back to the suggested order", userName);
         }

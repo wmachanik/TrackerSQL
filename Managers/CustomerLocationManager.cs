@@ -143,11 +143,16 @@ namespace TrackerSQL.Managers
                 string line = raw.Trim();
                 if (line.Length == 0 || Regex.IsMatch(line, @"^(c/o|care of|attn|attention|p\.?\s*o\.?\s*box|postnet)\b", RegexOptions.IgnoreCase))
                     continue;
+                // Woo/checkout label leaks: "Company Name - Salute" (not a street line).
+                if (IsCompanyLabelLine(line))
+                    continue;
                 line = Regex.Replace(line, @"^.*?\b(\(pty\)\s*ltd|pty\s*ltd|ltd|\(pty\))\.?(?=\s|$)", " ", RegexOptions.IgnoreCase);
                 line = Regex.Replace(line, @"\b(ground|first|second|third|fourth|fifth|\d+(st|nd|rd|th))\s+(floor|level)\b", " ", RegexOptions.IgnoreCase);
+                // Unit/shop numbers only — do not strip street names like "Section Street".
                 line = Regex.Replace(line,
-                    @"\b(shop|unit|flat|suite|office|apt|apartment|room|door|stand|erf|section|floor|level)\s*(no\.?|nr\.?|#)?\s*[a-z]?\d+[a-z]?(\s*(&|and|-|/)\s*[a-z]?\d+[a-z]?)*\b",
+                    @"\b(shop|unit|flat|suite|office|apt|apartment|room|door|stand|erf|floor|level)\s*(no\.?|nr\.?|#)?\s*[a-z]?\d+[a-z]?(\s*(&|and|-|/)\s*[a-z]?\d+[a-z]?)*\b",
                     " ", RegexOptions.IgnoreCase);
+                line = Regex.Replace(line, @"\bsection\s*(no\.?|nr\.?|#)\s*[a-z]?\d+[a-z]?\b", " ", RegexOptions.IgnoreCase);
                 line = Regex.Replace(line, @"^\s*(no|nr|number)\.?\s*(?=\d)", string.Empty, RegexOptions.IgnoreCase);
                 line = Regex.Replace(line, @"^\s*#\s*\d+\w*\s*", string.Empty);
                 line = WithoutInlineEstate(line);
@@ -161,7 +166,49 @@ namespace TrackerSQL.Managers
                 || (Regex.IsMatch(l, @"^\d+[a-z]?\s+\S") && !IsComplex(l));
             if (lines.Any(IsStreet))
                 lines = lines.Where(l => IsStreet(l) || !IsComplex(l)).ToList();
+            // Drop leftover company-only lines once a real street line exists.
+            if (lines.Any(IsStreet))
+                lines = lines.Where(l => IsStreet(l) || Regex.IsMatch(l, @"^\d{4}$") || !LooksLikePersonOrCompanyOnly(l)).ToList();
             return string.Join(", ", lines);
+        }
+
+        /// <summary>Checkout field labels that sometimes land in Address2 ("Company Name - Acme").</summary>
+        public static bool IsCompanyLabelLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
+            return Regex.IsMatch(line.Trim(),
+                @"^(company\s*name|company|business\s*name|trading\s*as|t/?a)\s*([-:–—]|$)",
+                RegexOptions.IgnoreCase);
+        }
+
+        private static bool LooksLikePersonOrCompanyOnly(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
+            if (Regex.IsMatch(line, @"\b(" + StreetWords + @")\b", RegexOptions.IgnoreCase))
+                return false;
+            if (Regex.IsMatch(line, @"\d"))
+                return false;
+            // Two+ words with no street token — usually a company/person pasted into the address.
+            return Regex.Matches(line.Trim(), @"[A-Za-z]+").Count >= 2;
+        }
+
+        /// <summary>
+        /// City / town centroids (e.g. "Cape Town, WC") are too vague for auto GPS — prefer postcode instead.
+        /// Street / neighbourhood / postalcode layers are kept as a rough pin for review.
+        /// </summary>
+        public static bool IsVagueCityMatch(GeocodeResult result)
+        {
+            if (result == null || !result.Success || result.IsPrecise)
+                return false;
+            string layer = (result.Layer ?? string.Empty).ToLowerInvariant();
+            if (layer == "locality" || layer == "localadmin" || layer == "borough"
+                || layer == "county" || layer == "macrocounty" || layer == "region")
+                return true;
+            string label = (result.Label ?? string.Empty).Trim();
+            return Regex.IsMatch(label, @"^(Cape Town|Johannesburg|Pretoria|Durban|Port Elizabeth|Gqeberha|Bloemfontein),\s*(WC|GP|KZN|EC|FS|NC|NW|LP|MP)\b",
+                RegexOptions.IgnoreCase);
         }
 
         /// <summary>Address (cleaned unless <paramref name="clean"/> is false), the area suburb when given, then postcode and country.</summary>
@@ -220,10 +267,19 @@ namespace TrackerSQL.Managers
         /// <summary>
         /// Called on contact save / order capture / the one-time batch. Looks up only when the contact is delivered
         /// by one of our drivers and has no point yet, or the address changed. <paramref name="force"/> = "look up again".
+        /// Optional draft fields override the saved contact address (Check popup with unsaved edits).
         /// </summary>
-        public LocationLookupOutcome EnsureForContact(int contactId, string userName, bool force = false, int? deliverPersonId = null)
+        public LocationLookupOutcome EnsureForContact(
+            int contactId,
+            string userName,
+            bool force = false,
+            int? deliverPersonId = null,
+            string draftBillingAddress = null,
+            string draftPostalCode = null,
+            int? draftAreaId = null)
         {
-            LocationLookupOutcome outcome = LookUpContact(contactId, userName, force, deliverPersonId);
+            LocationLookupOutcome outcome = LookUpContact(
+                contactId, userName, force, deliverPersonId, draftBillingAddress, draftPostalCode, draftAreaId);
             if (outcome.UsedLookup)
             {
                 CustomerLocation loc = outcome.Location;
@@ -238,7 +294,34 @@ namespace TrackerSQL.Managers
             return outcome;
         }
 
-        private LocationLookupOutcome LookUpContact(int contactId, string userName, bool force, int? deliverPersonId)
+        /// <summary>Applies unsaved address-box values onto a contact copy for GPS lookup / search text.</summary>
+        public static Contact ApplyDraftAddress(Contact contact, string billingAddress, string postalCode, int? areaId)
+        {
+            if (contact == null)
+                return null;
+            bool any = billingAddress != null || postalCode != null || areaId.HasValue;
+            if (!any)
+                return contact;
+            return new Contact
+            {
+                ContactID = contact.ContactID,
+                CompanyName = contact.CompanyName,
+                BillingAddress = billingAddress ?? contact.BillingAddress,
+                PostalCode = postalCode ?? contact.PostalCode,
+                AreaID = areaId ?? contact.AreaID,
+                StateOrProvince = contact.StateOrProvince,
+                PreferredAgentID = contact.PreferredAgentID
+            };
+        }
+
+        private LocationLookupOutcome LookUpContact(
+            int contactId,
+            string userName,
+            bool force,
+            int? deliverPersonId,
+            string draftBillingAddress = null,
+            string draftPostalCode = null,
+            int? draftAreaId = null)
         {
             if (!IsReady)
                 return new LocationLookupOutcome { Skipped = true, Message = "GPS tables are not installed yet." };
@@ -246,6 +329,8 @@ namespace TrackerSQL.Managers
             Contact contact = new ContactsRepository().GetById(contactId);
             if (contact == null)
                 return new LocationLookupOutcome { Skipped = true, Message = "Contact not found." };
+
+            contact = ApplyDraftAddress(contact, draftBillingAddress, draftPostalCode, draftAreaId);
 
             if (!force && CollectsOrCourier(contact))
                 return new LocationLookupOutcome { Skipped = true, Message = "Collects or goes by courier: no GPS point needed." };
@@ -284,7 +369,8 @@ namespace TrackerSQL.Managers
                 UpdatedBy = userName
             };
 
-            if (result.Success)
+            bool useGeocode = result.Success && !IsVagueCityMatch(result);
+            if (useGeocode)
             {
                 loc.Latitude = (decimal)result.Latitude;
                 loc.Longitude = (decimal)result.Longitude;
@@ -297,16 +383,31 @@ namespace TrackerSQL.Managers
             }
             else if (!TryPostcodeCentroid(contact.PostalCode, loc))
             {
-                bool dropRough = existing != null && existing.NeedsReview && !existing.IsManual && !existing.IsFromDriver;
-                if (dropRough)
-                    _locations.Delete(contactId);
-                return new LocationLookupOutcome
+                // Last resort: keep a vague city match only when there is no postcode point.
+                if (result.Success)
                 {
-                    UsedLookup = usedLookup,
-                    Location = dropRough ? null : existing,
-                    Message = "Address not found and no postcode point to fall back on; set the pin by hand."
-                        + (dropRough ? " The old rough point was removed." : string.Empty)
-                };
+                    loc.Latitude = (decimal)result.Latitude;
+                    loc.Longitude = (decimal)result.Longitude;
+                    loc.GeocodedAddress = result.Label;
+                    bool azure = result.Provider == GpsSettings.ProviderAzureMaps;
+                    loc.Source = azure ? CustomerLocation.SourceAzureMaps : CustomerLocation.SourceGeocoder;
+                    loc.ExpiresDate = azure ? DateTime.Now.AddDays(GpsSettings.AzureMapsKeepDays) : (DateTime?)null;
+                    loc.Confidence = result.Confidence.HasValue ? (decimal?)Convert.ToDecimal(result.Confidence.Value) : null;
+                    loc.LocationStatus = CustomerLocation.StatusReviewRequired;
+                }
+                else
+                {
+                    bool dropRough = existing != null && existing.NeedsReview && !existing.IsManual && !existing.IsFromDriver;
+                    if (dropRough)
+                        _locations.Delete(contactId);
+                    return new LocationLookupOutcome
+                    {
+                        UsedLookup = usedLookup,
+                        Location = dropRough ? null : existing,
+                        Message = "Address not found and no postcode point to fall back on; set the pin by hand."
+                            + (dropRough ? " The old rough point was removed." : string.Empty)
+                    };
+                }
             }
 
             loc.Geohash = Geohash.Encode((double)loc.Latitude, (double)loc.Longitude);
@@ -403,24 +504,54 @@ namespace TrackerSQL.Managers
             return SearchTextFor(contact);
         }
 
-        public LocationLookupOutcome EnsureForDeliverToAddress(int deliverToAddressId, string userName, bool force = false)
+        public LocationLookupOutcome EnsureForDeliverToAddress(
+            int deliverToAddressId,
+            string userName,
+            bool force = false,
+            string draftAddr1 = null,
+            string draftAddr2 = null,
+            string draftAddr3 = null,
+            string draftPostal = null,
+            int? draftAreaId = null)
         {
             var repo = new ContactDeliverToAddressRepository();
             ContactDeliverToAddress row = repo.GetById(deliverToAddressId);
             if (row == null)
                 return new LocationLookupOutcome { Skipped = true, Message = "Deliver-to address not found." };
 
+            ApplyDraftDeliverTo(row, draftAddr1, draftAddr2, draftAddr3, draftPostal, draftAreaId);
+
             LocationLookupOutcome outcome = LookUpDeliverTo(row, userName, force);
             if (outcome.UsedLookup)
             {
+                ContactDeliverToAddress after = repo.GetById(deliverToAddressId) ?? row;
                 AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
                     "DeliverTo=" + deliverToAddressId + " | GPS looked up"
                     + (force ? " again" : string.Empty) + ": "
-                    + (outcome.Success && row.HasGpsPoint
-                        ? (row.GpsNeedsReview ? "rough" : "found") + " " + row.Latitude + "," + row.Longitude
+                    + (outcome.Success && after.HasGpsPoint
+                        ? (after.GpsNeedsReview ? "rough" : "found") + " " + after.Latitude + "," + after.Longitude
                         : "not found - " + outcome.Message), userName);
             }
             return outcome;
+        }
+
+        /// <summary>Overlays unsaved deliver-to form fields onto the row used for GPS lookup.</summary>
+        public static void ApplyDraftDeliverTo(
+            ContactDeliverToAddress row,
+            string addr1,
+            string addr2,
+            string addr3,
+            string postal,
+            int? areaId)
+        {
+            if (row == null)
+                return;
+            // Null = query key absent (keep DB). Empty string = user cleared the box.
+            if (addr1 != null) row.Address1 = string.IsNullOrWhiteSpace(addr1) ? null : addr1.Trim();
+            if (addr2 != null) row.Address2 = string.IsNullOrWhiteSpace(addr2) ? null : addr2.Trim();
+            if (addr3 != null) row.Address3 = string.IsNullOrWhiteSpace(addr3) ? null : addr3.Trim();
+            if (postal != null) row.PostalCode = string.IsNullOrWhiteSpace(postal) ? null : postal.Trim();
+            if (areaId.HasValue) row.AreaID = areaId;
         }
 
         public ContactDeliverToAddress SetManualDeliverTo(int deliverToAddressId, decimal latitude, decimal longitude, string userName, string matchedAddress = null)
@@ -498,7 +629,8 @@ namespace TrackerSQL.Managers
             row.SourceAddress = physical.Length > 0 ? physical : addressText;
             row.LocationUpdatedBy = userName;
 
-            if (result.Success)
+            bool useGeocode = result.Success && !IsVagueCityMatch(result);
+            if (useGeocode)
             {
                 row.Latitude = (decimal)result.Latitude;
                 row.Longitude = (decimal)result.Longitude;
@@ -509,13 +641,25 @@ namespace TrackerSQL.Managers
             }
             else if (!TryPostcodeCentroid(contact.PostalCode, row))
             {
-                if (row.GpsNeedsReview && !row.GpsIsVerified && row.Source != CustomerLocation.SourceManual)
-                    repo.ClearGps(row.DeliverToAddressID, row.ContactID);
-                return new LocationLookupOutcome
+                if (result.Success)
                 {
-                    UsedLookup = usedLookup,
-                    Message = "Address not found; set the pin with Check."
-                };
+                    row.Latitude = (decimal)result.Latitude;
+                    row.Longitude = (decimal)result.Longitude;
+                    row.GeocodedAddress = result.Label;
+                    bool azure = result.Provider == GpsSettings.ProviderAzureMaps;
+                    row.Source = azure ? CustomerLocation.SourceAzureMaps : CustomerLocation.SourceGeocoder;
+                    row.LocationStatus = CustomerLocation.StatusReviewRequired;
+                }
+                else
+                {
+                    if (row.GpsNeedsReview && !row.GpsIsVerified && row.Source != CustomerLocation.SourceManual)
+                        repo.ClearGps(row.DeliverToAddressID, row.ContactID);
+                    return new LocationLookupOutcome
+                    {
+                        UsedLookup = usedLookup,
+                        Message = "Address not found; set the pin with Check."
+                    };
+                }
             }
 
             row.Geohash = Geohash.Encode((double)row.Latitude.Value, (double)row.Longitude.Value);

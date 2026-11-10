@@ -171,6 +171,12 @@ namespace TrackerSQL.Tools
             btnResetCatalog.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapResetCatalog);
             btnExpandAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapExpandAll);
             btnCollapseAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapCollapseAll);
+            litShowName.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowName);
+            litShowPack.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowPack);
+            litShowMode.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowMode);
+            chkShowName.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowNameTip);
+            chkShowPack.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowPackTip);
+            chkShowMode.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowModeTip);
             btnWriteMissingSkus.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapWriteMissingSkus);
             litSyncHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSyncHelp);
             litGeneralHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralHelp);
@@ -1960,6 +1966,8 @@ namespace TrackerSQL.Tools
             parent.UsesCategoryImportDefault = false;
             MarkRowApplySelected(parent);
             WooCommerceMappingManager.ApplyParentImportModes(rows);
+            if (string.Equals(parent.ImportMode, WooProductMapRow.ImportModeVariants, StringComparison.OrdinalIgnoreCase))
+                TickChildrenForVariantImport(rows, parent.WooProductId);
             MarkRowApplySelected(parent);
             Session[SessionPull] = rows;
             SetPullDirty();
@@ -2021,6 +2029,9 @@ namespace TrackerSQL.Tools
 
             MarkRowApplySelected(row);
             WooCommerceMappingManager.ApplyParentImportModes(rows);
+            if (row.IsParentGroup
+                && string.Equals(row.ImportMode, WooProductMapRow.ImportModeVariants, StringComparison.OrdinalIgnoreCase))
+                TickChildrenForVariantImport(rows, row.WooProductId);
             MarkRowApplySelected(row);
             Session[SessionPull] = rows;
             SetPullDirty();
@@ -2046,6 +2057,8 @@ namespace TrackerSQL.Tools
             parent.UsesCategoryImportDefault = false;
             MarkRowApplySelected(parent);
             WooCommerceMappingManager.ApplyParentImportModes(rows);
+            if (string.Equals(parent.ImportMode, WooProductMapRow.ImportModeVariants, StringComparison.OrdinalIgnoreCase))
+                TickChildrenForVariantImport(rows, parent.WooProductId);
             if (parent.ImportParentAsItem == false && parent.ImportParentAsNotes == false && parent.ImportParentExcluded == false)
                 _manager.RematchUnmappedChildren(rows, parent.WooProductId);
             MarkRowApplySelected(parent);
@@ -2100,6 +2113,19 @@ namespace TrackerSQL.Tools
             SetAllGroupsExpanded(false);
         }
 
+        /// <summary>Import Variants: each variant line starts ticked so it is imported.</summary>
+        private static void TickChildrenForVariantImport(IList<WooProductMapRow> rows, long productId)
+        {
+            if (rows == null)
+                return;
+            foreach (var child in rows)
+            {
+                if (child == null || child.IsParentGroup || child.WooProductId != productId)
+                    continue;
+                child.IncludeInImport = true;
+            }
+        }
+
         private void SetAllGroupsExpanded(bool expanded)
         {
             MergeVisiblePullEdits();
@@ -2138,6 +2164,13 @@ namespace TrackerSQL.Tools
             {
                 _sortOrdersRepo.FillDropDownCompact(ddlSortOrder, row.CreateSortOrder);
                 SyncCompactSortOrderTooltip(ddlSortOrder);
+            }
+
+            if (e.Row.Cells.Count > 4)
+            {
+                e.Row.Cells[2].ToolTip = row.ListSku ?? string.Empty;
+                e.Row.Cells[3].ToolTip = row.ListName ?? string.Empty;
+                e.Row.Cells[4].ToolTip = row.AttributesLabel ?? string.Empty;
             }
 
             var chkImport = e.Row.FindControl("chkImport") as CheckBox;

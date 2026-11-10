@@ -49,6 +49,8 @@ namespace TrackerSQL.Models
         public int PersonId { get; set; }
         public string Name { get; set; }
         public string Abbreviation { get; set; }
+        /// <summary>False for collection and courier people (People → Delivery type is not Deliver).</summary>
+        public bool OwnDriver { get; set; } = true;
         public double? Lat { get; set; }
         public double? Lng { get; set; }
         public double? Accuracy { get; set; }

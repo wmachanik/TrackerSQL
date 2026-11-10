@@ -3,4 +3,6 @@
   <msg key="AwayPeriod.ConfirmationBody">Note that your away period from {0} to {1} has been recorded.&lt;br /&gt;&lt;br /&gt;</msg>
   <msg key="CoffeeCheckup.BodyOrderType">Your {0} is ready for processing:</msg>
   <msg key="CoffeeCheckup.FooterDisableLink">&lt;br /&gt;&lt;p&gt;If you would prefer not to receive these reminders, &lt;a href='{0}'&gt;click here to disable them&lt;/a&gt;.&lt;/p&gt;</msg>
+  <msg key="CoffeeCheckup.SubjectReminderOnly">Based on your usual coffee schedule, a reminder that saves you one thing to remember.</msg>
+  <msg key="Order.ConfirmationFooter">&lt;p&gt;This email was sent automatically by Quaffee's order and tracking system.&lt;/p&gt;</msg>
 </overrides>

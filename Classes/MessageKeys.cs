@@ -188,6 +188,8 @@ namespace TrackerSQL.Classes
             public const string ConfirmationPORequired = "Order.ConfirmationPORequired";
             public const string ConfirmationPOReceived = "Order.ConfirmationPOReceived";
             public const string ConfirmationTableDeliveryLabel = "Order.ConfirmationTableDeliveryLabel";
+            public const string ConfirmationDeliverToLabel = "Order.ConfirmationDeliverToLabel";
+            public const string ConfirmationBodyStyle = "Order.ConfirmationBodyStyle";
             public const string ConfirmationTableOrderLabel = "Order.ConfirmationTableOrderLabel";
             public const string PortalAckSubject = "Order.PortalAckSubject";
             public const string PortalAckHeader = "Order.PortalAckHeader";
@@ -525,6 +527,12 @@ namespace TrackerSQL.Classes
             public const string MapSkuWooWriteFailed = "WooCommerce.MapSkuWooWriteFailed";
             public const string MapExpandAll = "WooCommerce.MapExpandAll";
             public const string MapCollapseAll = "WooCommerce.MapCollapseAll";
+            public const string MapShowName = "WooCommerce.MapShowName";
+            public const string MapShowPack = "WooCommerce.MapShowPack";
+            public const string MapShowMode = "WooCommerce.MapShowMode";
+            public const string MapShowNameTip = "WooCommerce.MapShowNameTip";
+            public const string MapShowPackTip = "WooCommerce.MapShowPackTip";
+            public const string MapShowModeTip = "WooCommerce.MapShowModeTip";
             public const string MapPullAttributes = "WooCommerce.MapPullAttributes";
             public const string MapSyncAttributes = "WooCommerce.MapSyncAttributes";
             public const string MapPullAttributesOk = "WooCommerce.MapPullAttributesOk";

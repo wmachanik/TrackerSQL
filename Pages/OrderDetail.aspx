@@ -1072,7 +1072,18 @@
                 if (!overlay || !frame) return;
                 dx = 0; dy = 0; place();
                 var url = 'ContactLocation.aspx?ContactID=' + encodeURIComponent(contactId);
-                if (deliverToAddressId) url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                function val(id) {
+                    var el = document.getElementById(id);
+                    return el ? (el.value || '') : '';
+                }
+                if (deliverToAddressId) {
+                    url += '&DeliverToAddressID=' + encodeURIComponent(deliverToAddressId);
+                    url += '&Addr1=' + encodeURIComponent(val('<%= tbxOdDeliverToAddr1.ClientID %>'));
+                    url += '&Addr2=' + encodeURIComponent(val('<%= tbxOdDeliverToAddr2.ClientID %>'));
+                    url += '&Addr3=' + encodeURIComponent(val('<%= tbxOdDeliverToAddr3.ClientID %>'));
+                    url += '&Postal=' + encodeURIComponent(val('<%= tbxOdDeliverToPostal.ClientID %>'));
+                    url += '&AreaID=' + encodeURIComponent(val('<%= ddlOdDeliverToArea.ClientID %>'));
+                }
                 frame.src = url;
                 overlay.style.display = 'flex';
             };

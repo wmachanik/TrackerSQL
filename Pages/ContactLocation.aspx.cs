@@ -34,13 +34,42 @@ namespace TrackerSQL.Pages
 
         private bool IsDeliverTo => DeliverToAddressId > 0;
 
+        /// <summary>Unsaved main-contact address from the parent form (query string).</summary>
+        private bool HasMainDraft => Request.QueryString["Address"] != null
+            || Request.QueryString["Postal"] != null
+            || Request.QueryString["AreaID"] != null;
+
+        private string DraftAddress => Request.QueryString["Address"];
+        private string DraftPostal => Request.QueryString["Postal"];
+
+        private int? DraftAreaId
+        {
+            get
+            {
+                if (int.TryParse(Request.QueryString["AreaID"], out int id) && id > 0)
+                    return id;
+                return null;
+            }
+        }
+
+        /// <summary>Unsaved deliver-to lines from the parent form.</summary>
+        private bool HasDeliverToDraft => Request.QueryString["Addr1"] != null
+            || Request.QueryString["Addr2"] != null
+            || Request.QueryString["Addr3"] != null
+            || Request.QueryString["Postal"] != null
+            || Request.QueryString["AreaID"] != null;
+
+        private string DraftAddr1 => Request.QueryString["Addr1"];
+        private string DraftAddr2 => Request.QueryString["Addr2"];
+        private string DraftAddr3 => Request.QueryString["Addr3"];
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
-                BindPage();
+                BindPage(autoSearchDraft: true);
         }
 
-        private void BindPage()
+        private void BindPage(bool autoSearchDraft = false)
         {
             var manager = new CustomerLocationManager();
             if (!manager.IsReady)
@@ -56,6 +85,7 @@ namespace TrackerSQL.Pages
             hdnAzureTiles.Value = settings.UseAzureMap ? ResolveUrl("~/Handlers/MapTile.ashx") : string.Empty;
 
             string addressText;
+            string savedAddressText;
             CustomerLocation loc;
             if (IsDeliverTo)
             {
@@ -70,6 +100,12 @@ namespace TrackerSQL.Pages
 
                 string title = string.Join(" — ", new[] { row.Label, row.DeliverToPerson }.Where(s => !string.IsNullOrWhiteSpace(s)));
                 litContactName.Text = HttpUtility.HtmlEncode(string.IsNullOrWhiteSpace(title) ? "Deliver-to address" : title);
+                savedAddressText = CustomerLocationManager.SearchTextForDeliverTo(row);
+                if (HasDeliverToDraft)
+                {
+                    CustomerLocationManager.ApplyDraftDeliverTo(
+                        row, DraftAddr1, DraftAddr2, DraftAddr3, DraftPostal, DraftAreaId);
+                }
                 addressText = CustomerLocationManager.SearchTextForDeliverTo(row);
                 loc = row.ToDisplayLocation();
             }
@@ -85,6 +121,12 @@ namespace TrackerSQL.Pages
                 }
 
                 litContactName.Text = HttpUtility.HtmlEncode(contact.CompanyName);
+                savedAddressText = CustomerLocationManager.SearchTextFor(contact);
+                if (HasMainDraft)
+                {
+                    contact = CustomerLocationManager.ApplyDraftAddress(
+                        contact, DraftAddress, DraftPostal, DraftAreaId);
+                }
                 addressText = CustomerLocationManager.SearchTextFor(contact);
                 loc = manager.Get(ContactId);
             }
@@ -95,7 +137,13 @@ namespace TrackerSQL.Pages
             ViewState["SearchLabel"] = null;
             hdnDirty.Value = "0";
 
-            if (loc != null)
+            bool draftDiffers = !string.IsNullOrWhiteSpace(addressText)
+                && !string.Equals(
+                    NormKey(addressText),
+                    NormKey(savedAddressText),
+                    StringComparison.Ordinal);
+
+            if (loc != null && !(autoSearchDraft && draftDiffers))
             {
                 SetPoint(loc.Latitude, loc.Longitude, true);
                 litMatched.Text = HttpUtility.HtmlEncode(!string.IsNullOrWhiteSpace(loc.GeocodedAddress) ? loc.GeocodedAddress
@@ -117,6 +165,51 @@ namespace TrackerSQL.Pages
                 lblState.Text = CustomerLocation.BadgeHtml(null) + "No pin yet";
                 lblState.CssClass = "contact-gps-value contact-gps-review";
             }
+
+            // Unsaved (or new) address in the parent form: try a search so the pin follows the box, not the DB.
+            if (autoSearchDraft && !string.IsNullOrWhiteSpace(addressText) && (loc == null || draftDiffers))
+                TryAutoSearch(addressText, manager);
+        }
+
+        private void TryAutoSearch(string addressText, CustomerLocationManager manager)
+        {
+            try
+            {
+                GeocodeResult result = manager.SearchAddress(addressText);
+                if (!result.Success)
+                {
+                    ShowMessage(result.Message ?? "Address not found yet — edit the search and try again, or place the pin by hand.", true);
+                    return;
+                }
+
+                SetPoint(Math.Round((decimal)result.Latitude, 6), Math.Round((decimal)result.Longitude, 6), true);
+                ViewState["SearchLabel"] = result.Label;
+                hdnDirty.Value = "1";
+                double? km = manager.KmFromDepot(result.Latitude, result.Longitude);
+                string distance = km.HasValue
+                    ? " (" + km.Value.ToString(km.Value < 10 ? "0.0" : "0", CultureInfo.InvariantCulture) + " km from the depot)"
+                    : string.Empty;
+                litMatched.Text = HttpUtility.HtmlEncode((result.Label ?? addressText) + distance + " (from current address, not saved yet)");
+                bool far = km.HasValue && km.Value > 150;
+                ShowMessage(far
+                    ? "The only match is " + km.Value.ToString("0", CultureInfo.InvariantCulture) + " km from the depot: " + result.Label
+                      + ". Check the address before saving the pin."
+                    : result.IsPrecise
+                        ? "Pin placed from the current address" + distance + ". Check it, then press Save this pin."
+                        : "Only a rough match (suburb / town)" + distance + ". Drag the pin, then press Save this pin.",
+                    far || !result.IsPrecise);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Lookup failed: " + ex.Message, true);
+            }
+        }
+
+        private static string NormKey(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return string.Empty;
+            return string.Join(" ", s.ToLowerInvariant().Split((char[])null, StringSplitOptions.RemoveEmptyEntries));
         }
 
         private void SetPoint(decimal lat, decimal lng, bool hasPoint)
@@ -154,7 +247,7 @@ namespace TrackerSQL.Pages
                     AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "Contact=" + ContactId + " | GPS pin saved (checked)");
                 }
 
-                BindPage();
+                BindPage(autoSearchDraft: false);
                 ShowMessage("Pin saved and marked as checked.", false);
                 ClientScript.RegisterStartupScript(GetType(), "gpsSavedClose",
                     "if (window.parent && window.parent.trackerGpsChanged) { window.parent.trackerGpsChanged(); window.parent.trackerCloseGps(true); }", true);
@@ -169,10 +262,26 @@ namespace TrackerSQL.Pages
         {
             try
             {
-                LocationLookupOutcome outcome = IsDeliverTo
-                    ? new CustomerLocationManager().EnsureForDeliverToAddress(DeliverToAddressId, Context?.User?.Identity?.Name, force: true)
-                    : new CustomerLocationManager().EnsureForContact(ContactId, Context?.User?.Identity?.Name, force: true);
-                BindPage();
+                var manager = new CustomerLocationManager();
+                LocationLookupOutcome outcome;
+                if (IsDeliverTo)
+                {
+                    outcome = HasDeliverToDraft
+                        ? manager.EnsureForDeliverToAddress(
+                            DeliverToAddressId, Context?.User?.Identity?.Name, force: true,
+                            DraftAddr1, DraftAddr2, DraftAddr3, DraftPostal, DraftAreaId)
+                        : manager.EnsureForDeliverToAddress(DeliverToAddressId, Context?.User?.Identity?.Name, force: true);
+                }
+                else
+                {
+                    outcome = HasMainDraft
+                        ? manager.EnsureForContact(
+                            ContactId, Context?.User?.Identity?.Name, force: true,
+                            draftBillingAddress: DraftAddress, draftPostalCode: DraftPostal, draftAreaId: DraftAreaId)
+                        : manager.EnsureForContact(ContactId, Context?.User?.Identity?.Name, force: true);
+                }
+
+                BindPage(autoSearchDraft: false);
                 ShowMessage(outcome.Message ?? (outcome.Success ? "Location found." : "Not found."), !outcome.Success);
                 if (outcome.Success || outcome.UsedLookup)
                     NotifyParent();

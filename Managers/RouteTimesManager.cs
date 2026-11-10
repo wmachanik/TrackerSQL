@@ -226,7 +226,7 @@ namespace TrackerSQL.Managers
         private static MobileStopGps PointOf(IEnumerable<MobileDeliveryStop> visit) =>
             visit.Select(s => s.Gps).FirstOrDefault(g => g?.Lat != null && g.Lng.HasValue);
 
-        private static bool Finished(MobileDeliveryStop stop) => stop.Done || stop.Proof != null;
+        private static bool Finished(MobileDeliveryStop stop) => stop.Done;
 
         private static TimeSpan ParseClock(string value, TimeSpan fallback)
         {

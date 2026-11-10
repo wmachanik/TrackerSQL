@@ -583,6 +583,7 @@ namespace TrackerSQL.Managers
             contact.ContactID = newId;
             WooContactBootstrap.EnsureAccInfo(_accInfoRepo, contact, order, newId);
             SendTrackingWelcomeIfNeeded(contact);
+            TryEnsureContactGps(newId, updatedBy);
 
             WooCommerceUserLog.Write(
                 string.Format(CultureInfo.InvariantCulture, "Created contact from Woo #{0}", preview.WooOrderNumber),
@@ -790,7 +791,10 @@ namespace TrackerSQL.Managers
             }
 
             if (options.UpdateAddress)
+            {
                 WooContactBootstrap.UpdateAccInfoAddresses(_accInfoRepo, contact, order, contact.ContactID);
+                TryEnsureContactGps(contact.ContactID, updatedBy);
+            }
 
             string changeDetail = string.Join("; ", changeParts);
             string noteMsg = string.Format(CultureInfo.InvariantCulture,
@@ -1144,7 +1148,8 @@ namespace TrackerSQL.Managers
             preview.Lines = order.LineItems.Select(li => BuildLinePreview(li)).ToList();
 
             preview.IsGearOnly = preview.Lines.Count > 0 && preview.Lines.All(l => l.IsGear);
-            preview.UseZzName = preview.IsGearOnly;
+            // Gear-only falls back to ZZName only when no contact matches (enabled preferred, then disabled).
+            preview.UseZzName = false;
 
             ResolveContactPreview(order, preview, ship);
             ResolveDeliveryPreview(order, preview, ship);
@@ -1405,26 +1410,13 @@ namespace TrackerSQL.Managers
 
         private void ResolveContactPreview(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
         {
-            if (preview.UseZzName)
-            {
-                preview.IsNewContact = false;
-                preview.CanAddContact = false;
-                preview.CanUpdateContact = false;
-                preview.ContactHasShippingChanges = false;
-                preview.NeedsCompanyNameDecision = false;
-                preview.ContactStatusLabel = string.Empty;
-                string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
-                preview.ContactDisplayName = GetWooContactName(order, ship);
-                preview.ContactSummary = "ZZName — " + BuildZzNameNotePrefix(ship.Company, ship.FullName, email);
-                return;
-            }
-
             Contact matched = FindMatchedContact(order, preview, ship);
             var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
             int? resolvedAreaId = areaResult?.AreaID;
 
             if (matched != null)
             {
+                preview.UseZzName = false;
                 preview.MatchedContactId = matched.ContactID;
                 preview.IsNewContact = false;
                 preview.ContactStatusLabel = "Found";
@@ -1438,23 +1430,40 @@ namespace TrackerSQL.Managers
                 preview.CanAddContact = false;
                 preview.CanUpdateContact = preview.ContactHasShippingChanges || preview.NeedsCompanyNameDecision;
                 preview.ContactSummary = string.Empty;
+                return;
             }
-            else
+
+            // No email/name match — gear-only walk-ins stay on ZZName; otherwise offer Add Contact.
+            if (preview.IsGearOnly)
             {
+                preview.UseZzName = true;
                 preview.MatchedContactId = null;
-                preview.IsNewContact = true;
-                preview.ContactStatusLabel = "New";
-                preview.ContactDisplayName = GetWooContactName(order, ship);
+                preview.IsNewContact = false;
+                preview.CanAddContact = false;
+                preview.CanUpdateContact = false;
                 preview.ContactHasShippingChanges = false;
                 preview.NeedsCompanyNameDecision = false;
-                preview.WooCompanyName = null;
-                preview.ContactCompanyName = null;
-                preview.CanAddContact = true;
-                preview.CanUpdateContact = false;
+                preview.ContactStatusLabel = string.Empty;
                 string email = FirstNonEmpty(ship.Email, order.Billing?.Email);
-                preview.ContactSummary = preview.ContactDisplayName
-                    + (string.IsNullOrWhiteSpace(email) ? string.Empty : " (" + email + ")");
+                preview.ContactDisplayName = GetWooContactName(order, ship);
+                preview.ContactSummary = "ZZName — " + BuildZzNameNotePrefix(ship.Company, ship.FullName, email);
+                return;
             }
+
+            preview.UseZzName = false;
+            preview.MatchedContactId = null;
+            preview.IsNewContact = true;
+            preview.ContactStatusLabel = "New";
+            preview.ContactDisplayName = GetWooContactName(order, ship);
+            preview.ContactHasShippingChanges = false;
+            preview.NeedsCompanyNameDecision = false;
+            preview.WooCompanyName = null;
+            preview.ContactCompanyName = null;
+            preview.CanAddContact = true;
+            preview.CanUpdateContact = false;
+            string newEmail = FirstNonEmpty(ship.Email, order.Billing?.Email);
+            preview.ContactSummary = preview.ContactDisplayName
+                + (string.IsNullOrWhiteSpace(newEmail) ? string.Empty : " (" + newEmail + ")");
         }
 
         private Contact FindMatchedContact(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)
@@ -1478,7 +1487,7 @@ namespace TrackerSQL.Managers
                     && contactId.Value != SystemConstants.CustomerConstants.SundryCustomerID)
                 {
                     Contact byOrder = _contactsRepo.GetById(contactId.Value);
-                    if (byOrder != null && byOrder.Enabled != false)
+                    if (byOrder != null)
                         return byOrder;
                 }
             }
@@ -1499,10 +1508,9 @@ namespace TrackerSQL.Managers
                 return empty;
 
             string normalized = email.Trim();
-            var hits = _contactsRepo.FindByEmailExact(normalized)
-                .Where(c => c.Enabled != false
-                    && (EmailMatches(c.EmailAddress, normalized) || EmailMatches(c.AltEmailAddress, normalized)))
-                .ToList();
+            var hits = PreferEnabledContacts(_contactsRepo.FindByEmailExact(normalized)
+                .Where(c => EmailMatches(c.EmailAddress, normalized) || EmailMatches(c.AltEmailAddress, normalized))
+                .ToList());
 
             if (hits.Count == 0)
                 return empty;
@@ -1663,19 +1671,27 @@ namespace TrackerSQL.Managers
             return score;
         }
 
+        /// <summary>Enabled contacts win. Disabled contacts are used only when no enabled contact matches.</summary>
+        private static List<Contact> PreferEnabledContacts(List<Contact> hits)
+        {
+            if (hits == null || hits.Count == 0)
+                return hits ?? new List<Contact>();
+            var enabled = hits.Where(c => c != null && c.Enabled != false).ToList();
+            return enabled.Count > 0 ? enabled : hits.Where(c => c != null).ToList();
+        }
+
         private Contact FindContactByName(WooOrderDto order, WooAddressDto ship)
         {
             string wooName = GetWooContactName(order, ship);
             if (!string.IsNullOrWhiteSpace(wooName))
             {
                 Contact byCompany = _contactsRepo.GetByContactNamePreferEnabled(wooName.Trim());
-                if (byCompany != null && byCompany.Enabled != false)
+                if (byCompany != null)
                     return byCompany;
 
-                var companyHits = _contactsRepo.SearchByContactNameLike(wooName.Trim())
-                    .Where(c => c.Enabled != false
-                        && string.Equals(c.CompanyName?.Trim(), wooName.Trim(), StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                var companyHits = PreferEnabledContacts(_contactsRepo.SearchByContactNameLike(wooName.Trim())
+                    .Where(c => string.Equals(c.CompanyName?.Trim(), wooName.Trim(), StringComparison.OrdinalIgnoreCase))
+                    .ToList());
                 if (companyHits.Count == 1)
                     return companyHits[0];
             }
@@ -1704,13 +1720,11 @@ namespace TrackerSQL.Managers
             if (!string.IsNullOrWhiteSpace(fullName))
             {
                 Contact byFullName = _contactsRepo.GetByContactNamePreferEnabled(fullName);
-                if (byFullName != null && byFullName.Enabled != false)
+                if (byFullName != null)
                     return byFullName;
             }
 
-            var hits = _contactsRepo.SearchByLastName(lastName.Trim())
-                .Where(c => c.Enabled != false)
-                .ToList();
+            var hits = PreferEnabledContacts(_contactsRepo.SearchByLastName(lastName.Trim()).ToList());
             if (hits.Count == 0)
                 return null;
 
@@ -2390,10 +2404,17 @@ namespace TrackerSQL.Managers
                     };
                     int altId = ZzNameDeliverTo.Save(alt, updatedBy);
                     if (altId > 0)
+                    {
                         header.DeliverToAddressID = altId;
+                        TryEnsureDeliverToGps(altId, updatedBy);
+                    }
                 }
                 else
+                {
                     header.DeliverToAddressID = match.DeliverToAddressID;
+                    if (!match.HasGpsPoint)
+                        TryEnsureDeliverToGps(match.DeliverToAddressID, updatedBy);
+                }
 
                 if (header.DeliverToAddressID.GetValueOrDefault() > 0)
                     ZzNameDeliverTo.TouchLastUsed(header.DeliverToAddressID.Value);
@@ -2753,6 +2774,7 @@ namespace TrackerSQL.Managers
                     ContactChangeLogManager.SourceWooImport,
                     string.Format(CultureInfo.InvariantCulture, "Created from Woo #{0}.", preview.WooOrderNumber),
                     updatedBy);
+                TryEnsureContactGps(newId, updatedBy);
                 return newId;
             }
 
@@ -2778,8 +2800,40 @@ namespace TrackerSQL.Managers
                     ContactChangeLogManager.SourceWooImport,
                     noteMsg,
                     updatedBy);
+                TryEnsureContactGps(contact.ContactID, updatedBy);
             }
             return contact.ContactID;
+        }
+
+        /// <summary>Looks up a GPS point after Woo creates/updates a contact (skipped for courier/collect / no address).</summary>
+        private static void TryEnsureContactGps(int contactId, string userName)
+        {
+            if (contactId <= 0 || contactId == SystemConstants.CustomerConstants.SundryCustomerID)
+                return;
+            try
+            {
+                new CustomerLocationManager().EnsureForContact(contactId, userName);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "Woo import contact GPS: " + ex.Message, userName);
+            }
+        }
+
+        private static void TryEnsureDeliverToGps(int deliverToAddressId, string userName)
+        {
+            if (deliverToAddressId <= 0)
+                return;
+            try
+            {
+                new CustomerLocationManager().EnsureForDeliverToAddress(deliverToAddressId, userName);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "Woo import deliver-to GPS: " + ex.Message, userName);
+            }
         }
 
         private Contact BuildContactFromWoo(WooOrderDto order, WooOrderImportPreviewRow preview, WooAddressDto ship)

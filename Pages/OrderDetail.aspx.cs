@@ -2141,6 +2141,8 @@ namespace TrackerSQL.Pages
             else if (string.IsNullOrWhiteSpace(row.AddressKind))
                 row.AddressKind = AlternativeAddressKind.Other;
 
+            bool addressChanged = existing == null
+                || !CustomerLocationManager.SameDeliverToPhysicalAddress(existing, row);
             int saved = ZzNameDeliverTo.Save(row, User?.Identity?.Name);
             if (saved <= 0)
             {
@@ -2149,6 +2151,20 @@ namespace TrackerSQL.Pages
                 ResetOdDeliverToSaveButton();
                 upnlDeliverToEditor.Update();
                 return;
+            }
+
+            // Full geocode (area-aware) after save — TryGeocode in Save is a thin first pass only.
+            if (addressChanged)
+            {
+                try
+                {
+                    new CustomerLocationManager().EnsureForDeliverToAddress(
+                        saved, User?.Identity?.Name, force: true);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.Delivery, "Order Detail deliver-to GPS: " + ex.Message);
+                }
             }
 
             hdnDeliverToEditorId.Value = saved.ToString();

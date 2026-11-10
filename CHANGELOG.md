@@ -2,9 +2,18 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
-## 3.0.3.13 — in progress
+## 3.0.3.14 — in progress
 
-_(Development; `Web.config` / `web.live.config` / `AssemblyInfo` version.)_
+_(Development; bump `Web.config` / `AssemblyInfo` / `Web.config.example` to **3.0.3.14**.)_
+
+- **Woo import contact match** — Prefer enabled contacts, then disabled (so a disabled match like Karen Chilton is found). Gear-only orders only fall back to ZZName when no contact matches.
+- **Woo import GPS** — New/updated contacts and ZZName alt addresses run `EnsureForContact` / `EnsureForDeliverToAddress` on import.
+- **GPS accuracy** — Check uses the current (unsaved) address boxes; strip checkout junk such as `Company Name - …`; reject vague city-only matches when a postcode centroid exists (Salute / Section Street).
+- **Delivery route StopKey** — Saved driver plans key by `(RouteDate, PersonID, ContactID, StopKey)` so ZZName and alternative addresses are separate stops (`SQLCommands-DriverGps-16.xml`).
+- **Send Client Mail history** — Batches logged in `ClientMailSendLogTbl` and shown as Send History (`SQLCommands-ClientMail-02.xml`).
+- **Woo product map** — Match enabled Tracker SKUs before disabled / leading-underscore SKUs; copy the first variant’s item onto unmatched siblings.
+
+## 3.0.3.13 — development
 
 - **Send Client Mail** — Three panels: message (default header includes `Dear [#FIRSTNAME#],`; greeting is edited in the header, not a separate tick), saved messages in `ClientMailTemplatesTbl`, a filter builder (And/Or, brackets, Last Item Type, Email Primary/All with Contains/Equals/Starts With and Does Not…), CSV export, 1-minute filter cookie, and Applying…/Sending… on the busy buttons. Test and send still use popups. Schema pack `SQLCommands-ClientMail-01.xml`.
 - **Layout** — Delivery Sheet, Order Detail, Send Checkup, and Contacts last-order column pick up the same page-tone / CSS updates.

@@ -2882,15 +2882,32 @@ namespace TrackerSQL.Pages
                 addressChanged = true;
             }
 
-            if (addressChanged && new PersonsRepository().IsDeliverPerson(deliveredBy))
+            string gpsNote = string.Empty;
+            bool hasStreet = !string.IsNullOrWhiteSpace(row.Address1)
+                || !string.IsNullOrWhiteSpace(row.Address2)
+                || !string.IsNullOrWhiteSpace(row.Address3);
+            if (addressChanged && hasStreet)
             {
                 try
                 {
-                    new CustomerLocationManager().EnsureForDeliverToAddress(savedId, Context?.User?.Identity?.Name, force: true);
+                    // Always try when the street text changed — force skips the courier/collect guard.
+                    LocationLookupOutcome gps = new CustomerLocationManager()
+                        .EnsureForDeliverToAddress(savedId, Context?.User?.Identity?.Name, force: true);
+                    if (gps.Skipped && !string.IsNullOrWhiteSpace(gps.Message))
+                        gpsNote = " GPS: " + gps.Message;
+                    else if (gps.Success)
+                        gpsNote = gps.Location != null && gps.Location.NeedsReview
+                            ? " GPS found roughly — use Check to confirm."
+                            : " GPS location found.";
+                    else if (!string.IsNullOrWhiteSpace(gps.Message))
+                        gpsNote = " GPS not found: " + gps.Message;
+                    else
+                        gpsNote = " GPS lookup did not find a point — use Check.";
                 }
                 catch (Exception ex)
                 {
                     AppLogger.WriteLog(SystemConstants.LogTypes.Customers, "DeliverTo GPS lookup: " + ex.Message);
+                    gpsNote = " GPS lookup failed: " + ex.Message;
                 }
             }
 
@@ -2901,6 +2918,9 @@ namespace TrackerSQL.Pages
             BindDeliverToGrid(contactId);
             HideDeliverToForm();
             upnlDeliverTo?.Update();
+            if (!string.IsNullOrEmpty(gpsNote))
+                SetStatus("Address saved." + gpsNote, gpsNote.IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0
+                    || gpsNote.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         protected void ddlDeliverToDeliveryBy_SelectedIndexChanged(object sender, EventArgs e)

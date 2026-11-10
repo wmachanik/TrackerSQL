@@ -77,6 +77,18 @@
                         </ajaxToolkit:TabPanel>
                     </ajaxToolkit:TabContainer>
 
+                    <h2 class="page-tone-title" style="font-size: 1rem; margin: 16px 0 8px;">Send History</h2>
+                    <asp:GridView ID="gvSendHistory" runat="server" CssClass="results-table" Font-Size="Small"
+                        AutoGenerateColumns="False" EmptyDataText="No client mail has been sent yet.">
+                        <Columns>
+                            <asp:BoundField DataField="MessageLabel" HeaderText="Message" />
+                            <asp:BoundField DataField="SentAtText" HeaderText="Date" ItemStyle-Wrap="false" />
+                            <asp:BoundField DataField="EmailsSent" HeaderText="Emails Sent" ItemStyle-HorizontalAlign="Right" />
+                            <asp:BoundField DataField="FilterText" HeaderText="Filter" />
+                            <asp:BoundField DataField="SuccessText" HeaderText="Success Rate" ItemStyle-Wrap="false" />
+                        </Columns>
+                    </asp:GridView>
+
                     <div class="button-row checkup-send-actions" style="margin-top: 12px;">
                         <asp:Button ID="btnOpenTest" Text="Send Test Email" runat="server" CssClass="filter-panel-btn"
                             OnClick="btnOpenTest_Click" CausesValidation="false"

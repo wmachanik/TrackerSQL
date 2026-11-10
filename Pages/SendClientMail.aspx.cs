@@ -51,7 +51,45 @@ namespace TrackerSQL.Pages
                     BindRules();
                     SetStatus("Write the message (defaults loaded), add filter conditions if you need them, then Apply Filters.", isError: null);
                 }
+                BindSendHistory();
             }
+        }
+
+        private void BindSendHistory()
+        {
+            try
+            {
+                gvSendHistory.DataSource = _templates.RecentSends(40);
+                gvSendHistory.DataBind();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.ClientMail, "Send history not loaded: " + ex.Message);
+            }
+        }
+
+        private string CurrentFilterText()
+        {
+            var parts = new List<string>();
+            if (chkEnabledOnly.Checked)
+                parts.Add("Enabled Only");
+            if (chkMustHaveEmail.Checked)
+                parts.Add("Has Email");
+            foreach (ClientMailRule rule in GetRules())
+            {
+                string line = (string.IsNullOrWhiteSpace(rule.Join) ? string.Empty : rule.Join + " ") + (rule.Display ?? string.Empty);
+                if (!string.IsNullOrWhiteSpace(line))
+                    parts.Add(line.Trim());
+            }
+            return parts.Count == 0 ? "All Contacts" : string.Join("; ", parts);
+        }
+
+        private string CurrentSavedMessageName()
+        {
+            if (ddlSavedMessages.SelectedValue == "0")
+                return null;
+            string name = ddlSavedMessages.SelectedItem == null ? null : ddlSavedMessages.SelectedItem.Text;
+            return string.IsNullOrWhiteSpace(name) ? null : name.Trim();
         }
 
         private void RegisterPostBackControls()
@@ -705,6 +743,25 @@ namespace TrackerSQL.Pages
                     chkCcOrdersEmail.Checked,
                     groupSize,
                     delayMs);
+
+                try
+                {
+                    _templates.InsertSendLog(new ClientMailSendLog
+                    {
+                        SentAt = TimeZoneUtils.Now(),
+                        MessageName = CurrentSavedMessageName(),
+                        Subject = tbxEmailSubject.Text.Trim(),
+                        FilterText = CurrentFilterText(),
+                        EmailsSent = result.TotalSent,
+                        EmailsFailed = result.TotalFailed,
+                        SentBy = User.Identity.Name
+                    });
+                    BindSendHistory();
+                }
+                catch (Exception logEx)
+                {
+                    AppLogger.WriteLog(SystemConstants.LogTypes.ClientMail, "Send history not saved: " + logEx.Message);
+                }
 
                 string status = $"Complete — sent: {result.TotalSent}, failed: {result.TotalFailed}.";
                 if (!string.IsNullOrWhiteSpace(result.ErrorMessage))

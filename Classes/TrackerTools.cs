@@ -463,9 +463,37 @@ label_6:
             return prepDataForCustomer.PreparationDate ?? DateTime.MinValue;
         }
 
+        /// <summary>Next prep/delivery for an area (e.g. deliver-to address area), not the billing contact's area.</summary>
+        public DateTime GetNextPreparationDateByAreaID(int areaId, ref DateTime pDelivery)
+        {
+            if (areaId <= 0)
+            {
+                pDelivery = DateTime.MinValue;
+                return DateTime.MinValue;
+            }
+
+            if (!this.IsNextPreparationDateByAreaTodays())
+                this.SetNextPreparationDateByArea();
+
+            var prepData = LoadPrepDataForArea(areaId);
+            if (!HasValidPrepDates(prepData))
+            {
+                this.SetNextPreparationDateByArea();
+                prepData = LoadPrepDataForArea(areaId);
+            }
+
+            pDelivery = prepData.DeliveryDate ?? DateTime.MinValue;
+            return prepData.PreparationDate ?? DateTime.MinValue;
+        }
+
         private static NextPreparationDateByArea LoadPrepDataForContact(long contactId)
         {
             return new NextPrepDateByAreaRepository().GetPrepDataForContact((int)contactId);
+        }
+
+        private static NextPreparationDateByArea LoadPrepDataForArea(int areaId)
+        {
+            return new NextPrepDateByAreaRepository().GetPrepDataForArea(areaId);
         }
 
         private static bool HasValidPrepDates(NextPreparationDateByArea prepData)

@@ -21,6 +21,8 @@ namespace TrackerSQL.Models
     {
         public string Sku { get; set; }
         public string Name { get; set; }
+        public long WooProductId { get; set; }
+        public long WooVariationId { get; set; }
         public double WooQty { get; set; }
         public string MapType { get; set; }
         public int? TrackerItemId { get; set; }

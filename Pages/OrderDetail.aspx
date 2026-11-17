@@ -122,7 +122,8 @@
                                     AutoPostBack="true"
                                     DropDownStyle="DropDown" CaseSensitive="false"
                                     AutoCompleteMode="Suggest" PromptText="----Select name----"
-                                    OnSelectedIndexChanged="cboContacts_SelectedIndexChanged">
+                                    OnSelectedIndexChanged="cboContacts_SelectedIndexChanged"
+                                    data-tracker-wait="Loading contact">
                                     <asp:ListItem Value="0">none</asp:ListItem>
                                 </ajaxToolkit:ComboBox>
                                 <asp:HiddenField ID="hdnSelectedContactId" runat="server" Value="" />
@@ -133,7 +134,8 @@
                             <td>
                                 <div class="order-deliver-to-row">
                                     <asp:DropDownList ID="ddlDeliverToOrder" runat="server" AutoPostBack="true"
-                                        OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged" />
+                                        OnSelectedIndexChanged="ddlDeliverToOrder_SelectedIndexChanged"
+                                        data-tracker-wait="Updating delivery address and dates" />
                                     <asp:Panel ID="pnlEditDeliverToOrder" runat="server" Visible="false"
                                         CssClass="image-button order-deliver-to-edit"
                                         ToolTip="Edit this alternative address">
@@ -188,7 +190,7 @@
                                 <asp:TextBox ID="tbxPurchaseOrder" runat="server" Width="20em" />
                             </td>
                         </tr>
-                        <tr>
+                        <tr id="trOrderFlag" runat="server">
                             <td>Order Flag</td>
                             <td>
                                 <asp:DropDownList ID="ddlInvoiceType" runat="server"

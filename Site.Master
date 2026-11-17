@@ -8,7 +8,7 @@
     <title>QOnT</title>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link href="~/Styles/Site.css?v=20261110-01" rel="stylesheet" type="text/css" />
+    <link href="~/Styles/Site.css?v=20261117-12" rel="stylesheet" type="text/css" />
     <link href="~/Styles/MobileStaff.css?v=20261110-01" rel="stylesheet" type="text/css" />
     <link rel="icon" type="image/ico" href="~/images/icon/QonTIcon.ico" />
     <meta name="viewport" content="min-width=340px, width=device-width,initial-scale=1.0, minimum-scale=0.5, user-scalable=yes" />
@@ -197,9 +197,13 @@
                                 <DynamicMenuItemStyle ForeColor="White" HorizontalPadding="5px" VerticalPadding="2px" />
                                 <DynamicMenuStyle BackColor="#201606" VerticalPadding="2px" HorizontalPadding="2px" BorderColor="Transparent" BorderStyle="Solid" />
                                 <Items>
-                                    <asp:MenuItem NavigateUrl="~/Default.aspx" Text=""
-                                        ImageUrl="~/images/imgButtons/Home.gif"
-                                        ToolTip="Home" Value="Home" />
+                                    <asp:MenuItem Selectable="False" Text="" ImageUrl="~/images/imgButtons/Home.gif"
+                                        ToolTip="Home" Value="Home">
+                                        <asp:MenuItem NavigateUrl="~/Default.aspx" Text="Home screen"
+                                            Value="HomeScreen" />
+                                        <asp:MenuItem NavigateUrl="~/Pages/ActivityDashboard.aspx" Text="Activity dashboard"
+                                            Value="ActivityDashboard" ToolTip="Last 7 / 30 / 90 day stats" />
+                                    </asp:MenuItem>
                                     <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts" ToolTip="Contact List"
                                         Value="Contacts">
                                         <asp:MenuItem NavigateUrl="~/Pages/Contacts.aspx" Text="Contacts"
@@ -269,8 +273,11 @@
                                             <asp:MenuItem NavigateUrl="~/Tools/XMLtoSQL.aspx" Text="XML to SQL" Value="XMLtoSQL" />
                                             <asp:MenuItem NavigateUrl="~/Tools/MessagesEditor.aspx" Text="Messages Editor" Value="MessagesEditor" />
                                             <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx" Text="System Preferences" Value="SystemPreferences" />
-                                            <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mapping" Value="WooMapping" />
                                             <asp:MenuItem NavigateUrl="~/Tools/EmailDiagnostics.aspx" Text="Email Diag." Value="Email Diag." />
+                                        </asp:MenuItem>
+                                        <asp:MenuItem Selectable="False" Text="Woo" Value="Woo" ToolTip="WooCommerce">
+                                            <asp:MenuItem NavigateUrl="~/Tools/SystemPreferences.aspx?section=woo" Text="Woo Settings" Value="WooSettings" />
+                                            <asp:MenuItem NavigateUrl="~/Tools/WooCommerceMapping.aspx" Text="Woo Mappings" Value="WooMapping" />
                                         </asp:MenuItem>
                                         <asp:MenuItem Text="Forms" Value="Forms">
                                             <asp:MenuItem NavigateUrl="~/Pages/LeaveApp.aspx" Text="Leave App" Value="Leave App"></asp:MenuItem>
@@ -389,11 +396,11 @@
         </div>
         <div id="trackerWaitOverlay" class="tracker-wait-overlay" aria-hidden="true" aria-live="polite" role="alertdialog" aria-label="Please wait">
             <div class="tracker-wait-box">
-                <img src="<%= ResolveUrl("~/images/animi/QuaffeeProgress.gif") %>" alt="" />
+                <img class="tracker-wait-spinner" src="<%= ResolveUrl("~/images/animi/coffee-beans-spin.svg") %>" alt="" width="64" height="64" />
                 <div id="trackerWaitLabel" class="tracker-wait-label">Please wait&hellip;</div>
             </div>
         </div>
-        <script src="<%= ResolveUrl("~/Scripts/trackerWaitOverlay.js") %>?v=20261110-01" type="text/javascript"></script>
+        <script src="<%= ResolveUrl("~/Scripts/trackerWaitOverlay.js") %>?v=20261117-02" type="text/javascript"></script>
     </form>
 
 </body>

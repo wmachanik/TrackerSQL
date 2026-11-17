@@ -196,7 +196,7 @@ namespace TrackerSQL.Managers
             var result = new List<MobileDeliveryStop>(stops.Count);
             foreach (var driverStops in stops.GroupBy(s => s.DeliveryById ?? 0))
             {
-                if (driverStops.All(s => s.Collection == true))
+                if (driverStops.All(s => s.Collection == true || s.SupplierPickup == true))
                 {
                     List<MobileDeliveryStop> collections = driverStops.OrderBy(s => s.Company, StringComparer.OrdinalIgnoreCase).ToList();
                     for (int i = 0; i < collections.Count; i++)
@@ -272,6 +272,8 @@ namespace TrackerSQL.Managers
                     ? (string.IsNullOrWhiteSpace(walkIn) ? "ZZName" : walkIn)
                     : row.CompanyName;
 
+            bool supplierPickup = MobileApiSettingsManager.IsSupplierPickupContact(row.ContactTypeId);
+
             return new MobileDeliveryStop
             {
                 OrderId = row.OrderID,
@@ -326,10 +328,11 @@ namespace TrackerSQL.Managers
                         Review = (!sundry || hasDeliverTo) && row.GpsStatus == CustomerLocation.StatusReviewRequired
                     }
                     : new MobileStopGps { Kind = "none" },
-                NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection
-                    || MobileApiSettingsManager.IsSupplierPickupContact(row.ContactTypeId) ? true : (bool?)null,
-                Collection = row.Collection ? true : (bool?)null,
-                SupplierPickup = MobileApiSettingsManager.IsSupplierPickupContact(row.ContactTypeId) ? true : (bool?)null
+                NoGpsLearning = sundry || row.CollectsOrCourier || row.Collection || supplierPickup
+                    ? true : (bool?)null,
+                // Supplier pickups use Collected flow even when Delivered By is Collect — not depot client collection.
+                Collection = !supplierPickup && row.Collection ? true : (bool?)null,
+                SupplierPickup = supplierPickup ? true : (bool?)null
             };
         }
 
@@ -660,16 +663,18 @@ namespace TrackerSQL.Managers
             string reason = (item.Reason ?? string.Empty).Trim();
             string missingItems = (item.MissingItems ?? string.Empty).Trim();
             bool supplierPickup = MobileApiSettingsManager.IsSupplierPickupContact(order.ContactTypeId);
-            if (outcome == OutcomeDelivered && receivedBy.Length == 0 && signature == null && reason.Length == 0)
+            if (outcome == OutcomeDelivered && receivedBy.Length == 0 && signature == null && reason.Length == 0
+                && !supplierPickup)
             {
-                if (supplierPickup)
-                    return Fail(item, "Choose how you collected from the supplier, or enter who handed it over.");
                 return Fail(item, "A delivered order needs how it was delivered, the received-by name or a signature.");
             }
             if (outcome == OutcomeNotDelivered && reason.Length == 0 && string.IsNullOrWhiteSpace(item.Note))
-                return Fail(item, "Say why it was not delivered.");
+                return Fail(item, supplierPickup ? "Say why it was not collected." : "Say why it was not delivered.");
+            if (supplierPickup && outcome == OutcomeDelivered && reason.Length == 0)
+                reason = "Collected";
             // Handed over at the depot: where the phone is says nothing about the client or the route.
-            bool collection = order.DeliveryById.HasValue
+            // Supplier pickups are not depot client collections even when Delivered By is Collect.
+            bool collection = !supplierPickup && order.DeliveryById.HasValue
                 && new PersonsRepository().GetDeliveryType(order.DeliveryById.Value) == DeliveryTypes.Collect;
             bool notAtClient = outcome == OutcomeDelivered
                 && (collection || supplierPickup || IsNotAtClientOption(reason));

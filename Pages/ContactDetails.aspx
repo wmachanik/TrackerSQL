@@ -18,7 +18,6 @@
                 return false;
             btn.setAttribute('data-busy', '1');
             btn.value = 'Adding...';
-            btn.disabled = true;
             return true;
         }
     </script>

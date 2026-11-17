@@ -7,6 +7,16 @@
 </asp:Content>
 <asp:Content ID="BodyContent" runat="server" ContentPlaceHolderID="MainContent">
     <h2>Welcome to TrackerSQL.NET</h2>
+
+    <div class="dashboard-links" style="margin-bottom: 20px;">
+        <div class="dashboard-card home-tone-summary">
+            <div class="tool-card-header">
+                <img class="tool-card-icon" src="images/imgButtons/icons8-weekly-summary-16.png" alt="" />
+                <h4><a href="Pages/ActivityDashboard.aspx">Activity dashboard</a></h4>
+            </div>
+            <p>Orders, deliveries, repairs, coffee and email — compare 7–360 day periods to the prior period</p>
+        </div>
+    </div>
     
     <!-- Dashboard Grid Layout -->
     <div class="responsive-layout-container home-dashboard">

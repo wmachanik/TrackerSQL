@@ -54,7 +54,7 @@ namespace TrackerSQL
             }
 
             bool wooOn = IsWooIntegrationEnabledCached();
-            SyncWooMappingMenuItem(wooOn);
+            SyncWooSystemMenuItem(wooOn);
             SyncWooOrderImportMenuItem(wooOn);
             HighlightCurrentMenuItem();
             MobileStaffLayout.ApplyBodyClasses(bodySite, Request);
@@ -75,29 +75,32 @@ namespace TrackerSQL
             }
         }
 
-        /// <summary>Hide Woo Mapping until WooCommerce integration is enabled.</summary>
-        private void SyncWooMappingMenuItem(bool wooOn)
+        /// <summary>Hide System → Woo submenu until WooCommerce integration is enabled.</summary>
+        private void SyncWooSystemMenuItem(bool wooOn)
         {
             if (NavigationMenu == null)
                 return;
 
-            MenuItem item = FindMenuItemByValue(NavigationMenu.Items, "WooMapping");
-            if (item == null)
+            MenuItem systemMenu = FindMenuItemByValue(NavigationMenu.Items, "System");
+            if (systemMenu == null)
                 return;
 
-            if (wooOn)
+            MenuItem wooMenu = FindMenuItemByValue(systemMenu.ChildItems, "Woo");
+            if (wooMenu == null)
+                return;
+
+            if (!wooOn)
             {
-                item.Enabled = true;
-                item.NavigateUrl = "~/Tools/WooCommerceMapping.aspx";
-                item.ToolTip = string.Empty;
+                systemMenu.ChildItems.Remove(wooMenu);
+                return;
             }
-            else
-            {
-                // Keep visible but send to Preferences wizard instead of Mapping.
-                item.Enabled = true;
-                item.NavigateUrl = "~/Tools/SystemPreferences.aspx?section=woo&wizard=1";
-                item.ToolTip = "Enable WooCommerce integration first (setup wizard)";
-            }
+
+            MenuItem settings = FindMenuItemByValue(wooMenu.ChildItems, "WooSettings");
+            MenuItem mapping = FindMenuItemByValue(wooMenu.ChildItems, "WooMapping");
+            if (settings != null)
+                settings.NavigateUrl = "~/Tools/SystemPreferences.aspx?section=woo";
+            if (mapping != null)
+                mapping.NavigateUrl = "~/Tools/WooCommerceMapping.aspx";
         }
 
         /// <summary>Hide Woo Order Import under Orders until WooCommerce integration is enabled.</summary>
@@ -184,29 +187,112 @@ namespace TrackerSQL
 
             foreach (MenuItem menuItem in NavigationMenu.Items)
             {
-                string menuUrl = ResolveUrl(menuItem.NavigateUrl).ToUpper();
-                if (currentPage == menuUrl)
-                {
-                    menuItem.Selected = true;
+                if (TryHighlightMenuBranch(menuItem, currentPage))
                     parentSelected = true;
-                }
-                else
+            }
+
+            HighlightWooSettingsMenuWhenOnWooSection();
+
+            if ((currentPage.Contains("DEFAULT.ASPX") || currentPage.EndsWith("/")) && !parentSelected)
+            {
+                MenuItem homeRoot = NavigationMenu.Items.Count > 0 ? NavigationMenu.Items[0] : null;
+                if (homeRoot != null && homeRoot.ChildItems.Count > 0)
                 {
-                    foreach (MenuItem childItem in menuItem.ChildItems)
+                    foreach (MenuItem child in homeRoot.ChildItems)
                     {
-                        string childUrl = ResolveUrl(childItem.NavigateUrl).ToUpper();
+                        if (string.IsNullOrEmpty(child.NavigateUrl))
+                            continue;
+                        string childUrl = ResolveUrl(child.NavigateUrl).ToUpper();
                         if (currentPage == childUrl)
                         {
-                            childItem.Selected = true;
-                            menuItem.Selected = true;
+                            child.Selected = true;
                             parentSelected = true;
+                            break;
                         }
                     }
+
+                    if (!parentSelected)
+                    {
+                        homeRoot.ChildItems[0].Selected = true;
+                    }
+                }
+                else if (homeRoot != null && homeRoot.Selectable)
+                {
+                    homeRoot.Selected = true;
+                }
+            }
+        }
+
+        private void HighlightWooSettingsMenuWhenOnWooSection()
+        {
+            string currentPage = Request.AppRelativeCurrentExecutionFilePath.ToUpper();
+            if (!currentPage.Contains("SYSTEMPREFERENCES.ASPX"))
+                return;
+
+            string raw = Request.QueryString["section"];
+            string wiz = Request.QueryString["wizard"];
+            bool wooSection = string.Equals(raw, "woo", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "woocommerce", StringComparison.OrdinalIgnoreCase)
+                || raw == "1"
+                || wiz == "1"
+                || string.Equals(wiz, "true", StringComparison.OrdinalIgnoreCase);
+            if (!wooSection)
+                return;
+
+            MenuItem wooSettings = FindMenuItemByValue(NavigationMenu.Items, "WooSettings");
+            if (wooSettings == null || !wooSettings.Enabled)
+                return;
+
+            MenuItem sysPrefs = FindMenuItemByValue(NavigationMenu.Items, "SystemPreferences");
+            if (sysPrefs != null)
+                sysPrefs.Selected = false;
+
+            SelectMenuItemAndAncestors(wooSettings);
+        }
+
+        private static void SelectMenuItemAndAncestors(MenuItem item)
+        {
+            if (item == null)
+                return;
+
+            item.Selected = true;
+            MenuItem parent = item.Parent;
+            while (parent != null)
+            {
+                if (parent.Selectable)
+                    parent.Selected = true;
+                parent = parent.Parent;
+            }
+        }
+
+        private bool TryHighlightMenuBranch(MenuItem menuItem, string currentPage)
+        {
+            if (menuItem == null)
+                return false;
+
+            string menuUrl = string.IsNullOrEmpty(menuItem.NavigateUrl)
+                ? string.Empty
+                : ResolveUrl(menuItem.NavigateUrl).ToUpper();
+            if (!string.IsNullOrEmpty(menuUrl) && currentPage == menuUrl)
+            {
+                if (menuItem.Selectable)
+                    menuItem.Selected = true;
+                return true;
+            }
+
+            foreach (MenuItem child in menuItem.ChildItems)
+            {
+                if (TryHighlightMenuBranch(child, currentPage))
+                {
+                    if (child.Selectable)
+                        child.Selected = true;
+                    if (menuItem.Selectable)
+                        menuItem.Selected = true;
+                    return true;
                 }
             }
 
-            if ((currentPage.Contains("DEFAULT.ASPX") || currentPage.EndsWith("/")) && !parentSelected)
-                NavigationMenu.Items[0].Selected = true;
+            return false;
         }
     }
 }

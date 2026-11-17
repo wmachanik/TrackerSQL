@@ -102,11 +102,13 @@
                         </table>
 
                         <asp:Panel ID="pnlFileBrowser" runat="server" CssClass="file-browser">
-                            <div class="xmltosql-list-tools">
-                                <asp:LinkButton ID="btnSortName" runat="server" Text="Sort by Name"
-                                    CssClass="sys-prefs-tab" OnClick="btnSortName_Click" CausesValidation="false" />
+                            <div class="xmltosql-list-tools" role="group" aria-label="Sort XML files">
                                 <asp:LinkButton ID="btnSortDate" runat="server" Text="Sort by Date"
-                                    CssClass="sys-prefs-tab" OnClick="btnSortDate_Click" CausesValidation="false" />
+                                    CssClass="sys-prefs-tab is-active" OnClick="btnSortDate_Click" CausesValidation="false"
+                                    ToolTip="Newest files first (default)" />
+                                <asp:LinkButton ID="btnSortName" runat="server" Text="Sort by Name"
+                                    CssClass="sys-prefs-tab" OnClick="btnSortName_Click" CausesValidation="false"
+                                    ToolTip="Alphabetical A–Z" />
                             </div>
                             <strong><asp:Literal ID="ltrlFileBrowserTitle" runat="server" Text="XML Files" /></strong>
                             <asp:Literal ID="ltrlFileList" runat="server" />

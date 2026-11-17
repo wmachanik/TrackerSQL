@@ -585,7 +585,8 @@ namespace TrackerSQL.Pages
                 Done = cbxDone.Checked,
                 PurchaseOrder = tbxPurchaseOrder.Text ?? string.Empty,
                 Notes = tbxNotes.Text ?? string.Empty,
-                InvoiceTypeID = TryGetListControlValue(ddlInvoiceType, out string invoiceTypeValue)
+                InvoiceTypeID = (trOrderFlag == null || trOrderFlag.Visible)
+                    && TryGetListControlValue(ddlInvoiceType, out string invoiceTypeValue)
                     && int.TryParse(invoiceTypeValue, out int invoiceTypeId) && invoiceTypeId > 0
                         ? invoiceTypeId
                         : (int?)null,
@@ -638,9 +639,14 @@ namespace TrackerSQL.Pages
 
         /// <summary>
         /// Order flag list. A new or unset order defaults to the system Standard invoice type.
+        /// Hidden for supplier / collection-only contacts (no invoice flag on pickups).
         /// </summary>
         private void BindInvoiceTypeDropdown(long contactId, int? selectedInvoiceTypeId)
         {
+            bool hideForSupplier = IsSupplierOrCollectionOnlyContact(contactId);
+            if (trOrderFlag != null)
+                trOrderFlag.Visible = !hideForSupplier;
+
             var invoiceTypes = new InvoiceTypesRepository().GetAll("InvoiceTypeID");
 
             ddlInvoiceType.Items.Clear();
@@ -648,12 +654,27 @@ namespace TrackerSQL.Pages
             foreach (var invoiceType in invoiceTypes)
                 ddlInvoiceType.Items.Add(new ListItem(invoiceType.InvoiceTypeDesc, invoiceType.InvoiceTypeID.ToString()));
 
+            if (hideForSupplier)
+            {
+                EnsureListControlSelectionByValue(ddlInvoiceType, "0");
+                return;
+            }
+
             ListItem selected = selectedInvoiceTypeId.HasValue
                 ? ddlInvoiceType.Items.FindByValue(selectedInvoiceTypeId.Value.ToString())
                 : null;
             (selected
                 ?? ddlInvoiceType.Items.FindByValue(SystemConstants.InvoiceTypeConstants.DefaultForNewOrder.ToString())
                 ?? ddlInvoiceType.Items[0]).Selected = true;
+        }
+
+        /// <summary>True when the contact type is Collection only / supplier pickup (Driver App setting).</summary>
+        private static bool IsSupplierOrCollectionOnlyContact(long contactId)
+        {
+            if (contactId <= 0)
+                return false;
+            Contact contact = new ContactsRepository().GetById((int)contactId);
+            return contact != null && MobileApiSettingsManager.IsSupplierPickupContact(contact.ContactTypeID);
         }
 
         private void BindWalkInAreaRow(long contactId, int? selectedAreaId)
@@ -1430,6 +1451,11 @@ namespace TrackerSQL.Pages
                         ? ReadDeliverToAddressIdFromControls()
                         : null;
                     BindDeliverToOrderDropdown(contactId, deliverTo);
+                    int? currentFlag = TryGetListControlValue(ddlInvoiceType, out string flagRaw)
+                        && int.TryParse(flagRaw, out int flagId) && flagId > 0
+                            ? flagId
+                            : (int?)null;
+                    BindInvoiceTypeDropdown(contactId, currentFlag);
                 }
 
                 UpdateNewItemButtonState();
@@ -1523,19 +1549,20 @@ namespace TrackerSQL.Pages
         /// <summary>
         /// Writes an orders.log audit line. AppLogger already prefixes the logged-in user.
         /// </summary>
-        private void LogOrderAudit(string action, string details = null)
+        private void LogOrderAudit(string action, string details = null, int knownOrderId = 0)
         {
             long contactId = GetEffectiveContactId();
             string company = GetSelectedContactDisplayName();
             if (string.IsNullOrWhiteSpace(company) && contactId > 0)
                 company = new ContactsRepository().GetContactNameById((int)contactId) ?? string.Empty;
 
-            string orderPart = OrderId > 0 ? $"Order {OrderId}" : "New order";
+            int id = knownOrderId > 0 ? knownOrderId : OrderId;
+            string orderPart = id > 0 ? $"Order {id}" : "New order";
             string contactPart = contactId > 0
                 ? (string.IsNullOrWhiteSpace(company)
-                    ? $"Contact={contactId}"
-                    : $"Contact={contactId} ({company})")
-                : "Contact=(none)";
+                    ? $"Customer #{contactId}"
+                    : $"Customer {company} (#{contactId})")
+                : "Customer (none)";
 
             string line = $"{orderPart} | {contactPart} | {action}";
             if (!string.IsNullOrWhiteSpace(details))
@@ -1591,6 +1618,13 @@ namespace TrackerSQL.Pages
                 parts.Add($"Walk-in area {previous.WalkInAreaID?.ToString() ?? "none"}->{current.WalkInAreaID?.ToString() ?? "none"}");
 
             return parts.Count > 0 ? string.Join("; ", parts) : "header updated";
+        }
+
+        private static string FormatSchedule(OrderHeaderData header)
+        {
+            if (header == null)
+                return string.Empty;
+            return $"Prep={header.PrepDate:yyyy-MM-dd}; Delivery={header.RequiredByDate:yyyy-MM-dd}";
         }
 
         private string BuildOrderDetailUrl(int orderId)
@@ -1708,7 +1742,9 @@ namespace TrackerSQL.Pages
                 && message.IndexOf("created", StringComparison.OrdinalIgnoreCase) >= 0
                 ? "Order created"
                 : "Order opened";
-            LogOrderAudit(activateAction, message);
+            string schedule = FormatSchedule(header);
+            string details = string.IsNullOrWhiteSpace(schedule) ? message : message + " | " + schedule;
+            LogOrderAudit(activateAction, details, orderId);
             SetStatusMessage(message, isSuccess: isSuccess, log: false);
 
             string url = ResolveUrl($"~/Pages/OrderDetail.aspx?{CONST_QRYSTR_ORDERID}={orderId}");
@@ -1728,31 +1764,36 @@ namespace TrackerSQL.Pages
             if (contactId <= 0 || OrderId > 0)
                 return;
 
-            DateTime deliveryDate = TimeZoneUtils.Now().Date;
-            DateTime prepDate = new TrackerTools().GetNextPreparationDateByCustomerID(contactId, ref deliveryDate);
+            BindDeliverToOrderDropdown(contactId, null);
+            ApplyScheduleDatesForSelection(contactId, ReadDeliverToAddressIdFromControls());
 
-            if (prepDate <= DateTime.MinValue || deliveryDate <= DateTime.MinValue)
-            {
-                var fallback = _orderManager.CalculateOrderDates(TimeZoneUtils.Now().Date);
-                prepDate = fallback.PrepDate;
-                deliveryDate = fallback.deliveryDate;
-            }
-
-            tbxPrepDate.Text = prepDate.ToString("yyyy-MM-dd");
-            tbxRequiredByDate.Text = deliveryDate.ToString("yyyy-MM-dd");
+            Contact contact = new ContactsRepository().GetById(contactId);
+            bool supplierPickup = contact != null
+                && MobileApiSettingsManager.IsSupplierPickupContact(contact.ContactTypeID);
 
             var prefs = new TrackerTools().RetrieveCustomerPrefs(contactId);
-            int deliveryId = prefs.PreferredDeliveryByID > 0
-                ? prefs.PreferredDeliveryByID
-                : SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
-
-            int dayOfWeek = (int)(deliveryDate.DayOfWeek + 1);
-            if (!IsNormalDeliveryDoW(deliveryId, dayOfWeek))
+            int deliveryId;
+            if (supplierPickup)
             {
-                deliveryId = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
-                if (!string.IsNullOrEmpty(tbxNotes.Text))
-                    tbxNotes.Text += " ";
-                tbxNotes.Text += "Default delivery person changed due to day-of-week.";
+                deliveryId = SystemConstants.DeliveryConstants.CollectionID;
+            }
+            else
+            {
+                deliveryId = prefs.PreferredDeliveryByID > 0
+                    ? prefs.PreferredDeliveryByID
+                    : SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
+
+                DateTime deliveryDate;
+                if (!DateTime.TryParse(tbxRequiredByDate.Text, out deliveryDate))
+                    deliveryDate = TimeZoneUtils.Now().Date;
+                int dayOfWeek = (int)(deliveryDate.DayOfWeek + 1);
+                if (!IsNormalDeliveryDoW(deliveryId, dayOfWeek))
+                {
+                    deliveryId = SystemConstants.DeliveryConstants.DefaultDeliveryPersonID;
+                    if (!string.IsNullOrEmpty(tbxNotes.Text))
+                        tbxNotes.Text += " ";
+                    tbxNotes.Text += "Default delivery person changed due to day-of-week.";
+                }
             }
 
             PreferredDeliveryPersonId = deliveryId;
@@ -1774,8 +1815,31 @@ namespace TrackerSQL.Pages
             {
                 tbxNewQuantityOrdered.Text = prefs.PreferedQty.ToString();
             }
+        }
 
-            BindDeliverToOrderDropdown(contactId, null);
+        /// <summary>Prep/delivery from the deliver-to address area when selected, else the contact's area.</summary>
+        private void ApplyScheduleDatesForSelection(int contactId, int? deliverToAddressId)
+        {
+            if (contactId <= 0)
+                return;
+
+            DateTime deliveryDate = TimeZoneUtils.Now().Date;
+            DateTime prepDate = DateTime.MinValue;
+            int? areaId = DeliveryOnBehalfManager.ResolveEffectiveAreaId(contactId, deliverToAddressId);
+            if (areaId.HasValue)
+                prepDate = new TrackerTools().GetNextPreparationDateByAreaID(areaId.Value, ref deliveryDate);
+            else
+                prepDate = new TrackerTools().GetNextPreparationDateByCustomerID(contactId, ref deliveryDate);
+
+            if (prepDate <= DateTime.MinValue || deliveryDate <= DateTime.MinValue)
+            {
+                var fallback = _orderManager.CalculateOrderDates(TimeZoneUtils.Now().Date);
+                prepDate = fallback.PrepDate;
+                deliveryDate = fallback.deliveryDate;
+            }
+
+            tbxPrepDate.Text = prepDate.ToString("yyyy-MM-dd");
+            tbxRequiredByDate.Text = deliveryDate.ToString("yyyy-MM-dd");
         }
 
         /// <summary>
@@ -1920,10 +1984,14 @@ namespace TrackerSQL.Pages
 
         protected void ddlDeliverToOrder_SelectedIndexChanged(object sender, EventArgs e)
         {
+            int contactId = (int)GetEffectiveContactId();
+
             if (!TryGetListControlValue(ddlDeliverToOrder, out string raw)
                 || raw == string.Empty
                 || raw == ZzNameDeliverTo.StandardValue)
             {
+                if (contactId > 0)
+                    ApplyScheduleDatesForSelection(contactId, null);
                 UpdateDeliverToEditButton();
                 MarkHeaderDirty();
                 pnlOrderHeader.Update();
@@ -1951,6 +2019,9 @@ namespace TrackerSQL.Pages
                     item.Selected = true;
                 }
             }
+
+            if (contactId > 0)
+                ApplyScheduleDatesForSelection(contactId, id);
 
             MaybeApplyDeliverToPurchaseOrder(id, row);
             UpdateDeliverToEditButton();
@@ -3036,7 +3107,8 @@ namespace TrackerSQL.Pages
 
                     LogOrderAudit(
                         "Item added",
-                        FormatItemAuditDetails(itemId, qty, packagingId) + "; via=create-new-anyway");
+                        FormatItemAuditDetails(itemId, qty, packagingId) + "; via=create-new-anyway",
+                        ensure.OrderId);
 
                     HideNewOrderItemPanel();
                     ActivatePersistedOrder(ensure.OrderId, "Order created. Item added.");
@@ -3140,7 +3212,10 @@ namespace TrackerSQL.Pages
                 return;
             }
 
-            LogOrderAudit("Last order items added", $"lines={lines.Count}");
+            LogOrderAudit(
+                "Last order items added",
+                FormatSchedule(header) + "; " + string.Join("; ", lines.Select(l => FormatItemAuditDetails(l.ItemTypeID, l.QuantityOrdered, l.PackagingID))),
+                addResult.OrderId);
 
             if (wasDraftOrder || OrderId <= 0)
             {
@@ -3282,7 +3357,7 @@ namespace TrackerSQL.Pages
                     return;
                 }
 
-                LogOrderAudit("Item added", FormatItemAuditDetails(itemId, qty, packagingId));
+                LogOrderAudit("Item added", FormatItemAuditDetails(itemId, qty, packagingId), orderId);
 
                 if (isNewOrder)
                 {

@@ -1375,6 +1375,18 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapBackToPreferences" xml:space="preserve">
     <value>Return to System Preferences</value>
   </data>
+  <data name="WooCommerce.ImportOfferMapping" xml:space="preserve">
+    <value>A product on this preview has a missing or unmapped SKU. Sort the mapping out now?</value>
+  </data>
+  <data name="WooCommerce.ImportSkuMissing" xml:space="preserve">
+    <value>SKU missing: "{0}" (Woo product {1}). Sync products on WooCommerce Mapping and map it.</value>
+  </data>
+  <data name="WooCommerce.ImportUnmappedSku" xml:space="preserve">
+    <value>Unmapped SKU: {0} ({1}). Sync products on WooCommerce Mapping and map it.</value>
+  </data>
+  <data name="WooCommerce.MapNeedsMappingIntro" xml:space="preserve">
+    <value>These products arrived on a Woo order and still need a mapping. Sync products, then map them (Missing SKUs when the shop SKU is blank).</value>
+  </data>
   <data name="WooCommerce.MapPullProducts" xml:space="preserve">
     <value>Pull products from Woo</value>
   </data>
@@ -1420,14 +1432,17 @@ When you continue, Tracker will create companion database tables (orders and ite
   <data name="WooCommerce.MapCollapseAll" xml:space="preserve">
     <value>Collapse all</value>
   </data>
+  <data name="WooCommerce.MapColTogglesLead" xml:space="preserve">
+    <value>Show columns:</value>
+  </data>
   <data name="WooCommerce.MapShowName" xml:space="preserve">
-    <value>Show Name</value>
+    <value>Name</value>
   </data>
   <data name="WooCommerce.MapShowPack" xml:space="preserve">
-    <value>Show Pack</value>
+    <value>Pack</value>
   </data>
   <data name="WooCommerce.MapShowMode" xml:space="preserve">
-    <value>Show Mode</value>
+    <value>Mode</value>
   </data>
   <data name="WooCommerce.MapShowNameTip" xml:space="preserve">
     <value>Hide the Name column so the SKU stays on screen. Hover a SKU to read the full value.</value>
@@ -1437,6 +1452,24 @@ When you continue, Tracker will create companion database tables (orders and ite
   </data>
   <data name="WooCommerce.MapShowModeTip" xml:space="preserve">
     <value>Hide the Mode column. The parent row still keeps its mode.</value>
+  </data>
+  <data name="WooCommerce.MapShowVariant" xml:space="preserve">
+    <value>Variant</value>
+  </data>
+  <data name="WooCommerce.MapShowMatch" xml:space="preserve">
+    <value>Match</value>
+  </data>
+  <data name="WooCommerce.MapShowCreate" xml:space="preserve">
+    <value>Create / qty</value>
+  </data>
+  <data name="WooCommerce.MapShowVariantTip" xml:space="preserve">
+    <value>Hide the Variant column. Hover other cells for full text.</value>
+  </data>
+  <data name="WooCommerce.MapShowMatchTip" xml:space="preserve">
+    <value>Hide the Match reason column.</value>
+  </data>
+  <data name="WooCommerce.MapShowCreateTip" xml:space="preserve">
+    <value>Hide Item SKU, S/O, Qty, and Pack columns when you only need Tracker SKU.</value>
   </data>
   <data name="WooCommerce.MapPullAttributes" xml:space="preserve">
     <value>Pull options for ticked attributes</value>

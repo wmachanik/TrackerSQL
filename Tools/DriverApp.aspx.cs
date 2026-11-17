@@ -20,7 +20,7 @@ namespace TrackerSQL.Tools
     {
         private const string ApkPath = "~/Downloads/QuaffeeDriver.apk";
 
-        protected string ApkUrl => ResolveUrl(ApkPath);
+        protected string ApkUrl => ResolveUrl("~/Tools/DriverApp.aspx?download=1");
 
         protected string PageUrl => Absolute(Request.Url.AbsolutePath);
 
@@ -28,6 +28,11 @@ namespace TrackerSQL.Tools
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (string.Equals(Request.QueryString["download"], "1", StringComparison.Ordinal))
+            {
+                SendApk();
+                return;
+            }
             pnlSettings.Visible = pnlRelated.Visible = SecurityManager.IsAdmin();
             if (pnlSettings.Visible && !IsPostBack)
             {
@@ -47,6 +52,27 @@ namespace TrackerSQL.Tools
             MobileAppRelease release = DriverAppReleaseManager.Latest();
             litApkInfo.Text = HttpUtility.HtmlEncode(string.Format(CultureInfo.InvariantCulture, "{0}{1:0.0} MB, built {2:dd MMM yyyy HH:mm}",
                 release != null ? "version " + release.Version + ", " : string.Empty, apk.Length / 1048576.0, apk.LastWriteTime));
+        }
+
+        private void SendApk()
+        {
+            string path = Server.MapPath(ApkPath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                Response.StatusCode = 404;
+                Response.ContentType = "text/plain";
+                Response.Write("The Android app has not been built yet.");
+                Response.End();
+                return;
+            }
+
+            Response.Clear();
+            Response.BufferOutput = false;
+            Response.ContentType = "application/vnd.android.package-archive";
+            Response.AppendHeader("Content-Disposition", "attachment; filename=\"QuaffeeDriver.apk\"");
+            Response.AppendHeader("Content-Length", new FileInfo(path).Length.ToString(CultureInfo.InvariantCulture));
+            Response.TransmitFile(path);
+            Response.End();
         }
 
         private void BindSettings()

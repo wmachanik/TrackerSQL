@@ -2,6 +2,36 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.4.3 — 2026-11-17
+
+**Quaffee Driver:** 0.5.9 (unchanged from 3.0.4.2).
+
+### Features and fixes
+
+- **Woo product pull grid** — Columns are a percentage of the panel (Svd and Impt stay narrow). Text stays on one line and ellipsizes. No horizontal scrollbar.
+- **Order Detail** — Order type is hidden for supplier and collection-only contacts. Wait overlay uses a spinning coffee-bean mark and a real status message (not the deliver-to id).
+- **XMLtoSQL** — File list defaults to newest date first, with a name sort toggle.
+
+### Go-live notes
+
+- Includes everything listed under **3.0.4.2** (that build was not published on its own).
+- Publish the site, including `Styles/Site.css`, `Site.Master`, `Scripts/trackerWaitOverlay.js`, `images/animi/coffee-beans-spin.svg`, and `driver/`. Live `Web.config` **`Version` → 3.0.4.3**. Hard-refresh Woo Mapping after recycle.
+
+## 3.0.4.2 — 2026-11-12
+
+**Quaffee Driver:** 0.5.9.
+
+### Features and fixes
+
+- **Alt address schedule** — Prep and delivery dates use the **deliver-to address area** when an alternative address is selected on the order (not only the billing contact's area).
+- **Supplier orders** — New orders for Collection-only contact types (e.g. Supplier) default **Delivered By** to Collection.
+- **Supplier collections (driver)** — Stops ask **Is this collected?**; primary button is **Collected**; no signature/terms. Server accepts a simple Collected sync.
+- **Driver phones** — Cell takes precedence over landline; numbers matching Driver App landline prefixes are treated as phone (not WhatsApp). Contact person name shown on the stop detail.
+
+### Go-live notes
+
+- Publish `bin/`, Order Detail, mobile managers/repos, rebuilt `driver/` (0.5.9) and `Downloads/QuaffeeDriver.json` (APK when shipped). Live `Web.config` **`Version` → 3.0.4.2**. Recycle; test alt-address dates, a supplier order → Collection, and Collected on the driver app.
+
 ## 3.0.4.1 — 2026-11-10
 
 **Quaffee Driver:** 0.5.8 (unchanged).

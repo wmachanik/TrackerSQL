@@ -492,6 +492,7 @@ namespace TrackerSQL.Pages
         {
             gvContactTypes.EditIndex = e.NewEditIndex;
             BindContactTypesGrid();
+            upnlContactTypes?.Update();
         }
 
         protected void gvContactTypes_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
@@ -509,25 +510,98 @@ namespace TrackerSQL.Pages
 
                 var tbxDesc = (TextBox)row.FindControl("ContactTypeDescTextBox");
                 var tbxNotes = (TextBox)row.FindControl("ContactTypeNotesTextBox");
-                var cbxCollection = (CheckBox)row.FindControl("cbxCtCollectionOnly");
+                if (!ContactTypesRepository.HasDriverCollectionOnlyColumn())
+                {
+                    SetLookupStatus("Collection only could not be saved. The contact type column is missing on this database.", true);
+                    return;
+                }
 
                 var contactType = new ContactType
                 {
                     ContactTypeID = contactTypeId,
                     ContactTypeDesc = tbxDesc?.Text ?? string.Empty,
                     Notes = tbxNotes?.Text ?? string.Empty,
-                    DriverCollectionOnly = cbxCollection != null && cbxCollection.Checked
+                    DriverCollectionOnly = PostedCollectionOnly(row, "cbxCtCollectionOnlyEdit", "hdnCtCollectionOnly")
                 };
 
                 new ContactTypesRepository().Update(contactType);
 
                 gvContactTypes.EditIndex = -1;
                 BindContactTypesGrid();
+                upnlContactTypes?.Update();
             }
             catch (Exception ex)
             {
                 lblStatus.Text = "Error updating contact type: " + ex.Message;
             }
+        }
+
+        protected void gvContactTypes_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow
+                && (e.Row.RowState & DataControlRowState.Edit) != 0)
+            {
+                WireCollectionOnly(e.Row, "cbxCtCollectionOnlyEdit", "hdnCtCollectionOnly");
+            }
+            else if (e.Row.RowType == DataControlRowType.Footer)
+            {
+                WireCollectionOnly(e.Row, "cbxCtCollectionOnlyFooter", "hdnCtCollectionOnlyFooter");
+            }
+        }
+
+        /// <summary>Keep a hidden 1/0 in step with the tick. The checkbox itself often does not post from this grid.</summary>
+        private static void WireCollectionOnly(GridViewRow row, string checkId, string hiddenId)
+        {
+            var cbx = row.FindControl(checkId) as CheckBox;
+            var hdn = row.FindControl(hiddenId) as HiddenField;
+            if (cbx == null || hdn == null)
+                return;
+            cbx.Attributes["onclick"] =
+                "var h=document.getElementById('" + hdn.ClientID + "');if(h)h.value=this.checked?'1':'0';";
+        }
+
+        /// <summary>
+        /// A ticked box posts its name. This grid's edit checkbox often does not, so the hidden field (set on click) is the value that is saved.
+        /// </summary>
+        private bool PostedCollectionOnly(GridViewRow row, string checkId, string hiddenId)
+        {
+            var cbx = row?.FindControl(checkId) as CheckBox;
+            if (FormPosted(cbx))
+                return true;
+
+            var hdn = row?.FindControl(hiddenId) as HiddenField;
+            if (hdn != null)
+            {
+                string posted = Request.Form[hdn.UniqueID];
+                if (posted == null)
+                    posted = FormValueEnding(hdn.ID);
+                if (posted != null)
+                    return posted == "1" || posted.Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return cbx != null && cbx.Checked;
+        }
+
+        private bool FormPosted(Control control)
+        {
+            if (control == null)
+                return false;
+            if (Request.Form[control.UniqueID] != null)
+                return true;
+            return FormValueEnding(control.ID) != null;
+        }
+
+        private string FormValueEnding(string controlId)
+        {
+            if (string.IsNullOrEmpty(controlId) || Request?.Form == null)
+                return null;
+            string suffix = "$" + controlId;
+            foreach (string key in Request.Form)
+            {
+                if (key != null && key.EndsWith(suffix, StringComparison.Ordinal))
+                    return Request.Form[key];
+            }
+            return null;
         }
 
         protected void gvContactTypes_RowCreated(object sender, GridViewRowEventArgs e)
@@ -546,13 +620,12 @@ namespace TrackerSQL.Pages
 
                 var tbxDesc = (TextBox)gvContactTypes.FooterRow.FindControl("ContactTypeDescTextBox");
                 var tbxNotes = (TextBox)gvContactTypes.FooterRow.FindControl("ContactTypeNotesTextBox");
-                var cbxCollection = (CheckBox)gvContactTypes.FooterRow.FindControl("cbxCtCollectionOnlyFooter");
 
                 var contactType = new ContactType
                 {
                     ContactTypeDesc = tbxDesc?.Text ?? string.Empty,
                     Notes = tbxNotes?.Text ?? string.Empty,
-                    DriverCollectionOnly = cbxCollection != null && cbxCollection.Checked
+                    DriverCollectionOnly = PostedCollectionOnly(gvContactTypes.FooterRow, "cbxCtCollectionOnlyFooter", "hdnCtCollectionOnlyFooter")
                 };
 
                 new ContactTypesRepository().Insert(contactType);

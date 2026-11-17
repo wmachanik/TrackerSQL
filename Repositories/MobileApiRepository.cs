@@ -990,8 +990,9 @@ FROM OrdersTbl o LEFT JOIN ContactsTbl c ON c.ContactID = o.ContactID WHERE o.Or
 
             string effectiveBy = DeliveryOnBehalfManager.EffectiveDeliveredByIdSql();
             string phoneCols = ContactDeliverToAddressRepository.HasPhoneColumns()
-                ? @"COALESCE(NULLIF(LTRIM(RTRIM(dob.CellNumber)), N''), NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N'')) AS CellNumber"
-                : "CAST(NULL AS NVARCHAR(30)) AS CellNumber";
+                ? @"NULLIF(LTRIM(RTRIM(dob.CellNumber)), N'') AS CellNumber,
+    NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N'') AS PhoneNumber"
+                : "CAST(NULL AS NVARCHAR(30)) AS CellNumber, CAST(NULL AS NVARCHAR(30)) AS PhoneNumber";
             string kindCol = ContactDeliverToAddressRepository.HasAddressKindColumn()
                 ? "dob.AddressKind"
                 : "CAST(NULL AS NVARCHAR(20)) AS AddressKind";
@@ -1025,7 +1026,7 @@ WHERE CAST(o.RequiredByDate AS DATE) = @Date AND o.DeliverToAddressID IS NOT NUL
                 DeliverToPerson = NullIfEmpty(Str(r, "DeliverToPerson")),
                 AddressKind = AlternativeAddressKind.Display(Str(r, "AddressKind")),
                 Cell = NullIfEmpty(Str(r, "CellNumber")),
-                Phone = null,
+                Phone = NullIfEmpty(Str(r, "PhoneNumber")),
                 Address = NullIfEmpty(Str(r, "AddressLine")),
                 PostalCode = NullIfEmpty(Str(r, "PostalCode")),
                 Area = NullIfEmpty(Str(r, "AreaName"))

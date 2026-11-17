@@ -4,7 +4,7 @@
 **Last Updated:** 2026-06-15 (page migration phase documented)  
 **Purpose:** Current migration guide for replacing legacy `TrackerSQL.Controls`, `TrackerDb`, OleDb/ObjectDataSource patterns, and old Access naming with the new SQL Server repository/model/manager/page structure.
 
-> **Current state (2026-11-10):** development **3.0.4.1** (Quaffee Lovers + supplier collections; Quaffee Driver **0.5.8**). Live **3.0.3.14** until this release is deployed. Full notes: [CHANGELOG.md](CHANGELOG.md). Deploying and config: [Documentation/DEPLOYMENT_AND_CONFIG.md](Documentation/DEPLOYMENT_AND_CONFIG.md). Mobile API and driver app: [Documentation/MOBILE_API_AND_DRIVER_APP.md](Documentation/MOBILE_API_AND_DRIVER_APP.md). Rules: [Documentation/HARD_PROJECT_RULES.md](Documentation/HARD_PROJECT_RULES.md).
+> **Current state (2026-11-17):** **3.0.4.3** (Quaffee Lovers, supplier collections, Woo pull-grid layout; Quaffee Driver **0.5.9**). Full notes: [CHANGELOG.md](CHANGELOG.md). Deploying and config: [Documentation/DEPLOYMENT_AND_CONFIG.md](Documentation/DEPLOYMENT_AND_CONFIG.md). Mobile API and driver app: [Documentation/MOBILE_API_AND_DRIVER_APP.md](Documentation/MOBILE_API_AND_DRIVER_APP.md). Rules: [Documentation/HARD_PROJECT_RULES.md](Documentation/HARD_PROJECT_RULES.md).
 >
 > **Fresh clone:** real config files are not in git (the repo is public). Copy `Web.config.example` → `Web.config` (and `web.live.config.example` / `Web.Release.config.example` if deploying) and fill in the real passwords.
 

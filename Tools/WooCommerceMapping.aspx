@@ -3,6 +3,7 @@
     MaintainScrollPositionOnPostback="true" %>
 
 <asp:Content ID="cntWooMapHdr" ContentPlaceHolderID="HeadContent" runat="server">
+    <script type="text/javascript" src="<%= ResolveUrl("~/Scripts/wooMapColToggles.js?v=20261117-02") %>"></script>
     <script type="text/javascript">
         window.wooMapDirty = false;
 
@@ -758,6 +759,10 @@
                 </div>
 
                 <asp:Label ID="lblMessage" runat="server" CssClass="status-message" Visible="false" />
+                <asp:Panel ID="pnlNeedsMapping" runat="server" Visible="false" CssClass="complex-form-section">
+                    <h3>Needs Mapping</h3>
+                    <p class="woo-map-section-note"><asp:Literal ID="litNeedsMapping" runat="server" /></p>
+                </asp:Panel>
 
                 <asp:MultiView ID="mvTabs" runat="server" ActiveViewIndex="0">
                     <asp:View ID="viewCat" runat="server">
@@ -945,65 +950,6 @@
                             <asp:Button ID="btnExpandAllGroups" runat="server" CssClass="filter-panel-btn" OnClick="btnExpandAllGroups_Click" CausesValidation="false" />
                             <asp:Button ID="btnCollapseAllGroups" runat="server" CssClass="filter-panel-btn" OnClick="btnCollapseAllGroups_Click" CausesValidation="false" />
                         </div>
-                        <div class="woo-map-col-toggles">
-                            <label class="woo-map-col-toggle">
-                                <input type="checkbox" id="chkShowName" runat="server" checked="checked" />
-                                <asp:Literal ID="litShowName" runat="server" />
-                            </label>
-                            <label class="woo-map-col-toggle">
-                                <input type="checkbox" id="chkShowPack" runat="server" checked="checked" />
-                                <asp:Literal ID="litShowPack" runat="server" />
-                            </label>
-                            <label class="woo-map-col-toggle">
-                                <input type="checkbox" id="chkShowMode" runat="server" checked="checked" />
-                                <asp:Literal ID="litShowMode" runat="server" />
-                            </label>
-                        </div>
-                        <script type="text/javascript">
-                            window.wooMapApplyColToggles = function () {
-                                var grid = document.getElementById('<%= gvPull.ClientID %>');
-                                var nameBox = document.getElementById('<%= chkShowName.ClientID %>');
-                                var packBox = document.getElementById('<%= chkShowPack.ClientID %>');
-                                var modeBox = document.getElementById('<%= chkShowMode.ClientID %>');
-                                function remember(key, box) {
-                                    if (!box) return true;
-                                    try {
-                                        var stored = localStorage.getItem(key);
-                                        if (stored === '0' || stored === '1')
-                                            box.checked = stored === '1';
-                                    } catch (ex) { }
-                                    return box.checked;
-                                }
-                                if (grid) {
-                                    var hideName = nameBox && !remember('wooMapShowName', nameBox);
-                                    var hidePack = packBox && !remember('wooMapShowPack', packBox);
-                                    var hideMode = modeBox && !remember('wooMapShowMode', modeBox);
-                                    grid.className = (grid.className || '')
-                                        .replace(/\bwoo-map-hide-name\b/g, '')
-                                        .replace(/\bwoo-map-hide-pack\b/g, '')
-                                        .replace(/\bwoo-map-hide-mode\b/g, '')
-                                        .replace(/\s+/g, ' ').trim();
-                                    if (hideName) grid.className += ' woo-map-hide-name';
-                                    if (hidePack) grid.className += ' woo-map-hide-pack';
-                                    if (hideMode) grid.className += ' woo-map-hide-mode';
-                                }
-                            };
-                            if (!window._wooMapColToggleBound) {
-                                window._wooMapColToggleBound = true;
-                                document.addEventListener('change', function (e) {
-                                    var t = e.target;
-                                    if (!t || !t.id) return;
-                                    var key = null;
-                                    if (t.id.indexOf('chkShowName') >= 0) key = 'wooMapShowName';
-                                    else if (t.id.indexOf('chkShowPack') >= 0) key = 'wooMapShowPack';
-                                    else if (t.id.indexOf('chkShowMode') >= 0) key = 'wooMapShowMode';
-                                    if (!key) return;
-                                    try { localStorage.setItem(key, t.checked ? '1' : '0'); } catch (ex) { }
-                                    window.wooMapApplyColToggles();
-                                }, false);
-                            }
-                            window.wooMapApplyColToggles();
-                        </script>
                         <asp:Panel ID="pnlPullSearch" runat="server" DefaultButton="btnFindSku" CssClass="filter-toolbar">
                             <div class="filter-section search-controls">
                                 <div class="filter-control">
@@ -1022,6 +968,36 @@
                                 </div>
                             </div>
                         </asp:Panel>
+                        <div id="wooMapPullHost" class="woo-map-pull-host">
+                        <div class="woo-map-col-toggles-row" id="wooMapColTogglesRow">
+                            <span class="woo-map-col-toggles-lead"><asp:Literal ID="litColTogglesLead" runat="server" /></span>
+                            <div class="woo-map-col-toggles">
+                                <label id="lblColToggleName" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowName" checked="checked" />
+                                    <asp:Literal ID="litShowName" runat="server" />
+                                </label>
+                                <label id="lblColTogglePack" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowPack" checked="checked" />
+                                    <asp:Literal ID="litShowPack" runat="server" />
+                                </label>
+                                <label id="lblColToggleMode" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowMode" checked="checked" />
+                                    <asp:Literal ID="litShowMode" runat="server" />
+                                </label>
+                                <label id="lblColToggleVariant" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowVariant" checked="checked" />
+                                    <asp:Literal ID="litShowVariant" runat="server" />
+                                </label>
+                                <label id="lblColToggleMatch" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowMatch" checked="checked" />
+                                    <asp:Literal ID="litShowMatch" runat="server" />
+                                </label>
+                                <label id="lblColToggleCreate" runat="server" class="woo-map-col-toggle">
+                                    <input type="checkbox" id="wooMapShowCreate" checked="checked" />
+                                    <asp:Literal ID="litShowCreate" runat="server" />
+                                </label>
+                            </div>
+                        </div>
                         <asp:Literal ID="litPullPageInfo" runat="server" />
                         <div class="results-container scrollable-table-container">
                         <asp:GridView ID="gvPull" runat="server" CssClass="results-table woo-map-pull-grid" AutoGenerateColumns="false"
@@ -1067,16 +1043,16 @@
                                         </span>
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Name">
+                                <asp:TemplateField HeaderText="Name" HeaderStyle-CssClass="woo-map-col-name" ItemStyle-CssClass="woo-map-col-name woo-map-name-col woo-map-ellipsis">
                                     <ItemTemplate>
                                         <span class='<%# Eval("NameCssClass") %>'>
                                             <%# Server.HtmlEncode(Convert.ToString(Eval("ListName"))) %>
                                         </span>
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:BoundField DataField="AttributesLabel" HeaderText="Variant" ItemStyle-CssClass="woo-map-variant-col" />
-                                <asp:BoundField DataField="NotesAttributeSummary" HeaderText="Pack cascade / notes" ItemStyle-CssClass="woo-map-variant-col" />
-                                <asp:TemplateField HeaderText="Mode">
+                                <asp:BoundField DataField="AttributesLabel" HeaderText="Variant" HeaderStyle-CssClass="woo-map-col-variant" ItemStyle-CssClass="woo-map-col-variant woo-map-variant-col" />
+                                <asp:BoundField DataField="NotesAttributeSummary" HeaderText="Pack cascade / notes" HeaderStyle-CssClass="woo-map-col-pack-cascade" ItemStyle-CssClass="woo-map-col-pack-cascade woo-map-variant-col" />
+                                <asp:TemplateField HeaderText="Mode" HeaderStyle-CssClass="woo-map-col-mode" ItemStyle-CssClass="woo-map-col-mode">
                                     <ItemTemplate>
                                         <asp:DropDownList ID="ddlImportMode" runat="server" CssClass="sys-prefs-input"
                                             Visible='<%# Eval("IsParentGroup") %>'
@@ -1084,8 +1060,8 @@
                                             OnSelectedIndexChanged="ddlImportMode_SelectedIndexChanged" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:BoundField DataField="MatchReason" HeaderText="Match" ItemStyle-CssClass="woo-map-match-col" />
-                                <asp:TemplateField HeaderText="Tracker SKU">
+                                <asp:BoundField DataField="MatchReason" HeaderText="Match" HeaderStyle-CssClass="woo-map-col-match" ItemStyle-CssClass="woo-map-col-match woo-map-match-col woo-map-ellipsis" />
+                                <asp:TemplateField HeaderText="Tracker SKU" HeaderStyle-CssClass="woo-map-col-tracker" ItemStyle-CssClass="woo-map-col-tracker">
                                     <ItemTemplate>
                                         <asp:DropDownList ID="ddlItem" runat="server" CssClass="sys-prefs-input woo-map-dest"
                                             Visible='<%# !(bool)Eval("IsParentGroup") || !(bool)Eval("ImportParentExcluded") %>'
@@ -1095,7 +1071,7 @@
                                             Text='<%# Eval("ParentDestPlaceholder") %>' />
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Item SKU">
+                                <asp:TemplateField HeaderText="Item SKU" HeaderStyle-CssClass="woo-map-col-create-item" ItemStyle-CssClass="woo-map-col-create-item">
                                     <ItemTemplate>
                                         <asp:TextBox ID="txtItemSku" runat="server" Text='<%# Eval("CreateSku") %>'
                                             CssClass="sys-prefs-input" Width="150px"
@@ -1103,22 +1079,22 @@
                                             ToolTip="Tracker SKU to create or rename" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="S/O" HeaderStyle-CssClass="woo-map-so-col" ItemStyle-CssClass="woo-map-so-col">
+                                <asp:TemplateField HeaderText="Sort" HeaderStyle-CssClass="woo-map-col-create-so woo-map-so-col" ItemStyle-CssClass="woo-map-col-create-so woo-map-so-col">
                                     <ItemTemplate>
-                                        <asp:DropDownList ID="ddlSortOrder" runat="server" CssClass="lookups-item-so woo-map-so woo-map-compact-select"
+                                        <asp:DropDownList ID="ddlSortOrder" runat="server" CssClass="woo-map-so woo-map-compact-select"
                                             Visible='<%# Eval("ShowItemCreateFields") %>'
                                             AutoPostBack="true"
                                             OnSelectedIndexChanged="ddlSortOrder_SelectedIndexChanged"
                                             ToolTip="Tracker item sort order (major category)" />
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Qty" HeaderStyle-CssClass="woo-map-qty-col" ItemStyle-CssClass="woo-map-qty-col">
+                                <asp:TemplateField HeaderText="Qty" HeaderStyle-CssClass="woo-map-col-create-qty woo-map-qty-col" ItemStyle-CssClass="woo-map-col-create-qty woo-map-qty-col">
                                     <ItemTemplate>
                                         <asp:TextBox ID="txtQty" runat="server" Text='<%# Eval("QtyFactor") %>' CssClass="sys-prefs-input woo-map-qty"
                                             Visible='<%# !(bool)Eval("IsParentGroup") || (bool)Eval("ImportParentAsItem") %>' />
                                     </ItemTemplate>
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Pack" HeaderStyle-CssClass="woo-map-pack-col" ItemStyle-CssClass="woo-map-pack-col">
+                                <asp:TemplateField HeaderText="Pack" HeaderStyle-CssClass="woo-map-col-pack woo-map-pack-col" ItemStyle-CssClass="woo-map-col-pack woo-map-pack-col">
                                     <ItemTemplate>
                                         <asp:DropDownList ID="ddlPack" runat="server" CssClass="sys-prefs-input woo-map-pack woo-map-compact-select"
                                             Visible='<%# !(bool)Eval("IsParentGroup") || (bool)Eval("ImportParentAsItem") %>'
@@ -1128,6 +1104,7 @@
                                 </asp:TemplateField>
                             </Columns>
                         </asp:GridView>
+                        </div>
                         </div>
                         <div class="button-row woo-map-pull-toolbar-bottom">
                             <asp:Button ID="btnSaveSelectedMapsBottom" runat="server" CssClass="filter-panel-btn"

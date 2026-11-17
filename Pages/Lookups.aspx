@@ -784,6 +784,7 @@
                                 OnRowEditing="gvContactTypes_RowEditing"
                                 OnRowCancelingEdit="gvContactTypes_RowCancelingEdit"
                                 OnRowUpdating="gvContactTypes_RowUpdating"
+                                OnRowDataBound="gvContactTypes_RowDataBound"
                                 OnRowCreated="gvContactTypes_RowCreated">
                                 <Columns>
                                     <asp:TemplateField ShowHeader="False">
@@ -829,13 +830,15 @@
                                             <span title="Driver app stops for contacts of this type are supplier pickups: the driver records Collected with who handed goods over — no client signature or terms. Also used when the supplier drops off at the client (Not at client delivery outcomes).">Collection only</span>
                                         </HeaderTemplate>
                                         <EditItemTemplate>
-                                            <asp:CheckBox ID="cbxCtCollectionOnly" runat="server" Checked='<%# Bind("DriverCollectionOnly") %>' />
+                                            <asp:CheckBox ID="cbxCtCollectionOnlyEdit" runat="server" Checked='<%# (bool)Eval("DriverCollectionOnly") %>' />
+                                            <asp:HiddenField ID="hdnCtCollectionOnly" runat="server" Value='<%# (bool)Eval("DriverCollectionOnly") ? "1" : "0" %>' />
                                         </EditItemTemplate>
                                         <ItemTemplate>
                                             <asp:CheckBox ID="cbxCtCollectionOnly" runat="server" Checked='<%# Eval("DriverCollectionOnly") %>' Enabled="false" />
                                         </ItemTemplate>
                                         <FooterTemplate>
                                             <asp:CheckBox ID="cbxCtCollectionOnlyFooter" runat="server" />
+                                            <asp:HiddenField ID="hdnCtCollectionOnlyFooter" runat="server" Value="0" />
                                         </FooterTemplate>
                                     </asp:TemplateField>
                                 </Columns>

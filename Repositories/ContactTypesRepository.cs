@@ -8,7 +8,8 @@ namespace TrackerSQL.Repositories
 {
     public class ContactTypesRepository : RepositoryBase<ContactType>
     {
-        private static bool _driverCollectionOnlySeen;
+        /// <summary>Null until checked; true once the column is known to exist (re-check while false so a late schema pack still works).</summary>
+        private static bool? _driverCollectionOnlyExists;
         private static readonly object CollectionOnlySync = new object();
         private static HashSet<int> _collectionOnlyIds;
         private static DateTime _collectionOnlyCachedAt;
@@ -23,22 +24,27 @@ namespace TrackerSQL.Repositories
         protected override string LookupColumns =>
             "ContactTypeID, ContactTypeDesc";
 
+        public static bool HasDriverCollectionOnlyColumn()
+        {
+            return DriverCollectionOnlyColumnExists();
+        }
+
         private static bool DriverCollectionOnlyColumnExists()
         {
-            if (!_driverCollectionOnlySeen)
+            if (_driverCollectionOnlyExists == true)
+                return true;
+
+            try
             {
-                try
-                {
-                    using (var db = new TrackerSQLDb())
-                        _driverCollectionOnlySeen = db.ExecuteScalar<int>(
-                            "SELECT CASE WHEN COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NULL THEN 0 ELSE 1 END") == 1;
-                }
-                catch
-                {
-                    _driverCollectionOnlySeen = false;
-                }
+                using (var db = new TrackerSQLDb())
+                    _driverCollectionOnlyExists = db.ExecuteScalar<int>(
+                        "SELECT CASE WHEN COL_LENGTH(N'dbo.ContactTypesTbl', N'DriverCollectionOnly') IS NULL THEN 0 ELSE 1 END") == 1;
             }
-            return _driverCollectionOnlySeen;
+            catch
+            {
+                _driverCollectionOnlyExists = false;
+            }
+            return _driverCollectionOnlyExists == true;
         }
 
         public static bool IsDriverCollectionOnly(int? contactTypeId)

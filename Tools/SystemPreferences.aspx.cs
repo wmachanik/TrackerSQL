@@ -44,6 +44,7 @@ namespace TrackerSQL.Tools
 
                 ShowSection(section);
                 dvSystemData.DataBind();
+                BindCheckupSettingsFields();
                 RefreshWooHome();
                 if (startWizard && section == 1 && !_wooManager.GetPreferencesHeader().WooCommerceEnabled)
                     StartWizardAtStep(0, announceResume: false);
@@ -994,6 +995,65 @@ namespace TrackerSQL.Tools
         protected void dvSystemData_DataBound(object sender, EventArgs e)
         {
             // Keep status if set by update; otherwise leave alone.
+        }
+
+        private void BindCheckupSettingsFields()
+        {
+            CoffeeCheckupAppSettings.LoadIntoFields(
+                out int maxReminders,
+                out int daysPushEach,
+                out int forceDelayCount,
+                out int escalationStepDays,
+                out int windowDays);
+
+            txtCheckupMaxReminders.Text = maxReminders.ToString();
+            txtCheckupDaysPushEach.Text = daysPushEach.ToString();
+            txtCheckupForceDelayCount.Text = forceDelayCount.ToString();
+            txtCheckupEscalationStepDays.Text = escalationStepDays.ToString();
+            txtCheckupWindowDays.Text = windowDays.ToString();
+        }
+
+        protected void btnSaveCheckupSettings_Click(object sender, EventArgs e)
+        {
+            if (!TryParsePositiveInt(txtCheckupMaxReminders.Text, 1, 99, out int maxReminders, out string err)
+                || !TryParsePositiveInt(txtCheckupDaysPushEach.Text, 0, 90, out int daysPushEach, out err)
+                || !TryParsePositiveInt(txtCheckupForceDelayCount.Text, 1, maxReminders, out int forceDelayCount, out err)
+                || !TryParsePositiveInt(txtCheckupEscalationStepDays.Text, 1, 90, out int escalationStepDays, out err)
+                || !TryParsePositiveInt(txtCheckupWindowDays.Text, 1, 60, out int windowDays, out err))
+            {
+                litCheckupSettingsStatus.Text = "<p class=\"status-message status-error\">" + HttpUtility.HtmlEncode(err) + "</p>";
+                return;
+            }
+
+            string saveError = CoffeeCheckupAppSettings.Save(
+                maxReminders,
+                daysPushEach,
+                forceDelayCount,
+                escalationStepDays,
+                windowDays,
+                Request.ApplicationPath);
+
+            if (!string.IsNullOrEmpty(saveError))
+            {
+                litCheckupSettingsStatus.Text = "<p class=\"status-message status-error\">" + HttpUtility.HtmlEncode(saveError) + "</p>";
+                return;
+            }
+
+            litCheckupSettingsStatus.Text = "<p class=\"status-message status-info\">Checkup settings saved.</p>";
+            BindCheckupSettingsFields();
+        }
+
+        private static bool TryParsePositiveInt(string text, int min, int max, out int value, out string error)
+        {
+            value = 0;
+            error = null;
+            if (!int.TryParse(text?.Trim(), out value) || value < min || value > max)
+            {
+                error = "Enter a whole number from " + min + " to " + max + ".";
+                return false;
+            }
+
+            return true;
         }
 
         #endregion

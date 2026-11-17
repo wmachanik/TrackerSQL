@@ -36,6 +36,7 @@ namespace TrackerSQL.Tools
         {
             if (!IsPostBack)
             {
+                ViewState[VsFileSort] = "date";
                 SetDefaultFileName();
                 ShowModeTab(0);
                 SetStatus("Select an XML command file, then click Execute. Prefer SQLCommands_Test_SQLServer.xml for a safe smoke test.", isError: null);
@@ -225,7 +226,10 @@ namespace TrackerSQL.Tools
         private string CurrentSort()
         {
             string sort = ViewState[VsFileSort] as string;
-            return string.Equals(sort, "date", StringComparison.OrdinalIgnoreCase) ? "date" : "name";
+            // Default: newest file date first (toggle to name when requested).
+            if (string.IsNullOrWhiteSpace(sort))
+                return "date";
+            return string.Equals(sort, "name", StringComparison.OrdinalIgnoreCase) ? "name" : "date";
         }
 
         private void ApplySortHighlight()

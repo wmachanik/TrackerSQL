@@ -39,6 +39,31 @@ namespace TrackerSQL.Repositories
             return new NextPreparationDateByArea();
         }
 
+        public NextPreparationDateByArea GetPrepDataForArea(int areaId)
+        {
+            if (areaId <= 0)
+                return new NextPreparationDateByArea();
+
+            const string sql = @"
+                SELECT n.NextPrepDayID, n.AreaID, n.PreparationDate, n.DeliveryDate, n.DeliveryOrder,
+                       n.NextPreparationDate, n.NextDeliveryDate
+                FROM NextPreparationDateByAreasTbl n
+                WHERE n.AreaID = @AreaID";
+
+            var parameters = new List<DBParameter>
+            {
+                new DBParameter { ParamName = "@AreaID", DataValue = areaId, DataDbType = DbType.Int32 }
+            };
+
+            using (var rdr = ExecReader(sql, parameters))
+            {
+                if (rdr != null && rdr.Read())
+                    return DbMapper.Map<NextPreparationDateByArea>(rdr);
+            }
+
+            return new NextPreparationDateByArea();
+        }
+
         public List<DateTime> GetAllDeliveryDates()
         {
             var list = new List<DateTime>();

@@ -19,7 +19,7 @@
 -->
 <configuration>
 	<appSettings>
-		<add key="Version" value="3.0.4.1" />
+		<add key="Version" value="3.0.4.3" />
 		<!-- Base64 32-byte AES key, or any passphrase (SHA-256 derived). Do not commit production keys. -->
 		<!-- SECRET: replace mypassword (see SETUP at the top) -->
 		<add key="WooCommerceCryptoKey" value="mypassword" />
@@ -43,6 +43,10 @@
 		<add key="EmailTestRecipient" value="warren@machanik.com" />
 		<add key="EnableDatabaseDetailedLogging" value="false" />
 		<add key="CoffeeCheckupReminderWindowDays" value="9" />
+		<add key="CoffeeCheckupMaxReminders" value="7" />
+		<add key="CoffeeCheckupDaysPushEachReminder" value="0" />
+		<add key="CoffeeCheckupForceReminderDelayCount" value="4" />
+		<add key="CoffeeCheckupEscalationStepDays" value="10" />
 		<add key="CoffeeCheckupReminderWindowMin" value="5" />
 		<add key="CoffeeCheckupReminderWindowMax" value="30" />
 		<add key="CoffeeCheckupMinMonthlyRecurringDays" value="20" />

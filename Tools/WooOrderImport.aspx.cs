@@ -55,8 +55,15 @@ namespace TrackerSQL.Tools
                 // so the mode combo and preview stay in sync.
                 bool wantRestore = string.Equals(
                     Request.QueryString["restore"], "1", StringComparison.OrdinalIgnoreCase);
+                bool wantRefresh = string.Equals(
+                    Request.QueryString["refresh"], "1", StringComparison.OrdinalIgnoreCase);
 
-                if (wantRestore && TryRestorePreviewFromSession() && GetPreviewRows().Count > 0)
+                if (wantRefresh && TryRestorePreviewFromSession() && GetPreviewRows().Count > 0)
+                {
+                    SyncModePanels();
+                    RefreshCurrentPreviewFromWoo("Mapping or Woo changed — ");
+                }
+                else if (wantRestore && TryRestorePreviewFromSession() && GetPreviewRows().Count > 0)
                 {
                     SyncModePanels();
                     SetStatus("Preview restored — continue importing without re-pulling.", false);
@@ -124,6 +131,14 @@ namespace TrackerSQL.Tools
 
         protected void btnRefreshFromWoo_Click(object sender, EventArgs e)
         {
+            RefreshCurrentPreviewFromWoo(null);
+        }
+
+        /// <summary>
+        /// Re-pulls Woo for every order id currently in the preview (e.g. after mapping, or ?refresh=1).
+        /// </summary>
+        private void RefreshCurrentPreviewFromWoo(string statusPrefix)
+        {
             var existing = GetPreviewRows();
             var ids = existing.Select(r => r.WooOrderId).Where(id => id > 0).Distinct().ToList();
             if (ids.Count == 0)
@@ -145,8 +160,10 @@ namespace TrackerSQL.Tools
                 gvPreview.PageIndex = 0;
                 BindPreview();
                 SaveUiStateToSession(rows);
+                OfferMappingIfNeeded(rows);
+                string prefix = string.IsNullOrEmpty(statusPrefix) ? string.Empty : statusPrefix.TrimEnd() + " ";
                 SetStatus(string.Format(CultureInfo.InvariantCulture,
-                    "Refreshed {0} order(s) from Woo.", rows.Count), false);
+                    "{0}Refreshed {1} order(s) from Woo.", prefix, rows.Count), false);
             }
             catch (Exception ex)
             {
@@ -297,6 +314,7 @@ namespace TrackerSQL.Tools
                 gvPreview.PageIndex = 0;
                 BindPreview();
                 SaveUiStateToSession(rows);
+                OfferMappingIfNeeded(rows);
                 SetStatus(string.Format(CultureInfo.InvariantCulture,
                     "Auto-pulled {0} order(s) ({1}).",
                     rows.Count,
@@ -367,6 +385,7 @@ namespace TrackerSQL.Tools
                 gvPreview.PageIndex = 0;
                 BindPreview();
                 SaveUiStateToSession(rows);
+                OfferMappingIfNeeded(rows);
                 string prefix = string.IsNullOrEmpty(statusPrefix) ? string.Empty : statusPrefix;
                 SetStatus(string.Format(CultureInfo.InvariantCulture,
                     "{0}Pulled {1} order(s) for preview.", prefix, rows.Count), false);
@@ -913,6 +932,50 @@ namespace TrackerSQL.Tools
             StatusMessageHelper.Set(pnlStatus, litStatus, message, isError ? true : (bool?)null);
         }
 
+        private void OfferMappingIfNeeded(IEnumerable<WooOrderImportPreviewRow> rows)
+        {
+            bool needed = rows != null && rows.Any(r => r.Conflicts != null && r.Conflicts.Any(NeedsMappingConflict));
+            if (!needed)
+                return;
+            string message = HttpUtility.JavaScriptStringEncode(
+                MessageProvider.Get(MessageKeys.WooCommerce.ImportOfferMapping));
+            string find = HttpUtility.JavaScriptStringEncode(FirstMappingSearchTerm(rows) ?? string.Empty);
+            string script = "if (confirm(\"" + message + "\")) {"
+                + "var u='WooCommerceMapping.aspx?tab=map&return=WooOrderImport.aspx';"
+                + "if(\"" + find + "\".length) u+='&find='+encodeURIComponent(\"" + find + "\");"
+                + "window.location.href=u;"
+                + "}";
+            ScriptManager.RegisterStartupScript(this, GetType(), "wooOfferMapping", script, true);
+        }
+
+        private static string FirstMappingSearchTerm(IEnumerable<WooOrderImportPreviewRow> rows)
+        {
+            if (rows == null)
+                return null;
+            foreach (var row in rows)
+            {
+                if (row?.Conflicts == null)
+                    continue;
+                foreach (string conflict in row.Conflicts)
+                {
+                    if (!NeedsMappingConflict(conflict))
+                        continue;
+                    string name = WooCommerceImportConflictText.ProductNameFromConflict(conflict);
+                    if (!string.IsNullOrWhiteSpace(name))
+                        return name;
+                }
+            }
+            return null;
+        }
+
+        private static bool NeedsMappingConflict(string conflict)
+        {
+            if (string.IsNullOrWhiteSpace(conflict))
+                return false;
+            return conflict.StartsWith(SystemConstants.WooCommerceConstants.SkuMissingConflictPrefix, StringComparison.OrdinalIgnoreCase)
+                || conflict.StartsWith(SystemConstants.WooCommerceConstants.UnmappedSkuConflictPrefix, StringComparison.OrdinalIgnoreCase);
+        }
+
         protected string FormatWarnings(object conflictsObj, object warningsObj)
         {
             var parts = new List<string>();
@@ -999,8 +1062,12 @@ namespace TrackerSQL.Tools
 
         protected void btnRefreshConflicts_Click(object sender, EventArgs e)
         {
+            int changed = _manager.ReconcileStoredImportConflicts(UserName());
             BindConflicts();
-            SetStatus("Conflict list refreshed.", false);
+            SetStatus(changed > 0
+                ? string.Format(CultureInfo.InvariantCulture,
+                    "Refreshed conflict status for {0} order(s) from Woo and current maps.", changed)
+                : "Conflict list refreshed from Woo and current maps.", false);
         }
     }
 }

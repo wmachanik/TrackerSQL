@@ -277,11 +277,19 @@ namespace TrackerSQL.Managers
             {
                 contact.ReminderCount++;
 
-                if (contact.ReminderCount < SystemConstants.CheckupConstants.MaxReminders)
+                if (contact.ReminderCount < CoffeeCheckupAppSettings.MaxReminders)
                 {
-                    if (contact.ReminderCount >= SystemConstants.CheckupConstants.ForceReminderDelayCount)
+                    int pushEach = CoffeeCheckupAppSettings.DaysPushEachReminder;
+                    if (pushEach > 0)
                     {
-                        int delayDays = 10 * (contact.ReminderCount - SystemConstants.CheckupConstants.ForceReminderDelayCount + 1);
+                        _contactsUsageRepository.ForceNextCoffeeDate(
+                            (int)contact.CustomerID,
+                            contact.NextPreparationDate.AddDays(pushEach));
+                    }
+                    else if (contact.ReminderCount >= CoffeeCheckupAppSettings.ForceReminderDelayCount)
+                    {
+                        int step = CoffeeCheckupAppSettings.EscalationStepDays;
+                        int delayDays = step * (contact.ReminderCount - CoffeeCheckupAppSettings.ForceReminderDelayCount + 1);
                         _contactsUsageRepository.ForceNextCoffeeDate(
                             (int)contact.CustomerID,
                             contact.NextPreparationDate.AddDays(delayDays));
@@ -296,7 +304,7 @@ namespace TrackerSQL.Managers
 
                 DisableContactForMaxReminders(contact);
                 failureReason =
-                    $"disabled — exceeded max reminders ({SystemConstants.CheckupConstants.MaxReminders})";
+                    $"disabled — exceeded max reminders ({CoffeeCheckupAppSettings.MaxReminders})";
                 return false;
             }
             catch (Exception ex)
@@ -312,9 +320,9 @@ namespace TrackerSQL.Managers
             string displayName = FormatContactDisplayName(contact);
             _contactsRepository.DisableContact(
                 (int)contact.CustomerID,
-                $"Disabled on {TimeZoneUtils.Now():d} - exceeded max reminder limit ({SystemConstants.CheckupConstants.MaxReminders})");
+                $"Disabled on {TimeZoneUtils.Now():d} - exceeded max reminder limit ({CoffeeCheckupAppSettings.MaxReminders})");
             contact.enabled = false;
-            string notice = $"Disabled {displayName} — exceeded max reminders ({SystemConstants.CheckupConstants.MaxReminders}).";
+            string notice = $"Disabled {displayName} — exceeded max reminders ({CoffeeCheckupAppSettings.MaxReminders}).";
             AddPrepNotice(notice);
             AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, $"CoffeeCheckupManager: {notice}");
         }
@@ -822,7 +830,7 @@ namespace TrackerSQL.Managers
                 // Filter in memory instead of multiple DB calls per customer
                 var eligibleContacts = allContacts.Where(contact =>
                     contact.enabled &&
-                    contact.ReminderCount < SystemConstants.CheckupConstants.MaxReminders &&
+                    contact.ReminderCount < CoffeeCheckupAppSettings.MaxReminders &&
                     !internalCustomerIds.Contains((int)contact.CustomerID) &&
                     HasValidEmailAddressOptimized(contact)
                 ).ToList();
@@ -891,7 +899,7 @@ namespace TrackerSQL.Managers
         }
         private bool IsEligibleForReminder(ContactToRemindWithItems contact)
         {
-            return contact.enabled && contact.ReminderCount < SystemConstants.CheckupConstants.MaxReminders;
+            return contact.enabled && contact.ReminderCount < CoffeeCheckupAppSettings.MaxReminders;
         }
         /// <summary>
         /// Sets up the list of contacts to send reminders to - FIXED TO PREVENT MIXING RECURRING AND REMINDER CUSTOMERS
@@ -943,7 +951,7 @@ namespace TrackerSQL.Managers
                     if (!hasValidItems)
                         continue;
 
-                    if (contact.ReminderCount >= SystemConstants.CheckupConstants.MaxReminders)
+                    if (contact.ReminderCount >= CoffeeCheckupAppSettings.MaxReminders)
                     {
                         if (contact.enabled)
                             DisableContactForMaxReminders(contact);
@@ -1180,7 +1188,7 @@ namespace TrackerSQL.Managers
                         contacts.Add(contact);
                     }
 
-                    if (contact.ReminderCount >= SystemConstants.CheckupConstants.MaxReminders)
+                    if (contact.ReminderCount >= CoffeeCheckupAppSettings.MaxReminders)
                     {
                         if (contact.enabled)
                             DisableContactForMaxReminders(contact);
@@ -1935,7 +1943,7 @@ namespace TrackerSQL.Managers
             {
                 AppLogger.WriteLog(SystemConstants.LogTypes.SendCheckup, "CoffeeCheckupManager: Getting eligible customers using OrderCheckTbl");
 
-                var databaseCustomers = _coffeeCheckupRepository.GetCustomersWithoutOrderConflicts(SystemConstants.CheckupConstants.MaxReminders);
+                var databaseCustomers = _coffeeCheckupRepository.GetCustomersWithoutOrderConflicts(CoffeeCheckupAppSettings.MaxReminders);
 
                 var eligibleCustomers = new List<ContactToRemindWithItems>();
 
@@ -2153,7 +2161,7 @@ namespace TrackerSQL.Managers
                     return "Contact is disabled — enable them before sending a reminder.";
 
                 int reminderCount = contact.ReminderCount ?? 0;
-                if (reminderCount >= SystemConstants.CheckupConstants.MaxReminders)
+                if (reminderCount >= CoffeeCheckupAppSettings.MaxReminders)
                     return "Contact has already reached the maximum reminder count.";
 
                 var toRemind = BuildManualReminderContact(contact);
@@ -2311,7 +2319,7 @@ namespace TrackerSQL.Managers
 
         public static int GetReminderWindowDays()
         {
-            int days = SystemConstants.CheckupConstants.DefaultReminderWindowDays; // CONST_DEFAULTREMINDERWINDOWDAYS; // default
+            int days = CoffeeCheckupAppSettings.DefaultReminderWindowDays;
 
             // Check session first
             if (HttpContext.Current != null && HttpContext.Current.Session != null)

@@ -225,7 +225,7 @@
 
                 <div class="complex-form-section">
                     <h3>Import conflicts</h3>
-                    <p class="woo-map-section-note">Orders imported with conflicts (unmapped SKUs, duplicate delivery date, ambiguous area, etc.). Conflicts are also appended to the Tracker order Notes.</p>
+                    <p class="woo-map-section-note">Orders imported with conflicts (missing or unmapped SKUs, duplicate delivery date, ambiguous area, etc.). Conflicts are also appended to the Tracker order Notes. After you fix a SKU or mapping, use <strong>Refresh from Woo</strong> on the preview or <strong>Refresh list</strong> here. Products that need a mapping are listed at the top of <a href="WooCommerceMapping.aspx">WooCommerce Mapping</a>.</p>
                     <div class="button-row">
                         <asp:Button ID="btnRefreshConflicts" runat="server" CssClass="filter-panel-btn" Text="Refresh list"
                             OnClick="btnRefreshConflicts_Click" CausesValidation="false" />

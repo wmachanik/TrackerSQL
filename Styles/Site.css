@@ -1,4 +1,4 @@
-﻿/* Rev: 20261028-03
+﻿/* Rev: 20261117-12
     Font sizes: use body (1em) everywhere. Keep overrides only for headings,
     intentional small text (.page-tone-subtitle), tight columns, iOS 16px inputs,
     and font-size:0 / inherit technique rules.
@@ -1816,9 +1816,26 @@ button,
     color: #302a20;
 }
 
-.tracker-wait-overlay img {
-    width: 48px;
-    height: 48px;
+.tracker-wait-overlay img,
+.tracker-wait-spinner {
+    width: 64px;
+    height: 64px;
+}
+
+.tracker-wait-spinner {
+    animation: tracker-wait-spin 1.15s linear infinite;
+    transform-origin: 50% 50%;
+}
+
+@keyframes tracker-wait-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracker-wait-spinner {
+        animation: none;
+    }
 }
 
 body.tracker-wait-active {
@@ -8132,11 +8149,11 @@ a.sys-prefs-mapping-link:visited {
 
 .woo-map-pull-grid select.woo-map-so,
 .results-table.woo-map-pull-grid select.woo-map-so {
-    min-width: 4.5em !important;
-    width: 4.5em !important;
-    max-width: 6em !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     font-size: 0.72rem !important;
-    padding: 1px 16px 1px 3px !important;
+    padding: 1px 1.1em 1px 3px !important;
     line-height: 1.15 !important;
     text-align: left !important;
     text-align-last: left !important;
@@ -8144,39 +8161,32 @@ a.sys-prefs-mapping-link:visited {
     box-sizing: border-box;
 }
 
-.woo-map-pull-grid td:has(> select.woo-map-so),
-.woo-map-pull-grid th.woo-map-so-col {
-    width: auto !important;
-    min-width: max-content !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-}
-
 .woo-map-pull-grid td.woo-map-so-col,
 .woo-map-pull-grid th.woo-map-so-col {
-    min-width: 4.75em !important;
-    max-width: none !important;
     padding-left: 2px !important;
-    padding-right: 1px !important;
+    padding-right: 2px !important;
     text-align: left !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
     font-size: 0.72rem;
 }
 
 .woo-map-pull-grid td.woo-map-qty-col,
 .woo-map-pull-grid th.woo-map-qty-col {
-    width: 3em;
-    max-width: 3.25em;
     padding-left: 2px !important;
-    padding-right: 1px !important;
+    padding-right: 2px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
     font-size: 0.72rem;
 }
 
 .woo-map-pull-grid input.woo-map-qty,
 .results-table.woo-map-pull-grid input.woo-map-qty {
-    width: 2.85em !important;
-    min-width: 2.75em !important;
-    max-width: 3.1em !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
     padding: 1px 2px !important;
     font-size: 0.72rem !important;
     line-height: 1.15 !important;
@@ -8185,9 +8195,10 @@ a.sys-prefs-mapping-link:visited {
 
 .woo-map-pull-grid select.woo-map-pack,
 .results-table.woo-map-pull-grid select.woo-map-pack {
-    min-width: 4em !important;
-    width: 4.5em !important;
-    max-width: 5em !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
     font-size: 0.72rem !important;
     padding: 1px 1.1em 1px 2px !important;
     line-height: 1.15 !important;
@@ -8197,42 +8208,153 @@ a.sys-prefs-mapping-link:visited {
 
 .woo-map-pull-grid td.woo-map-pack-col,
 .woo-map-pull-grid th.woo-map-pack-col {
-    width: 4.75em;
-    max-width: 5.25em;
     padding-left: 2px !important;
-    padding-right: 1px !important;
+    padding-right: 2px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
     font-size: 0.72rem;
 }
 
-.woo-map-col-toggles {
+.woo-map-col-toggles-row {
     display: flex;
+    justify-content: flex-end;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 0.75rem 1.25rem;
-    margin: 0.35rem 0 0.5rem;
+    gap: 0.35rem 0.85rem;
+    margin: 0.35rem 0 0.55rem;
     font-size: 0.92rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.woo-map-col-toggles-lead {
+    font-weight: 600;
+    margin-right: 0.15rem;
+    color: #2e3d2c;
+}
+.woo-map-col-toggles {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem 0.85rem;
 }
 .woo-map-col-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     cursor: pointer;
-}
-.woo-map-pull-grid.woo-map-hide-name th:nth-child(4),
-.woo-map-pull-grid.woo-map-hide-name td:nth-child(4),
-.woo-map-pull-grid.woo-map-hide-pack th:nth-child(6),
-.woo-map-pull-grid.woo-map-hide-pack td:nth-child(6),
-.woo-map-pull-grid.woo-map-hide-pack th:nth-child(13),
-.woo-map-pull-grid.woo-map-hide-pack td:nth-child(13),
-.woo-map-pull-grid.woo-map-hide-mode th:nth-child(7),
-.woo-map-pull-grid.woo-map-hide-mode td:nth-child(7) {
-    display: none;
-}
-.woo-map-pull-grid td.woo-map-sku-col,
-.woo-map-pull-grid th.woo-map-sku-col {
-    min-width: 11rem;
-    width: auto;
-    max-width: 16rem;
     white-space: nowrap;
+}
+.woo-map-col-toggle input {
+    margin: 0;
+    vertical-align: middle;
+}
+/* Column show/hide: checkboxes live in #wooMapPullHost; unchecked = hide via :has() (no JS class toggles). */
+#wooMapPullHost:has(#wooMapShowName:not(:checked)) th.woo-map-col-name,
+#wooMapPullHost:has(#wooMapShowName:not(:checked)) td.woo-map-col-name,
+#wooMapPullHost:has(#wooMapShowPack:not(:checked)) th.woo-map-col-pack-cascade,
+#wooMapPullHost:has(#wooMapShowPack:not(:checked)) td.woo-map-col-pack-cascade,
+#wooMapPullHost:has(#wooMapShowPack:not(:checked)) th.woo-map-col-pack,
+#wooMapPullHost:has(#wooMapShowPack:not(:checked)) td.woo-map-col-pack,
+#wooMapPullHost:has(#wooMapShowMode:not(:checked)) th.woo-map-col-mode,
+#wooMapPullHost:has(#wooMapShowMode:not(:checked)) td.woo-map-col-mode,
+#wooMapPullHost:has(#wooMapShowVariant:not(:checked)) th.woo-map-col-variant,
+#wooMapPullHost:has(#wooMapShowVariant:not(:checked)) td.woo-map-col-variant,
+#wooMapPullHost:has(#wooMapShowMatch:not(:checked)) th.woo-map-col-match,
+#wooMapPullHost:has(#wooMapShowMatch:not(:checked)) td.woo-map-col-match,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) th.woo-map-col-create-item,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) td.woo-map-col-create-item,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) th.woo-map-col-create-so,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) td.woo-map-col-create-so,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) th.woo-map-col-create-qty,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) td.woo-map-col-create-qty,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) th.woo-map-col-pack,
+#wooMapPullHost:has(#wooMapShowCreate:not(:checked)) td.woo-map-col-pack {
+    display: none !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+}
+
+/* Pull mapping grid: 100% of the panel, percentage columns, text wraps, no sideways scroll. */
+#wooMapPullHost,
+#wooMapPullHost .results-container,
+#wooMapPullHost .scrollable-table-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+#wooMapPullHost table.results-table.woo-map-pull-grid {
+    table-layout: fixed !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+#wooMapPullHost .woo-map-pull-grid th,
+#wooMapPullHost .woo-map-pull-grid td {
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    vertical-align: middle !important;
+}
+#wooMapPullHost .woo-map-pull-grid th.woo-map-flag-col,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-flag-col {
+    width: 3% !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    overflow-wrap: normal;
+}
+#wooMapPullHost .woo-map-pull-grid th.woo-map-sku-col,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-sku-col,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-name,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-name,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-variant,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-variant,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-pack-cascade,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-pack-cascade,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-match,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-match,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-tracker,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-tracker {
+    width: 11% !important;
+}
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-mode,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-mode,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-create-item,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-create-item,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-create-so,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-create-so,
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-pack,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-pack {
+    width: 7% !important;
+}
+#wooMapPullHost .woo-map-pull-grid th.woo-map-col-create-qty,
+#wooMapPullHost .woo-map-pull-grid td.woo-map-col-create-qty {
+    width: 4% !important;
+}
+#wooMapPullHost .scrollable-table-container .results-table.woo-map-pull-grid select,
+#wooMapPullHost .scrollable-table-container .results-table.woo-map-pull-grid input.sys-prefs-input,
+#wooMapPullHost .scrollable-table-container .results-table.woo-map-pull-grid input.woo-map-qty {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+}
+#wooMapPullHost .woo-map-pull-grid .woo-map-sku {
+    white-space: nowrap !important;
+    display: inline;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
 }
 
 .woo-map-pull-grid .woo-map-sku {
@@ -8372,6 +8494,23 @@ body.woo-map-working [id$="upgWooMap"] {
 .woo-map-pull-grid .woo-map-name-col {
     max-width: 12rem;
     word-break: break-word;
+}
+
+.woo-map-pull-grid td.woo-map-ellipsis,
+.woo-map-pull-grid td.woo-map-sku-col,
+.woo-map-pull-grid td.woo-map-match-col,
+.woo-map-pull-grid td.woo-map-variant-col {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 14rem;
+}
+
+.woo-map-pull-grid td.woo-map-ellipsis .woo-map-dest,
+.woo-map-pull-grid td.woo-map-ellipsis select {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .woo-map-pull-grid tr.woo-map-row-parent td {

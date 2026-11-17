@@ -39,12 +39,21 @@ namespace TrackerSQL.Managers
         private string _categoryFilterMode;
         private WooImportAddressConfig _addressConfig;
         private WooOrderImportPreviewContext _previewContext;
+        private List<Item> _skuMatchItems;
 
         private const string NoteNoItemMap = "No item map";
         private const string NoteCategoryNotImported = "Category not imported";
 
         private WooImportAddressConfig AddressConfig =>
             _addressConfig ?? (_addressConfig = WooImportAddressHelper.FromSettings(_settingsManager.GetSettings()));
+
+        private void ClearPreviewContext()
+        {
+            _previewContext = null;
+            _gearCategoryIds = null;
+            _categoryFilters = null;
+            _categoryFilterMode = null;
+        }
 
         private void EnsurePreviewContext()
         {
@@ -102,6 +111,7 @@ namespace TrackerSQL.Managers
                 return new List<WooOrderImportPreviewRow>();
 
             List<WooOrderDto> orders = FetchOrders(creds, mode, specificOrderId, rangeFrom, rangeTo);
+            ClearPreviewContext();
             EnsurePreviewContext();
 
             var previews = new List<WooOrderImportPreviewRow>();
@@ -469,6 +479,7 @@ namespace TrackerSQL.Managers
             if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
                 return result;
 
+            ClearPreviewContext();
             EnsurePreviewContext();
             foreach (long id in wooOrderIds.Distinct())
             {
@@ -506,6 +517,7 @@ namespace TrackerSQL.Managers
             if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out error))
                 return null;
 
+            ClearPreviewContext();
             EnsurePreviewContext();
             WooOrderDto order = _api.GetOrder(creds, wooOrderId);
             if (order == null)
@@ -960,6 +972,7 @@ namespace TrackerSQL.Managers
                 return result;
             }
 
+            ClearPreviewContext();
             EnsurePreviewContext();
             DateTime? maxImportedDate = null;
             long maxImportedWooId = 0;
@@ -1242,12 +1255,33 @@ namespace TrackerSQL.Managers
             {
                 Sku = li.Sku,
                 Name = li.Name,
+                WooProductId = li.ProductId,
+                WooVariationId = li.VariationId,
                 WooQty = li.Quantity,
                 IsGear = IsGearProduct(li.ProductId, li.VariationId)
             };
 
             bool variantParentItemNotes;
             WooItemMapping map = ResolveLineMap(li, out variantParentItemNotes);
+
+            if (map != null)
+            {
+                line.MapType = map.MapType;
+                if (map.IsExcludeMap || !map.IncludeInImport)
+                {
+                    line.CanImport = false;
+                    line.Note = map.IsExcludeMap ? "Excluded" : "Not included in import";
+                    return line;
+                }
+
+                if (!map.IsNotesMap && map.ItemID > 0)
+                    return ApplyMappedProductLine(li, line, map);
+            }
+
+            // Exact / prefix / wildcard SKU match beats inherited parent → order notes.
+            if (TryApplySkuMatchLine(li, line))
+                return line;
+
             if (variantParentItemNotes)
             {
                 line.MapType = "Notes";
@@ -1259,14 +1293,6 @@ namespace TrackerSQL.Managers
             if (map == null)
             {
                 TryResolveUnmappedLine(li, line);
-                return line;
-            }
-
-            line.MapType = map.MapType;
-            if (map.IsExcludeMap || !map.IncludeInImport)
-            {
-                line.CanImport = false;
-                line.Note = map.IsExcludeMap ? "Excluded" : "Not included in import";
                 return line;
             }
 
@@ -1284,6 +1310,11 @@ namespace TrackerSQL.Managers
                 return line;
             }
 
+            return ApplyMappedProductLine(li, line, map);
+        }
+
+        private WooOrderLinePreview ApplyMappedProductLine(WooOrderLineDto li, WooOrderLinePreview line, WooItemMapping map)
+        {
             var item = GetItemCached(map.ItemID);
             line.TrackerItemId = map.ItemID;
             line.TrackerSku = item?.SKU;
@@ -2217,11 +2248,18 @@ namespace TrackerSQL.Managers
         {
             foreach (var line in preview.Lines.Where(l => l.IsUnmappedForNotes))
             {
-                string sku = line.Sku ?? line.Name;
+                string label = string.IsNullOrWhiteSpace(line.Name) ? (line.Sku ?? string.Empty).Trim() : line.Name.Trim();
                 if (line.Note != null && line.Note.StartsWith(NoteCategoryNotImported, StringComparison.OrdinalIgnoreCase))
-                    preview.Conflicts.Add(line.Note + " — " + sku);
+                    preview.Conflicts.Add(line.Note + " — " + label);
+                else if (string.IsNullOrWhiteSpace(line.Sku))
+                {
+                    string wooRef = line.WooProductId > 0
+                        ? line.WooProductId.ToString(CultureInfo.InvariantCulture)
+                        : "?";
+                    preview.Conflicts.Add(MessageProvider.Format(MessageKeys.WooCommerce.ImportSkuMissing, label, wooRef));
+                }
                 else
-                    preview.Conflicts.Add("Unmapped SKU: " + sku);
+                    preview.Conflicts.Add(MessageProvider.Format(MessageKeys.WooCommerce.ImportUnmappedSku, label, line.Sku.Trim()));
             }
 
             var areaResult = _areaManager.ResolveArea(ship.Postcode, ship.Suburb, ship.State);
@@ -2311,6 +2349,47 @@ namespace TrackerSQL.Managers
         public List<WooOrderImportConflictRow> GetImportConflicts(int maxRows = 200)
         {
             return _wooOrderRepo.GetOrdersWithConflicts(maxRows);
+        }
+
+        /// <summary>Re-checks stored import conflicts against live Woo and current maps.</summary>
+        public int ReconcileStoredImportConflicts(string updatedBy)
+        {
+            if (!_settingsManager.TryGetApiCredentials(out WooCommerceApiClient.ApiCredentials creds, out _))
+                return 0;
+
+            ClearPreviewContext();
+            EnsurePreviewContext();
+            int changed = 0;
+            foreach (var row in _wooOrderRepo.GetOrdersWithConflicts())
+            {
+                if (row == null || row.OrderID <= 0)
+                    continue;
+                WooOrderInfo info = _wooOrderRepo.GetByTrackerOrderId(row.OrderID);
+                if (info == null || info.WooOrderId <= 0)
+                    continue;
+                try
+                {
+                    WooOrderDto order = _api.GetOrder(creds, info.WooOrderId);
+                    if (order == null)
+                        continue;
+                    WooOrderImportPreviewRow preview = BuildPreview(order);
+                    string conflictText = preview?.Conflicts != null && preview.Conflicts.Count > 0
+                        ? string.Join("; ", preview.Conflicts)
+                        : null;
+                    string before = (info.ImportConflicts ?? string.Empty).Trim();
+                    string after = (conflictText ?? string.Empty).Trim();
+                    if (string.Equals(before, after, StringComparison.Ordinal))
+                        continue;
+                    info.ImportConflicts = string.IsNullOrWhiteSpace(after) ? null : after;
+                    _wooOrderRepo.Upsert(info);
+                    changed++;
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WriteLog("woo", "Reconcile import conflicts order " + row.OrderID + ": " + ex.Message, updatedBy);
+                }
+            }
+            return changed;
         }
 
         private int CommitOrder(WooOrderDto order, WooOrderImportPreviewRow preview, int? existingOrderId, string updatedBy)
@@ -2523,7 +2602,7 @@ namespace TrackerSQL.Managers
                 updatedBy);
 
             bool isUpdate = existingOrderId.HasValue && existingOrderId.Value > 0;
-            LogWooImportToOrdersLog(orderId, contactId, order, preview, isUpdate, updatedBy);
+            LogWooImportToOrdersLog(orderId, contactId, order, preview, isUpdate, prepDate, deliveryDate, updatedBy);
 
             if (!isUpdate && contactId > 0 && contactId != SystemConstants.CustomerConstants.SundryCustomerID)
             {
@@ -2554,6 +2633,8 @@ namespace TrackerSQL.Managers
             WooOrderDto order,
             WooOrderImportPreviewRow preview,
             bool isUpdate,
+            DateTime prepDate,
+            DateTime deliveryDate,
             string updatedBy)
         {
             try
@@ -2563,9 +2644,9 @@ namespace TrackerSQL.Managers
                     : string.Empty;
                 string contactPart = contactId > 0
                     ? (string.IsNullOrWhiteSpace(company)
-                        ? "Contact=" + contactId.ToString(CultureInfo.InvariantCulture)
-                        : "Contact=" + contactId.ToString(CultureInfo.InvariantCulture) + " (" + company + ")")
-                    : "Contact=(none)";
+                        ? "Customer #" + contactId.ToString(CultureInfo.InvariantCulture)
+                        : "Customer " + company + " (#" + contactId.ToString(CultureInfo.InvariantCulture) + ")")
+                    : "Customer (none)";
 
                 string wooNumber = preview != null ? preview.WooOrderNumber : null;
                 if (string.IsNullOrWhiteSpace(wooNumber) && order != null)
@@ -2582,22 +2663,54 @@ namespace TrackerSQL.Managers
                     wooId = preview.WooOrderId;
 
                 string action = isUpdate ? "Updated from Woo import" : "Added by Woo import";
-                string details = "Woo order #" + wooNumber.Trim();
+                var details = new List<string>
+                {
+                    "Woo order #" + wooNumber.Trim()
+                };
                 if (wooId > 0)
-                    details += " (Woo id " + wooId.ToString(CultureInfo.InvariantCulture) + ")";
+                    details[0] += " (Woo id " + wooId.ToString(CultureInfo.InvariantCulture) + ")";
+                details.Add("Prep " + prepDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                details.Add("Delivery " + deliveryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                string lines = SummarizeImportedLinesForLog(preview);
+                if (!string.IsNullOrWhiteSpace(lines))
+                    details.Add("Lines " + lines);
 
                 AppLogger.WriteLog(
                     SystemConstants.LogTypes.Orders,
                     "Order " + orderId.ToString(CultureInfo.InvariantCulture)
                     + " | " + contactPart
                     + " | " + action
-                    + " | " + details,
+                    + " | " + string.Join("; ", details),
                     updatedBy);
             }
             catch (Exception ex)
             {
                 AppLogger.WriteLog("woo", "orders.log Woo import line failed: " + ex.Message, updatedBy);
             }
+        }
+
+        private static string SummarizeImportedLinesForLog(WooOrderImportPreviewRow preview)
+        {
+            if (preview?.Lines == null || preview.Lines.Count == 0)
+                return string.Empty;
+            var parts = new List<string>();
+            foreach (var line in preview.Lines.Where(l => l != null && l.CanImport))
+            {
+                if (line.TrackerItemId.HasValue && line.TrackerItemId.Value > 0)
+                {
+                    string sku = (line.TrackerSku ?? line.Sku ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(sku))
+                        sku = "item " + line.TrackerItemId.Value.ToString(CultureInfo.InvariantCulture);
+                    parts.Add(string.Format(CultureInfo.InvariantCulture, "{0}× {1}", line.TrackerQty, sku));
+                }
+                else if (line.IsUnmappedForNotes
+                    || string.Equals(line.MapType, "Notes", StringComparison.OrdinalIgnoreCase))
+                {
+                    string label = string.IsNullOrWhiteSpace(line.Name) ? (line.Sku ?? "notes") : line.Name;
+                    parts.Add(string.Format(CultureInfo.InvariantCulture, "{0}× notes ({1})", line.WooQty, label));
+                }
+            }
+            return parts.Count > 0 ? string.Join(", ", parts) : string.Empty;
         }
 
         private static bool LineGoesToOrderNotes(WooOrderLinePreview line)
@@ -3175,46 +3288,61 @@ namespace TrackerSQL.Managers
             return set;
         }
 
+        private void EnsureSkuMatchItems()
+        {
+            if (_skuMatchItems != null)
+                return;
+            _skuMatchItems = _itemsRepo.GetAll() ?? new List<Item>();
+        }
+
+        private bool TryApplySkuMatchLine(WooOrderLineDto li, WooOrderLinePreview line)
+        {
+            Item bySku = TryMatchTrackerSku(li.Sku, out string skuMatchReason);
+            if (bySku == null)
+                return false;
+
+            line.MapType = "SkuMatch";
+            line.TrackerItemId = bySku.ItemID;
+            line.TrackerSku = bySku.SKU;
+            line.IsUnmappedForNotes = false;
+            double qtyFactor = 1;
+            int? packagingId = null;
+            WooLineAttributeResolveResult attr = _mappingManager.ResolveOrderLineAttributes(
+                li.MetaData,
+                bySku.ItemServiceTypeID ?? 0,
+                qtyFactor,
+                packagingId,
+                _previewContext?.AttributeCache);
+            if (attr != null)
+            {
+                if (attr.QtyFactor > 0)
+                    qtyFactor = attr.QtyFactor;
+                if (attr.PackagingId.HasValue && attr.PackagingId.Value > 0)
+                    packagingId = attr.PackagingId;
+                if (attr.PrepTypeId.HasValue && attr.PrepTypeId.Value > 0)
+                    line.PrepTypeId = attr.PrepTypeId;
+                if (attr.NoteParts != null && attr.NoteParts.Count > 0)
+                    line.AttributeNoteParts = attr.NoteParts;
+                string baseNote = FormatSkuMatchNote(skuMatchReason);
+                if (!string.IsNullOrWhiteSpace(attr.Reason))
+                    line.Note = baseNote + " + " + attr.Reason;
+                else
+                    line.Note = baseNote;
+            }
+            else
+                line.Note = FormatSkuMatchNote(skuMatchReason);
+
+            line.SuppressPriorPackagingInfer = LineMetaHasPrepOrPackaging(li.MetaData);
+            line.TrackerQty = Math.Round(qtyFactor * li.Quantity, SystemConstants.DatabaseConstants.NumDecimalPoints);
+            line.PackagingId = packagingId;
+            line.CanImport = true;
+            return true;
+        }
+
         private void TryResolveUnmappedLine(WooOrderLineDto li, WooOrderLinePreview line)
         {
-            Item bySku = TryMatchTrackerSku(li.Sku);
-            if (bySku != null)
-            {
-                line.MapType = "SkuMatch";
-                line.TrackerItemId = bySku.ItemID;
-                line.TrackerSku = bySku.SKU;
-                double qtyFactor = 1;
-                int? packagingId = null;
-                WooLineAttributeResolveResult attr = _mappingManager.ResolveOrderLineAttributes(
-                    li.MetaData,
-                    bySku.ItemServiceTypeID ?? 0,
-                    qtyFactor,
-                    packagingId,
-                    _previewContext?.AttributeCache);
-                if (attr != null)
-                {
-                    if (attr.QtyFactor > 0)
-                        qtyFactor = attr.QtyFactor;
-                    if (attr.PackagingId.HasValue && attr.PackagingId.Value > 0)
-                        packagingId = attr.PackagingId;
-                    if (attr.PrepTypeId.HasValue && attr.PrepTypeId.Value > 0)
-                        line.PrepTypeId = attr.PrepTypeId;
-                    if (attr.NoteParts != null && attr.NoteParts.Count > 0)
-                        line.AttributeNoteParts = attr.NoteParts;
-                    if (!string.IsNullOrWhiteSpace(attr.Reason))
-                        line.Note = "Matched Tracker SKU + " + attr.Reason;
-                    else
-                        line.Note = "Matched Tracker SKU";
-                }
-                else
-                    line.Note = "Matched Tracker SKU";
-
-                line.SuppressPriorPackagingInfer = LineMetaHasPrepOrPackaging(li.MetaData);
-                line.TrackerQty = Math.Round(qtyFactor * li.Quantity, SystemConstants.DatabaseConstants.NumDecimalPoints);
-                line.PackagingId = packagingId;
-                line.CanImport = true;
+            if (TryApplySkuMatchLine(li, line))
                 return;
-            }
 
             string catNote = GetExcludedCategoryNote(li.ProductId, li.VariationId);
             line.MapType = "Notes";
@@ -3226,11 +3354,33 @@ namespace TrackerSQL.Managers
                 line.Note = "Unmapped → order notes";
         }
 
-        private Item TryMatchTrackerSku(string sku)
+        private static string FormatSkuMatchNote(string skuMatchReason)
         {
+            return string.IsNullOrWhiteSpace(skuMatchReason)
+                ? "Matched Tracker SKU"
+                : "Matched Tracker SKU (" + skuMatchReason.Trim() + ")";
+        }
+
+        private Item TryMatchTrackerSku(string sku, out string matchReason)
+        {
+            matchReason = null;
             if (string.IsNullOrWhiteSpace(sku))
                 return null;
-            return _itemsRepo.GetBySku(sku.Trim());
+
+            sku = sku.Trim();
+            Item exact = _itemsRepo.GetBySku(sku);
+            if (exact != null)
+            {
+                matchReason = "Exact SKU";
+                return exact;
+            }
+
+            EnsureSkuMatchItems();
+            Item match;
+            if (_mappingManager.TryResolveTrackerItemForWooSku(sku, _skuMatchItems, out match, out matchReason))
+                return match;
+
+            return null;
         }
 
         private void EnsureCategoryFilterContext()

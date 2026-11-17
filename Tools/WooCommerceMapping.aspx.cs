@@ -78,6 +78,7 @@ namespace TrackerSQL.Tools
 
             pnlWooDisabled.Visible = false;
             _settings.EnsureSchemaOnce();
+            BindNeedsMapping();
 
             if (!IsPostBack)
             {
@@ -171,12 +172,19 @@ namespace TrackerSQL.Tools
             btnResetCatalog.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapResetCatalog);
             btnExpandAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapExpandAll);
             btnCollapseAllGroups.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapCollapseAll);
+            litColTogglesLead.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapColTogglesLead);
             litShowName.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowName);
             litShowPack.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowPack);
             litShowMode.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowMode);
-            chkShowName.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowNameTip);
-            chkShowPack.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowPackTip);
-            chkShowMode.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowModeTip);
+            litShowVariant.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowVariant);
+            litShowMatch.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowMatch);
+            litShowCreate.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapShowCreate);
+            lblColToggleName.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowNameTip);
+            lblColTogglePack.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowPackTip);
+            lblColToggleMode.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowModeTip);
+            lblColToggleVariant.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowVariantTip);
+            lblColToggleMatch.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowMatchTip);
+            lblColToggleCreate.Attributes["title"] = MessageProvider.Get(MessageKeys.WooCommerce.MapShowCreateTip);
             btnWriteMissingSkus.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapWriteMissingSkus);
             litSyncHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapSyncHelp);
             litGeneralHelp.Text = MessageProvider.Get(MessageKeys.WooCommerce.MapGeneralHelp);
@@ -215,6 +223,39 @@ namespace TrackerSQL.Tools
             btnBack.AlternateText = MessageProvider.Get(MessageKeys.WooCommerce.ButtonBack);
             btnBack.ToolTip = MessageProvider.Get(MessageKeys.WooCommerce.MapBackToPreferences);
             BindActionButtonTexts();
+        }
+
+        /// <summary>Products named on open import conflicts that still need a Tracker mapping.</summary>
+        private void BindNeedsMapping()
+        {
+            var names = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in _orderImportManager.GetImportConflicts() ?? new List<WooOrderImportConflictRow>())
+            {
+                string text = row.ImportConflicts ?? string.Empty;
+                foreach (string part in text.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string name = WooCommerceImportConflictText.ProductNameFromConflict(part);
+                    if (string.IsNullOrWhiteSpace(name) || !seen.Add(name))
+                        continue;
+                    names.Add(name);
+                }
+            }
+
+            if (names.Count == 0)
+            {
+                pnlNeedsMapping.Visible = false;
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append(HttpUtility.HtmlEncode(MessageProvider.Get(MessageKeys.WooCommerce.MapNeedsMappingIntro)));
+            sb.Append("<ul>");
+            foreach (string name in names)
+                sb.Append("<li>").Append(HttpUtility.HtmlEncode(name)).Append("</li>");
+            sb.Append("</ul>");
+            litNeedsMapping.Text = sb.ToString();
+            pnlNeedsMapping.Visible = true;
         }
 
         /// <summary>
@@ -334,9 +375,17 @@ namespace TrackerSQL.Tools
         /// <summary>Deep-link e.g. ?tab=payment from order import.</summary>
         private bool TryShowInitialTabFromQuery()
         {
+            string find = (Request.QueryString["find"] ?? string.Empty).Trim();
+            if (find.Length > 0)
+                Session[SessionPullFind] = find;
+
             string tab = Request.QueryString["tab"];
             if (string.IsNullOrWhiteSpace(tab))
-                return false;
+            {
+                if (find.Length == 0)
+                    return false;
+                tab = "map";
+            }
 
             switch (tab.Trim().ToLowerInvariant())
             {
@@ -363,6 +412,12 @@ namespace TrackerSQL.Tools
                     EnsurePullRowsLoaded();
                     RebindPull();
                     SyncSaveSelectedButton();
+                    if (find.Length > 0)
+                    {
+                        txtFindSku.Text = find;
+                        Session[SessionPullFind] = find;
+                        btnFindSku_Click(btnFindSku, EventArgs.Empty);
+                    }
                     return true;
                 default:
                     return false;
@@ -503,9 +558,18 @@ namespace TrackerSQL.Tools
             SetHeaderTip(headerRow, "Match", MessageKeys.WooCommerce.MapColMatchTip);
             SetHeaderTip(headerRow, "Tracker SKU", MessageKeys.WooCommerce.MapColDestinationTip);
             SetHeaderTip(headerRow, "Item SKU", MessageKeys.WooCommerce.MapColItemSkuTip);
-            SetHeaderTip(headerRow, "S/O", MessageKeys.WooCommerce.MapColSortTip);
+            SetHeaderTip(headerRow, "Sort", MessageKeys.WooCommerce.MapColSortTip);
             SetHeaderTip(headerRow, "Qty", MessageKeys.WooCommerce.MapColQtyTip);
             SetHeaderTip(headerRow, "Pack", MessageKeys.WooCommerce.MapColPackTip);
+        }
+
+        private static void SetPullCellToolTip(TableCell cell, string text)
+        {
+            if (cell == null || string.IsNullOrWhiteSpace(text))
+                return;
+            cell.ToolTip = text.Trim();
+            cell.Attributes["data-woo-tip"] = text.Trim();
+            cell.Attributes["data-woo-tip-fixed"] = "1";
         }
 
         private static void SetHeaderTip(GridViewRow headerRow, string headerText, string messageKey)
@@ -2166,11 +2230,15 @@ namespace TrackerSQL.Tools
                 SyncCompactSortOrderTooltip(ddlSortOrder);
             }
 
-            if (e.Row.Cells.Count > 4)
+            if (e.Row.Cells.Count > 7)
             {
-                e.Row.Cells[2].ToolTip = row.ListSku ?? string.Empty;
-                e.Row.Cells[3].ToolTip = row.ListName ?? string.Empty;
-                e.Row.Cells[4].ToolTip = row.AttributesLabel ?? string.Empty;
+                SetPullCellToolTip(e.Row.Cells[2], row.ListSku);
+                SetPullCellToolTip(e.Row.Cells[3], row.ListName);
+                SetPullCellToolTip(e.Row.Cells[4], row.AttributesLabel);
+                SetPullCellToolTip(e.Row.Cells[5], row.NotesAttributeSummary);
+                SetPullCellToolTip(e.Row.Cells[7], row.MatchReason);
+                e.Row.Cells[2].CssClass = (e.Row.Cells[2].CssClass + " woo-map-ellipsis").Trim();
+                e.Row.Cells[8].CssClass = (e.Row.Cells[8].CssClass + " woo-map-ellipsis").Trim();
             }
 
             var chkImport = e.Row.FindControl("chkImport") as CheckBox;

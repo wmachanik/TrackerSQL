@@ -301,6 +301,14 @@ namespace TrackerSQL.Classes
             public const int DefaultImminentWindowDays = 4;
         }
 
+        public static class WooCommerceConstants
+        {
+            /// <summary>Start of an import conflict when the Woo line has no SKU.</summary>
+            public const string SkuMissingConflictPrefix = "SKU missing: ";
+            /// <summary>Start of an import conflict when the Woo SKU has no Tracker item.</summary>
+            public const string UnmappedSkuConflictPrefix = "Unmapped SKU: ";
+        }
+
         /// <summary>App-relative page paths and query keys for NavigateUrl construction.</summary>
         public static class PageUrls
         {

@@ -151,6 +151,7 @@
     <Content Include="images\animi\LimitedStock.gif" />
     <Content Include="images\animi\NoLongerAvailable.gif" />
     <Content Include="images\animi\QuaffeeProgress.gif" />
+    <Content Include="images\animi\coffee-beans-spin.svg" />
     <Content Include="images\Big_frog.gif" />
     <Content Include="images\BTN.jpg" />
     <Content Include="images\Bullets\BeanBullet.gif" />
@@ -251,6 +252,7 @@
     <Content Include="Pages\OrderDetail.aspx" />
     <Content Include="Pages\OrderDone.aspx" />
     <Content Include="Pages\OrderEntry.aspx" />
+    <Content Include="Pages\ActivityDashboard.aspx" />
     <Content Include="Pages\PreperationSummary.aspx" />
     <Content Include="Pages\\RecurringOrderDetails.aspx" />
     <Content Include="Pages\\RecurringOrders.aspx" />
@@ -269,6 +271,7 @@
     <Content Include="Scripts\jquery-1.4.1.min.js" />
     <Content Include="Scripts\unsavedChanges.js" />
     <Content Include="Scripts\trackerWaitOverlay.js" />
+    <Content Include="Scripts\wooMapColToggles.js" />
     <Content Include="Scripts\leaflet\leaflet.js" />
     <Content Include="Scripts\leaflet\leaflet.css" />
     <Content Include="Scripts\leaflet\images\layers.png" />
@@ -279,6 +282,7 @@
     <Content Include="Scripts\comboBoxPosition.js" />
     <Content Include="Styles\MobileSite.css" />
     <Content Include="Styles\MobileStaff.css" />
+    <Content Include="Styles\ActivityDashboard.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="Tools\EmailDiagnostics.aspx" />
     <Content Include="Tools\EmailDiagnostics.css" />
@@ -395,6 +399,7 @@
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-06.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-WooCommerce-07.xml" />
     <Content Include="Web.config" />
+    <Content Include=".well-known\web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Tools\Web.config" />
     <!-- Dev-only on disk, not published: Documentation\ -->
@@ -563,7 +568,9 @@
     <Compile Include="Classes\MobileStaffLayout.cs" />
     <Compile Include="Classes\AreaPill.cs" />
     <Compile Include="Classes\OrderFlagPill.cs" />
+    <Compile Include="Managers\ActivityDashboardManager.cs" />
     <Compile Include="Managers\AreaWeekBoardManager.cs" />
+    <Compile Include="Models\ActivityDashboardModels.cs" />
     <Compile Include="Models\AreaWeekBoard.cs" />
     <Compile Include="Managers\MobileAuthManager.cs" />
     <Compile Include="Managers\MobileDeliveryCompletionQueue.cs" />
@@ -645,6 +652,7 @@
     <Compile Include="Classes\ApplicationErrorNotifier.cs" />
     <Compile Include="Classes\RepositoryListResult.cs" />
     <Compile Include="Classes\BatchSendResult.cs" />
+    <Compile Include="Classes\CoffeeCheckupAppSettings.cs" />
     <Compile Include="Classes\ChangeRequestSubmission.cs" />
     <Compile Include="Classes\AreaDeliveryMatrix.cs" />
     <Compile Include="Classes\ConfigHelper.cs" />
@@ -799,6 +807,7 @@
     <Compile Include="Repositories\ItemUnitsRepository.cs" />
     <Compile Include="Repositories\MembershipRepository.cs" />
     <Compile Include="Repositories\NextPrepDateByAreaRepository.cs" />
+    <Compile Include="Repositories\ActivityDashboardRepository.cs" />
     <Compile Include="Repositories\OrdersRepository.cs" />
     <Compile Include="Repositories\PaymentTermsRepository.cs" />
     <Compile Include="Repositories\PersonsRepository.cs" />
@@ -1042,6 +1051,13 @@
     <Compile Include="Pages\OrderEntry.aspx.designer.cs">
       <DependentUpon>OrderEntry.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Pages\ActivityDashboard.aspx.cs">
+      <DependentUpon>ActivityDashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Pages\ActivityDashboard.aspx.designer.cs">
+      <DependentUpon>ActivityDashboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Pages\PreperationSummary.aspx.cs">
       <DependentUpon>PreperationSummary.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -1187,6 +1203,7 @@
     <Compile Include="Models\SystemPreferencesHdr.cs" />
     <Compile Include="Models\WooCommerceSettings.cs" />
     <Compile Include="Classes\WooCommerceSecretProtector.cs" />
+    <Compile Include="Classes\WooCommerceImportConflictText.cs" />
     <Compile Include="Repositories\SystemPreferencesHdrRepository.cs" />
     <Compile Include="Repositories\WooCommerceSettingsRepository.cs" />
     <Compile Include="Managers\XmlSchemaCommandRunner.cs" />

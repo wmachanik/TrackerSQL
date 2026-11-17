@@ -25,6 +25,13 @@ namespace TrackerSQL.Tools
         protected global::System.Web.UI.WebControls.MultiView mvSections;
         protected global::System.Web.UI.WebControls.View viewGeneral;
         protected global::System.Web.UI.WebControls.DetailsView dvSystemData;
+        protected global::System.Web.UI.WebControls.TextBox txtCheckupMaxReminders;
+        protected global::System.Web.UI.WebControls.TextBox txtCheckupDaysPushEach;
+        protected global::System.Web.UI.WebControls.TextBox txtCheckupForceDelayCount;
+        protected global::System.Web.UI.WebControls.TextBox txtCheckupEscalationStepDays;
+        protected global::System.Web.UI.WebControls.TextBox txtCheckupWindowDays;
+        protected global::System.Web.UI.WebControls.Button btnSaveCheckupSettings;
+        protected global::System.Web.UI.WebControls.Literal litCheckupSettingsStatus;
         protected global::System.Web.UI.WebControls.View viewWoo;
         protected global::System.Web.UI.WebControls.Literal litWooSectionTitle;
         protected global::System.Web.UI.WebControls.Panel pnlWooHome;

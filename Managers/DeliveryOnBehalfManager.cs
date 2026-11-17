@@ -36,6 +36,24 @@ namespace TrackerSQL.Managers
             return $"LEFT JOIN AreasTbl {areaAlias} ON {areaAlias}.AreaID = COALESCE(dob.AreaID, {contactAlias}.AreaID)";
         }
 
+        /// <summary>
+        /// Area used for prep/delivery schedule: deliver-to address area when set, else the contact's area.
+        /// </summary>
+        public static int? ResolveEffectiveAreaId(int contactId, int? deliverToAddressId)
+        {
+            if (deliverToAddressId.HasValue && deliverToAddressId.Value > 0 && IsActive)
+            {
+                ContactDeliverToAddress row = new ContactDeliverToAddressRepository().GetById(deliverToAddressId.Value);
+                if (row != null && row.AreaID.HasValue && row.AreaID.Value > 0)
+                    return row.AreaID.Value;
+            }
+
+            if (contactId <= 0)
+                return null;
+            Contact contact = new ContactsRepository().GetById(contactId);
+            return contact?.AreaID is int areaId && areaId > 0 ? areaId : (int?)null;
+        }
+
         public static string EffectiveBillingAddressSql(string contactAlias = "c")
         {
             if (!IsActive)
@@ -60,7 +78,8 @@ namespace TrackerSQL.Managers
         {
             if (!IsActive || !ContactDeliverToAddressRepository.HasPhoneColumns())
                 return contactAlias + ".CellNumber";
-            return "COALESCE(NULLIF(LTRIM(RTRIM(dob.CellNumber)), N''), NULLIF(LTRIM(RTRIM(dob.PhoneNumber)), N''), " + contactAlias + ".CellNumber)";
+            // Keep landline out of cell — the driver app prefers cell and uses landline prefixes for phone.
+            return "COALESCE(NULLIF(LTRIM(RTRIM(dob.CellNumber)), N''), " + contactAlias + ".CellNumber)";
         }
 
         public static string EffectivePhoneSql(string contactAlias = "c")

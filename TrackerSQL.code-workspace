@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../TrackerDriver"
+		}
+	],
+	"settings": {
+		"omnisharp.useModernNet": false,
+		"dotnet.preferCSharpExtension": true
+	}
+}

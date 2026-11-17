@@ -177,6 +177,55 @@
                                                 ItemStyle-CssClass="command-field-padding" />
                                         </Fields>
                                     </asp:DetailsView>
+
+                                    <div class="sys-prefs-checkup-block complex-form-section">
+                                        <h3>Coffee checkup reminders</h3>
+                                        <p class="activity-hint">
+                                            When a reminder is sent, Tracker increments the contact&apos;s reminder count and sets last-reminder date.
+                                            Optional: push <em>Next coffee</em> forward by a fixed number of days on every send, or use escalation
+                                            (after reminder #N, add increasing delays). Saved to <code>web.config</code> appSettings.
+                                        </p>
+                                        <table class="detail-form-table sys-prefs-form-table">
+                                            <tr>
+                                                <td class="sys-prefs-label">Max reminders per contact</td>
+                                                <td class="sys-prefs-field">
+                                                    <asp:TextBox ID="txtCheckupMaxReminders" runat="server" CssClass="sys-prefs-input" Width="80px" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="sys-prefs-label">Days to push Next coffee after each reminder</td>
+                                                <td class="sys-prefs-field">
+                                                    <asp:TextBox ID="txtCheckupDaysPushEach" runat="server" CssClass="sys-prefs-input" Width="80px" />
+                                                    <span class="sys-prefs-field-hint">0 = don&apos;t push every time; use escalation below instead (e.g. set 14 for +14 days each send).</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="sys-prefs-label">Start escalation after reminder #</td>
+                                                <td class="sys-prefs-field">
+                                                    <asp:TextBox ID="txtCheckupForceDelayCount" runat="server" CssClass="sys-prefs-input" Width="80px" />
+                                                    <span class="sys-prefs-field-hint">Only when days-push-each is 0 (default 4 → from 4th reminder onward).</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="sys-prefs-label">Escalation step (days × step number)</td>
+                                                <td class="sys-prefs-field">
+                                                    <asp:TextBox ID="txtCheckupEscalationStepDays" runat="server" CssClass="sys-prefs-input" Width="80px" />
+                                                    <span class="sys-prefs-field-hint">Default 10 → +10, +20, +30… days on Next prep date.</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="sys-prefs-label">Default send-checkup window (days)</td>
+                                                <td class="sys-prefs-field">
+                                                    <asp:TextBox ID="txtCheckupWindowDays" runat="server" CssClass="sys-prefs-input" Width="80px" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <div class="button-row">
+                                            <asp:Button ID="btnSaveCheckupSettings" runat="server" Text="Save checkup settings" CssClass="filter-panel-btn"
+                                                OnClick="btnSaveCheckupSettings_Click" CausesValidation="false" />
+                                        </div>
+                                        <asp:Literal ID="litCheckupSettingsStatus" runat="server" />
+                                    </div>
                                 </div>
                             </asp:View>
 

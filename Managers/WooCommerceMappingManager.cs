@@ -1379,6 +1379,15 @@ namespace TrackerSQL.Managers
             return TryMatchSku(sku, parentSku, disabledBySku, disabledSkusLongestFirst, out match, out reason);
         }
 
+        /// <summary>
+        /// Woo order import: exact Tracker SKU, then prefix/stem rules (e.g. 9QRCecSara500g → 9QRCecSara).
+        /// </summary>
+        public bool TryResolveTrackerItemForWooSku(string wooSku, IList<Item> items, out Item match, out string reason)
+        {
+            BuildSkuLookups(items, out var enabledBySku, out var enabledOrder, out var disabledBySku, out var disabledOrder);
+            return TryMatchSkuPreferEnabled(wooSku, string.Empty, enabledBySku, enabledOrder, disabledBySku, disabledOrder, out match, out reason);
+        }
+
         private static bool TryMatchSku(
             string sku,
             string parentSku,

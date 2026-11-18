@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Away reason used when pausing a recurring order (Contacts Away list).
+  Run via Tools → XMLtoSQL if the row is missing; code also inserts at runtime when needed.
+-->
+<root>
+  <command type="insert">
+    <![CDATA[
+      IF OBJECT_ID(N'dbo.AwayReasonTbl', N'U') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM dbo.AwayReasonTbl WHERE ReasonDesc = N'Recurring Pause')
+          INSERT INTO dbo.AwayReasonTbl (ReasonDesc) VALUES (N'Recurring Pause');
+    ]]>
+  </command>
+</root>

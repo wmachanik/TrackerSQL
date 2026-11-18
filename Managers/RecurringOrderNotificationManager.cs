@@ -19,7 +19,8 @@ namespace TrackerSQL.Managers
         {
             Added,
             Updated,
-            Disabled
+            Disabled,
+            Paused
         }
 
         /// <summary>
@@ -28,6 +29,14 @@ namespace TrackerSQL.Managers
         /// Never throws — save/disable must not fail because email failed.
         /// </summary>
         public string NotifyContact(int contactId, int recurringOrderId, ChangeKind kind)
+        {
+            return NotifyContact(contactId, recurringOrderId, kind, resumeDate: null);
+        }
+
+        /// <summary>
+        /// Sends the notification. For <see cref="ChangeKind.Paused"/>, pass <paramref name="resumeDate"/>.
+        /// </summary>
+        public string NotifyContact(int contactId, int recurringOrderId, ChangeKind kind, DateTime? resumeDate)
         {
             if (!SystemConstants.RecurringOrderConstants.NotifyContactOnChange)
                 return null;
@@ -85,6 +94,10 @@ namespace TrackerSQL.Managers
                         subjectKey = MessageKeys.RecurringOrder.DisabledEmailSubject;
                         bodyKey = MessageKeys.RecurringOrder.DisabledEmailBody;
                         break;
+                    case ChangeKind.Paused:
+                        subjectKey = MessageKeys.RecurringOrder.PausedEmailSubject;
+                        bodyKey = MessageKeys.RecurringOrder.PausedEmailBody;
+                        break;
                     default:
                         subjectKey = MessageKeys.RecurringOrder.UpdatedEmailSubject;
                         bodyKey = MessageKeys.RecurringOrder.UpdatedEmailBody;
@@ -98,8 +111,15 @@ namespace TrackerSQL.Managers
                 email.AddSysCCFAddress();
                 email.SetEmailSubject(MessageProvider.Get(subjectKey));
 
-                string body = MessageProvider.Format(bodyKey, contactName, companyName, itemsHtml, notes)
+                string resumeDisplay = resumeDate.HasValue
+                    ? resumeDate.Value.ToString("dd MMMM yyyy")
+                    : string.Empty;
+                string body = kind == ChangeKind.Paused
+                    ? MessageProvider.Format(bodyKey, contactName, companyName, itemsHtml, notes, resumeDisplay)
+                    : MessageProvider.Format(bodyKey, contactName, companyName, itemsHtml, notes)
                     + MessageProvider.Get(MessageProvider.GetEmailSignature());
+                if (kind == ChangeKind.Paused)
+                    body += MessageProvider.Get(MessageProvider.GetEmailSignature());
                 email.AddToBody(body);
 
                 if (!email.SendEmail())

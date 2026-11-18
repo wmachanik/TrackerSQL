@@ -794,6 +794,51 @@ namespace TrackerSQL.Repositories
             return updatedCount;
         }
 
+        /// <summary>
+        /// Advances each line's DateLastDone so the cycle is not due before <paramref name="resumeDate"/>.
+        /// Starts with a calendar shift from today to the resume date, then steps forward by cycle
+        /// when monthly/weekly alignment still falls short.
+        /// </summary>
+        public int ApplyPauseUntilDate(RecurringOrder recurringOrder, DateTime resumeDate)
+        {
+            if (recurringOrder?.Items == null || !recurringOrder.ContactID.HasValue)
+                return 0;
+
+            DateTime today = TimeZoneUtils.Now().Date;
+            resumeDate = resumeDate.Date;
+            if (resumeDate <= today)
+                return 0;
+
+            int skipDays = (resumeDate - today).Days;
+            int adjusted = 0;
+
+            foreach (var item in recurringOrder.Items.Where(item => item != null && item.ItemRequiredID.HasValue && item.ItemRequiredID.Value > 0))
+            {
+                DateTime baseLast = NormalizeOptionalDate(item.DateLastDone) ?? today;
+                item.DateLastDone = baseLast.AddDays(skipDays);
+
+                int guard = 0;
+                while (guard++ < 48)
+                {
+                    DateTime? next = CalculateNextDateRequired(
+                        recurringOrder.ContactID,
+                        item.RecurringTypeID,
+                        item.Value,
+                        item.DateLastDone,
+                        item.RequireUntilDate);
+                    if (!next.HasValue || next.Value.Date >= resumeDate)
+                        break;
+
+                    item.DateLastDone = next.Value.Date;
+                }
+
+                adjusted++;
+            }
+
+            AutoCalculateNextDatesForItems(recurringOrder);
+            return adjusted;
+        }
+
         public int AutoCalculateNextDatesForItems(RecurringOrder recurringOrder)
         {
             if (recurringOrder?.Items == null || !recurringOrder.ContactID.HasValue)

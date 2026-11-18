@@ -78,6 +78,51 @@
             return beginRecurringOrderLinePost(button, "Adding...");
         }
 
+        function beginRecurringOrderPauseOpen(button) {
+            return beginRecurringOrderLinePost(button, "Opening...");
+        }
+
+        function beginRecurringOrderPauseApply(button) {
+            if (typeof recurringOrderAllowNavigate === "function") {
+                recurringOrderAllowNavigate();
+            }
+            return beginRecurringOrderSave(button, "Saving...");
+        }
+
+        function updateRecurringPauseInputs() {
+            var weeksRadio = document.getElementById("<%= rblPauseByWeeks.ClientID %>");
+            var dateRadio = document.getElementById("<%= rblPauseByDate.ClientID %>");
+            var weeksBox = document.getElementById("<%= tbxPauseWeeks.ClientID %>");
+            var dateBox = document.getElementById("<%= tbxPauseResumeDate.ClientID %>");
+            if (!weeksRadio || !dateRadio) {
+                return;
+            }
+            var byWeeks = weeksRadio.checked;
+            if (weeksBox) {
+                weeksBox.disabled = !byWeeks;
+            }
+            if (dateBox) {
+                dateBox.disabled = byWeeks;
+            }
+        }
+
+        function wireRecurringPauseModeRadios() {
+            var weeksRadio = document.getElementById("<%= rblPauseByWeeks.ClientID %>");
+            var dateRadio = document.getElementById("<%= rblPauseByDate.ClientID %>");
+            if (!weeksRadio || !dateRadio) {
+                return;
+            }
+            if (weeksRadio.getAttribute("data-pause-wired") === "1") {
+                updateRecurringPauseInputs();
+                return;
+            }
+            weeksRadio.setAttribute("data-pause-wired", "1");
+            dateRadio.setAttribute("data-pause-wired", "1");
+            weeksRadio.addEventListener("change", updateRecurringPauseInputs);
+            dateRadio.addEventListener("change", updateRecurringPauseInputs);
+            updateRecurringPauseInputs();
+        }
+
         function beginRecurringOrderLinePost(button, workingText) {
             if (typeof recurringOrderAllowNavigate === "function") {
                 recurringOrderAllowNavigate();
@@ -147,6 +192,9 @@
                 <asp:PostBackTrigger ControlID="btnPredictionKeep" />
                 <asp:PostBackTrigger ControlID="btnDisablePromptApply" />
                 <asp:PostBackTrigger ControlID="btnDisablePromptSkip" />
+                <asp:PostBackTrigger ControlID="btnPauseSkip" />
+                <asp:PostBackTrigger ControlID="btnPauseApply" />
+                <asp:PostBackTrigger ControlID="btnPauseCancel" />
             </Triggers>
             <ContentTemplate>
                 <asp:HiddenField ID="hdnRecurringOrderId" runat="server" Value="0" />
@@ -418,6 +466,10 @@
                                     OnClick="btnDelete_Click" CausesValidation="false"
                                     OnClientClick="return beginRecurringOrderSave(this, 'Deleting...', 'Are you sure you want to delete this recurring order?');"
                                     ToolTip="Delete this recurring order" />
+                                <asp:Button ID="btnPauseSkip" Text="Pause / Skip" runat="server" CssClass="filter-panel-btn"
+                                    OnClick="btnPauseSkip_Click" CausesValidation="false"
+                                    OnClientClick="return beginRecurringOrderPauseOpen(this);"
+                                    ToolTip="Skip deliveries for a period by pushing last-done and next dates forward" />
                                 <asp:Button ID="btnRevert" Text="Revert Changes" runat="server" CssClass="filter-panel-btn"
                                     OnClick="btnRevert_Click"
                                     OnClientClick="return recurringOrderAllowNavigate();"
@@ -460,6 +512,53 @@
                                 CssClass="filter-panel-btn" OnClick="btnPredictionKeep_Click" CausesValidation="false"
                                 OnClientClick="return beginRecurringOrderSave(this, 'Saving...');"
                                 ToolTip="Keep prediction on for this contact" />
+                        </div>
+                    </div>
+                </asp:Panel>
+
+                <asp:Panel ID="pnlPausePrompt" runat="server" CssClass="confirm-modal-overlay" Visible="false">
+                    <div class="confirm-modal confirm-modal--recurring-pause">
+                        <h2>Pause Recurring Deliveries</h2>
+                        <p class="recurring-pause-intro"><asp:Literal ID="ltrlPauseIntro" runat="server" /></p>
+                        <p class="recurring-pause-soonest"><asp:Literal ID="ltrlPauseSoonest" runat="server" /></p>
+                        <asp:Panel ID="pnlPauseSelection" runat="server" CssClass="recurring-pause-selection-panel">
+                            <h3 class="recurring-pause-selection-title">How Long To Skip</h3>
+                            <div class="recurring-pause-options">
+                                <div class="recurring-pause-option">
+                                    <asp:RadioButton ID="rblPauseByWeeks" runat="server" GroupName="PauseMode"
+                                        Text="Number Of Weeks" Checked="true"
+                                        CssClass="recurring-pause-mode-radio" />
+                                    <div class="recurring-pause-option-fields">
+                                        <asp:TextBox ID="tbxPauseWeeks" runat="server" CssClass="col-ro-narrow-input" Width="4em" Text="4" />
+                                        <span class="small"> weeks from today</span>
+                                    </div>
+                                </div>
+                                <div class="recurring-pause-option">
+                                    <asp:RadioButton ID="rblPauseByDate" runat="server" GroupName="PauseMode"
+                                        Text="Resume On Date"
+                                        CssClass="recurring-pause-mode-radio" />
+                                    <div class="recurring-pause-option-fields recurring-pause-date-fields">
+                                        <asp:TextBox ID="tbxPauseResumeDate" runat="server" CssClass="col-ro-date-input" />
+                                        <ajaxToolkit:CalendarExtender ID="calPauseResumeDate" runat="server"
+                                            Enabled="True" TargetControlID="tbxPauseResumeDate" Format="yyyy-MM-dd" />
+                                        <div class="small recurring-pause-date-hint">First delivery on or after this day.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="recurring-pause-away-option">
+                                <asp:CheckBox ID="chkPauseAddContactAway" runat="server" Checked="true"
+                                    Text="Also Add Contact Away Period (shows on Contacts Away; skips checkup)" />
+                            </div>
+                        </asp:Panel>
+                        <p class="small recurring-pause-footnote"><asp:Literal ID="ltrlPauseHint" runat="server" /></p>
+                        <div class="button-row confirm-modal-buttons">
+                            <asp:Button ID="btnPauseApply" runat="server" Text="Apply Pause"
+                                CssClass="filter-panel-btn" OnClick="btnPauseApply_Click" CausesValidation="false"
+                                OnClientClick="return beginRecurringOrderPauseApply(this);"
+                                ToolTip="Update last-done dates and notify the contact" />
+                            <asp:Button ID="btnPauseCancel" runat="server" Text="Cancel"
+                                CssClass="filter-panel-btn" OnClick="btnPauseCancel_Click" CausesValidation="false"
+                                ToolTip="Close without changing dates" />
                         </div>
                     </div>
                 </asp:Panel>
@@ -522,13 +621,18 @@
         if (typeof Sys !== 'undefined' && Sys.WebForms && Sys.WebForms.PageRequestManager) {
             Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () {
                 attachChangeHandlers();
+                wireRecurringPauseModeRadios();
             });
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', attachChangeHandlers);
+            document.addEventListener('DOMContentLoaded', function () {
+                attachChangeHandlers();
+                wireRecurringPauseModeRadios();
+            });
         } else {
             attachChangeHandlers();
+            wireRecurringPauseModeRadios();
         }
 
         TrackerUnsaved.init({

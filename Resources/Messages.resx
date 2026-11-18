@@ -813,6 +813,36 @@ If you would like this restarted, please reply to this email.&lt;br /&gt;</value
   <data name="RecurringOrder.ItemsListItem" xml:space="preserve">
     <value>• {0} × {1} ({2}) — next: {3}&lt;br /&gt;</value>
   </data>
+  <data name="RecurringOrder.PausedEmailSubject" xml:space="preserve">
+    <value>Your recurring order has been paused</value>
+  </data>
+  <data name="RecurringOrder.PausedEmailBody" xml:space="preserve">
+    <value>Dear {0},&lt;br /&gt;&lt;br /&gt;
+Your recurring order for &lt;b&gt;{1}&lt;/b&gt; has been marked to skip deliveries until &lt;b&gt;{4}&lt;/b&gt;.&lt;br /&gt;
+We have updated our system so nothing will be scheduled before then.&lt;br /&gt;&lt;br /&gt;
+&lt;b&gt;Items:&lt;/b&gt;&lt;br /&gt;
+{2}&lt;br /&gt;
+&lt;b&gt;Notes:&lt;/b&gt; {3}&lt;br /&gt;&lt;br /&gt;
+If you need an earlier delivery or want to change this pause, please reply to this email.&lt;br /&gt;</value>
+  </data>
+  <data name="RecurringOrder.PauseInvalidWeeks" xml:space="preserve">
+    <value>Enter a number of weeks between {0} and {1}.</value>
+  </data>
+  <data name="RecurringOrder.PauseInvalidResumeDate" xml:space="preserve">
+    <value>Choose a resume date after today ({0}).</value>
+  </data>
+  <data name="RecurringOrder.PauseNoInput" xml:space="preserve">
+    <value>Enter how many weeks to skip, or choose the date deliveries should resume.</value>
+  </data>
+  <data name="RecurringOrder.PauseSuccessStatus" xml:space="preserve">
+    <value>Recurring order{0} paused until {1}. {2} line(s) updated; next dates recalculated.</value>
+  </data>
+  <data name="RecurringOrder.PauseRevertedStatus" xml:space="preserve">
+    <value>Pause undone — last-done and next dates were restored in the system.</value>
+  </data>
+  <data name="RecurringOrder.PauseAwayAddedNote" xml:space="preserve">
+    <value>Contact away period added (Contacts Away list).</value>
+  </data>
   <data name="Security.InvalidSecret" xml:space="preserve">
     <value>Invalid security configuration detected</value>
   </data>

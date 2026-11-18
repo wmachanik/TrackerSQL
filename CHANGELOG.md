@@ -2,6 +2,19 @@
 
 Release notes for shipped TrackerSQL versions. Newest first.
 
+## 3.0.4.4 — 2026-11-18
+
+**Quaffee Driver:** 0.5.9 (unchanged).
+
+### Features and fixes
+
+- **Recurring order pause / skip** — **Recurring Order Details** → **Pause / Skip**: skip by weeks or resume date; shifts last-done and recalculates next dates; emails the contact; **Revert** undoes pause in DB. Optional **Contact Away** row (reason **Recurring Pause**, `SQLCommands-RecurringPause-01.xml`).
+- **Layout** — Pause dialog uses a **How Long To Skip** panel; wider modal; date hint under the picker.
+
+### Go-live notes
+
+- Publish `bin/`, `Pages/RecurringOrderDetails.aspx` (+ code-behind), managers/repos, `Resources/Messages.resx`, `Styles/Site.css`, `App_Data/SQLCommands-RecurringPause-01.xml` (+ GoLive copy). Live `Web.config` **`Version` → 3.0.4.4**. Recycle; test pause, away list, and revert.
+
 ## 3.0.4.3 — 2026-11-17
 
 **Quaffee Driver:** 0.5.9 (unchanged from 3.0.4.2).

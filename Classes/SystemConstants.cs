@@ -96,6 +96,18 @@ namespace TrackerSQL.Classes
             /// a recurring order is added, updated, or disabled.
             /// </summary>
             public static readonly bool NotifyContactOnChange = true;
+
+            /// <summary>Minimum pause length when the user chooses a number of weeks.</summary>
+            public const int PauseMinWeeks = 1;
+
+            /// <summary>Maximum pause length when the user chooses a number of weeks.</summary>
+            public const int PauseMaxWeeks = 52;
+        }
+
+        /// <summary>Contacts Away reason codes (AwayReasonTbl.ReasonDesc).</summary>
+        public static class AwayReasonConstants
+        {
+            public const string RecurringPause = "Recurring Pause";
         }
 
         // Delivery and Personnel constants

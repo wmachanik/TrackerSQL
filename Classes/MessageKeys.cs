@@ -231,6 +231,14 @@ namespace TrackerSQL.Classes
             public const string NoEmailAddress = "RecurringOrder.NoEmailAddress";
             public const string ItemsListEmpty = "RecurringOrder.ItemsListEmpty";
             public const string ItemsListItem = "RecurringOrder.ItemsListItem";
+            public const string PausedEmailSubject = "RecurringOrder.PausedEmailSubject";
+            public const string PausedEmailBody = "RecurringOrder.PausedEmailBody";
+            public const string PauseInvalidWeeks = "RecurringOrder.PauseInvalidWeeks";
+            public const string PauseInvalidResumeDate = "RecurringOrder.PauseInvalidResumeDate";
+            public const string PauseNoInput = "RecurringOrder.PauseNoInput";
+            public const string PauseSuccessStatus = "RecurringOrder.PauseSuccessStatus";
+            public const string PauseRevertedStatus = "RecurringOrder.PauseRevertedStatus";
+            public const string PauseAwayAddedNote = "RecurringOrder.PauseAwayAddedNote";
         }
 
         /// <summary>

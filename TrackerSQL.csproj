@@ -378,6 +378,8 @@
     <Content Include="App_Data\SQLCommands-DriverGps-18.xml" />
     <Content Include="App_Data\SQLCommands-SupplierContacts-01.xml" />
     <Content Include="App_Data\SQLCommands-ClientMail-01.xml" />
+    <Content Include="App_Data\SQLCommands-RecurringPause-01.xml" />
+    <Content Include="App_Data\GoLive\SQLCommands-RecurringPause-01.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-08.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-09.xml" />
     <Content Include="App_Data\GoLive\SQLCommands-DriverGps-10.xml" />
@@ -909,6 +911,7 @@
     <Compile Include="Managers\PublicOrderViewManager.cs" />
     <Compile Include="Managers\RepairLookupDataSource.cs" />
     <Compile Include="Managers\RecurringOrderNotificationManager.cs" />
+    <Compile Include="Managers\RecurringOrderPauseManager.cs" />
     <Compile Include="Managers\RepairManager.cs" />
     <Compile Include="Managers\SecurityManager.cs" />
     <Compile Include="MobileSite.Master.cs">

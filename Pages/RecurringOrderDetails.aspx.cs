@@ -19,6 +19,9 @@ namespace TrackerSQL.Pages
         private const string WorkingItemsViewStateKey = "WorkingRecurringItems";
         private const string WorkingItemsSessionPrefix = "RecurringOrderDetails.WorkingItems.";
         private const string CurrentRecurringOrderIdViewStateKey = "CurrentRecurringOrderID";
+        /// <summary>Pause wrote the DB but revert baseline was left pre-pause until Save.</summary>
+        private const string PausePendingRevertViewStateKey = "RecurringOrderDetails.PausePendingRevert";
+        private const string PauseLinkedAwayPeriodViewStateKey = "RecurringOrderDetails.PauseLinkedAwayPeriodId";
 
         private readonly RecurringOrdersRepository recurringOrdersRepository = new RecurringOrdersRepository();
         private List<Item> _itemLookupCache;
@@ -69,6 +72,19 @@ namespace TrackerSQL.Pages
         protected CheckBox chkDisableReenablePrediction;
         protected Button btnDisablePromptApply;
         protected Button btnDisablePromptSkip;
+        protected Button btnPauseSkip;
+        protected Panel pnlPausePrompt;
+        protected Literal ltrlPauseIntro;
+        protected Literal ltrlPauseSoonest;
+        protected System.Web.UI.WebControls.RadioButton rblPauseByWeeks;
+        protected System.Web.UI.WebControls.RadioButton rblPauseByDate;
+        protected TextBox tbxPauseWeeks;
+        protected TextBox tbxPauseResumeDate;
+        protected Literal ltrlPauseHint;
+        protected Button btnPauseApply;
+        protected Button btnPauseCancel;
+        protected Panel pnlPauseSelection;
+        protected System.Web.UI.WebControls.CheckBox chkPauseAddContactAway;
 
         /// <summary>
         /// Keep ViewState in Session — large dropdown lists were overflowing the hidden-field
@@ -125,6 +141,7 @@ namespace TrackerSQL.Pages
                 btnUpdateAndReturn.Enabled = true;
                 btnInsert.Enabled = true;
                 btnDelete.Enabled = false;
+                btnPauseSkip.Enabled = false;
                 EnabledCheckBox.Checked = true;
                 SyncRecurringOrderIdControls(0);
                 BindRecurringItemsGrid(new List<RecurringOrderItem>
@@ -234,6 +251,9 @@ namespace TrackerSQL.Pages
             scriptManager.RegisterPostBackControl(btnPredictionKeep);
             scriptManager.RegisterPostBackControl(btnDisablePromptApply);
             scriptManager.RegisterPostBackControl(btnDisablePromptSkip);
+            scriptManager.RegisterPostBackControl(btnPauseSkip);
+            scriptManager.RegisterPostBackControl(btnPauseApply);
+            scriptManager.RegisterPostBackControl(btnPauseCancel);
         }
 
         private bool? ReadViewStateBool(string key)
@@ -422,7 +442,7 @@ namespace TrackerSQL.Pages
             ApplyInvoiceTypeFromContact(contactId);
         }
 
-        private void LoadRecurringOrder(int recurringOrderId, bool setStatus = true)
+        private void LoadRecurringOrder(int recurringOrderId, bool setStatus = true, bool captureRevertBaseline = true)
         {
             ClearWorkingItemsState(recurringOrderId);
 
@@ -433,7 +453,11 @@ namespace TrackerSQL.Pages
                 return;
             }
 
-            StoreOriginalDataInViewState(recurringOrder);
+            if (captureRevertBaseline)
+            {
+                StoreOriginalDataInViewState(recurringOrder);
+                ViewState.Remove(PausePendingRevertViewStateKey);
+            }
 
             SyncRecurringOrderIdControls(recurringOrder.RecurringOrderID);
             SetSelectedValueIfPresent(ddlCompanyName, recurringOrder.ContactID);
@@ -448,6 +472,7 @@ namespace TrackerSQL.Pages
             btnDelete.Enabled = true;
 
             var items = recurringOrder.Items ?? new List<RecurringOrderItem>();
+            btnPauseSkip.Enabled = recurringOrder.Enabled == true && items.Count > 0;
             BindRecurringItemsGrid(items);
 
             if (setStatus)
@@ -556,8 +581,10 @@ namespace TrackerSQL.Pages
 
             int calculatedCount = recurringOrdersRepository.AutoCalculateNextDatesForItems(recurringOrder);
             recurringOrdersRepository.Update(recurringOrder);
-            LoadRecurringOrder(recurringOrder.RecurringOrderID, setStatus: false);
+            LoadRecurringOrder(recurringOrder.RecurringOrderID, setStatus: false, captureRevertBaseline: true);
             ClearDirtyClientState();
+            ViewState.Remove(PausePendingRevertViewStateKey);
+            ViewState.Remove(PauseLinkedAwayPeriodViewStateKey);
 
             string auditAction = manualDisable
                 ? "Recurring order disabled"
@@ -793,9 +820,31 @@ namespace TrackerSQL.Pages
         {
             if (!string.IsNullOrEmpty(ReoccuringOrderIDLabel.Text))
             {
+                bool undoPauseOnDb = ReadViewStateBool(PausePendingRevertViewStateKey) == true;
+                var baseline = ViewState["OriginalRecurringOrder"] as RecurringOrder;
                 RestoreOriginalDataFromViewState();
-                ClearDirtyClientState();
-                SetStatus("Changes reverted to last saved state.", isError: false);
+                if (undoPauseOnDb && baseline != null && baseline.RecurringOrderID > 0)
+                {
+                    var revertOrder = CloneRecurringOrderForSave(baseline);
+                    recurringOrdersRepository.AutoCalculateNextDatesForItems(revertOrder);
+                    recurringOrdersRepository.Update(revertOrder);
+                    TryDeletePauseLinkedAwayPeriod();
+                    ViewState.Remove(PausePendingRevertViewStateKey);
+                    int recurringOrderId = baseline.RecurringOrderID;
+                    ClearWorkingItemsState(recurringOrderId);
+                    BindRecurringItemsGrid(revertOrder.Items ?? new List<RecurringOrderItem>());
+                    LogRecurringAudit("Pause skipped — reverted", "restored pre-pause schedule");
+                    ClearDirtyClientState();
+                    SetStatus(MessageProvider.Get(MessageKeys.RecurringOrder.PauseRevertedStatus), isError: false);
+                }
+                else
+                {
+                    ClearDirtyClientState();
+                    SetStatus("Changes reverted to last saved state.", isError: false);
+                }
+
+                upnlReoccuringOrderDetails.Update();
+                return;
             }
             else
             {
@@ -813,7 +862,27 @@ namespace TrackerSQL.Pages
                 NotesTextBox.Text = string.Empty;
                 ClearDirtyClientState();
                 SetStatus("Form cleared.", isError: false);
+                upnlReoccuringOrderDetails.Update();
             }
+        }
+
+        private static RecurringOrder CloneRecurringOrderForSave(RecurringOrder source)
+        {
+            if (source == null)
+                return null;
+
+            return new RecurringOrder
+            {
+                RecurringOrderID = source.RecurringOrderID,
+                ContactID = source.ContactID,
+                DeliveryByID = source.DeliveryByID,
+                InvoiceTypeID = source.InvoiceTypeID,
+                Enabled = source.Enabled,
+                Notes = source.Notes,
+                Items = source.Items == null
+                    ? new List<RecurringOrderItem>()
+                    : source.Items.Select(CloneRecurringOrderItem).ToList()
+            };
         }
 
         protected void btnReturn_Click(object sender, ImageClickEventArgs e)
@@ -2004,6 +2073,206 @@ namespace TrackerSQL.Pages
 
             var parsedValue = TrackerTools.ParseUserDate(value);
             return parsedValue <= SystemConstants.DatabaseConstants.SystemMinDate ? (DateTime?)null : parsedValue;
+        }
+
+        protected void btnPauseSkip_Click(object sender, EventArgs e)
+        {
+            int recurringOrderId = ResolveCurrentRecurringOrderId();
+            if (recurringOrderId <= 0)
+            {
+                SetStatus("Save this recurring order before pausing.", isError: true);
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            var recurringOrder = recurringOrdersRepository.GetById(recurringOrderId);
+            if (recurringOrder == null)
+            {
+                SetStatus("Recurring order not found.", isError: true);
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            if (recurringOrder.Enabled != true)
+            {
+                SetStatus("Enable this recurring order before pausing, or use Save to disable it.", isError: true);
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            recurringOrdersRepository.AutoCalculateNextDatesForItems(recurringOrder);
+            string contactName = GetSelectedContactName() ?? "this contact";
+            DateTime? soonestNext = null;
+            foreach (var item in recurringOrder.Items ?? new List<RecurringOrderItem>())
+            {
+                if (!item.NextDateRequired.HasValue)
+                    continue;
+                if (!soonestNext.HasValue || item.NextDateRequired.Value < soonestNext.Value)
+                    soonestNext = item.NextDateRequired;
+            }
+
+            ltrlPauseIntro.Text = HttpUtility.HtmlEncode(
+                "Pause deliveries for " + contactName + ".");
+            if (soonestNext.HasValue)
+            {
+                ltrlPauseSoonest.Text = HttpUtility.HtmlEncode(
+                    "The soonest next date is " + soonestNext.Value.ToString("yyyy-MM-dd") + ".");
+                ltrlPauseSoonest.Visible = true;
+            }
+            else
+            {
+                ltrlPauseSoonest.Text = HttpUtility.HtmlEncode(
+                    "Set how long to skip; last-done dates will move forward and next dates will be recalculated.");
+                ltrlPauseSoonest.Visible = true;
+            }
+
+            ltrlPauseHint.Text = HttpUtility.HtmlEncode(
+                "We add the skip period to each line's last-done date (stepping by recurrence when needed) "
+                + "so nothing is due before the resume date, then email the contact.");
+            if (tbxPauseWeeks != null)
+                tbxPauseWeeks.Text = "4";
+            if (tbxPauseResumeDate != null)
+                tbxPauseResumeDate.Text = string.Empty;
+            if (rblPauseByWeeks != null)
+                rblPauseByWeeks.Checked = true;
+            if (rblPauseByDate != null)
+                rblPauseByDate.Checked = false;
+            if (chkPauseAddContactAway != null)
+                chkPauseAddContactAway.Checked = true;
+            ScriptManager.RegisterStartupScript(this, GetType(), "wireRecurringPauseRadios",
+                "if (typeof wireRecurringPauseModeRadios === 'function') wireRecurringPauseModeRadios();", true);
+            pnlPausePrompt.Visible = true;
+            upnlReoccuringOrderDetails.Update();
+        }
+
+        protected void btnPauseCancel_Click(object sender, EventArgs e)
+        {
+            pnlPausePrompt.Visible = false;
+            upnlReoccuringOrderDetails.Update();
+        }
+
+        protected void btnPauseApply_Click(object sender, EventArgs e)
+        {
+            int recurringOrderId = ResolveCurrentRecurringOrderId();
+            if (recurringOrderId <= 0)
+            {
+                SetStatus("Could not pause — recurring order id is missing.", isError: true);
+                pnlPausePrompt.Visible = false;
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            var pauseManager = new RecurringOrderPauseManager();
+            bool byWeeks = rblPauseByWeeks != null && rblPauseByWeeks.Checked;
+            var mode = byWeeks
+                ? RecurringOrderPauseManager.PauseInputMode.Weeks
+                : RecurringOrderPauseManager.PauseInputMode.ResumeDate;
+
+            int? weeks = null;
+            if (byWeeks && int.TryParse(GetPostedOrControlValue(tbxPauseWeeks), out int parsedWeeks))
+                weeks = parsedWeeks;
+
+            DateTime? resumeInput = ParseOptionalUserDate(GetPostedOrControlValue(tbxPauseResumeDate));
+
+            if (!pauseManager.TryResolveResumeDate(mode, weeks, resumeInput, out DateTime resumeDate, out string error))
+            {
+                SetStatus(error, isError: true);
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            int linesUpdated = pauseManager.ApplyPause(recurringOrderId, resumeDate, out RecurringOrder saved);
+            if (linesUpdated <= 0 || saved == null)
+            {
+                SetStatus("No recurring lines were updated — check that lines have items and try again.", isError: true);
+                pnlPausePrompt.Visible = false;
+                upnlReoccuringOrderDetails.Update();
+                return;
+            }
+
+            ViewState.Remove(PauseLinkedAwayPeriodViewStateKey);
+            string awayNote = null;
+            bool addAway = chkPauseAddContactAway == null
+                || chkPauseAddContactAway.Checked;
+            if (addAway && saved.ContactID.HasValue && saved.ContactID.Value > 0)
+            {
+                int awayPeriodId = pauseManager.CreateContactAwayForPause(saved.ContactID.Value, resumeDate);
+                if (awayPeriodId > 0)
+                    ViewState[PauseLinkedAwayPeriodViewStateKey] = awayPeriodId;
+                else
+                    awayNote = "Contact away period was not created — check away reasons.";
+            }
+
+            pnlPausePrompt.Visible = false;
+            ViewState[PausePendingRevertViewStateKey] = true;
+            LoadRecurringOrder(recurringOrderId, setStatus: false, captureRevertBaseline: false);
+            ScriptManager.RegisterStartupScript(this, GetType(), "recurringOrderMarkDirtyAfterPause",
+                "if (typeof recurringOrderMarkDirty === 'function') recurringOrderMarkDirty();", true);
+
+            int skipDays = (resumeDate - TimeZoneUtils.Now().Date).Days;
+            int skipWeeksRounded = Math.Max(1, (int)Math.Round(skipDays / 7.0));
+            LogRecurringAudit(
+                "Recurring order paused",
+                $"resume={resumeDate:yyyy-MM-dd}; ~{skipWeeksRounded}wk; lines={linesUpdated}");
+
+            string emailNote = NotifyContactQuietly(
+                saved.ContactID,
+                recurringOrderId,
+                RecurringOrderNotificationManager.ChangeKind.Paused,
+                resumeDate);
+
+            string forContact = FormatForContactPhrase();
+            string status = MessageProvider.Format(
+                MessageKeys.RecurringOrder.PauseSuccessStatus,
+                forContact,
+                resumeDate.ToString("yyyy-MM-dd"),
+                linesUpdated.ToString());
+            if (!string.IsNullOrWhiteSpace(emailNote))
+                status += " " + emailNote;
+            if (!string.IsNullOrWhiteSpace(awayNote))
+                status += " " + awayNote;
+            else if (addAway && ViewState[PauseLinkedAwayPeriodViewStateKey] != null)
+                status += " " + MessageProvider.Get(MessageKeys.RecurringOrder.PauseAwayAddedNote);
+            SetStatus(status, isError: false);
+            new showMessageBox(Page, "Recurring Order Paused", status);
+            upnlReoccuringOrderDetails.Update();
+        }
+
+        private void TryDeletePauseLinkedAwayPeriod()
+        {
+            int awayPeriodId = ViewState[PauseLinkedAwayPeriodViewStateKey] as int? ?? 0;
+            if (awayPeriodId <= 0)
+                return;
+
+            try
+            {
+                new ContactsAwayPeriodRepository().Delete(awayPeriodId);
+                LogRecurringAudit("Pause reverted", "removed linked contact away id=" + awayPeriodId);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WriteLog(SystemConstants.LogTypes.Customers,
+                    "Recurring pause revert: could not delete away period " + awayPeriodId + ": " + ex.Message);
+            }
+
+            ViewState.Remove(PauseLinkedAwayPeriodViewStateKey);
+        }
+
+        /// <summary>
+        /// Best-effort contact email for pause; overload adds resume date for the paused template.
+        /// </summary>
+        private static string NotifyContactQuietly(int? contactId, int recurringOrderId,
+            RecurringOrderNotificationManager.ChangeKind kind, DateTime resumeDate)
+        {
+            if (!contactId.HasValue || contactId.Value <= 0 || recurringOrderId <= 0)
+                return null;
+
+            string error = new RecurringOrderNotificationManager()
+                .NotifyContact(contactId.Value, recurringOrderId, kind, resumeDate);
+            if (string.IsNullOrWhiteSpace(error))
+                return null;
+
+            return "Contact email not sent: " + error;
         }
     }
 }

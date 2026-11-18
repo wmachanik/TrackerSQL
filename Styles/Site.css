@@ -1905,6 +1905,67 @@ body.tracker-wait-active {
     margin-left: 4px;
 }
 
+.confirm-modal.confirm-modal--recurring-pause {
+    max-width: 620px;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-intro {
+    margin: 0 0 6px;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-soonest {
+    margin: 0 0 14px;
+    color: var(--text-muted, #5a5348);
+}
+
+.confirm-modal--recurring-pause .recurring-pause-selection-panel {
+    background: var(--page-tone-recurring-soft, #f7f3ee);
+    border: 1px solid var(--secondary-brown, #c4b5a0);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 12px 0 14px;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-selection-title {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+    color: var(--primary-brown, #4a3f35);
+}
+
+.confirm-modal--recurring-pause .recurring-pause-away-option {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(74, 63, 53, 0.15);
+}
+
+.confirm-modal--recurring-pause .recurring-pause-options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 0;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 12px;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-option-fields {
+    flex: 1 1 220px;
+    min-width: 200px;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-date-hint {
+    margin-top: 6px;
+    display: block;
+}
+
+.confirm-modal--recurring-pause .recurring-pause-footnote {
+    margin-top: 4px;
+}
+
 .confirm-modal-buttons {
     margin-top: 14px;
     display: flex;
